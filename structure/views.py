@@ -10,7 +10,7 @@ from django.views.decorators.cache import cache_page
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites
 from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
@@ -197,12 +197,16 @@ def HomologyModelDetails(request, modelname, state):
             t.color = colors[t]
             bb_temps[b][i] = t
             template_list.append(t.pdb_code.index)
+
+    psi = PdbStateIdentifier(model)
+    psi.run()
+    delta_distance = round(float(psi.activation_value), 2)
             
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                           'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
                                                           'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
                                                           'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
-                                                          'state': state})
+                                                          'state': state, 'delta_distance': delta_distance})
 
 def ServeHomModDiagram(request, modelname, state):
     if state=='refined':

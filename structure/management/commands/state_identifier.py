@@ -13,8 +13,13 @@ class Command(BaseBuild):
 	def add_arguments(self, parser):
 		super(Command, self).add_arguments(parser=parser)
 		parser.add_argument('-s', help="PDB code of GPCR structures", default=False, type=str)
+		parser.add_argument('--state', help="Activation state in case of homology model", default=False, type=str)
 
 	def handle(self, *args, **options):
-		psi = PdbStateIdentifier(options['s'])
+		try:
+			s = Structure.objects.get(pdb_code__index=options['s'])
+		except:
+			s = StructureModel.objects.get(protein__entry_name=options['s'], state__slug=options['state'])
+		psi = PdbStateIdentifier(s)
 		psi.run()
 		print(options['s'], psi.activation_value, psi.state)

@@ -815,17 +815,32 @@ class PdbChainSelector():
 
 class PdbStateIdentifier():
     def __init__(self, structure):
+        self.structure_type = None
         try:
-            structure.protein_conformation.protein.parent
+            if structure.protein_conformation.protein.parent==None:
+                raise Exception
             self.structure = structure
+            self.structure_type = 'structure'
         except:
-            self.structure = Structure.objects.get(pdb_code__index=structure.upper())
+            try:
+                structure.protein_conformation.protein
+                self.structure = structure
+                self.structure_type = 'refined'
+            except:
+                structure.protein
+                self.structure = structure
+                self.structure_type = 'hommod'
         self.state = None
         self.activation_value = None
         self.line = False
 
     def run(self):
-        self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+        if self.structure_type=='structure':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+        elif self.structure_type=='refined':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein)
+        elif self.structure_type=='hommod':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein)
         # class A and T
         if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
             tm6 = self.get_residue_distance('2x39', '6x35')
@@ -900,7 +915,7 @@ class PdbStateIdentifier():
             rota_struct1 = PDB.PDBParser(QUIET=True).get_structure('structure', io1)[0]
             io2 = StringIO(rotas[1].pdbdata.pdb)
             rota_struct2 = PDB.PDBParser(QUIET=True).get_structure('structure', io2)[0]
-            
+
             for chain1, chain2 in zip(rota_struct1, rota_struct2):
                 for r1, r2 in zip(chain1, chain2):
                     print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
@@ -908,8 +923,28 @@ class PdbStateIdentifier():
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)
         except:
-            print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
-            return False
+            try:
+                res1 = Residue.objects.get(protein_conformation=self.parent_prot_conf, display_generic_number__label=dgn(residue1, self.parent_prot_conf))
+                res2 = Residue.objects.get(protein_conformation=self.parent_prot_conf, display_generic_number__label=dgn(residue2, self.parent_prot_conf))
+                if self.structure_type=='refined':
+                    pdb_data = self.structure.pdb_data.pdb
+                elif self.structure_type=='hommod':
+                    pdb_data = self.structure.pdb
+                io = StringIO(pdb_data)
+                struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
+                for chain in struct:
+                    r1 = chain[res1.sequence_number]
+                    r2 = chain[res2.sequence_number]
+                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
+                    self.line = line
+                    return self.calculate_CA_distance(r1, r2)
+                
+            except:
+                print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
+                return False
+
+            
 
     def calculate_CA_distance(self, residue1, residue2):
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
