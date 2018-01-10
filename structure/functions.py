@@ -814,8 +814,9 @@ class PdbChainSelector():
 
 
 class PdbStateIdentifier():
-    def __init__(self, structure):
+    def __init__(self, structure, tm2_gn='2x39', tm6_gn='6x35', tm3_gn='3x47', tm7_gn='7x53'):
         self.structure_type = None
+        self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
         try:
             if structure.protein_conformation.protein.parent==None:
                 raise Exception
@@ -843,8 +844,8 @@ class PdbStateIdentifier():
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein)
         # class A and T
         if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
+            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<0:
@@ -855,8 +856,9 @@ class PdbStateIdentifier():
                     self.state = ProteinState.objects.get(slug='active')
         # class B
         elif self.parent_prot_conf.protein.family.slug.startswith('002') or self.parent_prot_conf.protein.family.slug.startswith('003'):
-            tm6 = self.get_residue_distance('2x44', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm2_gn_b = '2x'+str(int(self.tm2_gn.split('x')[1])+5)
+            tm6 = self.get_residue_distance(tm2_gn_b, self.tm6_gn)
+            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<10:
@@ -867,8 +869,8 @@ class PdbStateIdentifier():
                     self.state = ProteinState.objects.get(slug='active')
         # class C
         elif self.parent_prot_conf.protein.family.slug.startswith('004'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
+            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<0:
@@ -879,8 +881,8 @@ class PdbStateIdentifier():
                     self.state = ProteinState.objects.get(slug='active')
         # class F
         elif self.parent_prot_conf.protein.family.slug.startswith('005'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
+            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<5:
@@ -918,7 +920,7 @@ class PdbStateIdentifier():
 
             for chain1, chain2 in zip(rota_struct1, rota_struct2):
                 for r1, r2 in zip(chain1, chain2):
-                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    # print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
                     line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)
@@ -935,7 +937,7 @@ class PdbStateIdentifier():
                 for chain in struct:
                     r1 = chain[res1.sequence_number]
                     r2 = chain[res2.sequence_number]
-                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    # print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
                     line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)

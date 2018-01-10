@@ -14,12 +14,26 @@ class Command(BaseBuild):
 		super(Command, self).add_arguments(parser=parser)
 		parser.add_argument('-s', help="PDB code of GPCR structures", default=False, type=str)
 		parser.add_argument('--state', help="Activation state in case of homology model", default=False, type=str)
+		parser.add_argument('--gns', help="Specifiy generic numbers involved in calculation", default=False, nargs='+')
 
 	def handle(self, *args, **options):
 		try:
 			s = Structure.objects.get(pdb_code__index=options['s'])
 		except:
 			s = StructureModel.objects.get(protein__entry_name=options['s'], state__slug=options['state'])
-		psi = PdbStateIdentifier(s)
+		if options['gns']:
+			tm2_gn, tm6_gn, tm3_gn, tm7_gn = '2x39', '6x35', '3x47', '7x53'
+			for value in options['gns']:
+				if value.startswith('2'):
+					tm2_gn = value
+				elif value.startswith('6'):
+					tm6_gn = value
+				elif value.startswith('3'):
+					tm3_gn = value
+				elif value.startswith('7'):
+					tm7_gn = value
+			psi = PdbStateIdentifier(s, tm2_gn=tm2_gn, tm6_gn=tm6_gn, tm3_gn=tm3_gn, tm7_gn=tm7_gn)
+		else:
+			psi = PdbStateIdentifier(s)
 		psi.run()
 		print(options['s'], psi.activation_value, psi.state)
