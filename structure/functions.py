@@ -814,9 +814,11 @@ class PdbChainSelector():
 
 
 class PdbStateIdentifier():
-    def __init__(self, structure, tm2_gn='2x39', tm6_gn='6x35', tm3_gn='3x47', tm7_gn='7x53'):
+    def __init__(self, structure, tm2_gn='2x39', tm6_gn='6x35', tm3_gn='3x47', tm7_gn='7x53', inactive_cutoff=-1, intermediate_cutoff=8):
         self.structure_type = None
         self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
+        self.inactive_cutoff = inactive_cutoff
+        self.intermediate_cutoff = intermediate_cutoff
         try:
             if structure.protein_conformation.protein.parent==None:
                 raise Exception
@@ -848,11 +850,11 @@ class PdbStateIdentifier():
             tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<0:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 0<=self.activation_value<=8:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>8:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class B
         elif self.parent_prot_conf.protein.family.slug.startswith('002') or self.parent_prot_conf.protein.family.slug.startswith('003'):
@@ -873,11 +875,11 @@ class PdbStateIdentifier():
             tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<0:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 0<=self.activation_value<=8:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>8:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class F
         elif self.parent_prot_conf.protein.family.slug.startswith('005'):
@@ -943,7 +945,7 @@ class PdbStateIdentifier():
                     return self.calculate_CA_distance(r1, r2)
                 
             except:
-                print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
+                # print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
                 return False
 
             

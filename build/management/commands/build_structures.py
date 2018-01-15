@@ -75,6 +75,10 @@ class Command(BaseBuild):
             dest='purge',
             default=False,
             help='Purge existing records')
+        parser.add_argument('--skip_cn',
+            action='store_false',
+            default=True,
+            help='Skip building contact network for test build')
 
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
@@ -1448,31 +1452,19 @@ class Command(BaseBuild):
                     except:
                         pass
 
-                    try:
-                        current = time.time()
-                        self.build_contact_network(s,sd['pdb'])
-                        end = time.time()
-                        diff = round(end - current,1)
-                        self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
-                                    s.protein_conformation.protein.entry_name, diff))
-                    except Exception as msg:
-                        print(msg)
-                        print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
-                        self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
+                    if self.run_contactnetwork:
+                        try:
+                            current = time.time()
+                            self.build_contact_network(s,sd['pdb'])
+                            end = time.time()
+                            diff = round(end - current,1)
+                            self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
+                                        s.protein_conformation.protein.entry_name, diff))
+                        except Exception as msg:
+                            print(msg)
+                            print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
+                            self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
-                    try:
-                        current = time.time()
-                        mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
-                        # if not os.path.isdir(mypath):
-                        #     #Only run calcs, if not already in temp
-                        runcalculation(sd['pdb'],peptide_chain)
-
-                        parsecalculation(sd['pdb'],False)
-                        end = time.time()
-                        diff = round(end - current,1)
-                        self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
-                                    s.protein_conformation.protein.entry_name, diff))
-                    except Exception as msg:
                         try:
                             current = time.time()
                             mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
@@ -1483,13 +1475,26 @@ class Command(BaseBuild):
                             parsecalculation(sd['pdb'],False)
                             end = time.time()
                             diff = round(end - current,1)
-                            self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
+                            self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                         s.protein_conformation.protein.entry_name, diff))
                         except Exception as msg:
+                            try:
+                                current = time.time()
+                                mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
+                                # if not os.path.isdir(mypath):
+                                #     #Only run calcs, if not already in temp
+                                runcalculation(sd['pdb'],peptide_chain)
 
-                            print(msg)
-                            print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
-                            self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
+                                parsecalculation(sd['pdb'],False)
+                                end = time.time()
+                                diff = round(end - current,1)
+                                self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
+                                            s.protein_conformation.protein.entry_name, diff))
+                            except Exception as msg:
+
+                                print(msg)
+                                print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
+                                self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
 
 

@@ -24,6 +24,10 @@ class Command(BaseCommand):
                             dest='hommod',
                             default=False,
                             help='Include build of homology models')
+        parser.add_argument('--skip_cn',
+                            action='store_false',
+                            default=True,
+                            help='Skip building contact network for test build')
 
     def handle(self, *args, **options):
         if options['test']:
@@ -40,7 +44,7 @@ class Command(BaseCommand):
             ['build_construct_proteins'],
             ['build_structures', {'proc': options['proc']}],
             ['build_construct_data'],
-            ['build_ligands_from_cache', {'proc': options['proc']}],
+            ['build_ligands_from_cache', ['--skip_cn'], {'proc': options['proc']}],
             ['build_ligand_assays', {'proc': options['proc']}],
             ['build_mutant_data', {'proc': options['proc']}],
             # ['build_crystal_interactions', {'proc': options['proc']}],

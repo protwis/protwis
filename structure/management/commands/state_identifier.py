@@ -15,6 +15,7 @@ class Command(BaseBuild):
 		parser.add_argument('-s', help="PDB code of GPCR structures", default=False, type=str)
 		parser.add_argument('--state', help="Activation state in case of homology model", default=False, type=str)
 		parser.add_argument('--gns', help="Specifiy generic numbers involved in calculation", default=False, nargs='+')
+		parser.add_argument('--cutoffs', help="Specify inactive-intermediate and intermediate-active cutoffs", default=False, nargs='+')
 
 	def handle(self, *args, **options):
 		try:
@@ -32,7 +33,10 @@ class Command(BaseBuild):
 					tm3_gn = value
 				elif value.startswith('7'):
 					tm7_gn = value
-			psi = PdbStateIdentifier(s, tm2_gn=tm2_gn, tm6_gn=tm6_gn, tm3_gn=tm3_gn, tm7_gn=tm7_gn)
+			if options['cutoffs']:
+				psi = PdbStateIdentifier(s, tm2_gn=tm2_gn, tm6_gn=tm6_gn, tm3_gn=tm3_gn, tm7_gn=tm7_gn, inactive_cutoff=float(options['cutoffs'][0]), intermediate_cutoff=float(options['cutoffs'][1]))
+			else:
+				psi = PdbStateIdentifier(s, tm2_gn=tm2_gn, tm6_gn=tm6_gn, tm3_gn=tm3_gn, tm7_gn=tm7_gn)
 		else:
 			psi = PdbStateIdentifier(s)
 		psi.run()
