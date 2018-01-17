@@ -63,14 +63,15 @@ class AbsTargetSelection(TemplateView):
     # proteins and families
     #try - except block prevents manage.py from crashing - circular dependencies between protein - common
     try:
-        ppf = ProteinFamily.objects.get(slug=default_slug)
-        pfs = ProteinFamily.objects.filter(parent=ppf.id)
-        ps = Protein.objects.filter(family=ppf)
-        psets = ProteinSet.objects.all().prefetch_related('proteins')
-        tree_indent_level = []
-        action = 'expand'
-        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf
+        if ProteinFamily.objects.filter(slug=default_slug).exists():
+            ppf = ProteinFamily.objects.get(slug=default_slug)
+            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            ps = Protein.objects.filter(family=ppf)
+            psets = ProteinSet.objects.all().prefetch_related('proteins')
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
     except Exception as e:
         pass
 
