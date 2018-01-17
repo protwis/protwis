@@ -52,7 +52,6 @@ class BrowseSelection(AbsTargetSelection):
         # del ppf_g
         # del ppf_a
     except Exception as e:
-        print("selection error", e)
         pass
 
 @cache_page(60*60*24*2) # 2 days caching
