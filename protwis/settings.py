@@ -192,7 +192,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': '/tmp/django_cache',
         'OPTIONS': {
-            'MAX_ENTRIES': 100000
+            'MAX_ENTRIES': 10000000
         }
     },
     'alignments': {
