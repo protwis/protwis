@@ -26,7 +26,7 @@ class WebResource(models.Model):
         db_table = 'web_resource'
 
 class WebLink(models.Model):
-    web_resource = models.ForeignKey('WebResource')
+    web_resource = models.ForeignKey('WebResource', on_delete=models.CASCADE)
     index = models.TextField()
 
     # And now generating the working url is just a piece of cake
@@ -39,8 +39,8 @@ class WebLink(models.Model):
 
 
 class Publication(models.Model):
-    web_link = models.OneToOneField('common.WebLink')
-    journal = models.ForeignKey('PublicationJournal', null=True)
+    web_link = models.OneToOneField('common.WebLink', on_delete=models.CASCADE)
+    journal = models.ForeignKey('PublicationJournal', null=True, on_delete=models.CASCADE)
     title = models.TextField(null=True)
     authors = models.TextField(null=True)
     year = models.IntegerField(null=True)
@@ -178,8 +178,8 @@ class ReleaseNotes(models.Model):
 
 
 class ReleaseStatistics(models.Model):
-    release = models.ForeignKey('ReleaseNotes')
-    statistics_type = models.ForeignKey('ReleaseStatisticsType')
+    release = models.ForeignKey('ReleaseNotes', on_delete=models.CASCADE)
+    statistics_type = models.ForeignKey('ReleaseStatisticsType', on_delete=models.CASCADE)
     value = models.IntegerField()
 
     def __str__(self):

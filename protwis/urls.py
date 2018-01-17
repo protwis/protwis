@@ -7,7 +7,7 @@ from protwis import views
 urlpatterns = [
     url(r'^', include('home.urls')),
     url(r'^services/', include('api_' + settings.SITE_NAME + '.urls')),
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
     url(r'^common/', include('common.urls')),
     url(r'^protein/', include('protein.urls')),
     url(r'^family/', include('family.urls')),
