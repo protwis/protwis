@@ -74,7 +74,8 @@ def compare_family_slug(a,b):
     elif a[1]!=b[1]:
         return 1,"Class"
     elif a[2]!=b[2]:
-        return 2,"Ligand Type"
+        # return 2,"Ligand Type" Ignore Ligand Type level for construct Design purposes.
+        return 1,"Class"
     elif a[3]!=b[3]:
         return 3,"Receptor Family"
     else:

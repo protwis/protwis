@@ -24,6 +24,18 @@ class Residue(models.Model):
         else:
             return False
 
+class ResidueDataType(models.Model):
+    slug = models.SlugField(max_length=20)
+    name = models.CharField(max_length=100)
+
+class ResidueDataPoint(models.Model):
+    data_type = models.ForeignKey('ResidueDataType')
+    residue = models.ForeignKey('Residue', related_name='annotations')
+    value = models.FloatField(null=True)
+    value_text = models.CharField(max_length=50,null=True)
+
+    def __str__(self):
+        return '%s (%s)' % (self.data_type.name, str(self.value))
 
 class ResidueSet(models.Model):
     residue = models.ManyToManyField('Residue')
