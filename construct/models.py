@@ -43,7 +43,9 @@ class Construct(models.Model):
         # Q0SXH8 Cytochrome b(562)
         result = []
         position = None
-        for insert in self.insertions.filter(presence='YES').all():
+        for insert in self.insertions.all():
+            if not insert.presence=='YES':
+                continue
             if insert.insert_type.subtype in list_of_none_fusion:
                 continue
             if insert.insert_type.name!='fusion' and insert.insert_type.name!='auto':
@@ -61,11 +63,12 @@ class Construct(models.Model):
             result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position,insert.start,insert.end,'',''])
         
         if position:
-            for insert in self.insertions.filter(presence='YES').all():
-                if insert.insert_type.name=='linker':
+            for insert in self.insertions.all():
+                if insert.presence=='YES' and insert.insert_type.name=='linker':
                     if result[0][3].split("_")[0] == insert.position.split("_")[0]:
                         if result[0][4] is None or insert.start is None or abs(result[0][4]-insert.start)<len(insert.insert_type.subtype)+5:
-                            print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
+                            pass
+                            # print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
 
 
         return position,result
