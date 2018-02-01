@@ -244,6 +244,8 @@ class StructureList(views.APIView):
                 'resolution': structure.resolution,
                 'publication_date': structure.publication_date,
                 'type': structure.structure_type.name,
+                'state': structure.state.name,
+                'distance': structure.distance,
             }
 
             # publication
