@@ -64,16 +64,17 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
 
     simple_selection = request.session.get('selection', False)
     proteins = []
-
     if protein:  # if protein static page
         proteins.append(Protein.objects.get(entry_name=protein.lower()))
 
+    target_type = 'protein'
     # flatten the selection into individual proteins
     if simple_selection:
         for target in simple_selection.targets:
             if target.type == 'protein':
                 proteins.append(target.item)
             elif target.type == 'family':
+                target_type = 'family'
                 familyname = target.item
                 # species filter
                 species_list = []
@@ -95,6 +96,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
 
                 for fp in family_proteins:
                     proteins.append(fp)
+
 
     NMs = NaturalMutations.objects.filter(Q(protein__in=proteins)).prefetch_related('residue__generic_number','residue__display_generic_number','residue__protein_segment','protein')
     ptms = PTMs.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
@@ -155,7 +157,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
             if interactiontype not in interaction_data[sequence_number]:
                 interaction_data[sequence_number].append(interactiontype)
 
-    if target.type == 'family':
+    if target_type == 'family':
         pc = ProteinConformation.objects.get(protein__family__name=familyname, protein__sequence_type__slug='consensus')
         residuelist = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related('protein_segment', 'generic_number', 'display_generic_number')
     else:
@@ -254,7 +256,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
         response['Content-Disposition'] = 'attachment; filename=GPCRdb_' + proteins[0].entry_name + '_variant_data.xlsx'  # % 'mutations'
         return response
 
-    return render(request, 'browser.html', {'mutations': NMs, 'type': target.type, 'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'receptor': str(proteins[0].entry_name), 'mutations_pos_list': json.dumps(jsondata), 'natural_mutations_pos_list': json.dumps(jsondata_natural_mutations)})
+    return render(request, 'browser.html', {'mutations': NMs, 'type': target_type, 'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'receptor': str(proteins[0].entry_name), 'mutations_pos_list': json.dumps(jsondata), 'natural_mutations_pos_list': json.dumps(jsondata_natural_mutations)})
 
 def ajaxNaturalMutation(request, slug, **response_kwargs):
 
