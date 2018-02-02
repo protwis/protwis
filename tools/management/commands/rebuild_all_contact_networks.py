@@ -169,4 +169,3 @@ class Command(BaseCommand):
             print(s)
             self.purge_contact_network(s)
             self.build_contact_network(s,s.pdb_code.index)
-

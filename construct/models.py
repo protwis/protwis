@@ -134,7 +134,7 @@ class Construct(models.Model):
     def snake(self):
         ## Use cache if possible
         temp = self.snakecache
-        if temp==None or 1==1:
+        if temp==None:
             print(self.name+'_snake no cache')
             residues = Residue.objects.filter(protein_conformation__protein=self.protein).order_by('sequence_number').prefetch_related(
                 'protein_segment', 'generic_number', 'display_generic_number')

@@ -60,7 +60,7 @@ class Command(BaseCommand):
         # changes deletions to match PDB
         # Custom rules exist in the function
         self.replace_deletions()
-
+        
         ## IMPORTS ###
         self.import_inserts()
         self.import_expression()
@@ -353,7 +353,10 @@ class Command(BaseCommand):
             #print(i)
             aux_type, created = ConstructInsertionType.objects.get_or_create(name=i[5],subtype=i[6])
             for construct in Construct.objects.filter(structure__pdb_code__index=i[1].upper()):
-                insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
+                try:
+                    insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
+                except:
+                    print('Error with insert! FIXIT',i)
                 if i[4]:
                     i[4] = str(i[4])
                     #if position information add that
@@ -964,6 +967,7 @@ class Command(BaseCommand):
                 # if not_to_check:
                 #     print(c_pdb,not_to_check,m['pdb'][0])
                 protein = Protein.objects.filter(entry_name=c_pdb.lower()).get()
+                # print(c_pdb,protein)
                 if c_pdb in cached_mutations:
                     d = cached_mutations[c_pdb]
                 else:
@@ -1044,6 +1048,7 @@ class Command(BaseCommand):
         for c_pdb in missing:
             d = cache.get(c_pdb+"_auto_d")
             if not d:
+                protein = Protein.objects.filter(entry_name=c_pdb.lower()).get()
                 d = fetch_pdb_info(c_pdb,protein)
                 cache.set(c_pdb+"_auto_d",d,60*60*24)
             if len(d['mutations']):
