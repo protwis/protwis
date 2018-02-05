@@ -144,14 +144,14 @@ class FragmentSuperpose(object):
 
 
     def get_representative_fragments(self, state):
-        
+
         template = get_segment_template(self.target, state)
         return list(ResidueFragmentInteraction.objects.prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type').filter(structure_ligand_pair__structure__protein_conformation__protein=template.id))
 
 
     def get_all_fragments(self):
 
-        return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target).prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type'))
+        return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target).exclude(interaction_type__slug__in=['acc', 'hyd']).prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type'))
 
 #==============================================================================  
 class RotamerSuperpose(object):

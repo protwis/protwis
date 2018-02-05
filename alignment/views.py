@@ -1,5 +1,6 @@
 ﻿from django.shortcuts import render
 from django.conf import settings
+from django.http import HttpResponse
 from django.views.generic import TemplateView
 from django.db.models import Case, When
 from django.core.cache import cache
@@ -9,6 +10,9 @@ try:
 except:
     cache_alignment = cache
 
+from alignment import functions
+from common import definitions
+from common.selection import Selection
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
@@ -16,14 +20,21 @@ from structure.functions import BlastSearch
 
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
-from protein.models import Protein, ProteinSegment,ProteinFamily, ProteinSet
-from residue.models import ResiduePositionSet
+from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinSet
+from residue.models import ResidueNumberingScheme, ResiduePositionSet
 
-import inspect, os
-import hashlib
 from collections import OrderedDict
+from copy import deepcopy
+import hashlib
+import inspect
+from io import BytesIO
+import itertools
+import json
+import numpy as np
+import os
+import xlsxwriter
+import xlrd
 
-from common import definitions
 
 class TargetSelection(AbsTargetSelection):
     step = 1
@@ -41,6 +52,50 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+
+class PosTargetSelection(AbsTargetSelection):
+    step = 1
+    number_of_steps = 4
+    docs = 'sequences.html#structure-based-alignments'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/alignment/negativegroupselection',
+            'color': 'success',
+        },
+    }
+
+class NegTargetSelection(AbsTargetSelection):
+
+    step = 2
+    number_of_steps = 4
+    docs = 'sequences.html#structure-based-alignments'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/alignment/segmentselectionsignature',
+            'color': 'success',
+        },
+    }
+
+    def get_context_data(self, **kwargs):
+        #A bit ugly solution to having two target sets without modifying half of common.selection
+        context = super(NegTargetSelection, self).get_context_data(**kwargs)
+
+        self.request.session['targets_pos'] = deepcopy(self.request.session.get('selection', False))
+        del self.request.session['selection']
+
+        return context
 
 class TargetSelectionGprotein(AbsTargetSelection):
     step = 1
@@ -92,7 +147,7 @@ class TargetSelectionArrestin(AbsTargetSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/alignment/segmentselectionarrestin',
+            'url': '/alignment/segmentselectionsignature',
             'color': 'success',
         },
     }
@@ -187,6 +242,23 @@ class SegmentSelectionArrestin(AbsSegmentSelection):
     ## ProteinSegment for different proteins
     ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Arrestin').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
+class SegmentSelectionSignature(AbsSegmentSelection):
+    step = 3
+    number_of_steps = 4
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', False),
+        ('segments', True),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Calculate sequence signature',
+            'url': '/alignment/render_signature',
+            'color': 'success',
+        },
+    }
 
 class BlastSearchInput(AbsMiscSelection):
     step = 1
@@ -393,4 +465,396 @@ def render_csv_alignment(request):
 
     response = render(request, 'alignment/alignment_csv.html', context={'a': a}, content_type='text/csv')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
+    return response
+
+def render_reordered (request, group):
+
+    #grab the selections from session data
+    #targets set #1
+    ss_pos = request.session.get('targets_pos', False)
+    #targets set #2
+    ss_neg = request.session.get('selection', False)
+
+    aln = Alignment()
+
+    if group == 'positive':
+        aln.load_proteins_from_selection(ss_pos)
+    elif group == 'negative':
+        aln.load_proteins_from_selection(ss_neg)
+
+    aln.load_segments_from_selection(ss_neg)
+    aln.build_alignment()
+    aln.calculate_statistics()
+
+    return render(request, 'alignment/alignment_reordered.html', context={'aln': aln})
+
+def render_signature (request):
+
+    # Minimum difference between positive and negative set
+    # TODO: put these params to settings?
+    min_diff = 30
+    # Minimum conservation of the feature
+    min_cons = 0
+
+    colors = {
+        'neg': 'crimson',
+        'pos': 'royalblue',
+        'sma': 'gray',
+        'pol': 'blueviolet',
+        'hb': 'blueviolet',
+        'hbd': 'blue',
+        'hba': 'violet',
+        'alhp': 'gold',
+        'hp': 'gold',
+        'ar': 'limegreen',
+        'arhp': 'limegreen',
+        'charge': 'blue',
+        'lar': 'black'
+        }
+    # grab the selections from session data
+
+    # targets set #1
+    ss_pos = request.session.get('targets_pos', False)
+    # targets set #2
+    ss_neg = request.session.get('selection', False)
+
+    # calculate the alignments
+    aln_pos = Alignment()
+    aln_pos.load_proteins_from_selection(ss_pos)
+    aln_pos.load_segments_from_selection(ss_neg)
+    aln_pos.build_alignment()
+    aln_pos.calculate_statistics()
+
+    aln_neg = Alignment()
+    aln_neg.load_proteins_from_selection(ss_neg)
+    aln_neg.load_segments_from_selection(ss_neg)
+    aln_neg.build_alignment()
+    aln_neg.calculate_statistics()
+
+    # get common set of residues
+    common_gn = deepcopy(aln_pos.generic_numbers)
+
+    for scheme in aln_neg.numbering_schemes:
+        for segment in aln_neg.segments:
+            for pos in aln_neg.generic_numbers[scheme[0]][segment].items():
+                if pos[0] not in common_gn[scheme[0]][segment].keys():
+                    common_gn[scheme[0]][segment][pos[0]] = pos[1]
+            common_gn[scheme[0]][segment] = OrderedDict(sorted(
+                common_gn[scheme[0]][segment].items(),
+                key=lambda x: x[0].split('x')
+                ))
+
+    # get fature and amino acid frequency normalized to the common set of residues
+    feats_pos_norm = OrderedDict()
+    feats_neg_norm = OrderedDict()
+    aa_pos_norm = OrderedDict()
+    aa_neg_norm = OrderedDict()
+
+    for sid, segment in enumerate(aln_neg.segments):
+        feats_pos_norm[segment] = np.array(
+            [[x[0] for x in feat[sid]] for feat in aln_pos.feature_stats],
+            dtype='int'
+            )
+        feats_neg_norm[segment] = np.array(
+            [[x[0] for x in feat[sid]] for feat in aln_neg.feature_stats],
+            dtype='int'
+            )
+        aa_pos_norm[segment] = np.array(
+            [[x[0] for x in aa[sid]] for aa in aln_pos.amino_acid_stats],
+            dtype='int'
+            )
+        aa_neg_norm[segment] = np.array(
+            [[x[0] for x in aa[sid]] for aa in aln_neg.amino_acid_stats],
+            dtype='int'
+            )
+
+    # normalize and calculate difference
+    feats_delta = OrderedDict()
+    aa_delta = OrderedDict()
+
+    for segment in aln_neg.segments:
+        #TODO: get the correct default numering scheme from settings
+        for idx, res in enumerate(common_gn['gpcrdba'][segment].keys()):
+            if res not in aln_pos.generic_numbers['gpcrdba'][segment].keys():
+                feats_pos_norm[segment] = np.insert(feats_pos_norm[segment], idx, 0, axis=1)
+                aa_pos_norm[segment] = np.insert(aa_pos_norm[segment], idx, 0, axis=1)
+            elif res not in aln_neg.generic_numbers['gpcrdba'][segment].keys():
+                feats_neg_norm[segment] = np.insert(feats_neg_norm[segment], idx, 0, axis=1)
+                aa_neg_norm[segment] = np.insert(aa_neg_norm[segment], idx, 0, axis=1)
+
+        # now the difference
+        feats_delta[segment] = np.subtract(feats_pos_norm[segment], feats_neg_norm[segment])
+        aa_delta[segment] = np.subtract(aa_pos_norm[segment], aa_neg_norm[segment])
+
+    # adapt the feature stats to the format from Alignment objects
+    feats_delta_disp = []
+    for row, feat in enumerate(definitions.AMINO_ACID_GROUPS.keys()):
+        tmp_row = []
+        for segment in aln_neg.segments:
+            #first item is the real value,
+            # second is the assignmnent of color (via css)
+            # 0 - red, 5 - yellow, 10 - green
+            #third item is a tooltip
+            tmp_row.append([[
+                x,
+                int(x/20)+5,
+                "{} - {}".format(
+                    feats_pos_norm[segment][row][y],
+                    feats_neg_norm[segment][row][y]
+                    )
+                ] for y, x in enumerate(feats_delta[segment][row])])
+        feats_delta_disp.append(tmp_row)
+
+    # adapt the amino acids stats to the format from Alignment objects
+    aa_delta_disp = []
+    for row, aa in enumerate(definitions.AMINO_ACIDS.keys()):
+        tmp_row = []
+        for segment in aln_neg.segments:
+            #first item is the real value,
+            # second is the assignmnent of color (via css)
+            # 0 - red, 5 - yellow, 10 - green
+            #third item is a tooltip
+            tmp_row.append([[
+                x,
+                int(x/20)+5,
+                "{} - {}".format(
+                    aa_pos_norm[segment][row][y],
+                    aa_neg_norm[segment][row][y]
+                    )
+                ] for y, x in enumerate(aa_delta[segment][row])])
+        aa_delta_disp.append(tmp_row)
+
+
+
+    # save for later
+    # signature_map = feats_delta.argmax(axis=0)
+
+
+    # signature_data = []
+    # for i, f_id in enumerate(signature_map):
+    #     signature_data.append([
+    #         i,
+    #         colors[list(definitions.AMINO_ACID_GROUPS.keys())[f_id]],
+    #         int(feats_delta[f_id][i])
+    #         ])
+
+    # options = {
+    #     'xticks': residue_positions_common,
+    #     'anchor': 'signature_plot'
+    # }
+
+    num_of_sequences_pos = len(aln_pos.proteins)
+    num_residue_columns_pos = len(aln_pos.positions)
+    num_of_sequences_neg = len(aln_neg.proteins)
+    num_residue_columns_neg = len(aln_neg.positions)
+    return_html = render(request, 'sequence_signature/sequence_signature.html', {
+        # 'signature_data': json.dumps(signature_data),
+        # 'signature_options': json.dumps(options),
+        'num_residue_columns': len([x for x in common_gn['gpcrdba'][segment] for segment in aln_neg.segments]),
+        'num_of_sequences_pos': num_of_sequences_pos,
+        'num_residue_columns_pos': num_residue_columns_pos,
+        'num_of_sequences_neg': num_of_sequences_neg,
+        'num_residue_columns_neg': num_residue_columns_neg,
+
+        'common_segments': aln_neg.segments,
+        'common_generic_numbers': common_gn,
+        'feats_signature': feats_delta_disp,
+        'aa_signature': aa_delta_disp,
+        'a_pos': aln_pos,
+        'a_neg': aln_neg,
+        })
+
+    return return_html
+
+def render_signature_excel (request):
+
+    # version #1 - 8 sheets with separate pieces of signature outline
+
+    definitions.AMINO_ACID_GROUPS['custom'] = ['A', 'Q']
+
+    # step 1 - repeat the data preparation for a sequence signature
+
+    # targets set #1
+    ss_pos = request.session.get('targets_pos', False)
+    # targets set #2
+    ss_neg = request.session.get('selection', False)
+
+    # calculate the alignments
+    aln_pos = Alignment()
+    aln_pos.load_proteins_from_selection(ss_pos)
+    aln_pos.load_segments_from_selection(ss_neg)
+    aln_pos.build_alignment()
+    aln_pos.calculate_statistics()
+
+    aln_neg = Alignment()
+    aln_neg.load_proteins_from_selection(ss_neg)
+    aln_neg.load_segments_from_selection(ss_neg)
+    aln_neg.build_alignment()
+    aln_neg.calculate_statistics()
+
+    print(functions.get_numbering_schemes(aln_pos.proteins + aln_neg.proteins))
+    # get common set of residues
+    common_gn = deepcopy(aln_pos.generic_numbers)
+
+    for scheme in aln_neg.numbering_schemes:
+        for segment in aln_neg.segments:
+            for pos in aln_neg.generic_numbers[scheme[0]][segment].items():
+                if pos[0] not in common_gn[scheme[0]][segment].keys():
+                    common_gn[scheme[0]][segment][pos[0]] = pos[1]
+            common_gn[scheme[0]][segment] = OrderedDict(sorted(
+                common_gn[scheme[0]][segment].items(),
+                key=lambda x: x[0].split('x')
+                ))
+
+    # get fature and amino acid frequency normalized to the common set of residues
+    feats_pos_norm = OrderedDict()
+    feats_neg_norm = OrderedDict()
+    aa_pos_norm = OrderedDict()
+    aa_neg_norm = OrderedDict()
+
+    for sid, segment in enumerate(aln_neg.segments):
+        feats_pos_norm[segment] = np.array(
+            [[x[0] for x in feat[sid]] for feat in aln_pos.feature_stats],
+            dtype='int'
+            )
+        feats_neg_norm[segment] = np.array(
+            [[x[0] for x in feat[sid]] for feat in aln_neg.feature_stats],
+            dtype='int'
+            )
+        aa_pos_norm[segment] = np.array(
+            [[x[0] for x in aa[sid]] for aa in aln_pos.amino_acid_stats],
+            dtype='int'
+            )
+        aa_neg_norm[segment] = np.array(
+            [[x[0] for x in aa[sid]] for aa in aln_neg.amino_acid_stats],
+            dtype='int'
+            )
+
+    # normalize and calculate difference
+    feats_delta = OrderedDict()
+    aa_delta = OrderedDict()
+
+    for segment in aln_neg.segments:
+        #TODO: get the correct default numering scheme from settings
+        for idx, res in enumerate(common_gn['gpcrdba'][segment].keys()):
+            if res not in aln_pos.generic_numbers['gpcrdba'][segment].keys():
+                feats_pos_norm[segment] = np.insert(feats_pos_norm[segment], idx, 0, axis=1)
+                aa_pos_norm[segment] = np.insert(aa_pos_norm[segment], idx, 0, axis=1)
+            elif res not in aln_neg.generic_numbers['gpcrdba'][segment].keys():
+                feats_neg_norm[segment] = np.insert(feats_neg_norm[segment], idx, 0, axis=1)
+                aa_neg_norm[segment] = np.insert(aa_neg_norm[segment], idx, 0, axis=1)
+
+        # now the difference
+        feats_delta[segment] = np.subtract(feats_pos_norm[segment], feats_neg_norm[segment])
+        aa_delta[segment] = np.subtract(aa_pos_norm[segment], aa_neg_norm[segment])
+
+    # adapt the feature stats to the format from Alignment objects
+    feats_delta_disp = []
+    for row, feat in enumerate(definitions.AMINO_ACID_GROUPS.keys()):
+        tmp_row = []
+        for segment in aln_neg.segments:
+            #first item is the real value,
+            # second is the assignmnent of color (via css)
+            # 0 - red, 5 - yellow, 10 - green
+            #third item is a tooltip
+            tmp_row.append([[
+                x,
+                int(x/20)+5,
+                "{} - {}".format(
+                    feats_pos_norm[segment][row][y],
+                    feats_neg_norm[segment][row][y]
+                    )
+                ] for y, x in enumerate(feats_delta[segment][row])])
+        feats_delta_disp.append(tmp_row)
+
+    # adapt the amino acids stats to the format from Alignment objects
+    aa_delta_disp = []
+    for row, aa in enumerate(definitions.AMINO_ACIDS.keys()):
+        tmp_row = []
+        for segment in aln_neg.segments:
+            #first item is the real value,
+            # second is the assignmnent of color (via css)
+            # 0 - red, 5 - yellow, 10 - green
+            #third item is a tooltip
+            tmp_row.append([[
+                x,
+                int(x/20)+5,
+                "{} - {}".format(
+                    aa_pos_norm[segment][row][y],
+                    aa_neg_norm[segment][row][y]
+                    )
+                ] for y, x in enumerate(aa_delta[segment][row])])
+        aa_delta_disp.append(tmp_row)
+
+    outstream = BytesIO()
+    # wb = xlsxwriter.Workbook('excel_test.xlsx', {'in_memory': False})
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+    # Feature stats for signature
+    functions.prepare_excel_worksheet(
+        wb,
+        'signature_properties',
+        aln_neg,
+        common_gn,
+        feats_delta_disp
+    )
+    # Amino acids stats for signature
+    functions.prepare_excel_worksheet(
+        wb,
+        'signature_amino_acids',
+        aln_neg,
+        common_gn,
+        aa_delta_disp,
+        data_type='amino_acids'
+    )
+    # Feature stats for positive group alignment
+    functions.prepare_excel_worksheet(
+        wb,
+        'positive_group_properties',
+        aln_pos,
+        data_block=aln_pos.feature_stats
+    )
+    # Amino acids stats for positive group alignment
+    functions.prepare_excel_worksheet(
+        wb,
+        'positive_group_amino_acids',
+        aln_pos,
+        data_block=aln_pos.amino_acid_stats,
+        data_type='amino_acids'
+    )
+    # Positive group alignment
+    functions.prepare_excel_worksheet(
+        wb,
+        'positive_group_aln',
+        aln_pos
+    )
+    # Feature stats for negative group alignment
+    functions.prepare_excel_worksheet(
+        wb,
+        'negative_group_properties',
+        aln_neg,
+        data_block=aln_neg.feature_stats
+    )
+    # Amino acids stats for negative group alignment
+    functions.prepare_excel_worksheet(
+        wb,
+        'negative_group_amino_acids',
+        aln_neg,
+        data_block=aln_neg.amino_acid_stats,
+        data_type='amino_acids'
+    )
+    # Negative group alignment
+    functions.prepare_excel_worksheet(
+        wb,
+        'negative_group_aln',
+        aln_neg
+    )
+
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(
+        outstream.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    response['Content-Disposition'] = "attachment; filename=sequence_signature.xlsx"
+
     return response
