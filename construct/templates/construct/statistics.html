@@ -5,6 +5,80 @@
 
 {% endblock %}
 
+
+{% block addon_js %}
+
+<script type="text/javascript">
+
+    dynamine_data = {{rs_annotations|safe}};
+    
+    $( document ).ready(function() {
+        console.log( "ready!" );
+        $( ".adddynamine_nterm" ).each(function( index ) {
+          console.log( index + ": " + $( this ).attr('entryname'));
+          entry_name = $( this ).attr('entryname').split("_").slice(0, -1).join('_');
+          cut = $( this ).attr('entryname').split("_").slice(-1);
+          console.log( index + ": " + entry_name + ' ' + cut);
+          pos = $( this ).attr('position');
+          if (pos>0) {
+              test = dynamine_data[entry_name];
+              d = dynamine_data[entry_name]['N-term'];
+              length = Object.keys(d).length;
+              seq_pos = length-pos+1;
+              a = d[seq_pos];
+              if (a<0.7) {
+                // disordered / flexible
+                color = 'green';
+                if ($(this).attr('bgcolor')=='lightgrey') color = '#99C799';
+              } else if (a>0.8) {
+                // ordered / rigid
+                color = 'blue';
+                if ($(this).attr('bgcolor')=='lightgrey') color = '#999DFF';
+              } else {
+                color = 'red';
+                if ($(this).attr('bgcolor')=='lightgrey') color = '#FFA3A3';
+              }
+              console.log( index + ": " + entry_name + ' pos:' + pos + ' seq_pos:' + seq_pos + ' ' +a);
+              $(this).html("<font size=1 color='"+color+"'>"+a+"</font>");
+              // if ($(this).attr('bgcolor')=='lightgrey') $(this).css('opacity',0.4);
+              $(this).attr('bgcolor',color);
+          }
+        });
+        $( ".adddynamine_cterm" ).each(function( index ) {
+          console.log( index + ": " + $( this ).attr('entryname'));
+          entry_name = $( this ).attr('entryname').split("_").slice(0, -1).join('_');
+          cut = $( this ).attr('entryname').split("_").slice(-1);
+          console.log( index + ": " + entry_name + ' ' + cut);
+          pos = $( this ).attr('position');
+          if (pos>0) {
+              test = dynamine_data[entry_name];
+              d = dynamine_data[entry_name]['C-term'];
+              length = Object.keys(d).length;
+              seq_pos = Object.keys(d)[pos-1];
+              a = d[seq_pos];
+              if (a<0.7) {
+                // disordered / flexible
+                color = 'green';
+                if ($(this).attr('bgcolor')=='lightgrey') color = '#99C799';
+              } else if (a>0.8) {
+                // ordered / rigid
+                color = 'blue';
+                if ($(this).attr('bgcolor')=='lightgrey') color = '#999DFF';
+              } else {
+                color = 'red';
+                if ($(this).attr('bgcolor')=='lightgrey') color = '#FFA3A3';
+              }
+              console.log( index + ": " + entry_name + ' pos:' + pos + ' seq_pos:' + seq_pos + ' ' +a);
+              $(this).html("<font size=1 color='"+color+"'>"+a+"</font>");
+              // if ($(this).attr('bgcolor')=='lightgrey') $(this).css('opacity',0.4);
+              $(this).attr('bgcolor',color);
+          }
+        });
+    });
+
+</script>
+{% endblock %}
+
 {% block content %}
 
 <style type="text/css">
@@ -29,7 +103,21 @@ table {
     text-align:center;
 }
 </style>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 <h2> Construct Statistics</h2>
+
+
+
 
 
 <br>
@@ -47,15 +135,15 @@ Supplementary Table TruncationSites N-term
     <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td><td>{{t_pos.3|length}}</td>
     {% for pos in truncations_new_possibilties.nterm reversed %}
         {% if pos in t_pos.0 %}
-                <td bgcolor='green' align='center' style='border: none;'>C</td>
+                <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='green' align='center' style='border: none;'>C</td>
         {% elif pos in t_pos.1 %}
-                <td bgcolor='red' align='center' style='border: none;'>E</td>
+                <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='red' align='center' style='border: none;'>E</td>
         {% elif pos < t_pos.0.0 %}
-                <td bgcolor='grey' align='center' style='border: none;'></td>
+                <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='grey' align='center' style='border: none;'></td>
         {% elif pos < t_pos.1.0 %}
-                <td bgcolor='grey' align='center' style='border: none;'></td>
+                <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='grey' align='center' style='border: none;'></td>
         {% elif pos <= t_pos.2.0 %}
-                <td bgcolor='lightgrey' align='center' style='border: none;'></td>
+                <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
         {% else %}
             <td bgcolor='white' style='border: none;'></td>
         {% endif %}
@@ -92,15 +180,15 @@ Supplementary Table TruncationSites C-term
     <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td><td>{{t_pos.3|length}}</td>
     {% for pos in truncations_new_possibilties.cterm %}
         {% if pos in t_pos.0 %}
-                <td bgcolor='green' align='center' style='border: none;'>C</td>
+                <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='green' align='center' style='border: none;'>C</td>
         {% elif pos in t_pos.1 %}
-                <td bgcolor='red' align='center' style='border: none;'>E</td>
+                <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='red' align='center' style='border: none;'>E</td>
         {% elif pos < t_pos.0.0 %}
-                <td bgcolor='grey' align='center' style='border: none;'></td>
+                <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='grey' align='center' style='border: none;'></td>
         {% elif pos < t_pos.1.0 %}
-                <td bgcolor='grey' align='center' style='border: none;'></td>
+                <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='grey' align='center' style='border: none;'></td>
         {% elif pos <= t_pos.2.0 %}
-                <td bgcolor='lightgrey' align='center' style='border: none;'></td>
+                <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
         {% else %}
             <td bgcolor='white' style='border: none;'></td>
         {% endif %}
@@ -371,10 +459,4 @@ MUTATION TYPES (only mutated aa)
 {% endfor %}
 {% endfor %}
 </table>
-{% endblock %}
-{% block addon_js %}
-
-<script type="text/javascript">
-    //$(".verticalTableHeader").each(function(){$(this).height($(this).width())})
-</script>
 {% endblock %}

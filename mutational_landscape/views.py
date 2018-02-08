@@ -23,6 +23,7 @@ from common import definitions
 from collections import OrderedDict
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
+from family.views import linear_gradient, color_dict, RGB_to_hex, hex_to_RGB
 
 import re
 import json
@@ -58,21 +59,23 @@ class TargetSelection(AbsTargetSelection):
     }
     default_species = False
 
-def render_variants(request, protein = None, family = None, download = None, receptor_class = None, gn = None, aa = None, **response_kwargs):
+
+def render_variants(request, protein=None, family=None, download=None, receptor_class=None, gn=None, aa=None, **response_kwargs):
 
     simple_selection = request.session.get('selection', False)
     proteins = []
+    if protein:  # if protein static page
+        proteins.append(Protein.objects.get(entry_name=protein.lower()))
 
-    if protein: # if protein static page
-        proteins.append(Protein.objects.get(entry_name = protein.lower()))
-
+    target_type = 'protein'
     # flatten the selection into individual proteins
-
     if simple_selection:
         for target in simple_selection.targets:
             if target.type == 'protein':
                 proteins.append(target.item)
             elif target.type == 'family':
+                target_type = 'family'
+                familyname = target.item
                 # species filter
                 species_list = []
                 for species in simple_selection.species:
@@ -94,7 +97,8 @@ def render_variants(request, protein = None, family = None, download = None, rec
                 for fp in family_proteins:
                     proteins.append(fp)
 
-    NMs = NaturalMutations.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
+
+    NMs = NaturalMutations.objects.filter(Q(protein__in=proteins)).prefetch_related('residue__generic_number','residue__display_generic_number','residue__protein_segment','protein')
     ptms = PTMs.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
     ptms_dict = {}
 
@@ -104,7 +108,7 @@ def render_variants(request, protein = None, family = None, download = None, rec
     for residue in micro_switches_rset.residue_position.all():
         ms_label.append(residue.label)
 
-    ms_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
+    ms_object = Residue.objects.filter(protein_conformation__protein=proteins[0], generic_number__label__in=ms_label)
     ms_sequence_numbers = []
     for ms in ms_object:
         ms_sequence_numbers.append(ms.sequence_number)
@@ -115,7 +119,7 @@ def render_variants(request, protein = None, family = None, download = None, rec
     for residue in sodium_pocket_rset.residue_position.all():
         sp_label.append(residue.label)
 
-    sp_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
+    sp_object = Residue.objects.filter(protein_conformation__protein=proteins[0], generic_number__label__in=ms_label)
     sp_sequence_numbers = []
     for sp in sp_object:
         sp_sequence_numbers.append(sp.sequence_number)
@@ -133,10 +137,13 @@ def render_variants(request, protein = None, family = None, download = None, rec
     ### GET LB INTERACTION DATA
     # get also ortholog proteins, which might have been crystallised to extract
     # interaction data also from those
-    orthologs = Protein.objects.filter(family__slug__startswith=proteins[0].family.slug, sequence_type__slug='wt')
+    if protein:
+        orthologs = Protein.objects.filter(family__slug=proteins[0].family.slug, sequence_type__slug='wt')
+    else:
+        orthologs = Protein.objects.filter(family__slug__startswith=proteins[0].family.slug, sequence_type__slug='wt')
 
     interactions = ResidueFragmentInteraction.objects.filter(
-        structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
+        structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').all()
     interaction_data = {}
     for interaction in interactions:
         if interaction.rotamer.residue.generic_number:
@@ -150,6 +157,12 @@ def render_variants(request, protein = None, family = None, download = None, rec
             if interactiontype not in interaction_data[sequence_number]:
                 interaction_data[sequence_number].append(interactiontype)
 
+    if target_type == 'family':
+        pc = ProteinConformation.objects.get(protein__family__name=familyname, protein__sequence_type__slug='consensus')
+        residuelist = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related('protein_segment', 'generic_number', 'display_generic_number')
+    else:
+        residuelist = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment', 'display_generic_number', 'generic_number')
+
     jsondata = {}
     for NM in NMs:
         functional_annotation = ''
@@ -159,18 +172,18 @@ def render_variants(request, protein = None, family = None, download = None, rec
         else:
             GN = ''
         if SN in sp_sequence_numbers:
-            functional_annotation +=  'SodiumPocket '
+            functional_annotation += 'SodiumPocket '
         if SN in ms_sequence_numbers:
-            functional_annotation +=  'MicroSwitch '
+            functional_annotation += 'MicroSwitch '
         if SN in ptms_dict:
-            functional_annotation +=  'PTM (' + ptms_dict[SN] + ') '
+            functional_annotation += 'PTM (' + ptms_dict[SN] + ') '
         if SN in interaction_data:
-            functional_annotation +=  'LB (' + ', '.join(interaction_data[SN]) + ') '
+            functional_annotation += 'LB (' + ', '.join(interaction_data[SN]) + ') '
         if GN in gprotein_generic_set:
-            functional_annotation +=  'GP (contact) '
+            functional_annotation += 'GP (contact) '
 
-        type = NM.type
-        if type == 'missense':
+        ms_type = NM.type
+        if ms_type == 'missense':
             effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
             color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
         else:
@@ -181,20 +194,45 @@ def render_variants(request, protein = None, family = None, download = None, rec
         # print(NM.functional_annotation)
         jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color, functional_annotation]
 
-    residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0].entry_name).prefetch_related('protein_segment','display_generic_number','generic_number')
-    SnakePlot = DrawSnakePlot(
-                residuelist, "Class A", protein, nobuttons=1)
-    HelixBox = DrawHelixBox(residuelist,'Class A', protein, nobuttons = 1)
 
+    natural_mutation_list = {}
+    max_snp_pos = 1
+    for NM in NMs:
+        if NM.residue.generic_number:
+            if NM.residue.generic_number.label in natural_mutation_list:
+                natural_mutation_list[NM.residue.generic_number.label]['val'] += 1
+                if not str(NM.amino_acid) in natural_mutation_list[NM.residue.generic_number.label]['AA']:
+                    natural_mutation_list[NM.residue.generic_number.label]['AA'] = natural_mutation_list[NM.residue.generic_number.label]['AA'] + str(NM.amino_acid) + ' '
+
+                if natural_mutation_list[NM.residue.generic_number.label]['val'] > max_snp_pos:
+                    max_snp_pos = natural_mutation_list[NM.residue.generic_number.label]['val']
+            else:
+                natural_mutation_list[NM.residue.generic_number.label] = {'val':1, 'AA': NM.amino_acid + ' '}
+
+    jsondata_natural_mutations = {}
+
+    for r in residuelist:
+        if r.generic_number:
+            if r.generic_number.label in natural_mutation_list:
+                jsondata_natural_mutations[r.sequence_number] = natural_mutation_list[r.generic_number.label]
+
+    jsondata_natural_mutations['color'] = linear_gradient(start_hex="#c79494", finish_hex="#c40100", n=max_snp_pos)
+    # jsondata_cancer_mutations['color'] = linear_gradient(start_hex="#d8baff", finish_hex="#422d65", n=max_cancer_pos)
+    # jsondata_disease_mutations['color'] = linear_gradient(start_hex="#ffa1b1", finish_hex="#6e000b", n=max_disease_pos)
+    #
+    SnakePlot = DrawSnakePlot(residuelist, "Class A", protein, nobuttons=1)
+    HelixBox = DrawHelixBox(residuelist, 'Class A', protein, nobuttons=1)
+
+    # EXCEL TABLE EXPORT
     if download:
 
         data = []
         for r in NMs:
             values = r.__dict__
             data.append(values)
-        headers = ['type','amino_acid', 'allele_count','allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes', 'functional_annotation']
+        headers = ['type', 'amino_acid', 'allele_count', 'allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes', 'functional_annotation']
 
-        #EXCEL SOLUTION
+        # EXCEL SOLUTION
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output)
         worksheet = workbook.add_worksheet()
@@ -214,10 +252,11 @@ def render_variants(request, protein = None, family = None, download = None, rec
         output.seek(0)
         xlsx_data = output.read()
 
-        response = HttpResponse(xlsx_data,content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=GPCRdb_'+proteins[0].entry_name+'_variant_data.xlsx' #% 'mutations'
+        response = HttpResponse(xlsx_data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=GPCRdb_' + proteins[0].entry_name + '_variant_data.xlsx'  # % 'mutations'
         return response
-    return render(request, 'browser.html', {'mutations': NMs, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'receptor': str(proteins[0].entry_name),'mutations_pos_list' : json.dumps(jsondata)})
+
+    return render(request, 'browser.html', {'mutations': NMs, 'type': target_type, 'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'receptor': str(proteins[0].entry_name), 'mutations_pos_list': json.dumps(jsondata), 'natural_mutations_pos_list': json.dumps(jsondata_natural_mutations)})
 
 def ajaxNaturalMutation(request, slug, **response_kwargs):
 
@@ -445,7 +484,7 @@ def mutant_extract(request):
         # jsondata[mutation.residue.sequence_number].append([mutation.foldchange,ligand,qual])
     # print(jsondata)
 
-@cache_page(60*60*24*21) #  2 days
+@cache_page(60*60*24*21)
 def statistics(request):
 
     context = dict()
@@ -591,7 +630,7 @@ def get_functional_sites(protein):
     ### GET LB INTERACTION DATA
     ## get also ortholog proteins, which might have been crystallised to extract
     ## interaction data also from those
-    orthologs = Protein.objects.filter(family__slug__startswith=protein.family.slug, sequence_type__slug='wt')
+    orthologs = Protein.objects.filter(family__slug__startswith=protein.family.slug, sequence_type__slug='wt').prefetch_related('protein__family')
     interaction_residues = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').values_list('rotamer__residue_id', flat=True).distinct()
 
@@ -618,8 +657,8 @@ def economicburden(request):
     nhs_data = NHSPrescribings.objects.all().values('drugname__name').annotate(Avg('actual_cost'), Avg('items'), Avg('quantity'))
 
     drug_data = []
+    temp = {}
     for i in nhs_data:
-
         ## druginformation
         drugname = i['drugname__name']
         average_cost = int(i['actual_cost__avg'])
@@ -638,9 +677,12 @@ def economicburden(request):
 
         known_functional = 0
         for target in protein_targets:
-            function_sites = get_functional_sites(target)
-            known_functional += function_sites
-
+            if target.entry_name in temp:
+                known_functional += temp[target.entry_name]
+            else:
+                function_sites = get_functional_sites(target)
+                known_functional += function_sites
+                temp[target.entry_name] = function_sites
 
         putative_func = len(NaturalMutations.objects.filter(Q(protein__in=protein_targets), Q(sift_score__lte=0.05) | Q(polyphen_score__gte=0.1)).annotate(count_putative_func=Count('id')))
 

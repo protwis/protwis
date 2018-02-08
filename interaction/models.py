@@ -3,10 +3,10 @@ from django.db import models
 
 class ResidueFragmentInteraction(models.Model):
 
-    structure_ligand_pair = models.ForeignKey('StructureLigandInteraction')
-    rotamer = models.ForeignKey('structure.Rotamer')
-    fragment = models.ForeignKey('structure.Fragment')
-    interaction_type = models.ForeignKey('ResidueFragmentInteractionType')
+    structure_ligand_pair = models.ForeignKey('StructureLigandInteraction', on_delete=models.CASCADE)
+    rotamer = models.ForeignKey('structure.Rotamer', on_delete=models.CASCADE)
+    fragment = models.ForeignKey('structure.Fragment', on_delete=models.CASCADE)
+    interaction_type = models.ForeignKey('ResidueFragmentInteractionType', on_delete=models.CASCADE)
 
     def __str__(self):
         if self.rotamer.residue.display_generic_number is not None:
@@ -48,11 +48,11 @@ class ResidueFragmentInteractionType(models.Model):
 
 
 class StructureLigandInteraction(models.Model):
-    structure = models.ForeignKey('structure.Structure')
-    ligand = models.ForeignKey('ligand.Ligand')
-    ligand_role = models.ForeignKey('ligand.LigandRole')
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
+    ligand_role = models.ForeignKey('ligand.LigandRole', on_delete=models.CASCADE)
     pdb_reference = models.CharField(max_length=3, null=True)
-    pdb_file = models.ForeignKey('structure.PdbData', null=True)
+    pdb_file = models.ForeignKey('structure.PdbData', null=True, on_delete=models.CASCADE)
     annotated = models.BooleanField(default=False)
 
     def __str__(self):
@@ -63,8 +63,8 @@ class StructureLigandInteraction(models.Model):
 
 
 class ProteinLigandInteraction(models.Model):
-    protein = models.ForeignKey('protein.ProteinConformation')
-    ligand = models.ForeignKey('ligand.Ligand')
+    protein = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
+    ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
 
     def __str__(self):
         return "{} {}".format(self.protein.entry_name, self.ligand.name)
@@ -73,8 +73,8 @@ class ProteinLigandInteraction(models.Model):
         db_table = 'interaction_protein_ligand'
 
 class ResidueFragmentAtom(models.Model):
-    structureligandpair = models.ForeignKey('StructureLigandInteraction')
-    interaction = models.ForeignKey('ResidueFragmentInteraction', null=True)
+    structureligandpair = models.ForeignKey('StructureLigandInteraction', on_delete=models.CASCADE)
+    interaction = models.ForeignKey('ResidueFragmentInteraction', null=True, on_delete=models.CASCADE)
     atomtype = models.CharField(max_length = 20)
     atomnr = models.SmallIntegerField()
     atomclass = models.CharField(max_length = 20)
