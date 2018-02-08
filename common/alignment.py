@@ -653,7 +653,6 @@ class Alignment:
                 else:
                     # the intervals are defined as 0-10, where 0 is 0-9, 1 is 10-19 etc. Used for colors.
                     cons_interval = conservation[:-1]
-                
 
                 # forced consensus sequence uses the first residue to break ties
                 self.forced_consensus[i][p] = r[0][0]
@@ -661,11 +660,18 @@ class Alignment:
                 # consensus sequence displays + in tie situations
                 num_freq_aa = len(r[0])
                 if num_freq_aa == 1:
-                    self.consensus[i][p] = [r[0][0], cons_interval,
-                    r[0][0] + ' ' + str(round(r[1]/num_proteins*100)) + '%']
+                    # Use raw data
+                    self.consensus[i][p] = [
+                        r[0][0],
+                        cons_interval,
+                        round(r[1]/num_proteins*100)
+                        ]
                 elif num_freq_aa > 1:
-                    self.consensus[i][p] = ['+', cons_interval,
-                    '/'.join(r[0]) + ' ' + str(round(r[1]/num_proteins*100)) + '%']
+                    self.consensus[i][p] = [
+                        '+',
+                        cons_interval,
+                        round(r[1]/num_proteins*100)
+                        ]
 
                 # create a residue object full consensus
                 res = Residue()
