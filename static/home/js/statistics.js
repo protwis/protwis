@@ -110,6 +110,95 @@
             .attr("transform", "translate(680, 0)")
             .call(yAxis2);
     });
+    //Unique crystallized receptors per class graph
+    nv.addGraph(function () {
+        var datum = data_unique_class_cryst_container;
+        var chart = nv.models.multiBarChart()
+            .reduceXTicks(false)
+            .stacked(true)
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .color(d3.scale.category20().range());
+        chart.yAxis
+            .tickFormat(d3.format(',f'))
+            .showMaxMin(false);
+
+
+        var yAxis2 = nv.models.axis()
+            .scale(chart.yScale())
+            .showMaxMin(false)
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum))
+            .tickPadding(0)
+            .orient("right");
+
+        d3.select('#unique_cryst_class_container svg')
+            .datum(datum)
+            .transition().duration(500)
+            .call(chart);
+        d3.select('#unique_cryst_class_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
+            .attr("class", "nv-y nv-axis")
+            .attr("transform", "translate(680, 0)")
+            .call(yAxis2);
+    });
+    //Unique crystals/year per class
+    nv.addGraph(function () {
+        var datum = data_unique_class_cryst_year_container;
+        var chart = nv.models.multiBarChart()
+            .reduceXTicks(false)
+            .stacked(true)
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .color(d3.scale.category20().range());
+        chart.yAxis
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum));
+
+
+        var yAxis2 = nv.models.axis()
+            .scale(chart.yScale())
+            .showMaxMin(false)
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum))
+            .tickPadding(0)
+            .orient("right");
+
+        d3.select('#unique_class_cryst_year_container svg')
+            .datum(datum)
+            .transition().duration(500)
+            .call(chart);
+        d3.select('#unique_class_cryst_year_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
+            .attr("class", "nv-y nv-axis")
+            .attr("transform", "translate(680, 0)")
+            .call(yAxis2);
+    });
+    //All crystals/year per class
+    nv.addGraph(function () {
+        var chart = nv.models.multiBarChart()
+            .reduceXTicks(false)
+            .stacked(true)
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .color(d3.scale.category20().range());
+        chart.yAxis
+            .tickFormat(d3.format(',f'));
+
+        var datum = data_cryst_class_year_container;
+
+        var yAxis2 = nv.models.axis()
+            .scale(chart.yScale())
+            .showMaxMin(false)
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum))
+            .tickPadding(0)
+            .orient("right");
+
+        d3.select('#cryst_class_year_container svg')
+            .datum(datum)
+            .transition().duration(500)
+            .call(chart);
+        d3.select('#cryst_class_year_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
+            .attr("class", "nv-y nv-axis")
+            .attr("transform", "translate(680, 0)")
+            .call(yAxis2);
+    });
     //Resolution coverage graph
     //nv.addGraph(function () {
     //    var chart = nv.models.discreteBarChart()
@@ -145,19 +234,6 @@
         $(point).css("visibility", 'hidden');
         $('#'+$(this).attr('id') + '.chart_container').css("display", '');
     });
-    $(".Class_phylo").click(function () {
-        Clear_phylo()
-        var id = $(this).attr('id');
-        if ($('#' + id + '.container').find("svg").length == 0) {
-            console.log('Drawing...');
-            draw(id.substr(id.length - 1));
-        };
-
-        $(this).css("fill", '#000000');
-        //point = $('#' + $(this).attr('id')).find('svg')
-        //$(point).css("visibility", 'hidden');
-        $('#' + $(this).attr('id') + '.container').css("display", '');
-    });
 
     function Clear_all() {
         $('#charts').find(".chart_type").each(function (index) {
@@ -167,33 +243,11 @@
             $(this).css("display", 'none');
         });
     };
-    function Clear_phylo(){
-        $('#phylos').find(".Class_phylo").each(function (index) {
-            $(this).css("fill", '');
-            $('#'+$(this).attr('id')+".container").css("display", 'none');
-        });
-    };
-    function draw(number) {
-        $.ajax({
-            'url': '/structure/showtrees',
-            'data': {
-                number: number
-            },
-            'type': 'get',
-            'success': function (data) {
-                $("#phylos_div").html(data);
-            }
-        });
-    };
-
+ 
 
     $(document).ready(function () {
-        $('#phylo_1.Class_phylo').css("fill", '#000000');
-        $('#phylo_1.container').css("display", '');
-        $('#unique.chart_type').css("fill", '#000000');
-        $('#unique.chart_container').css("display", '');
-        draw('1');
-
+        $('#unique_class.chart_type').css("fill", '#000000');
+        $('#unique_class.chart_container').css("display", '');
     });
 
 };
