@@ -73,27 +73,6 @@
                         </tr>
                         {% endfor %}
                     </tbody>
-                    <!-- amino acid frequency -->
-                    <tr>
-                        <td class="ali-td ali-td-first-col">
-                            <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#aa-freq,#aa-freq-main">+</button>
-                        </td>
-                    </tr>
-                    <tbody id='aa-freq'>
-                        <tr>
-                            <td class="ali-td-header-row ali-td-first-col">
-                                AMINO ACIDS
-                            </td>
-                        </tr>
-                        {% for aa in a_pos.amino_acids %}
-                        <tr>
-                            <td class="ali-td ali-td-first-col">
-                                {{ aa }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-
                     <!-- numbering scheme lines -->
                     {% for ns in a_pos.numbering_schemes %}
                         <tr>
@@ -106,6 +85,10 @@
                             <td class="ali-td ali-td-first-col ali-td-consensus">
                                 CONSENSUS
                             </td>
+                        </tr>
+                        <!-- Empty line for consensus percentage -->
+                        <tr>
+                            <td class="ali-td ali-td-first-col ali-td-consensus"></td>
                         </tr>
                     {% endif %}
                     <tr>
@@ -181,27 +164,6 @@
                         </tr>
                         {% endfor %}
                     </tbody>
-                    <!-- amino acid frequency -->
-                    <tr>
-                        <td class="ali-td ali-td-first-col">
-                            <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#aa-freq-neg,#aa-freq-neg-main">+</button>
-                        </td>
-                    </tr>
-                    <tbody id='aa-freq-neg'>
-                        <tr>
-                            <td class="ali-td-header-row ali-td-first-col">
-                                AMINO ACIDS
-                            </td>
-                        </tr>
-                        {% for aa in a_neg.amino_acids %}
-                        <tr>
-                            <td class="ali-td ali-td-first-col">
-                                {{ aa }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-
                     <!-- numbering scheme lines -->
                     {% for ns in a_neg.numbering_schemes %}
                         <tr>
@@ -214,6 +176,10 @@
                             <td class="ali-td ali-td-first-col ali-td-consensus">
                                 CONSENSUS
                             </td>
+                        </tr>
+                        <!-- Empty line for consensus percentage -->
+                        <tr>
+                            <td class="ali-td ali-td-first-col ali-td-consensus"></td>
                         </tr>
                     {% endif %}
                     <tr>
@@ -282,19 +248,6 @@
                             </td>
                         </tr>
                     {% endfor %}
-                    <!-- amino acid frequency -->
-                    <tr>
-                        <td class="ali-td-header-row ali-td-first-col">
-                            AMINO ACIDS
-                        </td>
-                    </tr>
-                    {% for aa in a_pos.amino_acids %}
-                        <tr>
-                            <td class="ali-td ali-td-first-col">
-                                {{ aa }}
-                            </td>
-                        </tr>
-                    {% endfor %}
                 </table>
             </div>
         </td>
@@ -359,27 +312,6 @@
                         {% endfor %}
                         </tbody>
 
-                        <!-- amino acid frequency -->
-                        <tr>
-                                <td style='height:34px'></td>
-                            </tr>
-                        <tbody id='aa-freq-main'>
-                        <tr>
-                            <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
-                        </tr>
-                        {% for aa in a_pos.amino_acid_stats %}
-                        <tr>
-                            {% for segment in aa %} {% for freq in segment %}
-                            <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
-                                {{ freq.0 }}
-                            </td>
-                            {% endfor %}
-                            <td class="ali-td">&nbsp;</td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-
                         <!-- generic number lines -->
                         {% for ns, segments in a_pos.generic_numbers.items %}
                         <tr>
@@ -399,13 +331,23 @@
                         <!-- consensus sequence -->
                         <tr>
                             {% for segment, s in a_pos.consensus.items %} {% for p, r in s.items %}
-                            <td class="ali-td ali-residue res-cons-{{ r.1 }}">
+                            <td class="ali-td ali-residue res-color-{{ r.0 }}">
                                 <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ r.2 }}">
                                     {{ r.0 }}
                                 </div>
                             </td>
                             {% endfor %}
                             <td class="ali-td">&nbsp;</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            {% for segment, s in a_pos.consensus.items %} 
+                                {% for p, r in s.items %}
+                                    <td class="ali-td ali-residue res-cons-{{ r.1 }}">
+                                        {{ r.2 }}
+                                    </td>
+                                {% endfor %}
+                                <td class="ali-td">&nbsp;</td>
                             {% endfor %}
                         </tr>
                         {% endif %}
@@ -493,26 +435,6 @@
                             </tr>
                         {% endfor %}
                         </tbody>
-                        <!-- amino acid frequency -->
-                        <tr>
-                                <td style='height:34px'></td>
-                            </tr>
-                        <tbody id='aa-freq-neg-main'>
-                        <tr>
-                            <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
-                        </tr>
-                        {% for aa in a_neg.amino_acid_stats %}
-                        <tr>
-                            {% for segment in aa %} {% for freq in segment %}
-                            <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
-                                {{ freq.0 }}
-                            </td>
-                            {% endfor %}
-                            <td class="ali-td">&nbsp;</td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                        </tbody>
 
                         <!-- generic number lines -->
                         {% for ns, segments in a_neg.generic_numbers.items %}
@@ -533,13 +455,23 @@
                         <!-- consensus sequence -->
                         <tr>
                             {% for segment, s in a_neg.consensus.items %} {% for p, r in s.items %}
-                            <td class="ali-td ali-residue res-cons-{{ r.1 }}">
+                            <td class="ali-td ali-residue ali-td ali-residue res-color-{{ r.0 }}">
                                 <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ r.2 }}">
                                     {{ r.0 }}
                                 </div>
                             </td>
                             {% endfor %}
                             <td class="ali-td">&nbsp;</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            {% for segment, s in a_neg.consensus.items %} 
+                                {% for p, r in s.items %}
+                                    <td class="ali-td ali-residue res-cons-{{ r.1 }}">
+                                        {{ r.2 }}
+                                    </td>
+                                {% endfor %}
+                                <td class="ali-td">&nbsp;</td>
                             {% endfor %}
                         </tr>
                         {% endif %}
@@ -625,25 +557,6 @@
                                 {% endfor %}
                                 <td class="ali-td">&nbsp;</td>
                             {% endfor %}
-                            </tr>
-                        {% endfor %}
-
-                        <!-- amino acid frequency -->
-                        <tr>
-                            <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
-                        </tr>
-                        {% for aa in aa_signature %}
-                            <tr>
-                                {% for segment in aa %}
-                                    {% for freq in segment %}
-                                        <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
-                                            <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ freq.2|safe }}">
-                                                {{ freq.0 }}
-                                            </div>
-                                        </td>
-                                    {% endfor %}
-                                    <td class="ali-td">&nbsp;</td>
-                                {% endfor %}
                             </tr>
                         {% endfor %}
                     </table>
