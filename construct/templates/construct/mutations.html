@@ -116,13 +116,6 @@
                         filter_default_label: "PDB",
                         filter_container_id: "external_filter_container6"
                     }, 
-                    {
-                        column_number : 7,
-                        filter_type: "text",
-                        column_data_type: "text",
-                        filter_default_label: "Name",
-                        filter_container_id: "external_filter_container7"
-                    }, 
                 ],
                 {
                     cumulative_filtering: false
@@ -178,7 +171,6 @@
             <th class="seq-th">MUT</th>
             <th class="seq-th">Effect</th>
             <th class='seq-th'>PDB</th>
-            <th class="seq-th">Construct Name</th>
         </tr>
 
     </thead>
@@ -193,7 +185,6 @@
             <td>{{ mutation.mut}}</td>
             <td>{{ mutation.type}}</td>
             <td>{{ mutation.pdb}}</td>
-            <td>{{ mutation.cname}}</td>
         </tr>
         {% endfor %}
     </tbody>

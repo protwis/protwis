@@ -6,18 +6,18 @@ from Bio.PDB import PDBIO
 
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
-    protein_conformation = models.ForeignKey('protein.ProteinConformation')
-    structure_type = models.ForeignKey('StructureType')
-    pdb_code = models.ForeignKey('common.WebLink')
-    state = models.ForeignKey('protein.ProteinState')
-    publication = models.ForeignKey('common.Publication', null=True)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
+    structure_type = models.ForeignKey('StructureType', on_delete=models.CASCADE)
+    pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE)
+    state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
+    publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
     ligands = models.ManyToManyField('ligand.Ligand', through='interaction.StructureLigandInteraction')
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
     preferred_chain = models.CharField(max_length=20)
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
     publication_date = models.DateField()
-    pdb_data = models.ForeignKey('PdbData', null=True) #allow null for now, since dump file does not contain.
+    pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
     annotated = models.BooleanField(default=True)
     refined = models.BooleanField(default=False)
@@ -75,9 +75,9 @@ class Structure(models.Model):
 
 
 class StructureModel(models.Model):
-    protein = models.ForeignKey('protein.Protein')
-    state = models.ForeignKey('protein.ProteinState')
-    main_template = models.ForeignKey('structure.Structure')
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
+    main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdb = models.TextField()
     version = models.DateField()
     
@@ -95,10 +95,10 @@ class StructureModel(models.Model):
 
 
 class StructureModelStatsRotamer(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel')
-    residue = models.ForeignKey('residue.Residue', null=True)
-    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
-    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
+    homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE)
+    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
+    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
 
     def __repr__(self):
         return '<StructureModelStatsRotamer: seqnum '+str(self.residue.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
@@ -108,10 +108,10 @@ class StructureModelStatsRotamer(models.Model):
 
 
 class StructureRefinedStatsRotamer(models.Model):
-    structure = models.ForeignKey('structure.Structure')
-    residue = models.ForeignKey('residue.Residue', null=True)
-    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
-    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE)
+    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
+    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
 
     def __repr__(self):
         return '<StructureRefinedStatsRotamer: seqnum '+str(self.residue.sequence_number)+' '+str(self.structure.pdb_code.index)+'>'
@@ -121,8 +121,8 @@ class StructureRefinedStatsRotamer(models.Model):
 
 
 class StructureModelSeqSim(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel')
-    template = models.ForeignKey('structure.Structure')
+    homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE)
+    template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     similarity = models.IntegerField()
 
     def __repr__(self):
@@ -133,8 +133,8 @@ class StructureModelSeqSim(models.Model):
 
 
 class StructureRefinedSeqSim(models.Model):
-    structure = models.ForeignKey('structure.Structure', related_name='+', null=True)
-    template = models.ForeignKey('structure.Structure', related_name='+', null=True)
+    structure = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
+    template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
     similarity = models.IntegerField()
 
     def __repr__(self):
@@ -145,7 +145,7 @@ class StructureRefinedSeqSim(models.Model):
 
 
 class StructureModelRMSD(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel')
+    homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE)
     pdb = models.CharField(max_length=4)
     service = models.CharField(max_length=10)
     version = models.DecimalField(max_digits=2, decimal_places=1)
@@ -195,9 +195,9 @@ class PdbData(models.Model):
 
 
 class Rotamer(models.Model):
-    residue = models.ForeignKey('residue.Residue')
-    structure = models.ForeignKey('structure.Structure')
-    pdbdata = models.ForeignKey('PdbData')
+    residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    pdbdata = models.ForeignKey('PdbData', on_delete=models.CASCADE)
     missing_atoms = models.BooleanField(default=False)
 
     def __str__(self):
@@ -208,10 +208,10 @@ class Rotamer(models.Model):
 
 
 class Fragment(models.Model):
-    residue = models.ForeignKey('residue.Residue')
-    ligand = models.ForeignKey('ligand.Ligand')
-    structure = models.ForeignKey('structure.Structure')
-    pdbdata = models.ForeignKey('PdbData')
+    residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
+    ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    pdbdata = models.ForeignKey('PdbData', on_delete=models.CASCADE)
 
     def __str__(self):
         return '{} {}{} {}'.format(self.structure.pdb_code.index, self.residue.amino_acid,
@@ -222,8 +222,8 @@ class Fragment(models.Model):
 
 
 class StructureSegment(models.Model):
-    structure = models.ForeignKey('Structure')
-    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    structure = models.ForeignKey('Structure', on_delete=models.CASCADE)
+    protein_segment = models.ForeignKey('protein.ProteinSegment', on_delete=models.CASCADE)
     start = models.IntegerField()
     end = models.IntegerField()
 
@@ -237,8 +237,8 @@ class StructureSegment(models.Model):
 class StructureSegmentModeling(models.Model):
     """Annotations of segment borders that are observed in exp. structures, and can be used for modeling.
     This class is indentical to StructureSegment, but is kept separate to avoid confusion."""
-    structure = models.ForeignKey('Structure')
-    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    structure = models.ForeignKey('Structure', on_delete=models.CASCADE)
+    protein_segment = models.ForeignKey('protein.ProteinSegment', on_delete=models.CASCADE)
     start = models.IntegerField()
     end = models.IntegerField()
 
@@ -250,9 +250,9 @@ class StructureSegmentModeling(models.Model):
 
 
 class StructureCoordinates(models.Model):
-    structure = models.ForeignKey('Structure')
-    protein_segment = models.ForeignKey('protein.ProteinSegment')
-    description = models.ForeignKey('StructureCoordinatesDescription')
+    structure = models.ForeignKey('Structure', on_delete=models.CASCADE)
+    protein_segment = models.ForeignKey('protein.ProteinSegment', on_delete=models.CASCADE)
+    description = models.ForeignKey('StructureCoordinatesDescription', on_delete=models.CASCADE)
 
     def __str__(self):
         return "{} {} {}".format(self.structure.pdb_code.index, self.protein_segment.slug, self.description.text)
@@ -272,9 +272,9 @@ class StructureCoordinatesDescription(models.Model):
 
 
 class StructureEngineering(models.Model):
-    structure = models.ForeignKey('Structure')
-    protein_segment = models.ForeignKey('protein.ProteinSegment')
-    description = models.ForeignKey('StructureEngineeringDescription')
+    structure = models.ForeignKey('Structure', on_delete=models.CASCADE)
+    protein_segment = models.ForeignKey('protein.ProteinSegment', on_delete=models.CASCADE)
+    description = models.ForeignKey('StructureEngineeringDescription', on_delete=models.CASCADE)
 
     def __str__(self):
         return "{} {} {}".format(self.structure.pdb_code.index, self.protein_segment.slug, self.description.text)

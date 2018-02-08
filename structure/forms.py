@@ -2,7 +2,6 @@
 
 from django import forms
 import datetime
-from django.forms.extras.widgets import SelectDateWidget
 from django.forms import ModelForm, Form
 from django.utils.safestring import mark_safe
 

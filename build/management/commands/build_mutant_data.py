@@ -65,6 +65,7 @@ class Command(BaseBuild):
             dest='purge',
             default=False,
             help='Purge existing mutations records')
+        parser.add_argument('--test_run', action='store_true', help='Skip this during a test run', default=False)
 
     logger = logging.getLogger(__name__)
 
@@ -77,6 +78,9 @@ class Command(BaseBuild):
     data_all = []
 
     def handle(self, *args, **options):
+        if options['test_run']:
+            print('Skipping in test run')
+            return
         # delete any existing structure data
         if options['purge']:
             try:
