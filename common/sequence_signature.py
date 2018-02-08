@@ -4,7 +4,6 @@ A module for generating sequence signatures for the given two sets of proteins.
 from django.conf import settings
 
 from alignment.functions import *
-#from common.alignment import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.definitions import AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES
@@ -89,11 +88,11 @@ class SequenceSignature:
 
         for segment in self.aln_neg.segments:
             #TODO: get the correct default numering scheme from settings
-            for idx, res in enumerate(self.common_gn['gpcrdba'][segment].keys()):
-                if res not in self.aln_pos.generic_numbers['gpcrdba'][segment].keys():
+            for idx, res in enumerate(self.common_gn[self.common_schemes[0][0]][segment].keys()):
+                if res not in self.aln_pos.generic_numbers[self.common_schemes[0][0]][segment].keys():
                     self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, 0, axis=1)
                     # aa_pos_norm[segment] = np.insert(aa_pos_norm[segment], idx, 0, axis=1)
-                elif res not in self.aln_neg.generic_numbers['gpcrdba'][segment].keys():
+                elif res not in self.aln_neg.generic_numbers[self.common_schemes[0][0]][segment].keys():
                     self.features_normalized_neg[segment] = np.insert(self.features_normalized_neg[segment], idx, 0, axis=1)
                     # aa_neg_norm[segment] = np.insert(aa_neg_norm[segment], idx, 0, axis=1)
 
@@ -123,7 +122,7 @@ class SequenceSignature:
     def prepare_display_data(self):
 
         options = {
-            'num_residue_columns': len(sum([[x for x in self.common_gn['gpcrdba'][segment]] for segment in self.aln_neg.segments], [])),
+            'num_residue_columns': len(sum([[x for x in self.common_gn[self.common_schemes[0][0]][segment]] for segment in self.aln_neg.segments], [])),
             'num_of_sequences_pos': len(self.aln_pos.proteins),
             'num_residue_columns_pos': len(self.aln_pos.positions),
             'num_of_sequences_neg': len(self.aln_neg.proteins),
@@ -219,15 +218,15 @@ class SequenceSignature:
         # Second column and on
         # Segments
         offset = 0
-        for segment in generic_numbers_set['gpcrdba'].keys():
+        for segment in generic_numbers_set[numbering_schemes[0][0]].keys():
             worksheet.merge_range(
                 0,
                 1 + offset,
                 0,
-                len(generic_numbers_set['gpcrdba'][segment]) + offset - 1,
+                len(generic_numbers_set[numbering_schemes[0][0]][segment]) + offset - 1,
                 segment
             )
-            offset += len(generic_numbers_set['gpcrdba'][segment])
+            offset += len(generic_numbers_set[numbering_schemes[0][0]][segment])
 
         # Generic numbers
         offset = 1
