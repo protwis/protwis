@@ -4,7 +4,6 @@ A module for generating sequence signatures for the given two sets of proteins.
 from django.conf import settings
 
 from alignment.functions import *
-#from common.alignment import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.definitions import AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES
@@ -89,11 +88,11 @@ class SequenceSignature:
 
         for segment in self.aln_neg.segments:
             #TODO: get the correct default numering scheme from settings
-            for idx, res in enumerate(self.common_gn['gpcrdba'][segment].keys()):
-                if res not in self.aln_pos.generic_numbers['gpcrdba'][segment].keys():
+            for idx, res in enumerate(self.common_gn[self.common_schemes[0][0]][segment].keys()):
+                if res not in self.aln_pos.generic_numbers[self.common_schemes[0][0]][segment].keys():
                     self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, 0, axis=1)
                     # aa_pos_norm[segment] = np.insert(aa_pos_norm[segment], idx, 0, axis=1)
-                elif res not in self.aln_neg.generic_numbers['gpcrdba'][segment].keys():
+                elif res not in self.aln_neg.generic_numbers[self.common_schemes[0][0]][segment].keys():
                     self.features_normalized_neg[segment] = np.insert(self.features_normalized_neg[segment], idx, 0, axis=1)
                     # aa_neg_norm[segment] = np.insert(aa_neg_norm[segment], idx, 0, axis=1)
 
@@ -123,7 +122,7 @@ class SequenceSignature:
     def prepare_display_data(self):
 
         options = {
-            'num_residue_columns': len(sum([[x for x in self.common_gn['gpcrdba'][segment]] for segment in self.aln_neg.segments], [])),
+            'num_residue_columns': len(sum([[x for x in self.common_gn[self.common_schemes[0][0]][segment]] for segment in self.aln_neg.segments], [])),
             'num_of_sequences_pos': len(self.aln_pos.proteins),
             'num_residue_columns_pos': len(self.aln_pos.positions),
             'num_of_sequences_neg': len(self.aln_neg.proteins),
@@ -195,18 +194,18 @@ class SequenceSignature:
 
         # First column, numbering schemes
         for row, scheme in enumerate(numbering_schemes):
-            worksheet.write(1 + row, 0, scheme[1])
+            worksheet.write(1 + 3*row, 0, scheme[1])
 
         # First column, stats
         if data == 'features':
             for offset, prop in enumerate(props):
-                worksheet.write(3 + len(numbering_schemes) + offset, 0, prop)
+                worksheet.write(3 + 3 * len(numbering_schemes) + offset, 0, prop)
 
         # First column, protein list (for alignment) and line for consensus sequence
         else:
             for offset, prot in enumerate(alignment.proteins):
                 worksheet.write(
-                    3 + len(numbering_schemes) + offset,
+                    3 + 3 * len(numbering_schemes) + offset,
                     0,
                     prot.protein.entry_name
                 )
@@ -219,24 +218,27 @@ class SequenceSignature:
         # Second column and on
         # Segments
         offset = 0
-        for segment in generic_numbers_set['gpcrdba'].keys():
+        for segment in generic_numbers_set[numbering_schemes[0][0]].keys():
             worksheet.merge_range(
                 0,
                 1 + offset,
                 0,
-                len(generic_numbers_set['gpcrdba'][segment]) + offset - 1,
+                len(generic_numbers_set[numbering_schemes[0][0]][segment]) + offset - 1,
                 segment
             )
-            offset += len(generic_numbers_set['gpcrdba'][segment])
+            offset += len(generic_numbers_set[numbering_schemes[0][0]][segment])
 
         # Generic numbers
-        offset = 1
-        for row, item in enumerate(generic_numbers_set.items()):
+        # for row, item in enumerate(generic_numbers_set.items()):
+        for row, item in enumerate(numbering_schemes):
             scheme = item[0]
-            segment = item[1]
-            for sn, gn_list in segment.items():
+            offset = 1
+            for sn, gn_list in generic_numbers_set[scheme].items():
                 for col, gn_pair in enumerate(gn_list.items()):
-                    tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                    try:
+                        tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                    except:
+                        tm, bw, gpcrdb = ('', '', '')
                     worksheet.write(
                         1 + 3 * row,
                         col + offset,
