@@ -7,20 +7,14 @@ function wherebezier(p04,p14,p24,step,stop,p34,allow_cache) {
     var p = p04;
     xy = [0,0];
 
-    // if (stop<0) {
-    //     stop = lengthbezier(p04,p14,p24,step,p34)+stop;
-    // }
     i = 0;
     while (pos <= 1) {
         if (length>stop) { //stop if it reached the length along the line
             break;
         }
         if (i in bezier_cache && allow_cache) {
-            // console.log('using cache!');
             xy = bezier_cache[i][0];
             length = bezier_cache[i][1];
-            // xy = bezier_high(p04,p14,p24,p34,pos);
-            // length += Math.sqrt( Math.pow(xy[0]-p[0],2) + Math.pow(xy[1]-p[1],2) );
         } else {
 
             if (p34 === undefined) {
@@ -28,14 +22,12 @@ function wherebezier(p04,p14,p24,step,stop,p34,allow_cache) {
             } else {
                 xy = bezier_high(p04,p14,p24,p34,pos);
             }
-            // console.log(xy,p);
             length += Math.round(100*Math.sqrt( Math.pow(xy[0]-p[0],2) + Math.pow(xy[1]-p[1],2) ))/100;
         }
         p = xy;
         pos += step;
         bezier_cache[i] =  [xy,length]
         i += 1;
-        // console.log('pos '+pos+' length '+length+' stop at '+stop);
     }
     return [xy,length];
 }
@@ -369,20 +361,10 @@ function redraw_terminus(term) {
 
 function applyPresentColors(target) {
 
-    //console.log( $('#'+target));
-
-    // $('#'+target).find("circle").each(function( index ){
-    //       //console.log( index + ": " + $( this ).text() );
-    //       aa =  $(this).next().text().trim();
-    //       //console.log( index + ": " + aa );
-    //       $(this).css("fill", presetColors[aa][0]);
-    //       $(this).next().css("fill", presetColors[aa][1]);
-    //     });
+    // Color all residues by their amino acid using the presetColors array
 
     $('#'+target).find(".rcircle").each(function( index ){
-          // console.log( index + ": " + $( this ).text() );
           aa =  $(this).next().text().trim();
-          // console.log( index + ": " + aa );
           $(this).css("fill", presetColors[aa][0]);
           $(this).next().css("fill", presetColors[aa][1]);
         });
@@ -391,18 +373,10 @@ function applyPresentColors(target) {
 
 function resetColors(target) {
 
+    // Reset color of all residues
 
-    // $('#'+target).find("circle").each(function( index ){
-    //       //console.log( index + ": " + $( this ).text() );
-    //       aa =  $(this).next().text();
-    //       //console.log( index + ": " + aa );
-    //       $(this).css("fill", 'white');
-    //       $(this).next().css("fill", 'black');
-    //     });
     $('#'+target).find(".rcircle").each(function( index ){
-          //console.log( index + ": " + $( this ).text() );
           aa =  $(this).next().text();
-          //console.log( index + ": " + aa );
           $(this).css("fill", 'white');
           $(this).next().css("fill", 'black');
         });
@@ -953,8 +927,9 @@ function ajaxNaturalMutationPos(plotid) {
     var color_code = pos['color']
 
       $.each(pos, function( key, val ) {
+         console.log("Yes", pos);
 
-         extra = "\nAAchanges: " + "-->" + String(val['AA']) +
+         extra = "\nVariants: " + "-->" + String(val['AA']) +
         "\nNumber of Proteins: " + String(val['val']);
 
          if (val['val']==0) {

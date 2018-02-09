@@ -30,7 +30,7 @@ class Command(BaseBuild):
             help='Number of processes to run')
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
-
+        parser.add_argument('--test_run', action='store_true', help='Skip this during a test run', default=False)
     logger = logging.getLogger(__name__)
 
     # source file directory
@@ -38,6 +38,10 @@ class Command(BaseBuild):
 
 
     def handle(self, *args, **options):
+
+        if options['test_run']:
+            print('Skipping in test run')
+            return
         if options['filename']:
             filenames = options['filename']
         else:

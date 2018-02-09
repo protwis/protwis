@@ -19,8 +19,8 @@ class SignprotStructure(models.Model):
 
 class SignprotBarcode(models.Model):
 
-    protein = models.ForeignKey('protein.Protein')
-    residue = models.ForeignKey('residue.Residue')
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
     seq_similarity = models.DecimalField(max_digits=5, decimal_places=4)
     seq_identity = models.DecimalField(max_digits=5, decimal_places=4)
     paralog_score = models.DecimalField(max_digits=5, decimal_places=4)

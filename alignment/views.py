@@ -64,14 +64,15 @@ class TargetSelectionGprotein(AbsTargetSelection):
         },
     }
     try:
-        ppf = ProteinFamily.objects.get(slug="100_000")
-        pfs = ProteinFamily.objects.filter(parent=ppf.id)
-        ps = Protein.objects.filter(family=ppf)
+        if ProteinFamily.objects.filter(slug="100_000").exists():
+            ppf = ProteinFamily.objects.get(slug="100_000")
+            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            ps = Protein.objects.filter(family=ppf)
 
-        tree_indent_level = []
-        action = 'expand'
-        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
     except Exception as e:
         pass
 
@@ -97,14 +98,15 @@ class TargetSelectionArrestin(AbsTargetSelection):
         },
     }
     try:
-        ppf = ProteinFamily.objects.get(slug="200_000")
-        pfs = ProteinFamily.objects.filter(parent=ppf.id)
-        ps = Protein.objects.filter(family=ppf)
+        if ProteinFamily.objects.filter(slug="200_000").exists():
+            ppf = ProteinFamily.objects.get(slug="200_000")
+            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            ps = Protein.objects.filter(family=ppf)
 
-        tree_indent_level = []
-        action = 'expand'
-        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
     except Exception as e:
         pass
 

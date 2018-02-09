@@ -5,16 +5,16 @@ from django.db import models
 from polymorphic.models import PolymorphicModel
 
 class InteractingResiduePair(PolymorphicModel):
-    referenced_structure = models.ForeignKey('structure.Structure')
-    res1 = models.ForeignKey('residue.Residue', related_name='residue1')
-    res2 = models.ForeignKey('residue.Residue', related_name='residue2')
+    referenced_structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    res1 = models.ForeignKey('residue.Residue', related_name='residue1', on_delete=models.CASCADE)
+    res2 = models.ForeignKey('residue.Residue', related_name='residue2', on_delete=models.CASCADE)
 
     class Meta():
         db_table = 'interacting_residue_pair'
 
 
 class Interaction(PolymorphicModel):
-    interacting_pair = models.ForeignKey('contactnetwork.InteractingResiduePair')
+    interacting_pair = models.ForeignKey('contactnetwork.InteractingResiduePair', on_delete=models.CASCADE)
 
     class Meta():
         db_table = 'interaction'

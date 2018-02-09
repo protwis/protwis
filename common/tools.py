@@ -43,7 +43,7 @@ def create_cache_dirs(path):
         intermediate_path = os.sep.join([intermediate_path, directory])
         os.chmod(intermediate_path, 0o777)
 
-def fetch_from_web_api(url, index, cache_dir=False, xml=False):
+def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
     logger = logging.getLogger('build')
 
     # slugify the index for the cache filename (some indices have symbols not allowed in file names (e.g. /))
@@ -80,6 +80,11 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
             elif xml:
                 try:
                     d = etree.fromstring(req.read().decode('UTF-8'))
+                except:
+                    return False
+            elif raw:
+                try:
+                    d = req.read().decode('UTF-8')
                 except:
                     return False
             else:

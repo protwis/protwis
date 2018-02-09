@@ -14,20 +14,20 @@ class Construct(models.Model):
     #overall class
     name = models.TextField(max_length=100, unique=True)
     # linked onto the WT protein
-    protein = models.ForeignKey('protein.Protein')
-    contributor = models.ForeignKey('ContributorInfo')
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    contributor = models.ForeignKey('ContributorInfo', on_delete=models.CASCADE)
     #Modifications
     # mutations = models.ManyToManyField('ConstructMutation') ## MOVE TO ONETOMANY FIELDS in children
     # deletions = models.ManyToManyField('ConstructDeletion')
     # modifications = models.ManyToManyField('ConstructModification')
     # insertions = models.ManyToManyField('ConstructInsertion')
 
-    expression = models.ForeignKey('ExpressionSystem', null=True)  #method description if present
-    solubilization = models.ForeignKey('Solubilization', null=True)  #method description if present
-    purification = models.ForeignKey('Purification', null=True)  #method description if present
-    crystallization = models.ForeignKey('Crystallization', null=True)  #method description if present
-    crystal = models.ForeignKey('CrystalInfo', null=True) #might not exist, if failed
-    structure = models.ForeignKey('structure.Structure', null=True) #might not exist, if failed
+    expression = models.ForeignKey('ExpressionSystem', null=True, on_delete=models.CASCADE)  #method description if present
+    solubilization = models.ForeignKey('Solubilization', null=True, on_delete=models.CASCADE)  #method description if present
+    purification = models.ForeignKey('Purification', null=True, on_delete=models.CASCADE)  #method description if present
+    crystallization = models.ForeignKey('Crystallization', null=True, on_delete=models.CASCADE)  #method description if present
+    crystal = models.ForeignKey('CrystalInfo', null=True, on_delete=models.CASCADE) #might not exist, if failed
+    structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE) #might not exist, if failed
     schematics = models.BinaryField(null=True)
     snakecache = models.BinaryField(null=True)
 
@@ -43,7 +43,9 @@ class Construct(models.Model):
         # Q0SXH8 Cytochrome b(562)
         result = []
         position = None
-        for insert in self.insertions.filter(presence='YES').all():
+        for insert in self.insertions.all():
+            if not insert.presence=='YES':
+                continue
             if insert.insert_type.subtype in list_of_none_fusion:
                 continue
             if insert.insert_type.name!='fusion' and insert.insert_type.name!='auto':
@@ -61,11 +63,12 @@ class Construct(models.Model):
             result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position,insert.start,insert.end,'',''])
         
         if position:
-            for insert in self.insertions.filter(presence='YES').all():
-                if insert.insert_type.name=='linker':
+            for insert in self.insertions.all():
+                if insert.presence=='YES' and insert.insert_type.name=='linker':
                     if result[0][3].split("_")[0] == insert.position.split("_")[0]:
                         if result[0][4] is None or insert.start is None or abs(result[0][4]-insert.start)<len(insert.insert_type.subtype)+5:
-                            print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
+                            pass
+                            # print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
 
 
         return position,result
@@ -131,7 +134,7 @@ class Construct(models.Model):
     def snake(self):
         ## Use cache if possible
         temp = self.snakecache
-        if temp==None or 1==1:
+        if temp==None:
             print(self.name+'_snake no cache')
             residues = Residue.objects.filter(protein_conformation__protein=self.protein).order_by('sequence_number').prefetch_related(
                 'protein_segment', 'generic_number', 'display_generic_number')
@@ -144,7 +147,7 @@ class Construct(models.Model):
 
 class CrystalInfo(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3) #probably want more values
-    pdb_data = models.ForeignKey('structure.PdbData', null=True) #if exists
+    pdb_data = models.ForeignKey('structure.PdbData', null=True, on_delete=models.CASCADE) #if exists
     pdb_code = models.TextField(max_length=10, null=True) #if exists
     #No not include ligands here, as they should be part of crystalization
 
@@ -160,13 +163,13 @@ class ContributorInfo(models.Model):
 
 class ConstructMutation(models.Model):
     # construct = models.ManyToManyField('ConstructMutation')
-    construct = models.ForeignKey('Construct', related_name = 'mutations')
+    construct = models.ForeignKey('Construct', related_name = 'mutations', on_delete=models.CASCADE)
     sequence_number = models.SmallIntegerField()
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
     # mutation_type = models.CharField(max_length=30, null=True)
     remark = models.TextField(null=True)
-    residue = models.ForeignKey('residue.Residue', null=True)
+    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE)
     effects = models.ManyToManyField('ConstructMutationType', related_name="bar")
 
     def get_res(self):
@@ -218,7 +221,7 @@ class ConstructMutationType(models.Model):
 
 
 class ConstructDeletion(models.Model):
-    construct = models.ForeignKey('Construct', related_name = 'deletions')
+    construct = models.ForeignKey('Construct', related_name = 'deletions', on_delete=models.CASCADE)
     start = models.SmallIntegerField()
     end = models.SmallIntegerField()
 
@@ -230,7 +233,7 @@ class ConstructDeletion(models.Model):
 
 
 class ConstructModification(models.Model):
-    construct = models.ForeignKey('Construct', related_name = 'modifications')
+    construct = models.ForeignKey('Construct', related_name = 'modifications', on_delete=models.CASCADE)
     modification = models.TextField(max_length=50)
     position_type = models.TextField(max_length=20)
     pos_start = models.SmallIntegerField()
@@ -245,8 +248,8 @@ class ConstructModification(models.Model):
 
 
 class ConstructInsertion(models.Model):
-    construct = models.ForeignKey('Construct', related_name = 'insertions')
-    insert_type = models.ForeignKey('ConstructInsertionType')
+    construct = models.ForeignKey('Construct', related_name = 'insertions', on_delete=models.CASCADE)
+    insert_type = models.ForeignKey('ConstructInsertionType', on_delete=models.CASCADE)
     position = models.TextField(max_length=20, null=True) #N-term1, N-term2 etc -- to track order
     presence = models.TextField(max_length=20, null=True) #YES or NO (presence in crystal)
     start = models.SmallIntegerField(null=True) #pos if in recepter
@@ -283,7 +286,7 @@ class ConstructInsertionType(models.Model):
 
 
 class Chemical(models.Model):
-    chemical_type = models.ForeignKey('ChemicalType')
+    chemical_type = models.ForeignKey('ChemicalType', on_delete=models.CASCADE)
     name = models.CharField(max_length=200, null=True)
 
     def __str__(self):
@@ -306,7 +309,7 @@ class ChemicalType(models.Model):
 
 
 class ChemicalConc(models.Model):
-    chemical = models.ForeignKey('Chemical')
+    chemical = models.ForeignKey('Chemical', on_delete=models.CASCADE)
     # concentration = models.FloatField()
     concentration = models.CharField(max_length=200)
     concentration_unit = models.TextField(null=True)
@@ -321,7 +324,7 @@ class ChemicalConc(models.Model):
 # includes all chemicals, type & concentration. Chemicals can be from LCPlipid, detergent, etc.
 class ChemicalList(models.Model):
     chemicals = models.ManyToManyField('ChemicalConc')
-    name = models.ForeignKey('ChemicalListName',null=True)
+    name = models.ForeignKey('ChemicalListName',null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name.name
@@ -382,7 +385,7 @@ class PurificationStep(models.Model):
 
 class Solubilization(models.Model):
     # includes chem name, type[detergent & solubilisation_lipid] and concentration
-    chemical_list = models.ForeignKey('ChemicalList')
+    chemical_list = models.ForeignKey('ChemicalList', on_delete=models.CASCADE)
     remarks = models.TextField(null=True)
 
     def __str__(self):
@@ -393,10 +396,10 @@ class Solubilization(models.Model):
 
 
 class Crystallization(models.Model):
-    crystal_type = models.ForeignKey('CrystallizationTypes', null=True)
+    crystal_type = models.ForeignKey('CrystallizationTypes', null=True, on_delete=models.CASCADE)
     # chemical type= LCPlipid for LCP exp, else type= lipid for in surfo exp includes info on lcp_lipidic_condition,
     # protein_component etc.
-    crystal_method = models.ForeignKey('CrystallizationMethods', null=True)
+    crystal_method = models.ForeignKey('CrystallizationMethods', null=True, on_delete=models.CASCADE)
     remarks = models.TextField(max_length=1000, null=True)
 
     chemical_lists =  models.ManyToManyField('ChemicalList') #LCP list, detergent list, lip conc and other chem components
@@ -424,8 +427,8 @@ class Crystallization(models.Model):
 
 
 class CrystallizationLigandConc(models.Model):
-    ligand = models.ForeignKey('ligand.Ligand')
-    ligand_role = models.ForeignKey('ligand.LigandRole')
+    ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
+    ligand_role = models.ForeignKey('ligand.LigandRole', on_delete=models.CASCADE)
     #ligand_conc = models.FloatField(null=True)
     ligand_conc = models.CharField(max_length=200,null=True)
     ligand_conc_unit = models.TextField(null=True)

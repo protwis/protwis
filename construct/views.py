@@ -74,21 +74,22 @@ class ConstructStatistics(TemplateView):
     def get_context_data (self, **kwargs):
 
         context = super(ConstructStatistics, self).get_context_data(**kwargs)
-        cons = Construct.objects.all().order_by("protein__entry_name","crystal__pdb_code").prefetch_related(
-            "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
-            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
+        cons = Construct.objects.all().defer('schematics','snakecache').order_by("protein__entry_name","crystal__pdb_code").prefetch_related(
+            "crystal","mutations__effects","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor",
+            "structure__protein_conformation__protein__parent", "structure__state")
 
         #PREPARE DATA
-        proteins = Construct.objects.all().values_list('protein', flat = True)
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50','8x50','5x50','6x50','3x50','4x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
-        #print(pconfs)
+        proteins_ids = Construct.objects.all().values_list('protein', flat = True)
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__generic_number__label__in=['1x50','8x50','5x50','6x50','3x50','4x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
+
         x50s = {}
         for pc in pconfs:
             if pc[0] not in x50s:
                 x50s[pc[0]] = {}
             x50s[pc[0]][pc[2]] = pc[1]
 
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug__in=['TM3','TM4','TM5','TM6']).values('protein__entry_name','residue__protein_segment__slug').annotate(start=Min('residue__sequence_number'),GN=Max('residue__generic_number__label'),GN2=Min('residue__generic_number__label'),end=Max('residue__sequence_number'))
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__protein_segment__slug__in=['TM3','TM4','TM5','TM6']).values('protein__entry_name','residue__protein_segment__slug').annotate(start=Min('residue__sequence_number'),GN=Max('residue__generic_number__label'),GN2=Min('residue__generic_number__label'),end=Max('residue__sequence_number'))
         # print(pconfs)
         # x50s = {}
         track_anamalities = {}
@@ -121,13 +122,13 @@ class ConstructStatistics(TemplateView):
             #     x50s[pc[0]] = {}
             # x50s[pc[0]][pc[2]] = pc[1]
         # print(track_anamalities)
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).prefetch_related('protein').filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
         #pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
         tm1_start = {}
         for pc in pconfs:
             tm1_start[pc.protein.entry_name] = pc.start
 
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number'),end=Max('residue__sequence_number'))
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).prefetch_related('protein').filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number'),end=Max('residue__sequence_number'))
         cterm_start = {}
         cterm_end = {}
         for pc in pconfs:
@@ -144,25 +145,49 @@ class ConstructStatistics(TemplateView):
             p_class = p.family.slug.split('_')[0]
             pdb = c.crystal.pdb_code
             pdb = '' # do not count same mutation many times
-            for mutation in c.mutations.filter(effects__slug='thermostabilising').all():
+            for mutation in c.mutations.all():
+                skip = True
+                for effect in mutation.effects.all():
+                    if effect.slug == 'thermostabilising':
+                        skip = False
+                if skip:
+                    continue
                 if p.entry_name not in proteins:
                     proteins.append(entry_name)
                 mutations.append((mutation,entry_name,pdb,p_class))
                 if mutation.sequence_number not in positions:
                     positions.append(mutation.sequence_number)
-        rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein')
+        rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein','annotations__data_type')
 
         rs_lookup = {}
         gns = []
         for r in rs:
-            if not r.generic_number:
-                continue #skip non GN
+            if not r.generic_number: #skip non gn
+                continue 
             entry_name = r.protein_conformation.protein.entry_name
             pos = r.sequence_number
+            # segment = r.protein_segment.slug
             if entry_name not in rs_lookup:
                 rs_lookup[entry_name] = {}
             if pos not in rs_lookup[entry_name]:
                 rs_lookup[entry_name][pos] = r
+
+        rs = Residue.objects.filter(protein_conformation__protein__id__in=proteins_ids, protein_segment__slug__in=['N-term','C-term'],annotations__data_type__slug='dynamine').prefetch_related('generic_number','protein_segment','protein_conformation__protein','annotations__data_type')
+        rs_annotations = {}
+        for r in rs:
+            entry_name = r.protein_conformation.protein.entry_name
+            pos = r.sequence_number
+            segment = r.protein_segment.slug
+            if entry_name not in rs_annotations:
+                rs_annotations[entry_name] = {}
+            if segment not in rs_annotations[entry_name]:
+                rs_annotations[entry_name][segment] = {}
+            if pos not in rs_annotations[entry_name][segment]:
+                try:
+                    rs_annotations[entry_name][segment][pos] = r.annotations.all()[0].value
+                except:
+                    print('no dynamine for ',entry_name,pos,r.pk)
+        print(rs_annotations)
 
         truncations = {}
         truncations_new = {}
@@ -202,6 +227,8 @@ class ConstructStatistics(TemplateView):
             p_class_name = class_names[p_class]
             if state=='active':
                 p_class_name += "_active"
+            # if state=='intermediate':
+            #     p_class_name += "_interm"
             fusion_n = False
             fusion_icl3 = False
 
@@ -283,11 +310,12 @@ class ConstructStatistics(TemplateView):
 
                 if deletion.start >= x50s[entry_name]['8x50']:
                     found_cterm = True
-
+                    import html
                     bw = x50s[entry_name]['8x50']-deletion.start
                     bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
 
                     from_h8 = deletion.start - cterm_start[entry_name]
+                    print(p_class_name,':',html.unescape(p.family.name),':',entry_name,':',pdb_code,':',deletion.start-x50s[entry_name]['8x50'],':',from_h8)
 
                     if p_class_name not in truncations['cterm']:
                         truncations['cterm'][p_class_name] = {}
@@ -348,8 +376,8 @@ class ConstructStatistics(TemplateView):
                             track_fusions2[fusion_name]['found'].append(bw)
                         if bw2 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(bw2)
-                    else:
-                         print(entry_name,c.name,fusions)
+                    # else:
+                    #      print(entry_name,c.name,fusions)
 
                     if fusion_position=='icl3':
                         #Track those with fusion
@@ -456,7 +484,7 @@ class ConstructStatistics(TemplateView):
                 if track_fusions[p_class_name][entry_name_pdb] == {'found':[],'for_print':[], '3_4_length':[], '5_6_length':[], '3_4_deleted':[], '5_6_deleted':[]}:
                     if fusion_position=='nterm' or fusions[0][3].startswith('N-term'):
                         from_tm1 = tm1_start[entry_name]-1
-                        print(entry_name_pdb,'Seems to be without truncated N-term, fixme',tm1_start[entry_name])
+                        # print(entry_name_pdb,'Seems to be without truncated N-term, fixme',tm1_start[entry_name])
                         position = 'nterm_fusion'
                         if from_tm1 not in truncations_new_possibilties[position]:
                             truncations_new_possibilties[position].append(from_tm1)
@@ -466,7 +494,7 @@ class ConstructStatistics(TemplateView):
                         if from_tm1 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(from_tm1)
                     elif not fusions[0][3].startswith('C-term'):
-                        print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
+                        # print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
                         deletion.start = fusions[0][4] #the next one is "cut"
                         deletion.end = fusions[0][4]+1 #the 'prev' is cut
 
@@ -675,6 +703,7 @@ class ConstructStatistics(TemplateView):
                     if len(v[0])>1:
                             print('multiple cuts?',entry_name,r,v[0])
                     cut = v[0][0] if v[0] else v[2][0]
+                    print(entry_name,cut)
                     # print(r,v,pdbcode,entry_name,cut)
                     entry_name += "_"+str(cut)
                     if entry_name not in unique_sites:
@@ -687,6 +716,7 @@ class ConstructStatistics(TemplateView):
                     unique_sites[entry_name][3].append(pdbcode)
                 # print(sites)
                 truncations_new_sum[site][pclass] = sites
+                unique_sites = OrderedDict(sorted(unique_sites.items(), key=lambda x: int(x[0].split("_")[-1])))
                 val['receptors'] = unique_sites
 
         for pos, p_vals in truncations_new_sum.items():
@@ -825,10 +855,10 @@ class ConstructStatistics(TemplateView):
                 mutation_matrix[wt]['sum'][0] = min(1,round(mutation_matrix[wt]['sum'][1]/30,2))
                 mutation_matrix_sum_mut[mut][1] += 1
                 mutation_matrix_sum_mut[mut][0] = min(1,round(mutation_matrix_sum_mut[mut][1]/30,2))
+                gn = ''
                 if entry_name in rs_lookup and pos in rs_lookup[entry_name]:
-                    gn = rs_lookup[entry_name][pos].generic_number.label
-                else:
-                    gn = ''
+                    if rs_lookup[entry_name][pos].generic_number:
+                        gn = rs_lookup[entry_name][pos].generic_number.label
                 print(entry_name,"\t", pdb,"\t",gn,"\t", pos,"\t", wt,"\t", mut)
 
 
@@ -898,6 +928,7 @@ class ConstructStatistics(TemplateView):
         context['mutation_mut'] = mutation_mut
         context['mutation_matrix'] = mutation_matrix
         context['mutation_matrix_sum_mut'] = mutation_matrix_sum_mut
+        context['rs_annotations'] = rs_annotations
 
         for c in cons:
             pass
