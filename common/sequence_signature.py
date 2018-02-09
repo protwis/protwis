@@ -194,18 +194,18 @@ class SequenceSignature:
 
         # First column, numbering schemes
         for row, scheme in enumerate(numbering_schemes):
-            worksheet.write(1 + row, 0, scheme[1])
+            worksheet.write(1 + 3*row, 0, scheme[1])
 
         # First column, stats
         if data == 'features':
             for offset, prop in enumerate(props):
-                worksheet.write(3 + len(numbering_schemes) + offset, 0, prop)
+                worksheet.write(3 + 3 * len(numbering_schemes) + offset, 0, prop)
 
         # First column, protein list (for alignment) and line for consensus sequence
         else:
             for offset, prot in enumerate(alignment.proteins):
                 worksheet.write(
-                    3 + len(numbering_schemes) + offset,
+                    3 + 3 * len(numbering_schemes) + offset,
                     0,
                     prot.protein.entry_name
                 )
@@ -229,13 +229,16 @@ class SequenceSignature:
             offset += len(generic_numbers_set[numbering_schemes[0][0]][segment])
 
         # Generic numbers
-        offset = 1
-        for row, item in enumerate(generic_numbers_set.items()):
+        # for row, item in enumerate(generic_numbers_set.items()):
+        for row, item in enumerate(numbering_schemes):
             scheme = item[0]
-            segment = item[1]
-            for sn, gn_list in segment.items():
+            offset = 1
+            for sn, gn_list in generic_numbers_set[scheme].items():
                 for col, gn_pair in enumerate(gn_list.items()):
-                    tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                    try:
+                        tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                    except:
+                        tm, bw, gpcrdb = ('', '', '')
                     worksheet.write(
                         1 + 3 * row,
                         col + offset,

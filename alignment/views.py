@@ -540,7 +540,7 @@ def render_signature_excel (request):
     signature.prepare_excel_worksheet(
         wb,
         'signature_properties',
-        'signture',
+        'signature',
         'features'
     )
     # Feature stats for positive group alignment
@@ -555,7 +555,7 @@ def render_signature_excel (request):
         wb,
         'positive_group_aln',
         'positive',
-        'alignemt'
+        'alignment'
     )
     # Feature stats for negative group alignment
     signature.prepare_excel_worksheet(
