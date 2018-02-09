@@ -184,7 +184,8 @@ class SequenceParser(object):
         self.mapping = {}
         self.residues = {}
         self.segments = {}
-        self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']))
+        self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']))
+        self.wt_protein_id = wt_protein_id
         
         if pdb_file is not None:
             self.pdb_struct = PDBParser(QUIET=True).get_structure('pdb', pdb_file)[0]
@@ -327,7 +328,10 @@ class SequenceParser(object):
             seq = self.get_chain_sequence(chain_id)
         alignments = self.blast.run(seq)
         
-        self.wt = None
+        if self.wt_protein_id!=None:
+            self.wt = Protein.objects.get(id=self.wt_protein_id)
+        else:
+            self.wt = None
         for alignment in alignments:
             if self.wt==None:
                 try:

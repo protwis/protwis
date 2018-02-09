@@ -23,7 +23,7 @@ class Command(BaseBuild):
 		except:
 			s = StructureModel.objects.get(protein__entry_name=options['s'], state__slug=options['state'])
 		if options['gns']:
-			tm2_gn, tm6_gn, tm3_gn, tm7_gn = '2x39', '6x35', '3x47', '7x53'
+			tm2_gn, tm6_gn, tm3_gn, tm7_gn = '2x41', '6x38', '3x44', '7x52'
 			for value in options['gns']:
 				if value.startswith('2'):
 					tm2_gn = value

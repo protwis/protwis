@@ -14,6 +14,7 @@ from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
+from modeller.automodel import *    # Load the automodel class
 
 import Bio.PDB as PDB
 from modeller import *
@@ -71,6 +72,34 @@ class Command(BaseBuild):
         parser.add_argument('--complex', help='Build GPCR complex', default=False, action='store_true')
         
     def handle(self, *args, **options):
+        # env = environ()
+        # # If you also want to see HETATM residues, uncomment this line:
+        # #env.io.hetatm = True
+        # code = 'crfr1'
+        # mdl = model(env, file='./structure/homology_models/crfr1_human_Active_post.pdb')
+        # aln = alignment(env)
+        # aln.append_model(mdl, align_codes=code)
+        # aln.write(file=code+'.seq')
+        # return 0
+
+        # log.verbose()    # request verbose output
+        # env = environ()  # create a new MODELLER environment to build this model in
+
+        # # directories for input atom files
+        # # env.io.atom_files_directory = ['.', '../atom_files']
+
+        # a = automodel(env,
+        #               # alnfile  = './structure/PIR/P34998-2_Active.pir',     # alignment filename
+        #               # knowns   = './structure/homology_models/crfr1_human_Active_post.pdb',              # codes of the templates
+        #               # sequence = 'P34998-2')              # code of the target
+        #                 alnfile = './structure/PIR/P47871_Active.pir',
+        #                 knowns = './structure/homology_models/glr_human_Active_post.pdb',
+        #                 sequence = 'P47871')
+        # a.starting_model= 1                 # index of the first model
+        # a.ending_model  = 1                 # index of the last model
+        #                                     # (determines how many models to calculate)
+        # a.make() 
+        # return 0
         self.debug = options['debug']
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')
@@ -1625,6 +1654,7 @@ class HomologyModeling(object):
 
         # check if ECL3 might have a disulfide bridge
         self.disulfide_pairs.append(self.ECL3_disulfide(a.reference_dict))
+        self.statistics.add_info('disulfide_pairs', self.disulfide_pairs)
 
 
         # if complex
@@ -1821,7 +1851,7 @@ class HomologyModeling(object):
         if not self.debug:
             _stdout = sys.stdout
             sys.stdout = open(os.devnull, 'w')
-        
+
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
                           self.uniprot_id, self.modeller_iterations, path+modelname+'.pdb', 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums)
@@ -2170,7 +2200,8 @@ class HomologyModeling(object):
         with open(filename,'w+') as f:
             for seg_id, segment in main_pdb_array.items():
                 if seg_id!='TM1' and prev_seg!='0' and seg_id.startswith('T') and prev_seg.startswith('T'):
-                    f.write("\nTER")
+                    atom_num+=1
+                    # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
                 trimmed_segment = OrderedDict()
                 for key in segment:
                     res_num+=1
@@ -2191,7 +2222,8 @@ class HomologyModeling(object):
                     except:
                         pass
                     if segment[key]=='/':
-                        f.write("\nTER")
+                        atom_num+=1
+                        # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
                         icl3_mid = counter_num
                         res_num-=1
                         counter_num-=1
@@ -2200,16 +2232,19 @@ class HomologyModeling(object):
                         trimmed_segment[key] = counter_num
                         if 'x' in segment[key]:
                             if '?' in key:
-                                f.write("\nTER")
+                                atom_num+=1
+                                # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
                                 continue
                             else:
                                 helix_restraints.append(counter_num)
                                 continue
                     if 'x' in segment[key]:
-                        f.write("\nTER")
+                        atom_num+=1
+                        # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
                         continue
                     if '?' in key and '-' in segment[key]:
-                        f.write("\nTER")
+                        atom_num+=1
+                        # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
                         continue
                     if '-term' in seg_id and segment[key]=='-':
                         continue
@@ -2249,7 +2284,8 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                 prev_seg = seg_id[:4]
             f.write("\nTER\n")
             if self.reference_entry_name!=self.main_structure.protein_conformation.protein.parent.entry_name:
-                f.write("END\n")
+                atom_num+=1
+                # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
         return trimmed_resi_nums, helix_restraints, icl3_mid, disulfide_nums
                     
     def create_PIR_file(self, reference_dict, template_dict, template_file, hetatm_count, water_count):
@@ -3187,10 +3223,19 @@ class Loops(object):
                 no_first_temp, no_second_temp = True,True
                 main_temp_seq = Residue.objects.filter(protein_conformation=self.main_structure.protein_conformation,
                                                        protein_segment__slug=self.loop_label)
+                cp = self.compare_parent_loop_to_child(self.loop_label, self.main_structure)
+                try:
+                    if cp[0]==True:
+                        main_temp_seq = cp[1]
+                except:
+                    pass
                 for mid_template in self.loop_template_structures['ECL2_mid']:
                     if mid_template==self.main_structure:
                         ECL2_mid = parse.fetch_residues_from_pdb(self.main_structure,['45x50','45x51','45x52'])
-                        x50 = main_temp_seq.get(display_generic_number__label='45.50x50').sequence_number
+                        try:
+                            x50 = [i.sequence_number for i in main_temp_seq if i.display_generic_number!=None and i.display_generic_number.label=='45.50x50'][0]
+                        except:
+                            x50 = main_temp_seq.get(display_generic_number__label='45.50x50').sequence_number
                         break
                     else:
                         try:
@@ -3748,7 +3793,7 @@ class Loops(object):
                 temp_array[seg_label] = gns
         return temp_array
         
-    def compare_parent_loop_to_child(self, loop_label, structure):
+    def compare_parent_loop_to_child(self, loop_label, structure, ignore_gns=False):
         l_res = list(Residue.objects.filter(protein_conformation=structure.protein_conformation,
                                             protein_segment__slug=loop_label))
         l_p_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
@@ -3757,10 +3802,10 @@ class Loops(object):
         parent_seq_nums = [i.sequence_number for i in parent_res]
         l_res_gn = [ggn(i.display_generic_number.label) for i in l_res if i.generic_number!=None]
         parent_res_gn = [ggn(i.display_generic_number.label) for i in parent_res if i.generic_number!=None]
-        if l_res_gn!=parent_res_gn:
-            return False
-        elif len(l_res)!=len(parent_res) and l_res_gn==parent_res_gn:
+        if len(l_res)!=len(parent_res) and l_res_gn==parent_res_gn:
             return True, [i for i in l_res if i.sequence_number in parent_seq_nums]
+        elif l_res_gn!=parent_res_gn:
+            return False
         else:
             return True, l_res
                 

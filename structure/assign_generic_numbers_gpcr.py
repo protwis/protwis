@@ -43,11 +43,15 @@ class GenericNumbering(object):
         
         # calling sequence parser
         if sequence_parser:
-            # struct = Structure.objects.get(pdb_code__index=self.pdb_code)
+            if pdb_code:
+                struct = Structure.objects.get(pdb_code__index=self.pdb_code)
             if not signprot:
-                s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
+                if pdb_code:
+                    s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
+                else:
+                    s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
             else:
-                s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=signprot.id)
+                s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=signprot.id)
             self.pdb_structure = s.pdb_struct
             self.mapping = s.mapping
             self.wt = s.wt
@@ -225,8 +229,11 @@ class GenericNumbering(object):
                             gn = "{}.{}".format(bw.split('.')[0], gn)
                             if len(gn.split('.')[1])==3:
                                 gn = '-'+gn[:-1]
-                            residue["CA"].set_bfactor(float(gn))
-                            residue["N"].set_bfactor(float(bw))
+                            try:
+                                residue["CA"].set_bfactor(float(gn))
+                                residue["N"].set_bfactor(float(bw))
+                            except:
+                                pass
         return self.pdb_structure
 
     def assign_cgn_with_sequence_parser(self, target_chain):

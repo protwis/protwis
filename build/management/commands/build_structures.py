@@ -114,6 +114,11 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
 
+        if options['skip_cn']:
+            self.run_contactnetwork=True
+        else:
+            self.run_contactnetwork=False
+
         # where filenames specified?
         if options['filename']:
             self.filenames = options['filename']

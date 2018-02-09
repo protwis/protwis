@@ -11,7 +11,7 @@ from common.selection import SimpleSelection
 from common.alignment import Alignment
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
 from residue.functions import dgn
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer
 
 from subprocess import Popen, PIPE
@@ -72,7 +72,7 @@ class BlastSearch(object):
             logger.debug(blast_err)
         if blast_out!='\n':
             result = NCBIXML.read(StringIO(blast_out))
-            for aln in result.alignments[:self.top_results]:         
+            for aln in result.alignments[:self.top_results]:
                 logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
                 output.append((aln.hit_id, aln))
         return output
@@ -814,7 +814,7 @@ class PdbChainSelector():
 
 
 class PdbStateIdentifier():
-    def __init__(self, structure, tm2_gn='2x39', tm6_gn='6x35', tm3_gn='3x47', tm7_gn='7x53', inactive_cutoff=-1, intermediate_cutoff=8):
+    def __init__(self, structure, tm2_gn='2x41', tm6_gn='6x38', tm3_gn='3x44', tm7_gn='7x52', inactive_cutoff=2, intermediate_cutoff=7.5):
         self.structure_type = None
         self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
         self.inactive_cutoff = inactive_cutoff
@@ -858,21 +858,30 @@ class PdbStateIdentifier():
                     self.state = ProteinState.objects.get(slug='active')
         # class B
         elif self.parent_prot_conf.protein.family.slug.startswith('002') or self.parent_prot_conf.protein.family.slug.startswith('003'):
-            tm2_gn_b = '2x'+str(int(self.tm2_gn.split('x')[1])+5)
-            tm6 = self.get_residue_distance(tm2_gn_b, self.tm6_gn)
-            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
+            tm2_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(B)').label
+            tm6_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(B)').label
+            tm3_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(B)').label
+            tm7_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(B)').label
+            # print(tm2_gn_b, tm6_gn_b, tm3_gn_b, tm7_gn_b)
+            tm6 = self.get_residue_distance(tm2_gn_b, tm6_gn_b)
+            tm7 = self.get_residue_distance(tm3_gn_b, tm7_gn_b)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<10:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 10<=self.activation_value<=15:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>15:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class C
         elif self.parent_prot_conf.protein.family.slug.startswith('004'):
-            tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
-            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
+            tm2_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(C)').label
+            tm6_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(C)').label
+            tm3_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(C)').label
+            tm7_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(C)').label
+
+            tm6 = self.get_residue_distance(tm2_gn_c, tm6_gn_c)
+            tm7 = self.get_residue_distance(tm3_gn_c, tm7_gn_c)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
@@ -883,8 +892,13 @@ class PdbStateIdentifier():
                     self.state = ProteinState.objects.get(slug='active')
         # class F
         elif self.parent_prot_conf.protein.family.slug.startswith('005'):
-            tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
-            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
+            tm2_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(F)').label
+            tm6_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(F)').label
+            tm3_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(F)').label
+            tm7_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(F)').label
+
+            tm6 = self.get_residue_distance(tm2_gn_f, tm6_gn_f)
+            tm7 = self.get_residue_distance(tm3_gn_f, tm7_gn_f)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<5:

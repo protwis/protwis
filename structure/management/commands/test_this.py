@@ -251,7 +251,21 @@ class Command(BaseBuild):
 		# 			['2x42','6x38','3x47','7x53',0,8.0]]
 		# self.only_xtals = options['only_xtals']
 		# self.processors = options['proc']
+		# self.data = [5, 2.5, 0]
 		# self.prepare_input(options['proc'], self.data)
+
+		# data_dir = '../../data/protwis/gpcr/structure_data/structures/'
+		# files = os.listdir(data_dir)
+		# for f in files:
+		# 	with open(data_dir+f, 'r') as yf:
+		# 		y = yaml.load(yf)
+		# 		s = Structure.objects.get(pdb_code__index=f.split('.')[0])
+		# 		if s.protein_conformation.protein.parent.family.parent.parent.parent.slug=='002':
+		# 			p = PdbStateIdentifier(s)
+		# 			p.run()
+		# 			print(f, s.state, s.distance, p.state, p.activation_value)
+			
+
 		t = TestStateIdentifier(options['gns'], options['only_xtals'], float(options['cutoffs'][0]), float(options['cutoffs'][1]))
 		t.run()
 		print(datetime.now()-startTime)
@@ -264,39 +278,45 @@ class Command(BaseBuild):
 			with lock:
 				d = self.data[count.value]
 				count.value +=1
-			t = TestStateIdentifier([d[0],d[1],d[2],d[3]],self.only_xtals,d[4],d[5])
+			t = TestStateIdentifierSets(self.only_xtals, d)
 			t.run()
+			# t = TestStateIdentifier([d[0],d[1],d[2],d[3]],self.only_xtals,d[4],d[5])
+			# t.run()
+
 
 
 class TestStateIdentifierSets(object):
-	def __init__(self, only_xtals=False):
+	def __init__(self, only_xtals=False, iac=2):
 		self.only_xtals = only_xtals
+		self.iac = iac
 
 	def run(self):
 		tm2 = ['2x39','2x40','2x41','2x42']
-		tm6 = ['6x35','6x36','6x37','6x38']
+		tm6 = ['6x32','6x33','6x34','6x35'] # for class A ['6x35','6x36','6x37','6x38']
 		tm3 = ['3x47','3x46','3x45','3x44']
 		tm7 = ['7x53','7x52','7x51','7x50']
-		inact_cutoffs = [1, -0.5, -2]
-		inter_cutoffs = [8, 6, 4]
+		inact_cutoffs = [1, -0.5, -2] # for class A [1, -0.5, -2]
+		inter_cutoffs = [15, 12, 9, 6] # for class A [8, 6, 4] 
 		best = 1000
 		best_params = []
 		counter = 0
-		with open('./structure/cutoff_test_01.csv', 'w') as f:
-			for iac in inact_cutoffs:
-				for inc in inter_cutoffs:
-					for t2 in tm2:
-						for t6 in tm6:
-							for t3 in tm3:
-								for t7 in tm7:
-									counter+=1
-									t = TestStateIdentifier([t2, t6, t3, t7], self.only_xtals, iac, inc)
-									t.run()
-									if t.mismatch<best:
-										best = t.mismatch
-										best_params = [t2, t6, t3, t7, iac, inc]
-									print(counter, t2,t6,t3,t7, t.mismatch, t.match, t.exceptions, iac, inc)
-									f.write('{},{},{},{},{},{},{},{},{}\n'.format(t2, t6, t3, t7, t.mismatch, t.match, t.exceptions, iac, inc))
+		# with open('./structure/cutoff_test_01.csv', 'w') as f:
+			# for iac in inact_cutoffs:
+		iac = self.iac
+		for inc in inter_cutoffs:
+			for t2 in tm2:
+				for t6 in tm6:
+					for t3 in tm3:
+						for t7 in tm7:
+							counter+=1
+							t = TestStateIdentifier([t2, t6, t3, t7], self.only_xtals, iac, inc)
+							t.run()
+							if t.mismatch<best:
+								best = t.mismatch
+								best_params = [t2, t6, t3, t7, iac, inc]
+							if t.mismatch==0:
+								print(counter, t2,t6,t3,t7, t.mismatch, t.match, t.exceptions, iac, inc)
+							# f.write('{},{},{},{},{},{},{},{},{}\n'.format(t2, t6, t3, t7, t.mismatch, t.match, t.exceptions, iac, inc))
 		print(best_params, best)
 
 
@@ -328,7 +348,7 @@ class TestStateIdentifier(object):
 		self.only_xtals = only_xtals
 
 	def run(self):
-		strs = Structure.objects.filter(refined=False).exclude(protein_conformation__protein__parent__family__parent__parent__parent__slug__in=['002','005'])
+		strs = Structure.objects.filter(refined=False).exclude(protein_conformation__protein__parent__family__parent__parent__parent__slug__in=['001','004','005'])
 		self.match, self.mismatch, self.exceptions = 0,0,0
 		for s in strs:
 			try:
@@ -336,10 +356,10 @@ class TestStateIdentifier(object):
 					psis = PdbStateIdentifier(s, self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn, self.inact_cutoff, self.inter_cutoff)
 					psis.run()
 					if psis.state!=s.state:
-						print(s, s.state, s.distance, psis.state, psis.activation_value, 'mismatch')
+						# print(s, s.state, s.distance, psis.state, psis.activation_value, 'mismatch')
 						self.mismatch+=1
 					else:
-						# print(s, s.state, s.distance, psis.activation_value)
+						print(s,",",s.state,',', psis.state, psis.activation_value, self.inact_cutoff, self.inter_cutoff)
 						self.match+=1
 				else:
 					r_s = Structure.objects.get(pdb_code__index=s.pdb_code.index+'_refined')
@@ -353,10 +373,10 @@ class TestStateIdentifier(object):
 					else:
 						self.match+=1
 			except:
-				# print('Exception: ', s)
+				print('Exception: ', s)
 				self.exceptions+=1
 		if not self.only_xtals:
-			hommods = StructureModel.objects.all().exclude(protein__family__parent__parent__parent__slug__in=['002','003','005'])
+			hommods = StructureModel.objects.all().exclude(protein__family__parent__parent__parent__slug__in=['001','004','005'])
 			for h in hommods:
 				try:
 					psih = PdbStateIdentifier(h, self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn, self.inact_cutoff, self.inter_cutoff)
@@ -369,7 +389,7 @@ class TestStateIdentifier(object):
 					else:
 						self.match+=1
 				except:
-					# print('Exception hommod:', h)
+					print('Exception hommod:', h)
 					self.exceptions+=1
 		print('match:', self.match, 'mismatch:', self.mismatch, 'exceptions:', self.exceptions)
 		print('{}-{}-{}-{},{},{},{},{},{}'.format(self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn, self.mismatch, self.match, self.exceptions, self.inact_cutoff, self.inter_cutoff))
