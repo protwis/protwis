@@ -13,7 +13,7 @@ from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from common.diagrams_arrestin import DrawArrestinPlot
 
-from signprot.models import SignprotStructure, SignprotBarcode
+from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions
 
 from common import definitions
 from collections import OrderedDict
@@ -237,7 +237,7 @@ def Ginterface(request, protein = None):
                 gprotein_residues, "Gprotein", protein)
 
     crystal = Structure.objects.get(pdb_code__index="3SN6")
-    aa_names = definitions.AMINO_ACID_GROUP_NAMES
+    aa_names = definitions.AMINO_ACID_GROUP_NAMES_OLD
     names_aa = dict(zip(aa_names.values(),aa_names.keys()))
     names_aa['Polar (S/T)'] = 'pol_short'
     names_aa['Polar (N/Q/H)'] = 'pol_long'
@@ -446,3 +446,10 @@ def signprotdetail(request, slug):
         'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
 
     return render(request, 'signprot/signprot_details.html', context)
+
+def InteractionMatrix(request):
+
+    interactions = SignprotInteractions.objects.all().values_list('gpcr_residue__sequence_number','gpcr_residue__display_generic_number__label','structure__pdb_code__index','interaction_type','signprot_residue__sequence_number','signprot_residue__display_generic_number__label')
+    context = {'interactions':json.dumps(list(interactions))}
+
+    return render(request, 'signprot/matrix.html', context)
