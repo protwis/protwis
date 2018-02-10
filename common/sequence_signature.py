@@ -119,6 +119,18 @@ class SequenceSignature:
                     ] for y, x in enumerate(self.features_frequency_difference[segment][row])])
             self.features_frequency_diff_display.append(tmp_row)
 
+        self.signature = OrderedDict([(x, []) for x in self.aln_neg.segments])
+        for segment in self.aln_neg.segments:
+            tmp = np.array(self.features_frequency_difference[segment])
+            signature_map = tmp.argmax(axis=0)
+            self.signature[segment] = []
+            for col, pos in enumerate(list(signature_map)):
+                self.signature[segment].append([
+                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    self.features_frequency_difference[segment][pos][col]
+                ])
+
     def prepare_display_data(self):
 
         options = {
@@ -199,18 +211,18 @@ class SequenceSignature:
         # First column, stats
         if data == 'features':
             for offset, prop in enumerate(props):
-                worksheet.write(3 + 3 * len(numbering_schemes) + offset, 0, prop)
+                worksheet.write(1 + 3 * len(numbering_schemes) + offset, 0, prop)
 
         # First column, protein list (for alignment) and line for consensus sequence
         else:
             for offset, prot in enumerate(alignment.proteins):
                 worksheet.write(
-                    3 + 3 * len(numbering_schemes) + offset,
+                    1 + 3 * len(numbering_schemes) + offset,
                     0,
                     prot.protein.entry_name
                 )
             worksheet.write(
-                3 + len(numbering_schemes) + len(alignment.proteins),
+                1 + len(numbering_schemes) + len(alignment.proteins),
                 0,
                 'CONSENSUS'
                 )
@@ -272,6 +284,22 @@ class SequenceSignature:
                             cell_format
                         )
                     col_offset += len(segment)
+            col_offset = 0
+            for segment, cons_feat in self.signature.items():
+                for col, chunk in enumerate(cons_feat):
+                    worksheet.write(
+                        offset + len(AMINO_ACID_GROUPS),
+                        1 + col + col_offset,
+                        chunk[0]
+                    )
+                    cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
+                    worksheet.write(
+                        1 + offset + len(AMINO_ACID_GROUPS),
+                        1 + col + col_offset,
+                        chunk[2],
+                        cell_format
+                    )
+                col_offset += len(cons_feat)
         # Alignment
         else:
             offset = 1 + 3 * len(alignment.numbering_schemes)
