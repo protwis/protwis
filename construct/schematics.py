@@ -55,6 +55,7 @@ def generate_schematic(c):
     # print('%s function took %0.3f ms' % ('summaries', (time2-time1)*1000.0))
 
     n_term = {}
+    c_term = {}
     insert = {}
     deletion = {}
     pair_no = 0
@@ -102,6 +103,8 @@ def generate_schematic(c):
 
         if aux.position.startswith('N-term'):
             n_term[aux.position] = aux
+        if aux.position.startswith('C-term'):
+            c_term[aux.position] = aux
         summary['insertions'] += """{} - {} ({})<br>""".format(position_without_number,aux.insert_type.subtype,aux.insert_type.name)
     summary['insertions'] += '</div>'
     summary['deletions'] = ''
@@ -323,6 +326,24 @@ def generate_schematic(c):
         prev_r = r
         ii+=1
 
+    for aux in sorted(c_term):
+        # print("new",aux,c_term[aux])
+        name = c_term[aux].insert_type.subtype[:6]
+        title_cell_skip = 0
+        for i in range(20):
+            if i==0:
+                r_buffer.append([None, name, title_cell_skip,['insert','insertion',c_term[aux]]])
+            else:
+                if i<len(name):
+                    title_cell_skip = 1
+                else:
+                    title_cell_skip = 0
+                r_buffer.append([None, False, title_cell_skip,['insert','insertion',c_term[aux]]])
+        r_chunks_schematic_construct.append(r_buffer)
+        r_buffer = []
+
+        ii = 0
+
 
     results['schematic_1_c'] = r_chunks_schematic_construct
     # print(r_chunks_schematic_construct)
@@ -387,13 +408,13 @@ def generate_schematic(c):
         title_cell_skip = 0
         for i in range(chunk_size):
             if i==0:
-                r_buffer.append([None, name, title_cell_skip,['insert','insertion',n_term[aux]]])
+                r_buffer.append([None, name, title_cell_skip,['insert',n_term[aux].insert_type.name,n_term[aux]]])
             else:
                 if i<len(name):
                     title_cell_skip = 1
                 else:
                     title_cell_skip = 0
-                r_buffer.append([None, False, title_cell_skip,['insert','insertion',n_term[aux]]])
+                r_buffer.append([None, False, title_cell_skip,['insert',n_term[aux].insert_type.name,n_term[aux]]])
         r_chunks_custom.append(r_buffer)
         r_buffer = []
 
@@ -460,6 +481,22 @@ def generate_schematic(c):
     if r_buffer:
         r_chunks_custom.append(r_buffer)
 
+    r_buffer = []
+    for aux in sorted(c_term):
+        # print('adding cterm',aux,c_term[aux].insert_type)
+        name = c_term[aux].insert_type.subtype[:11]
+        title_cell_skip = 0
+        for i in range(chunk_size):
+            if i==0:
+                r_buffer.append([None, name, title_cell_skip,['insert',c_term[aux].insert_type.name,c_term[aux]]])
+            else:
+                if i<len(name):
+                    title_cell_skip = 1
+                else:
+                    title_cell_skip = 0
+                r_buffer.append([None, False, title_cell_skip,['insert',c_term[aux].insert_type.name,c_term[aux]]])
+        r_chunks_custom.append(r_buffer)
+        r_buffer = []
 
     results['residues_c'] = r_chunks_custom
 
@@ -593,10 +630,18 @@ def generate_schematic(c):
                         a = False
                 c_schematic_table += "</tr></table></div>"
             elif block=='post':
-                if r_chunks_schematic_construct[i][0][3]:
-                    if r_chunks_schematic_construct[i][0][3][0]=='insert' :
-                        c_schematic_table += create_block(r_chunks_schematic_construct[i])
-                        i+=1
+                a = True
+                c_schematic_table += "<div style2='float:right'><table align='right' width2='100%' class='no-wrap'><tr>"
+                while a and i<len(r_chunks_schematic_construct):
+                    if r_chunks_schematic_construct[i][0][3]:
+                        if r_chunks_schematic_construct[i][0][3][0]=='insert' :
+                            c_schematic_table += "<td style='min-width:80px'>"+create_block(r_chunks_schematic_construct[i]) +"</td>"
+                            i+=1
+                        else:
+                            a = False
+                    else:
+                        a = False
+                c_schematic_table += "</tr></table></div>"
             elif block=='insert':
                 # print("insert?",r_chunks_schematic_construct[i])
                 if r_chunks_schematic_construct[i][0][3]:
@@ -624,6 +669,14 @@ def generate_schematic(c):
     time2 = time.time()
     # print('%s function took %0.3f ms' % ('final', (time2-time1)*1000.0))
     #print('done')
+    results['schematic_1_c'] = '' #FAILS NOT REQUIRED THO
+    results['schematic_1_wt'] = '' #FAILS NOT REQUIRED THO
+    # results['residues_c'] = '' #FAILS
+    # results['residues_wt'] = '' ## FAILS
+    # results['schematic_2_wt'] = '' NOT FAILS
+    # results['schematic_2_c'] = '' # Not fails
+    # results['summary'] = '' # Not fails
+    # results['annotations'] = ''# Not fails
     return results
 
 

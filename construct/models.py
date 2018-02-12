@@ -80,6 +80,12 @@ class Construct(models.Model):
             temp = self.schematic()
             schematic = temp['schematic_2_c']
             cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_wt_schematic"
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_chem_summary"
+            summary = temp['summary']
+            cache.set(cache_key,summary,60*60*24*7)
 
         return schematic
 
@@ -90,6 +96,13 @@ class Construct(models.Model):
             temp = self.schematic()
             schematic = temp['schematic_2_wt']
             cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_cons_schematic"
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_chem_summary"
+            summary = temp['summary']
+            cache.set(cache_key,summary,60*60*24*7)
+
 
         return schematic
 
@@ -100,6 +113,12 @@ class Construct(models.Model):
             temp = self.schematic()
             summary = temp['summary']
             cache.set(cache_key,summary,60*60*24*7)
+            cache_key = self.name + "_cons_schematic"
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_wt_schematic"
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
 
         return summary
 
@@ -110,25 +129,21 @@ class Construct(models.Model):
 
 
     def schematic(self):
-        ## Use cache if possible
-        temp = self.schematics
-        #if temp==None or 1==1:
+
+        cache_key = self.name + "_all_schematics"
+        temp = cache.get(cache_key)
         if temp==None:
-            # print(self.name+'_schematics no cache')
-            try:
-                temp = generate_schematic(self)
-                self.schematics = pickle.dumps(temp)
-                self.save()
-            except:
-                print('schematics failed for ',self.name)
-        else:
-            # print(self.name+'_schematics used cache')
-            try:
-                temp = pickle.loads(temp)
-            except:
-                temp = generate_schematic(self)
-                self.schematics = pickle.dumps(temp)
-                self.save()
+            temp = generate_schematic(self)
+            cache.set(cache_key,temp,60*60*24*7)
+            cache_key = self.name + "_cons_schematic"
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_wt_schematic"
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_chem_summary"
+            summary = temp['summary']
+            cache.set(cache_key,summary,60*60*24*7)
         return temp
 
     def snake(self):
