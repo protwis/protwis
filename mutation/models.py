@@ -93,11 +93,11 @@ class MutationExperiment(models.Model):
 
     def getCalculation(self):
 
-        if self.foldchange and self.exp_type:
+        if self.foldchange and self.exp_type and self.wt_value:
             if self.wt_unit=='%':
                 # Check calc is done right, since current error
                 temp = round(self.mu_value/self.wt_value,3);
-                if temp<1:
+                if temp<1 and temp!=0:
                     temp = -1/temp
                 temp = -round(temp,3)
                 if temp != self.foldchange:
@@ -122,7 +122,7 @@ class MutationExperiment(models.Model):
                 sign = self.mu_sign
 
             # CHECK FOR % CALC
-            if self.wt_unit=='%':
+            if self.wt_unit=='%' and self.wt_value:
                 # Check calc is done right, since current error
                 temp = round(self.mu_value/self.wt_value,3);
                 if temp<1:
