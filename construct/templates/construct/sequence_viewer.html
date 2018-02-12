@@ -88,7 +88,7 @@
                     <tr>
                     {% for r in rs %}
                         {% if r.3 %}
-                            <td class="seqv seqv-segment no-wrap {{r.3.1}}" >
+                            <td class="seqv seqv-segment no-wrap {{r.3.1}}top" >
                             <div data-toggle="tooltip" data-placement="top" data-html="true"
                             title=" {{r.3.2}}">{% if r.3.4 %} {{r.3.4}} {% else %}&nbsp;{% endif %}</div>
                             </td>
@@ -101,9 +101,9 @@
                     </tr>
                     <tr>
                     {% for r in rs %}
-                        {% if r.3.1 == 'deletion' or r.3.1 == 'insertion' %}
+                        {% if r.3.1 == 'deletion' or r.3.1 == 'insertion' or r.3.0 == 'insert' %}
                             {% if not r.2 %}
-                                <td class="seqv seqv-segment no-wrap bg-{{r.3.1}}"
+                                <td class="seqv seqv-segment no-wrap {{r.3.1}}"
                                 {% if r.1 %}
                                     colspan="{{ r.1|length }}"
                                 {% endif %}>
