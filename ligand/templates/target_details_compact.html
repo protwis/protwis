@@ -28,6 +28,11 @@
         border-width: 1px;
         padding: 3px;
     }
+    .scroll-container {
+        /*max-width: 200px;*/
+        overflow-x: scroll;
+        overflow-y: auto;
+    }
 
 </style>
 {% endblock %}
@@ -233,7 +238,7 @@
         <br />
         <h3>Ligand min, max & mean activities (1 row/ligand)</h3>
 
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" class="scroll-container">
             <table style="width:100%" class="display" id="proteins">
                 <thead>
                     <tr>
