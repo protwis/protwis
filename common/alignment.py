@@ -1493,6 +1493,7 @@ class GProteinAlignment(Alignment):
             self.reference_dict[ref_seg] = ref_segment_dict
             self.template_dict[temp_seg] = temp_segment_dict
             self.alignment_dict[ref_seg] = align_segment_dict
+        import pprint
         return self
 
 
@@ -1509,7 +1510,7 @@ class ClosestReceptorHomolog():
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
-        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre']
+        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
         if p.family.slug[:3]=='007':

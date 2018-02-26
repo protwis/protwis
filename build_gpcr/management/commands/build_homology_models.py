@@ -2319,7 +2319,11 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                 ref_sequence+='/'
                 temp_sequence+='/'
             for ref_res, temp_res in zip(reference_dict[ref_seg], template_dict[temp_seg]):
-                if reference_dict[ref_seg][ref_res] in ['-','x']: 
+                if reference_dict[ref_seg][ref_res] in ['-','x']:
+                    if ref_seg in ['HN', 'hns1', 'S1', 's1h1', 'H1', 'h1ha', 'HA', 'hahb', 'HB', 'hbhc', 'HC', 'hchd', 'HD', 'hdhe', 
+                                   'HE', 'hehf', 'HF', 'hfs2', 'S2', 's2s3', 'S3', 's3h2', 'H2', 'h2s4', 'S4', 's4h3', 'H3', 'h3s5', 
+                                   'S5', 's5hg', 'HG', 'hgh4', 'H4', 'h4s6', 'S6', 's6h5', 'H5']:
+                        res_num+=1
                     continue
                 else:
                     ref_sequence+=reference_dict[ref_seg][ref_res]
@@ -2441,7 +2445,6 @@ class HomologyMODELLER(automodel):
         self.disulfide_nums = disulfide_nums
     
     def identify_chain(self, seq_num):
-        print(self.chains)
         if len(self.chains)==2:
             if self.icl3_mid==None:
                 return 'A'
@@ -2476,7 +2479,9 @@ class HomologyMODELLER(automodel):
         for seg_id, segment in self.atom_dict.items():
             for gn, atom in segment.items():
                 chain = self.identify_chain(atom)
+                print(str(atom)+':{}'.format(chain))
                 selection_out.append(self.residues[str(atom)+':{}'.format(chain)])
+                print(self.residues[str(atom)+':{}'.format(chain)])
         return selection(selection_out)
     
     def special_restraints(self, aln):
@@ -2853,7 +2858,7 @@ class HelixEndsModeling(HomologyModeling):
                     offset+=1
                 elif a.template_dict[temp_seg][temp_res]!='x':
                     increase_offset = False
-                if a.template_dict[temp_seg][temp_res]=='-':
+                if a.template_dict[temp_seg][temp_res]=='-' and self.main_structure.pdb_code.index not in ['6BQG','6BQH'] and ref_res!='1x36':
                     continue
                 if a.reference_dict[ref_seg][ref_res]=='x':
                     if list(full_template_dict_seg.keys()).index(ref_res)<mid+offset:    
@@ -2882,7 +2887,6 @@ class HelixEndsModeling(HomologyModeling):
                     del main_pdb_array[i][ii]
                 except:
                     pass
-            
             if ref_seg[0]=='T' or ref_seg=='H8':
                 if len(modifications['added'][ref_seg][0])>0:
                     self.helix_ends[ref_seg][0] = modifications['added'][ref_seg][0][0]
