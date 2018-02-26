@@ -265,6 +265,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         lig_role_name = ""
         if mutation.ligand:
             lig_name = mutation.ligand.name
+        if mutation.ligand_role:
             lig_role_name = mutation.ligand_role.name
 
         if not mutation.review_title:
