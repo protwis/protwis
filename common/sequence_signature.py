@@ -91,10 +91,8 @@ class SequenceSignature:
             for idx, res in enumerate(self.common_gn[self.common_schemes[0][0]][segment].keys()):
                 if res not in self.aln_pos.generic_numbers[self.common_schemes[0][0]][segment].keys():
                     self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, 0, axis=1)
-                    # aa_pos_norm[segment] = np.insert(aa_pos_norm[segment], idx, 0, axis=1)
                 elif res not in self.aln_neg.generic_numbers[self.common_schemes[0][0]][segment].keys():
                     self.features_normalized_neg[segment] = np.insert(self.features_normalized_neg[segment], idx, 0, axis=1)
-                    # aa_neg_norm[segment] = np.insert(aa_neg_norm[segment], idx, 0, axis=1)
 
             # now the difference
             self.features_frequency_difference[segment] = np.subtract(
@@ -128,7 +126,38 @@ class SequenceSignature:
                 self.signature[segment].append([
                     list(AMINO_ACID_GROUPS.keys())[pos],
                     list(AMINO_ACID_GROUP_NAMES.values())[pos],
-                    self.features_frequency_difference[segment][pos][col]
+                    self.features_frequency_difference[segment][pos][col],
+                    int(self.features_frequency_difference[segment][pos][col]/20)+5
+                ])
+        features_pos = OrderedDict()
+        features_neg = OrderedDict()
+        self.features_consensus_pos = OrderedDict([(x, []) for x in self.aln_neg.segments])
+        self.features_consensus_neg = OrderedDict([(x, []) for x in self.aln_neg.segments])
+        for sid, segment in enumerate(self.aln_neg.segments):
+            features_pos[segment] = np.array(
+                [[x[0] for x in feat[sid]] for feat in self.aln_pos.feature_stats],
+                dtype='int'
+                )
+            features_neg[segment] = np.array(
+                [[x[0] for x in feat[sid]] for feat in self.aln_neg.feature_stats],
+                dtype='int'
+                )
+            features_cons_pos = features_pos[segment].argmax(axis=0)
+            features_cons_neg = features_neg[segment].argmax(axis=0)
+
+            for col, pos in enumerate(list(features_cons_pos)):
+                self.features_consensus_pos[segment].append([
+                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    features_pos[segment][pos][col],
+                    int(features_pos[segment][pos][col]/20)+5
+                ])
+            for col, pos in enumerate(list(features_cons_neg)):
+                self.features_consensus_neg[segment].append([
+                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    features_neg[segment][pos][col],
+                    int(features_neg[segment][pos][col]/20)+5
                 ])
 
     def prepare_display_data(self):
@@ -142,6 +171,9 @@ class SequenceSignature:
             'common_segments': self.aln_neg.segments,
             'common_generic_numbers': self.common_gn,
             'feats_signature': self.features_frequency_diff_display,
+            'signature_consensus': self.signature,
+            'feats_cons_pos': self.features_consensus_pos,
+            'feats_cons_neg': self.features_consensus_neg,
             'a_pos': self.aln_pos,
             'a_neg': self.aln_neg,
         }
