@@ -21,6 +21,7 @@ from residue.models import ResiduePositionSet
 
 
 from datetime import datetime
+import time
 import json
 import copy
 import re
@@ -34,11 +35,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 def detail(request, slug):
 
     # get constructs
-    c = Construct.objects.filter(name=slug).prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
-                "crystallization__crystal_method", "crystallization__crystal_type",
-                "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
-                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").all()[0]
+    c = Construct.objects.defer('schematics','snakecache').get(name=slug)
 
     # get residues
     residues = Residue.objects.filter(protein_conformation__protein=c.protein).order_by('sequence_number').prefetch_related(
@@ -47,21 +44,11 @@ def detail(request, slug):
     residues_lookup = {}
     for r in residues:
         residues_lookup[r.sequence_number] = r
-
     schematics = c.schematic()
-
-
-    # snake = cache.get(c.name+'_snake')
-    # snake= None
-    # if snake==None:
-    #     print(c.name+'_snake no cache')
-    #     snake = cache.set(c.name+'_snake', DrawSnakePlot(residues,c.protein.get_protein_class(),str(c.protein),nobuttons = True), 60*60*24*2) #two days
-    #     snake = cache.get(c.name+'_snake')
-    # else:
-    #     print(c.name+'_snake used cache')
 
     chunk_size = 10
     context = {'c':c, 'chunk_size': chunk_size, 'annotations': json.dumps(schematics['annotations']), 'schematics': schematics, 'residues_lookup': residues_lookup}
+
     return render(request,'construct/construct_detail.html',context)
 
 class ConstructStatistics(TemplateView):
