@@ -1,0 +1,68 @@
+<table>
+    <!-- Sequence signature -->
+
+
+    <!-- Button collapsing the Residue properties section -->
+    <tr>
+        <td class="ali-td ali-td-first-col">
+            <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#signature,#signature-main">+</button>
+        </td>
+    </tr>
+    <!-- Empty row for subheader -->
+    <tr>
+        <td class="ali-td ali-td-header-row"></td>
+    </tr>
+    <tbody id='signature'>
+    <!-- GENERIC NUMBERS -->
+
+        <!-- segment line -->
+        <tr>
+            <td class="ali-td ali-td-first-col"></td>
+        </tr>
+
+        <!-- numbering scheme lines -->
+        {% for ns in a_pos.numbering_schemes %}
+            <tr>
+                <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
+            </tr>
+        {% endfor %}
+
+    <!-- FEATURE SIGNATURE -->
+
+        <!-- feature frequency -->
+        <tr>
+            <td class="ali-td-header-row ali-td-first-col">
+                RESIDUE PROPERTIES
+            </td>
+        </tr>
+        {% for feature in a_pos.features %}
+            <tr>
+                <td class="ali-td ali-td-first-col">
+                    {{ feature }}
+                </td>
+            </tr>
+        {% endfor %}
+
+        <!-- FEATURE CONSENSUS -->
+
+        <tr>
+            <td class="ali-td-header-row ali-td-first-col">
+                FEATURE CONSENSUS
+            </td>
+        </tr>
+        <!-- Second row for consensus values -->
+        <tr>
+            <td class="ali-td-header-row ali-td-first-col"></td>
+        </tr>
+
+        <!-- GENERIC NUMBERS -->
+
+
+        <!-- numbering scheme lines -->
+        {% for ns in a_pos.numbering_schemes %}
+            <tr>
+                <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
