@@ -119,7 +119,7 @@ class QueryPDB():
                     pdb_data_dict = fetch_pdb_info(s, protein, new_xtal=True)
                     exp_method = pdb_data_dict['experimental_method']
                     if exp_method=='Electron Microscopy':
-                        st_type, cr = StructureType.objects.get_or_create(slug='electron-microscopy', name=exp_method)
+                        st_type = StructureType.objects.get(slug='electron-microscopy')
                     elif exp_method=='X-ray diffraction':
                         st_type = StructureType.objects.get(slug='x-ray-diffraction')
                     if 'deletions' in pdb_data_dict:

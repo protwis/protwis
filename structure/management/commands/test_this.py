@@ -356,7 +356,7 @@ class TestStateIdentifier(object):
 					psis = PdbStateIdentifier(s, self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn, self.inact_cutoff, self.inter_cutoff)
 					psis.run()
 					if psis.state!=s.state:
-						# print(s, s.state, s.distance, psis.state, psis.activation_value, 'mismatch')
+						print(s, s.state, s.distance, psis.state, psis.activation_value, 'mismatch')
 						self.mismatch+=1
 					else:
 						print(s,",",s.state,',', psis.state, psis.activation_value, self.inact_cutoff, self.inter_cutoff)

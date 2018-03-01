@@ -113,7 +113,6 @@ class Command(BaseCommand):
                 lookup_dict[row[0]] = row[1:]
         sequence = ''
         for record in SeqIO.parse(self.alignment_file, 'fasta'):
-            print(record.id)
             sp, accession, name, ens = record.id.split('|')
             if name==self.options['wt'].upper():
                 sequence = record.seq
@@ -257,7 +256,6 @@ class Command(BaseCommand):
             self.logger.info('Protein to delete not found')
 
     def add_cgn_residues(self, gprotein_list):
-
         #Parsing pdb uniprot file for residues
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
