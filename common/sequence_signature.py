@@ -120,7 +120,7 @@ class SequenceSignature:
         self.signature = OrderedDict([(x, []) for x in self.aln_neg.segments])
         for segment in self.aln_neg.segments:
             tmp = np.array(self.features_frequency_difference[segment])
-            signature_map = tmp.argmax(axis=0)
+            signature_map = np.absolute(tmp).argmax(axis=0)
             self.signature[segment] = []
             for col, pos in enumerate(list(signature_map)):
                 self.signature[segment].append([
@@ -129,6 +129,7 @@ class SequenceSignature:
                     self.features_frequency_difference[segment][pos][col],
                     int(self.features_frequency_difference[segment][pos][col]/20)+5
                 ])
+
         features_pos = OrderedDict()
         features_neg = OrderedDict()
         self.features_consensus_pos = OrderedDict([(x, []) for x in self.aln_neg.segments])
@@ -142,8 +143,8 @@ class SequenceSignature:
                 [[x[0] for x in feat[sid]] for feat in self.aln_neg.feature_stats],
                 dtype='int'
                 )
-            features_cons_pos = features_pos[segment].argmax(axis=0)
-            features_cons_neg = features_neg[segment].argmax(axis=0)
+            features_cons_pos = np.absolute(features_pos[segment]).argmax(axis=0)
+            features_cons_neg = np.absolute(features_neg[segment]).argmax(axis=0)
 
             for col, pos in enumerate(list(features_cons_pos)):
                 self.features_consensus_pos[segment].append([
