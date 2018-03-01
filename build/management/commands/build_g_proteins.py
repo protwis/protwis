@@ -18,11 +18,15 @@ from optparse import make_option
 from itertools import islice
 
 import pandas as pd
+from Bio import SeqIO
+import Bio.PDB as PDB
+from collections import OrderedDict
 import math
 import numpy as np
 import logging
 import csv
 import os
+import csv
 
 from urllib.request import urlopen
 
@@ -33,6 +37,9 @@ class Command(BaseCommand):
     gprotein_data_path = os.sep.join([settings.DATA_DIR, 'g_protein_data'])
     gprotein_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])
     barcode_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'barcode_data.csv'])
+    pdbs_path = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'pdbs'])
+    lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
+    alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
@@ -42,9 +49,15 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
+        parser.add_argument('--wt', default=False, type=str, help='Add wild type protein sequence to data')
+        parser.add_argument('--xtal', default=False, type=str, help='Add xtal to data')
 
 
     def handle(self, *args, **options):
+        self.options = options
+        # self.update_alignment()
+        # self.add_entry()
+
         if options['filename']:
             filenames = options['filename']
         else:
@@ -66,6 +79,63 @@ class Command(BaseCommand):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+
+    def update_alignment(self):
+        with open(self.lookup, 'r') as csvfile:
+            lookup_data = csv.reader(csvfile, delimiter=',', quotechar='"')
+            lookup_dict = OrderedDict([('-1','NA.N-terminal insertion.-1'),('-2','NA.N-terminal insertion.-2'),('-3','NA.N-terminal insertion.-3')])
+            for row in lookup_data:
+                lookup_dict[row[0]] = row[1:]
+
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        for i, row in residue_data.iterrows():
+            try:
+                residue_data['CGN'][i] = lookup_dict[str(int(residue_data['sortColumn'][i]))][6].replace('(','').replace(')','')
+            except:
+                pass
+        residue_data['sortColumn'] = residue_data['sortColumn'].astype(int)
+
+        residue_data.to_csv(path_or_buf=self.gprotein_data_path+'/test.txt', sep='\t', na_rep='NA', index=False)
+
+    def add_entry(self):
+        if not self.options['wt']:
+            raise AssertionError('Error: Missing wt name')
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        try:
+            if residue_data['Uniprot_ID'][self.options['wt']] and not self.options['xtal']:
+                return 0
+        except:
+            pass
+        with open(self.lookup, 'r') as csvfile:
+            lookup_data = csv.reader(csvfile, delimiter=',', quotechar='"')
+            lookup_dict = OrderedDict([('-1','NA.N-terminal insertion.-1'),('-2','NA.N-terminal insertion.-2'),('-3','NA.N-terminal insertion.-3')])
+            for row in lookup_data:
+                lookup_dict[row[0]] = row[1:]
+        sequence = ''
+        for record in SeqIO.parse(self.alignment_file, 'fasta'):
+            print(record.id)
+            sp, accession, name, ens = record.id.split('|')
+            if name==self.options['wt'].upper():
+                sequence = record.seq
+                break
+
+        with open(self.gprotein_data_file, 'a') as f:
+            count_sort, count_res = 0,0
+            if self.options['xtal']:
+                m = PDB.PDBParser(os.sep.join('st', [pdbs_path, self.options['xtal']+'.pdb']))[0]
+
+            else:
+                for i in sequence:
+                    count_sort+=1
+                    if i=='-':
+                        continue
+                    count_res+=1
+                    cgn = lookup_dict[str(count_sort)][6].replace('(','').replace(')','')
+                    line = 'NA\tNA\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(count_res, i, cgn, ens, accession, name, count_sort)
+                    f.write(line)
+
+
+
 
     def purge_coupling_data(self):
         try:

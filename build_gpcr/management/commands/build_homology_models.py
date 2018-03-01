@@ -14,7 +14,6 @@ from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
-from modeller.automodel import *    # Load the automodel class
 
 import Bio.PDB as PDB
 from modeller import *
@@ -1673,6 +1672,8 @@ class HomologyModeling(object):
                 for key in values:
                     self.template_source[seg][key] = [self.main_structure, self.main_structure]
             for seg, values in sign_a.reference_dict.items():
+                pprint.pprint(sign_a.reference_dict[seg])
+                pprint.pprint(signprot_pdb_array[seg])
                 for key, res in values.items():
                     if signprot_pdb_array[seg][key] == 'x':
                         values[key] = 'x'
