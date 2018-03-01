@@ -964,7 +964,6 @@ class Command(BaseBuild):
                         os.makedirs(self.pdb_data_dir)
 
                     pdb_path = os.sep.join([self.pdb_data_dir, sd['pdb'] + '.pdb'])
-                    print(pdb_path)
                     if not os.path.isfile(pdb_path):
                         self.logger.info('Fetching PDB file {}'.format(sd['pdb']))
                         url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
@@ -1441,7 +1440,6 @@ class Command(BaseBuild):
                         print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
                         self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
 
-                    
                     try:
                         current = time.time()
                         self.create_rotamers(s,pdb_path,d)
