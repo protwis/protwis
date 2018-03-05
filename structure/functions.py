@@ -818,6 +818,12 @@ class PdbChainSelector():
 class PdbStateIdentifier():
     def __init__(self, structure, tm2_gn='2x41', tm6_gn='6x38', tm3_gn='3x44', tm7_gn='7x52', inactive_cutoff=2, intermediate_cutoff=7.5):
         self.structure_type = None
+        if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.5:
+            if structure.protein_conformation.protein.family.slug.startswith('002') or structure.protein_conformation.protein.family.slug.startswith('003'):
+                tm6_gn, tm7_gn = '6x33', '7x51'
+                inactive_cutoff, intermediate_cutoff = 2.5, 6
+            elif structure.protein_conformation.protein.family.slug.startswith('004'):
+                inactive_cutoff, intermediate_cutoff = 5, 7.5
         self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
         self.inactive_cutoff = inactive_cutoff
         self.intermediate_cutoff = intermediate_cutoff
@@ -864,7 +870,7 @@ class PdbStateIdentifier():
             tm6_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(B)').label
             tm3_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(B)').label
             tm7_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(B)').label
-            # print(tm2_gn_b, tm6_gn_b, tm3_gn_b, tm7_gn_b)
+            print(tm2_gn_b, tm6_gn_b, tm3_gn_b, tm7_gn_b)
             tm6 = self.get_residue_distance(tm2_gn_b, tm6_gn_b)
             tm7 = self.get_residue_distance(tm3_gn_b, tm7_gn_b)
             if tm6!=False and tm7!=False:

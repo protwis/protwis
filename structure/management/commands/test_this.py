@@ -268,6 +268,9 @@ class Command(BaseBuild):
 
 		t = TestStateIdentifier(options['gns'], options['only_xtals'], float(options['cutoffs'][0]), float(options['cutoffs'][1]))
 		t.run()
+
+		# c = ChangeDistanceValues()
+		# c.run()
 		print(datetime.now()-startTime)
 
 	def main_func(self, positions, iteration, count, lock):
@@ -283,6 +286,25 @@ class Command(BaseBuild):
 			# t = TestStateIdentifier([d[0],d[1],d[2],d[3]],self.only_xtals,d[4],d[5])
 			# t.run()
 
+
+class ChangeDistanceValues(object):
+	def __init__(self):
+		self.path = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
+
+	def run(self):
+		files = os.listdir(self.path)
+		for f in files:
+			try:
+				with open(os.sep.join([self.path, f]), 'r') as yf:
+					y = yaml.load(yf)
+					ps = PdbStateIdentifier(Structure.objects.get(pdb_code__index=y['pdb']))
+					ps.run()
+					print(f, y['distance'], y['state'], round(float(ps.activation_value), 2), ps.state)
+					y['distance'] = round(float(ps.activation_value), 2)
+				with open(os.sep.join([self.path, f]), 'w') as syf:
+					yaml.dump(y, syf, indent=4, default_flow_style=False)
+			except Exception as msg:
+				print(f, msg)
 
 
 class TestStateIdentifierSets(object):
@@ -332,7 +354,7 @@ class TestStateIdentifierBestSets(TestStateIdentifierSets):
 
 class TestStateIdentifier(object):
 	def __init__(self, gns, only_xtals=False, inact_cutoff=-1, inter_cutoff=8):
-		self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = '2x39', '6x35', '3x44', '7x53'
+		self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = '2x41', '6x33', '3x44', '7x51'
 		self.inact_cutoff = inact_cutoff
 		self.inter_cutoff = inter_cutoff
 		if gns:

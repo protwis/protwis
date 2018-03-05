@@ -69,6 +69,7 @@ class Command(BaseBuild):
         parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
         parser.add_argument('--state', help='Specify state in debug mode', default=False, type=str, nargs='+')
         parser.add_argument('--complex', help='Build GPCR complex', default=False, action='store_true')
+        parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str)
         
     def handle(self, *args, **options):
         # env = environ()
@@ -115,6 +116,10 @@ class Command(BaseBuild):
             self.complex = True
         else:
             self.complex = False
+        if not options['signprot']:
+            self.signprot = False
+        else:
+            self.signprot = options['signprot']
 
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'F':'005', 'T':'006'}
         self.modeller_iterations = options['i']
@@ -259,7 +264,7 @@ class Command(BaseBuild):
                 _stdout = sys.stdout
                 sys.stdout = open(os.devnull, 'w')
 
-            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations, complex_model=self.complex, debug=self.debug)
+            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             formatted_model = Homology_model.format_final_model()
@@ -372,7 +377,7 @@ class Command(BaseBuild):
 class HomologyModeling(object):
     ''' Class to build homology models for GPCRs. 
     
-        @param reference_entry_name: str, protein entry name \n
+        @param reference_entry_name: str, protein entry name \nco
         @param state: str, endogenous ligand state of reference \n
         @param query_states: list, list of endogenous ligand states to be applied for template search \n
         @param iterations: int, number of MODELLER iterations
@@ -380,9 +385,10 @@ class HomologyModeling(object):
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
     
-    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, debug=False):
+    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False):
         self.debug = debug
         self.complex = complex_model
+        self.signprot = signprot
         self.version = build_date
         self.reference_entry_name = reference_entry_name.lower()
         self.state = state
@@ -1659,36 +1665,51 @@ class HomologyModeling(object):
         # if complex
         if self.complex:
             self.signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
-            target_signprot = self.signprot_complex.protein
+            structure_signprot= self.signprot_complex.protein
+            if self.signprot!=False:
+                target_signprot = Protein.objects.get(entry_name=self.signprot)
+            else:
+                target_signprot = self.signprot_complex.protein
             self.signprot_protconf = ProteinConformation.objects.get(protein=target_signprot)
             sign_a = GProteinAlignment()
-            sign_a.run_alignment(self.signprot_complex.protein)
+            sign_a.run_alignment(target_signprot)
             io = StringIO(self.main_structure.pdb_data.pdb)
-            assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=target_signprot)
+            print(target_signprot)
+            assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=structure_signprot)
             signprot_pdb_array = assign_cgn.assign_cgn_with_sequence_parser(self.signprot_complex.chain)
+            new_array = OrderedDict()
             for seg, values in signprot_pdb_array.items():
-                main_pdb_array[seg] = values
+                # main_pdb_array[seg] = values
                 self.template_source[seg] = OrderedDict()
                 for key in values:
                     self.template_source[seg][key] = [self.main_structure, self.main_structure]
             for seg, values in sign_a.reference_dict.items():
-                pprint.pprint(sign_a.reference_dict[seg])
-                pprint.pprint(signprot_pdb_array[seg])
+                new_array[seg] = OrderedDict()
                 for key, res in values.items():
-                    if signprot_pdb_array[seg][key] == 'x':
-                        values[key] = 'x'
-                        del self.template_source[seg][key]
+                    try:
+                        if signprot_pdb_array[seg][key] == 'x':
+                            values[key] = 'x'
+                            new_array[seg][key] = 'x'
+                            del self.template_source[seg][key]
+                        else:
+                            new_array[seg][key] = signprot_pdb_array[seg][key]
+                    except:
+                        new_array[seg][key] = '-'
                 a.reference_dict[seg] = values
             for seg, values in sign_a.template_dict.items():
                 for key, res in values.items():
-                    if signprot_pdb_array[seg][key] == 'x':
+                    if new_array[seg][key] == 'x':
                         values[key] = 'x'
                 a.template_dict[seg] = values
             for seg, values in sign_a.alignment_dict.items():
                 for key, res in values.items():
-                    if signprot_pdb_array[seg][key] == 'x':
+                    if new_array[seg][key] == 'x':
                         values[key] = 'x'
                 a.alignment_dict[seg] = values
+            signprot_pdb_array = new_array
+        for seg, values in signprot_pdb_array.items():
+            main_pdb_array[seg] = values
+        pprint.pprint(signprot_pdb_array)
 
         # write to file
         trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums = self.write_homology_model_pdb(path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
@@ -2248,6 +2269,9 @@ class HomologyModeling(object):
                         # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
                         continue
                     if '-term' in seg_id and segment[key]=='-':
+                        continue
+                    if len(key.split('.'))==3 and segment[key]=='-':
+                        atom_num+=1
                         continue
                     for atom in main_pdb_array[seg_id][key]: 
                         atom_num+=1

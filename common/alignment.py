@@ -1477,6 +1477,7 @@ class GProteinAlignment(Alignment):
                 continue
             ref_segment_dict, temp_segment_dict, align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
             for ref_pos, temp_pos in zip(reference.alignment[ref_seg], template.alignment[temp_seg]):
+                print(ref_pos, temp_pos)
                 if ref_pos[1] and temp_pos[1] and ref_pos[1]==temp_pos[1]:
                     ref_segment_dict[ref_pos[0]] = ref_pos[2]
                     temp_segment_dict[temp_pos[0]] = temp_pos[2]
@@ -1499,7 +1500,6 @@ class GProteinAlignment(Alignment):
             self.reference_dict[ref_seg] = ref_segment_dict
             self.template_dict[temp_seg] = temp_segment_dict
             self.alignment_dict[ref_seg] = align_segment_dict
-        import pprint
         return self
 
 

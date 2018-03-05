@@ -23,7 +23,10 @@ class Command(BaseBuild):
 		except:
 			s = StructureModel.objects.get(protein__entry_name=options['s'], state__slug=options['state'])
 		if options['gns']:
-			tm2_gn, tm6_gn, tm3_gn, tm7_gn = '2x41', '6x38', '3x44', '7x52'
+			if s.protein_conformation.protein.family.slug.startswith('002') or s.protein_conformation.protein.family.slug.startswith('003'):
+				tm2_gn, tm6_gn, tm3_gn, tm7_gn = '2x41', '6x33', '3x44', '7x51'
+			else:	
+				tm2_gn, tm6_gn, tm3_gn, tm7_gn = '2x41', '6x38', '3x44', '7x52'
 			for value in options['gns']:
 				if value.startswith('2'):
 					tm2_gn = value
@@ -34,7 +37,7 @@ class Command(BaseBuild):
 				elif value.startswith('7'):
 					tm7_gn = value
 			if options['cutoffs']:
-				psi = PdbStateIdentifier(s, tm2_gn=tm2_gn, tm6_gn=tm6_gn, tm3_gn=tm3_gn, tm7_gn=tm7_gn, inactive_cutoff=float(options['cutoffs'][0]), intermediate_cutoff=float(options['cutoffs'][1]))
+				psi = PdbStateIdentifier(s, tm2_gn=tm2_gn, tm6_gn=tm6_gn, tm3_gn=tm3_gn, tm7_gn=tm7_gn, inactive_cutoff=float(options['cutoffs'][0]), intermediate_cutoff=float(options['cutoffs'][1]), )
 			else:
 				psi = PdbStateIdentifier(s, tm2_gn=tm2_gn, tm6_gn=tm6_gn, tm3_gn=tm3_gn, tm7_gn=tm7_gn)
 		else:

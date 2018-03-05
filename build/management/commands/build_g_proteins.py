@@ -88,6 +88,7 @@ class Command(BaseCommand):
                 lookup_dict[row[0]] = row[1:]
 
         residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+
         for i, row in residue_data.iterrows():
             try:
                 residue_data['CGN'][i] = lookup_dict[str(int(residue_data['sortColumn'][i]))][6].replace('(','').replace(')','')
@@ -387,8 +388,8 @@ class Command(BaseCommand):
                     cgn_proteins_list.append(p)
 
         #print(cgn_proteins_list)
-
         #GNA13_HUMAN missing from cambridge file
+   
         accessions= df.loc[df['Uniprot_ID'].isin(cgn_proteins_list)]
         accessions= accessions['Uniprot_ACC'].unique()
 
