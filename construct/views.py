@@ -346,12 +346,13 @@ class ConstructStatistics(TemplateView):
                     #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                     fusion_icl3 = True
                     bw = x50s[entry_name]['5x50']-deletion.start-1
-                    bw = str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1]-1)
+                    bw = "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1]-1)
                     bw_real = "5."+str(50-x50s[entry_name]['5x50']+deletion.start-1)
-                    bw2 = str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0]+1)
+                    bw2 = "6x"+str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0]+1)
                     bw2_real = "6."+str(50-x50s[entry_name]['6x50']+deletion.end+1)
-                    bw = bw_real+"x"+bw
-                    bw2 = bw2_real+"x"+bw2
+                    # Make 1.50x50 number
+                    # bw = bw_real+"x"+bw
+                    # bw2 = bw2_real+"x"+bw2
                     bw_combine = bw+"-"+bw2
                     position = 'icl3'
                     del_length = 1+deletion.end-deletion.start
@@ -422,12 +423,13 @@ class ConstructStatistics(TemplateView):
                     #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                     fusion_icl3 = True
                     bw = x50s[entry_name]['5x50']-deletion.start
-                    bw = str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1]-1)
+                    bw = "3x"+str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1]-1)
                     bw_real = "3."+str(50-x50s[entry_name]['3x50']+deletion.start-1)
-                    bw2 = str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0]+1)
+                    bw2 = "4x"+str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0]+1)
                     bw2_real = "4."+str(50-x50s[entry_name]['4x50']+deletion.end+1)
-                    bw = bw_real+"x"+bw
-                    bw2 = bw2_real+"x"+bw2
+                    # Make 1.50x50 number
+                    # bw = bw_real+"x"+bw
+                    # bw2 = bw2_real+"x"+bw2
                     bw_combine = bw+"-"+bw2
                     position = 'icl2'
                     del_length = 1+deletion.end-deletion.start
@@ -490,12 +492,13 @@ class ConstructStatistics(TemplateView):
                             #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                             fusion_icl3 = True
                             bw = x50s[entry_name]['5x50']-deletion.start
-                            bw = str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1])
+                            bw =  "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1])
                             bw_real = "5."+str(50-x50s[entry_name]['5x50']+deletion.start)
-                            bw2 = str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0])
+                            bw2 = "6x"+str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0])
                             bw2_real = "6."+str(50-x50s[entry_name]['6x50']+deletion.end)
-                            bw = bw_real+"x"+bw
-                            bw2 = bw2_real+"x"+bw2
+                            # Make 1.50x50 number
+                            # bw = bw_real+"x"+bw
+                            # bw2 = bw2_real+"x"+bw2
                             bw_combine = bw+"-"+bw2
                             position = 'icl3'
                             del_length = 1+deletion.end-deletion.start
@@ -560,12 +563,13 @@ class ConstructStatistics(TemplateView):
                             #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                             fusion_icl3 = True
                             bw = x50s[entry_name]['5x50']-deletion.start
-                            bw = str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1])
+                            bw = "3x"+str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1])
                             bw_real = "3."+str(50-x50s[entry_name]['3x50']+deletion.start)
-                            bw2 = str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0])
+                            bw2 = "4x"+str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0])
                             bw2_real = "4."+str(50-x50s[entry_name]['4x50']+deletion.end)
-                            bw = bw_real+"x"+bw
-                            bw2 = bw2_real+"x"+bw2
+                            # Make 1.50x50 number
+                            # bw = bw_real+"x"+bw
+                            # bw2 = bw2_real+"x"+bw2
                             bw_combine = bw+"-"+bw2
                             position = 'icl2'
                             del_length = deletion.end-deletion.start-1
@@ -1595,14 +1599,14 @@ def get_data_all_grouping(rules, mutant, wild_type, class_cons, fam_cons):
     hydro = hydro + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
 
     # Get the receptor family conservation fold change where possible
-    mut = fam_cons.get(mutant, u'\u2014')
-    w_t = fam_cons.get(wild_type, u'\u2014')
+    mut = fam_cons.get(mutant, 0)
+    w_t = fam_cons.get(wild_type, 0)
     rec_cons = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
     rec_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
 
     # Get the protein class conservation fold change where possible
-    mut = class_cons.get(mutant, u'\u2014')
-    w_t = class_cons.get(wild_type, u'\u2014')
+    mut = class_cons.get(mutant, 0)
+    w_t = class_cons.get(wild_type, 0)
     prot_cons = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
     prot_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
 
@@ -1892,6 +1896,7 @@ def align(request):
         proteins.append(c.protein)
         constructs[c.name] = c.protein.entry_name
         annotations[c.name] = c.schematic()['annotations']
+
 
     print(annotations)
 

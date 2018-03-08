@@ -131,7 +131,11 @@ class Construct(models.Model):
     def schematic(self):
 
         cache_key = self.name + "_all_schematics"
-        temp = cache.get(cache_key)
+        try:
+            temp = cache.get(cache_key)
+        except:
+            temp = None
+
         if temp==None:
             temp = generate_schematic(self)
             cache.set(cache_key,temp,60*60*24*7)
