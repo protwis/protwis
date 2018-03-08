@@ -237,7 +237,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <thead>
         <tr>
             <th class="seq-th" colspan="1">State</th>
-            <th class="protein-th" colspan="3">Targets</th>
+            <th class="protein-th" colspan="4">Targets</th>
             <th class="seq-th" colspan="4">Mutations</th>
             <th class="protein-th" colspan="4">Frequency</th>
             <th class="seq-th" colspan="3">Sites</th>
@@ -247,6 +247,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">Class</th>
             <th class="protein-th">Ligand Type</th>
             <th class="protein-th">Receptor Family</th>
+            <th class="protein-th">Receptor</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
@@ -257,7 +258,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">GPCRs (PDB IDs)</th>
             <th class='seq-th'>Ionic Lock</th>
             <th class='seq-th'>Sodium Ion Binding Site</th>
-            <th class='seq-th'>Residue Switch</th>
+            <th class='seq-th'>Switch</th>
         </tr>
     </thead>
     <tbody>
@@ -287,6 +288,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>
                 <table class="internal-table">
                     {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.real_receptor %}
                     <tr style='background-color: transparent;'>
                         <td class='inner'> {{ mutant }} </td>
                     </tr>
@@ -339,7 +349,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <thead>
         <tr>
             <th class="seq-th" colspan="1">State</th>
-            <th class="protein-th" colspan="3">Targets</th>
+            <th class="protein-th" colspan="4">Targets</th>
             <th class="seq-th" colspan="4">Mutations</th>
             <th class="protein-th" colspan="4">Frequency</th>
             <th class="seq-th " colspan="4">Data (Mutant)</th>
@@ -350,6 +360,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">Class</th>
             <th class="protein-th">Ligand Type</th>
             <th class="protein-th">Receptor Family</th>
+            <th class="protein-th">Receptor</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
@@ -364,7 +375,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="seq-th" >Hydroph- obicity</th>
             <th class='protein-th'>Ionic Lock</th>
             <th class='protein-th'>Sodium Ion Binding Site</th>
-            <th class='protein-th'>Residue Switch</th>
+            <th class='protein-th'>Switch</th>
         </tr>
     </thead>
 
@@ -394,6 +405,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>
                 <table class="internal-table">
                     {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.real_receptor %}
                     <tr style='background-color: transparent;'>
                         <td class='inner'> {{ mutant }} </td>
                     </tr>
@@ -444,7 +464,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <thead>
         <tr >
             <th class="seq-th" colspan="1">State</th>
-            <th class="protein-th" colspan="3">Targets</th>
+            <th class="protein-th" colspan="4">Targets</th>
             <th class="seq-th" colspan="4">Mutations</th>
             <th class="protein-th" colspan="4">Frequency</th>
             <th class="seq-th" colspan="4">Data (Wild Type)</th>
@@ -455,6 +475,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">Class</th>
             <th class="protein-th">Ligand Type</th>
             <th class="protein-th">Receptor Family</th>
+            <th class="protein-th">Receptor</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
@@ -469,7 +490,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="seq-th" >Hydroph- obicity</th>
             <th class='protein-th'>Ionic Lock</th>
             <th class='protein-th'>Sodium Ion Binding Site</th>
-            <th class='protein-th'>Residue Switch</th>
+            <th class='protein-th'>Switch</th>
         </tr>
     </thead>
         {% for key, group in pos_and_wt.items %}
@@ -498,6 +519,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>
                 <table class="internal-table">
                     {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.real_receptor %}
                     <tr style='background-color: transparent;'>
                         <td class='inner'> {{ mutant }} </td>
                     </tr>
@@ -548,7 +578,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <thead>
         <tr>
             <th class="seq-th" colspan="1">State</th>
-            <th class="protein-th" colspan="3">Targets</th>
+            <th class="protein-th" colspan="4">Targets</th>
             <th class="seq-th" colspan="4">Mutations</th>
             <th class="protein-th" colspan="4">Frequency</th>
             <th class="seq-th " colspan="4">Data (Fold Change (Mutant/Wild Type))</th>
@@ -559,6 +589,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">Class</th>
             <th class="protein-th">Ligand Type</th>
             <th class="protein-th">Receptor Family</th>
+            <th class="protein-th">Receptor</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
@@ -573,7 +604,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="seq-th" >Hydroph- obicity</th>
             <th class='protein-th'>Ionic Lock</th>
             <th class='protein-th'>Sodium Ion Binding Site</th>
-            <th class='protein-th'>Residue Switch</th>
+            <th class='protein-th'>Switch</th>
         </tr>
     </thead>
 
@@ -598,6 +629,11 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             </td>
             <td>
                 {% for mutant in group.1.receptor %}
+                    {{ mutant }}
+                {% endfor %}
+            </td>
+            <td>
+                {% for mutant in group.1.real_receptor %}
                     {{ mutant }}
                 {% endfor %}
             </td>
