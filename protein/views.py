@@ -29,7 +29,10 @@ class BrowseSelection(AbsBrowseSelection):
 def detail(request, slug):
     # get protein
     slug = slug.lower()
-    p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
+    try:
+        p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
+    except:
+        p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug, sequence_type__slug='wt')
 
     # get family list
     pf = p.family
