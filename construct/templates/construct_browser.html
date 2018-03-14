@@ -587,6 +587,7 @@
                     <tr style='max-height: 20px'>
                     <th class="protein-th" colspan=1></th>
                     <th class="protein-th" colspan=5>Construct</th>
+                    <th class="parts4-th" colspan=1>Crystallization</th>
                     <th class="seq-th" colspan=4>Sequence modifications</th>
                     <th class="pdb-th" colspan=2></th>
                     <th class="pub-th" colspan=2></th>
@@ -598,6 +599,7 @@
                     <th class="protein-th">Family</th>
                     <th class="protein-th">Class</th>
                     <th class="protein-th">Species</th>
+                    <th class="parts4-th">Method</th>
                     <th class="seq-th">Mutations</th>
                     <th class='seq-th'>Deletions</th>
                     <th class="seq-th">Modifications</th>
@@ -618,6 +620,11 @@
                     <td><span>{{ construct.protein.family.parent.name|safe }}</span></td>
                     <td>{{ construct.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ construct.protein.species.common_name }}</td>
+                    {% if construct.crystallization %}
+                    <td>{{ construct.crystallization.crystal_method.name}}</td>
+                    {% else %}
+                    <td colspan=1> N/A</td>
+                    {% endif %}
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.mutations }}"> {{ construct.mutations.count }}</a></td>
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.deletions }}"> {{ construct.deletions.count }}</a></td>
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.modifications }}"> {{ construct.modifications.count }}</a></td>
