@@ -198,6 +198,9 @@ class ConstructStatistics(TemplateView):
         truncations_new['icl2_fusion'] = OrderedDict()
 
 
+        truncations_new['icl3_start'] = OrderedDict()
+        truncations_new['icl3_end'] = OrderedDict()
+
         truncations_new['icl3_fusion_start'] = OrderedDict()
         truncations_new['icl3_fusion_end'] = OrderedDict()
         truncations_new['icl2_fusion_start'] = OrderedDict()
@@ -412,6 +415,10 @@ class ConstructStatistics(TemplateView):
                     position = 'icl3'
                     del_length = 1+deletion.end-deletion.start
 
+                    if bw=='5x107':
+                        # Skip these false deletions in melga
+                        continue
+
                     l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
                     if fusion_position=='icl3' or fusion_position=='nterm_icl3':
                         position = 'icl3_fusion'
@@ -467,6 +474,22 @@ class ConstructStatistics(TemplateView):
                             track_without_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
 
 
+                        if p_class_name not in truncations_new[position+'_start']:
+                            truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
+                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
+                        if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
+
+
+                        if p_class_name not in truncations_new[position+'_end']:
+                            truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
+                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
+                        if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
+
+
                     if p_class_name not in truncations[position]:
                         truncations[position][p_class_name] = {}
                     if bw_combine not in truncations[position][p_class_name]:
@@ -504,7 +527,7 @@ class ConstructStatistics(TemplateView):
                     position = 'icl2'
                     del_length = 1+deletion.end-deletion.start
                     l_3_4_length = x50s[entry_name]['4x50']-x50s[entry_name]['3x50']
-                    print(fusion_position)
+                    # print(fusion_position)
                     if fusion_position=='icl3' or fusion_position=='nterm_icl3':
                         position = 'icl2_fusion'
                         if bw not in track_fusions2[fusion_name]['found']:
@@ -800,7 +823,7 @@ class ConstructStatistics(TemplateView):
                             min_cut = cut
                         if cut > max_cut:
                             max_cut = cut
-                    # print(r,v,pdbcode,entry_name,cut)
+                    # print(site,r,v,pdbcode,entry_name,cut)
                     entry_name += "_"+str(cut)
                     if entry_name not in unique_sites:
                         unique_sites[entry_name] = v
@@ -858,6 +881,7 @@ class ConstructStatistics(TemplateView):
                         max_pos_range2[site][0] = start
                     if end > max_pos_range2[site][1]:
                         max_pos_range2[site][1] = end
+                    print('\n ### doing range',site, sites,max_pos_range2[site],val['range'])
                 val['receptors'] = unique_sites
                 val['fusions'] = distinct_fusion
                 if site in truncations_maximums:
@@ -913,8 +937,8 @@ class ConstructStatistics(TemplateView):
                                 temp.append('')
                         val['sum'] = temp
 
-        print(linkers_exist_before,linkers_exist_after)
-        # print("NEWCHECK",truncations_new)
+        # print(linkers_exist_before,linkers_exist_after)
+        print("NEWCHECK",truncations_new['icl3_start'])
         for pos, p_vals in truncations_new_sum.items():
             for pclass, c_vals in p_vals.items():
                 new_list = OrderedDict()
