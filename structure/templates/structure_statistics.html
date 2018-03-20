@@ -447,7 +447,9 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
             </li>
             <li>
                 <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
-                </a>
+            </li>
+            <li>
+                <a href="javascript:saveSvg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
             </li>
         </ul>
     </div>
@@ -497,6 +499,9 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
                             </a>
                         </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                        </li>
                     </ul>
                 </div>
             </td>
@@ -515,7 +520,9 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                         </li>
                         <li>
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
-                            </a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
                         </li>
                     </ul>
                 </div>
@@ -536,6 +543,9 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                         <li>
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
                             </a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
                         </li>
                     </ul>
                 </div>
@@ -577,6 +587,10 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
                             </a>
                         </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                                </a>
+                        </li>
                     </ul>
                 </div>
             </td>
@@ -597,6 +611,10 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_t2.tiff');">TIFF</a>
                             </a>
                         </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_t2.svg');">SVG</a>
+                                </a>
+                        </li>
                     </ul>
                 </div>
             </td>
@@ -607,13 +625,10 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
-<!--<script src="https://d3js.org/d3.v4.min.js"></script>-->
-
-<!--<script src="{% static 'home/js/statistics_diagram.js' %}"></script>-->
-<!--<script src="{% static 'home/js/statistics_diagram_crystals.js' %}"></script>-->
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/statistics.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
     $(window).load(function() {
