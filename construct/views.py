@@ -64,11 +64,11 @@ class ConstructStatistics(TemplateView):
         context = super(ConstructStatistics, self).get_context_data(**kwargs)
         cache_temp = cache.get('construct_statistics')
 
-        # if cache_temp:
-        #     for key, val in cache_temp.items():
-        #         context[key] = val
+        if cache_temp:
+            for key, val in cache_temp.items():
+                context[key] = val
 
-        #     return context
+            return context
 
         cons = Construct.objects.all().defer('schematics','snakecache').order_by("protein__entry_name","crystal__pdb_code").prefetch_related(
             "crystal","mutations__effects","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
@@ -224,7 +224,9 @@ class ConstructStatistics(TemplateView):
         'Rubredoxin':  'Rubr',
         'PGS (Pyrococcus abyssi glycogen synthase)': 'PGS',
         'BRIL (b562RIL)': 'BRIL',
-        'mT4L' : 'mT4L'
+        'mT4L' : 'mT4L',
+        'OB1' : 'OB1',
+        '3A Arrestin': 'Arr'
         }
         for c in cons:
             p = c.protein
@@ -502,6 +504,7 @@ class ConstructStatistics(TemplateView):
                     position = 'icl2'
                     del_length = 1+deletion.end-deletion.start
                     l_3_4_length = x50s[entry_name]['4x50']-x50s[entry_name]['3x50']
+                    print(fusion_position)
                     if fusion_position=='icl3' or fusion_position=='nterm_icl3':
                         position = 'icl2_fusion'
                         if bw not in track_fusions2[fusion_name]['found']:
@@ -565,7 +568,7 @@ class ConstructStatistics(TemplateView):
                         if from_tm1 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(from_tm1)
                     elif not fusions[0][3].startswith('C-term'):
-                        # print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
+                        print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
                         deletion.start = fusions[0][4] #the next one is "cut"
                         deletion.end = fusions[0][4]+1 #the 'prev' is cut
 
