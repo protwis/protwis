@@ -24,13 +24,13 @@ class Command(BaseBuild):
     def handle(self, *args, **options):
 
         # All human proteins and xtaled
-        self.proteins = list(set(list(Protein.objects.filter(sequence_type__slug='wt',species__common_name="Human").all())+list(ProteinSet.objects.get(name='All').proteins.all())))
-        # self.proteins = list(set(list(ProteinSet.objects.get(name='All').proteins.all())))
+        # self.proteins = list(set(list(Protein.objects.filter(sequence_type__slug='wt',species__common_name="Human").all())+list(ProteinSet.objects.get(name='All').proteins.all())))
+        self.proteins = list(set(list(ProteinSet.objects.get(name='All').proteins.all())))
         print(self.proteins)
 
         self.prepare_input(options['proc'], self.proteins)
         # self.logger.info('Finishing adding dynamine annotations')
-
+pkill -9 20691
     def get_dynamine_prediction(self, protein):
         json_api_key = '26cf5c434a171cab9220666030cd981bdbe485a449729a7c8c6272b9'
         job = {'protocol': '1.0',
