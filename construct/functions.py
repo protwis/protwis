@@ -577,7 +577,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
                     if pos:
                         pos = int(pos)
                     uniprot_pos = int(uniprot_pos)
-                    if receptor and uniprot_pos not in pos_in_wt:
+                    if receptor and uniprot_pos not in pos_in_wt and raw_u_id==uniprot_code: #FIXME, consider undoing raw_u_id since it doesnt capture anything
                             # print('hi',pos,uniprot_pos)
                         # if pos and pos>1000 and uniprot_pos<1000 and uniprot_pos!=pos-1000 and uniprot_pos!=pos-2000:
                         #     # print('PDB residue number:',pos, 'Receptor Uniprot pos:',uniprot_pos)
