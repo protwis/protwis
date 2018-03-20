@@ -64,11 +64,11 @@ class ConstructStatistics(TemplateView):
         context = super(ConstructStatistics, self).get_context_data(**kwargs)
         cache_temp = cache.get('construct_statistics')
 
-        if cache_temp:
-            for key, val in cache_temp.items():
-                context[key] = val
+        # if cache_temp:
+        #     for key, val in cache_temp.items():
+        #         context[key] = val
 
-            return context
+        #     return context
 
         cons = Construct.objects.all().defer('schematics','snakecache').order_by("protein__entry_name","crystal__pdb_code").prefetch_related(
             "crystal","mutations__effects","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
