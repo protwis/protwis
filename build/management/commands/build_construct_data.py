@@ -138,14 +138,15 @@ class Command(BaseCommand):
             # self.purge_construct_data()
             # filenames = os.listdir(self.construct_data_dir)
 
-        for filename in filenames:
-            if filename[-4:]!='json':
-                continue
-            filepath = os.sep.join([self.construct_data_dir, filename])
-            print('Adding '+filepath)
-            with open(filepath) as json_file:
-                d = json.load(json_file)
-                add_construct(d)
+        if filenames:
+            for filename in filenames:
+                if filename[-4:]!='json':
+                    continue
+                filepath = os.sep.join([self.construct_data_dir, filename])
+                print('Adding '+filepath)
+                with open(filepath) as json_file:
+                    d = json.load(json_file)
+                    add_construct(d)
 
         if do_all:
             structures = Structure.objects.all().exclude(refined=True)
