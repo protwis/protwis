@@ -771,6 +771,141 @@ table.dataTable {
   </div>
 </div>
 
+<div class='figure loopdeletions'>
+ <br>
+
+  <h4>Deletion start (ICL3) by class and residue position</h4>
+  {% for class, values in truncations_new.icl3_start.items %}
+  <div class="row">
+      <div class="col-md-12">
+  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+  <thead>
+    <tr><th colspan=3>No. PDBs each state***</th><th colspan=2>{{class}}</th><th></th><th colspan=2></th><th colspan={{values.range|length}}></th></tr>
+    <tr>
+      <th>Ina</th>
+      <th>Int</th>
+      <th>Act</th>
+      <th>Pos**</th>
+      <th>PDB</th>
+      <th>Species*</th>
+      <th>Name</th>
+      <th>GPCR</th>
+
+      {% for pos in values.range  %}
+      <th class="seq_pos no-sort verticalTableHeader">{{pos}}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+      <tbody>
+      {% for recp, t_pos in values.receptors.items %}
+      <tr>
+      <td>{{t_pos.6.inactive}}</td>
+      <td>{{t_pos.6.intermediate}}</td>
+      <td>{{t_pos.6.active}}</td>
+      <td>{{t_pos.7}}</td>
+      <td>{{t_pos.3|length}}</td>
+      <td>{{t_pos.5}}</td>
+      <td>{{t_pos.4}}</td>
+      <td>{{t_pos.8|safe}}</td>
+    
+
+
+      {% for pos in values.range %}
+          {% if pos in t_pos.0 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% elif pos in t_pos.1 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% elif pos < t_pos.0.0 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% elif pos < t_pos.1.0 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% elif pos <= t_pos.2.0 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% else %}
+              <td bgcolor='white' style='border: none;'></td>
+          {% endif %}
+      {% endfor %}
+      </tr>
+  {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><th></th><th colspan="7"></th>
+        {% for sum in values.sum  %}
+            <th class="seq_pos">{{sum}}</th>
+        {% endfor %}
+
+        </tr>
+      </tfoot>
+  </table>
+      </div>
+  </div>
+  {% endfor %}
+
+  <h4>Deletion end (ICL3) by class and residue position</h4>
+  {% for class, values in truncations_new.icl3_end.items %}
+  <div class="row">
+      <div class="col-md-12">
+  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+  <thead>
+    <tr><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state***</th><th colspan=3></th></tr>
+    <tr>
+      {% for pos in values.range  %}
+      <th class="seq_pos no-sort verticalTableHeader">{{pos}}</th>
+      {% endfor %}
+      <th>GPCR</th><th>Name</th><th>Species*</th><th>Ina</th><th>Int</th><th>Act</th><th>Pos**</th><th>PDB</th>
+
+    </tr>
+  </thead>
+      <tbody>
+      {% for recp, t_pos in values.receptors.items %}
+      <tr>
+      {% for pos in values.range %}
+          {% if pos in t_pos.0 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% elif pos in t_pos.1 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% elif pos < t_pos.0.0 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='white' align='center' style='border: none;'></td>
+          {% elif pos < t_pos.1.0 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% elif pos <= t_pos.2.0 %}
+                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+          {% else %}
+              <td bgcolor='lightgrey' style='border: none;'></td>
+          {% endif %}
+      {% endfor %}
+      <td>{{t_pos.8|safe}}</td>
+      <td>{{t_pos.4}}</td>
+      <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
+      <td>{{t_pos.6.inactive}}</td><td>{{t_pos.6.intermediate}}</td><td>{{t_pos.6.active}}</td>
+      <td>{{t_pos.7}}</td>
+      <td>{{t_pos.3|length}}</td>
+      
+
+      </tr>
+  {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+        {% for sum in values.sum  %}
+            <th class="seq_pos">{{sum}}</th>
+        {% endfor %}
+        <th></th><th colspan="7"></th>
+        </tr>
+      </tfoot>
+  </table>
+      </div>
+  </div>
+  {% endfor %}
+  * Empty species cell is human<br>
+  ** Position is the last kept residue in relation to the previous and next helix<br>
+  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+  **** In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.
+  </div>
+
+
+</div>
+
 <div class='figure mutations'>
 
   <br>
