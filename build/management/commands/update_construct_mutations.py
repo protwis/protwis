@@ -770,7 +770,7 @@ class Command(BaseCommand):
             uniprot = protein.parent.entry_name
             d = cache.get(pdbname+"_auto_d")
             # d = None
-            if not d:
+            if not d and 'deletions' in d:
                 d = fetch_pdb_info(pdbname,protein)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             for d in d['deletions']:
