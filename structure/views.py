@@ -65,7 +65,7 @@ class StructureBrowser(TemplateView):
                 "protein_conformation__protein__source",
                 "protein_conformation__protein__family__parent__parent__parent",
                 "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents",
+                "stabilizing_agents", "construct__crystallization__crystal_method",
                 "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
                 "protein_conformation__site_protein_conformation__site",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
