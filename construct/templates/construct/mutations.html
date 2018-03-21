@@ -56,6 +56,30 @@
 
 
     <script type="text/javascript" charset="utf-8">
+    
+        $.fn.dataTable.ext.search.push(
+            function( oSettings, aData, iDataIndex ) {
+                var selected = [];
+               // $(".mutationrow").hide();
+                $('.mut_choices input:checked').each(function() {
+                    selected.push($(this).attr('name'));
+                    // $("."+$(this).attr('name')).show();
+                });
+
+                type = aData[6].split(', ');
+                if (selected.length) {
+                    if (intersect(type,selected).length) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return true;
+                }
+            }
+        );
+
+
         $(document).ready(function () {
             // 'use strict';
 
@@ -128,6 +152,13 @@
             // $.datepicker.setDefaults($.datepicker.regional['']);
 
 
+            $(".mut_choices input[type=checkbox]").change(function () {
+
+                console.log('redraw!');
+                oTable.draw();
+
+            });
+
 
         });
         $('#apply_filter').click(function() {
@@ -137,6 +168,19 @@
         $("#OpenFilters").click(function () {
             $("#filters").toggle();
         });
+
+
+    function intersect(a, b) {
+        var t;
+        if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+        return a.filter(function (e) {
+            return b.indexOf(e) > -1;
+        });
+    }
+
+
+
+
     </script> 
 {% endblock %}
 
@@ -158,13 +202,20 @@
     <button id='apply_filter'>Apply Filter</button>
     </div>
 
+<div class="btn-group mut_choices" data-toggle="buttons">
+    {% for mut in overall_mut_types %}
+      <label class="btn btn-default btn-sm form-check-label">
+        <input name="{{mut}}" type="checkbox" autocomplete="off" value='{{mut}}' > {{mut}}
+      </label>
+    {% endfor %}
+</div>
 
 <table width="100%" class="display" id="mutations">
     <thead>
 
         <tr>
             <th class="protein-th">Protein</th>
-            <th class="protein-th">Generic Number</th>
+            <th class="protein-th" width="20px">Generic Number</th>
             <th class="protein-th">Position</th>
             <th class="protein-th">Segment</th>
             <th class="protein-th">WT</th>
@@ -175,16 +226,16 @@
 
     </thead>
     <tbody>
-    {% for mutation in mutation_list %}
-        <tr id="{{ mutation.pk }}">
+    {% for key, mutation in mutation_list.items %}
+        <tr class="{{ mutation.pk }} mutationrow {{ mutation.type|join:" "}}">
             <td><a href="{{ construct.name|safe}}">{{ mutation.entry_name|safe }}</a></td>
             <td>{{ mutation.gn}}</td>
             <td>{{ mutation.pos}}</td>
             <td>{{ mutation.segment}}</td>
             <td>{{ mutation.wt}}</td>
             <td>{{ mutation.mut}}</td>
-            <td>{{ mutation.type}}</td>
-            <td>{{ mutation.pdb}}</td>
+            <td>{{ mutation.type|join:", "}}</td>
+            <td>{{ mutation.pdbs|join:","}}</td>
         </tr>
         {% endfor %}
     </tbody>

@@ -1416,8 +1416,10 @@ class ConstructMutations(TemplateView):
                 rs_lookup[entry_name][pos] = r
 
         mutation_list = []
+        new_mutations = {}
+        overall_mut_types = set()
         for mutation in mutations:
-            # print("m",mutation)
+
             wt = mutation[0].wild_type_amino_acid
             mut = mutation[0].mutated_amino_acid
 
@@ -1425,6 +1427,7 @@ class ConstructMutations(TemplateView):
             mut_types = []
             for eff in mut_type:
                 mut_types.append(eff['slug'])
+                overall_mut_types.add(eff['slug'])
             mut_type = ",".join(mut_types)
             # # for
             # print(mut_type)
@@ -1451,13 +1454,18 @@ class ConstructMutations(TemplateView):
             else:
                 gn = ''
 
+            key = mutation[1]+"_"+str(mutation[0].sequence_number)+"_"+mutation[0].mutated_amino_acid
+            if key not in new_mutations:
+                new_mutations[key] = {'entry_name':entry_name,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': set(), 'pdbs': set()}
+            new_mutations[key]['type'].update(mut_types)
+            new_mutations[key]['pdbs'].add(pdb)
 
             mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': mut_type})
-            if (pdb == 'adrb1_melga'): print(gn)
 
 
-        context['mutation_list'] = mutation_list
-        print(mutation_list)
+        context['mutation_list'] = new_mutations
+        context['overall_mut_types'] = overall_mut_types
+
 
         return context
 
