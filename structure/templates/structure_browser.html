@@ -59,6 +59,7 @@
                             { type: "text" }, // x-ray ligand
                             { type: "text" }, // x-ray ligand function
                             { type: "text" }, // x-ray ligand type
+                            { type: "text" }, // xtal method
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
                             { type: "select"}, // annotated
@@ -201,6 +202,7 @@
                     <th class="ligand-th">X-ray ligand</th>
                     <th class="ligand-th">X-ray lig. function</th>
                     <th class="ligand-th">X-ray lig. type</th>
+                    <th class="ligand-th">Method</th>
                     <th class="pub-th">Reference</th>
                     <th class="pub-th">Date</th>
                     <th class="pub-th">Annotated</th>
@@ -208,6 +210,7 @@
                     <th class="pub-th">Sodium ion pocket</th>
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -288,6 +291,15 @@
                         {{ ligand.ligand.properities.ligand_type }}<br />
                         {% empty %}
                         N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for c in structure.construct.all %}
+                         {% if c.crystallization.crystal_method %}
+                            {{c.crystallization.crystal_method.name}}
+                         {% else %}
+                            N/A
+                         {% endif %}
                         {% endfor %}
                     </td>
                     <td>

@@ -39,6 +39,16 @@
             cursor: pointer;
         }
 
+        .glyphbutton > span.glyphicon {
+          font-size: 20px;
+          line-height: 0px;
+          vertical-align: middle;
+          /* counteract default bootstrap setting */
+          top: 0px;
+          /* counteract button padding */
+          margin: 0 0px;
+        }
+
         #filters{
 /*            float:left;
           display:none;
@@ -96,6 +106,15 @@
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
             // 'use strict';
+
+            $.fn.dataTable.ext.search.push(
+                function( settings, data, dataIndex ) {
+                    var pdb = data[0]  || 0; // use data for the age column
+                    console.log(pdb);
+                    
+                    return true;
+                }
+            );
 
             // var oTable;
             var oTable = $('#constructs').DataTable({
@@ -361,6 +380,11 @@
             })
 
             $('#apply_filter').click(function() {
+                pdbs = $('#filter_pdb').val().toUpperCase();
+                pdbs = pdbs.split(/[ ,]+/);
+                pdbs = pdbs.join("|");
+                oTable.search(pdbs,true,false).draw();
+
                 update_tables("both");
                 //$("#filters").toggle();
             });
@@ -540,9 +564,11 @@
 <!--     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container0"></span></div> -->
     <div style='width: 105px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div>
 <!--     <div style='width: 140px;display: inline-block;'><span id="external_filter_container5"></span></div> -->
-    <button id='apply_filter' class="btn btn-default btn-xs">Apply Filter</button>
-            <div class="dropdown btn-group">
-              <button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown">Selection options
+
+    (Or by PDB: <input type=text id='filter_pdb'>)
+    <button id='apply_filter' type="button" class="btn  btn-sm btn-primary glyphbutton">Filter <span class="glyphicon glyphicon-filter"></span></button>
+        <div class="dropdown btn-group">
+              <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">Selection options
               <span class="caret"></span></button>
               <ul class="dropdown-menu">
                 <li><a href="#">Toggle all <input class="select-all" type="checkbox" onclick="select_all(this)"></a></li>
@@ -561,6 +587,7 @@
                     <tr style='max-height: 20px'>
                     <th class="protein-th" colspan=1></th>
                     <th class="protein-th" colspan=5>Construct</th>
+                    <th class="parts4-th" colspan=1>Crystallization</th>
                     <th class="seq-th" colspan=4>Sequence modifications</th>
                     <th class="pdb-th" colspan=2></th>
                     <th class="pub-th" colspan=2></th>
@@ -572,6 +599,7 @@
                     <th class="protein-th">Family</th>
                     <th class="protein-th">Class</th>
                     <th class="protein-th">Species</th>
+                    <th class="parts4-th">Method</th>
                     <th class="seq-th">Mutations</th>
                     <th class='seq-th'>Deletions</th>
                     <th class="seq-th">Modifications</th>
@@ -586,12 +614,17 @@
             <tbody>
             {% for construct in constructs %}
                     <tr id="{{ construct.pk }}">
-                    <td class="text-center"><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
+                    <td class="text-center"><input class="alt" type="checkbox" id="{{ construct.pk }}" cname="{{ construct.name|safe}}"></td>
                     <td><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
                     <td><span>{{ construct.protein.name|safe }}</span></td>
                     <td><span>{{ construct.protein.family.parent.name|safe }}</span></td>
                     <td>{{ construct.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ construct.protein.species.common_name }}</td>
+                    {% if construct.crystallization %}
+                    <td>{{ construct.crystallization.crystal_method.name}}</td>
+                    {% else %}
+                    <td colspan=1> N/A</td>
+                    {% endif %}
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.mutations }}"> {{ construct.mutations.count }}</a></td>
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.deletions }}"> {{ construct.deletions.count }}</a></td>
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.modifications }}"> {{ construct.modifications.count }}</a></td>
@@ -638,7 +671,7 @@
                             <tbody style='border-top: 1px solid #111;'>
                             {% for construct in constructs %}
                             <tr style='height: 32px' id="wt_sche_{{ construct.pk }}">
-                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
+                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}" cname="{{ construct.name|safe}}"></td>
                                     <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
                                     <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
                             </tr>       
@@ -721,7 +754,7 @@
                             <tbody style='border-top: 1px solid #111;'>
                             {% for construct in constructs %}
                             <tr style='height: 32px' id="con_sche_{{ construct.pk }}">
-                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
+                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}" cname="{{ construct.name|safe}}"></td>
                                     <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
                                     <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
                             </tr>       

@@ -27,7 +27,7 @@ class Construct(models.Model):
     purification = models.ForeignKey('Purification', null=True, on_delete=models.CASCADE)  #method description if present
     crystallization = models.ForeignKey('Crystallization', null=True, on_delete=models.CASCADE)  #method description if present
     crystal = models.ForeignKey('CrystalInfo', null=True, on_delete=models.CASCADE) #might not exist, if failed
-    structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE) #might not exist, if failed
+    structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE, related_name='construct') #might not exist, if failed
     schematics = models.BinaryField(null=True)
     snakecache = models.BinaryField(null=True)
 
@@ -43,6 +43,7 @@ class Construct(models.Model):
         # Q0SXH8 Cytochrome b(562)
         result = []
         position = None
+        linker = {'before':'','after':''}
         for insert in self.insertions.all():
             if not insert.presence=='YES':
                 continue
@@ -57,9 +58,15 @@ class Construct(models.Model):
                 # if position != None:
                 #     print("new fusion??",position,insert.position,self.name)
                 if insert.position.startswith('N-term'):
-                    position = 'nterm'
+                    if position:
+                        position += '_nterm'
+                    else:
+                        position = 'nterm'
                 else:
-                    position = 'icl3'
+                    if position:
+                        position += '_icl3'
+                    else:
+                        position = 'icl3'
             result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position,insert.start,insert.end,'',''])
         
         if position:
@@ -67,11 +74,16 @@ class Construct(models.Model):
                 if insert.presence=='YES' and insert.insert_type.name=='linker':
                     if result[0][3].split("_")[0] == insert.position.split("_")[0]:
                         if result[0][4] is None or insert.start is None or abs(result[0][4]-insert.start)<len(insert.insert_type.subtype)+5:
-                            pass
-                            # print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
+                            # pass
+                            i_relative = 'after'
+                            if int(insert.position.split("_")[-1])<int(result[0][3].split("_")[-1]):
+                                i_relative = 'before'
+                            linker[i_relative] = insert.insert_type.subtype
+                            print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
 
-
-        return position,result
+        if len(result)>1:
+            print(position,self.structure, self.protein.entry_name,result)
+        return position,result,linker
 
     def cons_schematic(self):
         cache_key = self.name + "_cons_schematic"
@@ -131,7 +143,11 @@ class Construct(models.Model):
     def schematic(self):
 
         cache_key = self.name + "_all_schematics"
-        temp = cache.get(cache_key)
+        try:
+            temp = cache.get(cache_key)
+        except:
+            temp = None
+
         if temp==None:
             temp = generate_schematic(self)
             cache.set(cache_key,temp,60*60*24*7)
