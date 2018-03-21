@@ -903,13 +903,11 @@ table.dataTable {
   **** In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.
   </div>
 
-
-</div>
-
 <div class='figure mutations'>
 
-  <br>
-  Supplementary Table StabMutAASubst. Frequencies (no. GPCRs) of mutant amino acid substitutions across all positions of the receptor sequences/structures.
+  <div class="row">
+      <div class="col-md-12">
+  Frequencies (no. GPCRs) of mutant amino acid substitutions across all positions of the receptor sequences/structures.
   <table border=1>
   <tr><th>WT / MUT</th>
   {% for aa,vals in mutation_matrix.items %}
@@ -921,19 +919,20 @@ table.dataTable {
   <tr>
   <th width=25 style="text-align: center;">{{aa}}</th>
   {% for aa,vals2 in vals.items %}
-  <td width=25 style="text-align: center;background: rgba(255,0,0,  {{vals2.0}})">{{vals2.1}}</td>
+  <td width=25 style="text-align: center;background: rgba(120,120,120,  {{vals2.0}})">{{vals2.1}}</td>
   {% endfor %}
   </tr>
   {% endfor %}
   <tr>
-  <th width=25 style="text-align: center;">MUT AA</th>
+  <th width=25 style="text-align: center;">MUT SUM</th>
   {% for aa,vals2 in mutation_matrix_sum_mut.items %}
-  <td width=25 style="text-align: center;background: rgba(255,0,0,  {{vals2.0}})">{{vals2.1}}</td>
+  <td width=25 style="text-align: center;background: rgba(120,120,120,  {{vals2.0}})">{{vals2.1}}</td>
   {% endfor %}
   </tr>
   </table>
+  </div>
+  </div>
 </div>
-
 <div class='figure old'>
   <br>
   Supplementary Table FusionSites (and loop deletion sites, typically active state structures) 

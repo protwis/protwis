@@ -27,7 +27,7 @@ class Construct(models.Model):
     purification = models.ForeignKey('Purification', null=True, on_delete=models.CASCADE)  #method description if present
     crystallization = models.ForeignKey('Crystallization', null=True, on_delete=models.CASCADE)  #method description if present
     crystal = models.ForeignKey('CrystalInfo', null=True, on_delete=models.CASCADE) #might not exist, if failed
-    structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE) #might not exist, if failed
+    structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE, related_name='construct') #might not exist, if failed
     schematics = models.BinaryField(null=True)
     snakecache = models.BinaryField(null=True)
 
