@@ -53,7 +53,12 @@
 
                 scrollY:        '80vh',
                 scrollCollapse: true,
-                paging:         false
+                paging:         false,
+                  "order": [],
+                  columnDefs: [
+                    { targets: 'no-sort', orderable: false }
+
+                  ],
             });
 
             var prev_ids = Array()
@@ -168,6 +173,28 @@
             $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
 
 
+        $('.column_toggle').change(function(evt) {
+
+            // evt.stopPropagation();
+            // evt.stopImmediatePropagation();
+            // evt.preventDefault();
+            columns = $(this).attr('data-column').split(",");
+            var checked = this.checked;
+
+            columns.forEach(function(column) {
+                var column = oTable.column( column );
+                try {
+                    column.visible( checked );
+                }
+                catch(err) {
+                    column.visible( checked );
+                }
+            });
+            // var Table = $('#constructs').dataTable();
+            // Table.fnDraw();
+            oTable.draw();
+        } );
+
 
         });
 
@@ -227,22 +254,30 @@
                 $(function () {$('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );});
               });
         };
+
+
     </script> 
 {% endblock %}
 
 {% block content %}
 <h2>Experiment Browser</h2>
-<!--         <button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button> -->
 
-<!--         <div class="dropdown btn-group">
-              <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Views
-              <span class="caret"></span></button>
-              <ul class="dropdown-menu">
-                <li><a href="#" id="show_browser">Browser</a></li>
-                <li><a href="#" id="show_wt">WT schematic</a></li>
-                <li><a href="#" id="show_construct">Construct schematic</a></li>
-              </ul>
-        </div> -->
+<div class="btn-group" data-toggle="buttons">
+  <label class="btn btn-default active">
+    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="6,7,8" checked="checked"> Expression
+  </label>
+  <label class="btn btn-default active">
+    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="9" checked="checked"> Solubilzation
+  </label>
+
+  <label class="btn btn-default active">
+    <input class="column_toggle" type="checkbox" value="Purification" data-column="10" checked="checked"> Purification
+  </label>
+
+  <label class="btn btn-default active">
+    <input class="column_toggle" type="checkbox" value="Crystallization" data-column="11,12,13,14,15,16,17" checked="checked"> Crystallization
+  </label>
+</div>
 
 <!--         <div class="dropdown btn-group">
               <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Sequence
@@ -274,41 +309,41 @@
     <br>Loading...
     </div>
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
-        <table width="100%" class="display" id="constructs">
+        <table width="100%" class="display compact" id="constructs">
             <thead>
                     <tr style='max-height: 20px'>
-                    <th class="protein-th" colspan=1></th>
-                    <th class="protein-th" colspan=5>Construct</th>
-                    <th class="parts1-th" colspan=3>Expression </th>
-                    <th class="parts2-th" colspan=1>Solubilization</th>
-                    <th class="parts3-th" colspan=1>Purification</th>
-                    <th class="parts4-th" colspan=7>Crystallization</th>
-                    <th class="pdb-th" colspan=2></th>
-                    <th class="pub-th" colspan=2></th>
+                    <th colspan=1 class='no-sort'></th>
+                    <th colspan=5>Construct</th>
+                    <th colspan=3>Expression </th>
+                    <th colspan=1>Solubilization</th>
+                    <th colspan=1>Purification</th>
+                    <th colspan=7>Crystallization</th>
+                    <th colspan=2></th>
+                    <th colspan=2></th>
                 </tr>
                 <tr>
-                    <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                    <th class="protein-th">Name</th>
-                    <th class="protein-th">Receptor</th>
-                    <th class="protein-th">Family</th>
-                    <th class="protein-th">Class</th>
-                    <th class="protein-th">Species</th>
-                    <th class="parts1-th">Method</th>
-                    <th class="parts1-th">Host cell</th>
-                    <th class="parts1-th">Host cell type</th>
-                    <th class="parts2-th">Solubilization</th>
-                    <th class="parts3-th">Purification</th>
-                    <th class="parts4-th">Method</th>
-                    <th class="parts4-th">Type</th>
-                    <th class="parts4-th">Additional</th>
-                    <th class="parts4-th">Components</th>
-                    <th class="parts4-th">pH</th>
-                    <th class="parts4-th">Temp</th>
-                    <th class="parts4-th">Ligand</th>
-                    <th class="pdb-th">PDB</th>
-                    <th class="pdb-th">Resolution</th>
-                    <th class="pub-th">Reference</th>
-                    <th class="pub-th">Date</th>
+                    <th  class='no-sort'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th >Name</th>
+                    <th >Receptor</th>
+                    <th >Family</th>
+                    <th >Class</th>
+                    <th >Species</th>
+                    <th >Method</th>
+                    <th >Host cell</th>
+                    <th >Host cell type</th>
+                    <th >Solubilization</th>
+                    <th >Purification</th>
+                    <th >Method</th>
+                    <th >Type</th>
+                    <th >Additional</th>
+                    <th >Components</th>
+                    <th >pH</th>
+                    <th >Temp</th>
+                    <th >Ligand</th>
+                    <th >PDB</th>
+                    <th >Resolution</th>
+                    <th >Reference</th>
+                    <th >Date</th>
                 </tr>
 
             </thead>
