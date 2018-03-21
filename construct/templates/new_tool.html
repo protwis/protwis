@@ -278,7 +278,7 @@
       {% endif %}
   
   </th>
-  <th rowspan="1" colspan="1" class='possiblities_icl'>
+  <th rowspan="1" colspan="3" class='possiblities_icl'>
 
         <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("fusion");inserts_overview(true);'>
           Fusion
@@ -325,13 +325,13 @@
   <th>AA</th>
 
   {% if class == 'A'  or class == 'F' %}      
-    <!-- <th rowspan="1" class='possiblities_icl'>TM5-ICL3 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>TM5-ICL3 linker (non-wt)</th>
     <th rowspan="1" class='possiblities_icl'>Fusion<!-- ICL3 modification (Fusion / Deletion / Wt) --></th>
-    <!-- <th rowspan="1" class='possiblities_icl'>ICL3-TM6 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>ICL3-TM6 linker (non-wt)</th>
   {% elif class == 'B' or class == 'C' %}      
-    <!-- <th rowspan="1" class='possiblities_icl'>TM3-ICL2 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>TM3-ICL2 linker (non-wt)</th>
     <th rowspan="1" class='possiblities_icl'>Fusion<!-- ICL2 modification (Fusion / Deletion / Wt) --></th>
-    <!-- <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th>
   {% endif %}
 
   <th>BW**</th>
@@ -3472,8 +3472,20 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           }
 
           // ignore for now
-          icl_start_linker = '';
-          icl_end_linker = '';
+          icl_start_linker = '<td></td>';
+          icl_end_linker = '<td></td>';
+
+          if (icl_end_pos && icl_start_pos && icl_end_pos<=icl_start_pos) {
+            tr_class = 'error';
+
+            // use function but add the missing residue
+            ICL_start,ICL_end,icl_start_linker,icl_end_linker = calculate_auto_linker(icl_start_pos+1,icl_end_pos-1);
+
+            icl_start_linker = "<td>"+icl_start_linker+"</td>";
+            icl_end_linker = "<td>"+icl_end_linker+"</td>";
+
+          } 
+
 
           icl_total_cols = icl_start_cols + icl_start_linker + icl_mod + icl_end_linker + icl_end_cols;
 
@@ -3548,6 +3560,46 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
     }
 
+    function calculate_auto_linker(ICL_start,ICL_end) {
+
+              console.log('Calc new linker', ICL_start, ICL_end);
+              new_cut_site = Math.round((ICL_start+ICL_end)/2);
+
+              ICL_end_new = ICL_start-1;
+              ICL_start = ICL_end+1;
+              ICL_end = ICL_end_new;
+              fusion_site_location = ICL_start;
+
+              console.log('Calc new linker', ICL_start, ICL_end);
+
+              icl_start_linker = '';
+
+              for ( var i = ICL_start; 1 > 0 ? i <= new_cut_site : i > new_cut_site; i += 1) {
+                icl_start_linker += residues_pos[i][0];
+              }
+              linker_to_add = 'G'
+              for ( var i = new_cut_site+1; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
+                icl_start_linker += linker_to_add;
+                linker_to_add = linker_to_add=='G' ? 'S' : 'G';
+              }
+
+
+              icl_end_linker = '';
+              linker_to_add = 'G'
+              for ( var i = ICL_start; 1 > 0 ? i <= new_cut_site : i > new_cut_site; i += 1) {
+                icl_end_linker += linker_to_add;
+                linker_to_add = linker_to_add=='G' ? 'S' : 'G';
+              }
+              for ( var i = new_cut_site+1; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
+                icl_end_linker += residues_pos[i][0];
+              }
+
+              console.log('LINKERS', icl_start_linker, icl_end_linker);
+          
+          return ICL_start,ICL_end,icl_start_linker,icl_end_linker;
+
+    }
+
     function generate_sequence(include,manual) {
       console.log("Start generating a sequence",include);
       // console.log(include);
@@ -3566,6 +3618,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       table_row['mutations'] = [];
 
       ICL_start = 0;
+
+      add_forced_icl_linkers = false;
         
       $.each(modifications, function(key,val) {
 
@@ -3631,11 +3685,23 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           if (ICL_start==0) return //do not color if no start selected
           // do not color / track 
           ICL_end = range[0];
+
+          if (ICL_start && ICL_end && ICL_end<ICL_start) {
+              add_forced_icl_linkers = true;
+
+              ICL_start,ICL_end,icl_start_linker,icl_end_linker = calculate_auto_linker(ICL_start,ICL_end);
+              fusion_site_location = ICL_start;
+
+          }
+
           range = new Array;
           for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
               range.push(i);
           }
+          console.log('icl range',range);
         }
+
+
 
         $.each(range, function(i, ii){
           // console.log(ii,type);
@@ -3705,10 +3771,19 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
           } else {
             // check for fusion site
-            // console.log(key);
+            console.log(key,fusion_site_location);
             if (fusion_site_location!=-1 && fusion_in_sequence) {
               if (key==fusion_site_location && fusionpos!='None') {
                   // console.log('WE ARE AT FUSION SITE!');
+
+                  if (add_forced_icl_linkers) {
+                    console.log('ADD LINKERS');
+                    // if we have forced linkers due to overlap of cut sites
+                    sequence += "[LINKER:"+icl_start_linker+"]";
+                    sequence_short += "[LINKER:"+icl_start_linker+"]";
+                    sequence_short_2 += "[LINKER:"+icl_start_linker+"]";
+                    sequence_long += icl_start_linker.toUpperCase();
+                  }
                   
                   val = fusion_in_sequence;
                   val['name'] = val['method'].replace("fusion:", "");
@@ -3720,7 +3795,27 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
                   } else {
                     sequence_long += "["+val['type']+":"+val['name']+"]";
                   }
+
+
+                  if (add_forced_icl_linkers) {
+                    // if we have forced linkers due to overlap of cut sites
+                    sequence += "[LINKER:"+icl_end_linker+"]";
+                    sequence_short += "[LINKER:"+icl_end_linker+"]";
+                    sequence_short_2 += "[LINKER:"+icl_end_linker+"]";
+                    sequence_long += icl_end_linker.toUpperCase();
+                  }
+                  
               }
+            } else if (key==fusion_site_location && add_forced_icl_linkers) {
+                    // if we have forced linkers due to overlap of cut sites
+                    sequence += "[LINKER:"+icl_start_linker+"]";
+                    sequence_short += "[LINKER:"+icl_start_linker+"]";
+                    sequence_short_2 += "[LINKER:"+icl_start_linker+"]";
+                    sequence_long += icl_start_linker.toUpperCase();
+                    sequence += "[LINKER:"+icl_end_linker+"]";
+                    sequence_short += "[LINKER:"+icl_end_linker+"]";
+                    sequence_short_2 += "[LINKER:"+icl_end_linker+"]";
+                    sequence_long += icl_end_linker.toUpperCase();
             }
 
           }
@@ -3781,8 +3876,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       return [sequence_short,sequence_long];
     }
 
-    function generate_new_path(pos1,pos2,type) {
+    function generate_new_path(pos1,pos2,type,add_forced_icl_linkers) {
           cut_pos = [pos1,pos2];
+          console.log('CHECK OVERLAP',pos1,pos2);
           // fix to first
           if (parseInt(pos1)>ICL_min[type]) pos1 = ICL_min[type];
           if (parseInt(pos2)<ICL_max[type]) pos2 = ICL_max[type];
@@ -3808,7 +3904,10 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             // None
           } else {
             // ICL
+
+
             if (fusion_in_sequence) extra_boxes += 1;
+            if (add_forced_icl_linkers) extra_boxes += 2;
             // $.each(inserts["fusion"], function(key,val) {
             //   extra_boxes += 1;
             // });
@@ -3854,6 +3953,14 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             // where_on_line = length_used_last;
             // [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
             // $("#snake").append(add_box(where[0],where[1],'E','red'));
+          if (add_forced_icl_linkers)  {
+              where_on_line = length_used_first+length_availiable*current_insert/(extra_boxes+1);
+              [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
+              color = 'black';
+              $("#snake").append(add_box(where[0],where[1],'Linker',color));
+              current_insert += 1;
+          }
+
 
           if ( (fusionpos == 'icl2' || fusionpos == 'icl3') && fusion_in_sequence ) {
             // $.each(inserts["fusion"], function(key,val) {
@@ -3867,6 +3974,14 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
               $("#snake").append(add_box(where[0],where[1],val['type'],color));
               current_insert += 1;
             });
+          }
+
+          if (add_forced_icl_linkers)  {
+              where_on_line = length_used_first+length_availiable*current_insert/(extra_boxes+1);
+              [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
+              color = 'black';
+              $("#snake").append(add_box(where[0],where[1],'Linker',color));
+              current_insert += 1;
           }
 
           path = "<path id='path_custom_"+type+"' class='"+type+" long construct_custom' d='" + points_red + "' stroke='red' stroke-dasharray='5,10,5' fill='none' stroke-width='2' />"
@@ -4311,6 +4426,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       ICL_end = 0;
       // console.log('reset done');
       fusion_in_sequence = false;
+      add_forced_icl_linkers = false;
       $.each(modifications, function(key,val) {
 
         console.log("key is " + key + " look in " + possible[possible_id]);
@@ -4343,10 +4459,6 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           if (ICL_start==0) return //do not color if no start selected
           // do not color / track 
           ICL_end = range[0];
-          range = new Array;
-          for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
-              range.push(i);
-          }
 
           if (val['method']=='ICL3_end') {
             $('#path_ICL3').addClass('svg_construct_hidden');
@@ -4366,7 +4478,22 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             icl_name = "ICL2";
           }
 
-          
+          if (ICL_start && ICL_end && ICL_end<ICL_start) {
+              add_forced_icl_linkers = true;
+              new_cut_site = Math.round((ICL_start+ICL_end)/2);
+              AA_to_add_on_N = new_cut_site-ICL_end;
+              AA_to_add_on_C = ICL_start-new_cut_site;
+              filler_amount_N = AA_to_add_on_C;
+              filler_amount_C = AA_to_add_on_N;
+
+              ICL_end = ICL_start-1;
+              ICL_start = range[0]+1;
+          }
+
+          range = new Array;
+          for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
+              range.push(i);
+          }
 
         }
 
@@ -4381,8 +4508,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       })
 
       if (ICL_start>0 && ICL_end>0) {
-        // console.log('Generate new loop');
-        generate_new_path((ICL_start-1),(ICL_end+1),icl_name);
+        console.log('Generate new loop',(ICL_start-1),(ICL_end+1),icl_name);
+        generate_new_path((ICL_start-1),(ICL_end+1),icl_name,add_forced_icl_linkers);
       }
 
       generate_term_boxes("N");

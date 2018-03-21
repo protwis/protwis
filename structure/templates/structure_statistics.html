@@ -145,7 +145,7 @@ body {
     </thead>
     <tbody>
         <tr>
-            <td>Receptors</td>
+            <td>Receptors**</td>
             <td align="center" style="vertical-align:middle !important">{{ unique_structures }}</td>
             {% for class in unique_structures_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
@@ -177,10 +177,11 @@ body {
 
 </table>
 *Active state is defined as agonist-bound and opened intracellular TM bundle.
+**Receptor-orthologues are only counted once.
 <br />
 <br />
 Specific sets of structures can be downloaded from the <a href="/structure">structure browser</a><br />
-Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
+The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong><br />
 <br />
 <br />
 <br />

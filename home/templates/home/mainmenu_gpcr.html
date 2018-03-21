@@ -344,21 +344,27 @@
         <!-- Crystal Constructs -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                Crystal Constructs<span class="caret"></span>
+                Structure Constructs<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
-                <li class="nav-header disabled text-left"><a>Constructs</a></li>
-                <!-- <li><a href="/construct/statistics">Construct statistics</a></li> -->
-                <li><a href="/construct">Schematic alignments</a></li>
-                <li><a href="/construct/experiments">Experiment browser </a></li>
-                <li><a href="/construct/mutations">Mutation browser</a></li>
-                <li><a href="/construct/stabilisation">StabMutAnalyser</a></li>
+                <li class="nav-header disabled text-left"><a>Construct & experiment design</a></li>
+                    <li><a href="/construct">Construct alignments</a></li>
+                    <li><a href="/construct/design">Construct design tool
+                            <button  mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
+                              <span class="glyphicon glyphicon-film"></span>
+                            </button>
+                    </a></li>
+                    <li><a href="/construct/experiments">Experiment browser </a></li>
                 <li class="divider"></li>
-                <li><a href="/construct/design">Construct design tool
-                        <button  mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
-                          <span class="glyphicon glyphicon-film"></span>
-                        </button>
-                </a></li>
+                <li class="nav-header disabled text-left"><a>Truncation & fusion analysis</a></li>
+                <li><a href="/construct/statistics#truncations">Truncation sites</a></li>
+                <li><a href="/construct/statistics#fusions">Fusion sites</a></li>
+                <li><a href="/construct/statistics#loopdeletions">Loop deletions</a></li>
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Mutation analysis</a></li>
+                <li><a href="/construct/mutations">Mutation browser</a></li>
+                    <li><a href="/construct/stabilisation">StabMutAnalyser</a></li>
+                <li><a href="/construct/statistics#mutations">Mutation substitution matrix</a></li>
             </ul>
         </li>
 
