@@ -115,6 +115,21 @@
 
     });
 
+    $(window).on('hashchange', function() {
+        var hash = window.location.hash.substring(1); //Puts hash in variable, and removes the # character
+        $(".figure").hide();
+        $(".sub_figures").hide();
+        $("."+hash).show();
+        console.log($("."+hash).closest('.sub_figures'));
+        $("."+hash).find('.sub_figures').first().show();
+        $("."+hash+" label").removeClass('active');
+        $("."+hash).find('label').first().addClass('active');
+        $("input[name=display_sub_type]").change(function () {
+          $(".sub_figures").hide();
+          $("."+hash).show();
+        });
+    });
+
      if(window.location.hash) {
         var hash = window.location.hash.substring(1); //Puts hash in variable, and removes the # character
         $(".figure").hide();
@@ -129,9 +144,7 @@
           $("."+hash).show();
         });
 
-      } else {
-          // No hash found
-      }
+      } 
 
 </script>
 {% endblock %}
