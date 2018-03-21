@@ -5,11 +5,12 @@ from construct import views
 
 
 urlpatterns = [
-    url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
-    # url(r'^$', cache_page(3600*24)(views.ConstructBrowser.as_view()), name='browse'),
+    # url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
+    url(r'^$', cache_page(3600*24)(views.ConstructBrowser.as_view()), name='browse'),
     # url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache version
     url(r'^experiments[/]?$', cache_page(3600*24)(views.ExperimentBrowser.as_view()), name='browse'), #cache
-    url(r'^statistics[/]?$', views.ConstructStatistics.as_view(), name='statistics'),
+    #url(r'^statistics[/]?$', views.ConstructStatistics.as_view(), name='statistics'),
+    url(r'^statistics[/]?$', cache_page(3600*24)(views.ConstructStatistics.as_view()), name='statistics'),
     url(r'^mutations[/]?$', views.ConstructMutations.as_view(), name='mutations'),
     url(r'^residuetable[/]?$', views.ConstructTable.as_view(), name='residuetable'),
     url(r'^auto_webform/(?P<slug>[-\w]+)/$', views.fetch_pdb_for_webform, name='fetch'),
