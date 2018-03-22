@@ -4,6 +4,7 @@ A set of utility functions for alignment processing.
 import re
 from collections import OrderedDict
 from common import definitions
+from protein.models import Protein
 
 
 def strip_html_tags(text):
@@ -158,3 +159,35 @@ def get_format_props(freq=None, res=None):
             return properties[int(freq)]
     elif res:
         return residue[res]
+
+def get_proteins_from_selection(simple_selection):
+
+    proteins = []
+
+    # flatten the selection into individual proteins
+    for target in simple_selection.targets:
+        if target.type == 'protein':
+            proteins.append(target.item)
+        elif target.type == 'family':
+            # species filter
+            species_list = []
+            for species in simple_selection.species:
+                species_list.append(species.item)
+
+            # annotation filter
+            protein_source_list = []
+            for protein_source in simple_selection.annotation:
+                protein_source_list.append(protein_source.item)
+            
+            if species_list:
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                    species__in=(species_list), source__in=(protein_source_list)).select_related(
+                    'residue_numbering_scheme', 'species')
+            else:
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+
+            for fp in family_proteins:
+                proteins.append(fp)
+
+    return proteins
