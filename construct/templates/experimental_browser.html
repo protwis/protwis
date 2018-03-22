@@ -4,7 +4,7 @@
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
     <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
@@ -30,15 +30,50 @@
                 width: 1770px;
             }
         }
+
+        table.dataTable.compact thead th.over_header {
+            border-right: 1px solid;
+            border-left: 0px solid;
+            text-align: center;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead tr.over_header th {
+            border-bottom: 1px solid #ccc;
+        }
+
+        table.dataTable.compact thead th.leftborder {
+            border-left: 1px solid;
+        }
+
+        table.dataTable.compact thead th.rightborder {
+            border-right: 1px solid;
+        }
+
+        table.dataTable.compact thead th.checkbox_tr {
+            text-align: left;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead th {
+            padding: 4px 16px 4px 2px;
+        }
+        .yadcf-filter-wrapper {
+            margin-top: 0px;
+        }
+        input.yadcf-filter  {
+            width: 100px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
     </style>
 {% endblock %}
 
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
     <script src="{% static 'home/js/select2.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> 
 
 
     <script type="text/javascript" charset="utf-8">
@@ -47,18 +82,18 @@
 
             // var oTable;
             var oTable = $('#constructs').DataTable({
-                'scrollX': true,
-                // 'paging': true,
-                // 'autoWidth': true,
-
-                scrollY:        '80vh',
+                scrollY:        "80vh",
+                scrollX:        true,
                 scrollCollapse: true,
                 paging:         false,
-                  "order": [],
+                "order": [],
                   columnDefs: [
                     { targets: 'no-sort', orderable: false }
 
                   ],
+                // fixedColumns:   {
+                //     leftColumns: 4,
+                // }
             });
 
             var prev_ids = Array()
@@ -78,32 +113,174 @@
                         select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
-                        filter_default_label: "Receptor",
-                        filter_container_id: "external_filter_container1"
-                    }, 
+                        filter_default_label: "Gene",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '60px',
+                        }
+                    },
                     {
-                        column_number: 3,
+                        column_number : 3,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
-                        filter_default_label: "Family",
-                        filter_container_id: "external_filter_container2"
-                    },
+                        filter_default_label: "Receptor",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    }, 
                     {
                         column_number: 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Res. family",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number: 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
                         filter_default_label: "Class",
-                        filter_container_id: "external_filter_container3"
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
                     }, 
                     {
-                        column_number : 5,
+                        column_number : 6,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Species",
-                        filter_container_id: "external_filter_container4"
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    }, 
+                    {
+                        column_number : 7,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Method",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
                     },
+                    {
+                        column_number : 8,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Host cell",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 9,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Host cell type",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 10,
+                        filter_type: "text",
+                        select_type: 'select2',
+                        filter_default_label: "Solubilization",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
+                    },
+                    {
+                        column_number : 11,
+                        filter_type: "text",
+                        select_type: 'select2',
+                        filter_default_label: "Purification",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
+                    },
+                    {
+                        column_number : 12,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Method",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 13,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Type",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 14,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Additional",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 15,
+                        filter_type: "text",
+                        select_type: 'select2',
+                        filter_default_label: "Components",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
+                    },
+                    // {
+                    //     column_number : 16,
+                    //     filter_type: "range_number",
+                    //     filter_default_label: "Ph",
+                    //     filter_reset_button_text: false,
+                    // },
+                    // {
+                    //     column_number : 17,
+                    //     filter_type: "range_number",
+                    //     filter_default_label: "Temp",
+                    //     filter_reset_button_text: false,
+                    // },
+                    {
+                        column_number : 18,
+                        filter_type: "text",
+                        select_type: 'select2',
+                        filter_default_label: "Ligand",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
+                    },
+                    // {
+                    //     column_number : 19,
+                    //     filter_type: "range_number_slider",
+                    // },
                 ],
                 {
                     cumulative_filtering: false
@@ -174,14 +351,15 @@
 
 
         $('.column_toggle').change(function(evt) {
-
+            console.log('start toggle');
             // evt.stopPropagation();
             // evt.stopImmediatePropagation();
             // evt.preventDefault();
             columns = $(this).attr('data-column').split(",");
             var checked = this.checked;
-
+            var checked = (this.checked ? false : true);
             columns.forEach(function(column) {
+                // console.log('hiding column');
                 var column = oTable.column( column );
                 try {
                     column.visible( checked );
@@ -192,7 +370,9 @@
             });
             // var Table = $('#constructs').dataTable();
             // Table.fnDraw();
+            console.log('done toggle');
             oTable.draw();
+            console.log('done draw');
         } );
 
 
@@ -262,38 +442,6 @@
 {% block content %}
 <h2>Experiment Browser</h2>
 
-<div class="btn-group" data-toggle="buttons">
-  <label class="btn btn-default active">
-    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="6,7,8" checked="checked"> Expression
-  </label>
-  <label class="btn btn-default active">
-    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="9" checked="checked"> Solubilzation
-  </label>
-
-  <label class="btn btn-default active">
-    <input class="column_toggle" type="checkbox" value="Purification" data-column="10" checked="checked"> Purification
-  </label>
-
-  <label class="btn btn-default active">
-    <input class="column_toggle" type="checkbox" value="Crystallization" data-column="11,12,13,14,15,16,17" checked="checked"> Crystallization
-  </label>
-</div>
-
-<!--         <div class="dropdown btn-group">
-              <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Sequence
-              <span class="caret"></span></button>
-              <ul class="dropdown-menu">
-                <li><a href="#" id="align">Align selected</a></li>
-              </ul>
-        </div> -->
-    <div id='filters'>
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container3"></span></div>
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container2"></span></div>
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container1"></span></div>
-<!--     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container0"></span></div> -->
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div>
-<!--     <div style='width: 140px;display: inline-block;'><span id="external_filter_container5"></span></div> -->
-    <button id='apply_filter' class="btn btn-default btn-xs">Apply Filter</button>
         <div class="dropdown btn-group">
           <button class="btn btn-default dropdown-toggle btn-xs" type="button" data-toggle="dropdown">Selection options
           <span class="caret"></span></button>
@@ -303,44 +451,63 @@
             <li><a href="#" id="remove_non_sel">Remove Non-selected</a></li>
           </ul>
     </div>
-    </div>
+    Show/hide columns:
+<div class="btn-group" data-toggle="buttons">
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="6,7,8" checked="checked"> Expression
+  </label>
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="9" checked="checked"> SolubilIzation
+  </label>
+
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Purification" data-column="10" checked="checked"> Purification
+  </label>
+
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Crystallization" data-column="11,12,13,14,15,16,17" checked="checked"> Structure determination
+  </label>
+</div>
+<br><br>
 
     <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
     <br>Loading...
     </div>
+</div>
+<div>
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
         <table width="100%" class="display compact" id="constructs">
             <thead>
-                    <tr style='max-height: 20px'>
+                    <tr class='over_header' style='max-height: 20px'>
                     <th colspan=1 class='no-sort'></th>
-                    <th colspan=5>Construct</th>
-                    <th colspan=3>Expression </th>
-                    <th colspan=1>Solubilization</th>
-                    <th colspan=1>Purification</th>
-                    <th colspan=7>Crystallization</th>
+                    <th colspan=6 class="over_header">RECEPTOR</th>
+                    <th colspan=3 class="over_header">EXPRESSION </th>
+                    <th colspan=1 class="over_header">SOLUBILIZATION</th>
+                    <th colspan=1 class="over_header">PURIFICATION</th>
+                    <th colspan=7 class="over_header">STRUCTURE DETERMINATION</th>
                     <th colspan=2></th>
                     <th colspan=2></th>
                 </tr>
                 <tr>
-                    <th  class='no-sort'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                    <th >Name</th>
-                    <th >Receptor</th>
-                    <th >Family</th>
-                    <th >Class</th>
-                    <th >Species</th>
-                    <th >Method</th>
-                    <th >Host cell</th>
-                    <th >Host cell type</th>
-                    <th >Solubilization</th>
-                    <th >Purification</th>
-                    <th >Method</th>
-                    <th >Type</th>
-                    <th >Additional</th>
-                    <th >Components</th>
+                    <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th >PDB</th>
+                    <th ></th>
+                    <th ></th>
+                    <th ></th>
+                    <th ></th>
+                    <th  class='rightborder'></th>
+                    <th></th>
+                    <th ></th>
+                    <th  class='rightborder'></th>
+                    <th  class='rightborder'></th>
+                    <th  class='rightborder'></th>
+                    <th ></th>
+                    <th ></th>
+                    <th ></th>
+                    <th ></th>
                     <th >pH</th>
                     <th >Temp</th>
-                    <th >Ligand</th>
-                    <th >PDB</th>
+                    <th  class='rightborder'></th>
                     <th >Resolution</th>
                     <th >Reference</th>
                     <th >Date</th>
@@ -352,9 +519,10 @@
                     <tr id="{{ construct.pk }}">
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
                     <td><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
-                    <td><span>{{ construct.protein.name|safe }}</span></td>
-                    <td><span>{{ construct.protein.family.parent.name|safe }}</span></td>
-                    <td>{{ construct.protein.family.parent.parent.parent.name }}</td>
+                    <td><span>{{ construct.protein.entry_short|safe }}</span></td>
+                    <td><span>{{ construct.protein.short|safe }}</span></td>
+                    <td><span>{{ construct.protein.family.parent.short|safe }}</span></td>
+                    <td>{{ construct.protein.family.parent.parent.parent.short }}</td>
                     <td>{{ construct.protein.species.common_name }}</td>
 
                         {% if construct.expression %}
@@ -415,14 +583,19 @@
 
                     <td>
                         {% if construct.crystallization %}
-                             {% for l in construct.crystallization.ligands.all %}{{ l.ligand}}{% endfor %}
+                             {% for l in construct.crystallization.ligands.all %}
+
+                                {% if l.ligand.name|length < 40 %}
+                                    {{ l.ligand.name}}
+                                {% else %}
+                                    {{ l.ligand.name|slice:"0:40"}}..
+                                {% endif %}
+
+                             {% endfor %}
                         {% else %}
                             N/A
                         {% endif %}
                     </td>
-
-                    <td class="text-center"><a href="{{ construct.crystal.pdb_code}}">{{ construct.crystal.pdb_code}}
-                    </a></td>
                     <td class="text-center">{{ construct.crystal.resolution|floatformat:"1" }}</td>
                     <!-- 
                     <td>{{ construct.contributor.pi_name|safe }}</td>
