@@ -2,17 +2,24 @@
 A module for generating sequence signatures for the given two sets of proteins.
 """
 from django.conf import settings
+from django.core import exceptions
 
-from alignment.functions import *
-Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+from alignment.functions import strip_html_tags, get_format_props
+Alignment = getattr(__import__(
+    'common.alignment_' + settings.SITE_NAME,
+    fromlist=['Alignment']
+    ), 'Alignment')
 
-from common.definitions import AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES
+from protein.models import Protein, ProteinConformation
+from residue.models import Residue
 
 
 from collections import OrderedDict
 from copy import deepcopy
 import numpy as np
 import re
+import time
 
 class SequenceSignature:
     """
@@ -32,6 +39,97 @@ class SequenceSignature:
         self.freq_cutoff = 30
         self.common_gn = OrderedDict()
 
+    def setup_alignments(self, segments, protein_set_positive = None, protein_set_negative = None):
+
+        if protein_set_positive:
+            self.aln_pos.load_proteins(protein_set_positive)
+        if protein_set_negative:
+            self.aln_neg.load_proteins(protein_set_negative)
+
+        # In case positive and negative sets come from different classes
+        # unify the numbering schemes
+        self.common_schemes = self.merge_numbering_schemes()
+        self.aln_pos.numbering_schemes = self.common_schemes
+        self.aln_neg.numbering_schemes = self.common_schemes
+        # now load the segments and generic numbers
+        self.aln_pos.load_segments(segments)
+        self.aln_neg.load_segments(segments)
+
+        self.aln_pos.build_alignment()
+        self.aln_neg.build_alignment()
+
+        self.common_gn = deepcopy(self.aln_pos.generic_numbers)
+        for scheme in self.aln_neg.numbering_schemes:
+            for segment in self.aln_neg.segments:
+                for pos in self.aln_neg.generic_numbers[scheme[0]][segment].items():
+                    if pos[0] not in self.common_gn[scheme[0]][segment].keys():
+                        self.common_gn[scheme[0]][segment][pos[0]] = pos[1]
+                self.common_gn[scheme[0]][segment] = OrderedDict(sorted(
+                    self.common_gn[scheme[0]][segment].items(),
+                    key=lambda x: x[0].split('x')
+                    ))
+        self.common_segments = dict([
+            (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
+        ])
+        # tweaking alignment
+        self._update_alignment(self.aln_pos)
+        self.aln_pos.calculate_statistics()
+        # tweaking consensus seq
+        self._update_consensus_sequence(self.aln_pos)
+
+        # tweaking negative alignment
+        self._update_alignment(self.aln_neg)
+        self.aln_neg.calculate_statistics()
+        # tweaking consensus seq
+        self._update_consensus_sequence(self.aln_neg)
+
+    def _update_alignment(self, alignment):
+
+        for prot in alignment.proteins:
+            for seg, resi in prot.alignment.items():
+                consensus = []
+                aln_list = [x[0] for x in resi]
+                aln_dict = dict([
+                    (x[0], x) for x in resi
+                ])
+                for pos in self.common_segments[seg]:
+                    if pos not in aln_list:
+                        consensus.append([pos, False, '-', 0])
+                    else:
+                        consensus.append(aln_dict[pos])
+                prot.alignment[seg] = consensus
+
+    def _update_consensus_sequence(self, alignment):
+
+        for seg, resi in alignment.consensus.items():
+            consensus = OrderedDict()
+            aln_list = [x for x in resi.keys()]
+            aln_dict = dict([
+                (x, resi[x]) for x in resi.keys()
+            ])
+            for pos in self.common_segments[seg]:
+                if pos not in aln_list:
+                    consensus[pos] = ['_', 0, 100]
+                else:
+                    consensus[pos] = aln_dict[pos]
+            alignment.consensus[seg] = consensus
+
+    def _convert_feature_stats(self, fstats, aln):
+
+        tmp_fstats = []
+        for row in range(len(AMINO_ACID_GROUPS.keys())):
+            tmp_row = []
+            print(aln.feature_stats[row])
+            for segment in self.common_segments:
+                print(fstats[segment][row])
+                tmp_row.append([[
+                    str(x),
+                    str(int(x/10)),
+                ] for x in fstats[segment][row]])
+            print(tmp_row)
+            tmp_fstats.append(tmp_row)
+        aln.feature_stats = tmp_fstats
+
     def setup_alignments_from_selection(self, positive_selection, negative_selection):
         """
         The function gathers necessary information from provided selections
@@ -46,30 +144,14 @@ class SequenceSignature:
         self.aln_pos.load_proteins_from_selection(positive_selection)
         self.aln_neg.load_proteins_from_selection(negative_selection)
 
-        # In case positive and negative sets come from different classes
-        # unify the numbering schemes
-        self.common_schemes = self.merge_numbering_schemes()
-        self.aln_pos.numbering_schemes = self.common_schemes
-        self.aln_neg.numbering_schemes = self.common_schemes
-        # now load the segments and generic numbers
-        self.aln_pos.load_segments_from_selection(negative_selection)
-        self.aln_neg.load_segments_from_selection(negative_selection)
+        # local segment list
+        segments = []
 
-        self.aln_pos.build_alignment()
-        self.aln_pos.calculate_statistics()
-        self.aln_neg.build_alignment()
-        self.aln_neg.calculate_statistics()
+        # read selection
+        for segment in negative_selection.segments:
+            segments.append(segment)
 
-        self.common_gn = deepcopy(self.aln_pos.generic_numbers)
-        for scheme in self.aln_neg.numbering_schemes:
-            for segment in self.aln_neg.segments:
-                for pos in self.aln_neg.generic_numbers[scheme[0]][segment].items():
-                    if pos[0] not in self.common_gn[scheme[0]][segment].keys():
-                        self.common_gn[scheme[0]][segment][pos[0]] = pos[1]
-                self.common_gn[scheme[0]][segment] = OrderedDict(sorted(
-                    self.common_gn[scheme[0]][segment].items(),
-                    key=lambda x: x[0].split('x')
-                    ))
+        self.setup_alignments(segments)
 
     def calculate_signature(self):
         """
@@ -91,16 +173,24 @@ class SequenceSignature:
             for idx, res in enumerate(self.common_gn[self.common_schemes[0][0]][segment].keys()):
                 if res not in self.aln_pos.generic_numbers[self.common_schemes[0][0]][segment].keys():
                     self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, 0, axis=1)
+                    # Set 100% occurence for a gap feature
+                    self.features_normalized_pos[segment][-1, idx] = 100
                 elif res not in self.aln_neg.generic_numbers[self.common_schemes[0][0]][segment].keys():
                     self.features_normalized_neg[segment] = np.insert(self.features_normalized_neg[segment], idx, 0, axis=1)
+                    # Set 100% occurence for a gap feature
+                    self.features_normalized_neg[segment][-1, idx] = 100
 
             # now the difference
             self.features_frequency_difference[segment] = np.subtract(
                 self.features_normalized_pos[segment],
                 self.features_normalized_neg[segment]
                 )
+
+        self._convert_feature_stats(self.features_normalized_pos, self.aln_pos)
+        self._convert_feature_stats(self.features_normalized_neg, self.aln_neg)
+
         # Version with display data
-        for row, feat in enumerate(AMINO_ACID_GROUPS.keys()):
+        for row in range(len(AMINO_ACID_GROUPS.keys())):
             tmp_row = []
             for segment in self.aln_neg.segments:
                 #first item is the real value,
@@ -160,6 +250,8 @@ class SequenceSignature:
                     features_neg[segment][pos][col],
                     int(features_neg[segment][pos][col]/20)+5
                 ])
+        self._convert_feature_stats(self.features_normalized_pos, self.aln_pos)
+        self._convert_feature_stats(self.features_normalized_neg, self.aln_neg)
 
     def prepare_display_data(self):
 
@@ -169,7 +261,7 @@ class SequenceSignature:
             'num_residue_columns_pos': len(self.aln_pos.positions),
             'num_of_sequences_neg': len(self.aln_neg.proteins),
             'num_residue_columns_neg': len(self.aln_neg.positions),
-            'common_segments': self.aln_neg.segments,
+            'common_segments': self.common_segments,
             'common_generic_numbers': self.common_gn,
             'feats_signature': self.features_frequency_diff_display,
             'signature_consensus': self.signature,
@@ -179,6 +271,16 @@ class SequenceSignature:
             'a_neg': self.aln_neg,
         }
         return options
+
+    def prepare_session_data(self):
+
+        session_signature = {
+            'common_positions': self.common_gn,
+            'diff_matrix': self.features_frequency_difference,
+            'numbering_schemes': self.common_schemes,
+            'segments': self.aln_neg.segments
+        }
+        return session_signature
 
     def merge_numbering_schemes(self):
         """
@@ -371,3 +473,197 @@ class SequenceSignature:
                     )
 
                 col_offset += len(sequence.items())
+
+
+class SignatureMatch():
+
+    def __init__(self, common_positions, numbering_schemes, segments, difference_matrix, protein_set, cutoff=40):
+
+        self.cutoff = cutoff
+        self.common_gn = common_positions
+        self.schemes = numbering_schemes
+        self.segments = segments
+        self.diff_matrix = difference_matrix
+        self.signature_filtered = OrderedDict()
+        self.protein_set = protein_set
+        self.relevant_gn = OrderedDict([(x[0], OrderedDict()) for x in self.schemes])
+        self.relevant_segments = []
+
+        self.find_relevant_gns()
+
+        self.residue_to_feat = dict(
+            [(x, set()) for x in AMINO_ACIDS.keys()]
+            )
+        for fidx, feat in enumerate(AMINO_ACID_GROUPS.items()):
+            for res in feat[1].split(','):
+                self.residue_to_feat[res].add(fidx)
+
+
+    def find_relevant_gns(self):
+
+        signature_consensus = OrderedDict()
+        for segment in self.segments:
+            segment_consensus = []
+            signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
+            for col, pos in enumerate(list(signature_map)):
+                if self.diff_matrix[segment][pos][col] > self.cutoff:
+                    segment_consensus.append(self.diff_matrix[segment][ : , col])
+                    for scheme in self.schemes:
+                        gnum = list(self.common_gn[scheme[0]][segment].items())[col]
+                        try:
+                            self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
+                        except:
+                            self.relevant_gn[scheme[0]][segment] = OrderedDict()
+                            self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
+
+            segment_consensus = np.array(segment_consensus).T
+            if segment_consensus != []:
+                signature_consensus[segment] = segment_consensus
+        self.signature_filtered = signature_consensus
+        self.relevant_segments = signature_consensus.keys()
+
+
+    def score_protein_class(self, pclass_slug='001'):
+
+        a = time.time()
+        protein_scores = {}
+        class_proteins = Protein.objects.filter(
+            species__common_name='Human',
+            family__slug__startswith=pclass_slug
+            ).exclude(
+                id__in=[x.id for x in self.protein_set]
+                )
+        class_a_pcf = ProteinConformation.objects.order_by('protein__family__slug',
+            'protein__entry_name').filter(protein__in=class_proteins, protein__sequence_type__slug='wt').exclude(protein__entry_name__endswith='-consensus')
+        for pcf in class_a_pcf:
+            start = time.time()
+            protein_scores[pcf] = self.score_protein(pcf)
+            end = time.time()
+            print("Time elapsed for {}: ".format(pcf.protein.entry_name), end - start)
+        b = time.time()
+        print("Total time: ", b - a)
+        return sorted(protein_scores.items(), key=lambda x: x[1], reverse=True)
+
+
+    def score_protein(self, pcf):
+
+        prot_score = 0.0
+        for segment in self.relevant_segments:
+            resi = Residue.objects.filter(
+                protein_segment__slug=segment,
+                protein_conformation=pcf,
+                generic_number__label__in=self.relevant_gn[self.schemes[0][0]][segment].keys(),
+                )
+            for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
+                dslice = self.diff_matrix[segment][ : , idx]
+                try:
+                    res = resi.get(generic_number__label=pos).amino_acid
+                    n = set(dslice.nonzero)
+                    p = self.residue_to_feat[res]
+                    prot_score += np.sum(dslice[p & n])
+                    prot_score -= np.sum(dslice[n - p])
+                except Exception as e:
+                    prot_score -= np.sum(dslice)
+        return prot_score/100
+
+    def prepare_session_data(self):
+        session_signature = {
+            'common_positions': self.common_gn,
+            'diff_matrix': self.diff_matrix,
+            'numbering_schemes': self.schemes,
+            'segments': self.segments,
+            'relevant_gn': self.relevant_gn,
+            'relevant_segments': self.relevant_segments,
+            'signature_filtered': self.signature_filtered,
+        }
+        return session_signature
+
+class ScoreBreakdown():
+
+    def __init__(self, pcf, cutoff, **kwargs):
+
+        self.pcf = pcf
+        self.cutoff = cutoff
+        self.common_gn = kwargs['common_positions']
+        self.schemes = kwargs['numbering_schemes']
+        self.segments = kwargs['segments']
+        self.diff_matrix = kwargs['diff_matrix']
+        self.relevant_gn = kwargs['relevant_gn']
+        self.relevant_segments = kwargs['relevant_segments']
+        self.score_breakdown = kwargs['signature_filtered']
+        # self.score_breakdown = OrderedDict()
+        # self.relevant_gn = OrderedDict([(x[0], OrderedDict()) for x in self.schemes])
+
+    def find_relevant_gns(self):
+
+        signature_consensus = OrderedDict()
+        for segment in self.segments:
+            segment_consensus = []
+            signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
+            for col, pos in enumerate(list(signature_map)):
+                if self.diff_matrix[segment][pos][col] > self.cutoff:
+                    segment_consensus.append(self.diff_matrix[segment][ : , col])
+                    for scheme in self.schemes:
+                        gnum = list(self.common_gn[scheme[0]][segment].items())[col]
+                        try:
+                            self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
+                        except:
+                            self.relevant_gn[scheme[0]][segment] = OrderedDict()
+                            self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
+
+            segment_consensus = np.array(segment_consensus).T
+            if segment_consensus != []:
+                signature_consensus[segment] = segment_consensus
+        self.score_breakdown = signature_consensus
+
+    def prepare_display_data(self):
+
+        display_score_breakdown = []
+        for fidx, feat in enumerate(AMINO_ACID_GROUPS.items()):
+            display_score_breakdown.append([])
+            for segment in self.score_breakdown.keys():
+                tmp = []
+                rs = Residue.objects.filter(
+                    protein_segment__slug=segment,
+                    protein_conformation__id = self.pcf
+                    )
+                for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
+                    try:
+                        res = rs.get(generic_number__label=pos)
+                    except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
+                        res = None
+                    val = self.score_breakdown[segment][fidx][idx]
+                    if not res:
+                        tmp.append([-val, "red"] if val != 0 else [val, "white"])
+                        continue
+                    if res.amino_acid in feat[1]:
+                        if val != 0:
+                            tmp.append([val, "green"])
+                        else:
+                            tmp.append([val, "white"])
+                    else:
+                        if val != 0:
+                            tmp.append([-val, "red"])
+                        else:
+
+                            tmp.append([val, "white"])
+                display_score_breakdown[fidx].append(tmp)
+        signature_consensus = OrderedDict([
+            (x,
+            np.sum(
+                self.score_breakdown[x],
+                axis=0)/100
+            ) for x in self.score_breakdown.keys()
+            ])
+        display_data = {
+            'common_numbering_schemes': self.schemes,
+            'common_generic_numbers': self.relevant_gn,
+            'common_segments': self.score_breakdown.keys(),
+            'feats_signature': display_score_breakdown,
+            'signature_consensus': signature_consensus,
+
+            'num_residue_columns': OrderedDict(
+                [(x, len(signature_consensus[x])) for x in self.score_breakdown.keys()]
+                )
+        }
+        return display_data

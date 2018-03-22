@@ -1,4 +1,4 @@
-<table>
+{% comment %} <table> {% endcomment %}
 <!-- SEQUENCE ALIGNMENT 2 (NAGATIVE) -->
 
 
@@ -16,14 +16,14 @@
 
         <!-- segment title line -->
         <tr>
-            {% for s, num in a_neg.segments.items %}
+            {% for s, num in common_segments.items %}
                 <td class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
                 <td class="ali-td">&nbsp;</td>
             {% endfor %}
         </tr>
 
         <!-- generic number lines -->
-        {% for ns, segments in a_neg.generic_numbers.items %}
+        {% for ns, segments in common_generic_numbers.items %}
             <tr>
                 {% for s, num in segments.items %}
                     {% for n, dn in num.items %}
@@ -83,7 +83,7 @@
             {% endfor %}
         </tr>
         <!-- generic number lines -->
-        {% for ns, segments in a_neg.generic_numbers.items %}
+        {% for ns, segments in common_generic_numbers.items %}
                 <tr>
                     {% for s, num in segments.items %}
                         {% for n, dn in num.items %}
@@ -105,7 +105,7 @@
     <tbody class='collapse' id='aln-neg-main'>
 
         <!-- generic number lines -->
-        {% for ns, segments in a_neg.generic_numbers.items %}
+        {% for ns, segments in common_generic_numbers.items %}
         <tr>
             {% for s, num in segments.items %}
                 {% for n, dn in num.items %}
@@ -158,14 +158,14 @@
 
             <!-- segment title line -->
             <tr>
-                {% for s, num in a_neg.segments.items %}
+                {% for s, num in common_segments.items %}
                 <td class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
                 <td class="ali-td">&nbsp;</td>
                 {% endfor %}
             </tr>
 
             <!-- generic number lines -->
-            {% for ns, segments in a_neg.generic_numbers.items %}
+            {% for ns, segments in common_generic_numbers.items %}
                 <tr>
                     {% for s, num in segments.items %}
                         {% for n, dn in num.items %}

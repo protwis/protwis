@@ -16,7 +16,7 @@ from common.selection import Selection
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.sequence_signature import SequenceSignature
+from common.sequence_signature import SequenceSignature, SignatureMatch, ScoreBreakdown
 from structure.functions import BlastSearch
 
 # from common.alignment_SITE_NAME import Alignment
@@ -470,7 +470,7 @@ def render_csv_alignment(request):
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
     return response
 
-def render_reordered (request, group):
+def render_reordered(request, group):
 
     #grab the selections from session data
     #targets set #1
@@ -493,7 +493,7 @@ def render_reordered (request, group):
         'num_residue_columns': len(aln.positions) + len(aln.segments)
         })
 
-def render_signature (request):
+def render_signature(request):
 
     # grab the selections from session data
 
@@ -511,12 +511,17 @@ def render_signature (request):
 
     # save for later
     # signature_map = feats_delta.argmax(axis=0)
+    request.session['signature'] = signature.prepare_session_data()
 
-    return_html = render(request, 'sequence_signature/sequence_signature.html', signature.prepare_display_data())
+    return_html = render(
+        request,
+        'sequence_signature/sequence_signature.html',
+        signature.prepare_display_data()
+        )
 
     return return_html
 
-def render_signature_excel (request):
+def render_signature_excel(request):
 
     # version #2 - 5 sheets with separate pieces of signature outline
 
@@ -581,3 +586,44 @@ def render_signature_excel (request):
     response['Content-Disposition'] = "attachment; filename=sequence_signature.xlsx"
 
     return response
+
+def render_signature_match_scores(request, cutoff=40):
+
+    signature_data = request.session.get('signature')
+
+    # targets set #1
+    ss_pos = request.session.get('targets_pos', False)
+    # targets set #2
+    ss_neg = request.session.get('selection', False)
+
+    signature_match = SignatureMatch(
+        signature_data['common_positions'],
+        signature_data['numbering_schemes'],
+        signature_data['segments'],
+        signature_data['diff_matrix'],
+        functions.get_proteins_from_selection(ss_pos) + functions.get_proteins_from_selection(ss_neg)
+    )
+    scores = signature_match.score_protein_class()
+    request.session['signature'] = signature_match.prepare_session_data()
+    # scores = functions.score_class_a(
+
+    #     functions.get_proteins_from_selection(ss_pos) + functions.get_proteins_from_selection(ss_neg)
+    #     )
+
+    response = render(request, 'sequence_signature/signature_match.html', {'scores': scores})
+    return response
+
+def score_breakdown(request):
+
+    pcf = request.GET['protein_conformation']
+    cutoff = request.GET['cutoff']
+    signature_data = request.session.get('signature')
+
+    score_breakdown = ScoreBreakdown(pcf, int(cutoff), **signature_data)
+    #score_breakdown.find_relevant_gns()
+
+    return render(
+        request,
+        'sequence_signature/signature_match_breakdown.html',
+        score_breakdown.prepare_display_data()
+        )
