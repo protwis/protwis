@@ -1,4 +1,4 @@
-<table>
+{% comment %} <table> {% endcomment %}
 <!-- SEQUENCE ALIGNMENT 1 (POSITIVE) -->
 
     <!-- Subheader -->
@@ -15,14 +15,14 @@
 
         <!-- segment title line -->
         <tr>
-            {% for s, num in a_pos.segments.items %}
+            {% for s, num in common_segments.items %}
                 <td class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
                 <td class="ali-td">&nbsp;</td>
             {% endfor %}
         </tr>
 
         <!-- generic number lines -->
-        {% for ns, segments in a_pos.generic_numbers.items %}
+        {% for ns, segments in common_generic_numbers.items %}
         <tr>
             {% for s, num in segments.items %}
                 {% for n, dn in num.items %}
@@ -82,7 +82,7 @@
             {% endfor %}
         </tr>
         <!-- generic number lines -->
-        {% for ns, segments in a_pos.generic_numbers.items %}
+        {% for ns, segments in common_generic_numbers.items %}
             <tr>
                 {% for s, num in segments.items %}
                     {% for n, dn in num.items %}
@@ -104,7 +104,7 @@
     <tbody class='collapse' id='aln-main'>
 
         <!-- generic number lines -->
-        {% for ns, segments in a_pos.generic_numbers.items %}
+        {% for ns, segments in common_generic_numbers.items %}
             <tr>
                 {% for s, num in segments.items %}
                     {% for n, dn in num.items %}
@@ -157,14 +157,14 @@
 
             <!-- segment title line -->
             <tr>
-                {% for s, num in a_pos.segments.items %}
+                {% for s, num in common_segments.items %}
                 <td class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
                 <td class="ali-td">&nbsp;</td>
                 {% endfor %}
             </tr>
 
             <!-- generic number lines -->
-            {% for ns, segments in a_pos.generic_numbers.items %}
+            {% for ns, segments in common_generic_numbers.items %}
                 <tr>
                     {% for s, num in segments.items %}
                         {% for n, dn in num.items %}
@@ -205,4 +205,4 @@
         {% endif %}
     </tbody>
 
-</table>
+{% comment %} </table> {% endcomment %}

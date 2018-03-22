@@ -1,27 +1,10 @@
 <table>
-    <tr id="first-row" style="display:none;">
-        {% for s, num in signature_consensus.items %}
-            {% for pos in num %}
-                <td id="cutoff-{{ pos.2 }}"></td>
-            {% endfor %}
-            <td id='anchor' class="ali-td">&nbsp;</td>
-        {% endfor %}
-    </tr>
-    <!-- Sequence signature -->
-    <tr>
-        <td style='height:34px'></td>
-    </tr>
-    <tr>
-        <td class="ali-td-header-row" colspan="{{ num_residue_columns }}">SEQUENCE SIGNATURE</td>
-    </tr>
-    <tbody id='signature-main'>
-
     <!-- GENERIC NUMBERS -->
 
         <!-- segment title line -->
         <tr>
-            {% for s, num in common_segments.items %}
-                <td class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
+            {% for s, n in num_residue_columns.items %}
+                <td class="ali-td ali-td-segment-title" colspan="{{ n }}">{{ s }}</td>
                 <td class="ali-td">&nbsp;</td>
             {% endfor %}
         </tr>
@@ -32,7 +15,7 @@
         <tr>
             {% for s, num in segments.items %}
                 {% for n, dn in num.items %}
-                    {% if 'Common G-alpha numbering scheme' in a_neg.numbering_schemes.0 %}
+                    {% if 'Common G-alpha numbering scheme' in common_numbering_schemes.0 %}
                         <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
                     {% else %}
                         <td class="ali-td-generic-num">{{ dn|safe }}</td>
@@ -46,17 +29,12 @@
     <!-- FEATURE SIGNATURE -->
 
         <!-- feature frequency -->
-        <tr>
-            <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
-        </tr>
-        {% for feature in feats_signature %}
-        <tr>
-            {% for segment in feature %}
+        {% for feat in feats_signature %}
+            <tr>
+            {% for segment in feat %}
                 {% for freq in segment %}
-                    <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
-                        <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ freq.2|safe }}">
-                            {{ freq.0 }}
-                        </div>
+                    <td class="ali-td-stat-summary ali-residue" bgcolor="{{ freq.1 }}" >
+                        {{ freq.0 }}
                     </td>
                 {% endfor %}
                 <td class="ali-td">&nbsp;</td>
@@ -83,7 +61,7 @@
         <tr>
             {% for segment, cons in signature_consensus.items %}
                 {% for pos in cons %}
-                    <td class="ali-td-stat-summary ali-residue res-cons-{{ pos.3 }}">{{ pos.2 }}</td>
+                    <td class="ali-td-stat-summary ali-residue res-cons-{{ pos.3 }}">{{ pos}}</td>
                 {% endfor %}
                 <td class="ali-td">&nbsp;</td>
             {% endfor %}
@@ -96,7 +74,7 @@
             <tr>
                 {% for s, num in segments.items %}
                     {% for n, dn in num.items %}
-                        {% if 'Common G-alpha numbering scheme' in a_neg.numbering_schemes.0 %}
+                        {% if 'Common G-alpha numbering scheme' in common_numbering_schemes.0 %}
                             <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
                         {% else %}
                             <td class="ali-td-generic-num">{{ dn|safe }}</td>
@@ -108,4 +86,4 @@
         {% endfor %}
 
     </tbody>
-{% comment %} </table> {% endcomment %}
+</table>

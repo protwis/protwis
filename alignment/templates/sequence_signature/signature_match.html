@@ -1,0 +1,76 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+<style>
+    .panel-heading .accordion-toggle:after {
+        font-family:'Glyphicons Halflings';
+        content:"\e114";
+        float: right;
+        color: grey;
+    }
+    .panel-heading .accordion-toggle.collapsed:after {
+        content:"\e080";
+    }
+</style>
+<!-- <style>
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #eee;
+    shape-rendering: crispEdges;
+}
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+</style> -->
+{% endblock %}
+{% block content %}
+
+<table  class="table">
+    <thead>
+        <th>
+            <td>Signature match score</td>
+            <td>Protein</td>
+        </th>
+    </thead>
+    {% for pcf, score in scores %}
+        <tr>
+            <td>{{ score }}</td>
+            <td>
+                <div class="panel" >
+                    <div class="panel-heading" id="head-{{ pcf.id }}">
+                        <h4 class="panel-title" style="display: flex; justify-content: space-between;">
+                        <a href="/protein/{{ pcf.protein.entry_name }}">{{ pcf.protein.entry_name }}</a>
+                        <a class="accordion-toggle collapsed" data-toggle="collapse" aria-expanded="false" href='#{{ pcf.id }}'>Score breakdown</a>
+                        </h4>
+                    </div>
+                </div>
+                <div id="{{ pcf.id }}" class="panel-collapse collapse">
+                    <div class="panel-body">
+                        <div id='pconf-{{ pcf.id }}'>
+
+                        </div>
+                    Something here
+                    {% comment %} {% include 'sequence_signature/signature_match_breakdown.html' %} {% endcomment %}
+                    </div>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+
+</table>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/alignment.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+$('.collapse').on('show.bs.collapse', function() {
+    $(this).closest("table")
+        .find(".collapse.in")
+        .not(this)
+        .collapse('toggle');
+    ScoreBreakdown($(this)[0].id, 30);
+});
+</script>
+{% endblock %}

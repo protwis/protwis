@@ -26,7 +26,8 @@ AMINO_ACIDS = OrderedDict([
     ('Y', 'Tyr'),
     ('B', 'Asx'),
     ('Z', 'Glx'),
-    ('J', 'Xle')
+    ('J', 'Xle'),
+    ('-', 'Gap')
 ])
 
 # Amino Acid Propensities
@@ -85,7 +86,7 @@ HYDROPHOBICITY = {
 AMINO_ACID_GROUPS = OrderedDict([
     ('Hy_-', 'A,L,M,I,W,Y,F,V,H,G,P'),
     ('Al_-', 'A,L,M,I,V,P'),
-    ('Al_S', 'A,V,-,P'),
+    ('Al_S', 'A,V,P'),
     ('Al_M', 'L,I,V'),
     ('Al_L', 'L,M,I,V'),
     ('Al_XL', 'L,M'),
@@ -103,17 +104,17 @@ AMINO_ACID_GROUPS = OrderedDict([
     ('Hp_M', 'Q,E,I,W,S,Y,F'),
     ('Hp_S', 'V,H,N,T,C,D'),
     ('Hp_XS', 'G,P'),
-    ('P+-_-', 'R,K,Q,E,-,S,-,H,N,T,D'),
+    ('P+-_-', 'R,K,Q,E,S,H,N,T,D'),
     ('P_-', 'P'),
     ('P_XS', 'S,T'),
     ('P_S', 'S,N,T'),
     ('P_L', 'Q,H,N'),
-    ('P+-_XL', '-,K,Q,E,H'),
+    ('P+-_XL', 'K,Q,E,H'),
     ('P-_S', 'S,N,T,D'),
-    ('P-_M', '-,N,D'),
+    ('P-_M', 'N,D'),
     ('P-_L', 'Q,E,H,N,D'),
     ('P-_XL', 'Q,E,H'),
-    ('P+_XL', '-,K,Q,H'),
+    ('P+_XL', 'K,Q,H'),
     ('X_XXS', 'A,G'),
     ('X_XS', 'A,S,C,G'),
     ('X_S', 'A,S,V,T,C,G,P'),
@@ -139,6 +140,7 @@ AMINO_ACID_GROUPS = OrderedDict([
     ('R_-', 'R'),
     ('Y_-', 'Y'),
     ('W_-', 'W'),
+    ('_', '-'),
 ])
 
 AMINO_ACID_GROUP_NAMES = OrderedDict([
@@ -198,6 +200,7 @@ AMINO_ACID_GROUP_NAMES = OrderedDict([
     ('R_-', 'Arg'),
     ('Y_-', 'Tyr'),
     ('W_-', 'Trp'),
+    ('_', 'Gap'),
 ])
 AMINO_ACID_GROUPS_OLD = OrderedDict([
         ('hp',     ('A', 'C', 'F', 'I', 'L', 'M', 'P', 'V', 'W', 'Y')),
