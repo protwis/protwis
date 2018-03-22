@@ -14,6 +14,11 @@
     dynamine_data = {{rs_annotations|safe}};
     
     $( document ).ready(function() {
+
+
+      if(window.location.hash) {
+        $("#display_options").hide();
+      }
         console.log( "ready!" );
         $( ".adddynamine_nterm" ).each(function( index ) {
           // console.log( index + ": " + $( this ).attr('entryname'));
@@ -131,6 +136,7 @@
     });
 
      if(window.location.hash) {
+      $("#display_options").hide();
         var hash = window.location.hash.substring(1); //Puts hash in variable, and removes the # character
         $(".figure").hide();
         $(".sub_figures").hide();
@@ -233,12 +239,18 @@ table.dataTable {
 .figure {
   display: none;
 }
+
+
+#display_options {
+  display: none;
+}
+
 </style>
-<h2> Construct Statistics</h2>
+<br><br>
 
 <div class="row">
   <div class="col-md-12">
-  <div class="btn-group" data-toggle="buttons">
+  <div class="btn-group" id='display_options' data-toggle="buttons">
 
       <label class="btn btn-default form-check-label">
           <input name="display_type" value='truncations' class="form-check-input" type="radio" autocomplete="off"> Truncations
@@ -938,13 +950,13 @@ table.dataTable {
 
   <div class="row">
       <div class="col-md-12">
-  Frequencies (no. GPCRs) of mutant amino acid substitutions across all positions of the receptor sequences/structures.
+  <h5>Frequencies (no. GPCRs) of thermostabilising mutant amino acid substitutions across all positions of the receptor sequences/structures.</h5>
   <table border=1>
-  <tr><th>WT / MUT</th>
+  <tr><th style="text-align: center;">WT / MUT</th>
   {% for aa,vals in mutation_matrix.items %}
   <th width=25 style="text-align: center;">{{aa}}</th>
   {% endfor %}
-  <th width=25 style="text-align: center;">WT SUM</th>
+  <th width=25 style="text-align: center;">WT FREQ</th>
   </tr>
   {% for aa,vals in mutation_matrix.items %}
   <tr>
@@ -955,10 +967,11 @@ table.dataTable {
   </tr>
   {% endfor %}
   <tr>
-  <th width=25 style="text-align: center;">MUT SUM</th>
+  <th width=25 style="text-align: center;">MUT FREQ</th>
   {% for aa,vals2 in mutation_matrix_sum_mut.items %}
   <td width=25 style="text-align: center;background: rgba(120,120,120,  {{vals2.0}})">{{vals2.1}}</td>
   {% endfor %}
+  <th style="text-align: center;">{{mutation_matrix_total_sum}}</th>
   </tr>
   </table>
   </div>

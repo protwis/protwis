@@ -1123,7 +1123,8 @@ class ConstructStatistics(TemplateView):
                 mutation_list[p_class][gn]['mutation'].append((mutation[0].wild_type_amino_acid,mutation[0].mutated_amino_acid))
 
 
-        #print(mutation_matrix)
+        mutation_matrix_total_sum = sum([v[1] for k,v in mutation_matrix_sum_mut.items()])
+        
 
         for p_class, values in mutation_list.items():
             for gn, vals in values.items():
@@ -1148,6 +1149,8 @@ class ConstructStatistics(TemplateView):
         context['mutation_mut'] = mutation_mut
         context['mutation_matrix'] = mutation_matrix
         context['mutation_matrix_sum_mut'] = mutation_matrix_sum_mut
+        context['mutation_matrix_total_sum'] = mutation_matrix_total_sum
+
         context['rs_annotations'] = rs_annotations
 
         for c in cons:
