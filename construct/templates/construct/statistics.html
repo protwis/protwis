@@ -1,6 +1,6 @@
 {% extends "home/base.html" %}
 {% load staticfiles %}
-
+{% load filters %}
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 {% endblock %}
@@ -131,7 +131,7 @@
         $("."+hash).find('label').first().addClass('active');
         $("input[name=display_sub_type]").change(function () {
           $(".sub_figures").hide();
-          $("."+hash).show();
+          $("."+this.value).show();
         });
     });
 
@@ -147,7 +147,7 @@
         $("."+hash).find('label').first().addClass('active');
         $("input[name=display_sub_type]").change(function () {
           $(".sub_figures").hide();
-          $("."+hash).show();
+          $("."+this.value).show();
         });
 
       } 
@@ -200,6 +200,12 @@ table {
 
 .table-nterm > thead > tr > .seq_pos {
   padding:0px;
+  width: 1px;
+  text-align:center;
+}
+
+.table-nterm > thead > tr > .gn_pos {
+  padding:2px;
   width: 1px;
   text-align:center;
 }
@@ -417,7 +423,7 @@ table.dataTable {
 
   
   <div class='sub_figures fusion_nterm'>
-  <h3>N-terminal truncations sites by class and residue position (In presense of a N-term fusion protein)</h3>
+  <h3>N-terminal protein fusion sites by class and residue position</h3>
   {% for class, values in truncations_new.nterm_fusion.items %}
   <div class="row">
         <div class="col-md-12">
@@ -425,7 +431,7 @@ table.dataTable {
     <thead>
     <tr><th colspan={{values.fusions|length}}>{{class}}</th><th colspan={{values.range|length}}></th><th colspan=3></th><th colspan=3></th><th colspan=3></th></tr>
     {% if forloop.first %}
-      <tr><th colspan={{values.fusions|length}}>Fusion used</th><th colspan={{values.range|length}}></th><th colspan=3></th><th colspan=3>No. PDBs each state***</th><th colspan=3></th></tr>
+      <tr><th colspan={{values.fusions|length}}>Fusion protein</th><th colspan={{values.range|length}}></th><th colspan=4></th><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=2></th></tr>
     {% endif %}
     <tr>
       {% for fusion, number in values.fusions.items %}
@@ -434,7 +440,7 @@ table.dataTable {
       {% for pos in values.range reversed %}
       <th class="seq_pos2 no-sort verticalTableHeader">{{pos}}</th>
       {% endfor %}
-      <th>GPCR</th><th>Name</th><th>Species*</th><th>Ina</th><th>Int</th><th>Act</th><th>Pos**</th><th>PDB</th>
+      <th>Pos<sup>3</sup></th><th>Receptor</th><th>UniPort</th><th>Species<sup>2</sup></th><th>Ina</th><th>Int</th><th>Act</th><th>#PDB</th>
 
     </tr>
   </thead>
@@ -464,13 +470,13 @@ table.dataTable {
               <td bgcolor='white' style='border: none;'></td>
           {% endif %}
       {% endfor %}
+      <td>{{t_pos.7}}</td>
       <td>{{t_pos.8|safe}}</td>
       <td>{{t_pos.4}}</td>
       <td>{{t_pos.5}}</td>
       <td>{{t_pos.6.inactive}}</td>
       <td>{{t_pos.6.intermediate}}</td>
       <td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.7}}</td>
       <td>{{t_pos.3|length}}</td>
       </tr>
   {% endfor %}
@@ -479,9 +485,9 @@ table.dataTable {
       </div>
   </div>
   {% endfor %}
-  * Empty species cell is human<br>
-  ** Position is the last kept residue in relation to the start of Transmembrane Helix 1 (TM1)<br>
-  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive
+  1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+  2 Empty species cell is human<br>
+  3 Position is the last kept residue in relation to the start of Transmembrane Helix 1 (TM1)<br>
   </div>
 
 
@@ -823,19 +829,19 @@ table.dataTable {
       <div class="col-md-12">
   <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
   <thead>
-    <tr><th colspan=3>No. PDBs each state***</th><th colspan=2>{{class}}</th><th></th><th colspan=2></th><th colspan={{values.range|length}}></th></tr>
+    <tr><th colspan=3 style='white-space: nowrap;'>No. PDBs for each state<sup>1</sup></th><th colspan=2>{{class}}</th><th></th><th colspan=2></th><th colspan={{values.range|length}}></th></tr>
     <tr>
       <th>Ina</th>
       <th>Int</th>
       <th>Act</th>
-      <th>Pos**</th>
-      <th>PDB</th>
-      <th>Species*</th>
-      <th>Name</th>
-      <th>GPCR</th>
+      <th>#PDB</th>
+      <th>Species<sup>2</sup></th>
+      <th>UniProt</th>
+      <th>Receptor</th>
+      <th>Pos<sup>3</sup></th>
 
       {% for pos in values.range  %}
-      <th class="seq_pos no-sort verticalTableHeader">{{pos}}</th>
+      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
       {% endfor %}
     </tr>
   </thead>
@@ -845,11 +851,11 @@ table.dataTable {
       <td>{{t_pos.6.inactive}}</td>
       <td>{{t_pos.6.intermediate}}</td>
       <td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.7}}</td>
       <td>{{t_pos.3|length}}</td>
       <td>{{t_pos.5}}</td>
       <td>{{t_pos.4}}</td>
       <td>{{t_pos.8|safe}}</td>
+      <td>{{t_pos.7}}</td>
     
 
 
@@ -890,12 +896,12 @@ table.dataTable {
       <div class="col-md-12">
   <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
   <thead>
-    <tr><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state***</th><th colspan=3></th></tr>
+    <tr><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs for each state<sup>1</sup></th><th colspan=3></th></tr>
     <tr>
       {% for pos in values.range  %}
-      <th class="seq_pos no-sort verticalTableHeader">{{pos}}</th>
+      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
       {% endfor %}
-      <th>GPCR</th><th>Name</th><th>Species*</th><th>Ina</th><th>Int</th><th>Act</th><th>Pos**</th><th>PDB</th>
+      <th>Pos<sup>3</sup></th><th>Receptor</th><th>UniProt</th><th>Species<sup>2</sup></th><th>Ina</th><th>Int</th><th>Act</th><th>#PDB</th>
 
     </tr>
   </thead>
@@ -917,11 +923,11 @@ table.dataTable {
               <td bgcolor='lightgrey' style='border: none;'></td>
           {% endif %}
       {% endfor %}
+      <td>{{t_pos.7}}</td>
       <td>{{t_pos.8|safe}}</td>
       <td>{{t_pos.4}}</td>
       <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
       <td>{{t_pos.6.inactive}}</td><td>{{t_pos.6.intermediate}}</td><td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.7}}</td>
       <td>{{t_pos.3|length}}</td>
       
 
@@ -940,10 +946,9 @@ table.dataTable {
       </div>
   </div>
   {% endfor %}
-  * Empty species cell is human<br>
-  ** Position is the last kept residue in relation to the previous and next helix<br>
-  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
-  **** In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.
+  1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+  2 Empty species cell is human<br>
+  3 Position is the last kept residue, not the first deleted<br>
   </div>
 
 <div class='figure mutations'>
