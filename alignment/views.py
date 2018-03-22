@@ -587,7 +587,7 @@ def render_signature_excel(request):
 
     return response
 
-def render_signature_match_scores(request, cutoff=40):
+def render_signature_match_scores(request, cutoff):
 
     signature_data = request.session.get('signature')
 
