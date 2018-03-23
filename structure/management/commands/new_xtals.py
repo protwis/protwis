@@ -42,7 +42,7 @@ class Command(BaseBuild):
             q.new_xtals(self.verbose)
         else:
             self.uniprots = self.get_all_GPCR_uniprots()
-            # self.uniprots = ['P24530']
+            # self.uniprots = ['Q99835']
             self.yamls = self.get_all_yamls()
             self.prepare_input(options['proc'], self.uniprots)
 
@@ -210,7 +210,7 @@ class QueryPDB():
                                                 'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
                             auxiliary_proteins, ligands = [], []
                             for key, values in pdb_data_dict['ligands'].items():
-                                if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4']:
+                                if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT']:
                                     continue
                                 else:
                                     ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
@@ -282,17 +282,13 @@ class QueryPDB():
         dic = xmltodict.parse(response_mol.read())
         if 'NMR' in str_des or 'extracellular' in str_des:
             return 0
-        if pdb_code=='AAAA':
-            return 0
         if pdb_code in ['4QXE','1XWD','4QXF','4MQW']:
             return 0
         polymer = dic['molDescription']['structureId']['polymer']
         description = ''
         if type(polymer)==type([]):
             for mol in polymer:
-                if 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description']:
-                    description = mol['polymerDescription']['@description']
-                elif 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description']:
+                if 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description'] or 'Smoothened' in mol['polymerDescription']['@description']:
                     description = mol['polymerDescription']['@description']
                 if description=='' or int(mol['@length'])<100:
                     pass
@@ -319,7 +315,7 @@ class QueryPDB():
                             pass
             return 0
         else:
-            if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description']:
+            if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description'] or 'Smoothened' in polymer['polymerDescription']['@description']:
                 if int(polymer['@length'])<100:
                     return 0
                 if type(polymer['macroMolecule'])==type([]):

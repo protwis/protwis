@@ -25,6 +25,7 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
+from residue.functions import dgn
 
 import logging
 import os
@@ -35,6 +36,7 @@ from collections import OrderedDict
 import json
 from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
+from Bio.PDB.Selection import *
 
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
@@ -209,6 +211,29 @@ class Command(BaseBuild):
         ppb=PPBuilder()
         seq = ''
         i = 1
+
+        # Checking Na+ atom in xtal
+        parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
+        try:
+            wt_2x50 = Residue.objects.get(protein_conformation=parent_prot_conf, display_generic_number__label=dgn('2x50',parent_prot_conf))
+            wt_3x39 = Residue.objects.get(protein_conformation=parent_prot_conf, display_generic_number__label=dgn('3x39',parent_prot_conf))
+            if wt_2x50.amino_acid=='D' and wt_3x39.amino_acid=='S':
+                if chain[wt_2x50.sequence_number].get_resname()=='ASP' and chain[wt_3x39.sequence_number].get_resname()=='SER':
+                    v_2x50 = chain[wt_2x50.sequence_number]['OD1'].get_vector()
+                    v_3x39 = chain[wt_3x39.sequence_number]['OG'].get_vector()
+                    all_resis = uniqueify(chain)
+                    for r in all_resis:
+                        id_ = r.get_id()
+                        if id_[0]=='H_ NA':
+                            v_na = r['NA'].get_vector()
+                            d_2x50 = (v_na-v_2x50).norm()
+                            d_3x39 = (v_na-v_3x39).norm()
+                            if d_2x50<3 and d_3x39<3:
+                                structure.sodium = True
+                                structure.save()
+                                break
+        except:
+            pass
 
         check_1000 = 0
         prev_id = 0

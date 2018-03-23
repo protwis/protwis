@@ -266,11 +266,15 @@ class Command(BaseBuild):
 		# 			print(f, s.state, s.distance, p.state, p.activation_value)
 			
 
-		t = TestStateIdentifier(options['gns'], options['only_xtals'], float(options['cutoffs'][0]), float(options['cutoffs'][1]))
-		t.run()
+		# t = TestStateIdentifier(options['gns'], options['only_xtals'], float(options['cutoffs'][0]), float(options['cutoffs'][1]))
+		# t.run()
 
 		# c = ChangeDistanceValues()
 		# c.run()
+
+		ss = StructuralStatistics()
+		for s in Structure.objects.filter(protein_conformation__protein__family__parent__parent__parent__slug='001'):
+			print(s.protein_conformation.protein.parent.entry_name, s, s.state, 'ICL1', ss.check_segment(s, 'ICL1'))
 		print(datetime.now()-startTime)
 
 	def main_func(self, positions, iteration, count, lock):
@@ -285,6 +289,37 @@ class Command(BaseBuild):
 			t.run()
 			# t = TestStateIdentifier([d[0],d[1],d[2],d[3]],self.only_xtals,d[4],d[5])
 			# t.run()
+
+
+class StructuralStatistics(object):
+	def __init__(self):
+		pass
+
+	def check_segment(self, structure, segment):
+		parent_res = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent, protein_segment__slug=segment)
+		parent_gns = [i for i in parent_res if i.display_generic_number!=None]
+
+		struct_res = Residue.objects.filter(protein_conformation=structure.protein_conformation, protein_segment__slug=segment)
+		struct_gns = [i for i in struct_res if i.display_generic_number!=None]
+
+		if len(parent_gns)>0:
+			if len(struct_gns)==len(parent_gns):
+				return 'Conserved_ordered'
+			elif len(struct_gns)==0:
+				if len(parent_res)-2<=len(struct_res)<=len(parent_res)+2:
+					return 'Conserved_disordered'
+				elif len(struct_res)>len(parent_res):
+					return 'Conserved_disordered'
+				elif len(struct_res)<=len(parent_res)/2:
+					return 'Conserved_missing'
+			else:
+				if len(struct_res)<=len(parent_res)/2:
+					return 'Conserved_missing'
+		else:
+			if len(struct_res)<=len(parent_res)/2:
+				return 'Non-conserved_missing'
+			else:
+				return 'Non-conserved_present'
 
 
 class ChangeDistanceValues(object):

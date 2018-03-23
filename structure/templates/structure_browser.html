@@ -63,7 +63,8 @@
                             { type: "date-range" }, // publication date
                             { type: "select"}, // annotated
                             { type: "text"}, // refined
-                            { type: "select"} // sodium ion pocket
+                            { type: "select"}, // sodium ion pocket
+                            { type: "select"} // sodium ion in xtal
                         ]
                     });
                 }
@@ -205,9 +206,11 @@
                     <th class="pub-th">Date</th>
                     <th class="pub-th">Annotated</th>
                     <th class="pub-th">Refined</th>
-                    <th class="pub-th">Sodium ion pocket</th>
+                    <th class="pub-th">Na<sup>+</sup> binding GPCR</th>
+                    <th class="pub-th">Na<sup>+</sup> in xtal</th>
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -312,6 +315,13 @@
                     </td>
                     <td>
                         {% if structure.protein_conformation.is_sodium %}
+                        Yes
+                        {% else %}
+                        No
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if structure.sodium %}
                         Yes
                         {% else %}
                         No

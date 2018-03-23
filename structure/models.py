@@ -22,6 +22,7 @@ class Structure(models.Model):
     annotated = models.BooleanField(default=True)
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    sodium = models.BooleanField(default=False)
 
     def __str__(self):
         return self.pdb_code.index

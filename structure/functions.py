@@ -769,6 +769,7 @@ class PdbChainSelector():
             dssp = PDB.DSSP(structure[0], f, dssp='/env/bin/dssp')
             for key in dssp.keys():
                 if int(key[1][1]) in gn_residues:
+                    print(key, dssp[key])
                     self.dssp_dict[key[0]][key[1][1]] = dssp[key]
                     self.dssp_info[key[0]][dssp[key][2]] = self.dssp_info[key[0]][dssp[key][2]]+1
         os.remove(f)
@@ -818,29 +819,33 @@ class PdbChainSelector():
 class PdbStateIdentifier():
     def __init__(self, structure, tm2_gn='2x41', tm6_gn='6x38', tm3_gn='3x44', tm7_gn='7x52', inactive_cutoff=2, intermediate_cutoff=7.5):
         self.structure_type = None
-        if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.5:
-            if structure.protein_conformation.protein.family.slug.startswith('002') or structure.protein_conformation.protein.family.slug.startswith('003'):
-                tm6_gn, tm7_gn = '6x33', '7x51'
-                inactive_cutoff, intermediate_cutoff = 2.5, 6
-            elif structure.protein_conformation.protein.family.slug.startswith('004'):
-                inactive_cutoff, intermediate_cutoff = 5, 7.5
-        self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
-        self.inactive_cutoff = inactive_cutoff
-        self.intermediate_cutoff = intermediate_cutoff
+
         try:
             if structure.protein_conformation.protein.parent==None:
                 raise Exception
             self.structure = structure
             self.structure_type = 'structure'
+            family = structure.protein_conformation.protein.family
         except:
             try:
                 structure.protein_conformation.protein
                 self.structure = structure
                 self.structure_type = 'refined'
+                family = structure.protein_conformation.protein.family
             except:
                 structure.protein
                 self.structure = structure
                 self.structure_type = 'hommod'
+                family = structure.protein.family
+        if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.5:
+            if family.slug.startswith('002') or family.slug.startswith('003'):
+                tm6_gn, tm7_gn = '6x33', '7x51'
+                inactive_cutoff, intermediate_cutoff = 2.5, 6
+            elif family.slug.startswith('004'):
+                inactive_cutoff, intermediate_cutoff = 5, 7.5
+        self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
+        self.inactive_cutoff = inactive_cutoff
+        self.intermediate_cutoff = intermediate_cutoff
         self.state = None
         self.activation_value = None
         self.line = False
@@ -961,13 +966,13 @@ class PdbStateIdentifier():
                 for chain in struct:
                     r1 = chain[res1.sequence_number]
                     r2 = chain[res2.sequence_number]
-                    # print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
                     line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)
                 
             except:
-                # print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
+                print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
                 return False
 
             
