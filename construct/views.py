@@ -392,16 +392,16 @@ class ConstructStatistics(TemplateView):
                         truncations_new_sum[position][p_class_name][from_h8] += 1
 
                 if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
-                    if linkers['before']:
-                         print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                    # if linkers['before']:
+                    #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                     if linkers['before']:
                         deletion.start += len(linkers['before'])
                         linkers_exist_before[c.crystal.pdb_code] = len(linkers['before'])
                     if linkers['after']:
                         deletion.end -= len(linkers['after'])
                         linkers_exist_after[c.crystal.pdb_code] = len(linkers['after'])
-                    if linkers['before']:
-                         print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                    # if linkers['before']:
+                    #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                     fusion_icl3 = True
                     bw = x50s[entry_name]['5x50']-deletion.start-1
                     bw = "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1]-1)
@@ -417,6 +417,12 @@ class ConstructStatistics(TemplateView):
 
                     if bw=='5x107':
                         # Skip these false deletions in melga
+                        continue
+
+                    # if entry_name=='s1pr1_human':
+                    #     print("CHECK",deletion.start,deletion.end, bw,bw2)
+                    if entry_name=='s1pr1_human' and deletion.start==250:
+                        # Skip these false deletions in s1pr1_human (3V2W, 3V2Y)
                         continue
 
                     l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
@@ -591,7 +597,7 @@ class ConstructStatistics(TemplateView):
                         if from_tm1 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(from_tm1)
                     elif not fusions[0][3].startswith('C-term'):
-                        print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
+                        # print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
                         deletion.start = fusions[0][4] #the next one is "cut"
                         deletion.end = fusions[0][4]+1 #the 'prev' is cut
 
@@ -881,7 +887,7 @@ class ConstructStatistics(TemplateView):
                         max_pos_range2[site][0] = start
                     if end > max_pos_range2[site][1]:
                         max_pos_range2[site][1] = end
-                    print('\n ### doing range',site, sites,max_pos_range2[site],val['range'])
+                    # print('\n ### doing range',site, sites,max_pos_range2[site],val['range'])
                 val['receptors'] = unique_sites
                 val['fusions'] = distinct_fusion
                 if site in truncations_maximums:
@@ -904,7 +910,7 @@ class ConstructStatistics(TemplateView):
 
                 for recp, rval in val['receptors'].items():
                     if rval[10]:
-                        print(recp,rval[10])
+                        # print(recp,rval[10])
                         if len(rval[10])!=len(rval[3]): #if pdbs with linker is not same as amount of linkers
                             rval[10].append('0')
                         rval[10] = ','.join(list(set(rval[10])))
@@ -938,7 +944,7 @@ class ConstructStatistics(TemplateView):
                         val['sum'] = temp
 
         # print(linkers_exist_before,linkers_exist_after)
-        print("NEWCHECK",truncations_new['icl3_start'])
+        # print("NEWCHECK",truncations_new['icl3_start'])
         for pos, p_vals in truncations_new_sum.items():
             for pclass, c_vals in p_vals.items():
                 new_list = OrderedDict()

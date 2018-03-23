@@ -102,7 +102,7 @@
     ); 
 
     $('.table-nterm').css("width","");
-
+    $('[data-toggle="popover"]').on('click',function(e){e.preventDefault();}).popover(); 
     });
 
     $("input[name=display_type]").change(function () {
@@ -334,7 +334,7 @@ table.dataTable {
         <td>{{t_pos.6.intermediate}}</td>
         <td>{{t_pos.6.active}}</td>
         <td>{{t_pos.7}}</td>
-        <td>{{t_pos.3|length}}</td>
+        <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
         </tr>
     {% endfor %}
         </tbody>
@@ -369,7 +369,7 @@ table.dataTable {
       <tbody>
       {% for recp, t_pos in values.receptors.items %}
       <tr>
-        <td>{{t_pos.3|length}}</td>
+        <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
         <td>{{t_pos.6.inactive}}</td>
         <td>{{t_pos.6.intermediate}}</td>
         <td>{{t_pos.6.active}}</td>
@@ -477,7 +477,7 @@ table.dataTable {
       <td>{{t_pos.6.inactive}}</td>
       <td>{{t_pos.6.intermediate}}</td>
       <td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.3|length}}</td>
+      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
       </tr>
   {% endfor %}
       </tbody>
@@ -499,21 +499,21 @@ table.dataTable {
       <div class="col-md-12">
   <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
   <thead>
-    <tr><th colspan=3>No. PDBs each state***</th><th colspan=2>{{class}}</th><th></th><th colspan=3></th><th colspan={{values.range|length}}></th><th colspan={{values.fusions|length}}></th></tr>
+    <tr><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=2>{{class}}</th><th></th><th colspan=3></th><th colspan={{values.range|length}}></th><th colspan={{values.fusions|length}}></th></tr>
     <tr>
       <th>Ina</th>
       <th>Int</th>
       <th>Act</th>
-      <th>Pos**</th>
-      <th>PDB</th>
-      <th>Linker****</th>
-      <th>Species*</th>
-      <th>Name</th>
-      <th>GPCR</th>
+      <th>#PDB</th>
+      <th>Linker<sup>2</sup></th>
+      <th>Species<sup>3</sup></th>
+      <th>UniProt</th>
+      <th>Receptor</th>
+      <th>Pos<sup>4</sup></th>
 
 
       {% for pos in values.range  %}
-      <th class="seq_pos no-sort verticalTableHeader">{{pos}}</th>
+      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
       {% endfor %}
 
       {% for fusion, number in values.fusions.items %}
@@ -527,12 +527,12 @@ table.dataTable {
       <td>{{t_pos.6.inactive}}</td>
       <td>{{t_pos.6.intermediate}}</td>
       <td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.7}}</td>
-      <td>{{t_pos.3|length}}</td>
+      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
       <td>{{t_pos.10}}</td>
       <td>{{t_pos.5}}</td>
       <td>{{t_pos.4}}</td>
       <td>{{t_pos.8|safe}}</td>
+      <td>{{t_pos.7}}</td>
     
 
 
@@ -585,15 +585,15 @@ table.dataTable {
       <div class="col-md-12">
   <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
   <thead>
-    <tr><th colspan={{values.fusions|length}}></th><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state***</th><th colspan=3></th></tr>
+    <tr><th colspan={{values.fusions|length}}></th><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=3></th></tr>
     <tr>
       {% for fusion, number in values.fusions.items %}
       <th>{{fusion}}</th>
       {% endfor %}
       {% for pos in values.range  %}
-      <th class="seq_pos no-sort verticalTableHeader">{{pos}}</th>
+      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
       {% endfor %}
-      <th>GPCR</th><th>Name</th><th>Species*</th><th>Ina</th><th>Int</th><th>Act</th><th>Pos**</th><th>PDB</th><th>Linker****</th>
+      <th>Pos<sup>4</sup><th>Receptor</th><th>UniProt</th><th>Species<sup>3</sup></th><th>Ina</th><th>Int</th><th>Act</th></th><th>#PDB</th><th>Linker<sup>2</sup></th>
 
     </tr>
   </thead>
@@ -622,12 +622,12 @@ table.dataTable {
               <td bgcolor='lightgrey' style='border: none;'></td>
           {% endif %}
       {% endfor %}
+      <td>{{t_pos.7}}</td>
       <td>{{t_pos.8|safe}}</td>
       <td>{{t_pos.4}}</td>
       <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
       <td>{{t_pos.6.inactive}}</td><td>{{t_pos.6.intermediate}}</td><td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.7}}</td>
-      <td>{{t_pos.3|length}}</td>
+      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
       <td>{{t_pos.10}}</td>
       
 
@@ -642,17 +642,17 @@ table.dataTable {
         {% for sum in values.sum  %}
             <th class="seq_pos">{{sum}}</th>
         {% endfor %}
-        <th></th><th colspan="7"></th>
+        <th></th><th colspan="8"></th>
         </tr>
       </tfoot>
   </table>
       </div>
   </div>
   {% endfor %}
-  * Empty species cell is human<br>
-  ** Position is the last kept residue in relation to the previous and next helix<br>
-  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
-  **** In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.
+  1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+  2 In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.<br>
+  3 Empty species cell is human<br>
+  4 Position is the last kept residue in relation to the previous and next helix<br>
   </div>
 
   <div class='sub_figures fusion_icl2'>
@@ -663,21 +663,21 @@ table.dataTable {
       <div class="col-md-12">
   <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
   <thead>
-    <tr><th colspan=3>No. PDBs each state***</th><th colspan=2>{{class}}</th><th></th><th colspan=3></th><th colspan={{values.range|length}}></th><th colspan={{values.fusions|length}}></th></tr>
+    <tr><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=2>{{class}}</th><th></th><th colspan=3></th><th colspan={{values.range|length}}></th><th colspan={{values.fusions|length}}></th></tr>
     <tr>
       <th>Ina</th>
       <th>Int</th>
       <th>Act</th>
-      <th>Pos**</th>
-      <th>PDB</th>
-      <th>Linker****</th>
-      <th>Species*</th>
-      <th>Name</th>
-      <th>GPCR</th>
+      <th>#PDB</th>
+      <th>Linker<sup>2</sup></th>
+      <th>Species<sup>3</sup></th>
+      <th>UniProt</th>
+      <th>Receptor</th>
+      <th>Pos<sup>4</sup></th>
 
 
       {% for pos in values.range  %}
-      <th class="seq_pos no-sort verticalTableHeader">{{pos}}</th>
+      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
       {% endfor %}
 
       {% for fusion, number in values.fusions.items %}
@@ -691,12 +691,12 @@ table.dataTable {
       <td>{{t_pos.6.inactive}}</td>
       <td>{{t_pos.6.intermediate}}</td>
       <td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.7}}</td>
-      <td>{{t_pos.3|length}}</td>
+      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
       <td>{{t_pos.10}}</td>
       <td>{{t_pos.5}}</td>
       <td>{{t_pos.4}}</td>
       <td>{{t_pos.8|safe}}</td>
+      <td>{{t_pos.7}}</td>
     
 
 
@@ -750,15 +750,15 @@ table.dataTable {
       <div class="col-md-12">
   <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
   <thead>
-    <tr><th colspan={{values.fusions|length}}></th><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state***</th><th colspan=3></th></tr>
+    <tr><th colspan={{values.fusions|length}}></th><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=3></th></tr>
     <tr>
       {% for fusion, number in values.fusions.items %}
       <th>{{fusion}}</th>
       {% endfor %}
       {% for pos in values.range  %}
-      <th class="seq_pos no-sort verticalTableHeader">{{pos}}</th>
+      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
       {% endfor %}
-      <th>GPCR</th><th>Name</th><th>Species*</th><th>Ina</th><th>Int</th><th>Act</th><th>Pos**</th><th>PDB</th><th>Linker****</th>
+      <th>Pos<sup>4</sup><th>Receptor</th><th>UniProt</th><th>Species<sup>3</sup></th><th>Ina</th><th>Int</th><th>Act</th></th><th>#PDB</th><th>Linker<sup>2</sup></th>
 
     </tr>
   </thead>
@@ -787,12 +787,12 @@ table.dataTable {
               <td bgcolor='lightgrey' style='border: none;'></td>
           {% endif %}
       {% endfor %}
+      <td>{{t_pos.7}}</td>
       <td>{{t_pos.8|safe}}</td>
       <td>{{t_pos.4}}</td>
       <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
       <td>{{t_pos.6.inactive}}</td><td>{{t_pos.6.intermediate}}</td><td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.7}}</td>
-      <td>{{t_pos.3|length}}</td>
+      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
       <td>{{t_pos.10}}</td>
       
 
@@ -807,16 +807,17 @@ table.dataTable {
         {% for sum in values.sum  %}
             <th class="seq_pos">{{sum}}</th>
         {% endfor %}
-        <th></th><th colspan="7"></th>
+        <th></th><th colspan="8"></th>
         </tr>
       </tfoot>
   </table>
       </div>
   </div>
   {% endfor %}
-  * Empty species cell is human<br>
-  ** Position is the last kept residue in relation to the previous and next helix<br>
-  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive
+  1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+  2 In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.<br>
+  3 Empty species cell is human<br>
+  4 Position is the last kept residue in relation to the previous and next helix<br>
   </div>
 </div>
 
@@ -851,7 +852,7 @@ table.dataTable {
       <td>{{t_pos.6.inactive}}</td>
       <td>{{t_pos.6.intermediate}}</td>
       <td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.3|length}}</td>
+      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
       <td>{{t_pos.5}}</td>
       <td>{{t_pos.4}}</td>
       <td>{{t_pos.8|safe}}</td>
@@ -928,7 +929,7 @@ table.dataTable {
       <td>{{t_pos.4}}</td>
       <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
       <td>{{t_pos.6.inactive}}</td><td>{{t_pos.6.intermediate}}</td><td>{{t_pos.6.active}}</td>
-      <td>{{t_pos.3|length}}</td>
+      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
       
 
       </tr>
