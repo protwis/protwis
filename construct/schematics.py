@@ -15,7 +15,7 @@ def generate_schematic(c):
     annotations = {}
     json_annotations = {}
 
-    fusion_position,fusion_result = c.fusion()
+    fusion_position,fusion_result, linkers = c.fusion()
 
 
     time2 = time.time()

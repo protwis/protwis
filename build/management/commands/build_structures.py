@@ -81,6 +81,11 @@ class Command(BaseBuild):
             action='store_false',
             default=True,
             help='Skip building contact network for test build')
+        parser.add_argument('-i', '--incremental',
+            action='store_true',
+            dest='incremental',
+            default=False,
+            help='Incremental update to structures for small live update')
 
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
@@ -124,6 +129,11 @@ class Command(BaseBuild):
         # where filenames specified?
         if options['filename']:
             self.filenames = options['filename']
+
+        if options['incremental']:
+            self.incremental_mode = True
+        else:
+            self.incremental_mode = False
 
         try:
             self.logger.info('CREATING STRUCTURES')
@@ -942,9 +952,16 @@ class Command(BaseBuild):
                     # create a structure record
                     try:
                         s = Structure.objects.get(protein_conformation__protein=con)
-                        self.purge_contact_network(s)
-                        s = s.delete()
-                        s = Structure()
+
+                        # If update_flag is true then update existing structures
+                        # Otherwise only make new structures
+                        if not self.incremental_mode:
+                            self.purge_contact_network(s)
+                            s = s.delete()
+                            s = Structure()
+                        else:
+                            continue
+
                     except Structure.DoesNotExist:
                         s = Structure()
                     
@@ -1130,7 +1147,7 @@ class Command(BaseBuild):
                     except:
                         self.logger.error('Error saving publication'.format(sd['pdb']))
 
-                    if source_file.split('.')[0] in self.xtal_seg_ends:
+                    if source_file.split('.')[0] in self.xtal_seg_ends and not self.incremental_mode:
                         s.annotated = True
                     else:
                         s.annotated = False

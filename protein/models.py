@@ -22,6 +22,11 @@ class Protein(models.Model):
     name = models.CharField(max_length=200)
     sequence = models.TextField()
 
+    def entry_short(self):
+        return self.entry_name.split("_")[0].upper()
+
+    def short(self):
+        return self.name.replace(" receptor","").replace("-adrenoceptor","")
 
     def __str__(self):
         if not self.entry_name:
@@ -227,6 +232,9 @@ class ProteinFamily(models.Model):
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
     slug = models.SlugField(max_length=100, unique=True)
     name = models.CharField(max_length=200)
+
+    def short(self):
+        return self.name.replace("Class ","").replace(" receptors","")
 
     def __str__(self):
         return self.name

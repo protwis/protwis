@@ -65,7 +65,7 @@ class StructureBrowser(TemplateView):
                 "protein_conformation__protein__source",
                 "protein_conformation__protein__family__parent__parent__parent",
                 "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents",
+                "stabilizing_agents", "construct__crystallization__crystal_method",
                 "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
                 "protein_conformation__site_protein_conformation__site",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
@@ -317,6 +317,7 @@ class StructureStatistics(TemplateView):
         context['unique_active'] = len(unique_active)
         context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
         context['release_notes'] = ReleaseNotes.objects.all()[0]
+        context['latest_structure'] = Structure.objects.latest('publication_date').publication_date
 
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
         context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
