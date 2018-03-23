@@ -1407,7 +1407,7 @@ class ConstructMutations(TemplateView):
             for mutation in c.mutations.all():
                 if p.entry_name not in proteins:
                     proteins.append(entry_name)
-                mutations.append((mutation,entry_name,pdb,p_class,c.name))
+                mutations.append((mutation,entry_name,pdb,p_class,c.name,p))
                 if mutation.sequence_number not in positions:
                     positions.append(mutation.sequence_number)
         rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein','protein_segment')
@@ -1447,10 +1447,13 @@ class ConstructMutations(TemplateView):
             cname = mutation[4]
             pos = mutation[0].sequence_number
             p_class = mutation[3]
+            p = mutation[5]
             if p_class not in class_names:
-                class_names[p_class] = p.family.parent.parent.parent.name
+                class_names[p_class] = p.family.parent.parent.parent.short
             p_class_name = class_names[p_class]
             p_class = class_names[p_class]
+            entry_short = p.entry_short
+            receptor_short = p.short
 
 
             if entry_name not in rs_lookup:
@@ -1465,7 +1468,7 @@ class ConstructMutations(TemplateView):
 
             key = mutation[1]+"_"+str(mutation[0].sequence_number)+"_"+mutation[0].mutated_amino_acid
             if key not in new_mutations:
-                new_mutations[key] = {'entry_name':entry_name,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': set(), 'pdbs': set()}
+                new_mutations[key] = {'entry_name':entry_short,'receptor_short':receptor_short,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': set(), 'pdbs': set()}
             new_mutations[key]['type'].update(mut_types)
             new_mutations[key]['pdbs'].add(pdb)
 
