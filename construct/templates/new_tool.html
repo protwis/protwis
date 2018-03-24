@@ -119,7 +119,7 @@
     <div class="row">
       <div class="col-sm-12">
         <h1 class="display-4">Construct Design Tool </h1>
-            <p>This is a tool to design crystallisation constructs based on all published GPCR structures.<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
+            <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
                               <span class="glyphicon glyphicon-film"></span>
                             </button></p>
 
@@ -187,9 +187,9 @@
       Work Mode:
       </div>
       <div class="col-sm-9">
-        <button id=combi_mode_button class="btn btn-primary disabled" onclick='$( "#dialogauto" ).dialog( "open" )'>Automatic</button>
-        <button id=manual_mode_button class="btn btn-primary" onclick='edit_mode();'>Manual</button>
-        <button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
+        <button id=combi_mode_button class="btn btn-default disabled" onclick='$( "#dialogauto" ).dialog( "open" )'>Automatic</button>
+        <button id=manual_mode_button class="btn btn-default" onclick='edit_mode();'>Manual</button>
+        <button class="btn btn-default" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
       </div>
     </div>
 
@@ -209,9 +209,9 @@
       File (Excel):
       </div>
       <div class="col-sm-9">
-        <button class="btn btn-info" onclick='exportToExcel();'>Save</button>
+        <button class="btn btn-default" onclick='exportToExcel();'>Save</button>
           <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
-              <label class="btn btn-primary btn-file">
+              <label class="btn btn-default btn-file">
                 Open<input  id="id_file_source" name="file_source" type="file" style="display: none;">
               </label>
           </form>
@@ -317,7 +317,7 @@
 <tr>
   <th rowspan="1" class='possiblities_nterm'>N-term fusion***</th>
   <!-- <th rowspan="1" class='possiblities_nterm'>N-term linker</th> -->
-  <th>N-term res kept rel. to TM1*</th>
+  <th>N-term res kept before to TM1*</th>
   <th>Pos</th>
   <th>AA</th>
   <th>BW**</th>
@@ -337,7 +337,7 @@
   <th>BW**</th>
   <th>Pos</th>
   <th>AA</th>
-  <th>C-term res kept rel. to h8*</th>
+  <th>C-term res kept after h8*</th>
   <th>Pos</th>
   <th>AA</th>
   <th>All constructs</th>
@@ -428,7 +428,7 @@
   <th>BW**</th>
   <th>Pos</th>
   <th>AA</th>
-  <th>C-term res kept rel. to h8*</th>
+  <th>C-term res kept after h8*</th>
   <th>Pos</th>
   <th>AA</th>
 </tr>

@@ -46,6 +46,7 @@ class AbsTargetSelection(TemplateView):
     family_tree = True
     redirect_on_select = False
     filter_gprotein = False
+    selection_heading = False
     buttons = {
         'continue': {
             'label': 'Continue to next step',

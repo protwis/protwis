@@ -1558,10 +1558,12 @@ def stabilisation_browser(request):
         struct_id = mutant.construct.structure_id
         state = mutant.construct.structure.state.name
         prot = mutant.construct.protein
-        p_class = prot.family.parent.parent.parent.name
-        p_ligand = prot.family.parent.parent.name
-        p_receptor = prot.family.parent.name
-        real_receptor = prot.entry_name
+        p_class = prot.family.parent.parent.parent.short()
+        p_ligand = prot.family.parent.parent.short()
+        p_receptor = prot.family.parent.short()
+        print(p_receptor,'p_receptor')
+        real_receptor = prot.entry_short
+        real_receptor_iuphar = prot.short()
         pdb = mutant.construct.crystal.pdb_code
 
         # Get the generic number and segment, if known.
@@ -1582,6 +1584,7 @@ def stabilisation_browser(request):
                        'ligand': p_ligand,
                        'receptor': p_receptor,
                        'real_receptor': real_receptor,
+                       'real_receptor_iuphar': real_receptor_iuphar,
                        'wild_type':mutant_id["wild_type"],
                        'mutant':mutant_id['mutant'],
                        'state':state,
@@ -2108,7 +2111,8 @@ class design(AbsTargetSelection):
     #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
     #     + ' have selected all your receptors, click the green button.'
 
-    description = 'Get construct suggestions based on published constructs.'
+    description = '''This is a tool to design structure constructs based on all published GPCR structures.
+                    A modification can be based on a closest template, most frequent solution or structural rationale (mutations)'''
 
     # Middle section
     numbering_schemes = False
@@ -2122,7 +2126,7 @@ class design(AbsTargetSelection):
 
     selection_boxes = OrderedDict([
         ('reference', False),
-        ('targets', True),
+        ('targets', False),
         ('segments', False),
     ])
 
@@ -2132,11 +2136,13 @@ class design(AbsTargetSelection):
             'label': 'Show results',
             'onclick': 'submitupload()',
             'color': 'success',
+            'url': '/construct/tool/',
             #'url': 'calculate/'
         }
     }
 
-    redirect_on_select = False
+    redirect_on_select = True
+    selection_heading = "Construct Design Tool"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
