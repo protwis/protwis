@@ -509,7 +509,6 @@ class SignatureMatch():
             segment_consensus = []
             signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
             for col, pos in enumerate(list(signature_map)):
-                #if negative values should be taken into account as well, then here should be abs()
                 if abs(self.diff_matrix[segment][pos][col]) > self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
                     for scheme in self.schemes:
@@ -602,3 +601,105 @@ class SignatureMatch():
                     tmp.append([feat_abr, feat_name, val, "red", '_', pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", '_', pos])
             consensus_match[segment] = tmp
         return (prot_score/100, consensus_match)
+
+def signature_score_excel(workbook, scores, protein_signatures, signature_filtered, relevant_gn, relevant_segments, numbering_schemes):
+
+    worksheet = workbook.add_worksheet('scored_proteins')
+
+
+    # First column, numbering schemes
+    for row, scheme in enumerate(numbering_schemes):
+        worksheet.write(1 + 3*row, 0, scheme[1])
+    # Score header
+    worksheet.write(1, 1, 'Score')
+
+    offset = 0
+    # Segments
+    for segment, resi in relevant_segments.items():
+        worksheet.merge_range(
+            0,
+            2 + offset,
+            0,
+            len(resi) + offset,
+            segment
+        )
+        offset += len(resi)
+
+    # Generic numbers
+    # for row, item in enumerate(generic_numbers_set.items()):
+    for row, item in enumerate(numbering_schemes):
+        scheme = item[0]
+        offset = 1
+        for sn, gn_list in relevant_gn[scheme].items():
+            for col, gn_pair in enumerate(gn_list.items()):
+                try:
+                    tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                except:
+                    tm, bw, gpcrdb = ('', '', '')
+                worksheet.write(
+                    1 + 3 * row,
+                    1 + col + offset,
+                    tm
+                )
+                worksheet.write(
+                    2 + 3 * row,
+                    1 + col + offset,
+                    bw
+                )
+                worksheet.write(
+                    3 + 3*row,
+                    1 + col + offset,
+                    gpcrdb
+                )
+            offset += len(gn_list.items())
+
+    # Line for sequence signature
+    worksheet.write(
+        1 + 3 * len(numbering_schemes),
+        0,
+        'CONSENSUS'
+        )
+    col_offset = 0
+    for segment, cons_feat in signature_filtered.items():
+        for col, chunk in enumerate(cons_feat):
+            worksheet.write(
+                2 + 3 * len(numbering_schemes),
+                2 + col + col_offset,
+                chunk[0]
+            )
+            cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
+            worksheet.write(
+                1 + 3 * len(numbering_schemes),
+                2 + col + col_offset,
+                chunk[2],
+                cell_format
+            )
+        col_offset += len(cons_feat)
+
+
+
+    # Score lines
+    row_offset = 0
+    for protein, score in scores.items():
+        worksheet.write(
+            3 + 3 * len(numbering_schemes) + row_offset,
+            0,
+            protein.protein.entry_name,
+        )
+        worksheet.write(
+            3 + 3 * len(numbering_schemes) + row_offset,
+            1,
+            score,
+        )
+        col_offset = 0
+        for segment, data in protein_signatures[protein].items():
+            for col, res in enumerate(data):
+                cell_format = workbook.add_format({'bg_color': res[3],})
+                worksheet.write(
+                    3 + 3 * len(numbering_schemes) + row_offset,
+                    2 + col + col_offset,
+                    res[4],
+                    cell_format
+                )
+            col_offset += len(data)
+        row_offset += 1

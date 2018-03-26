@@ -16,7 +16,7 @@ from common.selection import Selection
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.sequence_signature import SequenceSignature, SignatureMatch
+from common.sequence_signature import SequenceSignature, SignatureMatch, signature_score_excel
 from structure.functions import BlastSearch
 
 # from common.alignment_SITE_NAME import Alignment
@@ -606,9 +606,46 @@ def render_signature_match_scores(request, cutoff):
     )
     signature_match.score_protein_class()
 
+    request.session['signature_match'] = {
+        'scores': signature_match.protein_report,
+        'protein_signatures': signature_match.protein_signatures,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
+    }
+
     response = render(
         request,
         'sequence_signature/signature_match.html',
         {'scores': signature_match}
         )
+    return response
+
+def render_signature_match_excel(request):
+
+    print('Kurwa')
+    scores_data = request.session.get('signature_match', False)
+
+    outstream = BytesIO()
+    # wb = xlsxwriter.Workbook('excel_test.xlsx', {'in_memory': False})
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+
+    signature_score_excel(
+        wb,
+        scores_data['scores'],
+        scores_data['protein_signatures'],
+        scores_data['signature_filtered'],
+        scores_data['relevant_gn'],
+        scores_data['relevant_segments'],
+        scores_data['numbering_schemes']
+    )
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(
+        outstream.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    response['Content-Disposition'] = "attachment; filename=sequence_signature_protein_scores.xlsx"
+
     return response
