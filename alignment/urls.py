@@ -16,7 +16,6 @@ urlpatterns = [
     url(r'^segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
     url(r'^render_signature_excel', views.render_signature_excel, name='render_signature_excel'),
     url(r'^render_signature_match_scores/(?P<cutoff>)', views.render_signature_match_scores, name='render_signature_match_scores'),
-    url(r'^score_breakdown', views.score_breakdown, name='signature_score_breakdown'),
     url(r'^render_signature', views.render_signature, name='rendersignature'),
     url(r'render_positive', views.render_reordered, {'group' : 'positive'}, name='render-reordered'),
     url(r'render_negative', views.render_reordered, {'group' : 'negative'}, name='render-reordered'),

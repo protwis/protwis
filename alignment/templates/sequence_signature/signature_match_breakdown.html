@@ -28,7 +28,7 @@
 
     <!-- FEATURE SIGNATURE -->
 
-        <!-- feature frequency -->
+        {% comment %} <!-- feature frequency -->
         {% for feat in feats_signature %}
             <tr>
             {% for segment in feat %}
@@ -40,13 +40,13 @@
                 <td class="ali-td">&nbsp;</td>
             {% endfor %}
             </tr>
-        {% endfor %}
+        {% endfor %} {% endcomment %}
 
     <!-- FEATURE CONSENSUS -->
 
         <!-- Feature names -->
         <tr>
-            {% for segment, cons in signature_consensus.items %}
+            {% for segment, cons in signature_consensus_disp.items %}
                 {% for pos in cons %}
                     <td class="ali-td-stat-summary ali-residue">
                         <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.1|safe }}">
@@ -59,9 +59,9 @@
         </tr>
         <!-- Consensus values -->
         <tr>
-            {% for segment, cons in signature_consensus.items %}
+            {% for segment, cons in signature_consensus_disp.items %}
                 {% for pos in cons %}
-                    <td class="ali-td-stat-summary ali-residue res-cons-{{ pos.3 }}">{{ pos}}</td>
+                    <td class="ali-td-stat-summary ali-residue " bgcolor="{{ pos.3 }}">{{ pos.2 }}</td>
                 {% endfor %}
                 <td class="ali-td">&nbsp;</td>
             {% endfor %}
@@ -70,7 +70,7 @@
 
         <!-- generic number lines -->
 
-        {% for ns, segments in common_generic_numbers.items %}
+        {% comment %} {% for ns, segments in common_generic_numbers.items %}
             <tr>
                 {% for s, num in segments.items %}
                     {% for n, dn in num.items %}
@@ -83,7 +83,7 @@
                     <td class="ali-td">&nbsp;</td>
                 {% endfor %}
             </tr>
-        {% endfor %}
+        {% endfor %} {% endcomment %}
 
     </tbody>
 </table>

@@ -68,7 +68,7 @@ class SequenceSignature:
                     self.common_gn[scheme[0]][segment].items(),
                     key=lambda x: x[0].split('x')
                     ))
-        self.common_segments = dict([
+        self.common_segments = OrderedDict([
             (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
         ])
         # tweaking alignment
@@ -119,14 +119,12 @@ class SequenceSignature:
         tmp_fstats = []
         for row in range(len(AMINO_ACID_GROUPS.keys())):
             tmp_row = []
-            print(aln.feature_stats[row])
             for segment in self.common_segments:
                 print(fstats[segment][row])
                 tmp_row.append([[
                     str(x),
                     str(int(x/10)),
                 ] for x in fstats[segment][row]])
-            print(tmp_row)
             tmp_fstats.append(tmp_row)
         aln.feature_stats = tmp_fstats
 
@@ -278,7 +276,7 @@ class SequenceSignature:
             'common_positions': self.common_gn,
             'diff_matrix': self.features_frequency_difference,
             'numbering_schemes': self.common_schemes,
-            'segments': self.aln_neg.segments
+            'common_segments': self.common_segments,
         }
         return session_signature
 
@@ -484,10 +482,14 @@ class SignatureMatch():
         self.schemes = numbering_schemes
         self.segments = segments
         self.diff_matrix = difference_matrix
-        self.signature_filtered = OrderedDict()
+        self.signature_matrix_filtered = OrderedDict()
+        self.signature_consensus = OrderedDict()
         self.protein_set = protein_set
         self.relevant_gn = OrderedDict([(x[0], OrderedDict()) for x in self.schemes])
-        self.relevant_segments = []
+        self.relevant_segments = OrderedDict()
+        self.scored_proteins = []
+        self.protein_report = OrderedDict()
+        self.protein_signatures = OrderedDict()
 
         self.find_relevant_gns()
 
@@ -501,12 +503,14 @@ class SignatureMatch():
 
     def find_relevant_gns(self):
 
-        signature_consensus = OrderedDict()
+        matrix_consensus = OrderedDict()
         for segment in self.segments:
+            print(segment)
             segment_consensus = []
             signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
             for col, pos in enumerate(list(signature_map)):
-                if self.diff_matrix[segment][pos][col] > self.cutoff:
+                #if negative values should be taken into account as well, then here should be abs()
+                if abs(self.diff_matrix[segment][pos][col]) > self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
                     for scheme in self.schemes:
                         gnum = list(self.common_gn[scheme[0]][segment].items())[col]
@@ -518,15 +522,33 @@ class SignatureMatch():
 
             segment_consensus = np.array(segment_consensus).T
             if segment_consensus != []:
-                signature_consensus[segment] = segment_consensus
-        self.signature_filtered = signature_consensus
-        self.relevant_segments = signature_consensus.keys()
+                matrix_consensus[segment] = segment_consensus
+        self.signature_matrix_filtered = matrix_consensus
+        self.relevant_segments = OrderedDict([
+            (
+                x[0],
+                self.relevant_gn[self.schemes[0][0]][x[0]].keys()
+            ) for x in self.signature_matrix_filtered.items()
+        ])
+        signature = OrderedDict([(x[0], []) for x in matrix_consensus.items()])
+        for segment in self.relevant_segments:
+            signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            tmp = np.array(self.signature_matrix_filtered[segment])
+            for col, pos in enumerate(list(signature_map)):
+                signature[segment].append([
+                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    tmp[pos][col],
+                    int(tmp[pos][col]/20)+5
+                ])
+        self.signature_consensus = signature
 
 
     def score_protein_class(self, pclass_slug='001'):
 
-        a = time.time()
+        start = time.time()
         protein_scores = {}
+        protein_signature_match = {}
         class_proteins = Protein.objects.filter(
             species__common_name='Human',
             family__slug__startswith=pclass_slug
@@ -536,134 +558,47 @@ class SignatureMatch():
         class_a_pcf = ProteinConformation.objects.order_by('protein__family__slug',
             'protein__entry_name').filter(protein__in=class_proteins, protein__sequence_type__slug='wt').exclude(protein__entry_name__endswith='-consensus')
         for pcf in class_a_pcf:
-            start = time.time()
-            protein_scores[pcf] = self.score_protein(pcf)
-            end = time.time()
-            print("Time elapsed for {}: ".format(pcf.protein.entry_name), end - start)
-        b = time.time()
-        print("Total time: ", b - a)
-        return sorted(protein_scores.items(), key=lambda x: x[1], reverse=True)
+            p_start = time.time()
+            score, signature_match = self.score_protein(pcf)
+            protein_scores[pcf] = score
+            protein_signature_match[pcf] = signature_match
+            p_end = time.time()
+            print("Time elapsed for {}: ".format(pcf.protein.entry_name), p_end - p_start)
+        end = time.time()
+        self.protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1], reverse=True))
+        for prot in self.protein_report.items():
+            self.protein_signatures[prot[0]] = protein_signature_match[prot[0]]
+        self.scored_proteins = list(self.protein_report.keys())
+        print("Total time: ", end - start)
 
 
     def score_protein(self, pcf):
-
         prot_score = 0.0
+        consensus_match = OrderedDict([(x, []) for x in self.relevant_segments])
         for segment in self.relevant_segments:
+            tmp = []
+            signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             resi = Residue.objects.filter(
                 protein_segment__slug=segment,
                 protein_conformation=pcf,
                 generic_number__label__in=self.relevant_gn[self.schemes[0][0]][segment].keys(),
                 )
             for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
-                dslice = self.diff_matrix[segment][ : , idx]
+                feat = signature_map[idx]
+                feat_abr = list(AMINO_ACID_GROUPS.keys())[feat]
+                feat_name = list(AMINO_ACID_GROUP_NAMES.values())[feat]
+                val = self.signature_matrix_filtered[segment][feat][idx]
                 try:
-                    res = resi.get(generic_number__label=pos).amino_acid
-                    n = set(dslice.nonzero)
-                    p = self.residue_to_feat[res]
-                    prot_score += np.sum(dslice[p & n])
-                    prot_score -= np.sum(dslice[n - p])
-                except Exception as e:
-                    prot_score -= np.sum(dslice)
-        return prot_score/100
-
-    def prepare_session_data(self):
-        session_signature = {
-            'common_positions': self.common_gn,
-            'diff_matrix': self.diff_matrix,
-            'numbering_schemes': self.schemes,
-            'segments': self.segments,
-            'relevant_gn': self.relevant_gn,
-            'relevant_segments': self.relevant_segments,
-            'signature_filtered': self.signature_filtered,
-        }
-        return session_signature
-
-class ScoreBreakdown():
-
-    def __init__(self, pcf, cutoff, **kwargs):
-
-        self.pcf = pcf
-        self.cutoff = cutoff
-        self.common_gn = kwargs['common_positions']
-        self.schemes = kwargs['numbering_schemes']
-        self.segments = kwargs['segments']
-        self.diff_matrix = kwargs['diff_matrix']
-        self.relevant_gn = kwargs['relevant_gn']
-        self.relevant_segments = kwargs['relevant_segments']
-        self.score_breakdown = kwargs['signature_filtered']
-        # self.score_breakdown = OrderedDict()
-        # self.relevant_gn = OrderedDict([(x[0], OrderedDict()) for x in self.schemes])
-
-    def find_relevant_gns(self):
-
-        signature_consensus = OrderedDict()
-        for segment in self.segments:
-            segment_consensus = []
-            signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
-            for col, pos in enumerate(list(signature_map)):
-                if self.diff_matrix[segment][pos][col] > self.cutoff:
-                    segment_consensus.append(self.diff_matrix[segment][ : , col])
-                    for scheme in self.schemes:
-                        gnum = list(self.common_gn[scheme[0]][segment].items())[col]
-                        try:
-                            self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
-                        except:
-                            self.relevant_gn[scheme[0]][segment] = OrderedDict()
-                            self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
-
-            segment_consensus = np.array(segment_consensus).T
-            if segment_consensus != []:
-                signature_consensus[segment] = segment_consensus
-        self.score_breakdown = signature_consensus
-
-    def prepare_display_data(self):
-
-        display_score_breakdown = []
-        for fidx, feat in enumerate(AMINO_ACID_GROUPS.items()):
-            display_score_breakdown.append([])
-            for segment in self.score_breakdown.keys():
-                tmp = []
-                rs = Residue.objects.filter(
-                    protein_segment__slug=segment,
-                    protein_conformation__id = self.pcf
-                    )
-                for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
-                    try:
-                        res = rs.get(generic_number__label=pos)
-                    except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
-                        res = None
-                    val = self.score_breakdown[segment][fidx][idx]
-                    if not res:
-                        tmp.append([-val, "red"] if val != 0 else [val, "white"])
-                        continue
-                    if res.amino_acid in feat[1]:
-                        if val != 0:
-                            tmp.append([val, "green"])
-                        else:
-                            tmp.append([val, "white"])
+                    res = resi.get(generic_number__label=pos)
+                    r_name = res.amino_acid if res.amino_acid != 'Gap' else '_'
+                    if feat in self.residue_to_feat[res.amino_acid]:
+                        prot_score += val
+                        tmp.append([feat_abr, feat_name, val, "green", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
                     else:
-                        if val != 0:
-                            tmp.append([-val, "red"])
-                        else:
-
-                            tmp.append([val, "white"])
-                display_score_breakdown[fidx].append(tmp)
-        signature_consensus = OrderedDict([
-            (x,
-            np.sum(
-                self.score_breakdown[x],
-                axis=0)/100
-            ) for x in self.score_breakdown.keys()
-            ])
-        display_data = {
-            'common_numbering_schemes': self.schemes,
-            'common_generic_numbers': self.relevant_gn,
-            'common_segments': self.score_breakdown.keys(),
-            'feats_signature': display_score_breakdown,
-            'signature_consensus': signature_consensus,
-
-            'num_residue_columns': OrderedDict(
-                [(x, len(signature_consensus[x])) for x in self.score_breakdown.keys()]
-                )
-        }
-        return display_data
+                        prot_score -= val
+                        tmp.append([feat_abr, feat_name, val, "red", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
+                except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
+                    prot_score -= val
+                    tmp.append([feat_abr, feat_name, val, "red", '_', pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", '_', pos])
+            consensus_match[segment] = tmp
+        return (prot_score/100, consensus_match)

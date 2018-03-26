@@ -10,13 +10,13 @@ try:
 except:
     cache_alignment = cache
 
-from alignment import functions
+from alignment.functions import get_proteins_from_selection
 from common import definitions
 from common.selection import Selection
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.sequence_signature import SequenceSignature, SignatureMatch, ScoreBreakdown
+from common.sequence_signature import SequenceSignature, SignatureMatch
 from structure.functions import BlastSearch
 
 # from common.alignment_SITE_NAME import Alignment
@@ -512,6 +512,7 @@ def render_signature(request):
     # save for later
     # signature_map = feats_delta.argmax(axis=0)
     request.session['signature'] = signature.prepare_session_data()
+    request.session.modified = True
 
     return_html = render(
         request,
@@ -599,31 +600,15 @@ def render_signature_match_scores(request, cutoff):
     signature_match = SignatureMatch(
         signature_data['common_positions'],
         signature_data['numbering_schemes'],
-        signature_data['segments'],
+        signature_data['common_segments'],
         signature_data['diff_matrix'],
-        functions.get_proteins_from_selection(ss_pos) + functions.get_proteins_from_selection(ss_neg)
+        get_proteins_from_selection(ss_pos) + get_proteins_from_selection(ss_neg)
     )
-    scores = signature_match.score_protein_class()
-    request.session['signature'] = signature_match.prepare_session_data()
-    # scores = functions.score_class_a(
+    signature_match.score_protein_class()
 
-    #     functions.get_proteins_from_selection(ss_pos) + functions.get_proteins_from_selection(ss_neg)
-    #     )
-
-    response = render(request, 'sequence_signature/signature_match.html', {'scores': scores})
-    return response
-
-def score_breakdown(request):
-
-    pcf = request.GET['protein_conformation']
-    cutoff = request.GET['cutoff']
-    signature_data = request.session.get('signature')
-
-    score_breakdown = ScoreBreakdown(pcf, int(cutoff), **signature_data)
-    #score_breakdown.find_relevant_gns()
-
-    return render(
+    response = render(
         request,
-        'sequence_signature/signature_match_breakdown.html',
-        score_breakdown.prepare_display_data()
+        'sequence_signature/signature_match.html',
+        {'scores': signature_match}
         )
+    return response
