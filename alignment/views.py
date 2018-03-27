@@ -10,13 +10,13 @@ try:
 except:
     cache_alignment = cache
 
-from alignment import functions
+from alignment.functions import get_proteins_from_selection
 from common import definitions
 from common.selection import Selection
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.sequence_signature import SequenceSignature
+from common.sequence_signature import SequenceSignature, SignatureMatch, signature_score_excel
 from structure.functions import BlastSearch
 
 # from common.alignment_SITE_NAME import Alignment
@@ -470,7 +470,7 @@ def render_csv_alignment(request):
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
     return response
 
-def render_reordered (request, group):
+def render_reordered(request, group):
 
     #grab the selections from session data
     #targets set #1
@@ -493,7 +493,7 @@ def render_reordered (request, group):
         'num_residue_columns': len(aln.positions) + len(aln.segments)
         })
 
-def render_signature (request):
+def render_signature(request):
 
     # grab the selections from session data
 
@@ -511,12 +511,18 @@ def render_signature (request):
 
     # save for later
     # signature_map = feats_delta.argmax(axis=0)
+    request.session['signature'] = signature.prepare_session_data()
+    request.session.modified = True
 
-    return_html = render(request, 'sequence_signature/sequence_signature.html', signature.prepare_display_data())
+    return_html = render(
+        request,
+        'sequence_signature/sequence_signature.html',
+        signature.prepare_display_data()
+        )
 
     return return_html
 
-def render_signature_excel (request):
+def render_signature_excel(request):
 
     # version #2 - 5 sheets with separate pieces of signature outline
 
@@ -579,5 +585,67 @@ def render_signature_excel (request):
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     response['Content-Disposition'] = "attachment; filename=sequence_signature.xlsx"
+
+    return response
+
+def render_signature_match_scores(request, cutoff):
+
+    signature_data = request.session.get('signature')
+
+    # targets set #1
+    ss_pos = request.session.get('targets_pos', False)
+    # targets set #2
+    ss_neg = request.session.get('selection', False)
+
+    signature_match = SignatureMatch(
+        signature_data['common_positions'],
+        signature_data['numbering_schemes'],
+        signature_data['common_segments'],
+        signature_data['diff_matrix'],
+        get_proteins_from_selection(ss_pos) + get_proteins_from_selection(ss_neg)
+    )
+    signature_match.score_protein_class()
+
+    request.session['signature_match'] = {
+        'scores': signature_match.protein_report,
+        'protein_signatures': signature_match.protein_signatures,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
+    }
+
+    response = render(
+        request,
+        'sequence_signature/signature_match.html',
+        {'scores': signature_match}
+        )
+    return response
+
+def render_signature_match_excel(request):
+
+    print('Kurwa')
+    scores_data = request.session.get('signature_match', False)
+
+    outstream = BytesIO()
+    # wb = xlsxwriter.Workbook('excel_test.xlsx', {'in_memory': False})
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+
+    signature_score_excel(
+        wb,
+        scores_data['scores'],
+        scores_data['protein_signatures'],
+        scores_data['signature_filtered'],
+        scores_data['relevant_gn'],
+        scores_data['relevant_segments'],
+        scores_data['numbering_schemes']
+    )
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(
+        outstream.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    response['Content-Disposition'] = "attachment; filename=sequence_signature_protein_scores.xlsx"
 
     return response

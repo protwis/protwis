@@ -16,6 +16,16 @@
 {% block content %}
 {% block buttons %}
 <a id='selection-button' href="render_signature_excel" class="btn btn-success">Download excel file</a>
+<a id='score-button' href="javascript:void(0)" class="btn btn-success">Find similar proteins (Class A)</a>
+
+<form class='col-md-4' style="display: inline;">
+    <div class="input-group mb-3">
+        <input id="cutoff-val" type="text" class="form-control col-md-4" size=15 placeholder="40">
+        <div class="input-group-btn">
+            <button id="cutoff-apply" class="btn btn-outline-secondary" type="button"><i class="glyphicon glyphicon-filter"></i></button>
+        </div>
+    </div>
+</form>
 {% endblock %}
 <!-- <h4>A sequence signature of your receptor panel</h4>
 
@@ -111,10 +121,17 @@
 
 <!-- <script src="{% static 'home/js/scatter_plot.js' %}"></script> -->
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-<!-- <script type="text/javascript" charset="utf-8">
-    $(window).load(function () {
-        draw_scatter_plot(data, options);
+<script type="text/javascript" charset="utf-8">
+    $('#score-button').click( function () {
+        var cutoff = $('#cutoff-val').val();
+        if (cutoff == '') {
+            cutoff = 40;
+        }
+        window.location.href = 'render_signature_match_scores/'+cutoff;
     });
+    //$(window).load(function () {
+    //    draw_scatter_plot(data, options);
+    //});
 
-</script> -->
+</script>
 {% endblock %}
