@@ -24,6 +24,10 @@ class Command(BaseCommand):
                             dest='hommod',
                             default=False,
                             help='Include build of homology models')
+        parser.add_argument('--skip_cn',
+                            action='store_false',
+                            default=True,
+                            help='Skip building contact network for test build')
 
     def handle(self, *args, **options):
         if options['test']:
@@ -38,7 +42,7 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_links'],
             ['build_construct_proteins'],
-            ['build_structures', {'proc': options['proc']}],
+            ['build_structures', ['--skip_cn'], {'proc': options['proc']}],
             ['build_construct_data'],
             ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_ligand_assays', {'proc': options['proc'], 'test_run': options['test']}],
@@ -49,6 +53,7 @@ class Command(BaseCommand):
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_arrestins'],
+            ['build_signprot_complex'],
             ['build_drugs'],
             ['build_nhs'],
             ['build_mutational_landscape'],

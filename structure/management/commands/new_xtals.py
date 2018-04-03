@@ -10,7 +10,7 @@ from protein.models import Protein, ProteinConformation, ProteinSequenceType, Pr
 from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
 from structure.sequence_parser import SequenceParser
-from structure.functions import PdbChainSelector, PdbStateIdentifier, IdentifySites
+from structure.functions import PdbChainSelector, PdbStateIdentifier
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
 
@@ -42,7 +42,7 @@ class Command(BaseBuild):
             q.new_xtals(self.verbose)
         else:
             self.uniprots = self.get_all_GPCR_uniprots()
-            # self.uniprots = ['P24530']
+            # self.uniprots = ['Q99835']
             self.yamls = self.get_all_yamls()
             self.prepare_input(options['proc'], self.uniprots)
 
@@ -119,7 +119,7 @@ class QueryPDB():
                     pdb_data_dict = fetch_pdb_info(s, protein, new_xtal=True)
                     exp_method = pdb_data_dict['experimental_method']
                     if exp_method=='Electron Microscopy':
-                        st_type, cr = StructureType.objects.get_or_create(slug='electron-microscopy', name=exp_method)
+                        st_type = StructureType.objects.get(slug='electron-microscopy')
                     elif exp_method=='X-ray diffraction':
                         st_type = StructureType.objects.get(slug='x-ray-diffraction')
                     if 'deletions' in pdb_data_dict:
@@ -210,7 +210,7 @@ class QueryPDB():
                                                 'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
                             auxiliary_proteins, ligands = [], []
                             for key, values in pdb_data_dict['ligands'].items():
-                                if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4']:
+                                if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT']:
                                     continue
                                 else:
                                     ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
@@ -242,7 +242,7 @@ class QueryPDB():
                             print(pi.state, pi.activation_value)
                             with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'r') as yf:
                                 struct_yaml = yaml.load(yf)
-                            struct_yaml['state'] = pi.state
+                            struct_yaml['state'] = pi.state.name
                             try:
                                 struct_yaml['distance'] = round(float(pi.activation_value), 2)
                             except:
@@ -251,8 +251,7 @@ class QueryPDB():
                                 yaml.dump(struct_yaml, struct_yaml_file, indent=4, default_flow_style=False)
                 
                         # Check sodium pocket
-                        id_sites = IdentifySites(struct)
-                        id_sites.sodium_pocket()
+                        new_prot_conf.sodium_pocket()
 
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
@@ -283,17 +282,13 @@ class QueryPDB():
         dic = xmltodict.parse(response_mol.read())
         if 'NMR' in str_des or 'extracellular' in str_des:
             return 0
-        if pdb_code=='AAAA':
-            return 0
         if pdb_code in ['4QXE','1XWD','4QXF','4MQW']:
             return 0
         polymer = dic['molDescription']['structureId']['polymer']
         description = ''
         if type(polymer)==type([]):
             for mol in polymer:
-                if 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description']:
-                    description = mol['polymerDescription']['@description']
-                elif 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description']:
+                if 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description'] or 'Smoothened' in mol['polymerDescription']['@description']:
                     description = mol['polymerDescription']['@description']
                 if description=='' or int(mol['@length'])<100:
                     pass
@@ -320,7 +315,7 @@ class QueryPDB():
                             pass
             return 0
         else:
-            if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description']:
+            if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description'] or 'Smoothened' in polymer['polymerDescription']['@description']:
                 if int(polymer['@length'])<100:
                     return 0
                 if type(polymer['macroMolecule'])==type([]):

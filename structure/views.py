@@ -10,7 +10,7 @@ from django.views.decorators.cache import cache_page
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites
 from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
@@ -197,12 +197,16 @@ def HomologyModelDetails(request, modelname, state):
             t.color = colors[t]
             bb_temps[b][i] = t
             template_list.append(t.pdb_code.index)
+
+    psi = PdbStateIdentifier(model)
+    psi.run()
+    delta_distance = round(float(psi.activation_value), 2)
             
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                           'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
                                                           'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
                                                           'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
-                                                          'state': state})
+                                                          'state': state, 'delta_distance': delta_distance})
 
 def ServeHomModDiagram(request, modelname, state):
     if state=='refined':
@@ -1278,7 +1282,6 @@ class SuperpositionWorkflowDownload(View):
         if 'alt_files' in request.FILES:
             request.session['alt_files'] = request.FILES.getlist('alt_files')
 
-
         return response
 
 
@@ -1570,6 +1573,7 @@ class PDBClean(TemplateView):
         out_stream = BytesIO()
         io = PDBIO()
         zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
+
         if selection.targets != []:
             if selection.targets != [] and selection.targets[0].type == 'structure':
                 for selected_struct in [x for x in selection.targets if x.type == 'structure']:
@@ -1595,25 +1599,28 @@ class PDBClean(TemplateView):
                     request.session['substructure_mapping'] = 'full'
                     zipf.writestr(mod_name, tmp.getvalue())
                     del tmp
-                    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
-                    stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
-                    for r in rotamers:
-                        try:
-                            gn = r.residue.generic_number.label
-                        except:
-                            gn = '-'
-                        if r.backbone_template:
-                            bt = r.backbone_template.pdb_code.index
-                        else:
-                            bt = '-'
-                        if r.rotamer_template:
-                            rt = r.rotamer_template.pdb_code.index
-                        else:
-                            rt = '-'
-                        stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
-                    stats_name = mod_name[:-3]+'templates.csv'
-                    zipf.writestr(stats_name, stats_data)
-                    del stats_data
+
+                    # stat file
+                    # rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
+                    # stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
+                    # for r in rotamers:
+                    #     try:
+                    #         gn = r.residue.generic_number.label
+                    #     except:
+                    #         gn = '-'
+                    #     if r.backbone_template:
+                    #         bt = r.backbone_template.pdb_code.index
+                    #     else:
+                    #         bt = '-'
+                    #     if r.rotamer_template:
+                    #         rt = r.rotamer_template.pdb_code.index
+                    #     else:
+                    #         rt = '-'
+                    #     stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+                    # stats_name = mod_name[:-3]+'templates.csv'
+                    # zipf.writestr(stats_name, stats_data)
+                    # del stats_data
+
                 for mod in selection.targets:
                     selection.remove('targets', 'structure_model', mod.item.id)
 

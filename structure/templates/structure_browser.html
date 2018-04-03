@@ -28,7 +28,7 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'iTlfrt',
-                'order': [[17, "desc"]], // order by date
+                'order': [[18, "desc"]], // order by date
                 'aoColumnDefs': [
                     { 'bSortable' : false, 'aTargets': [0] },
                     { 'sType': 'string', 'aTargets': [1] },
@@ -64,7 +64,8 @@
                             { type: "date-range" }, // publication date
                             { type: "select"}, // annotated
                             { type: "text"}, // refined
-                            { type: "select"} // sodium ion pocket
+                            { type: "select"}, // sodium ion pocket
+                            { type: "select"}, // sodium ion in xtal
                         ]
                     });
                 }
@@ -178,7 +179,7 @@
         <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
     </div>
     <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
-    <div style="font-size: 10px;">For information on state identification and Δ distance (Å) please refer to the <a href="http://docs.gpcrdb.org/tutorial_structures.html#structure-state">documentation</a></div>
+    <div style="font-size: 10px;">For information on state identification and &#916; distance (&#8491;) please refer to the <a href="http://docs.gpcrdb.org/structures.html">documentation</a></div>
     <br />
     <br />
 
@@ -207,9 +208,11 @@
                     <th class="pub-th">Date</th>
                     <th class="pub-th">Annotated</th>
                     <th class="pub-th">Refined</th>
-                    <th class="pub-th">Sodium ion pocket</th>
+                    <th class="pub-th">Na<sup>+</sup> binding GPCR</th>
+                    <th class="pub-th">Na<sup>+</sup> in xtal</th>
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -324,6 +327,13 @@
                     </td>
                     <td>
                         {% if structure.protein_conformation.is_sodium %}
+                        Yes
+                        {% else %}
+                        No
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if structure.sodium %}
                         Yes
                         {% else %}
                         No

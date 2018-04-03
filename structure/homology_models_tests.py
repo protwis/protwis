@@ -20,14 +20,17 @@ class HomologyModelsTests(object):
                 try:
                     alignment.template_dict[i][j.replace('.','x')]
                 except:
-                    missing_from_alignment.append(j)
+                    try:
+                        alignment.template_dict[i][j]
+                    except:
+                        missing_from_alignment.append(j)
         print('Main structure: ', main_structure)
         print('Alignment: ', lengths_1)
         print('PDB:       ', lengths_2)
         print('Missing from Alignment:')
-        print(missing_from_pdb)
-        print('Missing from PDB:')
         print(missing_from_alignment)
+        print('Missing from PDB:')
+        print(missing_from_pdb)
         
     def force_add_template_to_table(self, table, main_structure, list_of_templates):
         temp = OrderedDict()
