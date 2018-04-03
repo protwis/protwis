@@ -392,16 +392,16 @@ class ConstructStatistics(TemplateView):
                         truncations_new_sum[position][p_class_name][from_h8] += 1
 
                 if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
-                    if linkers['before']:
-                         print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                    # if linkers['before']:
+                    #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                     if linkers['before']:
                         deletion.start += len(linkers['before'])
                         linkers_exist_before[c.crystal.pdb_code] = len(linkers['before'])
                     if linkers['after']:
                         deletion.end -= len(linkers['after'])
                         linkers_exist_after[c.crystal.pdb_code] = len(linkers['after'])
-                    if linkers['before']:
-                         print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                    # if linkers['before']:
+                    #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                     fusion_icl3 = True
                     bw = x50s[entry_name]['5x50']-deletion.start-1
                     bw = "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1]-1)
@@ -417,6 +417,12 @@ class ConstructStatistics(TemplateView):
 
                     if bw=='5x107':
                         # Skip these false deletions in melga
+                        continue
+
+                    # if entry_name=='s1pr1_human':
+                    #     print("CHECK",deletion.start,deletion.end, bw,bw2)
+                    if entry_name=='s1pr1_human' and deletion.start==250:
+                        # Skip these false deletions in s1pr1_human (3V2W, 3V2Y)
                         continue
 
                     l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
@@ -591,7 +597,7 @@ class ConstructStatistics(TemplateView):
                         if from_tm1 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(from_tm1)
                     elif not fusions[0][3].startswith('C-term'):
-                        print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
+                        # print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
                         deletion.start = fusions[0][4] #the next one is "cut"
                         deletion.end = fusions[0][4]+1 #the 'prev' is cut
 
@@ -881,7 +887,7 @@ class ConstructStatistics(TemplateView):
                         max_pos_range2[site][0] = start
                     if end > max_pos_range2[site][1]:
                         max_pos_range2[site][1] = end
-                    print('\n ### doing range',site, sites,max_pos_range2[site],val['range'])
+                    # print('\n ### doing range',site, sites,max_pos_range2[site],val['range'])
                 val['receptors'] = unique_sites
                 val['fusions'] = distinct_fusion
                 if site in truncations_maximums:
@@ -904,7 +910,7 @@ class ConstructStatistics(TemplateView):
 
                 for recp, rval in val['receptors'].items():
                     if rval[10]:
-                        print(recp,rval[10])
+                        # print(recp,rval[10])
                         if len(rval[10])!=len(rval[3]): #if pdbs with linker is not same as amount of linkers
                             rval[10].append('0')
                         rval[10] = ','.join(list(set(rval[10])))
@@ -938,7 +944,7 @@ class ConstructStatistics(TemplateView):
                         val['sum'] = temp
 
         # print(linkers_exist_before,linkers_exist_after)
-        print("NEWCHECK",truncations_new['icl3_start'])
+        # print("NEWCHECK",truncations_new['icl3_start'])
         for pos, p_vals in truncations_new_sum.items():
             for pclass, c_vals in p_vals.items():
                 new_list = OrderedDict()
@@ -1401,7 +1407,7 @@ class ConstructMutations(TemplateView):
             for mutation in c.mutations.all():
                 if p.entry_name not in proteins:
                     proteins.append(entry_name)
-                mutations.append((mutation,entry_name,pdb,p_class,c.name))
+                mutations.append((mutation,entry_name,pdb,p_class,c.name,p))
                 if mutation.sequence_number not in positions:
                     positions.append(mutation.sequence_number)
         rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein','protein_segment')
@@ -1441,10 +1447,13 @@ class ConstructMutations(TemplateView):
             cname = mutation[4]
             pos = mutation[0].sequence_number
             p_class = mutation[3]
+            p = mutation[5]
             if p_class not in class_names:
-                class_names[p_class] = p.family.parent.parent.parent.name
+                class_names[p_class] = p.family.parent.parent.parent.short
             p_class_name = class_names[p_class]
             p_class = class_names[p_class]
+            entry_short = p.entry_short
+            receptor_short = p.short
 
 
             if entry_name not in rs_lookup:
@@ -1459,7 +1468,7 @@ class ConstructMutations(TemplateView):
 
             key = mutation[1]+"_"+str(mutation[0].sequence_number)+"_"+mutation[0].mutated_amino_acid
             if key not in new_mutations:
-                new_mutations[key] = {'entry_name':entry_name,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': set(), 'pdbs': set()}
+                new_mutations[key] = {'entry_name':entry_short,'receptor_short':receptor_short,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': set(), 'pdbs': set()}
             new_mutations[key]['type'].update(mut_types)
             new_mutations[key]['pdbs'].add(pdb)
 
@@ -1549,10 +1558,12 @@ def stabilisation_browser(request):
         struct_id = mutant.construct.structure_id
         state = mutant.construct.structure.state.name
         prot = mutant.construct.protein
-        p_class = prot.family.parent.parent.parent.name
-        p_ligand = prot.family.parent.parent.name
-        p_receptor = prot.family.parent.name
-        real_receptor = prot.entry_name
+        p_class = prot.family.parent.parent.parent.short()
+        p_ligand = prot.family.parent.parent.short()
+        p_receptor = prot.family.parent.short()
+        print(p_receptor,'p_receptor')
+        real_receptor = prot.entry_short
+        real_receptor_iuphar = prot.short()
         pdb = mutant.construct.crystal.pdb_code
 
         # Get the generic number and segment, if known.
@@ -1573,6 +1584,7 @@ def stabilisation_browser(request):
                        'ligand': p_ligand,
                        'receptor': p_receptor,
                        'real_receptor': real_receptor,
+                       'real_receptor_iuphar': real_receptor_iuphar,
                        'wild_type':mutant_id["wild_type"],
                        'mutant':mutant_id['mutant'],
                        'state':state,
@@ -2099,7 +2111,8 @@ class design(AbsTargetSelection):
     #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
     #     + ' have selected all your receptors, click the green button.'
 
-    description = 'Get construct suggestions based on published constructs.'
+    description = '''This is a tool to design structure constructs based on all published GPCR structures.
+                    A modification can be based on a closest template, most frequent solution or structural rationale (mutations)'''
 
     # Middle section
     numbering_schemes = False
@@ -2113,7 +2126,7 @@ class design(AbsTargetSelection):
 
     selection_boxes = OrderedDict([
         ('reference', False),
-        ('targets', True),
+        ('targets', False),
         ('segments', False),
     ])
 
@@ -2123,11 +2136,13 @@ class design(AbsTargetSelection):
             'label': 'Show results',
             'onclick': 'submitupload()',
             'color': 'success',
+            'url': '/construct/tool/',
             #'url': 'calculate/'
         }
     }
 
-    redirect_on_select = False
+    redirect_on_select = True
+    selection_heading = "Construct Design Tool"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

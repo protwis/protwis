@@ -35,7 +35,7 @@ class Construct(models.Model):
     json = models.TextField(null=True)
 
     def fusion(self):
-        list_of_none_fusion = ['Expression tag','Linker','Not_Observed','Engineered mutation','','Conflict','Insertion','S-arrestin']
+        list_of_none_fusion = ['Expression tag','Linker','Not_Observed','Engineered mutation','','Conflict','Insertion','S-arrestin','3A Arrestin']
         list_of_comfirmed_fusion = ['C8TP59','Q0SXH8','Q9V2J8','Soluble cytochrome b562','Endolysin','Rubredoxin','Lysozyme','Flavodoxin']
         #ODD Rubredoxin
         #Q9V2J8 GlgA glycogen synthase  auto_4ZJ8

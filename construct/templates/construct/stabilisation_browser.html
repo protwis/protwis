@@ -41,6 +41,13 @@
         width: 1770px;
     }
 }
+table thead th.over_header {
+    border-right: 1px solid;
+    border-left: 0px solid;
+    text-align: center;
+    padding: 4px 4px 4px 4px;
+}
+
 </style>
 {% endblock %}
 {% block addon_js %}
@@ -212,8 +219,8 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <div><span style='width: 160px;display: inline-block;'>PDB:</span><span style='width: 160px;display: inline-block;' id="external_filter_container6"></span></div>
     <button id='apply_filter'>Apply Filter</button>
 </div> -->
-<div>Group By:
-    <select style="margin-right: 20px" id="group_select">
+<div>Group by:
+    <select style="margin-right: 5px" id="group_select">
         <option value="position_only">Class and Position</option>
         <option value="pos_and_wt">Class, Position, and Wild Type AA</option>
         <option value="pos_and_mut">Class, Position, and Mutant AA</option>
@@ -222,13 +229,13 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
 
 
     <span id='minimum_2_gpcrs'>
+        <input style="margin-right: 5px" id='min-2-gpcr-checkbox' class="subset-check" data-sub="min2_subset" type="checkbox" />
         <span style="font-weight:bold">Mutant Subsets:</span> Only show mutations present in minimum 2 GPCRs
-        <input style="margin-right: 20px" id='min-2-gpcr-checkbox' class="subset-check" data-sub="min2_subset" type="checkbox" />
     </span>
 
     <span id='ala_subset_choice' style='display:none;'>
+        <input style="margin-right: 5px"  checked="checked" id='ala-checkbox' class="subset-check" data-sub="ala_subset" type="checkbox" />
         Hide Xaa to Ala and Ala to Leu Mutations
-        <input style="margin-right: 20px"  checked="checked" id='ala-checkbox' class="subset-check" data-sub="ala_subset" type="checkbox" />
     </span>
 
 </div>
@@ -236,17 +243,18 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
 <table width="100%" class="display" id="position_only">
     <thead>
         <tr>
-            <th class="seq-th" colspan="1">State</th>
-            <th class="protein-th" colspan="4">Targets</th>
-            <th class="seq-th" colspan="4">Mutations</th>
-            <th class="protein-th" colspan="4">Frequency</th>
-            <th class="seq-th" colspan="3">Sites</th>
+            <th class="seq-th over_header" colspan="1">STATE</th>
+            <th class="protein-th over_header" colspan="5">TARGETS</th>
+            <th class="seq-th over_header" colspan="4">MUTATIONS</th>
+            <th class="protein-th over_header" colspan="4">FREQUENCY</th>
+            <th class="seq-th over_header" colspan="3">SITES</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
             <th class="protein-th">Class</th>
             <th class="protein-th">Ligand Type</th>
             <th class="protein-th">Receptor Family</th>
+            <th class="protein-th">UniProt</th>
             <th class="protein-th">Receptor</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
@@ -255,7 +263,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">No. GPCRS</th>
             <th class="protein-th"><div style="max-width: 78px">No. Receptor Families</div></th>
             <th class="protein-th"><div style="max-width: 70px">No. Structures</div></th>
-            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="protein-th">PDBs</th>
             <th class='seq-th'>Ionic Lock</th>
             <th class='seq-th'>Sodium Ion Binding Site</th>
             <th class='seq-th'>Switch</th>
@@ -299,6 +307,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                     {% for mutant in group.1.real_receptor %}
                     <tr style='background-color: transparent;'>
                         <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.real_receptor_iuphar %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant|safe }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -348,18 +365,19 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
 <table width="100%" class="display" id="pos_and_mut">
     <thead>
         <tr>
-            <th class="seq-th" colspan="1">State</th>
-            <th class="protein-th" colspan="4">Targets</th>
-            <th class="seq-th" colspan="4">Mutations</th>
-            <th class="protein-th" colspan="4">Frequency</th>
-            <th class="seq-th " colspan="4">Data (Mutant)</th>
-            <th class="protein-th" colspan="3">Sites</th>
+            <th class="seq-th over_header" colspan="1">STATE</th>
+            <th class="protein-th over_header" colspan="5">TARGETS</th>
+            <th class="seq-th over_header" colspan="4">MUTATIONS</th>
+            <th class="protein-th over_header" colspan="4">FREQUENCY</th>
+            <th class="seq-th over_header" colspan="4">DATA (MUTANT)</th>
+            <th class="protein-th over_header" colspan="3">SITES</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
             <th class="protein-th">Class</th>
             <th class="protein-th">Ligand Type</th>
             <th class="protein-th">Receptor Family</th>
+            <th class="protein-th">UniProt</th>
             <th class="protein-th">Receptor</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
@@ -368,7 +386,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">No. GPCRS</th>
             <th class="protein-th">No. Receptor Families</th>
             <th class="protein-th">No. Structures</th>
-            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="protein-th">PDBs</th>
             <th class="seq-th" >Class Sequence Conservation</th>
             <th class="seq-th" >Receptor Family Sequence Conservation</th>
             <th class="seq-th" >Helix Propen- sity</th>
@@ -420,6 +438,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                     {% endfor %}
                 </table>
             </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.real_receptor_iuphar %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant|safe }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
             <td>{{group.0.segment}}</td>
             <td> {{group.0.gen_num}} </td>
             <td>
@@ -463,18 +490,19 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
 <table width="100%" class="display" id="pos_and_wt">
     <thead>
         <tr >
-            <th class="seq-th" colspan="1">State</th>
-            <th class="protein-th" colspan="4">Targets</th>
-            <th class="seq-th" colspan="4">Mutations</th>
-            <th class="protein-th" colspan="4">Frequency</th>
-            <th class="seq-th" colspan="4">Data (Wild Type)</th>
-            <th class="protein-th" colspan="3">Sites</th>
+            <th class="seq-th over_header" colspan="1">STATE</th>
+            <th class="protein-th over_header" colspan="5">TARGETS</th>
+            <th class="seq-th over_header" colspan="4">MUTATIONS</th>
+            <th class="protein-th over_header" colspan="4">FREQUENCY</th>
+            <th class="seq-th over_header" colspan="4">DATA (WILD TYPE)</th>
+            <th class="protein-th over_header" colspan="3">SITES</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
             <th class="protein-th">Class</th>
             <th class="protein-th">Ligand Type</th>
             <th class="protein-th">Receptor Family</th>
+            <th class="protein-th">UniProt</th>
             <th class="protein-th">Receptor</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
@@ -483,7 +511,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">No. GPCRS</th>
             <th class="protein-th">No. Receptor Families</th>
             <th class="protein-th">No. Structures</th>
-            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="protein-th">PDBs</th>
             <th class="seq-th" >Class Sequence Conservation</th>
             <th class="seq-th" >Receptor Family Sequence Conservation</th>
             <th class="seq-th" >Helix Propen- sity</th>
@@ -534,6 +562,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                     {% endfor %}
                 </table>
             </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.real_receptor_iuphar %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant|safe }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
             <td>{{group.0.segment}}</td>
             <td> {{group.0.gen_num}} </td>
             <td>{{group.0.wild_type}}</td>
@@ -577,18 +614,19 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
 <table width="100%" class="display" id="all">
     <thead>
         <tr>
-            <th class="seq-th" colspan="1">State</th>
-            <th class="protein-th" colspan="4">Targets</th>
-            <th class="seq-th" colspan="4">Mutations</th>
-            <th class="protein-th" colspan="4">Frequency</th>
-            <th class="seq-th " colspan="4">Data (Fold Change (Mutant/Wild Type))</th>
-            <th class="protein-th" colspan="3">Sites</th>
+            <th class="seq-th over_header" colspan="1">STATE</th>
+            <th class="protein-th over_header" colspan="5">TARGETS</th>
+            <th class="seq-th over_header" colspan="4">MUTATIONS</th>
+            <th class="protein-th over_header" colspan="4">FREQUENCY</th>
+            <th class="seq-th over_header" colspan="4">DATA (FOLD CHANGE (MUTANT/WILD TYPE))</th>
+            <th class="protein-th over_header" colspan="3">SITES</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
             <th class="protein-th">Class</th>
             <th class="protein-th">Ligand Type</th>
             <th class="protein-th">Receptor Family</th>
+            <th class="protein-th">UniProt</th>
             <th class="protein-th">Receptor</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
@@ -597,7 +635,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">No. GPCRS</th>
             <th class="protein-th">No. Receptor Families</th>
             <th class="protein-th">No. Structures</th>
-            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="protein-th">PDBs</th>
             <th class="seq-th" >Class Sequence Conservation</th>
             <th class="seq-th" >Receptor Family Sequence Conservation</th>
             <th class="seq-th" >Helix Propen- sity</th>
@@ -635,6 +673,11 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>
                 {% for mutant in group.1.real_receptor %}
                     {{ mutant }}
+                {% endfor %}
+            </td>
+            <td>
+                {% for mutant in group.1.real_receptor_iuphar %}
+                    {{ mutant|safe }}
                 {% endfor %}
             </td>
             <td>{{group.0.segment}}</td>
