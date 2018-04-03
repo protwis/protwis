@@ -391,7 +391,7 @@ class Command(BaseCommand):
         csv_rows_xtal_ligands = []
         for c in constructs:
             pdbname = c.structure.pdb_code.index
-            fusion_position, fusions = c.fusion() 
+            fusion_position, fusions, linkers = c.fusion() 
             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
             uniprot = protein.parent.entry_name   
             #print(c.name,fusion_position)
@@ -770,7 +770,7 @@ class Command(BaseCommand):
             uniprot = protein.parent.entry_name
             d = cache.get(pdbname+"_auto_d")
             # d = None
-            if not d:
+            if not d and 'deletions' in d:
                 d = fetch_pdb_info(pdbname,protein)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             for d in d['deletions']:

@@ -46,6 +46,7 @@ class AbsTargetSelection(TemplateView):
     family_tree = True
     redirect_on_select = False
     filter_gprotein = False
+    selection_heading = False
     buttons = {
         'continue': {
             'label': 'Continue to next step',
@@ -1536,14 +1537,14 @@ def ImportExcel(request, **response_kwargs):
                 curr_row = 0 #skip first, otherwise -1
                 while curr_row < num_rows:
                     curr_row += 1
-                    row = worksheet.row(curr_row)
+                    #row = worksheet.row(curr_row)
                     curr_cell = -1
                     temprow = []
                     if worksheet.cell_value(curr_row, 0) == '': #if empty
                         continue
                     while curr_cell < num_cells:
                         curr_cell += 1
-                        cell_type = worksheet.cell_type(curr_row, curr_cell)
+                        #cell_type = worksheet.cell_type(curr_row, curr_cell)
                         cell_value = worksheet.cell_value(curr_row, curr_cell)
                         temprow.append(cell_value)
                     o.append(temprow)

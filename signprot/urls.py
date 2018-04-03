@@ -12,4 +12,5 @@ urlpatterns = [
     url(r'^(?P<slug>[-\w]+)/$', views.signprotdetail, name='signprotdetail'),
     url(r'^structure/(?P<pdbname>[-\w]+)/$', views.StructureInfo, name='StructureInfo'),
     url(r'^family/(?P<slug>[-\w]+)/$', views.familyDetail, name='familyDetail'),
+    url(r'^matrix$', views.InteractionMatrix, name='InteractionMatrix'),
 ]

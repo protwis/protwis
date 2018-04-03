@@ -161,6 +161,7 @@ class PhylogeneticTreeGenerator(object):
         ("", "Protein receptors") : 'SteelBlue',
         ("", "Sensory receptors") : 'Indigo',
         ("", "Steroid receptors") : 'Purple',
+        ("Class B2 (Adhesion)", "") : 'LimeGreen',
         }
     #List of tree levels that should be sorted alphabetically
     SORTED_BRANCHES = [2,3]

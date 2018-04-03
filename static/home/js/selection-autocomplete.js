@@ -19,7 +19,7 @@ $.widget( "custom.catcomplete", $.ui.autocomplete, {
       });
     }
   });
-
+var redirect_on_select_new_scope = redirect_on_select;
 $(function() {
     $("#selection-autocomplete").catcomplete({
         source: "/protein/autocomplete?selection_only_receptors="+selection_only_receptors+"&type_of_selection=" + type_of_selection,
@@ -49,6 +49,14 @@ $(function() {
                 if (type_of_selection == 'reference' && redirect_on_select == 'True') {
                     toggleButtonClass('selection-button'); // loading effect on button
                     setTimeout(function(){window.location = redirect_url;}, 200);
+                }
+                if (type_of_selection == 'targets' && redirect_on_select_new_scope == 'True') {
+                    console.log('try to go!');
+                    toggleButtonClass('selection-button'); // loading effect on button
+                    $("#selection-button").click();
+                    if (redirect_url) {
+                        setTimeout(function(){window.location = redirect_url;}, 200);
+                    }
                 }
             }
 

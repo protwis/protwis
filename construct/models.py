@@ -27,7 +27,7 @@ class Construct(models.Model):
     purification = models.ForeignKey('Purification', null=True, on_delete=models.CASCADE)  #method description if present
     crystallization = models.ForeignKey('Crystallization', null=True, on_delete=models.CASCADE)  #method description if present
     crystal = models.ForeignKey('CrystalInfo', null=True, on_delete=models.CASCADE) #might not exist, if failed
-    structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE) #might not exist, if failed
+    structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE, related_name='construct') #might not exist, if failed
     schematics = models.BinaryField(null=True)
     snakecache = models.BinaryField(null=True)
 
@@ -35,7 +35,7 @@ class Construct(models.Model):
     json = models.TextField(null=True)
 
     def fusion(self):
-        list_of_none_fusion = ['Expression tag','Linker','Not_Observed','Engineered mutation','','Conflict','Insertion','S-arrestin']
+        list_of_none_fusion = ['Expression tag','Linker','Not_Observed','Engineered mutation','','Conflict','Insertion','S-arrestin','3A Arrestin']
         list_of_comfirmed_fusion = ['C8TP59','Q0SXH8','Q9V2J8','Soluble cytochrome b562','Endolysin','Rubredoxin','Lysozyme','Flavodoxin']
         #ODD Rubredoxin
         #Q9V2J8 GlgA glycogen synthase  auto_4ZJ8
@@ -43,6 +43,7 @@ class Construct(models.Model):
         # Q0SXH8 Cytochrome b(562)
         result = []
         position = None
+        linker = {'before':'','after':''}
         for insert in self.insertions.all():
             if not insert.presence=='YES':
                 continue
@@ -57,9 +58,15 @@ class Construct(models.Model):
                 # if position != None:
                 #     print("new fusion??",position,insert.position,self.name)
                 if insert.position.startswith('N-term'):
-                    position = 'nterm'
+                    if position:
+                        position += '_nterm'
+                    else:
+                        position = 'nterm'
                 else:
-                    position = 'icl3'
+                    if position:
+                        position += '_icl3'
+                    else:
+                        position = 'icl3'
             result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position,insert.start,insert.end,'',''])
         
         if position:
@@ -67,11 +74,16 @@ class Construct(models.Model):
                 if insert.presence=='YES' and insert.insert_type.name=='linker':
                     if result[0][3].split("_")[0] == insert.position.split("_")[0]:
                         if result[0][4] is None or insert.start is None or abs(result[0][4]-insert.start)<len(insert.insert_type.subtype)+5:
-                            pass
-                            # print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
+                            # pass
+                            i_relative = 'after'
+                            if int(insert.position.split("_")[-1])<int(result[0][3].split("_")[-1]):
+                                i_relative = 'before'
+                            linker[i_relative] = insert.insert_type.subtype
+                            print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
 
-
-        return position,result
+        if len(result)>1:
+            print(position,self.structure, self.protein.entry_name,result)
+        return position,result,linker
 
     def cons_schematic(self):
         cache_key = self.name + "_cons_schematic"
@@ -80,6 +92,12 @@ class Construct(models.Model):
             temp = self.schematic()
             schematic = temp['schematic_2_c']
             cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_wt_schematic"
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_chem_summary"
+            summary = temp['summary']
+            cache.set(cache_key,summary,60*60*24*7)
 
         return schematic
 
@@ -90,6 +108,13 @@ class Construct(models.Model):
             temp = self.schematic()
             schematic = temp['schematic_2_wt']
             cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_cons_schematic"
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_chem_summary"
+            summary = temp['summary']
+            cache.set(cache_key,summary,60*60*24*7)
+
 
         return schematic
 
@@ -100,6 +125,12 @@ class Construct(models.Model):
             temp = self.schematic()
             summary = temp['summary']
             cache.set(cache_key,summary,60*60*24*7)
+            cache_key = self.name + "_cons_schematic"
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_wt_schematic"
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
 
         return summary
 
@@ -110,25 +141,25 @@ class Construct(models.Model):
 
 
     def schematic(self):
-        ## Use cache if possible
-        temp = self.schematics
-        #if temp==None or 1==1:
+
+        cache_key = self.name + "_all_schematics"
+        try:
+            temp = cache.get(cache_key)
+        except:
+            temp = None
+
         if temp==None:
-            # print(self.name+'_schematics no cache')
-            try:
-                temp = generate_schematic(self)
-                self.schematics = pickle.dumps(temp)
-                self.save()
-            except:
-                print('schematics failed for ',self.name)
-        else:
-            # print(self.name+'_schematics used cache')
-            try:
-                temp = pickle.loads(temp)
-            except:
-                temp = generate_schematic(self)
-                self.schematics = pickle.dumps(temp)
-                self.save()
+            temp = generate_schematic(self)
+            cache.set(cache_key,temp,60*60*24*7)
+            cache_key = self.name + "_cons_schematic"
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_wt_schematic"
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
+            cache_key = self.name + "_chem_summary"
+            summary = temp['summary']
+            cache.set(cache_key,summary,60*60*24*7)
         return temp
 
     def snake(self):
