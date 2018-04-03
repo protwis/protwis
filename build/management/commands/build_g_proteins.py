@@ -134,9 +134,6 @@ class Command(BaseCommand):
                     line = 'NA\tNA\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(count_res, i, cgn, ens, accession, name, count_sort)
                     f.write(line)
 
-
-
-
     def purge_coupling_data(self):
         try:
             ProteinGProteinPair.objects.filter().delete()
