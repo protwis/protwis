@@ -769,7 +769,6 @@ class PdbChainSelector():
             dssp = PDB.DSSP(structure[0], f, dssp='/env/bin/dssp')
             for key in dssp.keys():
                 if int(key[1][1]) in gn_residues:
-                    print(key, dssp[key])
                     self.dssp_dict[key[0]][key[1][1]] = dssp[key]
                     self.dssp_info[key[0]][dssp[key][2]] = self.dssp_info[key[0]][dssp[key][2]]+1
         os.remove(f)
@@ -875,7 +874,7 @@ class PdbStateIdentifier():
             tm6_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(B)').label
             tm3_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(B)').label
             tm7_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(B)').label
-            print(tm2_gn_b, tm6_gn_b, tm3_gn_b, tm7_gn_b)
+
             tm6 = self.get_residue_distance(tm2_gn_b, tm6_gn_b)
             tm7 = self.get_residue_distance(tm3_gn_b, tm7_gn_b)
             if tm6!=False and tm7!=False:

@@ -47,6 +47,7 @@ class Command(BaseBuild):
 		parser.add_argument('--gns', help="Specifiy generic numbers involved in calculation for TestStateIdentifier", default=False, nargs='+')
 		parser.add_argument('--only_xtals', help="Only run TestStateIdentifier on xtals", default=False, action='store_true')
 		parser.add_argument('--cutoffs', help="Set inactive and intermediate cutoffs", default=False, nargs='+')
+		parser.add_argument('--segment', help="Set protein segment label for StructuralStatistics", default=False)
 
 
 	def handle(self, *args, **options):
@@ -274,7 +275,7 @@ class Command(BaseBuild):
 
 		ss = StructuralStatistics()
 		for s in Structure.objects.filter(protein_conformation__protein__family__parent__parent__parent__slug='001'):
-			print(s.protein_conformation.protein.parent.entry_name, s, s.state, 'ICL1', ss.check_segment(s, 'ICL1'))
+			print(s.protein_conformation.protein.parent.entry_name, s, s.state, options['segment'], ss.check_segment(s, options['segment']))
 		print(datetime.now()-startTime)
 
 	def main_func(self, positions, iteration, count, lock):
@@ -311,6 +312,8 @@ class StructuralStatistics(object):
 				elif len(struct_res)>len(parent_res):
 					return 'Conserved_disordered'
 				elif len(struct_res)<=len(parent_res)/2:
+					return 'Conserved_missing'
+				elif len(struct_res)<len(parent_res):
 					return 'Conserved_missing'
 			else:
 				if len(struct_res)<=len(parent_res)/2:

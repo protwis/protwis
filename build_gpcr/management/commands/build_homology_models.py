@@ -73,35 +73,6 @@ class Command(BaseBuild):
         parser.add_argument('--n_c_term', help='Model N- and C-termini', default=False, action='store_true')
         
     def handle(self, *args, **options):
-        # env = environ()
-        # # If you also want to see HETATM residues, uncomment this line:
-        # #env.io.hetatm = True
-        # code = 'crfr1'
-        # mdl = model(env, file='./structure/homology_models/crfr1_human_Active_post.pdb')
-        # aln = alignment(env)
-        # aln.append_model(mdl, align_codes=code)
-        # aln.write(file=code+'.seq')
-        # return 0
-
-        # log.verbose()    # request verbose output
-        # env = environ()  # create a new MODELLER environment to build this model in
-
-        # # directories for input atom files
-        # # env.io.atom_files_directory = ['.', '../atom_files']
-
-        # a = automodel(env,
-        #               # alnfile  = './structure/PIR/P34998-2_Active.pir',     # alignment filename
-        #               # knowns   = './structure/homology_models/crfr1_human_Active_post.pdb',              # codes of the templates
-        #               # sequence = 'P34998-2')              # code of the target
-        #                 alnfile = './structure/PIR/P47871_Active.pir',
-        #                 knowns = './structure/homology_models/glr_human_Active_post.pdb',
-        #                 sequence = 'P47871')
-        # a.starting_model= 1                 # index of the first model
-        # a.ending_model  = 1                 # index of the last model
-        #                                     # (determines how many models to calculate)
-        # a.make()
-        # return 0
-  
         self.debug = options['debug']
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')
@@ -467,8 +438,8 @@ class HomologyModeling(object):
 
             
             for r in self.template_stats:
-                if r[0] in ['N-term', 'C-term']:
-                    continue
+                # if r[0] in ['N-term', 'C-term']:
+                #     continue
                 res = Residue.objects.get(protein_conformation__protein=self.reference_protein.parent, sequence_number=r[1])
                 rots = StructureRefinedStatsRotamer.objects.create(structure=hommod, residue=res,
                                                                    backbone_template=r[4], rotamer_template=r[5])
@@ -494,8 +465,8 @@ class HomologyModeling(object):
                                                                 pdb=formatted_model, 
                                                                 version=self.version)
             for r in self.template_stats:
-                if r[0] in ['N-term', 'C-term']:
-                    continue
+                # if r[0] in ['N-term', 'C-term']:
+                #     continue
                 res = Residue.objects.get(protein_conformation__protein=self.reference_protein, sequence_number=r[1])
                 rots = StructureModelStatsRotamer.objects.create(homology_model=hommod, residue=res,
                                                                  backbone_template=r[4],rotamer_template=r[5])
@@ -520,15 +491,15 @@ class HomologyModeling(object):
         ''' Do final formatting on homology model pdb file. Adds REMARK line, correct residue numbering and 
             class-specific generic numbers. Returns the pdb in string format.
         '''
-        if self.prot_conf.protein!=self.main_structure.protein_conformation.protein.parent:
-            try:
-                del self.template_source['N-term']
-            except:
-                pass
-            try:
-                del self.template_source['C-term']
-            except:
-                pass
+        # if self.prot_conf.protein!=self.main_structure.protein_conformation.protein.parent:
+        #     try:
+        #         del self.template_source['N-term']
+        #     except:
+        #         pass
+        #     try:
+        #         del self.template_source['C-term']
+        #     except:
+        #         pass
         pos_list = []
         if self.complex:
             first_signprot_res = False
@@ -760,7 +731,9 @@ class HomologyModeling(object):
             try:
                 if (len(main_pdb_array['H8'])==0 and len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))>0 or 
                    (self.reference_protein.family.slug.startswith('004') and self.main_structure.pdb_code.index!='4OO9') or 
-                   (self.main_structure.pdb_code.index in ['5UNF','5UNG','5UNH'] and self.revise_xtal==False)):
+                   (self.main_structure.pdb_code.index in ['5UNF','5UNG','5UNH','5O9H'] and self.revise_xtal==False)):
+                    if self.main_structure.pdb_code.index=='5O9H' and self.reference_entry_name in ['c5ar2_human','c3ar_human']:
+                        raise AssertionError
                     helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
                                                  self.template_source, separate_H8=True)
                     main_pdb_array = helixends.main_pdb_array
@@ -776,7 +749,7 @@ class HomologyModeling(object):
                     else:
                         alt_simtable = self.similarity_table_all
                         for struct in alt_simtable:
-                            if struct.pdb_code.index in ['5UNF','5UNG','5UNH']:
+                            if struct.pdb_code.index in ['5UNF','5UNG','5UNH','5O9H']:
                                 continue
                             try:
                                 gn_list = list(Residue.objects.filter(protein_conformation=struct.protein_conformation, 
@@ -1373,13 +1346,15 @@ class HomologyModeling(object):
             trimmed_residues+=list(main_pdb_array['TM7'].keys())[(unwind_num*-1):]+list(main_pdb_array['H8'].keys())[:unwind_num]
         
         # N- and C-termini
-        if N_and_C_termini==True and self.prot_conf.protein==self.main_structure.protein_conformation.protein.parent:
+        if N_and_C_termini==True: #and self.prot_conf.protein==self.main_structure.protein_conformation.protein.parent:
             N_struct = self.template_source['TM1'][list(self.template_source['TM1'])[0]][0]
             N_term = Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='N-term')
             if N_struct!=None:
                 N_term_temp = Residue.objects.filter(protein_conformation=N_struct.protein_conformation,
                                                      protein_segment__slug='N-term')
                 last_five = [i.sequence_number for i in list(N_term_temp) if i.sequence_number<1000]
+                if self.prot_conf.protein!=self.main_structure.protein_conformation.protein.parent:
+                    last_five = last_five[-5:]
             else:
                 last_five = []
             if self.main_structure==N_struct:
@@ -1500,13 +1475,13 @@ class HomologyModeling(object):
             # Shorten N- and C-termini
             n_count=1
             delete_termini = set()
-            for num in a.template_dict['N-term']:
+            for num in list(a.template_dict['N-term'])[:-5]:
                 if a.template_dict['N-term'][num]=='-':
                     delete_termini.add(('N-term', num))
                 n_count+=1
             
             c_count=1
-            for num in a.template_dict['C-term']:
+            for num in list(a.template_dict['C-term'])[5:]:
                 if a.template_dict['C-term'][num]=='-':
                     delete_termini.add(('C-term', num))
                 c_count+=1
@@ -1933,7 +1908,6 @@ class HomologyModeling(object):
                         seq_num = Residue.objects.get(protein_conformation=self.prot_conf,display_generic_number__label=dgn(gn,self.prot_conf)).sequence_number
                         curr_seqnum = seq_num
                     elif self.complex and first_gn!=None and len(first_gn.split('.'))==3:
-                        print(self.signprot_protconf.protein, gn)
                         seq_num = Residue.objects.get(protein_conformation=self.signprot_protconf,display_generic_number__label=gn).sequence_number
                         curr_seqnum = seq_num
                     else:
@@ -1974,14 +1948,14 @@ class HomologyModeling(object):
                         sections.append([seg,first_seqnum,seq_num,first_gn,prev_gn,ref_prot.entry_name,first_temp])
                     
             for sec in sections:
-                if self.revise_xtal==False and 'term' in sec[0]:
-                    pass
-                else:
-                    pass
+                # if self.revise_xtal==False and 'term' in sec[0]:
+                #     pass
+                # else:
+                #     pass
                 for rot in rot_table:
-                    if self.revise_xtal==False and 'term' in sec[0]:
-                        pass
-                    else:
+                    # if self.revise_xtal==False and 'term' in sec[0]:
+                    #     pass
+                    # else:
                         if int(sec[1])<=int(rot[1])<=int(sec[2]):
                             try:
                                 bb = rot[4].pdb_code.index
@@ -2186,7 +2160,6 @@ class HomologyModeling(object):
                         continue
                     superpose = sp.RotamerSuperpose(orig_res, alt_res)
                     new_atoms = superpose.run()
-                    print(gn, struct, superpose.backbone_rmsd)
                     if superpose.backbone_rmsd>0.5:
                         continue
                     main_pdb_array[ref_seg][str(ref_res).replace('x','.')] = new_atoms

@@ -1573,7 +1573,7 @@ class PDBClean(TemplateView):
         out_stream = BytesIO()
         io = PDBIO()
         zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
-        print(selection.targets)
+
         if selection.targets != []:
             if selection.targets != [] and selection.targets[0].type == 'structure':
                 for selected_struct in [x for x in selection.targets if x.type == 'structure']:
@@ -1721,7 +1721,6 @@ class PDBDownload(View):
             return HttpResponseRedirect('/structure/pdb_segment_selection')
 
         if self.kwargs['substructure'] == 'full':
-            print(request.session['selection'])
             out_stream = request.session['cleaned_structures']
 
         elif self.kwargs['substructure'] == 'custom':
