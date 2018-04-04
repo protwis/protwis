@@ -13,6 +13,7 @@ import xlsxwriter, xlrd
 
 
 import logging, json, os
+from collections import OrderedDict
 
 
 
@@ -27,12 +28,15 @@ class Command(BaseCommand):
 
         #Get the proteins
         f = open('uniprot.json', 'w')
-        ps = Protein.objects.filter(Q(source__name='SWISSPROT') | Q(source__name='TREMBL'),web_links__web_resource__slug='uniprot').all().prefetch_related('web_links__web_resource')
+        # ps = Protein.objects.filter(Q(source__name='SWISSPROT') | Q(source__name='TREMBL'),web_links__web_resource__slug='uniprot').all().prefetch_related('web_links__web_resource')
+        ps = Protein.objects.filter(source__name='SWISSPROT', species__common_name='Human').all().prefetch_related('web_links__web_resource').order_by('entry_name')
+        ps = Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human").all().prefetch_related('web_links__web_resource').order_by('entry_name')
         print('total:',len(ps))
-        mapping = {}
+        mapping = OrderedDict()
         for p in ps:
-            uniprot = p.web_links.filter(web_resource__slug='uniprot').values_list('index', flat = True)
+            uniprot = p.web_links.filter(web_resource__slug='uniprot').exclude(index='AC').values_list('index', flat = True)
             mapping[p.entry_name] = list(uniprot)
+            print(p.entry_name)
 
 
         json.dump(mapping,f, indent=4, separators=(',', ': '))

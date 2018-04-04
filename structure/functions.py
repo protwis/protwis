@@ -11,7 +11,7 @@ from common.selection import SimpleSelection
 from common.alignment import Alignment
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
 from residue.functions import dgn
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer
 
 from subprocess import Popen, PIPE
@@ -67,6 +67,7 @@ class BlastSearch(object):
             blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
+
         if len(blast_err) != 0:
             logger.debug(blast_err)
         if blast_out!='\n':
@@ -542,8 +543,7 @@ def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, ch
 #==============================================================================
 class HSExposureCB(AbstractPropertyMap):
     """
-    Abstract class to calculate Half-Sphere Exposure (HSE).
-
+    Abstract class to calculate Half-Sphere Exposure (HSE). #GP: Biopython class repurposed
     The HSE can be calculated based on the CA-CB vector, or the pseudo CB-CA
     vector based on three consecutive CA atoms. This is done by two separate
     subclasses.
@@ -816,58 +816,101 @@ class PdbChainSelector():
 
 
 class PdbStateIdentifier():
-    def __init__(self, structure):
+    def __init__(self, structure, tm2_gn='2x41', tm6_gn='6x38', tm3_gn='3x44', tm7_gn='7x52', inactive_cutoff=2, intermediate_cutoff=7.5):
+        self.structure_type = None
+
         try:
-            structure.protein_conformation.protein.parent
+            if structure.protein_conformation.protein.parent==None:
+                raise Exception
             self.structure = structure
+            self.structure_type = 'structure'
+            family = structure.protein_conformation.protein.family
         except:
-            self.structure = Structure.objects.get(pdb_code__index=structure.upper())
+            try:
+                structure.protein_conformation.protein
+                self.structure = structure
+                self.structure_type = 'refined'
+                family = structure.protein_conformation.protein.family
+            except:
+                structure.protein
+                self.structure = structure
+                self.structure_type = 'hommod'
+                family = structure.protein.family
+        if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.5:
+            if family.slug.startswith('002') or family.slug.startswith('003'):
+                tm6_gn, tm7_gn = '6x33', '7x51'
+                inactive_cutoff, intermediate_cutoff = 2.5, 6
+            elif family.slug.startswith('004'):
+                inactive_cutoff, intermediate_cutoff = 5, 7.5
+        self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
+        self.inactive_cutoff = inactive_cutoff
+        self.intermediate_cutoff = intermediate_cutoff
         self.state = None
         self.activation_value = None
         self.line = False
 
     def run(self):
-        self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+        if self.structure_type=='structure':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+        elif self.structure_type=='refined':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein)
+        elif self.structure_type=='hommod':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein)
         # class A and T
         if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
+            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<0:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 0<=self.activation_value<=8:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>8:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class B
         elif self.parent_prot_conf.protein.family.slug.startswith('002') or self.parent_prot_conf.protein.family.slug.startswith('003'):
-            tm6 = self.get_residue_distance('2x44', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm2_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(B)').label
+            tm6_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(B)').label
+            tm3_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(B)').label
+            tm7_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(B)').label
+
+            tm6 = self.get_residue_distance(tm2_gn_b, tm6_gn_b)
+            tm7 = self.get_residue_distance(tm3_gn_b, tm7_gn_b)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<10:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 10<=self.activation_value<=15:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>15:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class C
         elif self.parent_prot_conf.protein.family.slug.startswith('004'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm2_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(C)').label
+            tm6_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(C)').label
+            tm3_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(C)').label
+            tm7_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(C)').label
+
+            tm6 = self.get_residue_distance(tm2_gn_c, tm6_gn_c)
+            tm7 = self.get_residue_distance(tm3_gn_c, tm7_gn_c)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<0:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 0<=self.activation_value<=8:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>8:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class F
         elif self.parent_prot_conf.protein.family.slug.startswith('005'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm2_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(F)').label
+            tm6_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(F)').label
+            tm3_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(F)').label
+            tm7_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(F)').label
+
+            tm6 = self.get_residue_distance(tm2_gn_f, tm6_gn_f)
+            tm7 = self.get_residue_distance(tm3_gn_f, tm7_gn_f)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<5:
@@ -905,13 +948,33 @@ class PdbStateIdentifier():
 
             for chain1, chain2 in zip(rota_struct1, rota_struct2):
                 for r1, r2 in zip(chain1, chain2):
-                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    # print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
                     line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)
         except:
-            print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
-            return False
+            try:
+                res1 = Residue.objects.get(protein_conformation=self.parent_prot_conf, display_generic_number__label=dgn(residue1, self.parent_prot_conf))
+                res2 = Residue.objects.get(protein_conformation=self.parent_prot_conf, display_generic_number__label=dgn(residue2, self.parent_prot_conf))
+                if self.structure_type=='refined':
+                    pdb_data = self.structure.pdb_data.pdb
+                elif self.structure_type=='hommod':
+                    pdb_data = self.structure.pdb
+                io = StringIO(pdb_data)
+                struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
+                for chain in struct:
+                    r1 = chain[res1.sequence_number]
+                    r2 = chain[res2.sequence_number]
+                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
+                    self.line = line
+                    return self.calculate_CA_distance(r1, r2)
+                
+            except:
+                print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
+                return False
+
+            
 
     def calculate_CA_distance(self, residue1, residue2):
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()

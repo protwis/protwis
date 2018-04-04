@@ -212,8 +212,11 @@ def render_mutations(request, protein = None, family = None, download = None, re
         if mutation.residue.sequence_number not in mutations_list_seq: mutations_list_seq[mutation.residue.sequence_number] = [[]]
 
         exp_type = "N/A"
-        if mutation.exp_func:
+        if mutation.exp_func and mutation.exp_type:
             exp_type = mutation.exp_type.type+" ("+mutation.exp_func.func+")"
+        elif mutation.exp_func:
+            exp_type = "("+mutation.exp_func.func+")"
+
 
         if exp_type=='N/A' and (mutation.opt_basal_activity or mutation.opt_receptor_expression):
             # If N/A and optional data something is irrevalent.
@@ -265,6 +268,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         lig_role_name = ""
         if mutation.ligand:
             lig_name = mutation.ligand.name
+        if mutation.ligand_role:
             lig_role_name = mutation.ligand_role.name
 
         if not mutation.review_title:

@@ -1,5 +1,8 @@
 from django.db import models
 
+from protein.models import Protein
+from structure.models import Structure
+
 # Create your models here.
 
 class SignprotStructure(models.Model):
@@ -28,6 +31,16 @@ class SignprotBarcode(models.Model):
     class Meta():
         db_table = 'gprotein_barcode'
 
+class SignprotComplex(models.Model):
+    protein = models.ForeignKey('protein.Protein')
+    structure = models.ForeignKey('structure.Structure')
+    chain = models.CharField(max_length=1)
+
+    def __str__(self):
+        return '<SignprotComplex: {} {}>'.format(self.protein.entry_name, self.structure.pdb_code.index)
+
+    class Meta():
+        db_table = 'signprot_complex'
 
 class SignprotInteractions(models.Model):
 
