@@ -32,8 +32,8 @@ class SignprotBarcode(models.Model):
         db_table = 'gprotein_barcode'
 
 class SignprotComplex(models.Model):
-    protein = models.ForeignKey('protein.Protein')
-    structure = models.ForeignKey('structure.Structure')
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     chain = models.CharField(max_length=1)
 
     def __str__(self):
