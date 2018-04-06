@@ -503,6 +503,7 @@ class HomologyModeling(object):
         pos_list = []
         if self.complex:
             first_signprot_res = False
+        pprint.pprint(self.template_source)
         for seg in self.template_source:
             for num in self.template_source[seg]:
                 try:
@@ -532,7 +533,7 @@ class HomologyModeling(object):
             prev_num = None
             first_hetatm = False
             water_count = 0
-            # first_signprot_res_found = False
+            first_signprot_res_found = False
             for line in pdblines:
                 try:
                     if prev_num==None:
@@ -558,9 +559,9 @@ class HomologyModeling(object):
                     group1 = pdb_re.group(1)
                     if self.complex:
                         if i<pos_list.index(first_signprot_res):
-                            # if first_signprot_res_found==False:
-                            #     out_list.append('TER\n')
-                            #     first_signprot_res_found = True
+                            if first_signprot_res_found==False:
+                                out_list.append('TER\n')
+                                first_signprot_res_found = True
                             if len(whitespace)==2:
                                 whitespace = whitespace[0]+'R'
                             else:
@@ -978,6 +979,7 @@ class HomologyModeling(object):
                     self.update_template_source(change_template_list,loop.loop_output_structure,label)
                 else:
                     loop_stat[label] = loop.loop_output_structure
+                    add_ECL2_disulfide = False
                     if label=='ECL2' and loop.loop_output_structure!=None:
                         change_i1, change_i2, change_i3, change_templates1, change_templates2, change_templates3 = [],[],[],[],[],[]
                         x50 = list(self.template_source[label].keys()).index('45x50')
