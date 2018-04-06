@@ -503,7 +503,6 @@ class HomologyModeling(object):
         pos_list = []
         if self.complex:
             first_signprot_res = False
-        pprint.pprint(self.template_source)
         for seg in self.template_source:
             for num in self.template_source[seg]:
                 try:
