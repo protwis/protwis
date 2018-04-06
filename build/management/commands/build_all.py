@@ -42,7 +42,7 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_links'],
             ['build_construct_proteins'],
-            ['build_structures', ['--skip_cn'], {'proc': options['proc']}],
+            ['build_structures', {'proc': options['proc']}],
             ['build_construct_data'],
             ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_ligand_assays', {'proc': options['proc'], 'test_run': options['test']}],
