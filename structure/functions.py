@@ -4,7 +4,10 @@ from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB.AbstractPropertyMap import AbstractPropertyMap
 from Bio.PDB.Polypeptide import CaPPBuilder, is_aa
-from Bio.PDB.Vector import rotaxis
+try:
+    from Bio.PDB.Vector import rotaxis
+except:
+    from Bio.PDB import rotaxis
 
 from django.conf import settings
 from common.selection import SimpleSelection
