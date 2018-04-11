@@ -594,7 +594,8 @@ class SignatureMatch():
                         prot_score += val
                         tmp.append([feat_abr, feat_name, val, "green", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
                     else:
-                        prot_score -= val
+                        #David doesn't want the negative values in the score
+                        # prot_score -= val
                         tmp.append([feat_abr, feat_name, val, "red", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
                 except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
                     prot_score -= val
