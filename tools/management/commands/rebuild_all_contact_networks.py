@@ -17,6 +17,9 @@ from structure.models import (Structure, StructureType, StructureSegment, Struct
     StructureEngineeringDescription, Fragment)
 
 
+import os
+import yaml
+from interaction.views import runcalculation,parsecalculation
 from multiprocessing import Queue, Process, Value, Lock
 
 class Command(BaseCommand):
@@ -145,6 +148,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         self.ss = Structure.objects.filter(refined=False).all()
+        self.structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
         self.prepare_input(16, self.ss)
 
         # for s in Structure.objects.filter(refined=False).all():
@@ -166,6 +170,25 @@ class Command(BaseCommand):
                     count.value +=1
                 else:
                     break 
-            print(s)
+
+            source_file_path = os.sep.join([self.structure_data_dir, s.pdb_code.index.upper() + ".yaml"])
+            if os.path.isfile(source_file_path):
+                with open(source_file_path, 'r') as f:
+                    sd = yaml.load(f)
+                    
+            peptide_chain = ""
+            if 'ligand' in sd and sd['ligand'] and sd['ligand']!='None':
+                if isinstance(sd['ligand'], list):
+                    ligands = sd['ligand']
+                else:
+                    ligands = [sd['ligand']]
+                for ligand in ligands:
+                    peptide_chain = ""
+                    if 'chain' in ligand:
+                        peptide_chain = ligand['chain']
+            print(s,"Contact Network")
             self.purge_contact_network(s)
             self.build_contact_network(s,s.pdb_code.index)
+            print(s,"Ligand Interactions")
+            runcalculation(s.pdb_code.index,peptide_chain)
+            parsecalculation(s.pdb_code.index,False)
