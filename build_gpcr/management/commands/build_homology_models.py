@@ -503,14 +503,29 @@ class HomologyModeling(object):
         pos_list = []
         if self.complex:
             first_signprot_res = False
-        pprint.pprint(self.template_source)
+
+        # Fix for complex model missing residues in signaling protein
+        if self.complex:
+            sign_prot_del_list = []
+            found_c_term = False
+            for seg in self.template_source:
+                if seg=='C-term':
+                    found_c_term = True
+                    continue
+                for num, vals in self.template_source[seg].items():
+                    if found_c_term and vals[0]==None:
+                        sign_prot_del_list.append([seg,num])
+            for i in sign_prot_del_list:
+                del self.template_source[i[0]][i[1]]
+        #############################################################
+
         for seg in self.template_source:
             for num in self.template_source[seg]:
                 try:
                     num = str(Residue.objects.get(protein_conformation=self.prot_conf,
                                                   display_generic_number__label=dgn(num,self.prot_conf)).sequence_number)
                 except:
-                    if self.complex:
+                    if self.complex and seg not in ['N-term','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','C-term']:
                         try:
                             num = str(Residue.objects.get(protein_conformation=self.signprot_protconf,
                                                           display_generic_number__label=num).sequence_number)
@@ -559,9 +574,9 @@ class HomologyModeling(object):
                     group1 = pdb_re.group(1)
                     if self.complex:
                         if i<pos_list.index(first_signprot_res):
-                            if first_signprot_res_found==False:
-                                out_list.append('TER\n')
-                                first_signprot_res_found = True
+                            # if first_signprot_res_found==False:
+                            #     out_list.append('TER\n')
+                            #     first_signprot_res_found = True
                             if len(whitespace)==2:
                                 whitespace = whitespace[0]+'R'
                             else:
@@ -713,6 +728,7 @@ class HomologyModeling(object):
             
             parse = GPCRDBParsingPDB()
             main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
+
             if self.main_structure.pdb_code.index=='4OR2':
                 main_pdb_array['H8'] = OrderedDict()
             try:
@@ -731,7 +747,7 @@ class HomologyModeling(object):
 
             try:
                 if (len(main_pdb_array['H8'])==0 and len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))>0 or 
-                   (self.reference_protein.family.slug.startswith('004') and self.main_structure.pdb_code.index!='4OO9') or 
+                   (self.reference_protein.family.slug.startswith('004') and self.main_structure.pdb_code.index not in ['4OO9']) or 
                    (self.main_structure.pdb_code.index in ['5UNF','5UNG','5UNH','5O9H'] and self.revise_xtal==False)):
                     if self.main_structure.pdb_code.index=='5O9H' and self.reference_entry_name in ['c5ar2_human','c3ar_human']:
                         raise AssertionError
@@ -820,7 +836,6 @@ class HomologyModeling(object):
                                 self.update_template_source([gn.replace('.','x')],struct,'H8')
                         except:
                             pass
-
                     helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
                                                  self.template_source, separate_H8=False)
                     self.helix_end_mods['added']['H8'] = helixends.helix_end_mods['added']['H8']
@@ -2719,13 +2734,15 @@ class HelixEndsModeling(HomologyModeling):
     def correct_helix_ends(self, main_structure, main_pdb_array, a, template_source, separate_H8=None):
         ''' Updates main template structure with annotated helix ends. If helix is too long, it removes residues, if it
             is too short, it superpositions residues from next closest template. Updates alignment with changes.
+
+            @param separate_H8: if True, skip H8; if False, only H8; if None (default), both
         '''
         modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],
                                   'TM7':[[],[]], 'H8':[[],[]]},
                          'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],
                                     'TM7':[[],[]], 'H8':[[],[]]}}
         try:
-            H8_alt = template_source['H8']['8x50'][0]
+            H8_alt = template_source['H8']['8x49'][0]
             if separate_H8==True:
                 raise Exception()
         except:
@@ -2820,7 +2837,7 @@ class HelixEndsModeling(HomologyModeling):
                 e_gn = Residue.objects.get(protein_conformation=protein_conf, 
                                            display_generic_number__label=dgn(raw_helix_ends[raw_seg][1],
                                                                              protein_conf))
-                seq_nums = [i for i in range(e_gn.sequence_number-e_dif+1,e_gn.sequence_number+1)]
+                seq_nums = [i for i in range(e_gn.sequence_number-e_dif+1,e_gn.sequence_number+1)]               
                 gns = [ggn(j.display_generic_number.label) for j in list(Residue.objects.filter(
                             protein_conformation=protein_conf, sequence_number__in=seq_nums))]
                 for gn in gns:
@@ -2864,7 +2881,6 @@ class HelixEndsModeling(HomologyModeling):
                 temp_seg_seq_len = len(list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, 
                                                                    sequence_number__in=range(first_res,last_res+1))))
                 mid = temp_seg_seq_len/2
-            
             if ref_seg[0] not in ['T','H']:
                 continue
             if separate_H8==True:
