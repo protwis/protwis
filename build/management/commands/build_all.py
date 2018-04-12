@@ -45,6 +45,7 @@ class Command(BaseCommand):
             ['build_structures', {'proc': options['proc']}],
             ['build_construct_data'],
             ['update_construct_mutations'],
+            ['build_dynamine_annotation', {'proc': options['proc']}],
             ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_ligand_assays', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_mutant_data', {'proc': options['proc'], 'test_run': options['test']}],

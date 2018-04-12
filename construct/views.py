@@ -77,14 +77,14 @@ class ConstructStatistics(TemplateView):
 
         #PREPARE DATA
         proteins_ids = Construct.objects.all().values_list('protein', flat = True)
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__generic_number__label__in=['1x50','8x50','5x50','6x50','3x50','4x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__generic_number__label__in=['1x50','7x50','8x50','5x50','6x50','3x50','4x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
 
         x50s = {}
         for pc in pconfs:
             if pc[0] not in x50s:
                 x50s[pc[0]] = {}
             x50s[pc[0]][pc[2]] = pc[1]
-
+        print(x50s)
         pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__protein_segment__slug__in=['TM3','TM4','TM5','TM6']).values('protein__entry_name','residue__protein_segment__slug').annotate(start=Min('residue__sequence_number'),GN=Max('residue__generic_number__label'),GN2=Min('residue__generic_number__label'),end=Max('residue__sequence_number'))
         # print(pconfs)
         # x50s = {}
@@ -339,11 +339,11 @@ class ConstructStatistics(TemplateView):
                     # if from_tm1==0:
                     #     print(state,entry_name,p_class_name,truncations_new[position][p_class_name]['receptors'][entry_name])
 
-                if deletion.start >= x50s[entry_name]['8x50']:
+                if deletion.start >= x50s[entry_name]['7x50']:
                     found_cterm = True
                     import html
-                    bw = x50s[entry_name]['8x50']-deletion.start
-                    bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
+                    # bw = x50s[entry_name]['8x50']-deletion.start
+                    # bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
 
                     from_h8 = deletion.start - cterm_start[entry_name]
                     # print(p_class_name,':',html.unescape(p.family.name),':',entry_name,':',pdb_code,':',deletion.start-x50s[entry_name]['8x50'],':',from_h8)

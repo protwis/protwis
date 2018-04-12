@@ -1,9 +1,10 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views import generic
 from django.http import HttpResponse
 from django.db.models import Q
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
+from django.urls import reverse
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair
 from residue.models import Residue
@@ -33,6 +34,10 @@ def detail(request, slug):
         p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
     else:
         p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
+
+    if p.family.slug.startswith('100'):
+        # If this protein is a gprotein, redirect to that page.
+        return redirect(reverse('signprotdetail', kwargs={'slug': slug}))
 
     # get family list
     pf = p.family
