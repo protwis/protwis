@@ -11,5 +11,5 @@ urlpatterns = [
     url(r'^targets_compact',TargetDetailsCompact, name='ligand_target_detail_compact'),
     url(r'^targets_purchasable',TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/$',LigandDetails, name='ligand_detail'),
-    url(r'^statistics', LigandStatistics.as_view(), name='ligand_statistics')
+    url(r'^statistics', cache_page(3600*24*7)(LigandStatistics.as_view()), name='ligand_statistics')
 ]
