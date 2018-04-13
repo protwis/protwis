@@ -72,6 +72,7 @@ class Command(BaseCommand):
         self.logger.info('CREATING PROTEIN SEGMENTS')
         self.logger.info('Parsing file ' + self.segment_source_file)
 
+        ProteinSegment.objects.filter(name='').delete()
         with open(self.segment_source_file, "r", encoding='UTF-8') as segment_file:
             for row in segment_file:
                 split_row = shlex.split(row)
@@ -90,15 +91,15 @@ class Command(BaseCommand):
                         'proteinfamily': split_row[4]
                     }
 
-                    s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], defaults=defaults)
+                    s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], proteinfamily=split_row[4], defaults=defaults)
                     s.proteinfamily = split_row[4]
                     s.save()
 
                     if created:
                         self.logger.info('Created protein segment ' + s.name)
-                except:
-                    # print('Failed creating protein segment',row[0])
-                    self.logger.error('Failed creating protein segment',row[0])
+                except Exception as msg:
+                    # print('Failed creating protein segment', split_row, msg)
+                    self.logger.error('Failed creating protein segment', split_row)
                     # continue
 
         self.logger.info('COMPLETED CREATING PROTEIN SEGMENTS')
