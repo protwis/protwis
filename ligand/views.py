@@ -94,7 +94,6 @@ def LigandDetails(request, ligand_id):
 
 
 def TargetDetailsCompact(request, **kwargs):
-
     if 'slug' in kwargs:
         slug = kwargs['slug']
         if slug.count('_') == 0 :
@@ -127,21 +126,29 @@ def TargetDetailsCompact(request, **kwargs):
                 'target': ', '.join([x.item.entry_name for x in selection.targets])
                 }
 
-    ligands = [x.ligand for x in ps.distinct('ligand')]
-    record_count = ps.values(
-        'protein',
-        ).annotate(num_records = Count('protein__entry_name')
-                   ).order_by('protein__entry_name')
+    ps = ps.prefetch_related('protein','ligand__properities__web_links__web_resource','ligand__properities__vendors__vendor')
+    d = {}
+    for p in ps:
+        if p.ligand not in d:
+            d[p.ligand] = {}
+        if p.protein not in d[p.ligand]:
+             d[p.ligand][p.protein] = []
+        d[p.ligand][p.protein].append(p)
     ligand_data = []
-    for lig in ligands:
-        ligand_records = ps.filter(
-            ligand=lig
-            ).order_by('protein__entry_name')
-        for record in record_count:
-            per_target_data = ligand_records.filter(protein=record['protein'])
-            if list(per_target_data) == []:
-                continue
-            protein_details = Protein.objects.get(pk=record['protein'])
+    for lig, records  in d.items():
+
+        links = lig.properities.web_links.all()
+        chembl_id = [x for x in links if x.web_resource.slug=='chembl_ligand'][0].index
+
+        vendors = lig.properities.vendors.all()
+        purchasability = 'No'
+        for v in vendors:
+            if v.vendor.name not in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']:
+                purchasability = 'Yes'
+
+        for record, vals in records.items():
+            per_target_data = vals
+            protein_details = record
 
             """
             A dictionary of dictionaries with a list of values.
@@ -156,12 +163,12 @@ def TargetDetailsCompact(request, **kwargs):
                 tmp_count += 1
             values = list(itertools.chain(*tmp.values()))
             ligand_data.append({
-                'ligand_id': lig.properities.web_links.filter(web_resource__slug = 'chembl_ligand')[0].index,
+                'ligand_id': chembl_id,
                 'protein_name': protein_details.entry_name,
                 'species': protein_details.species.common_name,
                 'record_count': tmp_count,
                 'assay_type': ', '.join(tmp.keys()),
-                'purchasability': 'Yes' if len(LigandVendorLink.objects.filter(lp=lig.properities).exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 'No',
+                'purchasability': purchasability,
                 #Flattened list of lists of dict keys:
                 'low_value': min(values),
                 'average_value': sum(values)/len(values),
