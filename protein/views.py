@@ -35,7 +35,7 @@ def detail(request, slug):
     else:
         p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
 
-    if p.family.slug.startswith('100'):
+    if p.family.slug.startswith('100') or p.family.slug.startswith('200'):
         # If this protein is a gprotein, redirect to that page.
         return redirect(reverse('signprotdetail', kwargs={'slug': slug}))
 
@@ -119,7 +119,7 @@ def SelectionAutocomplete(request):
         type_of_selection = request.GET.get('type_of_selection')
         selection_only_receptors = request.GET.get('selection_only_receptors')
         referer = request.META.get('HTTP_REFERER')
-        
+
         if 'gproteinselection' in str(referer) or 'signprot' in str(referer) and not 'ginterface' in str(referer):
             exclusion_slug = '00'
         else:
@@ -149,7 +149,7 @@ def SelectionAutocomplete(request):
                 species__in=(species_list),
                 source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
         else:
-            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q), 
+            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
                 species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
         for p in ps:
             p_json = {}
