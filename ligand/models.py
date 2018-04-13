@@ -35,6 +35,8 @@ class Ligand(models.Model):
         if gtop:
             # get name from response
             ligand_name = gtop['name']
+            if ligand_name=='11-<i>cis</i>-retinal':
+                ligand_name = 'retinal'
 
         # does a ligand by this name already exists?
         try:
