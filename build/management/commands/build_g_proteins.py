@@ -20,6 +20,8 @@ from itertools import islice
 import pandas as pd
 from Bio import SeqIO
 import Bio.PDB as PDB
+from Bio import pairwise2
+from Bio.pairwise2 import format_alignment
 from collections import OrderedDict
 import math
 import numpy as np
@@ -27,6 +29,8 @@ import logging
 import csv
 import os
 import csv
+import shlex, subprocess
+import requests, xmltodict
 
 from urllib.request import urlopen
 
@@ -35,11 +39,15 @@ class Command(BaseCommand):
 
     # source file directory
     gprotein_data_path = os.sep.join([settings.DATA_DIR, 'g_protein_data'])
+    if not os.path.exists(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])):
+        with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt']),'w') as f:
+            f.write('PDB_ID\tPDB_Chain\tPosition\tResidue\tCGN\tEnsembl_Protein_ID\tUniprot_ACC\tUniprot_ID\tsortColumn\n')
     gprotein_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])
     barcode_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'barcode_data.csv'])
     pdbs_path = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'pdbs'])
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
+    ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
@@ -51,34 +59,42 @@ class Command(BaseCommand):
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--wt', default=False, type=str, help='Add wild type protein sequence to data')
         parser.add_argument('--xtal', default=False, type=str, help='Add xtal to data')
+        parser.add_argument('--build_datafile', default=False, action='store_true', help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
 
 
     def handle(self, *args, **options):
         self.options = options
         # self.update_alignment()
-        # self.add_entry()
+
+        # self.add_new_orthologs()
+        # return 0
 
         if options['filename']:
             filenames = options['filename']
         else:
             filenames = False
 
-        #add gproteins from cgn db
-        try:
-            self.purge_coupling_data()
-            # self.purge_cgn_residues()
-            # self.purge_cgn_proteins()
+        if self.options['wt']:
+            self.add_entry()
+        elif self.options['build_datafile']:
+            self.build_table_from_fasta()
+        else:
+            #add gproteins from cgn db
+            try:
+                self.purge_coupling_data()
+                # self.purge_cgn_residues()
+                # self.purge_cgn_proteins()
 
-            self.create_g_proteins(filenames)
-            self.cgn_create_proteins_and_families()
+                self.create_g_proteins(filenames)
+                self.cgn_create_proteins_and_families()
 
-            human_and_orths = self.cgn_add_proteins()
-            self.update_protein_conformation(human_and_orths)
-            self.create_barcode()
+                human_and_orths = self.cgn_add_proteins()
+                self.update_protein_conformation(human_and_orths)
+                self.create_barcode()
 
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
+            except Exception as msg:
+                print(msg)
+                self.logger.error(msg)
 
     def update_alignment(self):
         with open(self.lookup, 'r') as csvfile:
@@ -97,6 +113,67 @@ class Command(BaseCommand):
         residue_data['sortColumn'] = residue_data['sortColumn'].astype(int)
 
         residue_data.to_csv(path_or_buf=self.gprotein_data_path+'/test.txt', sep='\t', na_rep='NA', index=False)
+
+    def add_new_orthologs(self):
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        with open(self.lookup, 'r') as csvfile:
+            lookup_data = csv.reader(csvfile, delimiter=',', quotechar='"')
+            lookup_dict = OrderedDict([('-1','NA.N-terminal insertion.-1'),('-2','NA.N-terminal insertion.-2'),('-3','NA.N-terminal insertion.-3')])
+            for row in lookup_data:
+                lookup_dict[row[0]] = row[1:]
+        fasta_dict = OrderedDict()
+        for record in SeqIO.parse(self.alignment_file, 'fasta'):
+            sp, accession, name, ens = record.id.split('|')
+            g_prot, species = name.split('_')
+            if g_prot not in fasta_dict:
+                fasta_dict[g_prot] = OrderedDict([(name, [accession, ens, str(record.seq)])])
+            else:
+                fasta_dict[g_prot][name] = [accession, ens, str(record.seq)]
+        with open(self.ortholog_file, 'r') as ortholog_file:
+            ortholog_data = csv.reader(ortholog_file, delimiter=',')
+            for i,row in enumerate(ortholog_data):
+                if i==0:
+                    header = list(row)
+                    continue
+                for j, column in enumerate(row):
+                    if j in [0,1]:
+                        continue
+                    if column!='':
+                        if '_' in column:
+                            entry_name = column
+                            BASE = 'http://www.uniprot.org'
+                            KB_ENDPOINT = '/uniprot/'
+                            result = requests.get(BASE + KB_ENDPOINT, params={'query': 'mnemonic:{}'.format(entry_name), 'format':'list'})
+                            accession = result.text.replace('\n','')
+                        else:
+                            entry_name = '{}_{}'.format(column,header[j])
+                            accession = column
+                        if entry_name not in fasta_dict[row[0]]:
+                            result = requests.get('https://www.uniprot.org/uniprot/{}.xml'.format(accession))
+                            uniprot_entry = result.text
+                            print('LAST')
+                            print(row, column)
+                            print(uniprot_entry)
+                            try:
+                                entry_dict = xmltodict.parse(uniprot_entry)
+                            except:
+                                self.logger.warning('Skipped: {}'.format(accession))
+                                continue
+                            try:
+                                ensembl = [i for i in entry_dict['uniprot']['entry']['dbReference'] if i['@type']=='Ensembl'][0]['@id']
+                            except:
+                                self.logger.warning('Missing Ensembl: {}'.format(accession))
+                            sequence = entry_dict['uniprot']['entry']['sequence']['#text'].replace('\n','')
+                            seqc = SeqCompare()
+                            aligned_seq = seqc.align(fasta_dict[row[0]][row[0]+'_HUMAN'][2],sequence)
+                            fasta_dict[row[0]][entry_name] = [accession, ensembl, aligned_seq]
+                            
+        with open(os.sep.join([settings.DATA_DIR, 'g_protein_data','fasta_test.fa']),'w') as f:
+            for g,val in fasta_dict.items():
+                for i,j in val.items():
+                    f.write('>sp|{}|{}|{}\n{}\n'.format(j[0],i,j[1],j[2]))
+        import pprint
+        pprint.pprint(fasta_dict)
 
     def add_entry(self):
         if not self.options['wt']:
@@ -130,9 +207,21 @@ class Command(BaseCommand):
                     if i=='-':
                         continue
                     count_res+=1
-                    cgn = lookup_dict[str(count_sort)][6].replace('(','').replace(')','')
+                    try:
+                        cgn = lookup_dict[str(count_sort)][6].replace('(','').replace(')','')
+                    except:
+                        print('Dict error: {}'.format(self.options['wt']))
                     line = 'NA\tNA\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(count_res, i, cgn, ens, accession, name, count_sort)
                     f.write(line)
+
+    def build_table_from_fasta(self):
+        os.chdir('/vagrant/shared/sites/protwis')
+        for record in SeqIO.parse(self.alignment_file, 'fasta'):
+            sp, accession, name, ens = record.id.split('|')
+            if len(record.seq)!=455:
+                continue
+            command = "/env/bin/python3 manage.py build_g_proteins --wt "+str(name.lower())
+            subprocess.call(shlex.split(command))
 
     def purge_coupling_data(self):
         try:
@@ -724,3 +813,12 @@ class Command(BaseCommand):
             local_file.close()
 
         return up
+
+
+class SeqCompare(object):
+    def __init__(self):
+        pass
+
+    def align(self, seq1, seq2):
+        for p in pairwise2.align.globalms(seq1, seq2, 8, 5, -5, -5):
+            return format_alignment(*p).split('\n')[2]

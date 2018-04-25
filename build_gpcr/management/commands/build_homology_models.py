@@ -20,7 +20,6 @@ from modeller import *
 from modeller.automodel import *
 from collections import OrderedDict
 import os
-import subprocess
 import shlex
 import logging
 import pprint
@@ -71,6 +70,7 @@ class Command(BaseBuild):
         parser.add_argument('--complex', help='Build GPCR complex', default=False, action='store_true')
         parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str)
         parser.add_argument('--n_c_term', help='Model N- and C-termini', default=False, action='store_true')
+        parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         
     def handle(self, *args, **options):
         self.debug = options['debug']
@@ -93,6 +93,7 @@ class Command(BaseBuild):
             self.signprot = False
         else:
             self.signprot = options['signprot']
+        self.force_main_temp = options['force_main_temp']
 
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'F':'005', 'T':'006'}
         self.modeller_iterations = options['i']
@@ -237,7 +238,8 @@ class Command(BaseBuild):
                 _stdout = sys.stdout
                 sys.stdout = open(os.devnull, 'w')
 
-            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug)
+            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
+                                              force_main_temp=self.force_main_temp)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             formatted_model = Homology_model.format_final_model()
@@ -358,10 +360,11 @@ class HomologyModeling(object):
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
     
-    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False):
+    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False, force_main_temp=False):
         self.debug = debug
         self.complex = complex_model
         self.signprot = signprot
+        self.force_main_temp = force_main_temp
         self.version = build_date
         self.reference_entry_name = reference_entry_name.lower()
         self.state = state
@@ -704,7 +707,7 @@ class HomologyModeling(object):
             @param order_by: str, order results by identity, similarity or simscore
         '''
         alignment = AlignedReferenceTemplate()
-        alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex)
+        alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex, force_main_temp=self.force_main_temp)
         main_pdb_array = OrderedDict()
         if core_alignment==True:
             if self.debug:
@@ -918,7 +921,7 @@ class HomologyModeling(object):
             del main_pdb_array['H8']
 
         trimmed_residues=[]
-        
+
         # loops
         if loops==True:
             c3x25 = {'001':'3x25','002':'3x29','003':'3x29','004':'3x29','005':'3x25'}
@@ -1719,6 +1722,10 @@ class HomologyModeling(object):
             for seg, values in signprot_pdb_array.items():
                 main_pdb_array[seg] = values
 
+        # for i,j,k,l in zip(a.reference_dict, a.template_dict, a.alignment_dict, main_pdb_array):
+        #     for v,b,n,m in zip(a.reference_dict[i], a.template_dict[j], a.alignment_dict[k], main_pdb_array[l]):
+        #         print(v, a.reference_dict[i][v], a.template_dict[j][b], a.alignment_dict[k][n], main_pdb_array[l][m])
+
         # write to file
         trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums = self.write_homology_model_pdb(path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
                                                                                                      main_pdb_array, a, 
@@ -1875,7 +1882,10 @@ class HomologyModeling(object):
             modelname = "{}_{}_{}_{}_GPCRdb".format(self.class_name, self.reference_entry_name,self.state,self.main_structure)
         else:
             modelname = "{}_{}_{}_refined_{}_GPCRdb".format(self.class_name, self.reference_protein.parent.entry_name, self.main_structure, self.main_structure.state.name)
-            os.remove('./pdb{}.ent'.format(self.reference_entry_name))
+            try:
+                os.remove('./pdb{}.ent'.format(self.reference_entry_name))
+            except:
+                pass
 
         # Ignore output from modeller!
         if not self.debug:
@@ -2118,6 +2128,11 @@ class HomologyModeling(object):
                 if ((gn in inconsistencies or alignment_dict[aligned_seg][aligned_res]=='.' and 
                     reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]) or (template_dict[temp_seg][temp_res]!='x' and 
                     len(main_pdb_array[ref_seg][ref_res.replace('x','.')])<atom_num_dict[template_dict[temp_seg][temp_res]])):
+                ########### 
+                # if (gn in inconsistencies) or (template_dict[temp_seg][temp_res]!='x' and 
+                #     len(main_pdb_array[ref_seg][ref_res.replace('x','.')])<atom_num_dict[template_dict[temp_seg][temp_res]]) or (reference_dict[ref_seg][gn]==template_dict[temp_seg][gn] or
+                #     gn in inconsistencies or alignment_dict[aligned_seg][aligned_res]=='.'):
+                ###########
                     non_cons_count+=1
                     gn_ = str(ref_res).replace('x','.')
                     no_match = True
@@ -2164,6 +2179,14 @@ class HomologyModeling(object):
 
     def find_and_switch_rotamer(self, similarity_table, gn, gn_, reference_dict, ref_seg, ref_res, main_pdb_array, atom_num_dict, template_dict, temp_seg, temp_res, non_cons_res_templates, switched_count, no_match, segment):
         parse = GPCRDBParsingPDB()
+        ######################
+        # if self.revise_xtal and self.force_main_temp:
+        #     s = Structure.objects.get(pdb_code__index='6CM4')
+        #     temp_st = OrderedDict([(s, 100)])
+        #     for st, sim in similarity_table.items():
+        #         temp_st[st] = sim
+        #     similarity_table = temp_st
+        ######################
         for struct in similarity_table:
             try:
                 alt_temp = parse.fetch_residues_from_pdb(struct, [gn])
@@ -3062,6 +3085,18 @@ class Loops(object):
     def fetch_loop_residues(self, main_pdb_array, superpose_modded_loop=False):
         ''' Fetch list of Atom objects of the loop when there is an available template. Returns an OrderedDict().
         '''
+        #################
+        # d2 = Structure.objects.get(pdb_code__index='6CM4')
+        # d3 = Structure.objects.get(pdb_code__index='3PBL')
+        # if self.loop_label=='ECL2':
+        #     self.loop_template_structures['ECL2_1'] = [d3]
+        #     self.loop_template_structures['ECL2_mid'] = [d3]
+        #     self.loop_template_structures['ECL2_2'] = [d3]
+        # if self.loop_label in ['ICL2', 'ICL1', 'ECL1']:
+        #     self.loop_template_structures = OrderedDict([(d3, 100)])
+        # if self.loop_label=='ECL3':
+        #     self.loop_template_structures = OrderedDict([(d2, 100)])
+        #################
         if (self.loop_label=='ECL2' and (self.loop_template_structures==None or 'ECL2_mid' in 
             self.loop_template_structures and self.loop_template_structures['ECL2_mid']==None)):
             return None

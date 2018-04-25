@@ -990,10 +990,12 @@ class AlignedReferenceTemplate(Alignment):
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, complex_model=False):
+                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, 
+                             complex_model=False, force_main_temp=False):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         self.complex = complex_model
+        self.force_main_temp = force_main_temp
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
             self.revise_xtal = str(reference_protein)
@@ -1073,6 +1075,10 @@ class AlignedReferenceTemplate(Alignment):
     def get_main_template(self):
         ''' Returns main template structure after checking for matching helix start and end positions.
         '''
+        if self.force_main_temp:
+            st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
+            self.main_template_protein = [i for i in self.ordered_proteins if i.protein==st.protein_conformation.protein.parent][0]
+            return st
         i = 1
         try:
             for st in self.similarity_table:
@@ -1171,7 +1177,7 @@ class AlignedReferenceTemplate(Alignment):
                 ref_ECL2 = self.ECL2_slicer(ref_seq)
             except:
                 ref_ECL2 = None
-                
+        
         for struct, similarity in self.provide_similarity_table.items():
             protein = struct.protein_conformation.protein.parent
             if protein==self.main_template_protein:
@@ -1270,10 +1276,12 @@ class AlignedReferenceTemplate(Alignment):
                 except:
                     temp_length, temp_length1, temp_length2 = -1,-1,-1
                 temp_list.append((struct, temp_length, similarity, float(struct.resolution), protein, struct.representative))
+                
 
                 if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                     temp_list1.append((struct, temp_length1, similarity, float(struct.resolution), protein, struct.representative))
                     temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein, struct.representative))
+                    
         if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
             ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict(), ECL2_part='_1')
             ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref, ECL2_part='_mid')
@@ -1283,6 +1291,8 @@ class AlignedReferenceTemplate(Alignment):
                 self.loop_table=None
             return self.loop_table
         else:
+            if self.segment_labels[0]!='ICL2':
+                temp_list = temp_list[1:]
             return self.order_sim_table(temp_list, ref_seq, OrderedDict(), x50_ref)
                     
     def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None, ECL2_part=''):
