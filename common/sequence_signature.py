@@ -120,7 +120,7 @@ class SequenceSignature:
         for row in range(len(AMINO_ACID_GROUPS.keys())):
             tmp_row = []
             for segment in self.common_segments:
-                print(fstats[segment][row])
+                # print(fstats[segment][row])
                 tmp_row.append([[
                     str(x),
                     str(int(x/10)),
@@ -197,7 +197,7 @@ class SequenceSignature:
                 #third item is a tooltip
                 tmp_row.append([[
                     x,
-                    int(x/20)+5,
+                    int(x/20)+5 if x!= 0 else -1,
                     "{} - {}".format(
                         self.features_normalized_pos[segment][row][y],
                         self.features_normalized_neg[segment][row][y]
@@ -296,6 +296,47 @@ class SequenceSignature:
         # order and convert numbering scheme dict to tuple
         return sorted(numbering_schemes.items(), key=lambda x: x[0])
 
+    # def apply_cutoff(self, cutoff=0):
+
+    #     matrix_consensus = OrderedDict()
+    #     for segment in self.segments:
+    #         # print(segment)
+    #         segment_consensus = []
+    #         signature_map = np.absolute(self.features_frequency_difference[segment]).argmax(axis=0)
+    #         for col, pos in enumerate(list(signature_map)):
+    #             if abs(self.features_frequency_difference[segment][pos][col]) > self.cutoff:
+    #                 segment_consensus.append(self.features_frequency_difference[segment][ : , col])
+    #                 for scheme in self.schemes:
+    #                     gnum = list(self.common_gn[scheme[0]][segment].items())[col]
+    #                     try:
+    #                         self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
+    #                     except:
+    #                         self.relevant_gn[scheme[0]][segment] = OrderedDict()
+    #                         self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
+
+    #         segment_consensus = np.array(segment_consensus).T
+    #         if segment_consensus != []:
+    #             matrix_consensus[segment] = segment_consensus
+    #     self.signature_matrix_filtered = matrix_consensus
+    #     self.relevant_segments = OrderedDict([
+    #         (
+    #             x[0],
+    #             self.relevant_gn[self.schemes[0][0]][x[0]].keys()
+    #         ) for x in self.signature_matrix_filtered.items()
+    #     ])
+    #     signature = OrderedDict([(x[0], []) for x in matrix_consensus.items()])
+    #     for segment in self.relevant_segments:
+    #         signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+    #         tmp = np.array(self.signature_matrix_filtered[segment])
+    #         for col, pos in enumerate(list(signature_map)):
+    #             signature[segment].append([
+    #                 list(AMINO_ACID_GROUPS.keys())[pos],
+    #                 list(AMINO_ACID_GROUP_NAMES.values())[pos],
+    #                 tmp[pos][col],
+    #                 int(tmp[pos][col]/20)+5
+    #             ])
+    #     self.signature_consensus = signature
+
     def prepare_excel_worksheet(self, workbook, worksheet_name, aln='positive', data='alignment'):
         """
         A function saving alignment data subset into the excel spreadsheet.
@@ -320,22 +361,22 @@ class SequenceSignature:
         worksheet = workbook.add_worksheet(worksheet_name)
 
         if aln == 'positive':
-            numbering_schemes = self.aln_pos.numbering_schemes
-            generic_numbers_set = self.aln_pos.generic_numbers
+            # numbering_schemes = self.aln_pos.numbering_schemes
+            # generic_numbers_set = self.aln_pos.generic_numbers
             alignment = self.aln_pos
             if data == 'features':
                 data_block = self.aln_pos.feature_stats
         elif aln == 'negative':
-            numbering_schemes = self.aln_neg.numbering_schemes
-            generic_numbers_set = self.aln_neg.generic_numbers
+            # numbering_schemes = self.aln_neg.numbering_schemes
+            # generic_numbers_set = self.aln_neg.generic_numbers
             alignment = self.aln_neg
             if data == 'features':
                 data_block = self.aln_neg.feature_stats
         else:
-            numbering_schemes = self.common_schemes
-            generic_numbers_set = self.common_gn
             if data == 'features':
                 data_block = self.features_frequency_diff_display
+        numbering_schemes = self.common_schemes
+        generic_numbers_set = self.common_gn
 
         # First column, numbering schemes
         for row, scheme in enumerate(numbering_schemes):
@@ -425,7 +466,7 @@ class SequenceSignature:
                         1 + col + col_offset,
                         chunk[0]
                     )
-                    cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
+                    cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5) if chunk[2] != 0 else get_format_props(-1))
                     worksheet.write(
                         1 + offset + len(AMINO_ACID_GROUPS),
                         1 + col + col_offset,
@@ -505,7 +546,7 @@ class SignatureMatch():
 
         matrix_consensus = OrderedDict()
         for segment in self.segments:
-            print(segment)
+            # print(segment)
             segment_consensus = []
             signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
             for col, pos in enumerate(list(signature_map)):
@@ -591,14 +632,16 @@ class SignatureMatch():
                     res = resi.get(generic_number__label=pos)
                     r_name = res.amino_acid if res.amino_acid != 'Gap' else '_'
                     if feat in self.residue_to_feat[res.amino_acid]:
-                        prot_score += val
+                        if val > 0:
+                            prot_score += val
                         tmp.append([feat_abr, feat_name, val, "green", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
                     else:
                         #David doesn't want the negative values in the score
                         # prot_score -= val
                         tmp.append([feat_abr, feat_name, val, "red", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
                 except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
-                    prot_score -= val
+                    #David doesn't want the negative values in the score
+                    #prot_score -= val
                     tmp.append([feat_abr, feat_name, val, "red", '_', pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", '_', pos])
             consensus_match[segment] = tmp
         return (prot_score/100, consensus_match)
@@ -606,13 +649,15 @@ class SignatureMatch():
 def signature_score_excel(workbook, scores, protein_signatures, signature_filtered, relevant_gn, relevant_segments, numbering_schemes):
 
     worksheet = workbook.add_worksheet('scored_proteins')
+    #wrap = workbook.add_format({'text_wrap': True})
 
 
     # First column, numbering schemes
     for row, scheme in enumerate(numbering_schemes):
         worksheet.write(1 + 3*row, 0, scheme[1])
+    worksheet.write(1,1, 'Receptor family / Ligand class')
     # Score header
-    worksheet.write(1, 1, 'Score')
+    worksheet.write(1, 2, 'Score')
 
     offset = 0
     # Segments
@@ -690,6 +735,14 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
         worksheet.write(
             3 + 3 * len(numbering_schemes) + row_offset,
             1,
+            "{} / {}".format(
+                protein.protein.family.parent.parent.name,
+                protein.protein.family.parent.name
+            )
+        )
+        worksheet.write(
+            3 + 3 * len(numbering_schemes) + row_offset,
+            2,
             score,
         )
         col_offset = 0

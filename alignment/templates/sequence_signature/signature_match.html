@@ -29,8 +29,11 @@
 
                         <!-- consensus sequence -->
                         <tr>
-                            <td class="ali-td ali-td-first-col ali-td-consensus">
+                            <td class="ali-td ali-td-first-col">
                                 CONSENSUS
+                            </td>
+                            <td class="ali-td ali-td-first-col">
+                                Receptor family
                             </td>
                         </tr>
 
@@ -58,6 +61,9 @@
                                         <a href='/protein/{{ p.protein.entry_name }}'>
                                             [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
                                         </a>
+                                    </td>
+                                    <td class="ali-td ali-td-first-col">
+                                        {{ p.protein.family.parent.parent.name }}
                                     </td>
                                 </tr>
                             {% endif %}
