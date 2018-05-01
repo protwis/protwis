@@ -7,17 +7,17 @@
     </tr>
     <!-- Empty row for collapse button -->
     <tr>
-        <td style='height:34px'></td>
+        <td class="ali-td"></td>
     </tr>
     <tbody class='collapse' id='props-main'>
 
         <!-- GENERIC NUMBERS -->
 
         <!-- segment title line -->
-        <tr>
+        <tr id='segments'>
             {% for s, num in common_segments.items %}
-                <td class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
-                <td class="ali-td">&nbsp;</td>
+                <td id='segment-{{ s }}' class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
+                <td id='anchor' class="ali-td">&nbsp;</td>
             {% endfor %}
         </tr>
 
@@ -98,8 +98,9 @@
         {% endfor %}
 
     </tbody>
+    <!-- Collapse button -->
     <tr>
-        <td style='height:34px'></td>
+        <td class="ali-td"></td>
     </tr>
     <tbody class='collapse' id='aln-main'>
 
@@ -156,10 +157,10 @@
         {% if a_pos.consensus %}
 
             <!-- segment title line -->
-            <tr>
+            <tr id='segments'>
                 {% for s, num in common_segments.items %}
-                <td class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
-                <td class="ali-td">&nbsp;</td>
+                <td id='segment-{{ s }}' class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
+                <td id="anchor" class="ali-td">&nbsp;</td>
                 {% endfor %}
             </tr>
 

@@ -208,7 +208,8 @@ class SequenceSignature:
         self.signature = OrderedDict([(x, []) for x in self.aln_neg.segments])
         for segment in self.aln_neg.segments:
             tmp = np.array(self.features_frequency_difference[segment])
-            signature_map = np.absolute(tmp).argmax(axis=0)
+            #signature_map = np.absolute(tmp).argmax(axis=0)
+            signature_map = tmp.argmax(axis=0)
             self.signature[segment] = []
             for col, pos in enumerate(list(signature_map)):
                 self.signature[segment].append([
@@ -231,8 +232,10 @@ class SequenceSignature:
                 [[x[0] for x in feat[sid]] for feat in self.aln_neg.feature_stats],
                 dtype='int'
                 )
-            features_cons_pos = np.absolute(features_pos[segment]).argmax(axis=0)
-            features_cons_neg = np.absolute(features_neg[segment]).argmax(axis=0)
+            # features_cons_pos = np.absolute(features_pos[segment]).argmax(axis=0)
+            # features_cons_neg = np.absolute(features_neg[segment]).argmax(axis=0)
+            features_cons_pos = features_pos[segment].argmax(axis=0)
+            features_cons_neg = features_neg[segment].argmax(axis=0)
 
             for col, pos in enumerate(list(features_cons_pos)):
                 self.features_consensus_pos[segment].append([
@@ -548,7 +551,8 @@ class SignatureMatch():
         for segment in self.segments:
             # print(segment)
             segment_consensus = []
-            signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
+            # signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
+            signature_map = self.diff_matrix[segment].argmax(axis=0)
             for col, pos in enumerate(list(signature_map)):
                 if abs(self.diff_matrix[segment][pos][col]) > self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
@@ -572,7 +576,8 @@ class SignatureMatch():
         ])
         signature = OrderedDict([(x[0], []) for x in matrix_consensus.items()])
         for segment in self.relevant_segments:
-            signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
             tmp = np.array(self.signature_matrix_filtered[segment])
             for col, pos in enumerate(list(signature_map)):
                 signature[segment].append([
@@ -617,7 +622,8 @@ class SignatureMatch():
         consensus_match = OrderedDict([(x, []) for x in self.relevant_segments])
         for segment in self.relevant_segments:
             tmp = []
-            signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
             resi = Residue.objects.filter(
                 protein_segment__slug=segment,
                 protein_conformation=pcf,
