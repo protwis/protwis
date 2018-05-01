@@ -602,15 +602,15 @@ class SignatureMatch():
                 )
         class_a_pcf = ProteinConformation.objects.order_by('protein__family__slug',
             'protein__entry_name').filter(protein__in=class_proteins, protein__sequence_type__slug='wt').exclude(protein__entry_name__endswith='-consensus')
-        for pcf in class_a_pcf:
+        for pcf in class_a_pcf[:5]:
             p_start = time.time()
-            score, signature_match = self.score_protein(pcf)
-            protein_scores[pcf] = score
+            score, nscore, signature_match = self.score_protein(pcf)
+            protein_scores[pcf] = (score, nscore)
             protein_signature_match[pcf] = signature_match
             p_end = time.time()
             print("Time elapsed for {}: ".format(pcf.protein.entry_name), p_end - p_start)
         end = time.time()
-        self.protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1], reverse=True))
+        self.protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1][0], reverse=True))
         for prot in self.protein_report.items():
             self.protein_signatures[prot[0]] = protein_signature_match[prot[0]]
         self.scored_proteins = list(self.protein_report.keys())
@@ -619,11 +619,14 @@ class SignatureMatch():
 
     def score_protein(self, pcf):
         prot_score = 0.0
+        norm = 0.0
         consensus_match = OrderedDict([(x, []) for x in self.relevant_segments])
         for segment in self.relevant_segments:
             tmp = []
             # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
+
             resi = Residue.objects.filter(
                 protein_segment__slug=segment,
                 protein_conformation=pcf,
@@ -650,7 +653,7 @@ class SignatureMatch():
                     #prot_score -= val
                     tmp.append([feat_abr, feat_name, val, "red", '_', pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", '_', pos])
             consensus_match[segment] = tmp
-        return (prot_score/100, consensus_match)
+        return (prot_score/100, prot_score/norm*100, consensus_match)
 
 def signature_score_excel(workbook, scores, protein_signatures, signature_filtered, relevant_gn, relevant_segments, numbering_schemes):
 
@@ -664,15 +667,23 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
     worksheet.write(1,1, 'Receptor family / Ligand class')
     # Score header
     worksheet.write(1, 2, 'Score')
+    worksheet.write(1, 3, 'Normalized score')
 
     offset = 0
     # Segments
     for segment, resi in relevant_segments.items():
+        print(segment, len(resi))
+        print('{}\t{}\n{}\t{}'.format(
+            0,
+            4 + offset,
+            0,
+            4 + len(resi) + offset - 1)
+             )
         worksheet.merge_range(
             0,
-            2 + offset,
+            4 + offset,
             0,
-            len(resi) + offset,
+            4 + len(resi) + offset - 1,
             segment
         )
         offset += len(resi)
@@ -690,17 +701,17 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                     tm, bw, gpcrdb = ('', '', '')
                 worksheet.write(
                     1 + 3 * row,
-                    1 + col + offset,
+                    3 + col + offset,
                     tm
                 )
                 worksheet.write(
                     2 + 3 * row,
-                    1 + col + offset,
+                    3 + col + offset,
                     bw
                 )
                 worksheet.write(
                     3 + 3*row,
-                    1 + col + offset,
+                    3 + col + offset,
                     gpcrdb
                 )
             offset += len(gn_list.items())
@@ -715,14 +726,14 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
     for segment, cons_feat in signature_filtered.items():
         for col, chunk in enumerate(cons_feat):
             worksheet.write(
-                2 + 3 * len(numbering_schemes),
-                2 + col + col_offset,
+                4 + 3 * len(numbering_schemes),
+                4 + col + col_offset,
                 chunk[0]
             )
             cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
             worksheet.write(
                 1 + 3 * len(numbering_schemes),
-                2 + col + col_offset,
+                4 + col + col_offset,
                 chunk[2],
                 cell_format
             )
@@ -749,7 +760,12 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
         worksheet.write(
             3 + 3 * len(numbering_schemes) + row_offset,
             2,
-            score,
+            score[0],
+        )
+        worksheet.write(
+            3 + 3 * len(numbering_schemes) + row_offset,
+            3,
+            score[1],
         )
         col_offset = 0
         for segment, data in protein_signatures[protein].items():
@@ -757,7 +773,7 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                 cell_format = workbook.add_format({'bg_color': res[3],})
                 worksheet.write(
                     3 + 3 * len(numbering_schemes) + row_offset,
-                    2 + col + col_offset,
+                    4 + col + col_offset,
                     res[4],
                     cell_format
                 )
