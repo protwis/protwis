@@ -602,7 +602,7 @@ class SignatureMatch():
                 )
         class_a_pcf = ProteinConformation.objects.order_by('protein__family__slug',
             'protein__entry_name').filter(protein__in=class_proteins, protein__sequence_type__slug='wt').exclude(protein__entry_name__endswith='-consensus')
-        for pcf in class_a_pcf[:5]:
+        for pcf in class_a_pcf:
             p_start = time.time()
             score, nscore, signature_match = self.score_protein(pcf)
             protein_scores[pcf] = (score, nscore)
