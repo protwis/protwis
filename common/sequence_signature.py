@@ -39,6 +39,34 @@ class SequenceSignature:
         self.freq_cutoff = 30
         self.common_gn = OrderedDict()
 
+        self.feature_preference = prepare_aa_group_preference()
+
+
+    def _assign_preferred_features(self, signature, segment):
+
+        new_signature = []
+        for pos, argmax in enumerate(signature):
+            updated = True
+            new_feat = argmax
+            while updated:
+                tmp = self._calculate_best_feature(pos, segment, argmax)
+                if tmp == new_feat:
+                    updated = False
+                else:
+                    new_feat = tmp
+            new_signature.append(new_feat)
+        return new_signature
+
+
+    def _calculate_best_feature(self, pos, segment, argmax):
+
+        tmp = self.feature_preference[argmax]
+        equiv_feat = np.where(np.isin(self.features_frequency_difference[segment][:, pos], argmax))[0]
+        for efeat in equiv_feat:
+            if efeat in tmp:
+                return efeat
+        return argmax
+
     def setup_alignments(self, segments, protein_set_positive = None, protein_set_negative = None):
 
         if protein_set_positive:
@@ -120,10 +148,10 @@ class SequenceSignature:
         for row in range(len(AMINO_ACID_GROUPS.keys())):
             tmp_row = []
             for segment in self.common_segments:
-                print(fstats[segment][row])
+                # print(fstats[segment][row])
                 tmp_row.append([[
                     str(x),
-                    str(int(x/10)),
+                    str(int(x/10)) if x != 0 else -1,
                 ] for x in fstats[segment][row]])
             tmp_fstats.append(tmp_row)
         aln.feature_stats = tmp_fstats
@@ -197,7 +225,7 @@ class SequenceSignature:
                 #third item is a tooltip
                 tmp_row.append([[
                     x,
-                    int(x/20)+5,
+                    int(x/20)+5 if x!= 0 else -1,
                     "{} - {}".format(
                         self.features_normalized_pos[segment][row][y],
                         self.features_normalized_neg[segment][row][y]
@@ -208,7 +236,11 @@ class SequenceSignature:
         self.signature = OrderedDict([(x, []) for x in self.aln_neg.segments])
         for segment in self.aln_neg.segments:
             tmp = np.array(self.features_frequency_difference[segment])
-            signature_map = np.absolute(tmp).argmax(axis=0)
+            #signature_map = np.absolute(tmp).argmax(axis=0)
+            signature_map = tmp.argmax(axis=0)
+            # Update mapping to prefer features with fewer amino acids
+            signature_map = self._assign_preferred_features(signature_map, segment)
+
             self.signature[segment] = []
             for col, pos in enumerate(list(signature_map)):
                 self.signature[segment].append([
@@ -231,8 +263,10 @@ class SequenceSignature:
                 [[x[0] for x in feat[sid]] for feat in self.aln_neg.feature_stats],
                 dtype='int'
                 )
-            features_cons_pos = np.absolute(features_pos[segment]).argmax(axis=0)
-            features_cons_neg = np.absolute(features_neg[segment]).argmax(axis=0)
+            # features_cons_pos = np.absolute(features_pos[segment]).argmax(axis=0)
+            # features_cons_neg = np.absolute(features_neg[segment]).argmax(axis=0)
+            features_cons_pos = features_pos[segment].argmax(axis=0)
+            features_cons_neg = features_neg[segment].argmax(axis=0)
 
             for col, pos in enumerate(list(features_cons_pos)):
                 self.features_consensus_pos[segment].append([
@@ -296,6 +330,47 @@ class SequenceSignature:
         # order and convert numbering scheme dict to tuple
         return sorted(numbering_schemes.items(), key=lambda x: x[0])
 
+    # def apply_cutoff(self, cutoff=0):
+
+    #     matrix_consensus = OrderedDict()
+    #     for segment in self.segments:
+    #         # print(segment)
+    #         segment_consensus = []
+    #         signature_map = np.absolute(self.features_frequency_difference[segment]).argmax(axis=0)
+    #         for col, pos in enumerate(list(signature_map)):
+    #             if abs(self.features_frequency_difference[segment][pos][col]) > self.cutoff:
+    #                 segment_consensus.append(self.features_frequency_difference[segment][ : , col])
+    #                 for scheme in self.schemes:
+    #                     gnum = list(self.common_gn[scheme[0]][segment].items())[col]
+    #                     try:
+    #                         self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
+    #                     except:
+    #                         self.relevant_gn[scheme[0]][segment] = OrderedDict()
+    #                         self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
+
+    #         segment_consensus = np.array(segment_consensus).T
+    #         if segment_consensus != []:
+    #             matrix_consensus[segment] = segment_consensus
+    #     self.signature_matrix_filtered = matrix_consensus
+    #     self.relevant_segments = OrderedDict([
+    #         (
+    #             x[0],
+    #             self.relevant_gn[self.schemes[0][0]][x[0]].keys()
+    #         ) for x in self.signature_matrix_filtered.items()
+    #     ])
+    #     signature = OrderedDict([(x[0], []) for x in matrix_consensus.items()])
+    #     for segment in self.relevant_segments:
+    #         signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+    #         tmp = np.array(self.signature_matrix_filtered[segment])
+    #         for col, pos in enumerate(list(signature_map)):
+    #             signature[segment].append([
+    #                 list(AMINO_ACID_GROUPS.keys())[pos],
+    #                 list(AMINO_ACID_GROUP_NAMES.values())[pos],
+    #                 tmp[pos][col],
+    #                 int(tmp[pos][col]/20)+5
+    #             ])
+    #     self.signature_consensus = signature
+
     def prepare_excel_worksheet(self, workbook, worksheet_name, aln='positive', data='alignment'):
         """
         A function saving alignment data subset into the excel spreadsheet.
@@ -320,22 +395,22 @@ class SequenceSignature:
         worksheet = workbook.add_worksheet(worksheet_name)
 
         if aln == 'positive':
-            numbering_schemes = self.aln_pos.numbering_schemes
-            generic_numbers_set = self.aln_pos.generic_numbers
+            # numbering_schemes = self.aln_pos.numbering_schemes
+            # generic_numbers_set = self.aln_pos.generic_numbers
             alignment = self.aln_pos
             if data == 'features':
                 data_block = self.aln_pos.feature_stats
         elif aln == 'negative':
-            numbering_schemes = self.aln_neg.numbering_schemes
-            generic_numbers_set = self.aln_neg.generic_numbers
+            # numbering_schemes = self.aln_neg.numbering_schemes
+            # generic_numbers_set = self.aln_neg.generic_numbers
             alignment = self.aln_neg
             if data == 'features':
                 data_block = self.aln_neg.feature_stats
         else:
-            numbering_schemes = self.common_schemes
-            generic_numbers_set = self.common_gn
             if data == 'features':
                 data_block = self.features_frequency_diff_display
+        numbering_schemes = self.common_schemes
+        generic_numbers_set = self.common_gn
 
         # First column, numbering schemes
         for row, scheme in enumerate(numbering_schemes):
@@ -425,7 +500,7 @@ class SequenceSignature:
                         1 + col + col_offset,
                         chunk[0]
                     )
-                    cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
+                    cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5) if chunk[2] != 0 else get_format_props(-1))
                     worksheet.write(
                         1 + offset + len(AMINO_ACID_GROUPS),
                         1 + col + col_offset,
@@ -490,6 +565,7 @@ class SignatureMatch():
         self.scored_proteins = []
         self.protein_report = OrderedDict()
         self.protein_signatures = OrderedDict()
+        self.feature_preference = prepare_aa_group_preference()
 
         self.find_relevant_gns()
 
@@ -501,13 +577,41 @@ class SignatureMatch():
                 self.residue_to_feat[res].add(fidx)
 
 
+    def _assign_preferred_features(self, signature, segment):
+
+        new_signature = []
+        for pos, argmax in enumerate(signature):
+            updated = True
+            new_feat = argmax
+            while updated:
+                tmp = self._calculate_best_feature(pos, segment, argmax)
+                if tmp == new_feat:
+                    updated = False
+                else:
+                    new_feat = tmp
+            new_signature.append(new_feat)
+        return new_signature
+
+
+    def _calculate_best_feature(self, pos, segment, argmax):
+
+        tmp = self.feature_preference[argmax]
+        equiv_feat = np.where(np.isin(self.diff_matrix[segment][:, pos], argmax))[0]
+        for efeat in equiv_feat:
+            if efeat in tmp:
+                return efeat
+        return argmax
+
     def find_relevant_gns(self):
 
         matrix_consensus = OrderedDict()
         for segment in self.segments:
-            print(segment)
+            # print(segment)
             segment_consensus = []
-            signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
+            # signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
+            signature_map = self.diff_matrix[segment].argmax(axis=0)
+            # Update mapping to prefer features with fewer amino acids
+            signature_map = self._assign_preferred_features(signature_map, segment)
             for col, pos in enumerate(list(signature_map)):
                 if abs(self.diff_matrix[segment][pos][col]) > self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
@@ -531,7 +635,8 @@ class SignatureMatch():
         ])
         signature = OrderedDict([(x[0], []) for x in matrix_consensus.items()])
         for segment in self.relevant_segments:
-            signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
             tmp = np.array(self.signature_matrix_filtered[segment])
             for col, pos in enumerate(list(signature_map)):
                 signature[segment].append([
@@ -558,13 +663,13 @@ class SignatureMatch():
             'protein__entry_name').filter(protein__in=class_proteins, protein__sequence_type__slug='wt').exclude(protein__entry_name__endswith='-consensus')
         for pcf in class_a_pcf:
             p_start = time.time()
-            score, signature_match = self.score_protein(pcf)
-            protein_scores[pcf] = score
+            score, nscore, signature_match = self.score_protein(pcf)
+            protein_scores[pcf] = (score, nscore)
             protein_signature_match[pcf] = signature_match
             p_end = time.time()
             print("Time elapsed for {}: ".format(pcf.protein.entry_name), p_end - p_start)
         end = time.time()
-        self.protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1], reverse=True))
+        self.protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1][0], reverse=True))
         for prot in self.protein_report.items():
             self.protein_signatures[prot[0]] = protein_signature_match[prot[0]]
         self.scored_proteins = list(self.protein_report.keys())
@@ -573,10 +678,14 @@ class SignatureMatch():
 
     def score_protein(self, pcf):
         prot_score = 0.0
+        norm = 0.0
         consensus_match = OrderedDict([(x, []) for x in self.relevant_segments])
         for segment in self.relevant_segments:
             tmp = []
-            signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
+            signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
+
             resi = Residue.objects.filter(
                 protein_segment__slug=segment,
                 protein_conformation=pcf,
@@ -591,37 +700,49 @@ class SignatureMatch():
                     res = resi.get(generic_number__label=pos)
                     r_name = res.amino_acid if res.amino_acid != 'Gap' else '_'
                     if feat in self.residue_to_feat[res.amino_acid]:
-                        prot_score += val
+                        if val > 0:
+                            prot_score += val
                         tmp.append([feat_abr, feat_name, val, "green", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
                     else:
                         #David doesn't want the negative values in the score
                         # prot_score -= val
                         tmp.append([feat_abr, feat_name, val, "red", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
                 except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
-                    prot_score -= val
+                    #David doesn't want the negative values in the score
+                    #prot_score -= val
                     tmp.append([feat_abr, feat_name, val, "red", '_', pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", '_', pos])
             consensus_match[segment] = tmp
-        return (prot_score/100, consensus_match)
+        return (prot_score/100, prot_score/norm*100, consensus_match)
 
 def signature_score_excel(workbook, scores, protein_signatures, signature_filtered, relevant_gn, relevant_segments, numbering_schemes):
 
     worksheet = workbook.add_worksheet('scored_proteins')
+    #wrap = workbook.add_format({'text_wrap': True})
 
 
     # First column, numbering schemes
     for row, scheme in enumerate(numbering_schemes):
         worksheet.write(1 + 3*row, 0, scheme[1])
+    worksheet.write(1,1, 'Receptor family / Ligand class')
     # Score header
-    worksheet.write(1, 1, 'Score')
+    worksheet.write(1, 2, 'Score')
+    worksheet.write(1, 3, 'Normalized score')
 
     offset = 0
     # Segments
     for segment, resi in relevant_segments.items():
+        print(segment, len(resi))
+        print('{}\t{}\n{}\t{}'.format(
+            0,
+            4 + offset,
+            0,
+            4 + len(resi) + offset - 1)
+             )
         worksheet.merge_range(
             0,
-            2 + offset,
+            4 + offset,
             0,
-            len(resi) + offset,
+            4 + len(resi) + offset - 1,
             segment
         )
         offset += len(resi)
@@ -639,17 +760,17 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                     tm, bw, gpcrdb = ('', '', '')
                 worksheet.write(
                     1 + 3 * row,
-                    1 + col + offset,
+                    3 + col + offset,
                     tm
                 )
                 worksheet.write(
                     2 + 3 * row,
-                    1 + col + offset,
+                    3 + col + offset,
                     bw
                 )
                 worksheet.write(
                     3 + 3*row,
-                    1 + col + offset,
+                    3 + col + offset,
                     gpcrdb
                 )
             offset += len(gn_list.items())
@@ -664,14 +785,14 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
     for segment, cons_feat in signature_filtered.items():
         for col, chunk in enumerate(cons_feat):
             worksheet.write(
-                2 + 3 * len(numbering_schemes),
-                2 + col + col_offset,
+                4 + 3 * len(numbering_schemes),
+                4 + col + col_offset,
                 chunk[0]
             )
             cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
             worksheet.write(
                 1 + 3 * len(numbering_schemes),
-                2 + col + col_offset,
+                4 + col + col_offset,
                 chunk[2],
                 cell_format
             )
@@ -690,7 +811,20 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
         worksheet.write(
             3 + 3 * len(numbering_schemes) + row_offset,
             1,
-            score,
+            "{} / {}".format(
+                protein.protein.family.parent.parent.name,
+                protein.protein.family.parent.name
+            )
+        )
+        worksheet.write(
+            3 + 3 * len(numbering_schemes) + row_offset,
+            2,
+            score[0],
+        )
+        worksheet.write(
+            3 + 3 * len(numbering_schemes) + row_offset,
+            3,
+            score[1],
         )
         col_offset = 0
         for segment, data in protein_signatures[protein].items():
@@ -698,9 +832,28 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                 cell_format = workbook.add_format({'bg_color': res[3],})
                 worksheet.write(
                     3 + 3 * len(numbering_schemes) + row_offset,
-                    2 + col + col_offset,
+                    4 + col + col_offset,
                     res[4],
                     cell_format
                 )
             col_offset += len(data)
         row_offset += 1
+
+def prepare_aa_group_preference():
+
+    pref_dict = {}
+    lengths = {}
+    for row, group in enumerate(AMINO_ACID_GROUPS.values()):
+        tmp_len = len(group.split(','))
+        try:
+            lengths[tmp_len].append(row)
+        except KeyError:
+            lengths[tmp_len] = [row,]
+    l_heap = sorted(lengths.keys(), reverse=True)
+    while l_heap:
+        tmp = l_heap.pop()
+        for feat_row in lengths[tmp]:
+            pref_dict[feat_row] = []
+            for pref_feat in l_heap:
+                pref_dict[feat_row].extend(lengths[pref_feat])
+    return pref_dict
