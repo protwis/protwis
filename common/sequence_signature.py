@@ -39,6 +39,34 @@ class SequenceSignature:
         self.freq_cutoff = 30
         self.common_gn = OrderedDict()
 
+        self.feature_preference = prepare_aa_group_preference()
+
+
+    def _assign_preferred_features(self, signature, segment):
+
+        new_signature = []
+        for pos, argmax in enumerate(signature):
+            updated = True
+            new_feat = argmax
+            while updated:
+                tmp = self._calculate_best_feature(pos, segment, argmax)
+                if tmp == new_feat:
+                    updated = False
+                else:
+                    new_feat = tmp
+            new_signature.append(new_feat)
+        return new_signature
+
+
+    def _calculate_best_feature(self, pos, segment, argmax):
+
+        tmp = self.feature_preference[argmax]
+        equiv_feat = np.where(np.isin(self.features_frequency_difference[segment][:, pos], argmax))[0]
+        for efeat in equiv_feat:
+            if efeat in tmp:
+                return efeat
+        return argmax
+
     def setup_alignments(self, segments, protein_set_positive = None, protein_set_negative = None):
 
         if protein_set_positive:
@@ -210,6 +238,9 @@ class SequenceSignature:
             tmp = np.array(self.features_frequency_difference[segment])
             #signature_map = np.absolute(tmp).argmax(axis=0)
             signature_map = tmp.argmax(axis=0)
+            # Update mapping to prefer features with fewer amino acids
+            signature_map = self._assign_preferred_features(signature_map, segment)
+
             self.signature[segment] = []
             for col, pos in enumerate(list(signature_map)):
                 self.signature[segment].append([
@@ -534,6 +565,7 @@ class SignatureMatch():
         self.scored_proteins = []
         self.protein_report = OrderedDict()
         self.protein_signatures = OrderedDict()
+        self.feature_preference = prepare_aa_group_preference()
 
         self.find_relevant_gns()
 
@@ -545,6 +577,31 @@ class SignatureMatch():
                 self.residue_to_feat[res].add(fidx)
 
 
+    def _assign_preferred_features(self, signature, segment):
+
+        new_signature = []
+        for pos, argmax in enumerate(signature):
+            updated = True
+            new_feat = argmax
+            while updated:
+                tmp = self._calculate_best_feature(pos, segment, argmax)
+                if tmp == new_feat:
+                    updated = False
+                else:
+                    new_feat = tmp
+            new_signature.append(new_feat)
+        return new_signature
+
+
+    def _calculate_best_feature(self, pos, segment, argmax):
+
+        tmp = self.feature_preference[argmax]
+        equiv_feat = np.where(np.isin(self.diff_matrix[segment][:, pos], argmax))[0]
+        for efeat in equiv_feat:
+            if efeat in tmp:
+                return efeat
+        return argmax
+
     def find_relevant_gns(self):
 
         matrix_consensus = OrderedDict()
@@ -553,6 +610,8 @@ class SignatureMatch():
             segment_consensus = []
             # signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
             signature_map = self.diff_matrix[segment].argmax(axis=0)
+            # Update mapping to prefer features with fewer amino acids
+            signature_map = self._assign_preferred_features(signature_map, segment)
             for col, pos in enumerate(list(signature_map)):
                 if abs(self.diff_matrix[segment][pos][col]) > self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
@@ -779,3 +838,22 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                 )
             col_offset += len(data)
         row_offset += 1
+
+def prepare_aa_group_preference():
+
+    pref_dict = {}
+    lengths = {}
+    for row, group in enumerate(AMINO_ACID_GROUPS.values()):
+        tmp_len = len(group.split(','))
+        try:
+            lengths[tmp_len].append(row)
+        except KeyError:
+            lengths[tmp_len] = [row,]
+    l_heap = sorted(lengths.keys(), reverse=True)
+    while l_heap:
+        tmp = l_heap.pop()
+        for feat_row in lengths[tmp]:
+            pref_dict[feat_row] = []
+            for pref_feat in l_heap:
+                pref_dict[feat_row].extend(lengths[pref_feat])
+    return pref_dict
