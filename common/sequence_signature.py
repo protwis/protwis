@@ -151,7 +151,7 @@ class SequenceSignature:
                 # print(fstats[segment][row])
                 tmp_row.append([[
                     str(x),
-                    str(int(x/10)),
+                    str(int(x/10)) if x != 0 else -1,
                 ] for x in fstats[segment][row]])
             tmp_fstats.append(tmp_row)
         aln.feature_stats = tmp_fstats
