@@ -364,6 +364,7 @@ class HomologyModeling(object):
         self.debug = debug
         self.complex = complex_model
         self.signprot = signprot
+        self.target_signprot = None
         self.force_main_temp = force_main_temp
         self.version = build_date
         self.reference_entry_name = reference_entry_name.lower()
@@ -450,6 +451,36 @@ class HomologyModeling(object):
             for struct, sim in self.similarity_table_all.items():
                 if struct in self.template_list:
                     db_seqsim = StructureRefinedSeqSim.objects.create(structure=hommod, template=struct, similarity=sim)
+        # Complex model
+        elif self.complex:
+            try:
+                hommod = StructureComplexModel.objects.get(receptor_protein=self.reference_protein, sign_prot=self.target_signprot)
+                hommod.main_template = self.main_structure
+                hommod.pdb = formatted_model
+                hommod.version = self.version
+                hommod.save()
+
+                # Delete previous data
+                StructureComplexModelStatsRotamer.objects.filter(homology_model=hommod).delete()
+                StructureComplexModelSeqSim.objects.filter(homology_model=hommod).delete()
+            except Exception as msg:
+                hommod = StructureComplexModel.objects.create(receptor_protein=self.reference_protein, sign_protein=self.target_signprot, 
+                                                                main_template=self.main_structure, 
+                                                                pdb=formatted_model, 
+                                                                version=self.version)
+            res_prot = self.reference_protein
+            for r in self.template_stats:
+                # if r[0] in ['N-term', 'C-term']:
+                #     continue
+                if r[0]=='HN':
+                    res_prot = self.target_signprot
+                res = Residue.objects.get(protein_conformation__protein=res_prot, sequence_number=r[1])
+                rots = StructureComplexModelStatsRotamer.objects.create(homology_model=hommod, residue=res, protein=res_prot,
+                                                                 backbone_template=r[4],rotamer_template=r[5])
+
+            for struct, sim in self.similarity_table_all.items():
+                if struct in self.template_list:
+                    db_seqsim = StructureComplexModelSeqSim.objects.create(homology_model=hommod, template=struct, similarity=sim)
         # Homology model
         else:
             try:
@@ -1672,12 +1703,12 @@ class HomologyModeling(object):
             self.signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
             structure_signprot= self.signprot_complex.protein
             if self.signprot!=False:
-                target_signprot = Protein.objects.get(entry_name=self.signprot)
+                self.target_signprot = Protein.objects.get(entry_name=self.signprot)
             else:
-                target_signprot = self.signprot_complex.protein
-            self.signprot_protconf = ProteinConformation.objects.get(protein=target_signprot)
+                self.target_signprot = self.signprot_complex.protein
+            self.signprot_protconf = ProteinConformation.objects.get(protein=self.target_signprot)
             sign_a = GProteinAlignment()
-            sign_a.run_alignment(target_signprot)
+            sign_a.run_alignment(self.target_signprot)
             io = StringIO(self.main_structure.pdb_data.pdb)
             assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=structure_signprot)
             signprot_pdb_array = assign_cgn.assign_cgn_with_sequence_parser(self.signprot_complex.chain)
@@ -1994,6 +2025,7 @@ class HomologyModeling(object):
                             s_file.write(l)
         
         self.template_stats = rot_table
+        pprint.pprint(self.template_stats)
 
         # template seq sim file
         with open(path+modelname+'.template_similarities.csv','w') as s_file:
@@ -3089,11 +3121,11 @@ class Loops(object):
         # d2 = Structure.objects.get(pdb_code__index='6CM4')
         # d3 = Structure.objects.get(pdb_code__index='3PBL')
         # if self.loop_label=='ECL2':
-        #     self.loop_template_structures['ECL2_1'] = [d3]
-        #     self.loop_template_structures['ECL2_mid'] = [d3]
-        #     self.loop_template_structures['ECL2_2'] = [d3]
+        #     self.loop_template_structures['ECL2_1'] = [d2]
+        #     self.loop_template_structures['ECL2_mid'] = [d2]
+        #     self.loop_template_structures['ECL2_2'] = [d2]
         # if self.loop_label in ['ICL2', 'ICL1', 'ECL1']:
-        #     self.loop_template_structures = OrderedDict([(d3, 100)])
+        #     self.loop_template_structures = OrderedDict([(d2, 100)])
         # if self.loop_label=='ECL3':
         #     self.loop_template_structures = OrderedDict([(d2, 100)])
         #################
@@ -4274,7 +4306,7 @@ class GPCRDBParsingPDB(object):
             @param structure: Structure, Structure object of protein. When using structure, leave filename=None. \n
             @param filename: str, filename of pdb to be parsed. When using filename, leave structure=None).
         '''
-        seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
+        seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000}
         if structure!=None and filename==None:
             io = StringIO(structure.pdb_data.pdb)
         else:

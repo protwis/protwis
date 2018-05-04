@@ -48,6 +48,7 @@ class Command(BaseBuild):
 		parser.add_argument('-s', help='Run StructureAnomalyRecognition on specific crystal structure', default=False)
 		parser.add_argument('-r', help='Specify residue number range. E.g. 10-25', default=False)
 		parser.add_argument('-a', help='Run on all structures', default=False, action='store_true')
+		parser.add_argument('--verbose', help='Verbose', default=False, action='store_true')
 
 	def handle(self, *args, **options):
 		if options['a']:
@@ -56,12 +57,13 @@ class Command(BaseBuild):
 				sar = StructureAnomalyRecognition(s)
 				sar.run_recog()
 		else:
-			sar = StructureAnomalyRecognition(options['s'], options['r'])
+			sar = StructureAnomalyRecognition(options['s'], options['r'], options['verbose'])
 			sar.run_recog()
 
 class StructureAnomalyRecognition(object):
-	def __init__(self, xtal=False, num_range=False):
+	def __init__(self, xtal=False, num_range=False, verbose=False):
 		if xtal:
+			self.verbose = verbose
 			try:
 				xtal.pdb_code
 				self.structure = xtal
@@ -101,7 +103,8 @@ class StructureAnomalyRecognition(object):
 				b0xb1_x_b1xb2 = np.cross(b0xb1, b1xb2)
 				y = np.dot(b0xb1_x_b1xb2, b1)*(1.0/np.linalg.norm(b1))
 				x = np.dot(b0xb1, b1xb2)
-				# print(chain[r.get_id()[1]+2].get_id()[1],'-',chain[r.get_id()[1]+3].get_id()[1],np.degrees(np.arctan2(y, x)))
+				if self.verbose:
+					print(chain[r.get_id()[1]+2].get_id()[1],'-',chain[r.get_id()[1]+3].get_id()[1],np.degrees(np.arctan2(y, x)))
 				values[r.get_id()[1]] = np.degrees(np.arctan2(y, x))
 			except:
 				pass

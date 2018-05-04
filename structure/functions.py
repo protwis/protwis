@@ -835,10 +835,16 @@ class PdbStateIdentifier():
                 self.structure_type = 'refined'
                 family = structure.protein_conformation.protein.family
             except:
-                structure.protein
-                self.structure = structure
-                self.structure_type = 'hommod'
-                family = structure.protein.family
+                try:
+                    structure.protein
+                    self.structure = structure
+                    self.structure_type = 'hommod'
+                    family = structure.protein.family
+                except:
+                    structure.receptor_protein
+                    self.structure = structure
+                    self.structure_type = 'complex'
+                    family = structure.receptor_protein.family
         if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.5:
             if family.slug.startswith('002') or family.slug.startswith('003'):
                 tm6_gn, tm7_gn = '6x33', '7x51'
@@ -859,6 +865,8 @@ class PdbStateIdentifier():
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein)
         elif self.structure_type=='hommod':
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein)
+        elif self.structure_type=='complex':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.receptor_protein)
         # class A and T
         if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
             tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)

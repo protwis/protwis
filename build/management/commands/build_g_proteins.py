@@ -49,7 +49,7 @@ class Command(BaseCommand):
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
     ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
 
-    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
+    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
 
     logger = logging.getLogger(__name__)
@@ -69,6 +69,18 @@ class Command(BaseCommand):
         # self.add_new_orthologs()
         # return 0
 
+        # self.fetch_missing_uniprot_files()
+        # return 0
+
+        # files = os.listdir(self.local_uniprot_dir)
+        # for f in files:
+        #     print(f)
+        #     with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot', f]), 'r') as fi:
+        #         for l in fi.readlines():
+        #             if l.startswith('DE'):
+        #                 print(l)
+        # return 0
+
         if options['filename']:
             filenames = options['filename']
         else:
@@ -80,10 +92,25 @@ class Command(BaseCommand):
             self.build_table_from_fasta()
         else:
             #add gproteins from cgn db
-            try:
+            # try:
                 self.purge_coupling_data()
-                # self.purge_cgn_residues()
-                # self.purge_cgn_proteins()
+                self.purge_cgn_residues()
+                self.purge_cgn_proteins()
+
+                self.ortholog_mapping = OrderedDict()
+                with open(self.ortholog_file, 'r') as ortholog_file:
+                    ortholog_data = csv.reader(ortholog_file, delimiter=',')
+                    for i,row in enumerate(ortholog_data):
+                        if i==0:
+                            header = list(row)
+                            continue
+                        for j, column in enumerate(row):
+                            if j in [0,1]:
+                                continue
+                            if '_' in column:
+                                self.ortholog_mapping[column] = row[0]
+                            else:
+                                self.ortholog_mapping[column+'_'+header[j]] = row[0]
 
                 self.create_g_proteins(filenames)
                 self.cgn_create_proteins_and_families()
@@ -92,9 +119,27 @@ class Command(BaseCommand):
                 self.update_protein_conformation(human_and_orths)
                 self.create_barcode()
 
-            except Exception as msg:
-                print(msg)
-                self.logger.error(msg)
+            # except Exception as msg:
+            #     print(msg)
+            #     self.logger.error(msg)
+
+    def fetch_missing_uniprot_files(self):
+        BASE = 'http://www.uniprot.org'
+        KB_ENDPOINT = '/uniprot/'
+        uniprot_files = os.listdir(self.local_uniprot_dir)
+        new_uniprot_files = os.listdir(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot']))
+        for record in SeqIO.parse(self.alignment_file, 'fasta'):
+            sp, accession, name, ens = record.id.split('|')
+            if accession+'.txt' not in uniprot_files and accession+'.txt' not in new_uniprot_files:
+                g_prot, species = name.split('_')
+                result = requests.get(BASE + KB_ENDPOINT + accession + '.txt')
+                with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot', accession+'.txt']), 'w') as f:
+                    f.write(result.text)
+            else:
+                try:
+                    os.rename(os.sep.join([self.local_uniprot_dir, accession+'.txt']), os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot', accession+'.txt']))
+                except:
+                    print('Missing: {}'.format(accession))
 
     def update_alignment(self):
         with open(self.lookup, 'r') as csvfile:
@@ -151,9 +196,6 @@ class Command(BaseCommand):
                         if entry_name not in fasta_dict[row[0]]:
                             result = requests.get('https://www.uniprot.org/uniprot/{}.xml'.format(accession))
                             uniprot_entry = result.text
-                            print('LAST')
-                            print(row, column)
-                            print(uniprot_entry)
                             try:
                                 entry_dict = xmltodict.parse(uniprot_entry)
                             except:
@@ -172,8 +214,6 @@ class Command(BaseCommand):
             for g,val in fasta_dict.items():
                 for i,j in val.items():
                     f.write('>sp|{}|{}|{}\n{}\n'.format(j[0],i,j[1],j[2]))
-        import pprint
-        pprint.pprint(fasta_dict)
 
     def add_entry(self):
         if not self.options['wt']:
@@ -508,19 +548,18 @@ class Command(BaseCommand):
         allprots = list(df.Uniprot_ID.unique())
         allprots = list(set(allprots) - set(cgn_proteins_list))
 
-        for gp in cgn_proteins_list:
-            for p in allprots:
-                if str(p).startswith(gp.split('_')[0]):
-                    orthologs_pairs.append((str(p), gp))
-                    orthologs.append(str(p))
+        # for gp in cgn_proteins_list:
+        for p in allprots:
+            # if str(p).startswith(gp.split('_')[0]):
+            if str(p) in self.ortholog_mapping:
+                orthologs_pairs.append((str(p), self.ortholog_mapping[str(p)]+'_HUMAN'))
+                orthologs.append(str(p))
 
         accessions_orth= df.loc[df['Uniprot_ID'].isin(orthologs)]
         accessions_orth= accessions_orth['Uniprot_ACC'].unique()
 
-
         for a in accessions_orth:
             up = self.parse_uniprot_file(a)
-
             #Fetch Protein Family for gproteins
             for k in cgn_dict.keys():
                 name=str(up['entry_name']).upper()
@@ -531,7 +570,7 @@ class Command(BaseCommand):
 
             #Create new Protein
             self.cgn_creat_gproteins(pfm, rns, a, up)
-
+        
         #human gproteins
         orthologs_lower = [x.lower() for x in orthologs]
         #print(orthologs_lower)
@@ -591,7 +630,10 @@ class Command(BaseCommand):
         if accession:
             p.accession = accession
         p.entry_name = uniprot['entry_name'].lower()
-        p.name = uniprot['names'][0].split('Guanine nucleotide-binding protein ')[1]
+        try:
+            p.name = uniprot['names'][0].split('Guanine nucleotide-binding protein ')[1]
+        except:
+            p.name = uniprot['names'][0]
         p.sequence = uniprot['sequence']
 
         try:
