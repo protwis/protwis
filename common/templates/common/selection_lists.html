@@ -32,7 +32,7 @@
                     [{{ selected_item.item.species.common_name|safe }}]
                 {% endif %}
             {% endif %}
-
+            {% if selected_item.properties.only_aligned_residues %} (Only GN) {% endif %}
             ({{ selected_item.type_title }})
             <a 
             onclick="RemoveFromSelection('{{ selection_type }}', '{{ selected_item.type }}',

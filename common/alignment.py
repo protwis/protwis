@@ -24,6 +24,7 @@ class Alignment:
         self.proteins = []
         self.non_matching_proteins = [] # proteins that do not match user specified site definitions
         self.segments = OrderedDict()
+        self.segments_only_alignable = []
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
         self.generic_number_objs = {}
@@ -141,6 +142,8 @@ class Alignment:
         for s in selected_segments:
             if hasattr(s, 'item'):
                 selected_segment = s.item
+                if hasattr(selected_segment, 'only_aligned_residues'):
+                    self.segments_only_alignable.append(selected_segment.slug)
             else:
                 selected_segment = s
                 
@@ -246,7 +249,11 @@ class Alignment:
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
                 'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
                 'generic_number__scheme', 'display_generic_number__scheme')
-        
+
+        # If segment flagged to only include the alignable residues, exclude the ones with GN
+        for s in self.segments_only_alignable:
+            rs = rs.exclude(protein_segment__slug=s, generic_number=None)
+
         # fetch individually selected residues (Custom segment)
         crs = {}
         for segment in self.segments:
@@ -603,8 +610,9 @@ class Alignment:
                     amino_acid = p[2]
 
                     # stop here if this is gapped position (no need to collect stats on those)
+                    # Now we want
                     if amino_acid in self.gaps:
-                        continue
+                        amino_acid = '-'
                     
                     # init counters
                     if generic_number not in self.aa_count[j]:
@@ -635,7 +643,6 @@ class Alignment:
                     elif self.aa_count[j][generic_number][amino_acid] == most_freq_aa[j][generic_number][1]:
                         if amino_acid not in most_freq_aa[j][generic_number][0]:
                             most_freq_aa[j][generic_number][0].append(amino_acid)
-
         # merge the amino acid counts into a consensus sequence
         num_proteins = len(self.proteins)
         sequence_counter = 1

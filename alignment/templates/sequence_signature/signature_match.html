@@ -29,8 +29,11 @@
 
                         <!-- consensus sequence -->
                         <tr>
-                            <td class="ali-td ali-td-first-col ali-td-consensus">
+                            <td class="ali-td ali-td-first-col">
                                 CONSENSUS
+                            </td>
+                            <td class="ali-td ali-td-first-col">
+                                Receptor family
                             </td>
                         </tr>
 
@@ -58,6 +61,9 @@
                                         <a href='/protein/{{ p.protein.entry_name }}'>
                                             [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
                                         </a>
+                                    </td>
+                                    <td class="ali-td ali-td-first-col">
+                                        {{ p.protein.family.parent.parent.name }}
                                     </td>
                                 </tr>
                             {% endif %}
@@ -94,7 +100,17 @@
 
                         <!-- consensus sequence -->
                         <tr>
-                            <td colspan="1" class="ali-td ali-td-first-col">S
+                            <td colspan="1" class="ali-td ali-td-first-col">
+                                    <div data-toggle="tooltip" data-placement="top" data-html="true"
+                                    title="Signature match score">
+                                        S
+                                    </div>
+                            </td>
+                            <td colspan="1" class="ali-td ali-td-first-col">
+                                    <div data-toggle="tooltip" data-placement="top" data-html="true"
+                                    title="Normalized signature match score">
+                                        NS
+                                    </div>
                             </td>
                         </tr>
 
@@ -102,7 +118,10 @@
                         {% for p, ps in scores.protein_report.items %}
                         <tr>
                             <td class="ali-td ali-td-first-col">
-                                {{ ps }}
+                                {{ ps.0|floatformat:"-2" }}
+                            </td>
+                            <td class="ali-td ali-td-first-col">
+                                {{ ps.1|floatformat:"-2" }}
                             </td>
                         </tr>
                         {% endfor %}
