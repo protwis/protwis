@@ -10,7 +10,6 @@
             <!-- segment list -->
             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
-                    <h4>Sequence segments</h4>
                     {% if position_type == 'site_residue' %}
                         {% include 'common/selection_segments_sitesearch.html' %}
                     {% elif position_type == 'gprotein' %}
@@ -27,15 +26,5 @@
             {% if structure_upload %}
             <!-- structure upload -->
                 {% include 'common/selection_pdb_upload.html' %}
-            {% endif %}
-            {% if rsets %}
-                <h4>Predefined sets of residues</h4>
-                <div class="col-md-12 panel panel-primary">
-                    <div class="panel-body">
-                        <div>
-                            {% include 'common/segmentselection_predefined.html' %}
-                        </div>
-                    </div>
-                </div>
             {% endif %}
 {% endblock %}

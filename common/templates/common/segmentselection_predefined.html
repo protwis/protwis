@@ -1,6 +1,9 @@
 {% for rset in rsets %}
+    {% ifchanged rset.set_type %}
+       {{ rset.set_type }}<br>
+    {% endifchanged %}
     <a href="javascript:void(0)" onclick="AddToSelection('segments', 'residue_position_set', '{{ rset.id }}')"
-        class="btn btn-primary btn-sm">
-        {{ rset.name }}
+        class="btn btn-primary btn-xs btn-block">
+         {{ rset.name }}
     </a>
 {% endfor %}
