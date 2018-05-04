@@ -26,57 +26,40 @@ function ScoreBreakdown (protein_conformation, cutoff) {
             $("#pconf-" + protein_conformation).html(data);
         },
     });
-}
+};
 
-$('#cutoff-apply').click( function() {
-    var cutoff = parseInt($('#cutoff-val').val());
+function ApplyCutoff (cutoff) {
     var row = [];
     $('#first-row td').each(function(){
         row.push($(this).attr('id'));
     });
-    //console.info(row.length);
     for (i=0; i < row.length; i++) {
         if (row[i] == 'anchor'){
             continue;
         }
         var cell = Math.abs(row[i].replace('cutoff-', ''));
         j = i + 1;
-        if (cell <= cutoff){
-            $('td:nth-child('+j+')').hide();
+        if (cell < cutoff){
+            console.info('Got it!');
+            $('#signature-table td:not(".ali-td-segment-title, .ali-td-header-row, .ali-td-anchor"):nth-child('+j+')').hide();//.css('background-color', 'gray');
         }
         else {
-            $('td:nth-child('+j+')').show();
+            $('#signature-table td:not(".ali-td-segment-title, .ali-td-header-row, .ali-td-anchor"):nth-child('+j+')').show();
         }
     };
+    $('#signature-table #segments td:not("#anchor")').each(function(){
+        var segment_name = $(this).attr('id').replace('segment-', '');
+        var colspan = $('#gns td#gn-'+segment_name+':visible').length;
+        $(this).attr('colspan', colspan);
+    });
+};
+
+$('#cutoff-apply').click( function() {
+    var cutoff = parseInt($('#cutoff-val').val());
+    ApplyCutoff(cutoff);
 });
+
 $(window).on("load", function () {
     $('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );
-
-    var row = [];
-    $('#first-row td').each(function(){
-        row.push($(this).attr('id'));
-    });
-    // console.info(row.length);
-    for (i=0; i < row.length; i++) {
-        if (row[i] == 'anchor'){
-            continue;
-        }
-        var qq = Math.abs(row[i].replace('cutoff-', ''));
-        // console.info(qq);
-        if (qq < 70){
-            j = i + 1;
-            $('td:nth-child('+j+')').hide();
-        }
-    };
-
-
-    // console.info(row);
-
-    // var w = 0;
-    // $('#test tr td:first').each(function(){
-    //     if($(this).width() > w) {
-    //         w = $(this).width();
-    //     }
-    // });
-    // console.info(w);
+    ApplyCutoff(40);
 });

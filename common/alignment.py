@@ -610,8 +610,9 @@ class Alignment:
                     amino_acid = p[2]
 
                     # stop here if this is gapped position (no need to collect stats on those)
+                    # Now we want
                     if amino_acid in self.gaps:
-                        continue
+                        amino_acid = '-'
                     
                     # init counters
                     if generic_number not in self.aa_count[j]:
@@ -642,7 +643,6 @@ class Alignment:
                     elif self.aa_count[j][generic_number][amino_acid] == most_freq_aa[j][generic_number][1]:
                         if amino_acid not in most_freq_aa[j][generic_number][0]:
                             most_freq_aa[j][generic_number][0].append(amino_acid)
-
         # merge the amino acid counts into a consensus sequence
         num_proteins = len(self.proteins)
         sequence_counter = 1
