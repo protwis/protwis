@@ -571,7 +571,7 @@ class SignatureMatch():
             [(x, set()) for x in AMINO_ACIDS.keys()]
             )
         for fidx, feat in enumerate(AMINO_ACID_GROUPS.items()):
-            for res in feat[1].split(','):
+            for res in feat[1]:
                 self.residue_to_feat[res].add(fidx)
 
 

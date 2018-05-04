@@ -628,7 +628,6 @@ class Alignment:
                     # update feature counter for this generic number
                     for feature, members in AMINO_ACID_GROUPS.items():
                         if amino_acid in members:
-                            # print("Feat: {}\tMembers: {}\tFound: {}".format(feature, members, amino_acid))
                             feature_count[j][generic_number][feature] += 1
 
                     # update most frequent amino_acids for this generic number
