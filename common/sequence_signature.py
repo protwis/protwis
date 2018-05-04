@@ -40,32 +40,31 @@ class SequenceSignature:
         self.common_gn = OrderedDict()
 
         self.feature_preference = prepare_aa_group_preference()
+        self.group_lengths = dict([
+            (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
+        ])
 
 
-    def _assign_preferred_features(self, signature, segment):
+    def _assign_preferred_features(self, signature, segment, ref_matrix):
 
         new_signature = []
         for pos, argmax in enumerate(signature):
-            updated = True
-            new_feat = argmax
-            while updated:
-                tmp = self._calculate_best_feature(pos, segment, argmax)
-                if tmp == new_feat:
-                    updated = False
-                else:
-                    new_feat = tmp
-            new_signature.append(new_feat)
+            new_signature.append(self._calculate_best_feature(pos, segment, argmax, ref_matrix))
         return new_signature
 
 
-    def _calculate_best_feature(self, pos, segment, argmax):
+    def _calculate_best_feature(self, pos, segment, argmax, ref_matrix):
 
         tmp = self.feature_preference[argmax]
-        equiv_feat = np.where(np.isin(self.features_frequency_difference[segment][:, pos], argmax))[0]
+        equiv_feat = np.where(np.isin(ref_matrix[segment][:, pos], ref_matrix[segment][argmax][pos]))[0]
+        pref_feat = argmax
+        min_len = self.group_lengths[argmax]
+
         for efeat in equiv_feat:
-            if efeat in tmp:
-                return efeat
-        return argmax
+            if efeat in tmp and self.group_lengths[efeat] < min_len:
+                pref_feat = efeat
+                min_len = self.group_lengths[efeat]
+        return pref_feat
 
     def setup_alignments(self, segments, protein_set_positive = None, protein_set_negative = None):
 
@@ -100,14 +99,14 @@ class SequenceSignature:
             (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
         ])
         # tweaking alignment
-        self._update_alignment(self.aln_pos)
         self.aln_pos.calculate_statistics()
+        self._update_alignment(self.aln_pos)
         # tweaking consensus seq
         self._update_consensus_sequence(self.aln_pos)
 
         # tweaking negative alignment
-        self._update_alignment(self.aln_neg)
         self.aln_neg.calculate_statistics()
+        self._update_alignment(self.aln_neg)
         # tweaking consensus seq
         self._update_consensus_sequence(self.aln_neg)
 
@@ -148,7 +147,6 @@ class SequenceSignature:
         for row in range(len(AMINO_ACID_GROUPS.keys())):
             tmp_row = []
             for segment in self.common_segments:
-                # print(fstats[segment][row])
                 tmp_row.append([[
                     str(x),
                     str(int(x/10)) if x != 0 else -1,
@@ -239,7 +237,7 @@ class SequenceSignature:
             #signature_map = np.absolute(tmp).argmax(axis=0)
             signature_map = tmp.argmax(axis=0)
             # Update mapping to prefer features with fewer amino acids
-            signature_map = self._assign_preferred_features(signature_map, segment)
+            signature_map = self._assign_preferred_features(signature_map, segment, self.features_frequency_difference)
 
             self.signature[segment] = []
             for col, pos in enumerate(list(signature_map)):
@@ -263,10 +261,10 @@ class SequenceSignature:
                 [[x[0] for x in feat[sid]] for feat in self.aln_neg.feature_stats],
                 dtype='int'
                 )
-            # features_cons_pos = np.absolute(features_pos[segment]).argmax(axis=0)
-            # features_cons_neg = np.absolute(features_neg[segment]).argmax(axis=0)
             features_cons_pos = features_pos[segment].argmax(axis=0)
+            features_cons_pos = self._assign_preferred_features(features_cons_pos, segment, features_pos)
             features_cons_neg = features_neg[segment].argmax(axis=0)
+            features_cons_neg = self._assign_preferred_features(features_cons_neg, segment, features_neg)
 
             for col, pos in enumerate(list(features_cons_pos)):
                 self.features_consensus_pos[segment].append([
@@ -606,7 +604,6 @@ class SignatureMatch():
 
         matrix_consensus = OrderedDict()
         for segment in self.segments:
-            # print(segment)
             segment_consensus = []
             # signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
             signature_map = self.diff_matrix[segment].argmax(axis=0)
@@ -731,13 +728,6 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
     offset = 0
     # Segments
     for segment, resi in relevant_segments.items():
-        print(segment, len(resi))
-        print('{}\t{}\n{}\t{}'.format(
-            0,
-            4 + offset,
-            0,
-            4 + len(resi) + offset - 1)
-             )
         worksheet.merge_range(
             0,
             4 + offset,
@@ -843,13 +833,13 @@ def prepare_aa_group_preference():
 
     pref_dict = {}
     lengths = {}
-    for row, group in enumerate(AMINO_ACID_GROUPS.values()):
-        tmp_len = len(group.split(','))
+    for row, group in enumerate(AMINO_ACID_GROUPS.items()):
+        tmp_len = len(group[1])
         try:
             lengths[tmp_len].append(row)
         except KeyError:
             lengths[tmp_len] = [row,]
-    l_heap = sorted(lengths.keys(), reverse=True)
+    l_heap = sorted(lengths.keys())
     while l_heap:
         tmp = l_heap.pop()
         for feat_row in lengths[tmp]:

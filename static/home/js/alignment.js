@@ -39,11 +39,12 @@ function ApplyCutoff (cutoff) {
         }
         var cell = Math.abs(row[i].replace('cutoff-', ''));
         j = i + 1;
-        if (cell <= cutoff){
-            $('#signature-table td:not(".ali-td-segment-title, .ali-td-header-row, .ali-td"):nth-child('+j+')').hide();
+        if (cell < cutoff){
+            console.info('Got it!');
+            $('#signature-table td:not(".ali-td-segment-title, .ali-td-header-row, .ali-td-anchor"):nth-child('+j+')').hide();//.css('background-color', 'gray');
         }
         else {
-            $('#signature-table td:not(".ali-td-segment-title, .ali-td-header-row, .ali-td"):nth-child('+j+')').show();
+            $('#signature-table td:not(".ali-td-segment-title, .ali-td-header-row, .ali-td-anchor"):nth-child('+j+')').show();
         }
     };
     $('#signature-table #segments td:not("#anchor")').each(function(){

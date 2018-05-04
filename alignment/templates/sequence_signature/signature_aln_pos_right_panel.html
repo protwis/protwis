@@ -7,7 +7,7 @@
     </tr>
     <!-- Empty row for collapse button -->
     <tr>
-        <td class="ali-td"></td>
+        <td class="ali-td-anchor"></td>
     </tr>
     <tbody class='collapse' id='props-main'>
 
@@ -17,7 +17,7 @@
         <tr id='segments'>
             {% for s, num in common_segments.items %}
                 <td id='segment-{{ s }}' class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
-                <td id='anchor' class="ali-td">&nbsp;</td>
+                <td id='anchor' class="ali-td-anchor">&nbsp;</td>
             {% endfor %}
         </tr>
 
@@ -32,7 +32,7 @@
                         <td class="ali-td-generic-num">{{ dn|safe }}</td>
                     {% endif %}
                 {% endfor %}
-                <td class="ali-td">&nbsp;</td>
+                <td class="ali-td-anchor">&nbsp;</td>
             {% endfor %}
         </tr>
         {% endfor %}
@@ -52,7 +52,7 @@
                         {{ freq.0 }}
                     </td>
                 {% endfor %}
-                <td class="ali-td">&nbsp;</td>
+                <td class="ali-td-anchor">&nbsp;</td>
             {% endfor %}
             </tr>
         {% endfor %}
@@ -68,7 +68,7 @@
                         </div>
                     </td>
                 {% endfor %}
-                <td class="ali-td">&nbsp;</td>
+                <td class="ali-td-anchor">&nbsp;</td>
             {% endfor %}
         </tr>
 
@@ -78,7 +78,7 @@
                 {% for pos in cons %}
                     <td class="ali-td-stat-summary ali-residue res-cons-{{ pos.3 }}">{{ pos.2 }}</td>
                 {% endfor %}
-                <td class="ali-td">&nbsp;</td>
+                <td class="ali-td-anchor">&nbsp;</td>
             {% endfor %}
         </tr>
         <!-- generic number lines -->
@@ -92,7 +92,7 @@
                             <td class="ali-td-generic-num">{{ dn|safe }}</td>
                         {% endif %}
                     {% endfor %}
-                    <td class="ali-td">&nbsp;</td>
+                    <td class="ali-td-anchor">&nbsp;</td>
                 {% endfor %}
             </tr>
         {% endfor %}
@@ -100,7 +100,7 @@
     </tbody>
     <!-- Collapse button -->
     <tr>
-        <td class="ali-td"></td>
+        <td class="ali-td-anchor"></td>
     </tr>
     <tbody class='collapse' id='aln-main'>
 
@@ -115,7 +115,7 @@
                             <td class="ali-td-generic-num">{{ dn|safe }}</td>
                         {% endif %}
                     {% endfor %}
-                    <td class="ali-td">&nbsp;</td>
+                    <td class="ali-td-anchor">&nbsp;</td>
                 {% endfor %}
             </tr>
         {% endfor %}
@@ -149,7 +149,7 @@
                             {% endif %}
                         </td>
                     {% endfor %}
-                    <td class="ali-td">&nbsp;</td>
+                    <td class="ali-td-anchor">&nbsp;</td>
                 {% endfor %}
             </tr>
         {% endfor %}
@@ -160,7 +160,7 @@
             <tr id='segments'>
                 {% for s, num in common_segments.items %}
                 <td id='segment-{{ s }}' class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
-                <td id="anchor" class="ali-td">&nbsp;</td>
+                <td id="anchor" class="ali-td-anchor">&nbsp;</td>
                 {% endfor %}
             </tr>
 
@@ -175,7 +175,7 @@
                                 <td class="ali-td-generic-num">{{ dn|safe }}</td>
                             {% endif %}
                         {% endfor %}
-                        <td class="ali-td">&nbsp;</td>
+                        <td class="ali-td-anchor">&nbsp;</td>
                     {% endfor %}
                 </tr>
             {% endfor %}
@@ -190,7 +190,7 @@
                             </div>
                         </td>
                     {% endfor %}
-                <td class="ali-td">&nbsp;</td>
+                <td class="ali-td-anchor">&nbsp;</td>
                 {% endfor %}
             </tr>
             <tr>
@@ -200,7 +200,7 @@
                             {{ r.2 }}
                         </td>
                     {% endfor %}
-                    <td class="ali-td">&nbsp;</td>
+                    <td class="ali-td-anchor">&nbsp;</td>
                 {% endfor %}
             </tr>
         {% endif %}
