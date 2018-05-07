@@ -42,7 +42,7 @@ class Command(BaseBuild):
             q.new_xtals(self.verbose)
         else:
             self.uniprots = self.get_all_GPCR_uniprots()
-            # self.uniprots = ['Q99835']
+            # self.uniprots = ['Q14832']
             self.yamls = self.get_all_yamls()
             self.prepare_input(options['proc'], self.uniprots)
 
@@ -136,6 +136,9 @@ class QueryPDB():
                                     del self.yaml_list[self.yaml_list.index(s)]
                                 except:
                                     pass
+                    else:
+                        print('Warning: no deletions in pdb info, check {}'.format(s))
+                        continue
 
                     if missing_from_db:
                         pref_chain = ''
@@ -282,7 +285,7 @@ class QueryPDB():
         dic = xmltodict.parse(response_mol.read())
         if 'NMR' in str_des or 'extracellular' in str_des:
             return 0
-        if pdb_code in ['4QXE','1XWD','4QXF','4MQW']:
+        if pdb_code in ['4QXE','1XWD','4QXF','4MQW','6B7H','6BSZ','6BT5']:
             return 0
         polymer = dic['molDescription']['structureId']['polymer']
         description = ''
