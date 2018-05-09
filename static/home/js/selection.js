@@ -8,6 +8,14 @@ function toggleButtonClass(button_id) {
     $('#'+button_id).toggleClass('active')
 }
 
+function ToggleSegments() {
+    $('#sequence_segments').slideToggle("fast");
+}
+
+function ToggleResidueSets() {
+    $('#residue_sets').slideToggle("fast");
+}
+
 function AddToSelection(selection_type, selection_subtype, selection_id) {
     $.ajax({
         'url': '/common/addtoselection',
@@ -114,6 +122,20 @@ function SelectStructuredGprotein(selection_type, protein_type) {
 function SelectAlignableSegments(selection_type) {
     $.ajax({
         'url': '/common/selectalignablesegments',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+
+function SelectAlignableResidues(selection_type) {
+    $.ajax({
+        'url': '/common/selectalignableresidues',
         'data': {
             selection_type: selection_type
         },

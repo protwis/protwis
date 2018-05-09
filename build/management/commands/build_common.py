@@ -72,7 +72,6 @@ class Command(BaseCommand):
         self.logger.info('CREATING PROTEIN SEGMENTS')
         self.logger.info('Parsing file ' + self.segment_source_file)
 
-        ProteinSegment.objects.filter(name='').delete()
         with open(self.segment_source_file, "r", encoding='UTF-8') as segment_file:
             for row in segment_file:
                 split_row = shlex.split(row)
@@ -87,12 +86,10 @@ class Command(BaseCommand):
                     defaults={
                         'category': split_row[1],
                         'fully_aligned': fully_aligned,
-                        'name': split_row[3],
-                        'proteinfamily': split_row[4]
+                        'name': split_row[3]
                     }
 
                     s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], proteinfamily=split_row[4], defaults=defaults)
-                    s.proteinfamily = split_row[4]
                     s.save()
 
                     if created:

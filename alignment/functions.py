@@ -117,6 +117,9 @@ def get_format_props(freq=None, res=None):
         }
     }
     properties = {
+        -1: {
+            'bg_color': '#FFFFFF',
+        },
         0: {
             'bg_color': '#ff0000',
         },

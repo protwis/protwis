@@ -624,11 +624,9 @@ def render_signature_match_scores(request, cutoff):
 
 def render_signature_match_excel(request):
 
-    print('Kurwa')
     scores_data = request.session.get('signature_match', False)
 
     outstream = BytesIO()
-    # wb = xlsxwriter.Workbook('excel_test.xlsx', {'in_memory': False})
     wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
 
     signature_score_excel(
