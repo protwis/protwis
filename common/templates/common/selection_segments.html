@@ -1,18 +1,30 @@
-    <h5>Predefined selections</h5>
-    <div class="btn-group" role="group">
+<h4>Sequence segment selection</h4> <hr>
+        <a href="javascript:void(0)" onclick="SelectAlignableResidues('segments')"
+        class="btn btn-primary btn-md  btn-block selection_buttons">
+            Structually conserved (generic) positions
+        </a>
         <a href="javascript:void(0)" onclick="SelectFullSequence('segments')"
-        class="btn btn-primary btn-sm">
+        class="btn btn-primary btn-md  btn-block selection_buttons">
             Full sequence
         </a>
-    </div>
-    <div class="btn-group" role="group">
-        <a href="javascript:void(0)" onclick="SelectAlignableSegments('segments')"
-        class="btn btn-primary btn-sm">
-            All TMs
-        </a>
-    </div>
+
+<hr>
+
+<a href="javascript:void(0)" onclick="ToggleSegments()" class="btn btn-info btn-md btn-block selection_buttons"> Sequence Segments <span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
+
+<div id="sequence_segments" style="display: none">
 {% for ss_cat in ss_cats %}
-    <h5>{{ ss_cat.0.title }}</h5>
+    <h5>
+    {% if ss_cat.0.title == 'Helix' %}
+        Transmembrane (TM) helices and H8
+    {% elif s_cat.0.title == 'Loop' %}
+        Loops
+    {% elif s_cat.0.title == 'Terminus' %}
+        Termini
+    {% else %} 
+        {{ ss_cat.0.title }}
+    {% endif %} 
+    </h5>
     {% for s in ss %}
         {% if s.category == ss_cat.0 %}
         <div class="btn-group" role="group">
@@ -31,8 +43,10 @@
     {% endfor %}
 {% endfor %}
 <p>
+
 <div id='segment-generic-numbers'>
 </div>
+
 </p>
 <p>
     <a data-toggle="modal" data-target="#PositionsFileSelector"
@@ -40,6 +54,17 @@
         <span class="glyphicon glyphicon-plus"></span> Read residue positions from a file
     </a>
 </p>
+</div>
+
+
+<a href="javascript:void(0)" onclick="ToggleResidueSets()" class="btn btn-info btn-md btn-block selection_buttons"> Residue sets<span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
+{% if rsets %}
+            <div id="residue_sets"  style="display: none">
+                {% include 'common/segmentselection_predefined.html' %}
+            </div>
+{% endif %}
+
+
 <div class="modal fade" id="PositionsFileSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">

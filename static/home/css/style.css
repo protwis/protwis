@@ -151,3 +151,7 @@ rect.segment {
 text.segment {
     cursor: pointer;
 }
+
+.selection_buttons {
+    margin-top: 5px;
+}

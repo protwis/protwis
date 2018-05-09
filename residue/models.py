@@ -90,6 +90,8 @@ class ResidueGenericNumberEquivalent(models.Model):
 class ResiduePositionSet(models.Model):
     residue_position = models.ManyToManyField('ResidueGenericNumberEquivalent')
     name = models.CharField(max_length=50)
+    set_type = models.CharField(max_length=100)
+    protein_group = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name
