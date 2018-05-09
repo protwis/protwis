@@ -149,7 +149,7 @@ class TargetSelectionArrestin(AbsTargetSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/alignment/segmentselectionsignature',
+            'url': '/alignment/segmentselectionarrestin',
             'color': 'success',
         },
     }

@@ -80,7 +80,7 @@ class Command(BaseCommand):
         # Parsing pdb uniprot file for residues
         self.logger.info('Start parsing ARRESTIN RESIDUES')
         self.logger.info('Parsing file ' + self.arrestin_data_file)
-        residue_data =  pd.read_excel(self.arrestin_data_file, sheetname=1)
+        residue_data =  pd.read_excel(self.arrestin_data_file, sheet_name=1)
         # residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(arrestin_list)]
 
         ## Example data to populate a table for further infrastructure work

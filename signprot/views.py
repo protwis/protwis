@@ -41,11 +41,11 @@ class BrowseSelection(AbsTargetSelection):
         ('segments', False),
     ])
     try:
-        ppf_g = ProteinFamily.objects.get(slug="100_000")
-        # ppf_a = ProteinFamily.objects.get(slug="200_000")
-        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
-        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
-        ps = Protein.objects.filter(family__in=[ppf_g]) # ,ppf_a
+        ppf_g = ProteinFamily.objects.get(slug="100_000")  # G proteins
+        ppf_a = ProteinFamily.objects.get(slug="200_000")  # Arrestins
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id, ppf_a.id])
+        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
+        ps = Protein.objects.filter(family__in=[ppf_g, ppf_a]) #
         tree_indent_level = []
         # action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
@@ -119,8 +119,7 @@ def familyDetail(request, slug):
     structures = SignprotStructure.objects.filter(origin__family__slug__startswith=slug
         )
 
-    mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
-                                'exp_qual', 'ligand')
+    mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number', 'exp_qual', 'ligand')
 
     mutations_list = {}
     for mutation in mutations:
@@ -304,7 +303,7 @@ def ajaxInterface(request, slug, **response_kwargs):
 
     if jsondata == None:
 
-        if slug == "arrs_human":
+        if slug == "arrs_human": # TODO: FIX HERE GENERIC INPUT
             rsets = ResiduePositionSet.objects.get(name="Arrestin interface")
         else:
             rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")

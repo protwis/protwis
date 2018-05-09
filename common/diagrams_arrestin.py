@@ -11,9 +11,10 @@ from math import cos, sin, pi, floor, sqrt
 from datetime import datetime
 from collections import OrderedDict
 
+
 class DrawArrestinPlot(Diagram):
 
-    def __init__(self, residue_list, protein_class, protein_name, nobuttons = None):
+    def __init__(self, residue_list, protein_class, protein_name, nobuttons=None):
         self.nobuttons = 'arrestin'
         self.type = 'snakeplot'
 
@@ -96,6 +97,7 @@ class DrawArrestinPlot(Diagram):
 
         self.count = 1
         self.count_sheet = 0
+
         for s in ARRESTIN_SEGMENTS['Full']:
 
             if self.segments_full[s].category == 'helix':
