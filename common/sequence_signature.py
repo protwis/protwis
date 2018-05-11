@@ -681,10 +681,10 @@ class SignatureMatch():
 
         relevant_gns_total = []
         for segment in  self.relevant_segments:
-            relevant_gns_total.append(self.relevant_gn[self.schemes[0][0]][segment].keys())
-        # print(relevant_gns_total)
+            for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
+                relevant_gns_total.append(pos)
+                
         resi = Residue.objects.filter(
-            protein_segment__slug=segment,
             protein_conformation=pcf,
             generic_number__label__in=relevant_gns_total
             ).prefetch_related('generic_number')
