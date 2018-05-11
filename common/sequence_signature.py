@@ -43,6 +43,7 @@ class SequenceSignature:
         self.group_lengths = dict([
             (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
         ])
+        self.default_column = np.array([((y.startswith('-') or y == '_') and y != '--' and not y.startswith('-_') and 100) or 0 for y in AMINO_ACID_GROUPS.keys()])
 
 
     def _assign_preferred_features(self, signature, segment, ref_matrix):
@@ -121,7 +122,7 @@ class SequenceSignature:
                 ])
                 for pos in self.common_segments[seg]:
                     if pos not in aln_list:
-                        consensus.append([pos, False, '-', 0])
+                        consensus.append([pos, False, '_', 0])
                     else:
                         consensus.append(aln_dict[pos])
                 prot.alignment[seg] = consensus
@@ -136,7 +137,7 @@ class SequenceSignature:
             ])
             for pos in self.common_segments[seg]:
                 if pos not in aln_list:
-                    consensus[pos] = ['_', 0, 100]
+                    consensus[pos] = ['-', 0, 100]
                 else:
                     consensus[pos] = aln_dict[pos]
             alignment.consensus[seg] = consensus
@@ -196,13 +197,9 @@ class SequenceSignature:
             #TODO: get the correct default numering scheme from settings
             for idx, res in enumerate(self.common_gn[self.common_schemes[0][0]][segment].keys()):
                 if res not in self.aln_pos.generic_numbers[self.common_schemes[0][0]][segment].keys():
-                    self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, 0, axis=1)
-                    # Set 100% occurence for a gap feature
-                    self.features_normalized_pos[segment][-1, idx] = 100
+                    self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, self.default_column, axis=1)
                 elif res not in self.aln_neg.generic_numbers[self.common_schemes[0][0]][segment].keys():
-                    self.features_normalized_neg[segment] = np.insert(self.features_normalized_neg[segment], idx, 0, axis=1)
-                    # Set 100% occurence for a gap feature
-                    self.features_normalized_neg[segment][-1, idx] = 100
+                    self.features_normalized_neg[segment] = np.insert(self.features_normalized_neg[segment], idx, self.default_column, axis=1)
 
             # now the difference
             self.features_frequency_difference[segment] = np.subtract(
@@ -393,20 +390,19 @@ class SequenceSignature:
         worksheet = workbook.add_worksheet(worksheet_name)
 
         if aln == 'positive':
-            # numbering_schemes = self.aln_pos.numbering_schemes
-            # generic_numbers_set = self.aln_pos.generic_numbers
             alignment = self.aln_pos
             if data == 'features':
                 data_block = self.aln_pos.feature_stats
+                feat_consensus = self.features_consensus_pos
         elif aln == 'negative':
-            # numbering_schemes = self.aln_neg.numbering_schemes
-            # generic_numbers_set = self.aln_neg.generic_numbers
             alignment = self.aln_neg
             if data == 'features':
                 data_block = self.aln_neg.feature_stats
+                feat_consensus = self.features_consensus_neg
         else:
             if data == 'features':
                 data_block = self.features_frequency_diff_display
+                feat_consensus = self.signature
         numbering_schemes = self.common_schemes
         generic_numbers_set = self.common_gn
 
@@ -428,7 +424,7 @@ class SequenceSignature:
                     prot.protein.entry_name
                 )
             worksheet.write(
-                1 + len(numbering_schemes) + len(alignment.proteins),
+                1 + 3 * len(numbering_schemes) + len(alignment.proteins),
                 0,
                 'CONSENSUS'
                 )
@@ -491,7 +487,7 @@ class SequenceSignature:
                         )
                     col_offset += len(segment)
             col_offset = 0
-            for segment, cons_feat in self.signature.items():
+            for segment, cons_feat in feat_consensus.items():
                 for col, chunk in enumerate(cons_feat):
                     worksheet.write(
                         offset + len(AMINO_ACID_GROUPS),
