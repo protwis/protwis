@@ -226,5 +226,23 @@
     </table>
 {% endblock %}
 {% block addon_js %}
-<script src="{% static 'home/js/alignment.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+$(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+})
+
+$(function(){
+    $('.ali-scroll-div').scroll(function(){
+        $('.ali-main-div')
+            .scrollLeft($('.ali-scroll-div').scrollLeft());
+    });
+    $('.ali-main-div').scroll(function(){
+        $('.ali-scroll-div')
+            .scrollLeft($('.ali-main-div').scrollLeft());
+    });
+});
+$(window).on("load", function () {
+    $('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );
+});
+</script>
 {% endblock %}

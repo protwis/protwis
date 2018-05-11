@@ -570,8 +570,8 @@ class SignatureMatch():
             for res in feat[1]:
                 try:
                     self.residue_to_feat[res].add(fidx)
-                except:
-                    print('error doing ',res)
+                except KeyError:
+                    self.residue_to_feat['-'].add(fidx)
 
 
     def _assign_preferred_features(self, signature, segment):
@@ -609,7 +609,7 @@ class SignatureMatch():
             # Update mapping to prefer features with fewer amino acids
             signature_map = self._assign_preferred_features(signature_map, segment)
             for col, pos in enumerate(list(signature_map)):
-                if abs(self.diff_matrix[segment][pos][col]) > self.cutoff:
+                if abs(self.diff_matrix[segment][pos][col]) >= self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
                     for scheme in self.schemes:
                         gnum = list(self.common_gn[scheme[0]][segment].items())[col]
@@ -618,7 +618,6 @@ class SignatureMatch():
                         except:
                             self.relevant_gn[scheme[0]][segment] = OrderedDict()
                             self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
-
             segment_consensus = np.array(segment_consensus).T
             if segment_consensus != []:
                 matrix_consensus[segment] = segment_consensus
@@ -683,7 +682,7 @@ class SignatureMatch():
         for segment in  self.relevant_segments:
             for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
                 relevant_gns_total.append(pos)
-                
+
         resi = Residue.objects.filter(
             protein_conformation=pcf,
             generic_number__label__in=relevant_gns_total
@@ -697,6 +696,8 @@ class SignatureMatch():
             tmp = []
             # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            signature_map = self._assign_preferred_features(signature_map, segment)
+
             norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
 
             for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
@@ -704,24 +705,80 @@ class SignatureMatch():
                 feat_abr = list(AMINO_ACID_GROUPS.keys())[feat]
                 feat_name = list(AMINO_ACID_GROUP_NAMES.values())[feat]
                 val = self.signature_matrix_filtered[segment][feat][idx]
-                #try
                 if pos in resi_dict:
-                    #res = resi.get(generic_number__label=pos)
                     res = resi_dict[pos]
-                    r_name = res.amino_acid if res.amino_acid != 'Gap' else '_'
                     if feat in self.residue_to_feat[res.amino_acid]:
                         if val > 0:
                             prot_score += val
-                        tmp.append([feat_abr, feat_name, val, "green", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "green",
+                            res.amino_acid, pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                res.amino_acid,
+                                pos
+                                ])
                     else:
                         #David doesn't want the negative values in the score
                         # prot_score -= val
-                        tmp.append([feat_abr, feat_name, val, "red", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
-                #except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "red",
+                            res.amino_acid,
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                res.amino_acid,
+                                pos
+                                ])
                 else:
-                    #David doesn't want the negative values in the score
-                    #prot_score -= val
-                    tmp.append([feat_abr, feat_name, val, "red", '_', pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", '_', pos])
+                    if feat_name == 'Gap':
+                        print("{}\t{}".format(pos, feat_name))
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "green",
+                            '_',
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                '_',
+                                pos
+                                ])
+                        prot_score += val
+                    else:
+                        #David doesn't want the negative values in the score
+                        #prot_score -= val
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "red",
+                            '_',
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                '_',
+                                pos
+                                ])
             consensus_match[segment] = tmp
         return (prot_score/100, prot_score/norm*100, consensus_match)
 
