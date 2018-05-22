@@ -1092,7 +1092,7 @@ class AlignedReferenceTemplate(Alignment):
                 if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                     i+=1
                     continue
-                # only use complex main template ['3SN6', '5VAI', '5UZ7']
+                # only use complex main template in table signprot_complex
                 if self.complex and st.pdb_code.index not in [x.structure.pdb_code.index for x in SignprotComplex.objects.all()]:
                     i+=1
                     continue

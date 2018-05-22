@@ -2081,6 +2081,56 @@ def SingleModelDownload(request, modelname, state, csv=False):
 
     return response
 
+def SingleComplexModelDownload(request, modelname, signprot, csv=False):
+    "Download single homology model"
+    print(modelname, signprot)
+    class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+    # if state=='refined':
+    #     hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
+    # else:
+    hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
+    if csv:
+        # if state=='refined':
+        #     rotamers = StructureRefinedStatsRotamer.objects.filter(structure=hommod).prefetch_related("structure", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        # else:
+        rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('protein','residue__sequence_number')
+        text_out = "Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n"
+        for r in rotamers:
+            if r.backbone_template:
+                bt = r.backbone_template.pdb_code.index
+            else:
+                bt = '-'
+            if r.rotamer_template:
+                rt = r.rotamer_template.pdb_code.index
+            else:
+                rt = '-'
+            if r.residue.generic_number:
+                gn = r.residue.generic_number.label
+            else:
+                gn = '-'
+            text_out+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+        response = HttpResponse(text_out, content_type="homology_models/csv")
+        # if state=='refined':
+        #     file_name = 'Class{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+        #                                                                        hommod.pdb_code.index)
+        # else:
+        file_name = 'Class{}_{}-{}_{}_{}_GPCRDB_complex.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+                                                                              hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+    else:
+        # if state=='refined':
+        #     response = HttpResponse(hommod.pdb_data.pdb, content_type="homology_models/model")
+        # else:
+        response = HttpResponse(hommod.pdb, content_type="homology_models/model")
+        # if state=='refined':
+        #     file_name = 'Class{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+        #                                                              hommod.pdb_code.index)
+        # else:
+        file_name = 'Class{}_{}-{}_{}_{}_GPCRDB_complex.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+                                                                    hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    return response
+
 def ServePdbOutfile (request, outfile, replacement_tag):
 
     root, ext = os.path.splitext(outfile)

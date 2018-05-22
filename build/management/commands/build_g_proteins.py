@@ -31,6 +31,7 @@ import os
 import csv
 import shlex, subprocess
 import requests, xmltodict
+import yaml
 
 from urllib.request import urlopen
 
@@ -81,6 +82,54 @@ class Command(BaseCommand):
         #                 print(l)
         # return 0
 
+        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_segment_ends.yaml']), 'r') as yfile:
+        #     dic = yaml.load(yfile)
+        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'test_alignment.fasta']), 'w') as testfile:
+
+        #     for record in SeqIO.parse(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_proteins.fasta']), 'fasta'):
+        #         sp, accession, name, ens = record.id.split('|')
+        #         sequence = record.seq
+        #         for d in dic:
+        #             if name.lower() in dic[d]:
+        #                 offset = 0
+        #                 try:
+        #                     for seg in ['HN','S1','H1','HA','HB','HC','HD','HE','HF','S2','S3','H2','S4','H3','S5','HG','H4','S6','H5']:
+        #                         s, e = dic[d][name.lower()][seg][0], dic[d][name.lower()][seg][1]
+        #                         sequence = sequence[:s-1+offset]+'['+sequence[s-1+offset:e+offset]+']'+sequence[e+offset:]
+        #                         offset+=2
+        #                     break
+        #                 except:
+        #                     pass
+        #         testfile.write(record.id+'\n'+str(sequence)+'\n')
+            
+
+        # return 0
+
+        # dic = {}
+        # for record in SeqIO.parse(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_proteins.fasta']), 'fasta'):
+        #     sp, accession, name, ens = record.id.split('|')
+        #     if 'HUMAN' in name:
+        #         subtype = name.split('_')[0].lower()
+        #         dic[subtype] = {name.lower(): {}}
+        #     else:
+        #         dic[subtype][name.lower()] = {}
+
+        #     # dic[subtype][name.lower()]['accession'] = accession
+        #     # dic[subtype][name.lower()]['ensemble'] = 
+        #     try:
+        #         p = Protein.objects.get(entry_name=name.lower())
+        #         helices = ProteinSegment.objects.filter(proteinfamily='Gprotein', category__in=['helix','sheet'])
+        #         for h in helices:
+        #             helix_resis = Residue.objects.filter(protein_conformation__protein=p, protein_segment=h)
+        #             start, end = helix_resis[0], helix_resis.reverse()[0]
+        #             dic[subtype][name.lower()][h.slug] = [start.sequence_number, end.sequence_number]
+        #     except:
+        #         print(name)
+            
+        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_segment_ends.yaml']), 'w') as f:
+        #     yaml.dump(dic, f, indent=4)
+        # return 0
+
         if options['filename']:
             filenames = options['filename']
         else:
@@ -92,7 +141,7 @@ class Command(BaseCommand):
             self.build_table_from_fasta()
         else:
             #add gproteins from cgn db
-            # try:
+            try:
                 self.purge_coupling_data()
                 self.purge_cgn_residues()
                 self.purge_cgn_proteins()
@@ -110,6 +159,8 @@ class Command(BaseCommand):
                             if '_' in column:
                                 self.ortholog_mapping[column] = row[0]
                             else:
+                                if column=='':
+                                    continue
                                 self.ortholog_mapping[column+'_'+header[j]] = row[0]
 
                 self.create_g_proteins(filenames)
@@ -119,9 +170,9 @@ class Command(BaseCommand):
                 self.update_protein_conformation(human_and_orths)
                 self.create_barcode()
 
-            # except Exception as msg:
-            #     print(msg)
-            #     self.logger.error(msg)
+            except Exception as msg:
+                print(msg)
+                self.logger.error(msg)
 
     def fetch_missing_uniprot_files(self):
         BASE = 'http://www.uniprot.org'
@@ -552,7 +603,7 @@ class Command(BaseCommand):
         for p in allprots:
             # if str(p).startswith(gp.split('_')[0]):
             if str(p) in self.ortholog_mapping:
-                orthologs_pairs.append((str(p), self.ortholog_mapping[str(p)]+'_HUMAN'))
+                # orthologs_pairs.append((str(p), self.ortholog_mapping[str(p)]+'_HUMAN'))
                 orthologs.append(str(p))
 
         accessions_orth= df.loc[df['Uniprot_ID'].isin(orthologs)]
@@ -567,7 +618,13 @@ class Command(BaseCommand):
 
                 if name in cgn_dict[k]:
                     pfm = ProteinFamily.objects.get(slug=k)
-
+                else:
+                    try:
+                        if self.ortholog_mapping[str(up['entry_name']).upper()]+'_HUMAN' in cgn_dict[k]:
+                            pfm = ProteinFamily.objects.get(slug=k)
+                    except:
+                        pass
+            
             #Create new Protein
             self.cgn_creat_gproteins(pfm, rns, a, up)
         

@@ -231,7 +231,8 @@ canvas {
                 <tr>
                     <td>{{ rota.residue.protein_segment.slug }}</td>
                     <td>{{ rota.residue.sequence_number }}</td>
-                    <td>{{ rota.residue.generic_number.label }}</td>
+                    <td>{{ rota.residue.display_generic_number.label }}</td>
+
                     {% if rota.backbone_template %}
                         <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
                         <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
