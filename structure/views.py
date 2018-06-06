@@ -1849,7 +1849,8 @@ def HommodDownload(request):
 
         zipf.writestr(stats_name, stats_data)
         del stats_data
-
+        
+    zipf.close()
     response = HttpResponse(content_type="application/zip")
     response['Content-Disposition'] = 'attachment; filename="GPCRDB_homology_models.zip"'
     response.write(out_stream.getvalue())
