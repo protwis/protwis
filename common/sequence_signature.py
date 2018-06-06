@@ -570,18 +570,17 @@ class SignatureMatch():
             for res in feat[1]:
                 try:
                     self.residue_to_feat[res].add(fidx)
-                except:
-                    print('error doing ',res)
+                except KeyError:
+                    self.residue_to_feat['-'].add(fidx)
 
-
-    def _assign_preferred_features(self, signature, segment):
+    def _assign_preferred_features(self, signature, segment, ref_matrix):
 
         new_signature = []
         for pos, argmax in enumerate(signature):
             updated = True
             new_feat = argmax
             while updated:
-                tmp = self._calculate_best_feature(pos, segment, argmax)
+                tmp = self._calculate_best_feature(pos, segment, argmax, ref_matrix)
                 if tmp == new_feat:
                     updated = False
                 else:
@@ -590,36 +589,39 @@ class SignatureMatch():
         return new_signature
 
 
-    def _calculate_best_feature(self, pos, segment, argmax):
+    def _calculate_best_feature(self, pos, segment, argmax, ref_matrix):
 
         tmp = self.feature_preference[argmax]
-        equiv_feat = np.where(np.isin(self.diff_matrix[segment][:, pos], argmax))[0]
+        amax = ref_matrix[segment][argmax, pos]
+        equiv_feat = np.where(np.isin(ref_matrix[segment][:, pos], amax))[0]
         for efeat in equiv_feat:
             if efeat in tmp:
                 return efeat
         return argmax
 
     def find_relevant_gns(self):
+        """
+        Find the set of generic residue positions meeting the cutoff.
+        """
 
         matrix_consensus = OrderedDict()
         for segment in self.segments:
             segment_consensus = []
-            # signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
             signature_map = self.diff_matrix[segment].argmax(axis=0)
             # Update mapping to prefer features with fewer amino acids
-            signature_map = self._assign_preferred_features(signature_map, segment)
+            signature_map = self._assign_preferred_features(signature_map, segment, self.diff_matrix)
             for col, pos in enumerate(list(signature_map)):
-                if abs(self.diff_matrix[segment][pos][col]) > self.cutoff:
+                if self.diff_matrix[segment][pos][col] >= self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
                     for scheme in self.schemes:
                         gnum = list(self.common_gn[scheme[0]][segment].items())[col]
                         try:
                             self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
-                        except:
+                        except KeyError:
                             self.relevant_gn[scheme[0]][segment] = OrderedDict()
                             self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
-
             segment_consensus = np.array(segment_consensus).T
+
             if segment_consensus != []:
                 matrix_consensus[segment] = segment_consensus
         self.signature_matrix_filtered = matrix_consensus
@@ -629,11 +631,13 @@ class SignatureMatch():
                 self.relevant_gn[self.schemes[0][0]][x[0]].keys()
             ) for x in self.signature_matrix_filtered.items()
         ])
+
         signature = OrderedDict([(x[0], []) for x in matrix_consensus.items()])
         for segment in self.relevant_segments:
-            # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            signature_map = self._assign_preferred_features(signature_map, segment, self.signature_matrix_filtered)
             tmp = np.array(self.signature_matrix_filtered[segment])
+
             for col, pos in enumerate(list(signature_map)):
                 signature[segment].append([
                     list(AMINO_ACID_GROUPS.keys())[pos],
@@ -655,17 +659,20 @@ class SignatureMatch():
             ).exclude(
                 id__in=[x.id for x in self.protein_set]
                 )
-        class_a_pcf = ProteinConformation.objects.order_by('protein__family__slug',
-            'protein__entry_name').filter(protein__in=class_proteins, protein__sequence_type__slug='wt').exclude(protein__entry_name__endswith='-consensus')
-        for i,pcf in enumerate(class_a_pcf):
+        class_a_pcf = ProteinConformation.objects.order_by(
+            'protein__family__slug',
+            'protein__entry_name'
+            ).filter(
+                protein__in=class_proteins,
+                protein__sequence_type__slug='wt'
+                ).exclude(protein__entry_name__endswith='-consensus')
+        for pcf in class_a_pcf:
             p_start = time.time()
             score, nscore, signature_match = self.score_protein(pcf)
             protein_scores[pcf] = (score, nscore)
             protein_signature_match[pcf] = signature_match
             p_end = time.time()
             print("Time elapsed for {}: ".format(pcf.protein.entry_name), p_end - p_start)
-            # if i>2:
-            #     break
         end = time.time()
         self.protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1][0], reverse=True))
         for prot in self.protein_report.items():
@@ -683,7 +690,7 @@ class SignatureMatch():
         for segment in  self.relevant_segments:
             for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
                 relevant_gns_total.append(pos)
-                
+
         resi = Residue.objects.filter(
             protein_conformation=pcf,
             generic_number__label__in=relevant_gns_total
@@ -695,8 +702,9 @@ class SignatureMatch():
 
         for segment in self.relevant_segments:
             tmp = []
-            # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            signature_map = self._assign_preferred_features(signature_map, segment, self.signature_matrix_filtered)
+
             norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
 
             for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
@@ -704,24 +712,79 @@ class SignatureMatch():
                 feat_abr = list(AMINO_ACID_GROUPS.keys())[feat]
                 feat_name = list(AMINO_ACID_GROUP_NAMES.values())[feat]
                 val = self.signature_matrix_filtered[segment][feat][idx]
-                #try
                 if pos in resi_dict:
-                    #res = resi.get(generic_number__label=pos)
                     res = resi_dict[pos]
-                    r_name = res.amino_acid if res.amino_acid != 'Gap' else '_'
                     if feat in self.residue_to_feat[res.amino_acid]:
                         if val > 0:
                             prot_score += val
-                        tmp.append([feat_abr, feat_name, val, "green", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "green",
+                            res.amino_acid, pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                res.amino_acid,
+                                pos
+                                ])
                     else:
                         #David doesn't want the negative values in the score
                         # prot_score -= val
-                        tmp.append([feat_abr, feat_name, val, "red", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
-                #except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "red",
+                            res.amino_acid,
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                res.amino_acid,
+                                pos
+                                ])
                 else:
-                    #David doesn't want the negative values in the score
-                    #prot_score -= val
-                    tmp.append([feat_abr, feat_name, val, "red", '_', pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", '_', pos])
+                    if feat_name == 'Gap':
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "green",
+                            '_',
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                '_',
+                                pos
+                                ])
+                        prot_score += val
+                    else:
+                        #David doesn't want the negative values in the score
+                        #prot_score -= val
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "red",
+                            '_',
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                '_',
+                                pos
+                                ])
             consensus_match[segment] = tmp
         return (prot_score/100, prot_score/norm*100, consensus_match)
 
@@ -789,13 +852,13 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
     for segment, cons_feat in signature_filtered.items():
         for col, chunk in enumerate(cons_feat):
             worksheet.write(
-                4 + 3 * len(numbering_schemes),
+                1 + 3 * len(numbering_schemes),
                 4 + col + col_offset,
                 chunk[0]
             )
             cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
             worksheet.write(
-                1 + 3 * len(numbering_schemes),
+                2 + 3 * len(numbering_schemes),
                 4 + col + col_offset,
                 chunk[2],
                 cell_format
