@@ -266,7 +266,7 @@ class Treeclass:
             open('static/home/images/'+build+'_legend.svg','w').write(str(self.Tree.legend))
             open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
         else:
-            return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
+            return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons, a.proteins
         
     def get_phylogeny(self, dirname):
 
@@ -309,7 +309,7 @@ def modify_tree(request):
 
 def render_tree(request):
     Tree_class=Treeclass()
-    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
     if phylogeny_input == 'too big':
         return render(request, 'phylogenetic_trees/too_big.html')
 
@@ -327,7 +327,7 @@ def render_tree(request):
 
 def render_tree_new(request):
     Tree_class=Treeclass()
-    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
     if phylogeny_input == 'too big':
         return render(request, 'phylogenetic_trees/too_big.html')
 
@@ -339,7 +339,28 @@ def render_tree_new(request):
     else:
         count = 1900 - 1400/math.sqrt(float(total))
     
+
+    protein_data = []
+
+    #FIXME remove
+    import random
+    for pc in proteins:
+        v = {}
+        p = pc.protein
+        v['name'] = p.entry_name
+        v['GPCR_class'] = p.family.parent.parent.parent.name
+        v['selectivity'] = ["Gq/G11 family"]
+        v['ligand_type'] = p.family.parent.parent.name
+        v['coverage'] = random.uniform(0, 1)
+        v['receptor_page'] = ''
+        print(v)
+        protein_data.append(v)
+
+
     request.session['Tree']=Tree_class
-    return render(request, 'phylogenetic_trees/display.html', {'phylip':Tree_class.phylip.replace('\n', '')})
+    context = {}
+    context['phylip'] = Tree_class.phylip.replace('\n', '')
+    context['protein_data'] = protein_data
+    return render(request, 'phylogenetic_trees/display.html', context)
 
 
