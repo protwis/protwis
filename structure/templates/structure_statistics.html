@@ -145,7 +145,7 @@ body {
     </thead>
     <tbody>
         <tr>
-            <td>Receptors</td>
+            <td>Receptors**</td>
             <td align="center" style="vertical-align:middle !important">{{ unique_structures }}</td>
             {% for class in unique_structures_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
@@ -177,22 +177,37 @@ body {
 
 </table>
 *Active state is defined as agonist-bound and opened intracellular TM bundle.
+**Receptor-orthologues are only counted once.
 <br />
 <br />
 Specific sets of structures can be downloaded from the <a href="/structure">structure browser</a><br />
-Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
+The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong><br />
 <br />
 <br />
 <br />
 <div id="charts" visibility="hidden">
     <?xml version="1.0" standalone="no" ?>
-    <svg id="chart_legend" width="450px" height="70px" version="1.1" xmlns="http://www.w3.org/2000/svg">
-        <circle class="chart_type" id="unique" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="13" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
-        <circle class="chart_type" id="unique_y" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors CRYSTAL STRUCTURES PUBLISHED each year.</text>
-        <circle class="chart_type" id="all" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
+    <svg id="chart_legend" width="950px" height="100px" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <text x="100" y="18" font-family="Verdana" font-size="14">By class</text>
+        <text x="550" y="18" font-family="Verdana" font-size="14">By ligand type</text>
+
+        <circle class="chart_type" id="unique" cx="450" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="470" y="33" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
+
+        <circle class="chart_type" id="unique_y" cx="450" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="470" y="53" font-family="Verdana" font-size="10">The number of unique receptors GPCR-ligand complexes.</text>
+
+        <circle class="chart_type" id="all" cx="450" cy="70" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="470" y="73" font-family="Verdana" font-size="10">The number of crystal structures available.</text>
+
+        <circle class="chart_type" id="unique_class" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
+
+        <circle class="chart_type" id="unique_class_y" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="53" font-family="Verdana" font-size="10">The number of unique GPCR-ligand complexes.</text>
+
+        <circle class="chart_type" id="all_class" cx="10" cy="70" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="73" font-family="Verdana" font-size="10">The number of crystal structures available.</text>
     </svg>
     <div id="unique" class="chart_container" style="display: none;">
         <div id="unique_cryst_container"><svg id="unique_cryst" style="width:800px;height:600px;"></svg></div>
@@ -275,6 +290,101 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
             </ul>
         </div>
     </div>
+<!-- </div>
+<br />
+<br />
+
+<div id="charts_classes" visibility="hidden"> -->
+    <!-- <?xml version="1.0" standalone="no" ?>
+    <svg id="chart_class_legend" width="450px" height="70px" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <circle class="chart_type" id="unique_class" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="13" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
+        <circle class="chart_type" id="unique_class_y" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors CRYSTAL STRUCTURES PUBLISHED each year.</text>
+        <circle class="chart_type" id="all_class" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
+    </svg> -->
+    <div id="unique_class" class="chart_container" style="display: none;">
+        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:800px;height:600px;"></svg></div>
+        <script>
+        data_unique_class_cryst_container={{ chartdata_class|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="unique_class_y" class="chart_container" style="display: none;">
+        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <script>
+            data_unique_class_cryst_year_container={{ chartdata_class_y|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="all_class" class="chart_container" style="display: none;">
+        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <script>
+            data_cryst_class_year_container={{ chartdata_class_all|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
 </div>
 <br />
 <br />
@@ -338,7 +448,9 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
             </li>
             <li>
                 <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
-                </a>
+            </li>
+            <li>
+                <a href="javascript:saveSvg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
             </li>
         </ul>
     </div>
@@ -388,6 +500,9 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
                             </a>
                         </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                        </li>
                     </ul>
                 </div>
             </td>
@@ -406,7 +521,9 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                         </li>
                         <li>
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
-                            </a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
                         </li>
                     </ul>
                 </div>
@@ -427,6 +544,9 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                         <li>
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
                             </a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
                         </li>
                     </ul>
                 </div>
@@ -468,6 +588,10 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
                             </a>
                         </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                                </a>
+                        </li>
                     </ul>
                 </div>
             </td>
@@ -488,6 +612,10 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
                             <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_t2.tiff');">TIFF</a>
                             </a>
                         </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_t2.svg');">SVG</a>
+                                </a>
+                        </li>
                     </ul>
                 </div>
             </td>
@@ -498,13 +626,10 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
-<!--<script src="https://d3js.org/d3.v4.min.js"></script>-->
-
-<!--<script src="{% static 'home/js/statistics_diagram.js' %}"></script>-->
-<!--<script src="{% static 'home/js/statistics_diagram_crystals.js' %}"></script>-->
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/statistics.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
     $(window).load(function() {

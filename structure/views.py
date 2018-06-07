@@ -10,7 +10,7 @@ from django.views.decorators.cache import cache_page
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites
 from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
@@ -52,7 +52,6 @@ class StructureBrowser(TemplateView):
     """
     Fetching Structure data for browser
     """
-
     template_name = "structure_browser.html"
 
     def get_context_data (self, **kwargs):
@@ -60,15 +59,17 @@ class StructureBrowser(TemplateView):
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
             context['structures'] = Structure.objects.filter(refined=False).select_related(
+                "state",
                 "pdb_code__web_resource",
                 "protein_conformation__protein__species",
                 "protein_conformation__protein__source",
                 "protein_conformation__protein__family__parent__parent__parent",
                 "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents",
+                "stabilizing_agents", "construct__crystallization__crystal_method",
                 "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+                "protein_conformation__site_protein_conformation__site",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
+                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')))
         except Structure.DoesNotExist as e:
             pass
 
@@ -196,12 +197,16 @@ def HomologyModelDetails(request, modelname, state):
             t.color = colors[t]
             bb_temps[b][i] = t
             template_list.append(t.pdb_code.index)
+
+    psi = PdbStateIdentifier(model)
+    psi.run()
+    delta_distance = round(float(psi.activation_value), 2)
             
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                           'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
                                                           'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
                                                           'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
-                                                          'state': state})
+                                                          'state': state, 'delta_distance': delta_distance})
 
 def ServeHomModDiagram(request, modelname, state):
     if state=='refined':
@@ -285,7 +290,7 @@ class StructureStatistics(TemplateView):
         
         unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-        unique_complexes = unique_structs.exclude(ligands=None)
+        unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
         #FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
         unique_gprots = unique_structs.filter(stabilizing_agents__slug='gs')
         unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
@@ -312,11 +317,16 @@ class StructureStatistics(TemplateView):
         context['unique_active'] = len(unique_active)
         context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
         context['release_notes'] = ReleaseNotes.objects.all()[0]
+        context['latest_structure'] = Structure.objects.latest('publication_date').publication_date
 
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
         context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
         context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, all_structs, lookup)
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
+
+        context['chartdata_class'] = self.get_per_class_cumulative_data_series(years, unique_structs, lookup)
+        context['chartdata_class_y'] = self.get_per_class_data_series(years, unique_structs, lookup)
+        context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
         #context['coverage'] = self.get_diagram_coverage()
         #{
         #    'depth': 3,
@@ -373,7 +383,7 @@ class StructureStatistics(TemplateView):
     def count_by_class(self, queryset, lookup):
 
         #Ugly walkaround
-        classes = [lookup[x] for x in lookup.keys() if x in ['001', '002', '003', '004', '005', '006']]
+        classes = [lookup[x] for x in reversed(['001', '002', '003', '004', '005', '006'])]
         records = []
         for s in queryset:
             fid = s.protein_conformation.protein.family.slug.split("_")
@@ -392,6 +402,33 @@ class StructureStatistics(TemplateView):
         max_y = max(years_list)
         return range(min_y, max_y+1)
 
+    def get_per_class_data_series(self, years, structures, lookup):
+        """
+        Prepare data for multiBarGraph of unique crystallized receptors grouped by class. Returns data series for django-nvd3 wrapper.
+        """
+        classes = [lookup[x] for x in ['001', '002', '003', '004', '005', '006']]
+        series = []
+        data = {}
+        for year in years:
+            for prot_class in classes:
+                if prot_class not in data.keys():
+                    data[prot_class] = []
+                count = 0
+                for structure in structures:
+                    fid = structure.protein_conformation.protein.family.slug.split("_")
+                    # if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                    if lookup[fid[0]] == prot_class and structure.publication_date.year == year:
+                        count += 1
+                data[prot_class].append(count)
+        for prot_class in classes:
+            series.append({"values":
+                [OrderedDict({
+                    'x': years[i],
+                    'y': j
+                    }) for i, j in enumerate(data[prot_class])],
+                "key": prot_class,
+                "yAxis": "1"})
+        return json.dumps(series)
 
     def get_per_family_data_series(self, years, structures, lookup):
         """
@@ -413,11 +450,42 @@ class StructureStatistics(TemplateView):
                 data[family].append(count)
         for family in families:
             series.append({"values":
-                [{
+                [OrderedDict({
                     'x': years[i],
                     'y': j
-                    } for i, j in enumerate(data[family])],
+                    }) for i, j in enumerate(data[family])],
                 "key": family,
+                "yAxis": "1"})
+        return json.dumps(series)
+
+    def get_per_class_cumulative_data_series(self, years, structures, lookup):
+        """
+        Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
+        """
+        classes =  [lookup[x] for x in ['001', '002', '003', '004', '005', '006']]
+        series = []
+        data = {}
+        for year in years:
+            for prot_class in classes:
+                if prot_class not in data.keys():
+                    data[prot_class] = []
+                count = 0
+                for structure in structures:
+                    fid = structure.protein_conformation.protein.family.slug.split("_")
+                    # if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                    if lookup[fid[0]] == prot_class and structure.publication_date.year == year:
+                        count += 1
+                if len(data[prot_class]) > 0:
+                    data[prot_class].append(count + data[prot_class][-1])
+                else:
+                    data[prot_class].append(count)
+        for prot_class in classes:
+            series.append({"values":
+                [OrderedDict({
+                    'x': years[i],
+                    'y': j
+                    }) for i, j in enumerate(data[prot_class])],
+                "key": prot_class,
                 "yAxis": "1"})
         return json.dumps(series)
 
@@ -1214,7 +1282,6 @@ class SuperpositionWorkflowDownload(View):
         if 'alt_files' in request.FILES:
             request.session['alt_files'] = request.FILES.getlist('alt_files')
 
-
         return response
 
 
@@ -1506,6 +1573,7 @@ class PDBClean(TemplateView):
         out_stream = BytesIO()
         io = PDBIO()
         zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
+
         if selection.targets != []:
             if selection.targets != [] and selection.targets[0].type == 'structure':
                 for selected_struct in [x for x in selection.targets if x.type == 'structure']:
@@ -1531,25 +1599,28 @@ class PDBClean(TemplateView):
                     request.session['substructure_mapping'] = 'full'
                     zipf.writestr(mod_name, tmp.getvalue())
                     del tmp
-                    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
-                    stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
-                    for r in rotamers:
-                        try:
-                            gn = r.residue.generic_number.label
-                        except:
-                            gn = '-'
-                        if r.backbone_template:
-                            bt = r.backbone_template.pdb_code.index
-                        else:
-                            bt = '-'
-                        if r.rotamer_template:
-                            rt = r.rotamer_template.pdb_code.index
-                        else:
-                            rt = '-'
-                        stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
-                    stats_name = mod_name[:-3]+'templates.csv'
-                    zipf.writestr(stats_name, stats_data)
-                    del stats_data
+
+                    # stat file
+                    # rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
+                    # stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
+                    # for r in rotamers:
+                    #     try:
+                    #         gn = r.residue.generic_number.label
+                    #     except:
+                    #         gn = '-'
+                    #     if r.backbone_template:
+                    #         bt = r.backbone_template.pdb_code.index
+                    #     else:
+                    #         bt = '-'
+                    #     if r.rotamer_template:
+                    #         rt = r.rotamer_template.pdb_code.index
+                    #     else:
+                    #         rt = '-'
+                    #     stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+                    # stats_name = mod_name[:-3]+'templates.csv'
+                    # zipf.writestr(stats_name, stats_data)
+                    # del stats_data
+
                 for mod in selection.targets:
                     selection.remove('targets', 'structure_model', mod.item.id)
 
@@ -1736,13 +1807,54 @@ def ConvertStructureModelsToProteins(request):
 
 def HommodDownload(request):
     "Download selected homology models in zip file"
-    p = PDBClean()
-    p.post(request)
-    p1 = PDBDownload()
-    p1.kwargs = {}
-    p1.kwargs['substructure'] = 'full'
-    p2 = p1.get(request, hommods=True)
-    return p2
+
+    out_stream = BytesIO()
+    io = PDBIO()
+    zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
+    pks = request.GET['ids'].split(',')
+    class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+    hommodels = StructureModel.objects.filter(pk__in=pks).prefetch_related('protein__family','state','main_template__pdb_code').all()
+
+    for hommod in hommodels:
+        mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+                                                                      hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+
+        tmp = StringIO(hommod.pdb)
+        zipf.writestr(mod_name, tmp.getvalue())
+        del tmp
+
+        stats_name = mod_name[:-3]+'templates.csv'
+        # Use cache to prevent this being performed too often
+        stats_data = cache.get(stats_name)
+        if stats_data is None:
+            rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related('homology_model','residue__generic_number','residue__protein_segment','backbone_template__pdb_code','rotamer_template__pdb_code').all().order_by('residue__sequence_number')
+            stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
+            for r in rotamers:
+                h = r.homology_model.pk
+                try:
+                    gn = r.residue.generic_number.label
+                except:
+                    gn = '-'
+                if r.backbone_template:
+                    bt = r.backbone_template.pdb_code.index
+                else:
+                    bt = '-'
+                if r.rotamer_template:
+                    rt = r.rotamer_template.pdb_code.index
+                else:
+                    rt = '-'
+                stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+
+            cache.set(stats_name,stats_data,3600*24*7) # cache a week
+
+        zipf.writestr(stats_name, stats_data)
+        del stats_data
+        
+    zipf.close()
+    response = HttpResponse(content_type="application/zip")
+    response['Content-Disposition'] = 'attachment; filename="GPCRDB_homology_models.zip"'
+    response.write(out_stream.getvalue())
+    return response
 
 def SingleModelDownload(request, modelname, state, csv=False):
     "Download single homology model"

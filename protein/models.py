@@ -1,17 +1,19 @@
-﻿from django.db import models
+﻿from django.utils.text import slugify
+from django.db import models
+from django.core.cache import cache
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from common.diagrams_arrestin import DrawArrestinPlot
 
-from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumberEquivalent
+from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResidueDataType, ResidueDataPoint
 
 class Protein(models.Model):
-    parent = models.ForeignKey('self', null=True)
-    family = models.ForeignKey('ProteinFamily')
-    species = models.ForeignKey('Species')
-    source = models.ForeignKey('ProteinSource')
-    residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme')
-    sequence_type = models.ForeignKey('ProteinSequenceType')
+    parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
+    family = models.ForeignKey('ProteinFamily', on_delete=models.CASCADE)
+    species = models.ForeignKey('Species', on_delete=models.CASCADE)
+    source = models.ForeignKey('ProteinSource', on_delete=models.CASCADE)
+    residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme', on_delete=models.CASCADE)
+    sequence_type = models.ForeignKey('ProteinSequenceType', on_delete=models.CASCADE)
     states = models.ManyToManyField('ProteinState', through='ProteinConformation')
     endogenous_ligands = models.ManyToManyField('ligand.Ligand')
     web_links = models.ManyToManyField('common.WebLink')
@@ -20,6 +22,11 @@ class Protein(models.Model):
     name = models.CharField(max_length=200)
     sequence = models.TextField()
 
+    def entry_short(self):
+        return self.entry_name.split("_")[0].upper()
+
+    def short(self):
+        return self.name.replace(" receptor","").replace("-adrenoceptor","")
 
     def __str__(self):
         if not self.entry_name:
@@ -44,6 +51,10 @@ class Protein(models.Model):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self))
 
+    def get_helical_box_no_buttons(self):
+        residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
+        return DrawHelixBox(residuelist,self.get_protein_class(),str(self), nobuttons=1)
+        
     def get_snake_plot_no_buttons(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1)
@@ -64,9 +75,9 @@ class Protein(models.Model):
 
 
 class ProteinConformation(models.Model):
-    protein = models.ForeignKey('Protein')
-    state = models.ForeignKey('ProteinState')
-    template_structure = models.ForeignKey('structure.Structure', null=True)
+    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
+    state = models.ForeignKey('ProteinState', on_delete=models.CASCADE)
+    template_structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE)
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
 
     # non-database attributes
@@ -84,11 +95,11 @@ class ProteinConformation(models.Model):
 
     @property
     def is_sodium(self):
-        sodium = IdentifiedSites.objects.filter(protein_conformation=self, site__slug='sodium_pocket')
-        if len(sodium)>0:
-            return True
-        else:
-            return False
+        # Avoid filter, to utilise if site_protein_conformation is prefetched, otherwise it generates a DB call
+        for s in self.site_protein_conformation.all():
+            if s.site.slug=='sodium_pocket':
+                return True
+        return False
 
     def sodium_pocket(self):
         try:
@@ -97,7 +108,8 @@ class ProteinConformation(models.Model):
             site = Site.objects.create(slug='sodium_pocket', name='Sodium ion pocket')
         try:
             ex_site = IdentifiedSites.objects.get(protein_conformation=self)
-            if len(ex_site.residues.all())==2:
+
+            if len(ex_site.residues.all())==2 and ex_site.site==site:
                 return
             else:
                 raise Exception
@@ -118,8 +130,8 @@ class ProteinConformation(models.Model):
 
 
 class IdentifiedSites(models.Model):
-    protein_conformation = models.ForeignKey('protein.ProteinConformation', related_name='site_protein_conformation')
-    site = models.ForeignKey('Site')
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', related_name='site_protein_conformation', on_delete=models.CASCADE)
+    site = models.ForeignKey('Site', on_delete=models.CASCADE)
     residues = models.ManyToManyField('residue.Residue', related_name='site_residue')
 
 
@@ -141,7 +153,7 @@ class ProteinState(models.Model):
 
 class Gene(models.Model):
     proteins = models.ManyToManyField('Protein', related_name='genes')
-    species = models.ForeignKey('Species')
+    species = models.ForeignKey('Species', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     position = models.SmallIntegerField()
 
@@ -166,7 +178,7 @@ class Species(models.Model):
 
 
 class ProteinAlias(models.Model):
-    protein = models.ForeignKey('Protein')
+    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     position = models.SmallIntegerField()
 
@@ -217,9 +229,12 @@ class ProteinSource(models.Model):
 
 
 class ProteinFamily(models.Model):
-    parent = models.ForeignKey('self', null=True)
+    parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
     slug = models.SlugField(max_length=100, unique=True)
     name = models.CharField(max_length=200)
+
+    def short(self):
+        return self.name.replace("Class ","").replace(" receptors","")
 
     def __str__(self):
         return self.name
@@ -241,8 +256,8 @@ class ProteinSequenceType(models.Model):
 
 
 class ProteinAnomaly(models.Model):
-    anomaly_type = models.ForeignKey('ProteinAnomalyType')
-    generic_number = models.ForeignKey('residue.ResidueGenericNumber')
+    anomaly_type = models.ForeignKey('ProteinAnomalyType', on_delete=models.CASCADE)
+    generic_number = models.ForeignKey('residue.ResidueGenericNumber', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.generic_number.label
@@ -264,7 +279,7 @@ class ProteinAnomalyType(models.Model):
 
 
 class ProteinAnomalyRuleSet(models.Model):
-    protein_anomaly = models.ForeignKey('ProteinAnomaly', related_name='rulesets')
+    protein_anomaly = models.ForeignKey('ProteinAnomaly', related_name='rulesets', on_delete=models.CASCADE)
     exclusive = models.BooleanField(default=False)
 
     def __str__(self):
@@ -276,8 +291,8 @@ class ProteinAnomalyRuleSet(models.Model):
 
 
 class ProteinAnomalyRule(models.Model):
-    rule_set = models.ForeignKey('ProteinAnomalyRuleSet', related_name='rules')
-    generic_number = models.ForeignKey('residue.ResidueGenericNumber')
+    rule_set = models.ForeignKey('ProteinAnomalyRuleSet', related_name='rules', on_delete=models.CASCADE)
+    generic_number = models.ForeignKey('residue.ResidueGenericNumber', on_delete=models.CASCADE)
     amino_acid = models.CharField(max_length=1)
     negative = models.BooleanField(default=False)
 
@@ -301,10 +316,10 @@ class ProteinFusion(models.Model):
 
 
 class ProteinFusionProtein(models.Model):
-    protein = models.ForeignKey('Protein')
-    protein_fusion = models.ForeignKey('ProteinFusion')
-    segment_before = models.ForeignKey('ProteinSegment', related_name='segment_before')
-    segment_after = models.ForeignKey('ProteinSegment', related_name='segment_after')
+    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
+    protein_fusion = models.ForeignKey('ProteinFusion', on_delete=models.CASCADE)
+    segment_before = models.ForeignKey('ProteinSegment', related_name='segment_before', on_delete=models.CASCADE)
+    segment_after = models.ForeignKey('ProteinSegment', related_name='segment_after', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.protein.name + " " + self.protein_fusion.name
@@ -314,9 +329,9 @@ class ProteinFusionProtein(models.Model):
 
 
 class ProteinConformationTemplateStructure(models.Model):
-    protein_conformation = models.ForeignKey('ProteinConformation')
-    protein_segment = models.ForeignKey('ProteinSegment')
-    structure = models.ForeignKey('structure.Structure')
+    protein_conformation = models.ForeignKey('ProteinConformation', on_delete=models.CASCADE)
+    protein_segment = models.ForeignKey('ProteinSegment', on_delete=models.CASCADE)
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.protein_conformation.protein.name + " " + self.protein_segment.slug \
@@ -337,8 +352,8 @@ class ProteinGProtein(models.Model):
         db_table = 'protein_gprotein'
 
 class ProteinGProteinPair(models.Model):
-    protein = models.ForeignKey('Protein')
-    g_protein = models.ForeignKey('ProteinGProtein')
+    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
+    g_protein = models.ForeignKey('ProteinGProtein', on_delete=models.CASCADE)
     transduction = models.TextField(null=True)
 
     def __str__(self):

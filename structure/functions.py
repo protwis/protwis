@@ -4,14 +4,17 @@ from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB.AbstractPropertyMap import AbstractPropertyMap
 from Bio.PDB.Polypeptide import CaPPBuilder, is_aa
-from Bio.PDB.Vector import rotaxis
+try:
+    from Bio.PDB.Vector import rotaxis
+except:
+    from Bio.PDB import rotaxis
 
 from django.conf import settings
 from common.selection import SimpleSelection
 from common.alignment import Alignment
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
 from residue.functions import dgn
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer
 
 from subprocess import Popen, PIPE
@@ -31,27 +34,27 @@ import numpy
 
 logger = logging.getLogger("protwis")
 
-ATOM_FORMAT_STRING="%s%5i %-4s%c%3s %c%4i%c   %8.3f%8.3f%8.3f%s%6.2f      %4s%2s%2s\n" 
+ATOM_FORMAT_STRING="%s%5i %-4s%c%3s %c%4i%c   %8.3f%8.3f%8.3f%s%6.2f      %4s%2s%2s\n"
 
 #==============================================================================
 # I have put it into separate class for the sake of future uses
 class BlastSearch(object):
-    
-    
+
+
     def __init__ (self, blast_path='blastp',
         blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results=1):
-  
+
         self.blast_path = blast_path
         self.blastdb = blastdb
         #typicaly top scored result is enough, but for sequences with missing
         #residues it is better to use more results to avoid getting sequence of
         #e.g.  different species
         self.top_results = top_results
-      
+
     #takes Bio.Seq sequence as an input and returns a list of tuples with the
     #alignments
     def run (self, input_seq):
-    
+
         output = []
         #Windows has problems with Popen and PIPE
         if sys.platform == 'win32':
@@ -67,11 +70,12 @@ class BlastSearch(object):
             blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
+
         if len(blast_err) != 0:
             logger.debug(blast_err)
         if blast_out!='\n':
             result = NCBIXML.read(StringIO(blast_out))
-            for aln in result.alignments[:self.top_results]:         
+            for aln in result.alignments[:self.top_results]:
                 logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
                 output.append((aln.hit_id, aln))
         return output
@@ -89,7 +93,7 @@ class BlastSearchOnline(object):
         output = []
 
         result = NCBIXML.read(NCBIWWW.qblast(self.blast_program, self.db, input_seq, auto_format='xml'))
-        for aln in result.alignments[:self.top_results]:         
+        for aln in result.alignments[:self.top_results]:
             logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
             output.append((aln.hit_id, aln))
         return output
@@ -114,26 +118,26 @@ class BlastSearchOnline(object):
 
 #stores information about alignments and b-w numbers
 class MappedResidue(object):
-  
+
     def __init__ (self, res_num, res_name):
-          
+
         self.number = res_num
         self.name = res_name
         self.pos_in_aln = 0
         self.mapping = {}
         self.bw = 0.
-        self.gpcrdb = 0.  
-        self.gpcrdb_id = 0     
+        self.gpcrdb = 0.
+        self.gpcrdb_id = 0
         self.segment = ''
         self.display = ''
-        self.residue_record = None     
-  
+        self.residue_record = None
+
     def add_bw_number (self, bw_number=''):
-    
+
         self.bw = bw_number
 
     def add_segment (self, segment=''):
-    
+
         self.segment = segment
 
     def add_display_number (self, display = ''):
@@ -163,11 +167,11 @@ class MappedResidue(object):
 class SelectionParser(object):
 
     def __init__ (self, selection):
-    
+
         self.generic_numbers = []
         self.helices = []
         self.substructures = []
-        
+
         for segment in selection.segments:
             logger.debug('Segments in selection: {}'.format(segment))
             if segment.type == 'helix':
@@ -178,7 +182,7 @@ class SelectionParser(object):
                 self.substructures.append(segment.item.slug)
         logger.debug("Helices selected: {}; Residues: {}; Other substructures:{}".format(self.helices, self.generic_numbers, self.substructures))
 
-    
+
 #==============================================================================
 class GenericNumbersSelector(Select):
 
@@ -201,7 +205,7 @@ class GenericNumbersSelector(Select):
                 return 1
         except:
             return 0
-        return 0        
+        return 0
 
 #==============================================================================
 class SubstructureSelector(Select):
@@ -228,23 +232,23 @@ class SubstructureSelector(Select):
 class CASelector(object):
 
     def __init__ (self, parsed_selection, ref_pdbio_struct, alt_structs):
-    
+
         self.ref_atoms = []
         self.alt_atoms = {}
-    
+
         self.selection = parsed_selection
         try:
             self.ref_atoms.extend(self.select_generic_numbers(ref_pdbio_struct))
             self.ref_atoms.extend(self.select_helices(ref_pdbio_struct))
         except Exception as msg:
             logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
-    
+
         for alt_struct in alt_structs:
             try:
                 self.alt_atoms[alt_struct.id] = []
                 self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(alt_struct))
                 self.alt_atoms[alt_struct.id].extend(self.select_helices(alt_struct))
-                
+
             except Exception as msg:
                 logger.warning("Can't select atoms from structure {!s}\n{!s}".format(alt_struct.id, msg))
 
@@ -253,9 +257,9 @@ class CASelector(object):
 
         if self.selection.generic_numbers == []:
             return []
-    
+
         atom_list = []
-    
+
         for chain in structure:
             for res in chain:
                 try:
@@ -269,13 +273,13 @@ class CASelector(object):
         if atom_list == []:
             logger.warning("No atoms with given generic numbers {} for  {!s}".format(self.selection.generic_numbers, structure.id))
         return atom_list
-    
-    
+
+
     def select_helices (self, structure):
-    
+
         if self.selection.helices == []:
             return []
-    
+
         atom_list = []
         for chain in structure:
             for res in chain:
@@ -292,21 +296,21 @@ class CASelector(object):
 
 
     def get_consensus_atom_sets (self, alt_id):
-        
+
         tmp_ref = []
         tmp_alt = []
-    
+
         for ref_at in self.ref_atoms:
             for alt_at in self.alt_atoms[alt_id]:
                 if ref_at.get_bfactor() == alt_at.get_bfactor():
                     tmp_ref.append(ref_at)
                     tmp_alt.append(alt_at)
-    
+
         if len(tmp_ref) != len(tmp_alt):
             return ([], [])
-    
+
         return (tmp_ref, tmp_alt)
-    
+
 
     def get_consensus_gn_set (self):
 
@@ -327,14 +331,14 @@ class CASelector(object):
                             gn_list.append("{:.3f}".format(-ref_ca.get_bfactor() + 0.001))
         return gn_list
 
-    
+
     def get_ref_atoms (self):
-    
+
         return self.ref_atoms
-  
-  
+
+
     def get_alt_atoms (self, alt_id):
-    
+
         try:
             return self.alt_atoms[alt_id]
         except:
@@ -342,7 +346,7 @@ class CASelector(object):
 
 
     def get_alt_atoms_all (self):
-    
+
         return self.alt_atoms
 
 
@@ -361,42 +365,45 @@ class BackboneSelector():
     #similarity_rules = [[['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
     #    [['Y'], ['AFE'], ['F']],
     #    [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],]
-    
+
     #interaction_type slugs changed along the way
     similarity_rules = [[['H', 'F', 'Y', 'W'], ['aro_ef_protein', 'aro_ff'], ['H', 'F', 'Y', 'W']],
         [['Y'], ['aro_fe_protein'], ['F']],
         [['S', 'T'], ['polar_acceptor_protein', 'polar_donor_protein'], ['S', 'T']],]
 
-    def __init__ (self, ref_pdbio_struct, fragment, use_similar=False):
+    def __init__(self, ref_pdbio_struct, fragment, use_similar=False):
 
         self.ref_atoms = []
         self.alt_atoms = []
-        
+
         self.ref_atoms = self.select_ref_atoms(fragment, ref_pdbio_struct, use_similar)
         self.alt_atoms = self.select_alt_atoms(PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', StringIO(str(fragment.rotamer.pdbdata)))[0])
-        
-        
-    def select_ref_atoms (self, fragment, ref_pdbio_struct, use_similar=False):
+
+
+    def select_ref_atoms(self, fragment, ref_pdbio_struct, use_similar=False):
 
         for chain in ref_pdbio_struct:
             for res in chain:
                 try:
                     gn = self.get_generic_number(res)
                     if gn == fragment.rotamer.residue.display_generic_number.label:
-                        logger.info("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
-                        if use_similar:
-                            for rule in self.similarity_rules:
-                                if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
-                                    return [res['CA'], res['N'], res['O']] 
+                        # logger.info("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
+                        if polypeptide.three_to_one(res.resname) == fragment.rotamer.residue.amino_acid:
+                            return [res['CA'], res['N'], res['O']]
                         else:
-                            if fragment.interaction_type.slug not in ['acc', 'hyd']:
-                                return [res['CA'], res['N'], res['O']] 
+                            if use_similar:
+                                for rule in self.similarity_rules:
+                                    if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
+                                        return [res['CA'], res['N'], res['O']]
+                        # else:
+                        #     if fragment.interaction_type.slug not in ['acc', 'hyd']:
+                        #         return [res['CA'], res['N'], res['O']]
                 except Exception as msg:
                     continue
-        return []                  
+        return []
 
 
-    def select_alt_atoms (self, rotamer_pdbio_struct):
+    def select_alt_atoms(self, rotamer_pdbio_struct):
 
         for chain in rotamer_pdbio_struct:
             for res in chain:
@@ -405,9 +412,9 @@ class BackboneSelector():
                 except:
                     continue
         return []
-    
 
-    def get_generic_number (self, res):
+
+    def get_generic_number(self, res):
 
         if 'CA' not in res:
             return 0.0
@@ -426,19 +433,19 @@ class BackboneSelector():
             return "{:.3f}".format(number).split('.')[1]
 
 
-    def get_ref_atoms (self):
-    
+    def get_ref_atoms(self):
+
         return self.ref_atoms
-  
-  
-    def get_alt_atoms (self):
-    
+
+
+    def get_alt_atoms(self):
+
         return self.alt_atoms
 
 
 #==============================================================================
 def check_gn (pdb_struct):
-        
+
     for chain in pdb_struct:
         for residue in chain:
             try:
@@ -506,41 +513,40 @@ def extract_pdb_data(residue):
 
 
 #==============================================================================
-def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, chain_id, charge="  "): 
-    """Returns an ATOM PDB string.""" 
-    if hetfield!=" ": 
-        record_type="HETATM" 
-    else: 
-        record_type="ATOM  " 
-    if atom.element: 
-        element = atom.element.strip().upper() 
-        element = element.rjust(2) 
-    else: 
-        element = "  " 
-    name=atom.get_fullname() 
-    altloc=atom.get_altloc() 
-    x, y, z=atom.get_coord() 
-    bfactor=atom.get_bfactor() 
-    occupancy=atom.get_occupancy() 
-    try: 
-        occupancy_str = "%6.2f" % occupancy 
-    except TypeError: 
-        if occupancy is None: 
-            occupancy_str = " " * 6 
-            import warnings 
-            from Bio import BiopythonWarning 
-            warnings.warn("Missing occupancy in atom %s written as blank" % repr(atom.get_full_id()), BiopythonWarning) 
-        else: 
-            raise TypeError("Invalid occupancy %r in atom %r" % (occupancy, atom.get_full_id())) 
-        pass 
-    args=(record_type, atom_number, name, altloc, resname, chain_id, resseq, icode, x, y, z, occupancy_str, bfactor, segid, element, charge) 
+def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, chain_id, charge="  "):
+    """Returns an ATOM PDB string."""
+    if hetfield!=" ":
+        record_type="HETATM"
+    else:
+        record_type="ATOM  "
+    if atom.element:
+        element = atom.element.strip().upper()
+        element = element.rjust(2)
+    else:
+        element = "  "
+    name=atom.get_fullname()
+    altloc=atom.get_altloc()
+    x, y, z=atom.get_coord()
+    bfactor=atom.get_bfactor()
+    occupancy=atom.get_occupancy()
+    try:
+        occupancy_str = "%6.2f" % occupancy
+    except TypeError:
+        if occupancy is None:
+            occupancy_str = " " * 6
+            import warnings
+            from Bio import BiopythonWarning
+            warnings.warn("Missing occupancy in atom %s written as blank" % repr(atom.get_full_id()), BiopythonWarning)
+        else:
+            raise TypeError("Invalid occupancy %r in atom %r" % (occupancy, atom.get_full_id()))
+        pass
+    args=(record_type, atom_number, name, altloc, resname, chain_id, resseq, icode, x, y, z, occupancy_str, bfactor, segid, element, charge)
     return ATOM_FORMAT_STRING % args
-    
+
 #==============================================================================
 class HSExposureCB(AbstractPropertyMap):
     """
-    Abstract class to calculate Half-Sphere Exposure (HSE).
-    
+    Abstract class to calculate Half-Sphere Exposure (HSE). #GP: Biopython class repurposed
     The HSE can be calculated based on the CA-CB vector, or the pseudo CB-CA
     vector based on three consecutive CA atoms. This is done by two separate
     subclasses.
@@ -549,20 +555,20 @@ class HSExposureCB(AbstractPropertyMap):
         """
         @param model: model
         @type model: L{Model}
-        
+
         @param radius: HSE radius
         @type radius: float
-        
+
         @param offset: number of flanking residues that are ignored in the calculation
         of the number of neighbors
         @type offset: int
-        
+
         @param hse_up_key: key used to store HSEup in the entity.xtra attribute
         @type hse_up_key: string
-        
+
         @param hse_down_key: key used to store HSEdown in the entity.xtra attribute
         @type hse_down_key: string
-        
+
         @param angle_key: key used to store the angle between CA-CB and CA-pCB in
         the entity.xtra attribute
         @type angle_key: string
@@ -630,13 +636,13 @@ class HSExposureCB(AbstractPropertyMap):
                                 ### GP
                                 # Puts residues' names in a list that were found in the upper half sphere
                                 residue_up.append(ro)
-                                
+
                                 ### end of GP code
                             else:
                                 hse_d+=1
                                 ### GP
                                 # Puts residues' names in a list that were found in the lower half sphere
-                                residue_down.append(ro)    
+                                residue_down.append(ro)
                                 ### end of GP code
                 res_id=r2.get_id()
                 chain_id=r2.get_parent().get_id()
@@ -650,7 +656,7 @@ class HSExposureCB(AbstractPropertyMap):
                 r2.xtra[hse_down_key]=hse_d
                 if angle_key:
                     r2.xtra[angle_key]=angle
-                
+
                 ### GP checking for atom clashes
                 include_prev, include_next = False, False
                 try:
@@ -658,7 +664,7 @@ class HSExposureCB(AbstractPropertyMap):
                         include_prev = True
                 except:
                     include_prev = False
-                try:                                
+                try:
                     if pp1[i].get_id()[1]+1!=pp1[i+1].get_id()[1]:
                         include_next = True
                 except:
@@ -691,12 +697,12 @@ class HSExposureCB(AbstractPropertyMap):
             for r in residues_in_pdb:
                 if r not in residues_with_proper_CA:
                     self.chain_breaks.append(r)
-                    
-                    
+
+
     def _get_cb(self, r1, r2, r3):
         """
         Method to calculate CB-CA vector.
-        
+
         @param r1, r2, r3: three consecutive residues (only r2 is used)
         @type r1, r2, r3: L{Residue}
         """
@@ -713,7 +719,7 @@ class HSExposureCB(AbstractPropertyMap):
         """
         Return a pseudo CB vector for a Gly residue.
         The pseudoCB vector is centered at the origin.
-        
+
         CB coord=N coord rotated over -120 degrees
         along the CA-C axis.
         """
@@ -813,58 +819,101 @@ class PdbChainSelector():
 
 
 class PdbStateIdentifier():
-    def __init__(self, structure):
+    def __init__(self, structure, tm2_gn='2x41', tm6_gn='6x38', tm3_gn='3x44', tm7_gn='7x52', inactive_cutoff=2, intermediate_cutoff=7.5):
+        self.structure_type = None
+
         try:
-            structure.protein_conformation.protein.parent
+            if structure.protein_conformation.protein.parent==None:
+                raise Exception
             self.structure = structure
+            self.structure_type = 'structure'
+            family = structure.protein_conformation.protein.family
         except:
-            self.structure = Structure.objects.get(pdb_code__index=structure.upper())
+            try:
+                structure.protein_conformation.protein
+                self.structure = structure
+                self.structure_type = 'refined'
+                family = structure.protein_conformation.protein.family
+            except:
+                structure.protein
+                self.structure = structure
+                self.structure_type = 'hommod'
+                family = structure.protein.family
+        if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.5:
+            if family.slug.startswith('002') or family.slug.startswith('003'):
+                tm6_gn, tm7_gn = '6x33', '7x51'
+                inactive_cutoff, intermediate_cutoff = 2.5, 6
+            elif family.slug.startswith('004'):
+                inactive_cutoff, intermediate_cutoff = 5, 7.5
+        self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
+        self.inactive_cutoff = inactive_cutoff
+        self.intermediate_cutoff = intermediate_cutoff
         self.state = None
         self.activation_value = None
         self.line = False
 
     def run(self):
-        self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+        if self.structure_type=='structure':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+        elif self.structure_type=='refined':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein)
+        elif self.structure_type=='hommod':
+            self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein)
         # class A and T
         if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
+            tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<0:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 0<=self.activation_value<=8:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>8:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class B
         elif self.parent_prot_conf.protein.family.slug.startswith('002') or self.parent_prot_conf.protein.family.slug.startswith('003'):
-            tm6 = self.get_residue_distance('2x44', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm2_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(B)').label
+            tm6_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(B)').label
+            tm3_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(B)').label
+            tm7_gn_b = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(B)').label
+
+            tm6 = self.get_residue_distance(tm2_gn_b, tm6_gn_b)
+            tm7 = self.get_residue_distance(tm3_gn_b, tm7_gn_b)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<10:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 10<=self.activation_value<=15:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>15:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class C
         elif self.parent_prot_conf.protein.family.slug.startswith('004'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm2_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(C)').label
+            tm6_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(C)').label
+            tm3_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(C)').label
+            tm7_gn_c = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(C)').label
+
+            tm6 = self.get_residue_distance(tm2_gn_c, tm6_gn_c)
+            tm7 = self.get_residue_distance(tm3_gn_c, tm7_gn_c)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<0:
+                if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 0<=self.activation_value<=8:
+                elif self.inactive_cutoff<=self.activation_value<=self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>8:
+                elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
         # class F
         elif self.parent_prot_conf.protein.family.slug.startswith('005'):
-            tm6 = self.get_residue_distance('2x39', '6x35')
-            tm7 = self.get_residue_distance('3x47', '7x53')
+            tm2_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(F)').label
+            tm6_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(F)').label
+            tm3_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(F)').label
+            tm7_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm7_gn, scheme__short_name='GPCRdb(F)').label
+
+            tm6 = self.get_residue_distance(tm2_gn_f, tm6_gn_f)
+            tm7 = self.get_residue_distance(tm3_gn_f, tm7_gn_f)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<5:
@@ -875,7 +924,7 @@ class PdbStateIdentifier():
                     self.state = ProteinState.objects.get(slug='active')
         else:
             print('{} is not class A,B,C,F'.format(self.structure))
-            
+
     def get_residue_distance(self, residue1, residue2):
         try:
             res1 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue1, self.parent_prot_conf))
@@ -899,21 +948,41 @@ class PdbStateIdentifier():
             rota_struct1 = PDB.PDBParser(QUIET=True).get_structure('structure', io1)[0]
             io2 = StringIO(rotas[1].pdbdata.pdb)
             rota_struct2 = PDB.PDBParser(QUIET=True).get_structure('structure', io2)[0]
-            
+
             for chain1, chain2 in zip(rota_struct1, rota_struct2):
                 for r1, r2 in zip(chain1, chain2):
-                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    # print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
                     line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)
         except:
-            print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
-            return False
+            try:
+                res1 = Residue.objects.get(protein_conformation=self.parent_prot_conf, display_generic_number__label=dgn(residue1, self.parent_prot_conf))
+                res2 = Residue.objects.get(protein_conformation=self.parent_prot_conf, display_generic_number__label=dgn(residue2, self.parent_prot_conf))
+                if self.structure_type=='refined':
+                    pdb_data = self.structure.pdb_data.pdb
+                elif self.structure_type=='hommod':
+                    pdb_data = self.structure.pdb
+                io = StringIO(pdb_data)
+                struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
+                for chain in struct:
+                    r1 = chain[res1.sequence_number]
+                    r2 = chain[res2.sequence_number]
+                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
+                    self.line = line
+                    return self.calculate_CA_distance(r1, r2)
+                
+            except:
+                print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
+                return False
+
+            
 
     def calculate_CA_distance(self, residue1, residue2):
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
         return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
-                
+
 
 def right_rotamer_select(rotamer, chain=None):
     ''' Filter out compound rotamers.

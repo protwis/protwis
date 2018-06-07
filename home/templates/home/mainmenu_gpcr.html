@@ -99,6 +99,8 @@
 
                         <li><a href="/alignment/blastsearch">Similarity search-BLAST</a></li>
                         <li><a href="/similaritymatrix/targetselection">Similarity matrix</a></li>
+                        <li class="divider"></li>
+                        <li><a href="/alignment/positivegroupselection">Sequence signature</a></li>
                     </ul>
                 </li>
 
@@ -189,11 +191,17 @@
                   </ul>
                 </li>
 
-                <!-- <li class="divider"></li>
-                <li class="nav-header disabled text-left"><a>Genetic variation</a></li>
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Genetic variation
+                    <button
+                    url='http://dx.doi.org/10.1016/j.cell.2017.11.033'
+                    class="refLink pull-right btn btn-xs btn-default"
+                     data-toggle="tooltip" data-placement="right" title="Cell">
+                              <span class="glyphicon glyphicon-book"></span>
+                    </button></a></li>
                   <li><a href="/mutational_landscape/statistics">Variation statistics</a></li>
                   <li><a href="/mutational_landscape">Receptor variant browser</a></li>
-                  <li><a href="/mutational_landscape/economicburden">Estimated economic burden</a></li> -->
+                  <li><a href="/mutational_landscape/economicburden">Estimated economic burden</a></li>
             </ul>
         </li>
 
@@ -336,20 +344,27 @@
         <!-- Crystal Constructs -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                Crystal Constructs<span class="caret"></span>
+                Structure Constructs<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
-                <li class="nav-header disabled text-left"><a>Constructs</a></li>
-                <!-- <li><a href="/construct/statistics">Construct statistics</a></li> -->
-                <li><a href="/construct">Schematic alignments</a></li>
-                <li><a href="/construct/experiments">Experiment browser </a></li>
-                <li><a href="/construct/mutations">Mutation browser</a></li>
+                <li class="nav-header disabled text-left"><a>Construct & experiment design</a></li>
+                    <li><a href="/construct">Construct alignments</a></li>
+                    <li><a href="/construct/design">Construct design tool
+                            <button  mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
+                              <span class="glyphicon glyphicon-film"></span>
+                            </button>
+                    </a></li>
+                    <li><a href="/construct/experiments">Experiment browser </a></li>
                 <li class="divider"></li>
-                <li><a href="/construct/design">Construct design tool
-                        <button  mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
-                          <span class="glyphicon glyphicon-film"></span>
-                        </button>
-                </a></li>
+                <li class="nav-header disabled text-left"><a>Truncation & fusion analysis</a></li>
+                <li><a href="/construct/analysis#truncations">Truncation sites</a></li>
+                <li><a href="/construct/analysis#fusions">Fusion sites</a></li>
+                <li><a href="/construct/analysis#loopdeletions">Loop deletions</a></li>
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Mutation analysis</a></li>
+                <li><a href="/construct/mutations">Mutation browser</a></li>
+                    <li><a href="/construct/stabilisation">StabMutAnalyser</a></li>
+                <li><a href="/construct/analysis#mutations">Mutation substitution matrix</a></li>
             </ul>
         </li>
 

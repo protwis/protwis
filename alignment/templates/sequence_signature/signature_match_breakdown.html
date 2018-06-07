@@ -1,0 +1,89 @@
+<table>
+    <!-- GENERIC NUMBERS -->
+
+        <!-- segment title line -->
+        <tr>
+            {% for s, n in num_residue_columns.items %}
+                <td class="ali-td ali-td-segment-title" colspan="{{ n }}">{{ s }}</td>
+                <td class="ali-td">&nbsp;</td>
+            {% endfor %}
+        </tr>
+
+        <!-- generic number lines -->
+
+        {% for ns, segments in common_generic_numbers.items %}
+        <tr>
+            {% for s, num in segments.items %}
+                {% for n, dn in num.items %}
+                    {% if 'Common G-alpha numbering scheme' in common_numbering_schemes.0 %}
+                        <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
+                    {% else %}
+                        <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                    {% endif %}
+                {% endfor %}
+                <td class="ali-td">&nbsp;</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+
+    <!-- FEATURE SIGNATURE -->
+
+        {% comment %} <!-- feature frequency -->
+        {% for feat in feats_signature %}
+            <tr>
+            {% for segment in feat %}
+                {% for freq in segment %}
+                    <td class="ali-td-stat-summary ali-residue" bgcolor="{{ freq.1 }}" >
+                        {{ freq.0 }}
+                    </td>
+                {% endfor %}
+                <td class="ali-td">&nbsp;</td>
+            {% endfor %}
+            </tr>
+        {% endfor %} {% endcomment %}
+
+    <!-- FEATURE CONSENSUS -->
+
+        <!-- Feature names -->
+        <tr>
+            {% for segment, cons in signature_consensus_disp.items %}
+                {% for pos in cons %}
+                    <td class="ali-td-stat-summary ali-residue">
+                        <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.1|safe }}">
+                            {{ pos.0 }}
+                        </div>
+                    </td>
+                {% endfor %}
+                <td class="ali-td">&nbsp;</td>
+            {% endfor %}
+        </tr>
+        <!-- Consensus values -->
+        <tr>
+            {% for segment, cons in signature_consensus_disp.items %}
+                {% for pos in cons %}
+                    <td class="ali-td-stat-summary ali-residue " bgcolor="{{ pos.3 }}">{{ pos.2 }}</td>
+                {% endfor %}
+                <td class="ali-td">&nbsp;</td>
+            {% endfor %}
+        </tr>
+        <!-- GENERIC NUMBERS -->
+
+        <!-- generic number lines -->
+
+        {% comment %} {% for ns, segments in common_generic_numbers.items %}
+            <tr>
+                {% for s, num in segments.items %}
+                    {% for n, dn in num.items %}
+                        {% if 'Common G-alpha numbering scheme' in common_numbering_schemes.0 %}
+                            <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
+                        {% else %}
+                            <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    <td class="ali-td">&nbsp;</td>
+                {% endfor %}
+            </tr>
+        {% endfor %} {% endcomment %}
+
+    </tbody>
+</table>

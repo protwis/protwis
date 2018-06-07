@@ -24,6 +24,10 @@ class Command(BaseCommand):
                             dest='hommod',
                             default=False,
                             help='Include build of homology models')
+        parser.add_argument('--skip_cn',
+                            action='store_false',
+                            default=True,
+                            help='Skip building contact network for test build')
 
     def handle(self, *args, **options):
         if options['test']:
@@ -40,15 +44,17 @@ class Command(BaseCommand):
             ['build_construct_proteins'],
             ['build_structures', {'proc': options['proc']}],
             ['build_construct_data'],
-            ['build_ligands_from_cache', {'proc': options['proc']}],
-            ['build_ligand_assays', {'proc': options['proc']}],
-            ['build_mutant_data', {'proc': options['proc']}],
-            # ['build_crystal_interactions', {'proc': options['proc']}],
             ['update_construct_mutations'],
+            ['build_dynamine_annotation', {'proc': options['proc']}],
+            ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
+            ['build_ligand_assays', {'proc': options['proc'], 'test_run': options['test']}],
+            ['build_mutant_data', {'proc': options['proc'], 'test_run': options['test']}],
+            # ['build_crystal_interactions', {'proc': options['proc']}],
             ['build_protein_sets'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_arrestins'],
+            # ['build_signprot_complex'],
             ['build_drugs'],
             ['build_nhs'],
             ['build_mutational_landscape'],

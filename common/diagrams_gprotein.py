@@ -17,31 +17,29 @@ class DrawGproteinPlot(Diagram):
         self.nobuttons = 'gprotein'
         self.type = 'snakeplot'
         plot_data = {}
-        plot_data['direction'] = [0,0, 1, 0, 1, 0, 1, 0]; # 0: EC->IC, 1: IC->EC
+        plot_data['direction'] = [0, 0, 1, 0, 1, 0, 1, 0]  # 0: EC->IC, 1: IC->EC
         plot_data['helixRadius'] = 70
 
         self.receptorId = protein_name
         self.family = protein_class
         self.output = ''
-        residueType = 'sp'
 
         # FIXME DO PUREIMAGE
-        pureImage = False
-        #$pureImage = isset($_GET['pureimage']) && $_GET['pureimage'] == 'TRUE' ? TRUE : FALSE;
+        # $pureImage = isset($_GET['pureimage']) && $_GET['pureimage'] == 'TRUE' ? TRUE : FALSE;
 
         # get sequence, baldwin, and bw information of this receptor
 
         self.sequence = residue_list
         self.segments = {}
-        self.segments_full = OrderedDict();
+        self.segments_full = OrderedDict()
         i = 0
         for r in self.sequence:
             if r.protein_segment:
                 segment = str(r.protein_segment.slug)
-            elif r.segment_slug: #from family aligment
+            elif r.segment_slug:  #from family aligment
                 segment = str(r.segment_slug)
 
-            if segment not in self.segments: 
+            if segment not in self.segments:
                 self.segments[segment] = []
                 self.segments_full[segment] = r.protein_segment
             label = ''
@@ -54,7 +52,7 @@ class DrawGproteinPlot(Diagram):
             displaylabel = r.amino_acid + str(r.sequence_number) + " \n " + displaylabel
             if hasattr(r, 'frequency'):
                 displaylabel = displaylabel + "\n" + r.frequency
-            self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
+            self.segments[segment].append([r.sequence_number, r.amino_acid,label,displaylabel])
             i += 1
 
         # for helix_num in range(1,2): #FIX for missing generic numbers
@@ -388,6 +386,9 @@ class DrawGproteinPlot(Diagram):
             orientation = -1
 
         if self.count not in self.TBCoords:
+            return 0
+
+        if self.count+1 not in self.TBCoords:
             return 0
 
         # Get positions of two  linking residues from each helix

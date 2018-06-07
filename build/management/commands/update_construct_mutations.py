@@ -1,13 +1,18 @@
 from django.utils.text import slugify
+from django.db import IntegrityError
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
 from django.conf import settings
 from django.db import connection
 from django.core.cache import cache
 
+from structure.models import Structure
 from construct.functions import  fetch_pdb_info
 from construct.models import *
 from residue.models import Residue
+
+from ligand.models import Ligand, LigandType, LigandRole
+from ligand.functions import get_or_make_ligand
 
 from operator import itemgetter
 from itertools import groupby
@@ -17,6 +22,8 @@ from optparse import make_option
 import os
 import xlrd
 import json
+
+import time
 from collections import OrderedDict
 
 
@@ -29,29 +36,300 @@ class Command(BaseCommand):
     annotation_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'construct_annotations.xlsx'])
 
     def handle(self, *args, **options):
-        self.excel_mutations = self.parse_excel(self.path,'Mutation_Data')
 
-        self.check_mutations()
+        ## DEBUG ITEMS
         # self.match_all_with_uniprot_mutations()
-
         # Simply check deletions on record vs newest pdb 
         # self.check_deletions()
-
-        # # changes deletions to match PDB
-        # # Custom rules exist in the function
-        self.replace_deletions()
-
         # # Make sure json file is correct
         # # self.json_check_for_mutations_deletions()
 
-        ### INSERTS ###
+        ### EXPORTS ###
         # # Export current inserts to file
         # self.export_inserts()
+        ########################
 
+        self.all_pdbs = []
+
+        # Restart constructs
+        self.rebuild_constructs()
+
+        ## MUST HAVE ##
+        self.excel_mutations = self.parse_excel(self.path,'Mutation_Data')
+        self.check_mutations()
+        # changes deletions to match PDB
+        # Custom rules exist in the function
+        self.replace_deletions()
+        
+        ## IMPORTS ###
         self.import_inserts()
+        self.import_expression()
+        self.import_solub()
+        self.import_puri()
+        self.import_xtal()
 
-        ### EXPRESSION ###
+    def purge_construct_data(self):
+        Construct.objects.all().delete()
+        Crystallization.objects.all().delete()
+        ChemicalConc.objects.all().delete()
+        Chemical.objects.all().delete()
+        ChemicalType.objects.all().delete()
+        ChemicalList.objects.all().delete()
+        CrystallizationLigandConc.objects.all().delete()
+        CrystallizationMethods.objects.all().delete()
+        CrystallizationTypes.objects.all().delete()
+        ChemicalListName.objects.all().delete()
+        ContributorInfo.objects.all().delete()
+        ConstructMutation.objects.all().delete()
+        ConstructDeletion.objects.all().delete()
+        ConstructInsertion.objects.all().delete()
+        ConstructInsertionType.objects.all().delete()
+        ConstructModification.objects.all().delete()
+        CrystalInfo.objects.all().delete()
+        ExpressionSystem.objects.all().delete()
+        Solubilization.objects.all().delete()
+        Purification.objects.all().delete()
+        PurificationStep.objects.all().delete()
 
+    def rebuild_constructs(self):
+        self.purge_construct_data()
+
+        structures = Structure.objects.all().exclude(refined=True)
+        for s in structures:
+            pdbname = str(s)
+            self.all_pdbs.append(pdbname)
+            protein_conformation = s.protein_conformation
+
+            construct = Construct()
+            construct.protein = protein_conformation.protein.parent
+            construct.name = pdbname
+            construct.json = ''
+            construct.structure = s
+
+            #CrystalInfo
+            crystal = CrystalInfo()
+            crystal.resolution = s.resolution
+            crystal.pdb_data = s.pdb_data
+            crystal.pdb_code = s.pdb_code.index
+            crystal.save()
+
+            construct.crystal = crystal
+
+            d = {}
+            d['contact_info'] = {}
+            d['contact_info']['name_cont'] = 'gpcrdb'
+            d['contact_info']['pi_email'] = 'info@gpcrdb.org'
+            d['contact_info']['pi_name'] = 'gpcrdb'
+            d['contact_info']['url'] = 'gpcrdb.org'
+            d['contact_info']['date'] = time.strftime('%m/%d/%Y')
+            d['contact_info']['address'] = ''
+            construct.contributor, created = ContributorInfo.objects.get_or_create(name = d['contact_info']['name_cont'],
+                                                       pi_email = d['contact_info']['pi_email'],
+                                                       pi_name = d['contact_info']['pi_name'],
+                                                       urls = d['contact_info']['url'],
+                                                       date = datetime.datetime.strptime(d['contact_info']['date'], '%m/%d/%Y').strftime('%Y-%m-%d'),
+                                                       address = d['contact_info']['address'])
+
+            construct.save()
+
+    def import_expression(self):
+        expressions = self.parse_excel(self.annotation_file,'Expression')
+        exp_list = {}
+        for e in expressions:
+            if e[1] not in exp_list:
+                exp_list[e[1]] = []
+            exp_list[e[1]].append(e)
+            # print("#####",e[1])
+            for construct in Construct.objects.filter(structure__pdb_code__index=e[1]).all():
+                ce = construct.expression
+                 #print(construct.name)
+                # if ce:
+                #     print(ce.expression_method,ce.host_cell_type,ce.host_cell,ce.expression_time,ce.remarks)
+                #     print(e)
+
+                new_e = ExpressionSystem()
+                new_e.expression_method = e[4]
+                new_e.host_cell_type = e[2]
+                new_e.host_cell = e[3]
+                new_e.expression_time = e[5]
+                new_e.remarks = e[6]
+
+                # if ce:
+                #     ce.delete()
+
+                new_e.save()
+                construct.expression = new_e
+                construct.save()
+
+        missing = list(set(self.all_pdbs) - set(exp_list.keys()))
+        print(sorted(missing)," do not have any Expression annotated -- add them to sheet with NONE if they have none")
+
+
+    def import_solub(self):
+        solubs = self.parse_excel(self.annotation_file,'Solubzn-Detergent')
+        solub_list = {}
+        for s in solubs:
+            if s[1] not in solub_list:
+                solub_list[s[1]] = []
+            solub_list[s[1]].append(s)
+        for pdb,chems in solub_list.items():
+            c_list = ChemicalList()
+            list_name,created  = ChemicalListName.objects.get_or_create(name='Solubilization')
+            c_list.name = list_name
+            c_list.save()
+            for c in chems:
+                ct, created = ChemicalType.objects.get_or_create(name=c[3])
+                chem, created = Chemical.objects.get_or_create(name=c[2], chemical_type=ct)
+                cc, created = ChemicalConc.objects.get_or_create(concentration=c[4], concentration_unit=c[5], chemical=chem)
+                c_list.chemicals.add(cc)      
+
+            solubilization = Solubilization.objects.create(chemical_list = c_list)
+            try:
+                construct = Construct.objects.get(structure__pdb_code__index=c[1].upper())
+                construct.solubilization = solubilization
+                construct.save()
+            except:
+                print(c[1],'cannot find pdb construct')
+
+        missing = list(set(self.all_pdbs) - set(solub_list.keys()))
+        print(sorted(missing)," do not have any Solubzn-Detergent annotated -- add them to sheet with NONE if they have none")
+
+
+    def import_puri(self):
+        puris = self.parse_excel(self.annotation_file,'Purification-Treatment')
+        puri_list = {}
+
+        for p in puris:
+            if p[1] not in puri_list:
+                puri_list[p[1]] = []
+            puri_list[p[1]].append(p)
+
+        for pdb,treat in puri_list.items():
+            try:
+                construct = Construct.objects.get(structure__pdb_code__index=pdb.upper())
+            except:
+                print(pdb,'cannot find pdb construct')
+                continue
+
+            purification = Purification.objects.create()
+            # print('purification made')
+            for t in treat:
+                s,created = PurificationStep.objects.get_or_create(name=t[2])
+                # print(t,s,c)
+                purification.steps.add(s)
+
+            construct.purification = purification
+            construct.save()
+
+        missing = list(set(self.all_pdbs) - set(puri_list.keys()))
+        print(sorted(missing)," do not have any Purification-Treatment annotated -- add them to sheet with NONE if they have none")
+
+    def import_xtal(self):
+        xtals = self.parse_excel(self.annotation_file,'Xtal-methods')
+        xtals_list = {}
+        for x in xtals:
+            if x[1] in xtals_list:
+                print('pdbcode duplicate?',x[1])
+            xtals_list[x[1]] = x
+
+        xtal_chems = self.parse_excel(self.annotation_file,'Xtal-Chemicals')
+        xtals_chems_list = {}
+        for x in xtal_chems:
+            if x[1] not in xtals_chems_list:
+                xtals_chems_list[x[1]] = []
+            xtals_chems_list[x[1]].append(x)
+
+        xtal_ligands = self.parse_excel(self.annotation_file,'PDB-ligand-complex')
+        xtal_ligands_list = {}
+        for x in xtal_ligands:
+            if x[1] not in xtal_ligands_list:
+                xtal_ligands_list[x[1]] = []
+            xtal_ligands_list[x[1]].append(x)
+
+
+        missing = list(set(self.all_pdbs) - set(xtals_list.keys()))
+        print(sorted(missing)," do not have any Xtal-methods annotated -- add them to sheet with NONE if they have none")
+        missing = list(set(self.all_pdbs) - set(xtals_chems_list.keys()))
+        print(sorted(missing)," do not have any Xtal-Chemicals annotated -- add them to sheet with NONE if they have none")
+        missing = list(set(self.all_pdbs) - set(xtal_ligands_list.keys()))
+        print(sorted(missing)," do not have any PDB-ligand-complex annotated -- add them to sheet with NONE if they have none")
+
+        for pdb,x in xtals_list.items():
+            try:
+                construct = Construct.objects.get(structure__pdb_code__index=pdb.upper())
+            except:
+                print(pdb,'cannot find pdb construct')
+                continue
+            c = Crystallization()
+            c_type, created = CrystallizationTypes.objects.get_or_create(name=x[3], sub_name=x[4])
+            c_method, created = CrystallizationMethods.objects.get_or_create(name=x[2])
+
+            c.crystal_type = c_type
+            c.crystal_method = c_method
+            c.remarks = x[10]
+            c.temp = x[7]
+
+            # Some entries have it wrong here
+            try:
+                c.ph_start = float(x[8])
+                c.ph_end = float(x[9])
+            except:
+                c.ph_start = 0
+                c.ph_end = 0
+
+            c.protein_conc = x[5]
+            c.protein_conc_unit = x[6]
+            c.save()
+
+            if pdb in xtals_chems_list:
+                chems = xtals_chems_list[pdb]
+                chem_types = {}
+                for chem in chems:
+                    ctype = chem[2]
+                    if ctype not in chem_types:
+                        chem_types[ctype] = []
+                    chem_types[ctype].append(chem)
+                    
+                for ctype,chems in chem_types.items():
+                    c_list = ChemicalList()
+                    list_name,created  = ChemicalListName.objects.get_or_create(name=ctype)
+                    c_list.name = list_name
+                    c_list.save()
+                    for ch in chems:
+                        ct, created = ChemicalType.objects.get_or_create(name=ch[4])
+                        chem, created = Chemical.objects.get_or_create(name=ch[3], chemical_type=ct)
+                        cc, created = ChemicalConc.objects.get_or_create(concentration=ch[5], concentration_unit=ch[6], chemical=chem)
+                        c_list.chemicals.add(cc)
+                    c.chemical_lists.add(c_list)
+            else:
+                print('no chems for ',pdb)
+
+
+            if pdb in xtal_ligands_list:
+                l = xtal_ligands_list[pdb][0]
+                ligand = get_or_make_ligand(l[7],l[6],l[2])
+                role_slug = slugify(l[3])
+                try:
+                    lr, created = LigandRole.objects.get_or_create(slug=role_slug,
+                    defaults={'name': l[3]})
+                except IntegrityError:
+                    lr = LigandRole.objects.get(slug=role_slug)
+                if ligand:
+                    ligand_c = CrystallizationLigandConc()
+                    ligand_c.construct_crystallization = c
+                    ligand_c.ligand = ligand
+                    if lr: 
+                        ligand_c.ligand_role = lr
+                    if l[4]:
+                        ligand_c.ligand_conc = l[4]
+                    if l[5]:
+                        ligand_c.ligand_conc_unit = l[5]
+                    ligand_c.save()
+
+                    c.ligands.add(ligand_c)
+
+            construct.crystallization = c
+            construct.save()
 
 
     def import_inserts(self):
@@ -60,16 +338,25 @@ class Command(BaseCommand):
         ConstructInsertion.objects.all().delete()
 
         inserts = self.parse_excel(self.annotation_file,'inserts')
+
+        tracked_pdbs = []
         for i in inserts:
+
+            if i[1] not in tracked_pdbs:
+                tracked_pdbs.append(i[1])
+
             if i[2]=='NONE':
                 # SKip those that are entries just to show there is nothing
                 continue 
             if i[3]=='?':
                 continue
-            # print(i)
+            #print(i)
             aux_type, created = ConstructInsertionType.objects.get_or_create(name=i[5],subtype=i[6])
-            for construct in Construct.objects.filter(structure__pdb_code__index=i[1]):
-                insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
+            for construct in Construct.objects.filter(structure__pdb_code__index=i[1].upper()):
+                try:
+                    insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
+                except:
+                    print('Error with insert! FIXIT',i)
                 if i[4]:
                     i[4] = str(i[4])
                     #if position information add that
@@ -81,6 +368,9 @@ class Command(BaseCommand):
                         insert.end = int(i[4].split('.')[0])
                 insert.save()
                 construct.invalidate_schematics()
+
+        missing = list(set(self.all_pdbs) - set(tracked_pdbs))
+        print(sorted(missing)," do not have any inserts annotated -- add them to sheet with NONE if they have none")
 
 
     def export_inserts(self):
@@ -101,7 +391,7 @@ class Command(BaseCommand):
         csv_rows_xtal_ligands = []
         for c in constructs:
             pdbname = c.structure.pdb_code.index
-            fusion_position, fusions = c.fusion() 
+            fusion_position, fusions, linkers = c.fusion() 
             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
             uniprot = protein.parent.entry_name   
             #print(c.name,fusion_position)
@@ -421,11 +711,11 @@ class Command(BaseCommand):
             #     continue
             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
             uniprot = protein.parent.entry_name
-            d = cache.get(pdbname+"_deletions")
+            d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
                 d = fetch_pdb_info(pdbname,protein)
-                cache.set(pdbname+"_deletions",d,60*60*24)
+                cache.set(pdbname+"_auto_d",d,60*60*24)
             pdb_deletions = []
             for d in d['deletions']:
                 pdb_deletions += range(d['start'],d['end']+1)
@@ -478,11 +768,11 @@ class Command(BaseCommand):
             cname = c.name
             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
             uniprot = protein.parent.entry_name
-            d = cache.get(pdbname+"_deletions")
+            d = cache.get(pdbname+"_auto_d")
             # d = None
-            if not d:
+            if not d and 'deletions' in d:
                 d = fetch_pdb_info(pdbname,protein)
-                cache.set(pdbname+"_deletions",d,60*60*24)
+                cache.set(pdbname+"_auto_d",d,60*60*24)
             for d in d['deletions']:
                 dele, created = ConstructDeletion.objects.get_or_create(construct=c, start=d['start'],end=d['end'])
 
@@ -534,11 +824,11 @@ class Command(BaseCommand):
             uniprot = protein.parent.entry_name
             # if uniprot !='glp1r_human':
             #     continue
-            d = cache.get(pdbname+"_mutations")
+            d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
                 d = fetch_pdb_info(pdbname,protein)
-                cache.set(pdbname+"_mutations",d,60*60*24)
+                cache.set(pdbname+"_auto_d",d,60*60*24)
             # print('pdb',d['mutations'])
             cons_muts = ConstructMutation.objects.filter(construct = c)
             for m in cons_muts:
@@ -624,6 +914,7 @@ class Command(BaseCommand):
     def check_mutations(self):
         track_annotated_mutations = []
         cached_mutations = {}
+        mut_pdb_list = {}
         for i,mut in enumerate(self.excel_mutations):
             # print("Progress ",i,len(self.excel_mutations))
             # continue
@@ -643,10 +934,14 @@ class Command(BaseCommand):
             # if m['entry_name']!='glp1r_human':
             #     continue
 
+
             # print(m)
             if m['pdb'] and m['pdb'][0]!='%':
                 pdbs = m['pdb'].split(',')
                 # print(pdbs)
+                for pdb in pdbs:
+                    if pdb not in mut_pdb_list:
+                        mut_pdb_list[pdb] = []
                 if len(pdbs)==0:
                     cons = Construct.objects.filter(structure__pdb_code__index = m['pdb'])
                 else:
@@ -658,22 +953,28 @@ class Command(BaseCommand):
             pdbs_hasnot = []
             for c in cons:
                 c_pdb = c.structure.pdb_code.index
+                if c_pdb not in mut_pdb_list:
+                    mut_pdb_list[c_pdb] = []
                 not_to_check = None
                 if m['pdb'] and m['pdb'][0]=='%':
                     # if there are some pdbs not to check on this uniport
                     not_to_check = m['pdb'].replace("%","").split(",")
+                    for pdb in not_to_check:
+                        if pdb not in mut_pdb_list:
+                            mut_pdb_list[pdb] = []
                     if c_pdb in not_to_check:
                         continue
                 # if not_to_check:
                 #     print(c_pdb,not_to_check,m['pdb'][0])
                 protein = Protein.objects.filter(entry_name=c_pdb.lower()).get()
+                # print(c_pdb,protein)
                 if c_pdb in cached_mutations:
                     d = cached_mutations[c_pdb]
                 else:
-                    d = cache.get(c_pdb+"_mutations")
+                    d = cache.get(c_pdb+"_auto_d")
                     if not d:
                         d = fetch_pdb_info(c_pdb,protein)
-                        cache.set(c_pdb+"_mutations",d,60*60*24)
+                        cache.set(c_pdb+"_auto_d",d,60*60*24)
                     cached_mutations[c_pdb] = d
                 # Find construct mutation
                 cons_muts = ConstructMutation.objects.filter(construct=c, sequence_number = m['pos'], mutated_amino_acid = m['mut_aa'], wild_type_amino_acid = m['wt_aa'])
@@ -739,6 +1040,20 @@ class Command(BaseCommand):
         non_annotated_muts = ConstructMutation.objects.all().exclude(pk__in=track_annotated_mutations).order_by('construct__protein__entry_name','sequence_number')
         print(len(non_annotated_muts),'non-annotated mutations')
         csv_rows = [['reference','pdb','construct name','class','lig type','rec fam','uniprot','segment','gpcrdb#','AA no.','WT aa','Mut aa','','','','','','Remark']]
+
+
+        missing = list(set(self.all_pdbs) - set(mut_pdb_list.keys()))
+        print(sorted(missing)," do not have any mutations annotated -- add them to sheet with NONE if they have none")
+        missing2 = []
+        for c_pdb in missing:
+            d = cache.get(c_pdb+"_auto_d")
+            if not d:
+                protein = Protein.objects.filter(entry_name=c_pdb.lower()).get()
+                d = fetch_pdb_info(c_pdb,protein)
+                cache.set(c_pdb+"_auto_d",d,60*60*24)
+            if len(d['mutations']):
+                missing2.append(c_pdb)
+        print(sorted(missing2)," do not have any mutations annotated (but auto has them having) -- add them to sheet with NONE if they have none")
 
         for mut in non_annotated_muts:
             pdb = mut.construct.structure.pdb_code.index 

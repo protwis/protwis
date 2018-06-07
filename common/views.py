@@ -46,6 +46,7 @@ class AbsTargetSelection(TemplateView):
     family_tree = True
     redirect_on_select = False
     filter_gprotein = False
+    selection_heading = False
     buttons = {
         'continue': {
             'label': 'Continue to next step',
@@ -63,14 +64,15 @@ class AbsTargetSelection(TemplateView):
     # proteins and families
     #try - except block prevents manage.py from crashing - circular dependencies between protein - common
     try:
-        ppf = ProteinFamily.objects.get(slug=default_slug)
-        pfs = ProteinFamily.objects.filter(parent=ppf.id)
-        ps = Protein.objects.filter(family=ppf)
-        psets = ProteinSet.objects.all().prefetch_related('proteins')
-        tree_indent_level = []
-        action = 'expand'
-        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf
+        if ProteinFamily.objects.filter(slug=default_slug).exists():
+            ppf = ProteinFamily.objects.get(slug=default_slug)
+            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            ps = Protein.objects.filter(family=ppf)
+            psets = ProteinSet.objects.all().prefetch_related('proteins')
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
     except Exception as e:
         pass
 
@@ -183,7 +185,7 @@ class AbsSegmentSelection(TemplateView):
     ])
 
     try:
-        rsets = ResiduePositionSet.objects.exclude(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
+        rsets = ResiduePositionSet.objects.filter(protein_group='gpcr').prefetch_related('residue_position').order_by('set_type','name')
     except Exception as e:
         pass
 
@@ -277,7 +279,6 @@ def AddToSelection(request):
     selection_type = request.GET['selection_type']
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
-
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
 
@@ -314,17 +315,25 @@ def AddToSelection(request):
             else:
                 o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
+        elif selection_subtype == 'structure_many':
+            selection_subtype = 'structure'
+            for pdb_code in selection_id.split(","):
+                if 'refined' in pdb_code:
+                    sel1, sel2 = pdb_code.split('_')
+                    o.append(Structure.objects.get(pdb_code__index=sel1.upper()+'_refined'))
+                else:
+                    o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
+
         elif selection_subtype == 'structure_model':
-            o.append(StructureModel.objects.filter(protein__entry_name=selection_id)[0])
+            o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=selection_id)[0])
 
-        elif selection_subtype == 'structure_model_Inactive':
-            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Inactive'))
+        elif selection_subtype == 'structure_models_many':
+            selection_subtype = 'structure_model'
+            for model in selection_id.split(","):
+                state = model.split('_')[-1]
+                entry_name = '_'.join(model.split('_')[:-1])
+                o.append(StructureModel.objects.defer('pdb').get(protein__entry_name=entry_name, state__name=state))
 
-        elif selection_subtype == 'structure_model_Intermediate':
-            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Intermediate'))
-
-        elif selection_subtype == 'structure_model_Active':
-            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Active'))
 
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
@@ -347,7 +356,6 @@ def AddToSelection(request):
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
     # add simple selection to session
     request.session['selection'] = simple_selection
 
@@ -544,6 +552,70 @@ def SelectAlignableSegments(request):
     request.session['selection'] = simple_selection
 
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def SelectAlignableResidues(request):
+    """Adds all alignable residues to the selection"""
+    selection_type = request.GET['selection_type']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    if "protein_type" in request.GET:
+        if request.GET['protein_type'] == 'gprotein':
+            segmentlist = definitions.G_PROTEIN_SEGMENTS
+        else:
+            segmentlist = definitions.ARRESTIN_SEGMENTS
+
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(segmentlist['Structured'])])
+        segments = ProteinSegment.objects.filter(slug__in = segmentlist['Structured'], partial=False).order_by(preserved)
+    else:
+        segments = ProteinSegment.objects.filter(proteinfamily='GPCR').order_by('pk')
+
+    numbering_scheme_slug = 'false'
+
+    # find the relevant numbering scheme (based on target selection)
+    cgn = False
+    if numbering_scheme_slug == 'cgn':
+        cgn = True
+    elif numbering_scheme_slug == 'false':
+        if simple_selection.reference:
+            first_item = simple_selection.reference[0]
+        else:
+            first_item = simple_selection.targets[0]
+        if first_item.type == 'family':
+            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
+            numbering_scheme = proteins[0].residue_numbering_scheme
+        elif first_item.type == 'protein':
+            numbering_scheme = first_item.item.residue_numbering_scheme
+    else:
+        numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
+
+    for segment in segments:
+        if segment.fully_aligned:
+            selection_object = SelectionItem(segment.category, segment)
+            # add the selected item to the selection
+            selection.add(selection_type, segment.category, selection_object)
+        else:
+            #if not fully aligned
+
+            if ResidueGenericNumberEquivalent.objects.filter(
+            default_generic_number__protein_segment=segment,
+            scheme=numbering_scheme).exists():
+                segment.only_aligned_residues = True
+                selection_object = SelectionItem(segment.category, segment, properties={'only_aligned_residues':True})
+                selection.add(selection_type, segment.category, selection_object)
+
+
+    simple_selection = selection.exporter()
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return render(request, 'common/selection_lists.html', selection.dict('segments'))
 
 def ToggleFamilyTreeNode(request):
     """Opens/closes a node in the family selection tree"""
@@ -1529,14 +1601,14 @@ def ImportExcel(request, **response_kwargs):
                 curr_row = 0 #skip first, otherwise -1
                 while curr_row < num_rows:
                     curr_row += 1
-                    row = worksheet.row(curr_row)
+                    #row = worksheet.row(curr_row)
                     curr_cell = -1
                     temprow = []
                     if worksheet.cell_value(curr_row, 0) == '': #if empty
                         continue
                     while curr_cell < num_cells:
                         curr_cell += 1
-                        cell_type = worksheet.cell_type(curr_row, curr_cell)
+                        #cell_type = worksheet.cell_type(curr_row, curr_cell)
                         cell_value = worksheet.cell_value(curr_row, curr_cell)
                         temprow.append(cell_value)
                     o.append(temprow)

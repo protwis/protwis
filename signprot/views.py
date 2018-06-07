@@ -13,7 +13,7 @@ from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from common.diagrams_arrestin import DrawArrestinPlot
 
-from signprot.models import SignprotStructure, SignprotBarcode
+from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions
 
 from common import definitions
 from collections import OrderedDict
@@ -37,23 +37,21 @@ class BrowseSelection(AbsTargetSelection):
     target_input=False
 
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', False), ('targets', True),
         ('segments', False),
     ])
     try:
         ppf_g = ProteinFamily.objects.get(slug="100_000")
-        ppf_a = ProteinFamily.objects.get(slug="200_000")
-        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
-        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
-        ps = Protein.objects.filter(family__in=[ppf_g,ppf_a]) #
+        # ppf_a = ProteinFamily.objects.get(slug="200_000")
+        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
+        ps = Protein.objects.filter(family__in=[ppf_g]) # ,ppf_a
         tree_indent_level = []
         # action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf_g
-        del ppf_a
+        # del ppf_g
+        # del ppf_a
     except Exception as e:
-        print("selection error")
         pass
 
 @cache_page(60*60*24*2) # 2 days caching
@@ -239,7 +237,7 @@ def Ginterface(request, protein = None):
                 gprotein_residues, "Gprotein", protein)
 
     crystal = Structure.objects.get(pdb_code__index="3SN6")
-    aa_names = definitions.AMINO_ACID_GROUP_NAMES
+    aa_names = definitions.AMINO_ACID_GROUP_NAMES_OLD
     names_aa = dict(zip(aa_names.values(),aa_names.keys()))
     names_aa['Polar (S/T)'] = 'pol_short'
     names_aa['Polar (N/Q/H)'] = 'pol_long'
@@ -305,7 +303,11 @@ def ajaxInterface(request, slug, **response_kwargs):
     jsondata = cache.get(name_of_cache)
 
     if jsondata == None:
-        rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
+
+        if slug == "arrs_human":
+            rsets = ResiduePositionSet.objects.get(name="Arrestin interface")
+        else:
+            rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
         # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
 
         jsondata = {}
@@ -444,3 +446,10 @@ def signprotdetail(request, slug):
         'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
 
     return render(request, 'signprot/signprot_details.html', context)
+
+def InteractionMatrix(request):
+
+    interactions = SignprotInteractions.objects.all().values_list('gpcr_residue__sequence_number','gpcr_residue__display_generic_number__label','structure__pdb_code__index','interaction_type','signprot_residue__sequence_number','signprot_residue__display_generic_number__label')
+    context = {'interactions':json.dumps(list(interactions))}
+
+    return render(request, 'signprot/matrix.html', context)

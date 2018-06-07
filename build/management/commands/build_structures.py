@@ -25,6 +25,7 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
+from residue.functions import dgn
 
 import logging
 import os
@@ -35,6 +36,7 @@ from collections import OrderedDict
 import json
 from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
+from Bio.PDB.Selection import *
 
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
@@ -75,6 +77,15 @@ class Command(BaseBuild):
             dest='purge',
             default=False,
             help='Purge existing records')
+        parser.add_argument('--skip_cn',
+            action='store_false',
+            default=True,
+            help='Skip building contact network for test build')
+        parser.add_argument('-i', '--incremental',
+            action='store_true',
+            dest='incremental',
+            default=False,
+            help='Incremental update to structures for small live update')
 
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
@@ -110,9 +121,19 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
 
+        if options['skip_cn']:
+            self.run_contactnetwork=True
+        else:
+            self.run_contactnetwork=False
+
         # where filenames specified?
         if options['filename']:
             self.filenames = options['filename']
+
+        if options['incremental']:
+            self.incremental_mode = True
+        else:
+            self.incremental_mode = False
 
         try:
             self.logger.info('CREATING STRUCTURES')
@@ -200,6 +221,29 @@ class Command(BaseBuild):
         ppb=PPBuilder()
         seq = ''
         i = 1
+
+        # Checking Na+ atom in xtal
+        parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
+        try:
+            wt_2x50 = Residue.objects.get(protein_conformation=parent_prot_conf, display_generic_number__label=dgn('2x50',parent_prot_conf))
+            wt_3x39 = Residue.objects.get(protein_conformation=parent_prot_conf, display_generic_number__label=dgn('3x39',parent_prot_conf))
+            if wt_2x50.amino_acid=='D' and wt_3x39.amino_acid=='S':
+                if chain[wt_2x50.sequence_number].get_resname()=='ASP' and chain[wt_3x39.sequence_number].get_resname()=='SER':
+                    v_2x50 = chain[wt_2x50.sequence_number]['OD1'].get_vector()
+                    v_3x39 = chain[wt_3x39.sequence_number]['OG'].get_vector()
+                    all_resis = uniqueify(chain)
+                    for r in all_resis:
+                        id_ = r.get_id()
+                        if id_[0]=='H_ NA':
+                            v_na = r['NA'].get_vector()
+                            d_2x50 = (v_na-v_2x50).norm()
+                            d_3x39 = (v_na-v_3x39).norm()
+                            if d_2x50<3 and d_3x39<3:
+                                structure.sodium = True
+                                structure.save()
+                                break
+        except:
+            pass
 
         check_1000 = 0
         prev_id = 0
@@ -908,9 +952,16 @@ class Command(BaseBuild):
                     # create a structure record
                     try:
                         s = Structure.objects.get(protein_conformation__protein=con)
-                        self.purge_contact_network(s)
-                        s = s.delete()
-                        s = Structure()
+
+                        # If update_flag is true then update existing structures
+                        # Otherwise only make new structures
+                        if not self.incremental_mode:
+                            self.purge_contact_network(s)
+                            s = s.delete()
+                            s = Structure()
+                        else:
+                            continue
+
                     except Structure.DoesNotExist:
                         s = Structure()
                     
@@ -1096,7 +1147,7 @@ class Command(BaseBuild):
                     except:
                         self.logger.error('Error saving publication'.format(sd['pdb']))
 
-                    if source_file.split('.')[0] in self.xtal_seg_ends:
+                    if source_file.split('.')[0] in self.xtal_seg_ends and not self.incremental_mode:
                         s.annotated = True
                     else:
                         s.annotated = False
@@ -1184,7 +1235,8 @@ class Command(BaseBuild):
 
                                     # create empty properties
                                     lp = LigandProperities.objects.create()
-
+                                    lp.ligand_type = lt
+                                    lp.save()
                                     # create the ligand
                                     try:
                                         l, created = Ligand.objects.get_or_create(name=ligand['name'], canonical=True,
@@ -1448,31 +1500,19 @@ class Command(BaseBuild):
                     except:
                         pass
 
-                    try:
-                        current = time.time()
-                        self.build_contact_network(s,sd['pdb'])
-                        end = time.time()
-                        diff = round(end - current,1)
-                        self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
-                                    s.protein_conformation.protein.entry_name, diff))
-                    except Exception as msg:
-                        print(msg)
-                        print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
-                        self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
+                    if self.run_contactnetwork:
+                        try:
+                            current = time.time()
+                            self.build_contact_network(s,sd['pdb'])
+                            end = time.time()
+                            diff = round(end - current,1)
+                            self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
+                                        s.protein_conformation.protein.entry_name, diff))
+                        except Exception as msg:
+                            print(msg)
+                            print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
+                            self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
-                    try:
-                        current = time.time()
-                        mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
-                        # if not os.path.isdir(mypath):
-                        #     #Only run calcs, if not already in temp
-                        runcalculation(sd['pdb'],peptide_chain)
-
-                        parsecalculation(sd['pdb'],False)
-                        end = time.time()
-                        diff = round(end - current,1)
-                        self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
-                                    s.protein_conformation.protein.entry_name, diff))
-                    except Exception as msg:
                         try:
                             current = time.time()
                             mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
@@ -1483,13 +1523,26 @@ class Command(BaseBuild):
                             parsecalculation(sd['pdb'],False)
                             end = time.time()
                             diff = round(end - current,1)
-                            self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
+                            self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                         s.protein_conformation.protein.entry_name, diff))
                         except Exception as msg:
+                            try:
+                                current = time.time()
+                                mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
+                                # if not os.path.isdir(mypath):
+                                #     #Only run calcs, if not already in temp
+                                runcalculation(sd['pdb'],peptide_chain)
 
-                            print(msg)
-                            print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
-                            self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
+                                parsecalculation(sd['pdb'],False)
+                                end = time.time()
+                                diff = round(end - current,1)
+                                self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
+                                            s.protein_conformation.protein.entry_name, diff))
+                            except Exception as msg:
+
+                                print(msg)
+                                print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
+                                self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
 
 

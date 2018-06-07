@@ -39,6 +39,16 @@
             cursor: pointer;
         }
 
+        .glyphbutton > span.glyphicon {
+          font-size: 20px;
+          line-height: 0px;
+          vertical-align: middle;
+          /* counteract default bootstrap setting */
+          top: 0px;
+          /* counteract button padding */
+          margin: 0 0px;
+        }
+
         #filters{
 /*            float:left;
           display:none;
@@ -97,6 +107,15 @@
         $(document).ready(function () {
             // 'use strict';
 
+            $.fn.dataTable.ext.search.push(
+                function( settings, data, dataIndex ) {
+                    var pdb = data[0]  || 0; // use data for the age column
+                    // console.log(pdb);
+                    
+                    return true;
+                }
+            );
+
             // var oTable;
             var oTable = $('#constructs').DataTable({
                 scrollX: true,
@@ -121,7 +140,6 @@
             var prev_ids = Array()
             var current_align_ids = Array()
 
-            console.log(oTable);
             $("#constructs_div").show();
             // assign_to_row();
 
@@ -135,31 +153,34 @@
                         column_data_type: "html",
                         html_data_type: "text",
                         filter_default_label: "Receptor",
-                        filter_container_id: "external_filter_container1"
+                        filter_container_id: "external_filter_container1",
+                        filter_reset_button_text: false,
                     }, 
-                    {
-                        column_number: 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Family",
-                        filter_container_id: "external_filter_container2"
-                    },
                     {
                         column_number: 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Class",
-                        filter_container_id: "external_filter_container3"
-                    }, 
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Rec.Family",
+                        filter_container_id: "external_filter_container2",
+                        filter_reset_button_text: false,
+                    },
                     {
-                        column_number : 5,
+                        column_number: 5,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Species",
-                        filter_container_id: "external_filter_container4"
-                    },
+                        filter_default_label: "Class",
+                        filter_container_id: "external_filter_container3",
+                        filter_reset_button_text: false,
+                    }, 
+                    // {
+                    //     column_number : 5,
+                    //     filter_type: "multi_select",
+                    //     select_type: 'select2',
+                    //     filter_default_label: "Species",
+                    //     filter_container_id: "external_filter_container4"
+                    // },
                 ],
                 {
                     cumulative_filtering: false
@@ -361,6 +382,11 @@
             })
 
             $('#apply_filter').click(function() {
+                pdbs = $('#filter_pdb').val().toUpperCase();
+                pdbs = pdbs.split(/[ ,]+/);
+                pdbs = pdbs.join("|");
+                oTable.search(pdbs,true,false).draw();
+
                 update_tables("both");
                 //$("#filters").toggle();
             });
@@ -517,7 +543,7 @@
 
 {% block content %}
 
-    <br />
+    <div class="row">
 
         <div class="btn-group">
         <button class="btn btn-primary btn-group" id='show_browser'>Browser</button>
@@ -532,46 +558,51 @@
                 <li><a href="#" id="align">Align selected</a></li>
               </ul>
         </div>
-    <div id='filters'>
-    Filter by either Class, Receptor Family or Receptor:
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container3"></span></div>
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container2"></span></div>
-    <div style='width: 105px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container1"></span></div> and by
-<!--     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container0"></span></div> -->
-    <div style='width: 105px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div>
-<!--     <div style='width: 140px;display: inline-block;'><span id="external_filter_container5"></span></div> -->
-    <button id='apply_filter' class="btn btn-default btn-xs">Apply Filter</button>
+        <div id='filters' style="display: inline-block;">
+        Filter:
+        <div style='width: 90px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container1"></span></div>
+        <div style='width: 90px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container2"></span></div>
+        <div style='width: 90px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container3"></span></div>
+    <!--     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container0"></span></div> -->
+        {# <div style='width: 105px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div> #}
+    <!--     <div style='width: 140px;display: inline-block;'><span id="external_filter_container5"></span></div> -->
+
+        <input type=text id='filter_pdb' placeholder="PDB(s)" class="form-control" size=20>
+        <button id='apply_filter' type="button" class="btn  btn-sm btn-primary glyphbutton">Filter <span class="glyphicon glyphicon-filter"></span></button>
             <div class="dropdown btn-group">
-              <button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown">Selection options
-              <span class="caret"></span></button>
-              <ul class="dropdown-menu">
-                <li><a href="#">Toggle all <input class="select-all" type="checkbox" onclick="select_all(this)"></a></li>
-                <li><a href="#" id="remove_sel">Remove Selected</a></li>
-                <li><a href="#" id="remove_non_sel">Remove Non-selected</a></li>
-              </ul>
+                  <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">Selection options
+                  <span class="caret"></span></button>
+                  <ul class="dropdown-menu">
+                    <li><a href="#">Toggle all <input class="select-all" type="checkbox" onclick="select_all(this)"></a></li>
+                    <li><a href="#" id="remove_sel">Remove Selected</a></li>
+                    <li><a href="#" id="remove_non_sel">Remove Non-selected</a></li>
+                  </ul>
+            </div>
         </div>
     </div>
-
     <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
     <br>Loading...
     </div>
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
-        <table width="100%" class="display" id="constructs" style='margin: 0;width: 100%;'>
+        <table width="100%" class="display compact" id="constructs" style='margin: 0;width: 100%;'>
             <thead>
                     <tr style='max-height: 20px'>
                     <th class="protein-th" colspan=1></th>
-                    <th class="protein-th" colspan=5>Construct</th>
+                    <th class="protein-th" colspan=6>Construct</th>
+                    <th class="parts4-th" colspan=1>Crystallization</th>
                     <th class="seq-th" colspan=4>Sequence modifications</th>
                     <th class="pdb-th" colspan=2></th>
                     <th class="pub-th" colspan=2></th>
                 </tr>
                 <tr>
                     <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                    <th class="protein-th">Name</th>
+                    <th class="protein-th">PDB</th>
+                    <th class="protein-th">UniProt</th>
                     <th class="protein-th">Receptor</th>
-                    <th class="protein-th">Family</th>
+                    <th class="protein-th">Rec. Family</th>
                     <th class="protein-th">Class</th>
                     <th class="protein-th">Species</th>
+                    <th class="parts4-th">Method</th>
                     <th class="seq-th">Mutations</th>
                     <th class='seq-th'>Deletions</th>
                     <th class="seq-th">Modifications</th>
@@ -586,12 +617,18 @@
             <tbody>
             {% for construct in constructs %}
                     <tr id="{{ construct.pk }}">
-                    <td class="text-center"><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
+                    <td class="text-center"><input class="alt" type="checkbox" id="{{ construct.pk }}" cname="{{ construct.name|safe}}"></td>
                     <td><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
-                    <td><span>{{ construct.protein.name|safe }}</span></td>
-                    <td><span>{{ construct.protein.family.parent.name|safe }}</span></td>
-                    <td>{{ construct.protein.family.parent.parent.parent.name }}</td>
+                    <td><span>{{ construct.protein.entry_short|safe }}</span></td>
+                    <td><span>{{ construct.protein.short|safe }}</span></td>
+                    <td><span>{{ construct.protein.family.parent.short|safe }}</span></td>
+                    <td>{{ construct.protein.family.parent.parent.parent.short }}</td>
                     <td>{{ construct.protein.species.common_name }}</td>
+                    {% if construct.crystallization %}
+                    <td>{{ construct.crystallization.crystal_method.name}}</td>
+                    {% else %}
+                    <td colspan=1> N/A</td>
+                    {% endif %}
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.mutations }}"> {{ construct.mutations.count }}</a></td>
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.deletions }}"> {{ construct.deletions.count }}</a></td>
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.modifications }}"> {{ construct.modifications.count }}</a></td>
@@ -629,7 +666,8 @@
                             <thead>
                             <tr height='49px'>
                                 <th class="ali-td ali-td-first-col protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                                <th class="ali-td ali-td-first-col protein-th">Construct name</th>
+                                <th class="ali-td ali-td-first-col protein-th">PDB</th>
+                                <th class="ali-td ali-td-first-col protein-th receptor_sorting cus_sorting">UniProt</th>
                                 <th class="ali-td ali-td-first-col protein-th receptor_sorting cus_sorting">Receptor</th>
                             </tr>
                             </thead>
@@ -638,9 +676,10 @@
                             <tbody style='border-top: 1px solid #111;'>
                             {% for construct in constructs %}
                             <tr style='height: 32px' id="wt_sche_{{ construct.pk }}">
-                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
+                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}" cname="{{ construct.name|safe}}"></td>
                                     <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
-                                    <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
+                                    <td style='padding: 8px 10px;'>{{ construct.protein.entry_short|safe }}</td>
+                                    <td style='padding: 8px 10px;'>{{ construct.protein.short|safe }}</td>
                             </tr>       
                             {% endfor %}
                             </tbody>
@@ -712,7 +751,8 @@
                             <thead>
                             <tr height='49px'>
                                 <th class="ali-td ali-td-first-col protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                                <th class="ali-td ali-td-first-col protein-th">Construct name</th>
+                                <th class="ali-td ali-td-first-col protein-th">PDB</th>
+                                <th class="ali-td ali-td-first-col protein-th receptor_sorting cus_sorting">UniProt</th>
                                 <th class="ali-td ali-td-first-col protein-th receptor_sorting cus_sorting">Receptor</th>
                             </tr>
                             </thead>
@@ -721,9 +761,10 @@
                             <tbody style='border-top: 1px solid #111;'>
                             {% for construct in constructs %}
                             <tr style='height: 32px' id="con_sche_{{ construct.pk }}">
-                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
+                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}" cname="{{ construct.name|safe}}"></td>
                                     <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
-                                    <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
+                                    <td style='padding: 8px 10px;'>{{ construct.protein.entry_short|safe }}</td>
+                                    <td style='padding: 8px 10px;'>{{ construct.protein.short|safe }}</td>
                             </tr>       
                             {% endfor %}
                             </tbody>

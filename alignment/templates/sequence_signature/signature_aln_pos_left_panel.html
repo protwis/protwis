@@ -1,0 +1,140 @@
+<table>
+
+    <!-- SEQUENCE ALIGNMENT 1 (POSITIVE) -->
+
+    <!-- GENERIC NUMBERS -->
+
+    <!-- Empty row for a subheader -->
+    <tr>
+        <td class="ali-td ali-td-first-col"></td>
+    </tr>
+    <!-- Button collapsing the Residue properties section -->
+    <tr>
+        <td class="ali-td ali-td-first-col">
+            <button type="button" class="btn btn-info ali-td" data-toggle="collapse" data-target="#props,#props-main">+</button>
+        </td>
+    </tr>
+    <tbody class='collapse' id='props'>
+
+        <!-- GENERIC NUMBERS -->
+
+        <!-- segment line -->
+        <tr>
+            <td class="ali-td ali-td-first-col"></td>
+        </tr>
+
+        <!-- numbering scheme lines -->
+        {% for ns in a_pos.numbering_schemes %}
+            <tr>
+                <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
+            </tr>
+        {% endfor %}
+
+    <!-- FEATURE FREQUENCY -->
+
+        <tr>
+            <td class="ali-td-header-row ali-td-first-col">
+                RESIDUE PROPERTIES
+            </td>
+        </tr>
+        {% for feature in a_pos.features %}
+        <tr>
+            <td class="ali-td ali-td-first-col">
+                {{ feature }}
+            </td>
+        </tr>
+        {% endfor %}
+
+    <!-- FEATURE CONSENSUS -->
+
+        <tr>
+            <td class="ali-td-header-row ali-td-consensus">
+                PROPERTY CONSENSUS
+            </td>
+        </tr>
+        <!-- Second row for consensus values -->
+        <tr>
+            <td class="ali-td-header-row ali-td-consensus">
+            </td>
+        </tr>
+        <!-- numbering scheme lines -->
+        {% for ns in a_pos.numbering_schemes %}
+            <tr>
+                <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+
+    <!-- GENERIC NUMBERS -->
+
+    <tr>
+        <td class="ali-td ali-td-first-col">
+            <button type="button" class="btn btn-info ali-td" data-toggle="collapse" data-target="#aln,#aln-main">+</button>
+        </td>
+    </tr>
+    <tbody class='collapse' id='aln'>
+
+        <!-- numbering scheme lines -->
+        {% for ns in a_pos.numbering_schemes %}
+            <tr>
+                <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
+            </tr>
+        {% endfor %}
+
+        <!-- protein names -->
+        {% for p in a_pos.proteins %}
+            {% if 'Common G-alpha numbering scheme' in a_pos.numbering_schemes.0 %}
+                <tr>
+                    <td class="ali-td ali-td-first-col">
+                        <a href='/signprot/{{ p.protein.entry_name }}'>
+                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                        </a>
+                    </td>
+                </tr>
+            {% elif 'Common arrestin numbering scheme' in a_pos.numbering_schemes.0 %}
+                <tr>
+                    <td class="ali-td ali-td-first-col">
+                        <a href='/signprot/{{ p.protein.entry_name }}'>
+                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                        </a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td class="ali-td ali-td-first-col">
+                        <a href='/protein/{{ p.protein.entry_name }}'>
+                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+
+        {% if a_pos.consensus %}
+
+        <!-- GENERIC NUMBERS -->
+
+            <!-- segment line -->
+            <tr>
+                <td class="ali-td ali-td-first-col"></td>
+            </tr>
+            <!-- numbering scheme lines -->
+            {% for ns in a_pos.numbering_schemes %}
+                <tr>
+                    <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
+                </tr>
+            {% endfor %}
+
+        <!-- CONSENSUS SEQUENCE -->
+            <tr>
+                <td class="ali-td ali-td-first-col ali-td-consensus">
+                    SEQUENCE CONSENSUS
+                </td>
+            </tr>
+            <!-- Empty line for consensus percentage -->
+            <tr>
+                <td class="ali-td ali-td-first-col ali-td-consensus"></td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>

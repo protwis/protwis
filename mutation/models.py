@@ -5,9 +5,9 @@ import ast
 
 # Create your models here.
 class Mutation(models.Model):
-    protein = models.ForeignKey('protein.Protein')
-    residue = models.ForeignKey('residue.Residue', null=True) #If auxilliary it will be null
-    mutation_type = models.ForeignKey('MutationType', null=True)
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE) #If auxilliary it will be null
+    mutation_type = models.ForeignKey('MutationType', null=True, on_delete=models.CASCADE)
     amino_acid = models.CharField(max_length=1) #amino acid one-letter
 
     class Meta():
@@ -28,23 +28,23 @@ class MutationExperiment(models.Model):
     submitting_group = models.CharField(max_length=200, null=True)
 
     #links
-    refs = models.ForeignKey('common.Publication', null=True) #Change to a common model?
+    refs = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE) #Change to a common model?
     data_container = models.CharField(max_length=200, null=True) # is the data from a table, figure, Supl. info or inside the text in reference
     data_container_number = models.CharField(max_length=20, null=True) # if the data above is from a table/figure, what is the number
 
-    review = models.ForeignKey('common.Publication', null=True, related_name='review') #Change to a common model?
-    protein = models.ForeignKey('protein.Protein')
-    residue = models.ForeignKey('residue.Residue')
-    mutation = models.ForeignKey('Mutation')
-    ligand = models.ForeignKey('ligand.Ligand', null=True, related_name='ligand') #Change to a ligand model?
-    ligand_role = models.ForeignKey('ligand.LigandRole', null=True) #Change to a ligand model?
-    ligand_ref = models.ForeignKey('ligand.Ligand', null=True, related_name='reference_ligand') #Change to a ligand model?
-    raw = models.ForeignKey('MutationRaw', null=True)
-    optional = models.ForeignKey('MutationOptional', null=True)
-    exp_type = models.ForeignKey('MutationExperimentalType', null=True)
-    exp_func= models.ForeignKey('MutationFunc', null=True)
-    exp_measure = models.ForeignKey('MutationMeasure', null=True)
-    exp_qual = models.ForeignKey('MutationQual', null=True)
+    review = models.ForeignKey('common.Publication', null=True, related_name='review', on_delete=models.CASCADE) #Change to a common model?
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
+    mutation = models.ForeignKey('Mutation', on_delete=models.CASCADE)
+    ligand = models.ForeignKey('ligand.Ligand', null=True, related_name='ligand', on_delete=models.CASCADE) #Change to a ligand model?
+    ligand_role = models.ForeignKey('ligand.LigandRole', null=True, on_delete=models.CASCADE) #Change to a ligand model?
+    ligand_ref = models.ForeignKey('ligand.Ligand', null=True, related_name='reference_ligand', on_delete=models.CASCADE) #Change to a ligand model?
+    raw = models.ForeignKey('MutationRaw', null=True, on_delete=models.CASCADE)
+    optional = models.ForeignKey('MutationOptional', null=True, on_delete=models.CASCADE)
+    exp_type = models.ForeignKey('MutationExperimentalType', null=True, on_delete=models.CASCADE)
+    exp_func= models.ForeignKey('MutationFunc', null=True, on_delete=models.CASCADE)
+    exp_measure = models.ForeignKey('MutationMeasure', null=True, on_delete=models.CASCADE)
+    exp_qual = models.ForeignKey('MutationQual', null=True, on_delete=models.CASCADE)
 
     #Values
     wt_value = models.FloatField()
@@ -93,8 +93,17 @@ class MutationExperiment(models.Model):
 
     def getCalculation(self):
 
-        if self.foldchange and self.exp_type:
-            
+        if self.foldchange and self.exp_type and self.wt_value:
+            if self.wt_unit=='%':
+                # Check calc is done right, since current error
+                temp = round(self.mu_value/self.wt_value,3);
+                if temp<1 and temp!=0:
+                    temp = -1/temp
+                temp = -round(temp,3)
+                if temp != self.foldchange:
+                    self.foldchange = temp
+                    self.save()
+
             #"Type: "+ self.exp_measure.measure + " <br>
             temp = (" Measure: "+self.exp_type.type+" <br> Unit: " + str(self.wt_unit) +  " <br> WT: " + str(self.wt_value) + " <br> Mu: "+ str(self.mu_value) +" <br> Foldchange: "+str(self.foldchange))
         else:
@@ -111,6 +120,18 @@ class MutationExperiment(models.Model):
             sign = ''
             if self.mu_sign!="=":
                 sign = self.mu_sign
+
+            # CHECK FOR % CALC
+            if self.wt_unit=='%' and self.wt_value:
+                # Check calc is done right, since current error
+                temp = round(self.mu_value/self.wt_value,3);
+                if temp<1:
+                    temp = -1/temp
+                temp = -round(temp,3)
+                if temp != self.foldchange:
+                    self.foldchange = temp
+                    self.save()
+
             if temp>1:
                 temp =  "<font color='red'>"+sign + str(temp) + "↓</font>"
             elif temp<1:

@@ -106,6 +106,12 @@
 </div>
 
 
+<div id="dialogauto" title="Switch Mode">
+  <p>You sure you want to go back to automatic mode -- all current changes will be deleted</p>
+</div>
+
+
+
 
 <div class="row">
   <div class="col-sm-6">
@@ -113,7 +119,7 @@
     <div class="row">
       <div class="col-sm-12">
         <h1 class="display-4">Construct Design Tool </h1>
-            <p>This is a tool to design crystallisation constructs based on all published GPCR structures.<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
+            <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
                               <span class="glyphicon glyphicon-film"></span>
                             </button></p>
 
@@ -181,9 +187,9 @@
       Work Mode:
       </div>
       <div class="col-sm-9">
-        <button id=combi_mode_button class="btn btn-primary disabled" onclick='combi_mode();'>Automatic</button>
-        <button id=manual_mode_button class="btn btn-primary" onclick='edit_mode();'>Manual</button>
-        <button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
+        <button id=combi_mode_button class="btn btn-default disabled" onclick='$( "#dialogauto" ).dialog( "open" )'>Automatic</button>
+        <button id=manual_mode_button class="btn btn-default" onclick='edit_mode();'>Manual</button>
+        <button class="btn btn-default" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
       </div>
     </div>
 
@@ -203,9 +209,9 @@
       File (Excel):
       </div>
       <div class="col-sm-9">
-        <button class="btn btn-info" onclick='exportToExcel();'>Save</button>
+        <button class="btn btn-default" onclick='exportToExcel();'>Save</button>
           <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
-              <label class="btn btn-primary btn-file">
+              <label class="btn btn-default btn-file">
                 Open<input  id="id_file_source" name="file_source" type="file" style="display: none;">
               </label>
           </form>
@@ -272,7 +278,7 @@
       {% endif %}
   
   </th>
-  <th rowspan="1" colspan="1" class='possiblities_icl'>
+  <th rowspan="1" colspan="3" class='possiblities_icl'>
 
         <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("fusion");inserts_overview(true);'>
           Fusion
@@ -311,7 +317,7 @@
 <tr>
   <th rowspan="1" class='possiblities_nterm'>N-term fusion***</th>
   <!-- <th rowspan="1" class='possiblities_nterm'>N-term linker</th> -->
-  <th>N-term res kept rel. to TM1*</th>
+  <th>N-term res kept before to TM1*</th>
   <th>Pos</th>
   <th>AA</th>
   <th>BW**</th>
@@ -319,19 +325,19 @@
   <th>AA</th>
 
   {% if class == 'A'  or class == 'F' %}      
-    <!-- <th rowspan="1" class='possiblities_icl'>TM5-ICL3 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>TM5-ICL3 linker (non-wt)</th>
     <th rowspan="1" class='possiblities_icl'>Fusion<!-- ICL3 modification (Fusion / Deletion / Wt) --></th>
-    <!-- <th rowspan="1" class='possiblities_icl'>ICL3-TM6 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>ICL3-TM6 linker (non-wt)</th>
   {% elif class == 'B' or class == 'C' %}      
-    <!-- <th rowspan="1" class='possiblities_icl'>TM3-ICL2 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>TM3-ICL2 linker (non-wt)</th>
     <th rowspan="1" class='possiblities_icl'>Fusion<!-- ICL2 modification (Fusion / Deletion / Wt) --></th>
-    <!-- <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th>
   {% endif %}
 
   <th>BW**</th>
   <th>Pos</th>
   <th>AA</th>
-  <th>C-term res kept rel. to h8*</th>
+  <th>C-term res kept after h8*</th>
   <th>Pos</th>
   <th>AA</th>
   <th>All constructs</th>
@@ -422,7 +428,7 @@
   <th>BW**</th>
   <th>Pos</th>
   <th>AA</th>
-  <th>C-term res kept rel. to h8*</th>
+  <th>C-term res kept after h8*</th>
   <th>Pos</th>
   <th>AA</th>
 </tr>
@@ -446,6 +452,12 @@
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/diagrams.js' %}"></script> 
 <script type="text/javascript" charset="utf-8">
+
+if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+
+  $("#content").prepend('<div class="alert alert-warning"><strong>Warning!</strong> <p>Safari browser has compability issues with the snakeplot display. The export results will be correct, but the diagram will have errors. To prevent these issues, use Firefox or Chrome.</div>');
+
+}
 
   function upload() {
       event.preventDefault();
@@ -475,7 +487,7 @@
                   // }
                   start = parseInt(range_match[1]);
                   end = parseInt(range_match[2]);
-                  for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
+                  for (var i = start; 1 > 0 ? i <= end : i > end; i += 1) {
                       range.push(i);
                   }
                 } else {
@@ -1097,7 +1109,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[3]) {
+            if (state==vals[3] || 1==1) { // ignore state
               if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None') ) { //|| 1==1 include NOT all data regardless of fusion
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 // TABLE
@@ -1195,7 +1207,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[3]) {
+            if (state==vals[3] || 1==1) {
                 find = 1;
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 if(!show_cterm[level]) { show_cterm[level] = {}; } 
@@ -1272,7 +1284,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[2]) {
+            if (state==vals[2] || 1==1) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) {
                 find = 1;
                 range = "5."+(50+vals[0])+"-"+"6."+(50-vals[1]);
@@ -1408,7 +1420,7 @@
       }
       {% endif %}
 
-      $("#icl3_start_button").html("ICL3 ("+Object.keys(show_table_start).length+")");
+      // $("#icl3_start_button").html("ICL3 ("+Object.keys(show_table_start).length+")");
     }
 
     function build_icl2_menu() {
@@ -1423,7 +1435,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[2]) {
+            if (state==vals[2] || 1==1) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) { //use icl3 cos thats how it is
                 find = 1;
                 range = "3."+(50+vals[0])+"-"+"4."+(50-vals[1]);
@@ -3460,8 +3472,20 @@
           }
 
           // ignore for now
-          icl_start_linker = '';
-          icl_end_linker = '';
+          icl_start_linker = '<td></td>';
+          icl_end_linker = '<td></td>';
+
+          if (icl_end_pos && icl_start_pos && icl_end_pos<=icl_start_pos) {
+            tr_class = 'error';
+
+            // use function but add the missing residue
+            ICL_start,ICL_end,icl_start_linker,icl_end_linker = calculate_auto_linker(icl_start_pos+1,icl_end_pos-1);
+
+            icl_start_linker = "<td>"+icl_start_linker+"</td>";
+            icl_end_linker = "<td>"+icl_end_linker+"</td>";
+
+          } 
+
 
           icl_total_cols = icl_start_cols + icl_start_linker + icl_mod + icl_end_linker + icl_end_cols;
 
@@ -3536,6 +3560,46 @@
 
     }
 
+    function calculate_auto_linker(ICL_start,ICL_end) {
+
+              console.log('Calc new linker', ICL_start, ICL_end);
+              new_cut_site = Math.round((ICL_start+ICL_end)/2);
+
+              ICL_end_new = ICL_start-1;
+              ICL_start = ICL_end+1;
+              ICL_end = ICL_end_new;
+              fusion_site_location = ICL_start;
+
+              console.log('Calc new linker', ICL_start, ICL_end);
+
+              icl_start_linker = '';
+
+              for ( var i = ICL_start; 1 > 0 ? i <= new_cut_site : i > new_cut_site; i += 1) {
+                icl_start_linker += residues_pos[i][0];
+              }
+              linker_to_add = 'G'
+              for ( var i = new_cut_site+1; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
+                icl_start_linker += linker_to_add;
+                linker_to_add = linker_to_add=='G' ? 'S' : 'G';
+              }
+
+
+              icl_end_linker = '';
+              linker_to_add = 'G'
+              for ( var i = ICL_start; 1 > 0 ? i <= new_cut_site : i > new_cut_site; i += 1) {
+                icl_end_linker += linker_to_add;
+                linker_to_add = linker_to_add=='G' ? 'S' : 'G';
+              }
+              for ( var i = new_cut_site+1; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
+                icl_end_linker += residues_pos[i][0];
+              }
+
+              console.log('LINKERS', icl_start_linker, icl_end_linker);
+          
+          return ICL_start,ICL_end,icl_start_linker,icl_end_linker;
+
+    }
+
     function generate_sequence(include,manual) {
       console.log("Start generating a sequence",include);
       // console.log(include);
@@ -3554,6 +3618,8 @@
       table_row['mutations'] = [];
 
       ICL_start = 0;
+
+      add_forced_icl_linkers = false;
         
       $.each(modifications, function(key,val) {
 
@@ -3619,11 +3685,23 @@
           if (ICL_start==0) return //do not color if no start selected
           // do not color / track 
           ICL_end = range[0];
+
+          if (ICL_start && ICL_end && ICL_end<ICL_start) {
+              add_forced_icl_linkers = true;
+
+              ICL_start,ICL_end,icl_start_linker,icl_end_linker = calculate_auto_linker(ICL_start,ICL_end);
+              fusion_site_location = ICL_start;
+
+          }
+
           range = new Array;
           for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
               range.push(i);
           }
+          console.log('icl range',range);
         }
+
+
 
         $.each(range, function(i, ii){
           // console.log(ii,type);
@@ -3693,10 +3771,19 @@
 
           } else {
             // check for fusion site
-            // console.log(key);
+            console.log(key,fusion_site_location);
             if (fusion_site_location!=-1 && fusion_in_sequence) {
               if (key==fusion_site_location && fusionpos!='None') {
                   // console.log('WE ARE AT FUSION SITE!');
+
+                  if (add_forced_icl_linkers) {
+                    console.log('ADD LINKERS');
+                    // if we have forced linkers due to overlap of cut sites
+                    sequence += "[LINKER:"+icl_start_linker+"]";
+                    sequence_short += "[LINKER:"+icl_start_linker+"]";
+                    sequence_short_2 += "[LINKER:"+icl_start_linker+"]";
+                    sequence_long += icl_start_linker.toUpperCase();
+                  }
                   
                   val = fusion_in_sequence;
                   val['name'] = val['method'].replace("fusion:", "");
@@ -3708,7 +3795,27 @@
                   } else {
                     sequence_long += "["+val['type']+":"+val['name']+"]";
                   }
+
+
+                  if (add_forced_icl_linkers) {
+                    // if we have forced linkers due to overlap of cut sites
+                    sequence += "[LINKER:"+icl_end_linker+"]";
+                    sequence_short += "[LINKER:"+icl_end_linker+"]";
+                    sequence_short_2 += "[LINKER:"+icl_end_linker+"]";
+                    sequence_long += icl_end_linker.toUpperCase();
+                  }
+                  
               }
+            } else if (key==fusion_site_location && add_forced_icl_linkers) {
+                    // if we have forced linkers due to overlap of cut sites
+                    sequence += "[LINKER:"+icl_start_linker+"]";
+                    sequence_short += "[LINKER:"+icl_start_linker+"]";
+                    sequence_short_2 += "[LINKER:"+icl_start_linker+"]";
+                    sequence_long += icl_start_linker.toUpperCase();
+                    sequence += "[LINKER:"+icl_end_linker+"]";
+                    sequence_short += "[LINKER:"+icl_end_linker+"]";
+                    sequence_short_2 += "[LINKER:"+icl_end_linker+"]";
+                    sequence_long += icl_end_linker.toUpperCase();
             }
 
           }
@@ -3769,8 +3876,9 @@
       return [sequence_short,sequence_long];
     }
 
-    function generate_new_path(pos1,pos2,type) {
+    function generate_new_path(pos1,pos2,type,add_forced_icl_linkers) {
           cut_pos = [pos1,pos2];
+          console.log('CHECK OVERLAP',pos1,pos2);
           // fix to first
           if (parseInt(pos1)>ICL_min[type]) pos1 = ICL_min[type];
           if (parseInt(pos2)<ICL_max[type]) pos2 = ICL_max[type];
@@ -3796,7 +3904,10 @@
             // None
           } else {
             // ICL
+
+
             if (fusion_in_sequence) extra_boxes += 1;
+            if (add_forced_icl_linkers) extra_boxes += 2;
             // $.each(inserts["fusion"], function(key,val) {
             //   extra_boxes += 1;
             // });
@@ -3842,6 +3953,14 @@
             // where_on_line = length_used_last;
             // [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
             // $("#snake").append(add_box(where[0],where[1],'E','red'));
+          if (add_forced_icl_linkers)  {
+              where_on_line = length_used_first+length_availiable*current_insert/(extra_boxes+1);
+              [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
+              color = 'black';
+              $("#snake").append(add_box(where[0],where[1],'Linker',color));
+              current_insert += 1;
+          }
+
 
           if ( (fusionpos == 'icl2' || fusionpos == 'icl3') && fusion_in_sequence ) {
             // $.each(inserts["fusion"], function(key,val) {
@@ -3855,6 +3974,14 @@
               $("#snake").append(add_box(where[0],where[1],val['type'],color));
               current_insert += 1;
             });
+          }
+
+          if (add_forced_icl_linkers)  {
+              where_on_line = length_used_first+length_availiable*current_insert/(extra_boxes+1);
+              [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
+              color = 'black';
+              $("#snake").append(add_box(where[0],where[1],'Linker',color));
+              current_insert += 1;
           }
 
           path = "<path id='path_custom_"+type+"' class='"+type+" long construct_custom' d='" + points_red + "' stroke='red' stroke-dasharray='5,10,5' fill='none' stroke-width='2' />"
@@ -3933,6 +4060,17 @@
             //   // do not do stuff if it's short
             //   return
             // }
+
+            // Safari fix where :visible is not working
+            $.each($( "circle."+term+"-term.long" ), function(key,val) {
+            
+              if ($(val).css('display') != 'none') {
+                first_visible_residue = parseInt($(val).attr('id'));
+                if (term=='N') {return false;}
+              }
+
+            });
+
 
             if (isNaN(first_visible_residue)) {
               // $("."+term+"-term").hide();
@@ -4288,6 +4426,7 @@
       ICL_end = 0;
       // console.log('reset done');
       fusion_in_sequence = false;
+      add_forced_icl_linkers = false;
       $.each(modifications, function(key,val) {
 
         console.log("key is " + key + " look in " + possible[possible_id]);
@@ -4320,10 +4459,6 @@
           if (ICL_start==0) return //do not color if no start selected
           // do not color / track 
           ICL_end = range[0];
-          range = new Array;
-          for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
-              range.push(i);
-          }
 
           if (val['method']=='ICL3_end') {
             $('#path_ICL3').addClass('svg_construct_hidden');
@@ -4343,7 +4478,22 @@
             icl_name = "ICL2";
           }
 
-          
+          if (ICL_start && ICL_end && ICL_end<ICL_start) {
+              add_forced_icl_linkers = true;
+              new_cut_site = Math.round((ICL_start+ICL_end)/2);
+              AA_to_add_on_N = new_cut_site-ICL_end;
+              AA_to_add_on_C = ICL_start-new_cut_site;
+              filler_amount_N = AA_to_add_on_C;
+              filler_amount_C = AA_to_add_on_N;
+
+              ICL_end = ICL_start-1;
+              ICL_start = range[0]+1;
+          }
+
+          range = new Array;
+          for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
+              range.push(i);
+          }
 
         }
 
@@ -4358,8 +4508,8 @@
       })
 
       if (ICL_start>0 && ICL_end>0) {
-        // console.log('Generate new loop');
-        generate_new_path((ICL_start-1),(ICL_end+1),icl_name);
+        console.log('Generate new loop',(ICL_start-1),(ICL_end+1),icl_name);
+        generate_new_path((ICL_start-1),(ICL_end+1),icl_name,add_forced_icl_linkers);
       }
 
       generate_term_boxes("N");
@@ -4467,6 +4617,27 @@
         "Reset": function() {
           $( this ).dialog( "close" );
           resetAll();
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
+
+    $( "#dialogauto" ).dialog({
+      autoOpen: false,
+      show: {
+        effect: "blind",
+        duration: 200
+      },
+      hide: {
+        effect: "explode",
+        duration: 200
+      },
+      buttons: {
+        "Automatic mode": function() {
+          $( this ).dialog( "close" );
+          combi_mode();
         },
         Cancel: function() {
           $( this ).dialog( "close" );

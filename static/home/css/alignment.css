@@ -5,6 +5,13 @@
     white-space: nowrap;
     height: 25px;
 }
+.ali-td-anchor
+{
+    padding: 0px 4px 0px 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    height: 25px;
+}
 .ali-td-space
 {
     width: 20px;
@@ -226,6 +233,9 @@
 .res-color-_ {
     background-color: #EDEDED;
     color: #000000;
+}
+.res-cons--1 {
+    background-color: #FFFFFF;
 }
 .res-cons-0 {
     background-color: #ff0000;

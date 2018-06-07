@@ -21,6 +21,7 @@ from residue.models import ResiduePositionSet
 
 
 from datetime import datetime
+import time
 import json
 import copy
 import re
@@ -34,11 +35,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 def detail(request, slug):
 
     # get constructs
-    c = Construct.objects.filter(name=slug).prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
-                "crystallization__crystal_method", "crystallization__crystal_type",
-                "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
-                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").all()[0]
+    c = Construct.objects.defer('schematics','snakecache').get(name=slug)
 
     # get residues
     residues = Residue.objects.filter(protein_conformation__protein=c.protein).order_by('sequence_number').prefetch_related(
@@ -47,21 +44,11 @@ def detail(request, slug):
     residues_lookup = {}
     for r in residues:
         residues_lookup[r.sequence_number] = r
-
     schematics = c.schematic()
-
-
-    # snake = cache.get(c.name+'_snake')
-    # snake= None
-    # if snake==None:
-    #     print(c.name+'_snake no cache')
-    #     snake = cache.set(c.name+'_snake', DrawSnakePlot(residues,c.protein.get_protein_class(),str(c.protein),nobuttons = True), 60*60*24*2) #two days
-    #     snake = cache.get(c.name+'_snake')
-    # else:
-    #     print(c.name+'_snake used cache')
 
     chunk_size = 10
     context = {'c':c, 'chunk_size': chunk_size, 'annotations': json.dumps(schematics['annotations']), 'schematics': schematics, 'residues_lookup': residues_lookup}
+
     return render(request,'construct/construct_detail.html',context)
 
 class ConstructStatistics(TemplateView):
@@ -73,22 +60,32 @@ class ConstructStatistics(TemplateView):
 
     def get_context_data (self, **kwargs):
 
+
         context = super(ConstructStatistics, self).get_context_data(**kwargs)
-        cons = Construct.objects.all().order_by("protein__entry_name","crystal__pdb_code").prefetch_related(
-            "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
-            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
+        cache_temp = cache.get('construct_statistics')
+
+        # if cache_temp:
+        #     for key, val in cache_temp.items():
+        #         context[key] = val
+
+        #     return context
+
+        cons = Construct.objects.all().defer('schematics','snakecache').order_by("protein__entry_name","crystal__pdb_code").prefetch_related(
+            "crystal","mutations__effects","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor",
+            "structure__protein_conformation__protein__parent", "structure__state")
 
         #PREPARE DATA
-        proteins = Construct.objects.all().values_list('protein', flat = True)
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50','8x50','5x50','6x50','3x50','4x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
-        #print(pconfs)
+        proteins_ids = Construct.objects.all().values_list('protein', flat = True)
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__generic_number__label__in=['1x50','7x50','8x50','5x50','6x50','3x50','4x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
+
         x50s = {}
         for pc in pconfs:
             if pc[0] not in x50s:
                 x50s[pc[0]] = {}
             x50s[pc[0]][pc[2]] = pc[1]
-
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug__in=['TM3','TM4','TM5','TM6']).values('protein__entry_name','residue__protein_segment__slug').annotate(start=Min('residue__sequence_number'),GN=Max('residue__generic_number__label'),GN2=Min('residue__generic_number__label'),end=Max('residue__sequence_number'))
+        print(x50s)
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__protein_segment__slug__in=['TM3','TM4','TM5','TM6']).values('protein__entry_name','residue__protein_segment__slug').annotate(start=Min('residue__sequence_number'),GN=Max('residue__generic_number__label'),GN2=Min('residue__generic_number__label'),end=Max('residue__sequence_number'))
         # print(pconfs)
         # x50s = {}
         track_anamalities = {}
@@ -121,13 +118,13 @@ class ConstructStatistics(TemplateView):
             #     x50s[pc[0]] = {}
             # x50s[pc[0]][pc[2]] = pc[1]
         # print(track_anamalities)
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).prefetch_related('protein').filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
         #pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
         tm1_start = {}
         for pc in pconfs:
             tm1_start[pc.protein.entry_name] = pc.start
 
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number'),end=Max('residue__sequence_number'))
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).prefetch_related('protein').filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number'),end=Max('residue__sequence_number'))
         cterm_start = {}
         cterm_end = {}
         for pc in pconfs:
@@ -138,31 +135,57 @@ class ConstructStatistics(TemplateView):
         mutations = []
         positions = []
         proteins = []
+        full_p_name = {}
         for c in cons:
             p = c.protein
             entry_name = p.entry_name
+            full_p_name[entry_name] = p.name.replace('receptor','').replace('-adrenoceptor','')
             p_class = p.family.slug.split('_')[0]
             pdb = c.crystal.pdb_code
             pdb = '' # do not count same mutation many times
-            for mutation in c.mutations.filter(effects__slug='thermostabilising').all():
+            for mutation in c.mutations.all():
+                skip = True
+                for effect in mutation.effects.all():
+                    if effect.slug == 'thermostabilising':
+                        skip = False
+                if skip:
+                    continue
                 if p.entry_name not in proteins:
                     proteins.append(entry_name)
                 mutations.append((mutation,entry_name,pdb,p_class))
                 if mutation.sequence_number not in positions:
                     positions.append(mutation.sequence_number)
-        rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein')
+        rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein','annotations__data_type')
 
         rs_lookup = {}
         gns = []
         for r in rs:
-            if not r.generic_number:
-                continue #skip non GN
+            if not r.generic_number: #skip non gn
+                continue 
             entry_name = r.protein_conformation.protein.entry_name
             pos = r.sequence_number
+            # segment = r.protein_segment.slug
             if entry_name not in rs_lookup:
                 rs_lookup[entry_name] = {}
             if pos not in rs_lookup[entry_name]:
                 rs_lookup[entry_name][pos] = r
+
+        rs = Residue.objects.filter(protein_conformation__protein__id__in=proteins_ids, protein_segment__slug__in=['N-term','C-term'],annotations__data_type__slug='dynamine').prefetch_related('generic_number','protein_segment','protein_conformation__protein','annotations__data_type')
+        rs_annotations = {}
+        for r in rs:
+            entry_name = r.protein_conformation.protein.entry_name
+            pos = r.sequence_number
+            segment = r.protein_segment.slug
+            if entry_name not in rs_annotations:
+                rs_annotations[entry_name] = {}
+            if segment not in rs_annotations[entry_name]:
+                rs_annotations[entry_name][segment] = {}
+            if pos not in rs_annotations[entry_name][segment]:
+                try:
+                    rs_annotations[entry_name][segment][pos] = r.annotations.all()[0].value
+                except:
+                    print('no dynamine for ',entry_name,pos,r.pk)
+        # print(rs_annotations)
 
         truncations = {}
         truncations_new = {}
@@ -173,10 +196,20 @@ class ConstructStatistics(TemplateView):
         truncations_new['nterm_fusion'] = OrderedDict()
         truncations_new['icl3_fusion'] = OrderedDict()
         truncations_new['icl2_fusion'] = OrderedDict()
+
+
+        truncations_new['icl3_start'] = OrderedDict()
+        truncations_new['icl3_end'] = OrderedDict()
+
+        truncations_new['icl3_fusion_start'] = OrderedDict()
+        truncations_new['icl3_fusion_end'] = OrderedDict()
+        truncations_new['icl2_fusion_start'] = OrderedDict()
+        truncations_new['icl2_fusion_end'] = OrderedDict()
         track_fusions = OrderedDict()
         track_fusions2 = OrderedDict()
         track_without_fusions = OrderedDict()
         truncations_new_possibilties = {}
+        truncations_maximums = {}
         truncations_new_sum = {}
         truncations['cterm'] = {}
         truncations['icl3'] = {}
@@ -184,12 +217,27 @@ class ConstructStatistics(TemplateView):
         truncations['icl2'] = {}
         truncations['icl2_fusion'] = {}
         class_names = {}
+        states = {}
+        linkers_exist_before = {}
+        linkers_exist_after = {}
+        fusion_by_pdb = {}
+        fusions_short = {
+        'Flavodoxin': 'Flav',
+        'T4 Lysozyme (T4L)': 'T4L',
+        'Rubredoxin':  'Rubr',
+        'PGS (Pyrococcus abyssi glycogen synthase)': 'PGS',
+        'BRIL (b562RIL)': 'BRIL',
+        'mT4L' : 'mT4L',
+        'OB1' : 'OB1',
+        '3A Arrestin': 'Arr'
+        }
         for c in cons:
             p = c.protein
             entry_name = p.entry_name
             pdb_code = c.crystal.pdb_code 
             entry_name_pdb = entry_name+ "_"+ pdb_code
             state = c.structure.state.slug
+            entry_name_pdb_state = entry_name+ "_"+ pdb_code + "_" +state
             crystal_p = c.structure.protein_conformation.protein.parent.entry_name
             if entry_name!=crystal_p:
                 print("ERROR ERROR ERROR",pdb_code,entry_name,crystal_p)
@@ -199,13 +247,16 @@ class ConstructStatistics(TemplateView):
             p_class = p.family.slug.split('_')[0]
             if p_class not in class_names:
                 class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
-            p_class_name = class_names[p_class]
-            if state=='active':
-                p_class_name += "_active"
+            p_class_name = class_names[p_class].strip()
+            states[pdb_code] = state
+            # if state=='active':
+            #     p_class_name += "_active"
+            # if state=='intermediate':
+            #     p_class_name += "_interm"
             fusion_n = False
             fusion_icl3 = False
 
-            fusion_position, fusions = c.fusion()
+            fusion_position, fusions, linkers = c.fusion()
             found_nterm = False
             found_cterm = False
 
@@ -218,6 +269,7 @@ class ConstructStatistics(TemplateView):
 
             if fusions:
                 fusion_name = fusions[0][2]
+                fusion_by_pdb[pdb_code] = fusions_short[fusion_name]
                 if fusion_name not in track_fusions2:
                     track_fusions2[fusion_name] = {'found':[],'for_print':[]}
             # if entry_name=='aa2ar_human':
@@ -240,7 +292,7 @@ class ConstructStatistics(TemplateView):
 
 
                     position = 'nterm'
-                    if fusion_position=='nterm':
+                    if fusion_position=='nterm' or fusion_position=='nterm_icl3':
                         position = 'nterm_fusion'
                         if from_tm1 not in track_fusions[p_class_name][entry_name_pdb]['found']:
                             track_fusions[p_class_name][entry_name_pdb]['found'].append(from_tm1)
@@ -256,9 +308,15 @@ class ConstructStatistics(TemplateView):
 
                     if position not in truncations_new_possibilties:
                         truncations_new_possibilties[position] = []
+                    if position not in truncations_maximums:
+                        truncations_maximums[position] = {}
+                    if p_class_name not in truncations_maximums[position]:
+                        truncations_maximums[position][p_class_name] = 0
                     if from_tm1 not in truncations_new_possibilties[position]:
                         truncations_new_possibilties[position].append(from_tm1)
                         truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
+                    if tm1_start[entry_name]-1 > truncations_maximums[position][p_class_name]:
+                        truncations_maximums[position][p_class_name] = tm1_start[entry_name]-1
 
                     if position not in truncations_new_sum:
                         truncations_new_sum[position] = {}
@@ -267,11 +325,11 @@ class ConstructStatistics(TemplateView):
 
                     if p_class_name not in truncations_new[position]:
                         truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                    if entry_name_pdb not in truncations_new[position][p_class_name]['receptors']:
-                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb] = [[],[],[tm1_start[entry_name]-1]]
-                    if fusion_position!='nterm':
-                        if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb][0]:
-                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb][0].append(from_tm1)
+                    if entry_name_pdb_state not in truncations_new[position][p_class_name]['receptors']:
+                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state] = [[],[],[tm1_start[entry_name]-1]]
+                    if fusion_position!='nterm' or 1==1:
+                        if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0]:
+                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0].append(from_tm1)
                             if from_tm1 not in truncations_new_sum[position][p_class_name]:
                                 truncations_new_sum[position][p_class_name][from_tm1] = 0
                             truncations_new_sum[position][p_class_name][from_tm1] += 1
@@ -281,13 +339,14 @@ class ConstructStatistics(TemplateView):
                     # if from_tm1==0:
                     #     print(state,entry_name,p_class_name,truncations_new[position][p_class_name]['receptors'][entry_name])
 
-                if deletion.start >= x50s[entry_name]['8x50']:
+                if deletion.start >= x50s[entry_name]['7x50']:
                     found_cterm = True
-
-                    bw = x50s[entry_name]['8x50']-deletion.start
-                    bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
+                    import html
+                    # bw = x50s[entry_name]['8x50']-deletion.start
+                    # bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
 
                     from_h8 = deletion.start - cterm_start[entry_name]
+                    # print(p_class_name,':',html.unescape(p.family.name),':',entry_name,':',pdb_code,':',deletion.start-x50s[entry_name]['8x50'],':',from_h8)
 
                     if p_class_name not in truncations['cterm']:
                         truncations['cterm'][p_class_name] = {}
@@ -304,9 +363,15 @@ class ConstructStatistics(TemplateView):
 
                     if position not in truncations_new_possibilties:
                         truncations_new_possibilties[position] = []
+                    if position not in truncations_maximums:
+                        truncations_maximums[position] = {}
+                    if p_class_name not in truncations_maximums[position]:
+                        truncations_maximums[position][p_class_name] = 0
                     if from_h8 not in truncations_new_possibilties[position]:
                         truncations_new_possibilties[position].append(from_h8)
                         truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
+                    if from_h8 > truncations_maximums[position][p_class_name]:
+                        truncations_maximums[position][p_class_name] = from_h8
 
                     if position not in truncations_new_sum:
                         truncations_new_sum[position] = {}
@@ -327,31 +392,50 @@ class ConstructStatistics(TemplateView):
                         truncations_new_sum[position][p_class_name][from_h8] += 1
 
                 if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
-                    # if fusion_icl3:
+                    # if linkers['before']:
+                    #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                    if linkers['before']:
+                        deletion.start += len(linkers['before'])
+                        linkers_exist_before[c.crystal.pdb_code] = len(linkers['before'])
+                    if linkers['after']:
+                        deletion.end -= len(linkers['after'])
+                        linkers_exist_after[c.crystal.pdb_code] = len(linkers['after'])
+                    # if linkers['before']:
                     #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                     fusion_icl3 = True
                     bw = x50s[entry_name]['5x50']-deletion.start-1
-                    bw = str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1]-1)
+                    bw = "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1]-1)
                     bw_real = "5."+str(50-x50s[entry_name]['5x50']+deletion.start-1)
-                    bw2 = str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0]+1)
+                    bw2 = "6x"+str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0]+1)
                     bw2_real = "6."+str(50-x50s[entry_name]['6x50']+deletion.end+1)
-                    bw = bw_real+"x"+bw
-                    bw2 = bw2_real+"x"+bw2
+                    # Make 1.50x50 number
+                    # bw = bw_real+"x"+bw
+                    # bw2 = bw2_real+"x"+bw2
                     bw_combine = bw+"-"+bw2
                     position = 'icl3'
                     del_length = 1+deletion.end-deletion.start
 
+                    if bw=='5x107':
+                        # Skip these false deletions in melga
+                        continue
+
+                    # if entry_name=='s1pr1_human':
+                    #     print("CHECK",deletion.start,deletion.end, bw,bw2)
+                    if entry_name=='s1pr1_human' and deletion.start==250:
+                        # Skip these false deletions in s1pr1_human (3V2W, 3V2Y)
+                        continue
+
                     l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
-                    if fusion_position=='icl3':
+                    if fusion_position=='icl3' or fusion_position=='nterm_icl3':
                         position = 'icl3_fusion'
                         if bw not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(bw)
                         if bw2 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(bw2)
-                    else:
-                         print(entry_name,c.name,fusions)
+                    # else:
+                    #      print(entry_name,c.name,fusions)
 
-                    if fusion_position=='icl3':
+                    if fusion_position=='icl3' or fusion_position=='nterm_icl3':
                         #Track those with fusion
                         if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
                             track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
@@ -361,6 +445,21 @@ class ConstructStatistics(TemplateView):
                             track_fusions[p_class_name][entry_name_pdb]['5_6_deleted'].append(del_length)
                         if l_5_6_length not in track_fusions[p_class_name][entry_name_pdb]['5_6_length']:
                             track_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
+
+                        if p_class_name not in truncations_new[position+'_start']:
+                            truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
+                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
+                        if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
+
+
+                        if p_class_name not in truncations_new[position+'_end']:
+                            truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
+                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
+                        if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
 
                     else:
                         # print('ICL3 CUT WITHOUT FUSION',bw_combine,entry_name,c.name)
@@ -379,6 +478,22 @@ class ConstructStatistics(TemplateView):
                             track_without_fusions[p_class_name][entry_name_pdb]['5_6_deleted'].append(del_length)
                         if l_5_6_length not in track_without_fusions[p_class_name][entry_name_pdb]['5_6_length']:
                             track_without_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
+
+
+                        if p_class_name not in truncations_new[position+'_start']:
+                            truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
+                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
+                        if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
+
+
+                        if p_class_name not in truncations_new[position+'_end']:
+                            truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
+                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
+                        if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
 
 
                     if p_class_name not in truncations[position]:
@@ -407,23 +522,39 @@ class ConstructStatistics(TemplateView):
                     #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                     fusion_icl3 = True
                     bw = x50s[entry_name]['5x50']-deletion.start
-                    bw = str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1]-1)
+                    bw = "3x"+str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1]-1)
                     bw_real = "3."+str(50-x50s[entry_name]['3x50']+deletion.start-1)
-                    bw2 = str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0]+1)
+                    bw2 = "4x"+str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0]+1)
                     bw2_real = "4."+str(50-x50s[entry_name]['4x50']+deletion.end+1)
-                    bw = bw_real+"x"+bw
-                    bw2 = bw2_real+"x"+bw2
+                    # Make 1.50x50 number
+                    # bw = bw_real+"x"+bw
+                    # bw2 = bw2_real+"x"+bw2
                     bw_combine = bw+"-"+bw2
                     position = 'icl2'
                     del_length = 1+deletion.end-deletion.start
                     l_3_4_length = x50s[entry_name]['4x50']-x50s[entry_name]['3x50']
-                    if fusion_position=='icl3':
+                    # print(fusion_position)
+                    if fusion_position=='icl3' or fusion_position=='nterm_icl3':
                         position = 'icl2_fusion'
                         if bw not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(bw)
                         if bw2 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(bw2)
 
+
+                    if p_class_name not in truncations_new[position+'_start']:
+                        truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                    if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
+                        truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
+                    if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
+                        truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
+
+                    if p_class_name not in truncations_new[position+'_end']:
+                        truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                    if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
+                        truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
+                    if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
+                        truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
 
                     if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
                             track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
@@ -456,7 +587,7 @@ class ConstructStatistics(TemplateView):
                 if track_fusions[p_class_name][entry_name_pdb] == {'found':[],'for_print':[], '3_4_length':[], '5_6_length':[], '3_4_deleted':[], '5_6_deleted':[]}:
                     if fusion_position=='nterm' or fusions[0][3].startswith('N-term'):
                         from_tm1 = tm1_start[entry_name]-1
-                        print(entry_name_pdb,'Seems to be without truncated N-term, fixme',tm1_start[entry_name])
+                        # print(entry_name_pdb,'Seems to be without truncated N-term, fixme',tm1_start[entry_name])
                         position = 'nterm_fusion'
                         if from_tm1 not in truncations_new_possibilties[position]:
                             truncations_new_possibilties[position].append(from_tm1)
@@ -466,7 +597,7 @@ class ConstructStatistics(TemplateView):
                         if from_tm1 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(from_tm1)
                     elif not fusions[0][3].startswith('C-term'):
-                        print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
+                        # print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
                         deletion.start = fusions[0][4] #the next one is "cut"
                         deletion.end = fusions[0][4]+1 #the 'prev' is cut
 
@@ -475,25 +606,26 @@ class ConstructStatistics(TemplateView):
                             #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                             fusion_icl3 = True
                             bw = x50s[entry_name]['5x50']-deletion.start
-                            bw = str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1])
+                            bw =  "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1])
                             bw_real = "5."+str(50-x50s[entry_name]['5x50']+deletion.start)
-                            bw2 = str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0])
+                            bw2 = "6x"+str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0])
                             bw2_real = "6."+str(50-x50s[entry_name]['6x50']+deletion.end)
-                            bw = bw_real+"x"+bw
-                            bw2 = bw2_real+"x"+bw2
+                            # Make 1.50x50 number
+                            # bw = bw_real+"x"+bw
+                            # bw2 = bw2_real+"x"+bw2
                             bw_combine = bw+"-"+bw2
                             position = 'icl3'
                             del_length = 1+deletion.end-deletion.start
 
                             l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
-                            if fusion_position=='icl3':
+                            if fusion_position=='icl3' or fusion_position=='nterm_icl3':
                                 position = 'icl3_fusion'
                                 if bw not in track_fusions2[fusion_name]['found']:
                                     track_fusions2[fusion_name]['found'].append(bw)
                                 if bw2 not in track_fusions2[fusion_name]['found']:
                                     track_fusions2[fusion_name]['found'].append(bw2)
 
-                            if fusion_position=='icl3':
+                            if fusion_position=='icl3' or fusion_position=='nterm_icl3':
                                 #Track those with fusion
                                 if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
                                     track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
@@ -545,12 +677,13 @@ class ConstructStatistics(TemplateView):
                             #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
                             fusion_icl3 = True
                             bw = x50s[entry_name]['5x50']-deletion.start
-                            bw = str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1])
+                            bw = "3x"+str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1])
                             bw_real = "3."+str(50-x50s[entry_name]['3x50']+deletion.start)
-                            bw2 = str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0])
+                            bw2 = "4x"+str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0])
                             bw2_real = "4."+str(50-x50s[entry_name]['4x50']+deletion.end)
-                            bw = bw_real+"x"+bw
-                            bw2 = bw2_real+"x"+bw2
+                            # Make 1.50x50 number
+                            # bw = bw_real+"x"+bw
+                            # bw2 = bw2_real+"x"+bw2
                             bw_combine = bw+"-"+bw2
                             position = 'icl2'
                             del_length = deletion.end-deletion.start-1
@@ -594,7 +727,7 @@ class ConstructStatistics(TemplateView):
 
 
             position = 'nterm'
-            if fusion_position=='nterm':
+            if fusion_position=='nterm' or fusion_position=='nterm_icl3':
                 position = 'nterm_fusion'
             if p_class_name not in truncations_new[position]:
                 truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
@@ -663,32 +796,155 @@ class ConstructStatistics(TemplateView):
 
 
         #print(truncations_new)
+        max_pos_range = {}
+        max_pos_range2 = {}
+        max_pos_range3 = {}
+        site_fusions = {}
         for site in truncations_new:
             # print(site)
+            max_pos_range[site] = 0
+            max_pos_range2[site] = [100,0,0]
+            max_pos_range3[site] = [0,0]
+            site_fusions[site] = []
             for pclass, val in truncations_new[site].items():
                 # print(site,pclass)
                 unique_sites = OrderedDict()
                 sites = {}
+                distinct_fusion = {}
+                min_cut = 0
+                max_cut = 0
+                if site not in truncations_new_sum:
+                    truncations_new_sum[site] = {}
+                if pclass not in truncations_new_sum[site]:
+                    truncations_new_sum[site][pclass] = {}
                 for r,v in val['receptors'].items():
-                    entry_name = "_".join(r.split("_")[:-1])
-                    pdbcode = r.split("_")[-1]
+                    entry_name = "_".join(r.split("_")[:2])
+                    original_entryname=entry_name
+                    pdbcode = r.split("_")[2]
                     if len(v[0])>1:
                             print('multiple cuts?',entry_name,r,v[0])
                     cut = v[0][0] if v[0] else v[2][0]
-                    # print(r,v,pdbcode,entry_name,cut)
+                    if site in truncations_maximums:
+                        if cut < min_cut:
+                            min_cut = cut
+                        if cut > max_cut:
+                            max_cut = cut
+                    # print(site,r,v,pdbcode,entry_name,cut)
                     entry_name += "_"+str(cut)
                     if entry_name not in unique_sites:
                         unique_sites[entry_name] = v
-                        unique_sites[entry_name].append([])
+                        unique_sites[entry_name].append([]) #for pdbs
+                        unique_sites[entry_name].append('') #for GPCR
+                        unique_sites[entry_name].append('') #for Species
+                        unique_sites[entry_name].append({'inactive':'','intermediate':'','active':''}) #for State
+                        unique_sites[entry_name].append('') #for cut
+                        unique_sites[entry_name].append(full_p_name[original_entryname])
+                        unique_sites[entry_name].append([]) #for fusions
+                        unique_sites[entry_name].append([]) #for linkers #10
                         if cut not in sites:
                             sites[cut] = 0
                         sites[cut] += 1
 
                     unique_sites[entry_name][3].append(pdbcode)
+                    unique_sites[entry_name][4] = original_entryname.split("_")[0].upper()
+                    unique_sites[entry_name][5] = original_entryname.split("_")[1].lower()
+                    if unique_sites[entry_name][5]=='human':
+                        unique_sites[entry_name][5] = ''
+                    if unique_sites[entry_name][6][states[pdbcode]] != '':
+                        unique_sites[entry_name][6][states[pdbcode]] += 1
+                    else:
+                        unique_sites[entry_name][6][states[pdbcode]] = 1
+                    unique_sites[entry_name][7] = cut
+                    if pdbcode in fusion_by_pdb:
+                        if fusion_by_pdb[pdbcode] not in unique_sites[entry_name][9]:
+                            unique_sites[entry_name][9].append(fusion_by_pdb[pdbcode])
+                            if fusion_by_pdb[pdbcode] not in distinct_fusion:
+                                distinct_fusion[fusion_by_pdb[pdbcode]] = 0
+                            distinct_fusion[fusion_by_pdb[pdbcode]] += 1
+                        if fusion_by_pdb[pdbcode] not in site_fusions[site]:
+                            site_fusions[site].append(fusion_by_pdb[pdbcode])
+                    if site=='icl3_fusion_start' and pdbcode in linkers_exist_before:
+                        # print('FOUND',linkers_exist_before[pdbcode])
+                        unique_sites[entry_name][10].append(str(linkers_exist_before[pdbcode]))
+                    if site=='icl3_fusion_end' and pdbcode in linkers_exist_after:
+                        # print('FOUND',linkers_exist_after[pdbcode])
+                        unique_sites[entry_name][10].append(str(linkers_exist_after[pdbcode]))
                 # print(sites)
                 truncations_new_sum[site][pclass] = sites
-                val['receptors'] = unique_sites
+                if site in truncations_maximums:
+                    unique_sites = OrderedDict(sorted(unique_sites.items(), key=lambda x: int(x[0].split("_")[-1])))
+                else:
+                    unique_sites = OrderedDict(sorted(unique_sites.items(), key=lambda x: x[0].split("_")[-1]))
+                    val['range'] = sorted(list(sites.keys()))
+                    first_range = val['range'][0]
+                    last_range = val['range'][-1]
+                    prefix = val['range'][0].split('x')[0]
+                    start = int(val['range'][0].split('x')[1])
+                    end = int(val['range'][-1].split('x')[1])+1
 
+                    max_pos_range2[site][2] = prefix
+                    if start < max_pos_range2[site][0]:
+                        max_pos_range2[site][0] = start
+                    if end > max_pos_range2[site][1]:
+                        max_pos_range2[site][1] = end
+                    # print('\n ### doing range',site, sites,max_pos_range2[site],val['range'])
+                val['receptors'] = unique_sites
+                val['fusions'] = distinct_fusion
+                if site in truncations_maximums:
+                    val['range'] = list(range(min_cut,truncations_maximums[site][pclass]+1))
+                    if min_cut < max_pos_range3[site][0]:
+                        max_pos_range3[site][0] = min_cut
+                    if max_cut > max_pos_range3[site][1]:
+                        max_pos_range3[site][1] = max_cut
+                    if 'fusion' in site:
+                        val['range'] = list(range(min_cut,max_cut+1))
+                    if len(val['range'])>300:
+                        val['range'] = val['range'][::2]
+                    if len(val['range'])>max_pos_range[site]:
+                        max_pos_range[site] = len(val['range'])
+
+
+        # Add offset to align tables
+        for site in truncations_new:
+            for pclass, val in truncations_new[site].items():
+
+                for recp, rval in val['receptors'].items():
+                    if rval[10]:
+                        # print(recp,rval[10])
+                        if len(rval[10])!=len(rval[3]): #if pdbs with linker is not same as amount of linkers
+                            rval[10].append('0')
+                        rval[10] = ','.join(list(set(rval[10])))
+                    else:
+                        rval[10] = '' #no linkers
+
+                temp = {}
+                for fusion in site_fusions[site]:
+                    if fusion in val['fusions']:
+                        temp[fusion] = val['fusions'][fusion]
+                    else:
+                        temp[fusion] = ''
+                val['fusions'] = temp
+
+                if 'range' in val:
+                    if len(val['range'])<max_pos_range[site]:
+                        val['range'] = val['range'] + [5000] * (max_pos_range[site]-len(val['range']))
+                    if site in truncations_maximums and 'fusion' in site:
+                        val['range'] = list(range(max_pos_range3[site][0],max_pos_range3[site][1]+1))
+                    if max_pos_range2[site][2] != 0:
+                        temp = []
+                        for x in range(max_pos_range2[site][0],max_pos_range2[site][1]):
+                            temp.append(max_pos_range2[site][2]+"x"+str(x))
+                        val['range'] = temp
+                        temp = []
+                        for x in val['range']:
+                            if x in truncations_new_sum[site][pclass]:
+                                temp.append(truncations_new_sum[site][pclass][x])
+                            else:
+                                temp.append('')
+                        val['sum'] = temp
+
+        # print(linkers_exist_before,linkers_exist_after)
+        # print("NEWCHECK",truncations_new['icl3_start'])
         for pos, p_vals in truncations_new_sum.items():
             for pclass, c_vals in p_vals.items():
                 new_list = OrderedDict()
@@ -763,7 +1019,7 @@ class ConstructStatistics(TemplateView):
         for fusion, vals in track_fusions2.items():
             temp = []
             for p in fusion_possibilities:
-                print(p)
+                # print(p)
                 if p in vals['found']:
                     temp.append(1)
                 else:
@@ -772,7 +1028,7 @@ class ConstructStatistics(TemplateView):
         # print(track_without_fusions)
         #truncations =  OrderedDict(sorted(truncations.items(), key=lambda x: x[1]['hits'],reverse=True))
         #print(ordered_truncations)
-        print(track_fusions2)
+        # print(track_fusions2)
         context['truncations'] = ordered_truncations
         context['truncations_new'] = truncations_new
         context['truncations_new_possibilties'] = truncations_new_possibilties
@@ -825,11 +1081,11 @@ class ConstructStatistics(TemplateView):
                 mutation_matrix[wt]['sum'][0] = min(1,round(mutation_matrix[wt]['sum'][1]/30,2))
                 mutation_matrix_sum_mut[mut][1] += 1
                 mutation_matrix_sum_mut[mut][0] = min(1,round(mutation_matrix_sum_mut[mut][1]/30,2))
+                gn = ''
                 if entry_name in rs_lookup and pos in rs_lookup[entry_name]:
-                    gn = rs_lookup[entry_name][pos].generic_number.label
-                else:
-                    gn = ''
-                print(entry_name,"\t", pdb,"\t",gn,"\t", pos,"\t", wt,"\t", mut)
+                    if rs_lookup[entry_name][pos].generic_number:
+                        gn = rs_lookup[entry_name][pos].generic_number.label
+                # print(entry_name,"\t", pdb,"\t",gn,"\t", pos,"\t", wt,"\t", mut)
 
 
             if p_class not in mutation_type:
@@ -873,7 +1129,8 @@ class ConstructStatistics(TemplateView):
                 mutation_list[p_class][gn]['mutation'].append((mutation[0].wild_type_amino_acid,mutation[0].mutated_amino_acid))
 
 
-        #print(mutation_matrix)
+        mutation_matrix_total_sum = sum([v[1] for k,v in mutation_matrix_sum_mut.items()])
+        
 
         for p_class, values in mutation_list.items():
             for gn, vals in values.items():
@@ -898,9 +1155,33 @@ class ConstructStatistics(TemplateView):
         context['mutation_mut'] = mutation_mut
         context['mutation_matrix'] = mutation_matrix
         context['mutation_matrix_sum_mut'] = mutation_matrix_sum_mut
+        context['mutation_matrix_total_sum'] = mutation_matrix_total_sum
+
+        context['rs_annotations'] = rs_annotations
 
         for c in cons:
             pass
+
+        cache_temp = {}
+
+        cache_temp['truncations'] = ordered_truncations
+        cache_temp['truncations_new'] = truncations_new
+        cache_temp['truncations_new_possibilties'] = truncations_new_possibilties
+        cache_temp['truncations_new_sum'] = truncations_new_sum
+        cache_temp['fusion_possibilities'] = fusion_possibilities
+        cache_temp['test'] = track_fusions
+        cache_temp['test2'] = track_fusions2
+        cache_temp['track_fusion_sums'] = track_fusion_sums
+        cache_temp['track_without_fusions'] = track_without_fusions
+        cache_temp['mutation_list'] = mutation_list
+        cache_temp['mutation_type'] = mutation_type
+        cache_temp['mutation_wt'] = mutation_wt
+        cache_temp['mutation_mut'] = mutation_mut
+        cache_temp['mutation_matrix'] = mutation_matrix
+        cache_temp['mutation_matrix_sum_mut'] = mutation_matrix_sum_mut
+        cache_temp['rs_annotations'] = rs_annotations
+
+        cache.set('construct_statistics', cache_temp, 60*60*24*2) #two days
 
         return context
 
@@ -1126,7 +1407,7 @@ class ConstructMutations(TemplateView):
             for mutation in c.mutations.all():
                 if p.entry_name not in proteins:
                     proteins.append(entry_name)
-                mutations.append((mutation,entry_name,pdb,p_class,c.name))
+                mutations.append((mutation,entry_name,pdb,p_class,c.name,p))
                 if mutation.sequence_number not in positions:
                     positions.append(mutation.sequence_number)
         rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein','protein_segment')
@@ -1144,8 +1425,10 @@ class ConstructMutations(TemplateView):
                 rs_lookup[entry_name][pos] = r
 
         mutation_list = []
+        new_mutations = {}
+        overall_mut_types = set()
         for mutation in mutations:
-            # print("m",mutation)
+
             wt = mutation[0].wild_type_amino_acid
             mut = mutation[0].mutated_amino_acid
 
@@ -1153,6 +1436,7 @@ class ConstructMutations(TemplateView):
             mut_types = []
             for eff in mut_type:
                 mut_types.append(eff['slug'])
+                overall_mut_types.add(eff['slug'])
             mut_type = ",".join(mut_types)
             # # for
             # print(mut_type)
@@ -1163,10 +1447,13 @@ class ConstructMutations(TemplateView):
             cname = mutation[4]
             pos = mutation[0].sequence_number
             p_class = mutation[3]
+            p = mutation[5]
             if p_class not in class_names:
-                class_names[p_class] = p.family.parent.parent.parent.name
+                class_names[p_class] = p.family.parent.parent.parent.short
             p_class_name = class_names[p_class]
             p_class = class_names[p_class]
+            entry_short = p.entry_short
+            receptor_short = p.short
 
 
             if entry_name not in rs_lookup:
@@ -1179,13 +1466,18 @@ class ConstructMutations(TemplateView):
             else:
                 gn = ''
 
+            key = mutation[1]+"_"+str(mutation[0].sequence_number)+"_"+mutation[0].mutated_amino_acid
+            if key not in new_mutations:
+                new_mutations[key] = {'entry_name':entry_short,'receptor_short':receptor_short,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': set(), 'pdbs': set()}
+            new_mutations[key]['type'].update(mut_types)
+            new_mutations[key]['pdbs'].add(pdb)
 
             mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': mut_type})
-            if (pdb == 'adrb1_melga'): print(gn)
 
 
-        context['mutation_list'] = mutation_list
-        print(mutation_list)
+        context['mutation_list'] = new_mutations
+        context['overall_mut_types'] = overall_mut_types
+
 
         return context
 
@@ -1266,10 +1558,12 @@ def stabilisation_browser(request):
         struct_id = mutant.construct.structure_id
         state = mutant.construct.structure.state.name
         prot = mutant.construct.protein
-        p_class = prot.family.parent.parent.parent.name
-        p_ligand = prot.family.parent.parent.name
-        p_receptor = prot.family.parent.name
-        real_receptor = prot.entry_name
+        p_class = prot.family.parent.parent.parent.short()
+        p_ligand = prot.family.parent.parent.short()
+        p_receptor = prot.family.parent.short()
+        print(p_receptor,'p_receptor')
+        real_receptor = prot.entry_short
+        real_receptor_iuphar = prot.short()
         pdb = mutant.construct.crystal.pdb_code
 
         # Get the generic number and segment, if known.
@@ -1290,6 +1584,7 @@ def stabilisation_browser(request):
                        'ligand': p_ligand,
                        'receptor': p_receptor,
                        'real_receptor': real_receptor,
+                       'real_receptor_iuphar': real_receptor_iuphar,
                        'wild_type':mutant_id["wild_type"],
                        'mutant':mutant_id['mutant'],
                        'state':state,
@@ -1577,14 +1872,14 @@ def get_data_all_grouping(rules, mutant, wild_type, class_cons, fam_cons):
     hydro = hydro + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
 
     # Get the receptor family conservation fold change where possible
-    mut = fam_cons.get(mutant, u'\u2014')
-    w_t = fam_cons.get(wild_type, u'\u2014')
+    mut = fam_cons.get(mutant, 0)
+    w_t = fam_cons.get(wild_type, 0)
     rec_cons = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
     rec_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
 
     # Get the protein class conservation fold change where possible
-    mut = class_cons.get(mutant, u'\u2014')
-    w_t = class_cons.get(wild_type, u'\u2014')
+    mut = class_cons.get(mutant, 0)
+    w_t = class_cons.get(wild_type, 0)
     prot_cons = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
     prot_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
 
@@ -1816,7 +2111,8 @@ class design(AbsTargetSelection):
     #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
     #     + ' have selected all your receptors, click the green button.'
 
-    description = 'Get construct suggestions based on published constructs.'
+    description = '''This is a tool to design structure constructs based on all published GPCR structures.
+                    A modification can be based on a closest template, most frequent solution or structural rationale (mutations)'''
 
     # Middle section
     numbering_schemes = False
@@ -1830,7 +2126,7 @@ class design(AbsTargetSelection):
 
     selection_boxes = OrderedDict([
         ('reference', False),
-        ('targets', True),
+        ('targets', False),
         ('segments', False),
     ])
 
@@ -1840,11 +2136,13 @@ class design(AbsTargetSelection):
             'label': 'Show results',
             'onclick': 'submitupload()',
             'color': 'success',
+            'url': '/construct/tool/',
             #'url': 'calculate/'
         }
     }
 
-    redirect_on_select = False
+    redirect_on_select = True
+    selection_heading = "Construct Design Tool"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1874,6 +2172,7 @@ def align(request):
         proteins.append(c.protein)
         constructs[c.name] = c.protein.entry_name
         annotations[c.name] = c.schematic()['annotations']
+
 
     print(annotations)
 

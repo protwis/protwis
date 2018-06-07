@@ -2,14 +2,19 @@ from django.shortcuts import render
 from django.db.models import Q
 
 from collections import defaultdict
+from django.conf import settings
 
 import json
 import functools
 
 from contactnetwork.models import *
 from structure.models import Structure
+from protein.models import Protein, ProteinSegment
 
-from django.http import JsonResponse
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+
+from django.http import JsonResponse, HttpResponse
+from collections import OrderedDict
 
 
 def Interactions(request):
@@ -66,6 +71,36 @@ def PdbTreeData(request):
         data_dict[s0 + ',' + l0][s1 + ',' + l1][s2 + ',' + l2][s3 + ',' + l3].append(pdb + ' (' + state + ')'  + '(' + rep + ')')
 
     return JsonResponse(data_dict)
+
+def PdbTableData(request):
+
+    data = Structure.objects.filter(refined=False).select_related(
+                "state",
+                "pdb_code__web_resource",
+                "protein_conformation__protein__species",
+                "protein_conformation__protein__source",
+                "protein_conformation__protein__family__parent__parent__parent",
+                "publication__web_link__web_resource").prefetch_related(
+                "stabilizing_agents", "construct__crystallization__crystal_method",
+                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+                "protein_conformation__site_protein_conformation__site")
+        
+    data_dict = OrderedDict()
+    data_table = "<table><tbody>\n"
+    for s in data:
+        pdb_id = s.pdb_code.index
+        row = {}
+        row['protein'] = s.protein_conformation.protein.parent.entry_short()
+        row['protein_long'] = s.protein_conformation.protein.parent.short()
+        row['protein_family'] = s.protein_conformation.protein.parent.family.short()
+        row['species'] = s.protein_conformation.protein.species.common_name
+        row['date'] = s.publication_date
+        row['state'] = s.state.name
+        data_dict[pdb_id] = row
+        data_table += "<tr><td>{}</td></tr>\n".format(pdb_id)
+    data_table += "</tbody></table>"
+    print(data_table)
+    return HttpResponse(data_table)
 
 def InteractionData(request):
 
@@ -155,6 +190,28 @@ def InteractionData(request):
     data['segments'] = set()
     data['segment_map'] = {}
     data['aa_map'] = {}
+
+    # Create a consensus sequence.
+
+    excluded_segment = ['C-term','N-term']
+    segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
+    proteins =  Protein.objects.filter(protein__entry_name__in=pdbs).all()
+
+    a = Alignment()
+    a.load_proteins(proteins)
+    a.load_segments(segments) #get all segments to make correct diagrams
+    # build the alignment data matrix
+    a.build_alignment()
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
+    consensus = a.full_consensus
+
+    data['gn_map'] = OrderedDict()
+    data['pos_map'] = OrderedDict()
+    for aa in consensus:
+        if 'x' in aa.family_generic_number:
+            data['gn_map'][aa.family_generic_number] = aa.amino_acid
+            data['pos_map'][aa.sequence_number] = aa.amino_acid
 
     for i in interactions:
         pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']

@@ -110,7 +110,7 @@ class Command(BaseCommand):
                 Residue.objects.get_or_create(sequence_number=row['pdbPos'], protein_conformation=pc, amino_acid=row['res_id'][0], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
 
             except:
-                print("didnt work")
+                print("failed to add residue")
                 self.logger.error("Failed to add residues")
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
@@ -118,6 +118,7 @@ class Command(BaseCommand):
                 ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=can_scheme) ## Update scheme_id
 
             except:
+                print("failed to add residue generic number")
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
 
     def update_protein_conformation(self, arrestin_list):

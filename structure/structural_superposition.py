@@ -144,14 +144,14 @@ class FragmentSuperpose(object):
 
 
     def get_representative_fragments(self, state):
-        
+
         template = get_segment_template(self.target, state)
         return list(ResidueFragmentInteraction.objects.prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type').filter(structure_ligand_pair__structure__protein_conformation__protein=template.id))
 
 
     def get_all_fragments(self):
 
-        return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target).prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type'))
+        return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target).exclude(interaction_type__slug__in=['acc', 'hyd']).prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type'))
 
 #==============================================================================  
 class RotamerSuperpose(object):
@@ -172,11 +172,11 @@ class RotamerSuperpose(object):
         super_imposer = Superimposer()
         try:
             if self.TM_keys==None:
-                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C']]
-                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C']]
+                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C','O']]
+                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','O']]
             else:
-                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
-                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
+                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C','O'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
+                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','O'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
             super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
             super_imposer.apply(self.template_atoms)
             array1, array2 = np.array([0,0,0]), np.array([0,0,0])

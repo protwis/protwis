@@ -12,7 +12,7 @@ import yaml
 import logging
 
 class Ligand(models.Model):
-    properities = models.ForeignKey('LigandProperities')
+    properities = models.ForeignKey('LigandProperities', on_delete=models.CASCADE)
     name = models.TextField()
     canonical = models.NullBooleanField()
     ambigious_alias = models.NullBooleanField() #required to flag 'safe' alias, eg one parent
@@ -35,6 +35,8 @@ class Ligand(models.Model):
         if gtop:
             # get name from response
             ligand_name = gtop['name']
+            if ligand_name=='11-<i>cis</i>-retinal':
+                ligand_name = 'retinal'
 
         # does a ligand by this name already exists?
         try:
@@ -251,7 +253,7 @@ class Ligand(models.Model):
 
 
 class LigandProperities(models.Model):
-    ligand_type = models.ForeignKey('LigandType', null=True)
+    ligand_type = models.ForeignKey('LigandType', null=True, on_delete=models.CASCADE)
     web_links = models.ManyToManyField('common.WebLink')
     #vendor_links = models.ManyToManyField('common.WebLink', related_name='vendors')
     smiles = models.TextField(null=True)
@@ -311,9 +313,9 @@ class ChemblAssay(models.Model):
         
 class AssayExperiment(models.Model):
     
-    ligand = models.ForeignKey('Ligand')
-    protein = models.ForeignKey('protein.Protein')
-    assay = models.ForeignKey('ChemblAssay')
+    ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE)
     assay_type = models.CharField(max_length=10)
     assay_description = models.TextField(max_length=1000)
     pchembl_value = models.DecimalField(max_digits=9, decimal_places=3)
@@ -341,8 +343,8 @@ class LigandVendors(models.Model):
     url = models.TextField(null=True)
 
 class LigandVendorLink(models.Model):
-    vendor = models.ForeignKey('LigandVendors')
-    lp = models.ForeignKey('LigandProperities', related_name='vendors')
+    vendor = models.ForeignKey('LigandVendors', on_delete=models.CASCADE)
+    lp = models.ForeignKey('LigandProperities', related_name='vendors', on_delete=models.CASCADE)
     url = models.CharField(max_length=300)  #SourceRecordURL
     vendor_external_id = models.CharField(max_length=300) #RegistryID
     sid = models.CharField(max_length=200, unique=True) #SID

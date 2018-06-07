@@ -66,12 +66,19 @@
 
             $('[data-toggle="tooltip"]').tooltip();
             //$('[data-toggle="tooltip"]').tooltip({html:true});
-            {% if HelixBox %}
+            // cat = {{type|safe}}
+            {% if type == 'family' %}
+            natural_mutations_json = '{{natural_mutations_pos_list|safe}}';
+            receptor = '{{receptor|safe}}';
+            ajaxNaturalMutationPos("snakeplot");
+            ajaxNaturalMutationPos("helixbox");
+            table_ajaxMutants();
+
+            {% else %}
             natural_mutations_json = '{{mutations_pos_list|safe}}';
             receptor = '{{receptor|safe}}';
-
-            ajaxNaturalMutation("snakeplot", receptor);
             ajaxNaturalMutation("helixbox", receptor);
+            ajaxNaturalMutation("snakeplot", receptor);
             table_ajaxMutants();
             {% endif %}
             });
@@ -177,9 +184,13 @@
 {% if HelixBox %}
 <h2>Residue</h2>
 <ul>
+    {% if type == 'family' %}
+    <li>number of proteins within the selected family are highlighted in a gradient from <font color=#bf9695>light red</font> to <font color=#b4352f>red</font></li>
+    {% else %}
     <li>deleterious missense variants are shown in <font color=#e30e0e>red</font></li>
     <li>tolerated missense variants are shown in <font color=#70c070>green</font></li>
     <li>loss of function mutations ('stop gained' or 'frameshift' in the coding region) are shown in <font color=#575c9d>blue</font></li>
+    {% endif %}
 </ul>
 <div class="col-md-2 text-right text-info">
     <h4>Diagrams</h4>

@@ -74,7 +74,8 @@ def compare_family_slug(a,b):
     elif a[1]!=b[1]:
         return 1,"Class"
     elif a[2]!=b[2]:
-        return 2,"Ligand Type"
+        # return 2,"Ligand Type" Ignore Ligand Type level for construct Design purposes.
+        return 1,"Class"
     elif a[3]!=b[3]:
         return 3,"Receptor Family"
     else:
@@ -408,7 +409,7 @@ def json_icl3(request, slug, **response_kwargs):
         state = c.structure.state.slug
         if pdb not in states:
             states[pdb] = state
-        fusion, f_results = c.fusion()
+        fusion, f_results, linkers = c.fusion()
         if fusion:
             f_protein = f_results[0][2]
         else:
@@ -481,7 +482,7 @@ def json_icl2(request, slug, **response_kwargs):
         state = c.structure.state.slug
         if pdb not in states:
             states[pdb] = state
-        fusion, f_results = c.fusion()
+        fusion, f_results, linkers = c.fusion()
         if fusion:
             f_protein = f_results[0][2]
         else:
@@ -533,7 +534,7 @@ def json_nterm(request, slug, **response_kwargs):
         d_level, d_level_name = compare_family_slug(level,p_level)
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
-        fusion, f_results = c.fusion()
+        fusion, f_results, linkers = c.fusion()
         if fusion:
             f_protein = f_results[0][2]
         else:
@@ -587,7 +588,7 @@ def json_cterm(request, slug, **response_kwargs):
         d_level, d_level_name = compare_family_slug(level,p_level)
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
-        fusion, f_results = c.fusion()
+        fusion, f_results, linkers = c.fusion()
         if fusion:
             f_protein = f_results[0][2]
         else:

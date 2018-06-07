@@ -112,19 +112,18 @@ def detail(request, slug):
             if NM.residue.generic_number.label in natural_mutation_list:
                 natural_mutation_list[NM.residue.generic_number.label]['val'] += 1
                 if not str(NM.amino_acid) in natural_mutation_list[NM.residue.generic_number.label]['AA']:
-                    natural_mutation_list[NM.residue.generic_number.label]['AA'] = natural_mutation_list[NM.residue.generic_number.label]['AA'] + str(NM.amino_acid)
+                    natural_mutation_list[NM.residue.generic_number.label]['AA'] = natural_mutation_list[NM.residue.generic_number.label]['AA'] + str(NM.amino_acid) + ' '
 
                 if natural_mutation_list[NM.residue.generic_number.label]['val'] > max_snp_pos:
                     max_snp_pos = natural_mutation_list[NM.residue.generic_number.label]['val']
             else:
-                natural_mutation_list[NM.residue.generic_number.label] = {'val':1, 'AA': NM.amino_acid}
+                natural_mutation_list[NM.residue.generic_number.label] = {'val':1, 'AA': NM.amino_acid + ' '}
 
     ## PTMs
     ptms = PTMs.objects.filter(
         protein__in=proteins).prefetch_related('residue__generic_number')
 
     ptm_list = {}
-    max_snp_pos = 1
     for ptm in ptms:
         if ptm.residue.generic_number:
             if ptm.residue.generic_number.label in ptm_list:
@@ -216,8 +215,8 @@ def detail(request, slug):
     # jsondata_cancer_mutations['color'] = linear_gradient(start_hex="#d8baff", finish_hex="#422d65", n=max_cancer_pos)
     # jsondata_disease_mutations['color'] = linear_gradient(start_hex="#ffa1b1", finish_hex="#6e000b", n=max_disease_pos)
 
-    HelixBox = DrawHelixBox(residues,'Class A','family_diagram_preloaded_data')
-    SnakePlot = DrawSnakePlot(residues,'Class A','family_diagram_preloaded_data') ## was str(list_proteins)
+    HelixBox = DrawHelixBox(residues, 'Class A', 'family_diagram_preloaded_data')
+    SnakePlot = DrawSnakePlot(residues, 'Class A', 'family_diagram_preloaded_data')
 
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens

@@ -1,9 +1,10 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views import generic
 from django.http import HttpResponse
 from django.db.models import Q
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
+from django.urls import reverse
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair
 from residue.models import Residue
@@ -29,7 +30,14 @@ class BrowseSelection(AbsBrowseSelection):
 def detail(request, slug):
     # get protein
     slug = slug.lower()
-    p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
+    if Protein.objects.filter(entry_name=slug).exists():
+        p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
+    else:
+        p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
+
+    if p.family.slug.startswith('100') or p.family.slug.startswith('200'):
+        # If this protein is a gprotein, redirect to that page.
+        return redirect(reverse('signprotdetail', kwargs={'slug': slug}))
 
     # get family list
     pf = p.family
@@ -111,7 +119,7 @@ def SelectionAutocomplete(request):
         type_of_selection = request.GET.get('type_of_selection')
         selection_only_receptors = request.GET.get('selection_only_receptors')
         referer = request.META.get('HTTP_REFERER')
-        
+
         if 'gproteinselection' in str(referer) or 'signprot' in str(referer) and not 'ginterface' in str(referer):
             exclusion_slug = '00'
         else:
@@ -141,7 +149,7 @@ def SelectionAutocomplete(request):
                 species__in=(species_list),
                 source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
         else:
-            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q), 
+            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
                 species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
         for p in ps:
             p_json = {}

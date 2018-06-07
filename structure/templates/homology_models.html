@@ -25,7 +25,7 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'iTlfrt',
-                'order': [[4, "asc"],[1, "asc"]], // order by date
+                'order': [[4, "asc"],[1, "asc"]], // order by class then receptor name
 
                 'tableTools': {
                     "sRowSelect": "single",
@@ -75,20 +75,13 @@
                 table.draw();
             });
             $('#download_btn').click(function () {
-                ClearSelection('targets');
-                var checked_data = table.rows('.alt_selected').data();
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][9];
-                    var state = checked_data[i][3];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model_'.concat(state),  div.innerText.replace(/\s+/g, '') );
-                    } else {
-                        AddToSelection('targets', 'structure_model_'.concat(state), div.textContent.replace(/\s+/g, ''));
-                    }
-                }
+                var selected_ids = [];
+                 $.each($(".alt_selected"), function(){            
+                    hom_id = $(this).closest('tr').attr('model_id');
+                    selected_ids.push(hom_id);
+                });
                 
-                window.location.href = '/structure/hommod_download';
+                window.location.href = '/structure/hommod_download?ids='+selected_ids.join(",");
 
             });
             $('#align_btn').click(function () {
@@ -104,6 +97,7 @@
                         AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
                     }
                 }
+                
                 window.location.href = '/structure/selection_convert_model';
             });
             $('.select-all').change(function () {
@@ -126,17 +120,19 @@
 
                 }
                 var checked_data = table.rows('.alt_selected').data();
+                var selected_ids = [];
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][9];
                     var state2 = checked_data[i][3];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model_'.concat(state2), div.innerText.replace(/\s+/g, ''));
+                        selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
                     } else {
-                        AddToSelection('targets', 'structure_model_'.concat(state2), div.textContent.replace(/\s+/g, ''));
+                        selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
                     }
 
                 }
+                AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
                 window.location.href = '/structure/superposition_workflow_index';
             });
 
@@ -171,6 +167,12 @@
                 <li>
                     <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-09-27.zip"> 2017-09-27 models </a>
                 </li>
+                <li>
+                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-01-18.zip"> 2018-01-18 models </a>
+                </li>
+                <li>
+                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-04-06.zip"> 2018-04-06 models </a>
+                </li>
             </ul>
     </div>
     
@@ -179,7 +181,7 @@
     <div style="font-size: 10px;">For information on state identification and Δ distance (Å) please refer to the <a href="http://docs.gpcrdb.org/structures.html#structure-state">documentation</a></div>
 
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
-        <table class="display" id="structure_model">
+        <table class="display" id="structure_model" style="width: 100%;">
             <thead>
                 <tr>
                     <th><input class="select-all" type="checkbox"> Select all</th>
@@ -210,7 +212,7 @@
             </thead>
             <tbody>
             {% for model in structure_model %}
-                <tr>
+                <tr model_id='{{model.pk}}'>
                     <td><input class="alt" type="checkbox"></td>
                     <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
                     <td>{{ model.protein.family.parent.name|safe }}</td>

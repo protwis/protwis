@@ -56,20 +56,20 @@ INSTALLED_APPS = (
     'contactnetwork',
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
 ROOT_URLCONF = 'protwis.urls'
 
-WSGI_APPLICATION = 'protwis.wsgi.application'
+# WSGI_APPLICATION = 'protwis.wsgi.application'
 
 
 # Internationalization
@@ -97,6 +97,7 @@ MEDIA_ROOT = '/protwis/media/protwis'
 # Serializer
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_COOKIE_AGE = 86400 #Expire cookies and session after 24 hrs
 
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH' : False,
@@ -191,7 +192,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': '/tmp/django_cache',
         'OPTIONS': {
-            'MAX_ENTRIES': 100000
+            'MAX_ENTRIES': 10000000
         }
     },
     'alignments': {
