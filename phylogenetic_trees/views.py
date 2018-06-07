@@ -159,7 +159,7 @@ class Treeclass:
         infile = open('/tmp/%s/infile' %dirname,'w')
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
         if len(a.proteins) < 3:
-            return 'More_prots',None, None, None, None,None,None,None
+            return 'More_prots',None, None, None, None,None,None,None,None
         ####Get additional protein information
         accesions = {}
         for n in a.proteins:
@@ -205,7 +205,7 @@ class Treeclass:
                 os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
             except:
                 kill_phylo() #FIXME, needs better way of handling this!
-                return "too big","too big","too big","too big","too big","too big","too big","too big"
+                return "too big","too big","too big","too big","too big","too big","too big","too big","too big"
 
         ### Write phylip input options
         inp = open('/tmp/%s/temp' %dirname,'w')
@@ -219,7 +219,7 @@ class Treeclass:
             subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
         except:
             kill_phylo() #FIXME, needs better way of handling this!
-            return "too big","too big","too big","too big","too big","too big","too big","too big"
+            return "too big","too big","too big","too big","too big","too big","too big","too big","too big"
         os.rename('/tmp/%s/infile' %dirname, '/tmp/%s/dupa' %dirname)
         os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
         inp = open('/tmp/%s/temp' %dirname,'w')
