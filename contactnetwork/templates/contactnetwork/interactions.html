@@ -38,7 +38,8 @@
                                 <input type="hidden" class="interactions-input" value="[]" />
                                 <input class="crystal-pdb" type="hidden" value="[]" />
                                 <h5><span class="crystal-count">No crystal selected.</span></h5>
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button>
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br>
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB (new)</button>
                             </div>
                         </div>
                     </div>
@@ -322,6 +323,31 @@
                         <p><strong>Legend:</strong></p>
                         <p>(A): Active, (I): Inactive, (R): Representative, (N): Non-representative </p>
                         <div class="treeview"></div>
+                        </div>
+                      <div class="clearfix"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
+
+    <!-- BEGIN SINGLE CRYSTAL PDB CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-pdb-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of crystals from table</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <p><strong>Legend:</strong></p>
+                        <p>(A): Active, (I): Inactive, (R): Representative, (N): Non-representative </p>
+                        <div class="tableview"></div>
                         </div>
                       <div class="clearfix"></div>
                </div>
@@ -2155,8 +2181,19 @@
         }
 
 
+        function initializePdbChooserTable(treeSelector) {
+          $.get('pdbtabledata', function ( data ) {
+            console.log(data);
+            console.log(treeSelector + ' .tableview');
+
+            $(treeSelector + ' .tableview').html(data);
+          });
+        }
+
+
         function initalizeSingleCrystalView() {
             initializePdbChooser('#single-crystal-pdb-modal .treeview', '#single-crystal-tab .crystal-count', '#single-crystal-tab .crystal-pdb', false);
+            initializePdbChooserTable("#single-crystal-pdb-modal-table");
             initializeSegmentButtons('#single-crystal-tab');
             initializeGoButton('#single-crystal-tab', renderSingleCrystalHeatmap);
             initializeFullscreenButton('#single-crystal-tab');
@@ -2192,6 +2229,11 @@
     </script>
 
     <style type="text/css">
+
+        .modal-wide {
+          width: 1200px;
+        }
+
         #single-crystal-pdbs {
             height: 400px;
             overflow: scroll;
