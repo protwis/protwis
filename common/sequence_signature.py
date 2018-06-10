@@ -622,7 +622,7 @@ class SignatureMatch():
                             self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
             segment_consensus = np.array(segment_consensus).T
 
-            if segment_consensus != []:
+            if segment_consensus.shape != (0,):
                 matrix_consensus[segment] = segment_consensus
         self.signature_matrix_filtered = matrix_consensus
         self.relevant_segments = OrderedDict([
