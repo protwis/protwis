@@ -608,134 +608,142 @@ function draw_quantitative_data(select_data, data_type){
 }
 
 function draw_categorical_data(select_data, data_type) {
-    tree.align_tips(true);
 
+    tree.align_tips(true);
     var maximum_length = 0;
     var selectivity_families = {}; // create object of selectivity to bind to element
 
-        tree.get_nodes().forEach(function (node) {
-            if (d3.layout.phylotree.is_leafnode(node)) {
-                select_data.forEach(function (receptor) {
-                    if(node.name === receptor.name){
-                        selectivity_families[node.name] = [""].map(function () {
-                            return receptor.selectivity
-                        });
-                    }
-                });
-                maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
-            }
-        });
-
-
-        var set_of_families = [];  // create a set of familisies to get the index to look up in the color scale
-        select_data.forEach(function (receptor) {
-            if (!set_of_families.includes(receptor.selectivity)) // array of unique values
-                set_of_families.push(receptor.selectivity);
-        });
-
-        var selectivity_colors = d3.scale.ordinal()
-            .domain([0, set_of_families.length])
-            .range(["#383F51", "#5DA9E9", "#DDDBF1", "#F93943", "#A37871", "#8A4F7D"]);
-
-        var selectivity_tooltip = d3.select("body").append("div")
-            .attr("class", "class_tooltip")
-            .style("opacity", 0);
-
-        tree.style_nodes(function (element, node_data) {
-
-            if (node_data.name in receptor_classes) {   // see if the node has attributes
-                var node_label = element.select("text");
-                var font_size  = parseFloat(node_label.style("font-size"));
-
-                var annotation = element.selectAll("rect").data(receptor_classes[node_data.name]);
-
-                annotation.enter().append("rect").attr("class", "receptor_class_obj");
-                annotation
-                    .attr ("width", font_size)
-                    .attr ("height", font_size)
-                    .attr ("y", -font_size/2)
-                    .style("fill", function (d) {
-                        return selectivity_colors(get_class_index(d, set_of_families))
-                    })
-
-                    .on("mouseover", function(d) { // add tooltip
-                        selectivity_tooltip.transition()
-                            .style("opacity", .9);
-                        selectivity_tooltip.html(function(){
-                            return ("Class: " + d)
-                        })
-                            .style("left", (d3.event.pageX) + "px")
-                            .style("top", (d3.event.pageY - 28) + "px");
-                    })
-
-                    .on("mouseout", function() {
-                        selectivity_tooltip.transition().duration(100)
-                            .style("opacity", 0);
+    tree.get_nodes().forEach(function (node) {
+        if (d3.layout.phylotree.is_leafnode(node)) {
+            select_data.forEach(function (receptor) {
+                if(node.name === receptor.name){
+                    selectivity_families[node.name] = [""].map(function () {
+                        return receptor.selectivity
                     });
-
-                var move_past_label = maximum_length * 0.55 * font_size;
-
-                if (tree.radial ()) {
-                    var shifter = tree.shift_tip(node_data)[0];
-                    annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
-                        .attr ("x", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
-                } else {
-                    var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
-                    annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
                 }
+            });
+            maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+        }
+    });
 
+
+    var set_of_families = [];  // create a set of families to get the index to look up in the color scale
+    select_data.forEach(function (receptor) {
+        receptor.selectivity.forEach(function (family) {
+            if (!set_of_families.includes(family)) // array of unique values
+                set_of_families.push(family);
+        });
+
+    });
+
+    var selectivity_colors = d3.scale.ordinal()
+        .domain([0, set_of_families.length])
+        .range(["#383F51", "#5DA9E9", "#DDDBF1", "#F93943", "#A37871", "#8A4F7D"]);
+
+    var selectivity_tooltip = d3.select("body").append("div")
+        .attr("class", "selectivity_tooltip")
+        .style("opacity", 0);
+
+    tree.style_nodes(function (element, node_data) {
+
+        if (node_data.name in selectivity_families) {   // see if the node has attributes
+            var node_label = element.select("text");
+            var font_size  = parseFloat(node_label.style("font-size"));
+
+            var annotation = element.selectAll("rect").data(selectivity_families[node_data.name]);
+
+            annotation.enter()
+                .append("rect")
+                .attr("class", "receptor_selectivity_obj");
+            annotation
+                .attr ("width", font_size)
+                .attr ("height", font_size)
+                .attr ("y", -font_size/2)
+                .style("fill", function (d, i) {
+                    return selectivity_colors(get_class_index(d[i], set_of_families))
+
+                })
+
+                .on("mouseover", function(d) { // add tooltip
+                    selectivity_tooltip.transition()
+                        .style("opacity", .9);
+                    selectivity_tooltip.html(function(){
+                        return (d)
+                    })
+                        .style("left", (d3.event.pageX) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+
+                .on("mouseout", function() {
+                    selectivity_tooltip.transition().duration(100)
+                        .style("opacity", 0);
+                });
+
+            var move_past_label = maximum_length * 0.55 * font_size;
+
+            if (tree.radial ()) {
+                var shifter = tree.shift_tip(node_data)[0];
+
+                annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
+                    .attr ("x", function (d, i) {
+                        return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * i+1 - move_past_label;})
+            } else {
+                var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
+                annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
             }
 
+        }
+
+    });
+    var svg_legend_wd_receptor_family = 200;
+    var svg_legend_hg_receptor_family = 100;
+
+    var svg_legend_receptor_family = d3.select(".category_legend").append("svg")
+        .attr("width", svg_legend_wd_receptor_family).attr("height", svg_legend_hg_receptor_family)
+        .attr("id", "selectivity_legend_box");
+
+    // add specific title to legend
+    svg_legend_receptor_family.append("text")
+        .attr("x", 0)
+        .attr("y", 7)
+        .attr("dy", ".35em")
+        .text(data_type.print_name)
+        .attr("fill", "black")
+        .style("font-size", 14)
+        .style("font-weight", "bold");
+
+
+    //// Vertical Legend ////
+    var selectivity_legend = svg_legend_receptor_family.selectAll('.category_legend')
+        .data(set_of_families)
+        .enter().append('g')
+        .attr("class", "selectivity_legend_group")
+        .attr("transform", function (d, i) {
+            return "translate(0," + i * 20 + ")"
         });
-        var svg_legend_wd_receptor_familiy = 200;
-        var svg_legend_hg_receptor_familiy = 100;
-
-        var svg_legend_receptor_family = d3.select(".category_legend").append("svg")
-            .attr("width", svg_legend_wd_receptor_familiy).attr("height", svg_legend_hg_receptor_familiy)
-            .attr("id", "selectivity_legend_box");
-
-        // add specific title to legend
-        svg_legend_receptor_family.append("text")
-            .attr("x", 0)
-            .attr("y", 7)
-            .attr("dy", ".35em")
-            .text(data_type.print_name)
-            .attr("fill", "black")
-            .style("font-size", 14)
-            .style("font-weight", "bold");
 
 
-        //// Vertical Legend ////
-        var selectivity_legend = svg_legend_receptor_family.selectAll('.category_legend')
-            .data(set_of_families)
-            .enter().append('g')
-            .attr("class", "selectivity_legend_group")
-            .attr("transform", function (d, i) {
-                return "translate(0," + i * 20 + ")"
-            });
+    selectivity_legend.append('rect')
+        .attr("x", 0)
+        .attr("y", 20)
+        .attr("width", 10)
+        .attr("height", 10)
+        .style("fill", function (d) {
+            return selectivity_colors(get_class_index(d, set_of_families))
+        });
 
+    selectivity_legend.append('text')
+        .attr("x", 20)
+        .attr("y", 30)
+        .text(function (d) {
+            return "Class " + d
+        })
+        .attr("class", "textselected")
+        .style("text-anchor", "start")
+        .style("font-size", 13);
 
-        selectivity_legend.append('rect')
-            .attr("x", 0)
-            .attr("y", 20)
-            .attr("width", 10)
-            .attr("height", 10)
-            .style("fill", function (d) {
-                return selectivity_colors(get_class_index(d, set_of_families))
-            });
-
-        selectivity_legend.append('text')
-            .attr("x", 20)
-            .attr("y", 30)
-            .text(function (d) {
-                return "Class " + d
-            })
-            .attr("class", "textselected")
-            .style("text-anchor", "start")
-            .style("font-size", 13);
-    return true
+    tree.layout();
 }
-
 //calculate the centroid using the bbox
 function getMyCentroid(el_r) {
     bbox = el_r.getBBox();
