@@ -626,19 +626,18 @@ function draw_categorical_data(select_data, data_type) {
             }
         });
 
-        console.log(selectivity_families);
 
-        var set_of_classes = [];  // create a set of classes to get the index to look up in the color scale
+        var set_of_families = [];  // create a set of familisies to get the index to look up in the color scale
         select_data.forEach(function (receptor) {
-            if (!set_of_classes.includes(receptor.GPCR_class)) // array of unique values
-                set_of_classes.push(receptor.GPCR_class);
+            if (!set_of_families.includes(receptor.selectivity)) // array of unique values
+                set_of_families.push(receptor.selectivity);
         });
 
-        var class_colors = d3.scale.ordinal()
-            .domain([0, set_of_classes.length])
-            .range(["#6B5B95", "#92B558", "#E94B3C", "#6F9FD8", "#00A591", "#6C4F3D"]);
+        var selectivity_colors = d3.scale.ordinal()
+            .domain([0, set_of_families.length])
+            .range(["#383F51", "#5DA9E9", "#DDDBF1", "#F93943", "#A37871", "#8A4F7D"]);
 
-        var class_tooltip = d3.select("body").append("div")
+        var selectivity_tooltip = d3.select("body").append("div")
             .attr("class", "class_tooltip")
             .style("opacity", 0);
 
@@ -656,13 +655,13 @@ function draw_categorical_data(select_data, data_type) {
                     .attr ("height", font_size)
                     .attr ("y", -font_size/2)
                     .style("fill", function (d) {
-                        return class_colors(get_class_index(d, set_of_classes))
+                        return selectivity_colors(get_class_index(d, set_of_families))
                     })
 
                     .on("mouseover", function(d) { // add tooltip
-                        class_tooltip.transition()
+                        selectivity_tooltip.transition()
                             .style("opacity", .9);
-                        class_tooltip.html(function(){
+                        selectivity_tooltip.html(function(){
                             return ("Class: " + d)
                         })
                             .style("left", (d3.event.pageX) + "px")
@@ -670,7 +669,7 @@ function draw_categorical_data(select_data, data_type) {
                     })
 
                     .on("mouseout", function() {
-                        class_tooltip.transition().duration(100)
+                        selectivity_tooltip.transition().duration(100)
                             .style("opacity", 0);
                     });
 
@@ -688,15 +687,15 @@ function draw_categorical_data(select_data, data_type) {
             }
 
         });
-        var svg_legend_wd_receptor_class = 200;
-        var svg_legend_hg_receptor_class = 100;
+        var svg_legend_wd_receptor_familiy = 200;
+        var svg_legend_hg_receptor_familiy = 100;
 
-        var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
-            .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
-            .attr("id", "class_legend_box");
+        var svg_legend_receptor_family = d3.select(".category_legend").append("svg")
+            .attr("width", svg_legend_wd_receptor_familiy).attr("height", svg_legend_hg_receptor_familiy)
+            .attr("id", "selectivity_legend_box");
 
         // add specific title to legend
-        svg_legend_receptor_class.append("text")
+        svg_legend_receptor_family.append("text")
             .attr("x", 0)
             .attr("y", 7)
             .attr("dy", ".35em")
@@ -707,25 +706,25 @@ function draw_categorical_data(select_data, data_type) {
 
 
         //// Vertical Legend ////
-        var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
-            .data(set_of_classes)
+        var selectivity_legend = svg_legend_receptor_family.selectAll('.category_legend')
+            .data(set_of_families)
             .enter().append('g')
-            .attr("class", "class_legend_group")
+            .attr("class", "selectivity_legend_group")
             .attr("transform", function (d, i) {
                 return "translate(0," + i * 20 + ")"
             });
 
 
-        class_legend.append('rect')
+        selectivity_legend.append('rect')
             .attr("x", 0)
             .attr("y", 20)
             .attr("width", 10)
             .attr("height", 10)
             .style("fill", function (d) {
-                return class_colors(get_class_index(d, set_of_classes))
+                return selectivity_colors(get_class_index(d, set_of_families))
             });
 
-        class_legend.append('text')
+        selectivity_legend.append('text')
             .attr("x", 20)
             .attr("y", 30)
             .text(function (d) {
@@ -734,8 +733,6 @@ function draw_categorical_data(select_data, data_type) {
             .attr("class", "textselected")
             .style("text-anchor", "start")
             .style("font-size", 13);
-
-
     return true
 }
 
