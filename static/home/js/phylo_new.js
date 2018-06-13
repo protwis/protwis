@@ -61,7 +61,7 @@ function init() {
 
     var svg = d3.select(container_id)
         .append("svg")
-        .attr("id", "my_svg")
+        .attr("id", "my_svg");
 
     default_tree_settings();
     tree(phylip_data).svg(svg).layout();
@@ -110,14 +110,14 @@ function init() {
         sort_nodes(false);
     });
 
-    d3.select("#show_selectivity").on("click", function (e) {
-        $(this).toggleClass('active');
-        if($(this).hasClass('active')){
-            add_selectivity(receptor_data);
-        } else {
-            d3.selectAll(".selectivity_circle").remove();
-        }
-    });
+    // d3.select("#show_selectivity").on("click", function (e) {
+    //     $(this).toggleClass('active');
+    //     if($(this).hasClass('active')){
+    //         add_selectivity(receptor_data);
+    //     } else {
+    //         d3.selectAll(".selectivity_circle").remove();
+    //     }
+    // });
 
     selected_case = [];
     d3.select("fieldset[name=data_selection]").on("change", function() {
@@ -140,6 +140,8 @@ function init() {
                     if (option.value === "class"){
                         if (option.name === "GPCR_class"){
                             draw_class_data(receptor_data, data_type[0]);
+                            update_controls();
+
                         } else if (option.name === "ligand_type"){
                             draw_class_data(receptor_data, data_type[3]);
                         }
@@ -153,11 +155,13 @@ function init() {
 
             } else {
                 d3.selectAll(".receptor_class_obj").remove();
-                d3.selectAll(".class_legend_obj").remove();
-                d3.selectAll(".class_legend_ligand").remove();
+                d3.selectAll(".class_legend_box").remove();
+                d3.selectAll(".class_legend_group").remove();
+                d3.selectAll(".ligand_legend_group").remove();
                 d3.selectAll(".ligand_class_obj").remove();
                 d3.selectAll(".class_tooltip").remove();
                 d3.selectAll(".ligand_tooltip").remove();
+                d3.selectAll(".quantity_legend").remove();
 
 
             }
@@ -166,6 +170,7 @@ function init() {
 
     });
 
+    // TODO modify the opening of the receptor page
     // add a custom menu for terminal nodes - to open receptor page
     function add_url_to_menu_title() { //add title to menu
         return "Open receptor page";
@@ -220,7 +225,6 @@ function get_class_index(class_name, class_array) {
 }
 
 function draw_class_data(select_data, data_type){
-    console.log(select_data);
     // work with a default mode and add colors and shapes in the data_type.json
     tree.align_tips(true);
 
@@ -302,11 +306,12 @@ function draw_class_data(select_data, data_type){
             }
 
         });
-        var svg_legend_wd_receptor_class = 150;
+        var svg_legend_wd_receptor_class = 200;
         var svg_legend_hg_receptor_class = 100;
 
         var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
-            .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class);
+            .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
+            .attr("id", "class_legend_box");
 
         // add specific title to legend
         svg_legend_receptor_class.append("text")
@@ -323,7 +328,7 @@ function draw_class_data(select_data, data_type){
         var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
             .data(set_of_classes)
             .enter().append('g')
-            .attr("class", "class_legend_obj")
+            .attr("class", "class_legend_group")
             .attr("transform", function (d, i) {
                 return "translate(0," + i * 20 + ")"
             });
@@ -426,11 +431,11 @@ function draw_class_data(select_data, data_type){
 
         });
 
-        var svg_legend_wd = 150;
+        var svg_legend_wd = 200;
         var svg_legend_hg = 150;
 
         var svg_legend_ligand_class = d3.select(".class_legend").append("svg")
-            .attr("width", svg_legend_wd).attr("height", svg_legend_hg);
+            .attr("width", svg_legend_wd).attr("height", svg_legend_hg).attr("id", "class_legend_box");
 
         // add specific title to legend
         svg_legend_ligand_class.append("text")
@@ -447,7 +452,7 @@ function draw_class_data(select_data, data_type){
         var ligand_legend = svg_legend_ligand_class.selectAll('.class_legend')
             .data(set_of_ligands)
             .enter().append('g')
-            .attr("class", "class_legend_ligand")
+            .attr("class", "ligand_legend_group")
             .attr("transform", function (d, i) {
                 return "translate(0," + i * 20 + ")"
             });
@@ -475,12 +480,12 @@ function draw_class_data(select_data, data_type){
 
     tree.layout();
 
-
 }
 
 function draw_quantitative_data(select_data, data_type){
 
     tree.align_tips(true);
+
 
     var maximum_length = 0;
 
@@ -530,7 +535,7 @@ function draw_quantitative_data(select_data, data_type){
                     coverage_tooltip.transition()
                         .style("opacity", .9);
                     coverage_tooltip.html(function(){
-                        return ("Coverage: " + d)
+                        return ("Coverage: " + d.toFixed(2))
                     })
                         .style("left", (d3.event.pageX) + "px")
                         .style("top", (d3.event.pageY - 28) + "px");
@@ -601,162 +606,13 @@ function draw_quantitative_data(select_data, data_type){
         .style("font-size", 13);
 
     tree.layout();
-
-    /*var element  = d3.selectAll("g.node");
-    var nodes = tree.get_nodes();
-    var rect_padding = 35;
-    var rect_w = 20;
-    var rect_h = 10;
-    var max_rect_h = 50;
-
-    var coverage_bars = element.append("g").attr("class", "receptor_coverage");
-
-    var coverage_tooltip = d3.select("body").append("div")
-        .attr("class", "coverage_tooltip")
-        .style("opacity", 0);
-
-    if(tree.radial()){
-
-        var yScale_radial = d3.scale.linear() // scale to draw the quantities relative to the max_rect_h
-            .domain([0, 1])
-            .range([0, max_rect_h]);
-
-        var yAxis_radial = d3.svg.axis()
-            .orient('left')
-            .scale(yScale_radial);
-
-        coverage_bars
-            .append("rect")
-            .attr("x", function (d, i) {
-                if (d3.selectAll(".branch-tracer").empty()){ // tips are not aligned
-                    return (tree._label_width())*Math.cos(element[0][i].__data__.angle)
-                } else {
-                    return (tree._label_width()+Math.abs(d3.selectAll(".branch-tracer")[0][i].x2.baseVal.value)+rect_padding)*Math.cos(element[0][i].__data__.angle)
-                }
-            })
-            .attr("y", function (d, i) {
-                if (d3.selectAll(".branch-tracer").empty()){ // tips are not aligned
-                    return (tree._label_width()+30)*Math.sin(element[0][i].__data__.angle)
-                } else {
-                    return (tree._label_width()+30+Math.abs(d3.selectAll(".branch-tracer")[0][i].x2.baseVal.value)+rect_padding)*Math.sin(element[0][i].__data__.angle)
-                }
-            })
-            .attr("id", function(d, i, j) {
-                return "rect" + j;
-            })
-            .attr("width", rect_w)
-            .attr("height", function (d, i) {
-                if(select_data[i].name === d.name){
-                    return yScale_radial(select_data[i].coverage)
-                } else { // in the case where the value is missing
-                    return "NC"
-                }
-            })
-            .attr("fill", "#DBB1CD")
-            .attr("stroke", "black")
-            .attr("stroke-width", 0.5)
-            .attr("transform", "translate(" + 0 + "," + 0 + ")");
-
-        coverage_bars.append("g")
-            .attr("class", "y_axis")
-            .attr("transform", function (d, i) {
-                if (d3.selectAll(".branch-tracer").empty()){ // tips are not aligned
-                    x_origin = (tree._label_width())* Math.cos(element[0][i].__data__.angle)
-                } else {
-                    x_origin = (tree._label_width() + Math.abs(d3.selectAll(".branch-tracer")[0][i].x2.baseVal.value)+rect_padding)*Math.cos(element[0][i].__data__.angle)
-                }
-                if (d3.selectAll(".branch-tracer").empty()){ // tips are not aligned
-                    y_origin = (tree._label_width()+max_rect_h)*Math.sin(element[0][i].__data__.angle)
-                } else {
-                    y_origin = (tree._label_width()+Math.abs(d3.selectAll(".branch-tracer")[0][i].x2.baseVal.value)+rect_padding)*Math.sin(element[0][i].__data__.angle)
-                }
-                return "translate(" + x_origin + "," + y_origin + ")"
-            })
-            .call(yAxis_radial.ticks(3));
-
-    } else if(!tree.radial()) { // if tree is linear
-
-        var yScale_linear = d3.scale.linear() // scale to draw the quantities relative to the max_rect_h
-            .domain([0, 1])
-            .range([0, max_rect_h]);
-
-        var yAxis_linear = d3.svg.axis()
-            .orient('bottom')
-            .scale(yScale_linear);
-
-        coverage_bars
-            .append("rect")
-            .attr("x", function (d, i) {
-                if (d3.selectAll(".branch-tracer").empty()){ // tips are not aligned
-                    return (tree._label_width())* Math.cos(element[0][i].__data__.angle)
-                } else {
-                    return (tree._label_width()+Math.abs(d3.selectAll(".branch-tracer")[0][i].x2.baseVal.value)+rect_padding)*Math.cos(element[0][i].__data__.angle)
-                }
-            })
-            .attr("y", function (d, i) {
-                if (d3.selectAll(".branch-tracer").empty()){ // tips are not aligned
-                    return (tree._label_width())*Math.sin(element[0][i].__data__.angle)
-                } else {
-                    return (tree._label_width()+Math.abs(d3.selectAll(".branch-tracer")[0][i].x2.baseVal.value)+rect_padding)*Math.sin(element[0][i].__data__.angle)
-                }
-            })
-            .attr("id", function(d, i, j) {
-                return "rect" + j;
-            })
-            .attr("width", function (d, i) {
-                if(select_data[i].name === d.name){
-                    return yScale_linear(select_data[i].coverage)
-                } else { // in the case where the value is missing
-                    return "NC"
-                }
-            })
-            .attr("height", rect_h)
-            .attr("fill", "#DBB1CD")
-            .attr("stroke", "black")
-            .attr("stroke-width", 0.5)
-            .attr("transform", "translate(" + 0 + "," + (-rect_h) + ")");
-
-        coverage_bars.append("g")
-            .attr("class", "y_axis")
-            .attr("transform", function (d, i) {
-                if (d3.selectAll(".branch-tracer").empty()){ // tips are not aligned
-                    x_origin = (tree._label_width())* Math.cos(element[0][i].__data__.angle)
-                } else {
-                    x_origin = (tree._label_width()+Math.abs(d3.selectAll(".branch-tracer")[0][i].x2.baseVal.value)+rect_padding)*Math.cos(element[0][i].__data__.angle)
-                }
-                if (d3.selectAll(".branch-tracer").empty()){ // tips are not aligned
-                    y_origin = (tree._label_width()+max_rect_h)*Math.sin(element[0][i].__data__.angle)
-                } else {
-                    y_origin = (tree._label_width()+Math.abs(d3.selectAll(".branch-tracer")[0][i].x2.baseVal.value)+rect_padding)*Math.sin(element[0][i].__data__.angle)
-                }
-                return "translate(" + x_origin + "," + y_origin + ")"
-            })
-            .call(yAxis_linear.ticks(3));
-    }
-
-    // ADD QUANTITY TOOLTIP
-
-    coverage_bars.on("mouseover", function(d, i) { // add tooltip
-        coverage_tooltip.transition()
-            .style("opacity", .9);
-        coverage_tooltip.html(function(){
-            if(select_data[i].name === d.name){
-                return ("Quantity: " + select_data[i].coverage)
-            } else {
-                return "0"
-            }
-        })
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-    })
-        .on("mouseout", function(d) {
-            coverage_tooltip.transition().duration(100)
-                .style("opacity", 0);
-        });
-*/
 }
 
 function draw_categorical_data(select_data, data_type) {
+
+
+
+
     return true
 }
 
@@ -791,28 +647,28 @@ function get_centroid(all_nodes, element_selection) {
 
 }
 
-function set_class_arc_radius(nodes_a, element_a, rect_diag, rect_padding) {
-/**
- * This function computes the radius of the class arc
- */
-    var max_r = [];
-    var max_line = [];
-
-    nodes_a.forEach(function (node) {
-        max_r.push(node.radius);
-    });
-
-    if(element_a.selectAll(".branch-tracer").empty()){ // if there is no line - tips not aligned
-        return (Math.max(...max_r)+2*rect_diag+rect_padding)
-    } else { // if tips are aligned
-        //console.log("ha linee")
-        element_a.selectAll("line").forEach(function (l) {
-            max_line.push(Math.abs(l[0].attributes[1].nodeValue));
-        });
-        return (tree._label_width() + Math.max(...max_line)+60)
-    }
-
-}
+// function set_class_arc_radius(nodes_a, element_a, rect_diag, rect_padding) {
+// /**
+//  * This function computes the radius of the class arc
+//  */
+//     var max_r = [];
+//     var max_line = [];
+//
+//     nodes_a.forEach(function (node) {
+//         max_r.push(node.radius);
+//     });
+//
+//     if(element_a.selectAll(".branch-tracer").empty()){ // if there is no line - tips not aligned
+//         return (Math.max(...max_r)+2*rect_diag+rect_padding)
+//     } else { // if tips are aligned
+//         //console.log("ha linee")
+//         element_a.selectAll("line").forEach(function (l) {
+//             max_line.push(Math.abs(l[0].attributes[1].nodeValue));
+//         });
+//         return (tree._label_width() + Math.max(...max_line)+60)
+//     }
+//
+// }
 
 function sort_nodes (asc) {
     tree.traverse_and_compute (function (n) {
@@ -854,7 +710,7 @@ function default_tree_settings () {
 }
 
 function update_controls () {
-    $("[data-mode='" + (tree.radial()      ? 'radial' : 'linear') + "']").click();
+    //$("[data-mode='" + (tree.radial()      ? 'radial' : 'linear') + "']").click();
     $("[data-align='"  + (tree.align_tips () ? 'right' : 'left') + "']").click();
 }
 

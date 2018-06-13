@@ -190,7 +190,7 @@ div.ligand_tooltip{
 div.coverage_tooltip{
     position: absolute;
     text-align: center;
-    width: 90px;
+    width: 100px;
     height: 20px;
     padding: 2px;
     font: 12px sans-serif;
@@ -206,22 +206,35 @@ div.coverage_tooltip{
     stroke-width: 1px;
 }
 
-.class_legend{
+.class_legend_box{
     margin: 10px 10px 10px 10px;
     top: 10%;
     padding: 7px 10px 10px 10px;
-    border: 2px solid darkgrey;
     height: 70%;
     float: left;
     fill: black;
 }
 
-.class_legend_ligand{
+.ligand_legend_group{
     margin: 10px 10px 10px 10px;
     top: 10%;
     padding: 7px 10px 10px 10px;
-    border: 2px solid darkgrey;
     height: 70%;
     float: left;
     fill: black;
+}
+
+.class_legend_group{
+    margin: 10px 10px 10px 10px;
+    top: 10%;
+    padding: 7px 10px 10px 10px;
+    height: 70%;
+    float: left;
+    fill: black;
+}
+
+#class_legend_box{
+    margin: 10px 10px 10px 10px;
+    padding: 7px 10px 10px 10px;
+    border: 2px solid dimgrey;
 }
