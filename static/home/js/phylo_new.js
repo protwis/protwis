@@ -140,7 +140,6 @@ function init() {
                     if (option.value === "class"){
                         if (option.name === "GPCR_class"){
                             draw_class_data(receptor_data, data_type[0]);
-                            update_controls();
 
                         } else if (option.name === "ligand_type"){
                             draw_class_data(receptor_data, data_type[3]);
@@ -609,8 +608,132 @@ function draw_quantitative_data(select_data, data_type){
 }
 
 function draw_categorical_data(select_data, data_type) {
+    tree.align_tips(true);
+
+    var maximum_length = 0;
+    var selectivity_families = {}; // create object of selectivity to bind to element
+
+        tree.get_nodes().forEach(function (node) {
+            if (d3.layout.phylotree.is_leafnode(node)) {
+                select_data.forEach(function (receptor) {
+                    if(node.name === receptor.name){
+                        selectivity_families[node.name] = [""].map(function () {
+                            return receptor.selectivity
+                        });
+                    }
+                });
+                maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+            }
+        });
+
+        console.log(selectivity_families);
+
+        var set_of_classes = [];  // create a set of classes to get the index to look up in the color scale
+        select_data.forEach(function (receptor) {
+            if (!set_of_classes.includes(receptor.GPCR_class)) // array of unique values
+                set_of_classes.push(receptor.GPCR_class);
+        });
+
+        var class_colors = d3.scale.ordinal()
+            .domain([0, set_of_classes.length])
+            .range(["#6B5B95", "#92B558", "#E94B3C", "#6F9FD8", "#00A591", "#6C4F3D"]);
+
+        var class_tooltip = d3.select("body").append("div")
+            .attr("class", "class_tooltip")
+            .style("opacity", 0);
+
+        tree.style_nodes(function (element, node_data) {
+
+            if (node_data.name in receptor_classes) {   // see if the node has attributes
+                var node_label = element.select("text");
+                var font_size  = parseFloat(node_label.style("font-size"));
+
+                var annotation = element.selectAll("rect").data(receptor_classes[node_data.name]);
+
+                annotation.enter().append("rect").attr("class", "receptor_class_obj");
+                annotation
+                    .attr ("width", font_size)
+                    .attr ("height", font_size)
+                    .attr ("y", -font_size/2)
+                    .style("fill", function (d) {
+                        return class_colors(get_class_index(d, set_of_classes))
+                    })
+
+                    .on("mouseover", function(d) { // add tooltip
+                        class_tooltip.transition()
+                            .style("opacity", .9);
+                        class_tooltip.html(function(){
+                            return ("Class: " + d)
+                        })
+                            .style("left", (d3.event.pageX) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
+
+                    .on("mouseout", function() {
+                        class_tooltip.transition().duration(100)
+                            .style("opacity", 0);
+                    });
+
+                var move_past_label = maximum_length * 0.55 * font_size;
+
+                if (tree.radial ()) {
+                    var shifter = tree.shift_tip(node_data)[0];
+                    annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
+                        .attr ("x", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
+                } else {
+                    var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
+                    annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
+                }
+
+            }
+
+        });
+        var svg_legend_wd_receptor_class = 200;
+        var svg_legend_hg_receptor_class = 100;
+
+        var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
+            .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
+            .attr("id", "class_legend_box");
+
+        // add specific title to legend
+        svg_legend_receptor_class.append("text")
+            .attr("x", 0)
+            .attr("y", 7)
+            .attr("dy", ".35em")
+            .text(data_type.print_name)
+            .attr("fill", "black")
+            .style("font-size", 14)
+            .style("font-weight", "bold");
 
 
+        //// Vertical Legend ////
+        var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
+            .data(set_of_classes)
+            .enter().append('g')
+            .attr("class", "class_legend_group")
+            .attr("transform", function (d, i) {
+                return "translate(0," + i * 20 + ")"
+            });
+
+
+        class_legend.append('rect')
+            .attr("x", 0)
+            .attr("y", 20)
+            .attr("width", 10)
+            .attr("height", 10)
+            .style("fill", function (d) {
+                return class_colors(get_class_index(d, set_of_classes))
+            });
+
+        class_legend.append('text')
+            .attr("x", 20)
+            .attr("y", 30)
+            .text(function (d) {
+                return "Class " + d
+            })
+            .attr("class", "textselected")
+            .style("text-anchor", "start")
+            .style("font-size", 13);
 
 
     return true
@@ -710,7 +833,7 @@ function default_tree_settings () {
 }
 
 function update_controls () {
-    //$("[data-mode='" + (tree.radial()      ? 'radial' : 'linear') + "']").click();
+    $("[data-mode='" + (tree.radial()      ? 'radial' : 'linear') + "']").click();
     $("[data-align='"  + (tree.align_tips () ? 'right' : 'left') + "']").click();
 }
 
