@@ -103,7 +103,7 @@ function init() {
     d3.select("#sort_descending").on ("click", function (e) {
         sort_nodes(false);
     });
-    
+
 
     selected_case = [];
     d3.select("fieldset[name=data_selection]").on("change", function() {
@@ -120,7 +120,7 @@ function init() {
         if(selected_case.length === 0){
             alert("Please select data");
             remove_annotations();
-        } else {
+        } else if (selected_case.length === 1){
             $(this).toggleClass('active');
             if($(this).hasClass('active') ){
                 // check for type of data selected and draw accordingly - the type of data is specified in the value of the input tag
@@ -129,7 +129,6 @@ function init() {
                         if (option.name === "GPCR_class"){
                             draw_class_data(receptor_data, data_type[0]);
                             //$(this).toggleClass("active");
-
                         } else if (option.name === "ligand_type"){
                             draw_class_data(receptor_data, data_type[3]);
                         }
@@ -146,6 +145,10 @@ function init() {
                 //$(this).toggleClass("inactive");
             }
 
+        } else if (selected_case.length === 2){
+            if(option.value==="class" && option.name === "GPCR_class" && option.name === "ligand_type"){
+
+            }
         }
 
     });
@@ -195,7 +198,6 @@ function remove_annotations() {
     d3.selectAll(".receptor_selectivity_obj").remove();
     d3.selectAll("#categorical_legend_box").remove();
     d3.selectAll(".selectivity_legend_group").remove();
-
 
 
     // if(d3.select("#draw_data").classed('active')){
@@ -478,6 +480,9 @@ function draw_quantitative_data(select_data, data_type){
 
     tree.align_tips(true);
 
+    //console.log(d3.selectAll(".phylotree-align-toggler").select("input[data-align=right]"));
+
+
     var maximum_length = 0;
 
     var receptor_coverage = {}; // create object of coverages to bind to element
@@ -593,26 +598,49 @@ function draw_categorical_data(select_data, data_type) {
     var maximum_length = 0;
     var selectivity_families = {}; // create object of selectivity to bind to element
 
-    tree.get_nodes().forEach(function (node) {
+    // TODO uncomment this code when selectivity is fixed
+    // tree.get_nodes().forEach(function (node) {
+    //     if (d3.layout.phylotree.is_leafnode(node)) {
+    //             select_data.forEach(function (receptor) {
+    //             if(node.name === receptor.name){
+    //                 selectivity_families[node.name] = receptor.selectivity
+    //             }
+    //         });
+    //         maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+    //     }
+    // });
+    // var set_of_families = [];  // create a set of families to get the index to look up in the color scale
+    // select_data.forEach(function (receptor) {
+    //     receptor.selectivity.forEach(function (family) {
+    //         if (!set_of_families.includes(family)) // array of unique values
+    //             set_of_families.push(family);
+    //     });
+    //
+    // });
+
+     tree.get_nodes().forEach(function (node) {
         if (d3.layout.phylotree.is_leafnode(node)) {
                 select_data.forEach(function (receptor) {
                 if(node.name === receptor.name){
-                    selectivity_families[node.name] = receptor.selectivity
+                    var thr = Math.random();
+                    if(0<thr<0.3){
+                        selectivity_families[node.name] = ['Gq/G11 family', 'Gs family']
+                    } else if (0.3<thr<0.6){
+                        selectivity_families[node.name] = ['Gi/Go family', 'G12/G13 family']
+                    } else if (0.6<thr<1){
+                        selectivity_families[node.name] = ['Gi/Go family', 'G12/G13 family', 'Gs family']
+                    } else {
+                        selectivity_families[node.name] = ['Gi/Go family']
+                    }
+
                 }
             });
             maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
         }
     });
 
+    var set_of_families = ['Gi/Go family', 'G12/G13 family', 'Gs family', 'Gq/G11 family'];  // create a set of families to get the index to look up in the color scale
 
-    var set_of_families = [];  // create a set of families to get the index to look up in the color scale
-    select_data.forEach(function (receptor) {
-        receptor.selectivity.forEach(function (family) {
-            if (!set_of_families.includes(family)) // array of unique values
-                set_of_families.push(family);
-        });
-
-    });
 
     var selectivity_colors = d3.scale.ordinal()
         .domain([0, set_of_families.length])
@@ -663,7 +691,8 @@ function draw_categorical_data(select_data, data_type) {
 
                 annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
                     .attr ("x", function (d, i) {
-                        return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * i+1 - move_past_label;})
+                        return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;
+                    })
             } else {
                 var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
                 annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
@@ -675,7 +704,7 @@ function draw_categorical_data(select_data, data_type) {
 
 
     var svg_legend_wd_receptor_family = 200;
-    var svg_legend_hg_receptor_family = 100;
+    var svg_legend_hg_receptor_family = 130;
 
     var svg_legend_receptor_family = d3.select(".category_legend").append("svg")
         .attr("width", svg_legend_wd_receptor_family).attr("height", svg_legend_hg_receptor_family)
