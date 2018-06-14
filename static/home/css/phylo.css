@@ -214,47 +214,35 @@ div.selectivity_tooltip{
 
 }
 
-.y_axis path, line{
-    fill: none;
-    stroke: dimgray;
-    stroke-width: 1px;
-}
-
-.class_legend_box{
-    margin: 10px 10px 10px 10px;
-    top: 10%;
-    padding: 7px 10px 10px 10px;
-    height: 70%;
-    float: left;
-    fill: black;
-}
-
-.ligand_legend_group{
-    margin: 10px 10px 10px 10px;
-    top: 10%;
-    padding: 7px 10px 10px 10px;
-    height: 70%;
-    float: left;
-    fill: black;
-}
-
-.coverage_legend_group{
-    margin: 10px 10px 10px 10px;
-    top: 10%;
-    padding: 7px 10px 10px 10px;
-    height: 70%;
-    float: left;
-    fill: black;
-}
 
 #class_legend_box{
     margin: 10px 10px 10px 10px;
+    top: 10%;
     padding: 7px 10px 10px 10px;
+    float: left;
+    fill: black;
     border: 2px solid dimgrey;
+
 }
 
-#selectivity_legend_box{
+#quantity_legend_box{
     margin: 10px 10px 10px 10px;
+    top: 10%;
     padding: 7px 10px 10px 10px;
+    float: left;
+    fill: black;
     border: 2px solid dimgrey;
+
 }
+
+#categorical_legend_box{
+    margin: 10px 10px 10px 10px;
+    top: 10%;
+    padding: 7px 10px 10px 10px;
+    float: left;
+    fill: black;
+    border: 2px solid dimgrey;
+
+}
+
+
