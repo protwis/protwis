@@ -225,6 +225,7 @@ function get_class_index(class_name, class_array) {
 function draw_class_data(select_data, data_type){
     // work with a default mode and add colors and shapes in the data_type.json
     tree.align_tips(true);
+    update_controls();
 
     var maximum_length = 0;
 
@@ -479,9 +480,7 @@ function draw_class_data(select_data, data_type){
 function draw_quantitative_data(select_data, data_type){
 
     tree.align_tips(true);
-
-    //console.log(d3.selectAll(".phylotree-align-toggler").select("input[data-align=right]"));
-
+    update_controls();
 
     var maximum_length = 0;
 
@@ -595,6 +594,8 @@ function draw_quantitative_data(select_data, data_type){
 function draw_categorical_data(select_data, data_type) {
 
     tree.align_tips(true);
+    update_controls();
+    
     var maximum_length = 0;
     var selectivity_families = {}; // create object of selectivity to bind to element
 
@@ -790,9 +791,10 @@ function default_tree_settings () {
     })
 }
 
-function update_controls () {
-    $("[data-mode='" + (tree.radial()      ? 'radial' : 'linear') + "']").click();
+function update_controls() {
     $("[data-align='"  + (tree.align_tips () ? 'right' : 'left') + "']").click();
+    d3.selectAll(".branch-tracer").style("opacity", 1);
+    //$("[data-mode='" + (tree.radial()      ? 'radial' : 'linear') + "']").click();
 }
 
 
