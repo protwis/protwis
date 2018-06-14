@@ -130,17 +130,17 @@ function init() {
 
     d3.select("#draw_data").on("click", function (e) {
         // TODO add a function that resize the svg and checks for elements inside
+
         if(selected_case.length === 0){
             alert("Please select data")
+
         } else {
-            $(this).toggleClass('active');
-            if($(this).hasClass('active') ){
                 // check for type of data selected and draw accordingly - the type of data is specified in the value of the input tag
                 selected_case.forEach(function (option) {
                     if (option.value === "class"){
                         if (option.name === "GPCR_class"){
                             draw_class_data(receptor_data, data_type[0]);
-
+                            $(this).toggleClass('');
                         } else if (option.name === "ligand_type"){
                             draw_class_data(receptor_data, data_type[3]);
                         }
@@ -152,18 +152,18 @@ function init() {
                     }
                 });
 
-            } else {
-                d3.selectAll(".receptor_class_obj").remove();
-                d3.selectAll(".class_legend_box").remove();
-                d3.selectAll(".class_legend_group").remove();
-                d3.selectAll(".ligand_legend_group").remove();
-                d3.selectAll(".ligand_class_obj").remove();
-                d3.selectAll(".class_tooltip").remove();
-                d3.selectAll(".ligand_tooltip").remove();
-                d3.selectAll(".quantity_legend").remove();
+            // } else {
+            //     d3.selectAll(".receptor_class_obj").remove();
+            //     d3.selectAll("#class_legend_box").remove();
+            //     d3.selectAll(".class_legend_group").remove();
+            //     d3.selectAll(".ligand_legend_group").remove();
+            //     d3.selectAll(".ligand_class_obj").remove();
+            //     d3.selectAll(".class_tooltip").remove();
+            //     d3.selectAll(".ligand_tooltip").remove();
+            //     d3.selectAll(".quantity_legend").remove();
+            //
 
-
-            }
+            //}
 
         }
 
@@ -189,21 +189,31 @@ function init() {
 
 }
 
-function update_band() {
+function remove_annotations() {
     /**
-     * This function updates the bands so that they disappear when the tree changes
+     * This function removes all data
      */
-    /*var svg_element   = document.getElementById("my_svg"); // or other selector like querySelector()
-    var svg_size = svg_element.getBoundingClientRect(); // get the bounding rectangle
-    d3.select("#my_svg").attr("width", svg_size.width + 300);*/
+    // class
     d3.selectAll(".receptor_class_obj").remove();
+    d3.selectAll("#class_legend_box").remove();
+    d3.selectAll(".class_legend_group").remove();
+
     d3.selectAll(".ligand_class_obj").remove();
-    d3.selectAll(".class_tooltip").remove();
+    d3.selectAll(".ligand_legend_group").remove();
+    //    d3.selectAll(".class_tooltip").remove();
+
+    // quantitative
+    d3.selectAll(".receptor_coverage_obj").remove();
+    d3.selectAll(".").remove();
+    d3.selectAll(".").remove();
+
+    // categorical
+    d3.selectAll(".ligand_class_obj").remove();
     d3.selectAll(".ligand_tooltip").remove();
 
-    if(d3.select("#draw_data").classed('active')){
-        d3.select("#draw_data").classed('active', false)
-    }
+    // if(d3.select("#draw_data").classed('active')){
+    //     d3.select("#draw_data").classed('active', false)
+    // }
 }
 
 function get_class_index(class_name, class_array) {
@@ -348,7 +358,6 @@ function draw_class_data(select_data, data_type){
             .text(function (d) {
                 return "Class " + d
             })
-            .attr("class", "textselected")
             .style("text-anchor", "start")
             .style("font-size", 13);
 
@@ -446,7 +455,6 @@ function draw_class_data(select_data, data_type){
             .style("font-size", 14)
             .style("font-weight", "bold");
 
-
         //// Vertical Legend ////
         var ligand_legend = svg_legend_ligand_class.selectAll('.class_legend')
             .data(set_of_ligands)
@@ -471,20 +479,17 @@ function draw_class_data(select_data, data_type){
             .text(function (d) {
                 return d
             })
-            .attr("class", "textselected")
             .style("text-anchor", "start")
             .style("font-size", 13);
 
     }
 
     tree.layout();
-
 }
 
 function draw_quantitative_data(select_data, data_type){
 
     tree.align_tips(true);
-
 
     var maximum_length = 0;
 
@@ -521,7 +526,7 @@ function draw_quantitative_data(select_data, data_type){
 
             var annotation = element.selectAll("rect").data(receptor_coverage[node_data.name]);
 
-            annotation.enter().append("rect").attr("class", "receptor_coverage");
+            annotation.enter().append("rect").attr("class", "receptor_coverage_obj");
             annotation
                 .attr ("height", font_size)
                 .attr("width", function (d) {
@@ -564,7 +569,8 @@ function draw_quantitative_data(select_data, data_type){
     var svg_legend_hg_coverage = 100;
 
     var svg_legend_coverage = d3.select(".quantity_legend").append("svg")
-        .attr("width", svg_legend_wd_coverage).attr("height", svg_legend_hg_coverage);
+        .attr("width", svg_legend_wd_coverage).attr("height", svg_legend_hg_coverage)
+        .attr("id", "quantity_legend_box");
 
     // add specific title to legend
     svg_legend_coverage.append("text")
@@ -581,7 +587,7 @@ function draw_quantitative_data(select_data, data_type){
     var coverage_legend = svg_legend_coverage.selectAll('.quantity_legend')
         .data(receptor_coverage)
         .enter().append('g')
-        .attr("class", "class_legend_coverage")
+        .attr("class", "coverage_legend_group")
         .attr("transform", function (d, i) {
             return "translate(0," + i * 20 + ")"
         });
@@ -600,7 +606,6 @@ function draw_quantitative_data(select_data, data_type){
         .text(function (d) {
             return "coverage " + d
         })
-        .attr("class", "textselected")
         .style("text-anchor", "start")
         .style("font-size", 13);
 
@@ -615,11 +620,9 @@ function draw_categorical_data(select_data, data_type) {
 
     tree.get_nodes().forEach(function (node) {
         if (d3.layout.phylotree.is_leafnode(node)) {
-            select_data.forEach(function (receptor) {
+                select_data.forEach(function (receptor) {
                 if(node.name === receptor.name){
-                    selectivity_families[node.name] = [""].map(function () {
-                        return receptor.selectivity
-                    });
+                    selectivity_families[node.name] = receptor.selectivity
                 }
             });
             maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
@@ -652,15 +655,14 @@ function draw_categorical_data(select_data, data_type) {
 
             var annotation = element.selectAll("rect").data(selectivity_families[node_data.name]);
 
-            annotation.enter()
-                .append("rect")
-                .attr("class", "receptor_selectivity_obj");
+            annotation.enter().append("rect").attr("class", "receptor_selectivity_obj");
+
             annotation
                 .attr ("width", font_size)
                 .attr ("height", font_size)
                 .attr ("y", -font_size/2)
-                .style("fill", function (d, i) {
-                    return selectivity_colors(get_class_index(d[i], set_of_families))
+                .style("fill", function (d, i, j) {
+                    return selectivity_colors(get_class_index(d, set_of_families))
 
                 })
 
@@ -679,7 +681,7 @@ function draw_categorical_data(select_data, data_type) {
                         .style("opacity", 0);
                 });
 
-            var move_past_label = maximum_length * 0.55 * font_size;
+            var move_past_label = maximum_length * 0.65 * font_size;
 
             if (tree.radial ()) {
                 var shifter = tree.shift_tip(node_data)[0];
@@ -695,12 +697,14 @@ function draw_categorical_data(select_data, data_type) {
         }
 
     });
+
+
     var svg_legend_wd_receptor_family = 200;
     var svg_legend_hg_receptor_family = 100;
 
     var svg_legend_receptor_family = d3.select(".category_legend").append("svg")
         .attr("width", svg_legend_wd_receptor_family).attr("height", svg_legend_hg_receptor_family)
-        .attr("id", "selectivity_legend_box");
+        .attr("id", "quantitative_legend_box");
 
     // add specific title to legend
     svg_legend_receptor_family.append("text")
@@ -738,65 +742,12 @@ function draw_categorical_data(select_data, data_type) {
         .text(function (d) {
             return "Class " + d
         })
-        .attr("class", "textselected")
         .style("text-anchor", "start")
         .style("font-size", 13);
 
     tree.layout();
 }
-//calculate the centroid using the bbox
-function getMyCentroid(el_r) {
-    bbox = el_r.getBBox();
-    return [bbox.x + bbox.width/2, bbox.y + bbox.height/2];
-}
 
-function get_centroid(all_nodes, element_selection) {
-
-    var centroid_x_list = [];
-    var centroid_y_list = [];
-
-    if (element_selection.selectAll("line").empty()){
-        d3.selectAll("path")[0].forEach(function (d, i) {
-            centroid_x_list.push(getMyCentroid(d)[0]);
-            centroid_y_list.push(getMyCentroid(d)[1]);
-        });
-
-        var centr_x = centroid_x_list.reduce(function (a, b) {
-            return a + b;
-        }) / centroid_x_list.length;
-
-        var centr_y = centroid_y_list.reduce(function (a, b) {
-            return a + b;
-        }) / centroid_y_list.length;
-        return [centr_x, centr_y]
-    } else { // return the root coordinates
-        return [all_nodes[0].y , all_nodes[0].x]
-    }
-
-}
-
-// function set_class_arc_radius(nodes_a, element_a, rect_diag, rect_padding) {
-// /**
-//  * This function computes the radius of the class arc
-//  */
-//     var max_r = [];
-//     var max_line = [];
-//
-//     nodes_a.forEach(function (node) {
-//         max_r.push(node.radius);
-//     });
-//
-//     if(element_a.selectAll(".branch-tracer").empty()){ // if there is no line - tips not aligned
-//         return (Math.max(...max_r)+2*rect_diag+rect_padding)
-//     } else { // if tips are aligned
-//         //console.log("ha linee")
-//         element_a.selectAll("line").forEach(function (l) {
-//             max_line.push(Math.abs(l[0].attributes[1].nodeValue));
-//         });
-//         return (tree._label_width() + Math.max(...max_line)+60)
-//     }
-//
-// }
 
 function sort_nodes (asc) {
     tree.traverse_and_compute (function (n) {
@@ -817,7 +768,6 @@ function default_tree_settings () {
     tree.branch_name (null);
     tree.node_span ('equal');
     tree.options ({'draw-size-bubbles' : false}, false);
-    //tree.style_nodes (node_colorizer);
     tree.style_edges (edge_colorizer);
     tree.node_circle_size (undefined);
     tree.radial(true);
@@ -842,29 +792,8 @@ function update_controls () {
     $("[data-align='"  + (tree.align_tips () ? 'right' : 'left') + "']").click();
 }
 
-function node_colorizer (element, data) {
-
-    try{
-        var count_class = 0;
-
-        selection_set.forEach(function (d,i) { if (data[d]) {count_class ++; element.style ("fill", color_scheme(i), i === current_selection_id ?  "important" : null);}});
-
-        if (count_class > 1) {
-
-        } else {
-            if (count_class == 0) {
-                element.style ("fill", null);
-            }
-        }
-    }
-    catch (e) {
-
-    }
-
-}
 
 function edge_colorizer (element, data) {
-    //console.log (data[current_selection_name]);
     try {
         var count_class = 0;
         selection_set.forEach (function (d,i) { if (data[d]) {count_class ++;

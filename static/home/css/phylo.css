@@ -238,7 +238,7 @@ div.selectivity_tooltip{
     fill: black;
 }
 
-.class_legend_group{
+.coverage_legend_group{
     margin: 10px 10px 10px 10px;
     top: 10%;
     padding: 7px 10px 10px 10px;
@@ -248,6 +248,12 @@ div.selectivity_tooltip{
 }
 
 #class_legend_box{
+    margin: 10px 10px 10px 10px;
+    padding: 7px 10px 10px 10px;
+    border: 2px solid dimgrey;
+}
+
+#selectivity_legend_box{
     margin: 10px 10px 10px 10px;
     padding: 7px 10px 10px 10px;
     border: 2px solid dimgrey;
