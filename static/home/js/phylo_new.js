@@ -595,7 +595,7 @@ function draw_categorical_data(select_data, data_type) {
 
     tree.align_tips(true);
     update_controls();
-    
+
     var maximum_length = 0;
     var selectivity_families = {}; // create object of selectivity to bind to element
 
