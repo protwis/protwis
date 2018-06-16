@@ -6,11 +6,18 @@
 }*/
 
 #my_svg{
+    margin: 10px 10px 10px 10px;
+}
 
+.divider{
+    stroke-width: 0.5px;
+    fill: lightgray;
 }
 
 .node, text {
     font: 7px sans-serif;
+    cursor: pointer;
+
 }
 
 .link {
@@ -20,6 +27,12 @@
 }
 
 .row {
+    margin-top: 10px;
+    margin-right: -15px;
+    margin-left: 15px;
+}
+
+.container-fluid{
     margin-top: 10px;
     margin-right: -15px;
     margin-left: 15px;
@@ -48,12 +61,6 @@
     stroke-width: 0.5px;
 }*/
 
-.selectivity_circle{
-    /*fill: red;*/
-    stroke: black;
-    stroke-width: 0.5px;
-    cursor: pointer;
-}
 
 .internal-node circle, .internal-node ellipse, .internal-node rect{
     fill: #CCC;

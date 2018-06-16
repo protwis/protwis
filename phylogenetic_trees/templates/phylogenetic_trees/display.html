@@ -141,6 +141,51 @@
     </div>
 </div>
 
+<div class = 'container' id = "main_display"> </div>
+<div class="container-fluid">
+    <div class="btn-group" id="bs-example-navbar-collapse-1">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+            <span></span> Newick <b class="caret"></b></a>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a href="#" data-toggle="modal" data-target="#newick_modal">Input Text</a></li>
+            <li><a href="#"><input type="file" id="newick_file"/></a></li>
+            <li class="divider"></li>
+            <li><a href="#" data-toggle="modal" data-target="#newick_export_modal">Export</a></li>
+        </ul>
+
+    </div>
+</div>
+
+<div class="modal" id = 'newick_modal'>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Newick string to render</h4>
+      </div>
+      <div class="modal-body" id = 'newick_body'>
+         <textarea id = 'nwk_spec' autofocus = true placeholder = "" style = 'width: 100%; height: 100%' rows = 20 selectionStart = 1 selectionEnd = 1000>(a : 0.1, (b : 0.11, (c : 0.12, d : 0.13) : 0.14) : 0.15)</textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id = 'validate_newick'>Display this tree</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="modal" id = 'newick_export_modal'>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-body" id = 'newick_body'>
+         <textarea id = 'nwk_export_spec' autofocus = true placeholder = "" style = 'width: 100%; height: 100%' rows = 20></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 
 <!--<svg id="tree_display"></svg>-->
 
@@ -159,7 +204,7 @@
             <!--<b> Tree</b>-->
             <!--<li><a href-lang="text" href="data:,{{ phylip|safe }}" download="newick_file.nwk">Newick</a></li>-->
         </ul>
-    </div>
+</div>
 
 <div class="legend_box">
     <div class="class_legend"></div>

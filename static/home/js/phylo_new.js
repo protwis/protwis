@@ -27,6 +27,7 @@ var selectivity_data = {
 var width  = 800,
     height = 800,
     color_scheme = d3.scale.category10(),
+    selection_set = ['Foreground'],
     current_selection_id = 0;
 
 var tree;
@@ -56,6 +57,7 @@ function init() {
     var svg = d3.select(container_id)
         .append("svg")
         .attr("id", "my_svg");
+    
 
     default_tree_settings();
     tree(phylip_data).svg(svg).layout();
@@ -171,12 +173,81 @@ function init() {
         );
     });
 
+    // export and import of newick
+    $('#newick_export_modal').on('show.bs.modal', function (e) {
+        $('textarea[id$="nwk_export_spec"]').val(
+            tree.get_newick (
+                function (node) {
+                    var tags = [];
+                    selection_set.forEach (function (d) { if (node[d]) {tags.push(d)}; });
+                    if (tags.length) {
+                        return "{" + tags.join (",") + "}";
+                    }
+                    return "";
+                }
+            )
+        );
+    });
+
+    $("#newick_file").on("change", function (e) {
+    var files = e.target.files; // FileList object
+    if (files.length === 1) {
+      var f = files[0];
+      var reader = new FileReader();
+
+      reader.onload = function(e) {
+            var res = d3.layout.newick_parser (e.target.result);
+            if (res["json"]) {
+                if (!("children" in res["json"])) {
+                    res["error"] = "Empty tree";
+                }
+            }
+            var warning_div = d3.select ("#main_display").insert ("div", ":first-child");
+            if (res["error"]) {
+                warning_div.attr ("class", "alert alert-danger alert-dismissable")
+                            .html ("<strong> Newick parser error for file " + f.name +": </strong> In file " + res["error"]);
+            } else {
+                default_tree_settings ();
+                tree (res);
+                selection_set = tree.get_parsed_tags().length > 0 ? tree.get_parsed_tags() : ["Foreground"];
+                // selection_set.forEach((d,i) => update_selection_names(i))
+                // current_selection_name = selection_set[0];
+                // update_selection_names(0);
+                tree.svg (svg).layout();
+                warning_div.attr ("class", "alert alert-success alert-dismissable")
+                            .html ("Loaded a tree from  file <strong>" + f.name +": </strong>");
+            }
+            warning_div.append ("button")
+                       .attr ("type", "button")
+                       .attr ("class", "close")
+                       .attr ("data-dismiss", "alert")
+                       .attr ("aria-hidden", "true")
+                       .html ("&times;");
+        };
+      reader.readAsText(f);
+    }
+});
+
+    $("#validate_newick").on ("click", function (e) {
+    var res = d3.layout.newick_parser ( $('textarea[id$="nwk_spec"]').val(), true);
+    if (res["error"] || ! res["json"]) {
+        var warning_div = d3.select ("#newick_body").selectAll ("div  .alert-danger").data ([res["error"]])
+        warning_div.enter ().append ("div");
+        warning_div.html (function (d) {return d;}).attr ("class", "alert-danger");
+    } else {
+        default_tree_settings ();
+         tree (res).svg (svg).layout();
+        $('#newick_modal').modal('hide');
+    }
+});
+
 }
 
 function remove_annotations() {
     if (tree.align_tips ($(".phylotree-align-toggler").data("align") === "right")) {
                 tree.placenodes().update();
     }
+
     /**
      * This function removes all data
      */
@@ -203,6 +274,8 @@ function remove_annotations() {
     // if(d3.select("#draw_data").classed('active')){
     //     d3.select("#draw_data").classed('active', false)
     // }
+
+    update_controls("false");
 }
 
 function get_class_index(class_name, class_array) {
@@ -225,7 +298,7 @@ function get_class_index(class_name, class_array) {
 function draw_class_data(select_data, data_type){
     // work with a default mode and add colors and shapes in the data_type.json
     tree.align_tips(true);
-    update_controls();
+    update_controls("true");
 
     var maximum_length = 0;
 
@@ -480,7 +553,7 @@ function draw_class_data(select_data, data_type){
 function draw_quantitative_data(select_data, data_type){
 
     tree.align_tips(true);
-    update_controls();
+    update_controls("true");
 
     var maximum_length = 0;
 
@@ -594,7 +667,7 @@ function draw_quantitative_data(select_data, data_type){
 function draw_categorical_data(select_data, data_type) {
 
     tree.align_tips(true);
-    update_controls();
+    update_controls("true");
 
     var maximum_length = 0;
     var selectivity_families = {}; // create object of selectivity to bind to element
@@ -791,9 +864,15 @@ function default_tree_settings () {
     })
 }
 
-function update_controls() {
-    $("[data-align='"  + (tree.align_tips () ? 'right' : 'left') + "']").click();
-    d3.selectAll(".branch-tracer").style("opacity", 1);
+function update_controls(variable) {
+    if(variable === "true"){
+        $("[data-align='"  + (tree.align_tips () ? 'right' : 'left') + "']").click();
+        d3.selectAll(".branch-tracer").style("opacity", 1);
+    } else {
+        $("[data-align='"  + (tree.align_tips () ? 'right' : 'left') + "']").click();
+
+    }
+
     //$("[data-mode='" + (tree.radial()      ? 'radial' : 'linear') + "']").click();
 }
 
@@ -820,3 +899,4 @@ function edge_colorizer (element, data) {
 function dblclick(url){
     window.open(url);
 }
+
