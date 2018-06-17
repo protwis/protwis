@@ -127,12 +127,20 @@ function init() {
             if($(this).hasClass('active') ){
                 // check for type of data selected and draw accordingly - the type of data is specified in the value of the input tag
                 selected_case.forEach(function (option) {
+                    // TODO FIX THIS MESS HERE
                     if (option.value === "class"){
                         if (option.name === "GPCR_class"){
-                            draw_class_data(receptor_data, data_type[0]);
-                            //$(this).toggleClass("active");
+                            if(d3.selectAll(".receptor_class_obj").empty()){
+                                draw_class_data(receptor_data, data_type[0]);
+                            } else {
+                                remove_annotations()
+                            }
                         } else if (option.name === "ligand_type"){
-                            draw_class_data(receptor_data, data_type[3]);
+                            if(d3.selectAll(".ligand_class_obj").empty()){
+                                draw_class_data(receptor_data, data_type[3]);
+                            } else {
+                                remove_annotations()
+                            }
                         }
                     } else if (option.value === "category"){
                         draw_categorical_data(receptor_data, data_type[1])
@@ -297,257 +305,259 @@ function get_class_index(class_name, class_array) {
 
 function draw_class_data(select_data, data_type){
     // work with a default mode and add colors and shapes in the data_type.json
-    tree.align_tips(true);
-    update_controls("true");
 
-    var maximum_length = 0;
+        tree.align_tips(true);
+        update_controls("true");
 
-    if (data_type.name === "GPCR_class"){
-        var receptor_classes = {}; // create object of GPCR_classes to bind to element
+        var maximum_length = 0;
 
-        tree.get_nodes().forEach(function (node) {
-            if (d3.layout.phylotree.is_leafnode(node)) {
-                select_data.forEach(function (receptor) {
-                    if(node.name === receptor.name){
-                        receptor_classes[node.name] = [""].map(function () {
-                            return receptor.GPCR_class
-                        });
-                    }
-                });
-                maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
-            }
-        });
+        if (data_type.name === "GPCR_class"){
+            var receptor_classes = {}; // create object of GPCR_classes to bind to element
 
-        var set_of_classes = [];  // create a set of classes to get the index to look up in the color scale
-        select_data.forEach(function (receptor) {
-            if (!set_of_classes.includes(receptor.GPCR_class)) // array of unique values
-                set_of_classes.push(receptor.GPCR_class);
-        });
-
-        var class_colors = d3.scale.ordinal()
-            .domain([0, set_of_classes.length])
-            .range(["#6B5B95", "#92B558", "#E94B3C", "#6F9FD8", "#00A591", "#6C4F3D"]);
-
-        var class_tooltip = d3.select("body").append("div")
-            .attr("class", "class_tooltip")
-            .style("opacity", 0);
-
-        tree.style_nodes(function (element, node_data) {
-
-            if (node_data.name in receptor_classes) {   // see if the node has attributes
-                var node_label = element.select("text");
-                var font_size  = parseFloat(node_label.style("font-size"));
-
-                var annotation = element.selectAll("rect").data(receptor_classes[node_data.name]);
-
-                annotation.enter().append("rect").attr("class", "receptor_class_obj");
-                annotation
-                    .attr ("width", font_size)
-                    .attr ("height", font_size)
-                    .attr ("y", -font_size/2)
-                    .style("fill", function (d) {
-                        return class_colors(get_class_index(d, set_of_classes))
-                    })
-
-                    .on("mouseover", function(d) { // add tooltip
-                        class_tooltip.transition()
-                            .style("opacity", .9);
-                        class_tooltip.html(function(){
-                            return ("Class: " + d)
-                        })
-                            .style("left", (d3.event.pageX) + "px")
-                            .style("top", (d3.event.pageY - 28) + "px");
-                    })
-
-                    .on("mouseout", function() {
-                        class_tooltip.transition().duration(100)
-                            .style("opacity", 0);
+            tree.get_nodes().forEach(function (node) {
+                if (d3.layout.phylotree.is_leafnode(node)) {
+                    select_data.forEach(function (receptor) {
+                        if(node.name === receptor.name){
+                            receptor_classes[node.name] = [""].map(function () {
+                                return receptor.GPCR_class
+                            });
+                        }
                     });
+                    maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+                }
+            });
 
-                var move_past_label = maximum_length * 0.55 * font_size;
+            var set_of_classes = [];  // create a set of classes to get the index to look up in the color scale
+            select_data.forEach(function (receptor) {
+                if (!set_of_classes.includes(receptor.GPCR_class)) // array of unique values
+                    set_of_classes.push(receptor.GPCR_class);
+            });
 
-                if (tree.radial ()) {
-                    var shifter = tree.shift_tip(node_data)[0];
-                    annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
-                        .attr ("x", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
-                } else {
-                    var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
-                    annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
+            var class_colors = d3.scale.ordinal()
+                .domain([0, set_of_classes.length])
+                .range(["#6B5B95", "#92B558", "#E94B3C", "#6F9FD8", "#00A591", "#6C4F3D"]);
+
+            var class_tooltip = d3.select("body").append("div")
+                .attr("class", "class_tooltip")
+                .style("opacity", 0);
+
+            tree.style_nodes(function (element, node_data) {
+
+                if (node_data.name in receptor_classes) {   // see if the node has attributes
+                    var node_label = element.select("text");
+                    var font_size  = parseFloat(node_label.style("font-size"));
+
+                    var annotation = element.selectAll("rect").data(receptor_classes[node_data.name]);
+
+                    annotation.enter().append("rect").attr("class", "receptor_class_obj");
+                    annotation
+                        .attr ("width", font_size)
+                        .attr ("height", font_size)
+                        .attr ("y", -font_size/2)
+                        .style("fill", function (d) {
+                            return class_colors(get_class_index(d, set_of_classes))
+                        })
+
+                        .on("mouseover", function(d) { // add tooltip
+                            class_tooltip.transition()
+                                .style("opacity", .9);
+                            class_tooltip.html(function(){
+                                return ("Class: " + d)
+                            })
+                                .style("left", (d3.event.pageX) + "px")
+                                .style("top", (d3.event.pageY - 28) + "px");
+                        })
+
+                        .on("mouseout", function() {
+                            class_tooltip.transition().duration(100)
+                                .style("opacity", 0);
+                        });
+
+                    var move_past_label = maximum_length * 0.55 * font_size;
+
+                    if (tree.radial ()) {
+                        var shifter = tree.shift_tip(node_data)[0];
+                        annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
+                            .attr ("x", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
+                    } else {
+                        var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
+                        annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
+                    }
+
                 }
 
-            }
-
-        });
-        var svg_legend_wd_receptor_class = 200;
-        var svg_legend_hg_receptor_class = 100;
-
-        var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
-            .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
-            .attr("id", "class_legend_box");
-
-        // add specific title to legend
-        svg_legend_receptor_class.append("text")
-            .attr("x", 0)
-            .attr("y", 7)
-            .attr("dy", ".35em")
-            .text(data_type.print_name)
-            .attr("fill", "black")
-            .style("font-size", 14)
-            .style("font-weight", "bold");
-
-
-        //// Vertical Legend ////
-        var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
-            .data(set_of_classes)
-            .enter().append('g')
-            .attr("class", "class_legend_group")
-            .attr("transform", function (d, i) {
-                return "translate(0," + i * 20 + ")"
             });
+            var svg_legend_wd_receptor_class = 200;
+            var svg_legend_hg_receptor_class = 100;
+
+            var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
+                .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
+                .attr("id", "class_legend_box");
+
+            // add specific title to legend
+            svg_legend_receptor_class.append("text")
+                .attr("x", 0)
+                .attr("y", 7)
+                .attr("dy", ".35em")
+                .text(data_type.print_name)
+                .attr("fill", "black")
+                .style("font-size", 14)
+                .style("font-weight", "bold");
 
 
-        class_legend.append('rect')
-            .attr("x", 0)
-            .attr("y", 20)
-            .attr("width", 10)
-            .attr("height", 10)
-            .style("fill", function (d) {
-                return class_colors(get_class_index(d, set_of_classes))
-            });
-
-        class_legend.append('text')
-            .attr("x", 20)
-            .attr("y", 30)
-            .text(function (d) {
-                return "Class " + d
-            })
-            .style("text-anchor", "start")
-            .style("font-size", 13);
-
-    } else if (data_type.name === "ligand_type"){
-
-        var ligand_classes = {}; // create object of ligand_type to bind to element
-
-        tree.get_nodes().forEach(function (node) {
-            if (d3.layout.phylotree.is_leafnode(node)) {
-                select_data.forEach(function (receptor) {
-                    if(node.name === receptor.name){
-                        ligand_classes[node.name] = [""].map(function () {
-                            return receptor.ligand_type
-                        });
-                    }
+            //// Vertical Legend ////
+            var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
+                .data(set_of_classes)
+                .enter().append('g')
+                .attr("class", "class_legend_group")
+                .attr("transform", function (d, i) {
+                    return "translate(0," + i * 20 + ")"
                 });
-                maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
-            }
-        });
 
-        var set_of_ligands = [];  // create a set of classes to get the index to look up in the color scale
-        select_data.forEach(function (receptor) {
-            if (!set_of_ligands.includes(receptor.ligand_type)) // array of unique values
-                set_of_ligands.push(receptor.ligand_type);
-        });
 
-        var ligands_colors = d3.scale.ordinal()
-            .domain([0, set_of_ligands.length])
-            .range(["#feb236", "#d64161", "#ff7b25", "#878f99", "#86af49", "#c1946a", "#b1cbbb", "#4040a1"]);
+            class_legend.append('rect')
+                .attr("x", 0)
+                .attr("y", 20)
+                .attr("width", 10)
+                .attr("height", 10)
+                .style("fill", function (d) {
+                    return class_colors(get_class_index(d, set_of_classes))
+                });
 
-        var ligands_tooltip = d3.select("body").append("div")
-            .attr("class", "ligand_tooltip")
-            .style("opacity", 0);
+            class_legend.append('text')
+                .attr("x", 20)
+                .attr("y", 30)
+                .text(function (d) {
+                    return "Class " + d
+                })
+                .style("text-anchor", "start")
+                .style("font-size", 13);
 
-        tree.style_nodes(function (element, node_data) {
+        } else if (data_type.name === "ligand_type"){
 
-            if (node_data.name in ligand_classes) {   // see if the node has attributes
-                var node_label = element.select("text");
-                var font_size  = parseFloat(node_label.style("font-size"));
+            var ligand_classes = {}; // create object of ligand_type to bind to element
 
-                var annotation = element.selectAll("circle").data(ligand_classes[node_data.name]);
-
-                annotation.enter().append("circle").attr("class", "ligand_class_obj");
-                annotation
-                    .attr("r", font_size/2)
-                    .attr ("cy", 0)
-                    .style("fill", function (d) {
-                        return ligands_colors(get_class_index(d, set_of_ligands))
-
-                    })
-
-                    .on("mouseover", function(d) { // add tooltip
-                        ligands_tooltip.transition()
-                            .style("opacity", .9);
-                        ligands_tooltip.html(function(){
-                            return ("" + d)
-                        })
-                            .style("left", (d3.event.pageX) + "px")
-                            .style("top", (d3.event.pageY - 28) + "px");
-                    })
-
-                    .on("mouseout", function() {
-                        ligands_tooltip.transition().duration(100)
-                            .style("opacity", 0);
+            tree.get_nodes().forEach(function (node) {
+                if (d3.layout.phylotree.is_leafnode(node)) {
+                    select_data.forEach(function (receptor) {
+                        if(node.name === receptor.name){
+                            ligand_classes[node.name] = [""].map(function () {
+                                return receptor.ligand_type
+                            });
+                        }
                     });
+                    maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+                }
+            });
 
-                var move_past_label = maximum_length * 0.60 * font_size;
+            var set_of_ligands = [];  // create a set of classes to get the index to look up in the color scale
+            select_data.forEach(function (receptor) {
+                if (!set_of_ligands.includes(receptor.ligand_type)) // array of unique values
+                    set_of_ligands.push(receptor.ligand_type);
+            });
 
-                if (tree.radial ()) {
-                    var shifter = tree.shift_tip(node_data)[0];
-                    annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
-                        .attr ("cx", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
-                } else {
-                    var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
-                    annotation.attr ("transform", null).attr("cx", function (d, i) { return  x_shift + font_size * i;});
+            var ligands_colors = d3.scale.ordinal()
+                .domain([0, set_of_ligands.length])
+                .range(["#feb236", "#d64161", "#ff7b25", "#878f99", "#86af49", "#c1946a", "#b1cbbb", "#4040a1"]);
+
+            var ligands_tooltip = d3.select("body").append("div")
+                .attr("class", "ligand_tooltip")
+                .style("opacity", 0);
+
+            tree.style_nodes(function (element, node_data) {
+
+                if (node_data.name in ligand_classes) {   // see if the node has attributes
+                    var node_label = element.select("text");
+                    var font_size  = parseFloat(node_label.style("font-size"));
+
+                    var annotation = element.selectAll("circle").data(ligand_classes[node_data.name]);
+
+                    annotation.enter().append("circle").attr("class", "ligand_class_obj");
+                    annotation
+                        .attr("r", font_size/2)
+                        .attr ("cy", 0)
+                        .style("fill", function (d) {
+                            return ligands_colors(get_class_index(d, set_of_ligands))
+
+                        })
+                        .on("mouseover", function(d) { // add tooltip
+                            ligands_tooltip.transition()
+                                .style("opacity", .9);
+                            ligands_tooltip.html(function(){
+                                return ("" + d)
+                            })
+                                .style("left", (d3.event.pageX) + "px")
+                                .style("top", (d3.event.pageY - 28) + "px");
+                        })
+
+                        .on("mouseout", function() {
+                            ligands_tooltip.transition().duration(100)
+                                .style("opacity", 0);
+                        });
+
+                    var move_past_label = maximum_length * 0.60 * font_size;
+
+                    if (tree.radial ()) {
+                        var shifter = tree.shift_tip(node_data)[0];
+                        annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
+                            .attr ("cx", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
+                    } else {
+                        var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
+                        annotation.attr ("transform", null).attr("cx", function (d, i) { return  x_shift + font_size * i;});
+                    }
+
                 }
 
-            }
-
-        });
-
-        var svg_legend_wd = 200;
-        var svg_legend_hg = 150;
-
-        var svg_legend_ligand_class = d3.select(".class_legend").append("svg")
-            .attr("width", svg_legend_wd).attr("height", svg_legend_hg).attr("id", "class_legend_box");
-
-        // add specific title to legend
-        svg_legend_ligand_class.append("text")
-            .attr("x", 0)
-            .attr("y", 7)
-            .attr("dy", ".35em")
-            .text(data_type.print_name)
-            .attr("fill", "black")
-            .style("font-size", 14)
-            .style("font-weight", "bold");
-
-        //// Vertical Legend ////
-        var ligand_legend = svg_legend_ligand_class.selectAll('.class_legend')
-            .data(set_of_ligands)
-            .enter().append('g')
-            .attr("class", "ligand_legend_group")
-            .attr("transform", function (d, i) {
-                return "translate(0," + i * 20 + ")"
             });
 
+            var svg_legend_wd = 200;
+            var svg_legend_hg = 150;
 
-        ligand_legend.append('circle')
-            .attr("cx", 5)
-            .attr("cy", 25)
-            .attr("r", 5)
-            .style("fill", function (d) {
-                return ligands_colors(get_class_index(d, set_of_ligands))
-            });
+            var svg_legend_ligand_class = d3.select(".class_legend").append("svg")
+                .attr("width", svg_legend_wd).attr("height", svg_legend_hg).attr("id", "class_legend_box");
 
-        ligand_legend.append('text')
-            .attr("x", 20)
-            .attr("y", 30)
-            .text(function (d) {
-                return d
-            })
-            .style("text-anchor", "start")
-            .style("font-size", 13);
+            // add specific title to legend
+            svg_legend_ligand_class.append("text")
+                .attr("x", 0)
+                .attr("y", 7)
+                .attr("dy", ".35em")
+                .text(data_type.print_name)
+                .attr("fill", "black")
+                .style("font-size", 14)
+                .style("font-weight", "bold");
 
-    }
+            //// Vertical Legend ////
+            var ligand_legend = svg_legend_ligand_class.selectAll('.class_legend')
+                .data(set_of_ligands)
+                .enter().append('g')
+                .attr("class", "ligand_legend_group")
+                .attr("transform", function (d, i) {
+                    return "translate(0," + i * 20 + ")"
+                });
 
-    tree.layout();
+
+            ligand_legend.append('circle')
+                .attr("cx", 5)
+                .attr("cy", 25)
+                .attr("r", 5)
+                .style("fill", function (d) {
+                    return ligands_colors(get_class_index(d, set_of_ligands))
+                });
+
+            ligand_legend.append('text')
+                .attr("x", 20)
+                .attr("y", 30)
+                .text(function (d) {
+                    return d
+                })
+                .style("text-anchor", "start")
+                .style("font-size", 13);
+
+        }
+
+            tree.layout();
+
+
 }
 
 function draw_quantitative_data(select_data, data_type){
