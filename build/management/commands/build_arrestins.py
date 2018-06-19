@@ -28,7 +28,7 @@ class Command(BaseCommand):
     help = 'Build Arrestin proteins'
 
     # source file directory
-    arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'TableS2.xlsx'])
+    arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'TableS2.xlsx']) # CAN_aln.csv
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
@@ -80,11 +80,8 @@ class Command(BaseCommand):
         # Parsing pdb uniprot file for residues
         self.logger.info('Start parsing ARRESTIN RESIDUES')
         self.logger.info('Parsing file ' + self.arrestin_data_file)
-        residue_data =  pd.read_excel(self.arrestin_data_file, sheet_name=1)
+        residue_data = pd.read_csv(self.arrestin_data_file)
         # residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(arrestin_list)]
-
-        ## Example data to populate a table for further infrastructure work
-        residue_data = residue_data[residue_data['pdb_id']=='1ayr']
 
         can_scheme = ResidueNumberingScheme.objects.get(slug='can')
 
@@ -97,15 +94,15 @@ class Command(BaseCommand):
 
             # fetch residue generic number
             rgnsp = []
-            if(int(row['CAN'].split('.')[2])<10):
-                rgnsp = row['CAN'].split('.')
+            if(int(row['CAN_id'].split('.')[2]) < 10):
+                rgnsp = row['CAN_id'].split('.')
                 rgn_new = rgnsp[0] + '.' + rgnsp[1] + '.0' + rgnsp[2]
                 rgn, c = ResidueGenericNumber.objects.get_or_create(label=rgn_new)
 
             else:
-                rgn, c = ResidueGenericNumber.objects.get_or_create(label=row['CAN'])
+                rgn, c = ResidueGenericNumber.objects.get_or_create(label=row['CAN_id'])
 
-            ps, c = ProteinSegment.objects.get_or_create(slug=row['CAN'].split('.')[1], proteinfamily='Arrestin')
+            ps, c = ProteinSegment.objects.get_or_create(slug=row['CAN_id'].split('.')[1], proteinfamily='Arrestin')
             try:
                 Residue.objects.get_or_create(sequence_number=row['pdbPos'], protein_conformation=pc, amino_acid=row['res_id'][0], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
 

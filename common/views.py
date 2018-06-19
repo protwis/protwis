@@ -478,9 +478,8 @@ def SelectFullSequence(request):
             segmentlist = definitions.G_PROTEIN_SEGMENTS
         else:
             segmentlist = definitions.ARRESTIN_SEGMENTS
-
         preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(segmentlist['Full'])])
-        segments = ProteinSegment.objects.filter(slug__in = segmentlist['Full'], partial=False).order_by(preserved)
+        segments = ProteinSegment.objects.filter(slug__in=segmentlist['Full'], partial=False).order_by(preserved)
 
 
     else:

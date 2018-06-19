@@ -117,6 +117,8 @@ class Diagram:
                 output += '<br><button style="width:120px;" onclick="ajaxBarcode(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Barcode</button>'
             elif nobuttons == 'arrestin':
                 output += ' <button style="width:220px;" onclick="ajaxInterface(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Receptor Interface</button>'
+                output += '<br><button style="width:220px;" onclick="ajaxNaturalMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Natural Genetic Variations</button>'
+                output += ' <button style="width:220px;" onclick="ajaxPTMs(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show PTM sites</button>'
 
             else:
                 output += '<br><button style="width:220px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Invitro Mutants</button>'
