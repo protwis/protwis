@@ -602,7 +602,8 @@ def render_signature_match_scores(request, cutoff):
         signature_data['numbering_schemes'],
         signature_data['common_segments'],
         signature_data['diff_matrix'],
-        get_proteins_from_selection(ss_pos) + get_proteins_from_selection(ss_neg)
+        get_proteins_from_selection(ss_pos) + get_proteins_from_selection(ss_neg),
+        cutoff = int(cutoff)
     )
     signature_match.score_protein_class()
 

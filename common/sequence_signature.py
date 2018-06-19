@@ -43,6 +43,7 @@ class SequenceSignature:
         self.group_lengths = dict([
             (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
         ])
+        self.default_column = np.array([((y.startswith('-') or y == '_') and y != '--' and not y.startswith('-_') and 100) or 0 for y in AMINO_ACID_GROUPS.keys()])
 
 
     def _assign_preferred_features(self, signature, segment, ref_matrix):
@@ -121,7 +122,7 @@ class SequenceSignature:
                 ])
                 for pos in self.common_segments[seg]:
                     if pos not in aln_list:
-                        consensus.append([pos, False, '-', 0])
+                        consensus.append([pos, False, '_', 0])
                     else:
                         consensus.append(aln_dict[pos])
                 prot.alignment[seg] = consensus
@@ -136,7 +137,7 @@ class SequenceSignature:
             ])
             for pos in self.common_segments[seg]:
                 if pos not in aln_list:
-                    consensus[pos] = ['_', 0, 100]
+                    consensus[pos] = ['-', 0, 100]
                 else:
                     consensus[pos] = aln_dict[pos]
             alignment.consensus[seg] = consensus
@@ -196,13 +197,9 @@ class SequenceSignature:
             #TODO: get the correct default numering scheme from settings
             for idx, res in enumerate(self.common_gn[self.common_schemes[0][0]][segment].keys()):
                 if res not in self.aln_pos.generic_numbers[self.common_schemes[0][0]][segment].keys():
-                    self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, 0, axis=1)
-                    # Set 100% occurence for a gap feature
-                    self.features_normalized_pos[segment][-1, idx] = 100
+                    self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, self.default_column, axis=1)
                 elif res not in self.aln_neg.generic_numbers[self.common_schemes[0][0]][segment].keys():
-                    self.features_normalized_neg[segment] = np.insert(self.features_normalized_neg[segment], idx, 0, axis=1)
-                    # Set 100% occurence for a gap feature
-                    self.features_normalized_neg[segment][-1, idx] = 100
+                    self.features_normalized_neg[segment] = np.insert(self.features_normalized_neg[segment], idx, self.default_column, axis=1)
 
             # now the difference
             self.features_frequency_difference[segment] = np.subtract(
@@ -393,20 +390,19 @@ class SequenceSignature:
         worksheet = workbook.add_worksheet(worksheet_name)
 
         if aln == 'positive':
-            # numbering_schemes = self.aln_pos.numbering_schemes
-            # generic_numbers_set = self.aln_pos.generic_numbers
             alignment = self.aln_pos
             if data == 'features':
                 data_block = self.aln_pos.feature_stats
+                feat_consensus = self.features_consensus_pos
         elif aln == 'negative':
-            # numbering_schemes = self.aln_neg.numbering_schemes
-            # generic_numbers_set = self.aln_neg.generic_numbers
             alignment = self.aln_neg
             if data == 'features':
                 data_block = self.aln_neg.feature_stats
+                feat_consensus = self.features_consensus_neg
         else:
             if data == 'features':
                 data_block = self.features_frequency_diff_display
+                feat_consensus = self.signature
         numbering_schemes = self.common_schemes
         generic_numbers_set = self.common_gn
 
@@ -428,7 +424,7 @@ class SequenceSignature:
                     prot.protein.entry_name
                 )
             worksheet.write(
-                1 + len(numbering_schemes) + len(alignment.proteins),
+                1 + 3 * len(numbering_schemes) + len(alignment.proteins),
                 0,
                 'CONSENSUS'
                 )
@@ -491,7 +487,7 @@ class SequenceSignature:
                         )
                     col_offset += len(segment)
             col_offset = 0
-            for segment, cons_feat in self.signature.items():
+            for segment, cons_feat in feat_consensus.items():
                 for col, chunk in enumerate(cons_feat):
                     worksheet.write(
                         offset + len(AMINO_ACID_GROUPS),
@@ -572,17 +568,19 @@ class SignatureMatch():
             )
         for fidx, feat in enumerate(AMINO_ACID_GROUPS.items()):
             for res in feat[1]:
-                self.residue_to_feat[res].add(fidx)
+                try:
+                    self.residue_to_feat[res].add(fidx)
+                except KeyError:
+                    self.residue_to_feat['-'].add(fidx)
 
-
-    def _assign_preferred_features(self, signature, segment):
+    def _assign_preferred_features(self, signature, segment, ref_matrix):
 
         new_signature = []
         for pos, argmax in enumerate(signature):
             updated = True
             new_feat = argmax
             while updated:
-                tmp = self._calculate_best_feature(pos, segment, argmax)
+                tmp = self._calculate_best_feature(pos, segment, argmax, ref_matrix)
                 if tmp == new_feat:
                     updated = False
                 else:
@@ -591,37 +589,40 @@ class SignatureMatch():
         return new_signature
 
 
-    def _calculate_best_feature(self, pos, segment, argmax):
+    def _calculate_best_feature(self, pos, segment, argmax, ref_matrix):
 
         tmp = self.feature_preference[argmax]
-        equiv_feat = np.where(np.isin(self.diff_matrix[segment][:, pos], argmax))[0]
+        amax = ref_matrix[segment][argmax, pos]
+        equiv_feat = np.where(np.isin(ref_matrix[segment][:, pos], amax))[0]
         for efeat in equiv_feat:
             if efeat in tmp:
                 return efeat
         return argmax
 
     def find_relevant_gns(self):
+        """
+        Find the set of generic residue positions meeting the cutoff.
+        """
 
         matrix_consensus = OrderedDict()
         for segment in self.segments:
             segment_consensus = []
-            # signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
             signature_map = self.diff_matrix[segment].argmax(axis=0)
             # Update mapping to prefer features with fewer amino acids
-            signature_map = self._assign_preferred_features(signature_map, segment)
+            signature_map = self._assign_preferred_features(signature_map, segment, self.diff_matrix)
             for col, pos in enumerate(list(signature_map)):
-                if abs(self.diff_matrix[segment][pos][col]) > self.cutoff:
+                if self.diff_matrix[segment][pos][col] >= self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
                     for scheme in self.schemes:
                         gnum = list(self.common_gn[scheme[0]][segment].items())[col]
                         try:
                             self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
-                        except:
+                        except KeyError:
                             self.relevant_gn[scheme[0]][segment] = OrderedDict()
                             self.relevant_gn[scheme[0]][segment][gnum[0]] = gnum[1]
-
             segment_consensus = np.array(segment_consensus).T
-            if segment_consensus != []:
+
+            if segment_consensus.shape != (0,):
                 matrix_consensus[segment] = segment_consensus
         self.signature_matrix_filtered = matrix_consensus
         self.relevant_segments = OrderedDict([
@@ -630,11 +631,13 @@ class SignatureMatch():
                 self.relevant_gn[self.schemes[0][0]][x[0]].keys()
             ) for x in self.signature_matrix_filtered.items()
         ])
+
         signature = OrderedDict([(x[0], []) for x in matrix_consensus.items()])
         for segment in self.relevant_segments:
-            # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            signature_map = self._assign_preferred_features(signature_map, segment, self.signature_matrix_filtered)
             tmp = np.array(self.signature_matrix_filtered[segment])
+
             for col, pos in enumerate(list(signature_map)):
                 signature[segment].append([
                     list(AMINO_ACID_GROUPS.keys())[pos],
@@ -656,8 +659,13 @@ class SignatureMatch():
             ).exclude(
                 id__in=[x.id for x in self.protein_set]
                 )
-        class_a_pcf = ProteinConformation.objects.order_by('protein__family__slug',
-            'protein__entry_name').filter(protein__in=class_proteins, protein__sequence_type__slug='wt').exclude(protein__entry_name__endswith='-consensus')
+        class_a_pcf = ProteinConformation.objects.order_by(
+            'protein__family__slug',
+            'protein__entry_name'
+            ).filter(
+                protein__in=class_proteins,
+                protein__sequence_type__slug='wt'
+                ).exclude(protein__entry_name__endswith='-consensus')
         for pcf in class_a_pcf:
             p_start = time.time()
             score, nscore, signature_match = self.score_protein(pcf)
@@ -677,37 +685,106 @@ class SignatureMatch():
         prot_score = 0.0
         norm = 0.0
         consensus_match = OrderedDict([(x, []) for x in self.relevant_segments])
+
+        relevant_gns_total = []
+        for segment in  self.relevant_segments:
+            for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
+                relevant_gns_total.append(pos)
+
+        resi = Residue.objects.filter(
+            protein_conformation=pcf,
+            generic_number__label__in=relevant_gns_total
+            ).prefetch_related('generic_number')
+        resi_dict = {}
+        for r in resi:
+            if r.generic_number:
+                resi_dict[r.generic_number.label] = r
+
         for segment in self.relevant_segments:
             tmp = []
-            # signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            signature_map = self._assign_preferred_features(signature_map, segment, self.signature_matrix_filtered)
+
             norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
 
-            resi = Residue.objects.filter(
-                protein_segment__slug=segment,
-                protein_conformation=pcf,
-                generic_number__label__in=self.relevant_gn[self.schemes[0][0]][segment].keys(),
-                )
             for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
                 feat = signature_map[idx]
                 feat_abr = list(AMINO_ACID_GROUPS.keys())[feat]
                 feat_name = list(AMINO_ACID_GROUP_NAMES.values())[feat]
                 val = self.signature_matrix_filtered[segment][feat][idx]
-                try:
-                    res = resi.get(generic_number__label=pos)
-                    r_name = res.amino_acid if res.amino_acid != 'Gap' else '_'
+                if pos in resi_dict:
+                    res = resi_dict[pos]
                     if feat in self.residue_to_feat[res.amino_acid]:
                         if val > 0:
                             prot_score += val
-                        tmp.append([feat_abr, feat_name, val, "green", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "green",
+                            res.amino_acid, pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                res.amino_acid,
+                                pos
+                                ])
                     else:
                         #David doesn't want the negative values in the score
                         # prot_score -= val
-                        tmp.append([feat_abr, feat_name, val, "red", res.amino_acid, pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", res.amino_acid, pos])
-                except (exceptions.ObjectDoesNotExist, exceptions.MultipleObjectsReturned):
-                    #David doesn't want the negative values in the score
-                    #prot_score -= val
-                    tmp.append([feat_abr, feat_name, val, "red", '_', pos]) if val > 0 else tmp.append([feat_abr, feat_name, val, "white", '_', pos])
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "red",
+                            res.amino_acid,
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                res.amino_acid,
+                                pos
+                                ])
+                else:
+                    if feat_name == 'Gap':
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "green",
+                            '_',
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                '_',
+                                pos
+                                ])
+                        prot_score += val
+                    else:
+                        #David doesn't want the negative values in the score
+                        #prot_score -= val
+                        tmp.append([
+                            feat_abr,
+                            feat_name,
+                            val,
+                            "red",
+                            '_',
+                            pos
+                            ]) if val > 0 else tmp.append([
+                                feat_abr,
+                                feat_name,
+                                val,
+                                "white",
+                                '_',
+                                pos
+                                ])
             consensus_match[segment] = tmp
         return (prot_score/100, prot_score/norm*100, consensus_match)
 
@@ -775,13 +852,13 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
     for segment, cons_feat in signature_filtered.items():
         for col, chunk in enumerate(cons_feat):
             worksheet.write(
-                4 + 3 * len(numbering_schemes),
+                1 + 3 * len(numbering_schemes),
                 4 + col + col_offset,
                 chunk[0]
             )
             cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
             worksheet.write(
-                1 + 3 * len(numbering_schemes),
+                2 + 3 * len(numbering_schemes),
                 4 + col + col_offset,
                 chunk[2],
                 cell_format
