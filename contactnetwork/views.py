@@ -86,20 +86,20 @@ def PdbTableData(request):
                 "protein_conformation__site_protein_conformation__site")
         
     data_dict = OrderedDict()
-    data_table = "<table><tbody>\n"
+    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th class='no-sort'></th></thead><tbody>\n"
     for s in data:
         pdb_id = s.pdb_code.index
-        row = {}
-        row['protein'] = s.protein_conformation.protein.parent.entry_short()
-        row['protein_long'] = s.protein_conformation.protein.parent.short()
-        row['protein_family'] = s.protein_conformation.protein.parent.family.short()
-        row['species'] = s.protein_conformation.protein.species.common_name
-        row['date'] = s.publication_date
-        row['state'] = s.state.name
-        data_dict[pdb_id] = row
-        data_table += "<tr><td>{}</td></tr>\n".format(pdb_id)
+        r = {}
+        r['protein'] = s.protein_conformation.protein.parent.entry_short()
+        r['protein_long'] = s.protein_conformation.protein.parent.short()
+        r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
+        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
+        r['species'] = s.protein_conformation.protein.species.common_name
+        r['date'] = s.publication_date
+        r['state'] = s.state.name
+        data_dict[pdb_id] = r
+        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td><button class='btn btn-default btn-sm' onclick='thisPDB(\"{}\",\"{}\");'>Select</button></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['date'],r['protein_long'],pdb_id)
     data_table += "</tbody></table>"
-    print(data_table)
     return HttpResponse(data_table)
 
 def InteractionData(request):
