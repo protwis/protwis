@@ -39,7 +39,7 @@ function init() {
 
     // append checkboxes according to data in data_type
     $.each(data_type, function (obj, value) {
-        $("#data_selection_id").append('<input type=\"checkbox\" name=\"' + value.name + '\" value=\"' + value.type +'\"' +'\/> ' + value.print_name + '\n');
+        $("#data_selection_id").append('<input type=\"checkbox\" name=\"' + value.name + '\" value=\"' + value.type +'\"' +'\/> ' + value.print_name.replace(/["']/g, "") + '\n');
     });
 
     tree = d3.layout.phylotree("body")
