@@ -112,32 +112,25 @@ function init() {
     });
 
     d3.select("#draw_data").on("click", function (e) {
-        // TODO add a function that resize the svg and checks for elements inside
+        // TODO TAKE A LOOK HERE
         if(selected_case.length === 0){
             alert("Please select data")
         } else {
             $(this).toggleClass('active');
             if($(this).hasClass('active') ){
-                // check for type of data selected and draw accordingly - the type of data is specified in the value of the input tag
-                selected_case.forEach(function (option) {
-                    if (option.value === "class"){
-                        if (option.name === "GPCR_class"){
-                            draw_class_data(receptor_data, data_type[0]);
-                        } else if (option.name === "ligand_type"){
-                            draw_class_data(receptor_data, data_type[1]);
+                data_type.forEach(function (obj, index) {
+                    selected_case.forEach(function (option) {
+                        if (option.value === "class" && option.name === obj.name){
+                            draw_class_data(receptor_data, data_type[index])
+                        } else if(option.value === "category" && option.name === obj.name){
+                            draw_categorical_data(receptor_data, data_type[index])
+                        } else if(option.value === "quantity" && option.name === obj.name){
+                            draw_quantitative_data(receptor_data, data_type[index])
                         }
-                    } else if (option.value === "category"){
-                        draw_categorical_data(receptor_data, data_type[2])
-
-                    } else if (option.value === "quantity"){
-                        draw_quantitative_data(receptor_data, data_type[3]);
-                    }
+                    })
                 });
-
             } else {
                 remove_annotations()
-
-
             }
 
         }
