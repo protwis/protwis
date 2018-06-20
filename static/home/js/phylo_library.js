@@ -104,7 +104,7 @@
         collapsible: true,
         "left-right-spacing": "fixed-step", //'fit-to-size',
         "top-bottom-spacing": "fixed-step",
-        "left-offset": 10,
+        "left-offset": 15,
         "show-scale": "top",
         // currently not implemented to support any other positioning
         "draw-size-bubbles": false,

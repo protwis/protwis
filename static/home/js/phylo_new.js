@@ -13,16 +13,6 @@ var urls = {
     'calcr_human':"http://gpcrdb.org/protein/calcr_human/"
 };
 
-var selectivity_data = {
-    'glp1r_human': ['Gq/G11 family'],
-    'g1sgd4_rabit': ['Gs family', 'G12/G13 family'],
-    'glr_human': ['Gi/Go family', 'Gq/G11 family', 'Gs family'],
-    'crfr1_human': ['Gs family'],
-    'grm1_human': ['Gi/Go family', 'Gq/G11 family'],
-    'grm5_human': ['Gi/Go family', 'Gq/G11 family', 'Gs family'],
-    'calcr_human': ['G12/G13 family']
-};
-
 
 var width  = 800,
     height = 800,
@@ -46,6 +36,11 @@ d3.select(window).on('load', init);
 // });
 
 function init() {
+
+    // append checkboxes according to data in data_type
+    $.each(data_type, function (obj, value) {
+        $("#data_selection_id").append('<input type=\"checkbox\" name=\"' + value.name + '\" value=\"' + value.type +'\"' +'\/> ' + value.print_name + '\n');
+    });
 
     tree = d3.layout.phylotree("body")
         .size([800, 800])
@@ -117,48 +112,34 @@ function init() {
     });
 
     d3.select("#draw_data").on("click", function (e) {
-
         // TODO add a function that resize the svg and checks for elements inside
         if(selected_case.length === 0){
-            alert("Please select data");
-            remove_annotations();
-        } else if (selected_case.length === 1){
+            alert("Please select data")
+        } else {
             $(this).toggleClass('active');
             if($(this).hasClass('active') ){
                 // check for type of data selected and draw accordingly - the type of data is specified in the value of the input tag
                 selected_case.forEach(function (option) {
-                    // TODO FIX THIS MESS HERE
                     if (option.value === "class"){
                         if (option.name === "GPCR_class"){
-                            if(d3.selectAll(".receptor_class_obj").empty()){
-                                draw_class_data(receptor_data, data_type[0]);
-                            } else {
-                                remove_annotations()
-                            }
+                            draw_class_data(receptor_data, data_type[0]);
                         } else if (option.name === "ligand_type"){
-                            if(d3.selectAll(".ligand_class_obj").empty()){
-                                draw_class_data(receptor_data, data_type[3]);
-                            } else {
-                                remove_annotations()
-                            }
+                            draw_class_data(receptor_data, data_type[1]);
                         }
                     } else if (option.value === "category"){
-                        draw_categorical_data(receptor_data, data_type[1])
+                        draw_categorical_data(receptor_data, data_type[2])
 
                     } else if (option.value === "quantity"){
-                        draw_quantitative_data(receptor_data, data_type[2]);
+                        draw_quantitative_data(receptor_data, data_type[3]);
                     }
                 });
 
             } else {
-                remove_annotations();
-                //$(this).toggleClass("inactive");
-            }
+                remove_annotations()
 
-        } else if (selected_case.length === 2){
-            if(option.value==="class" && option.name === "GPCR_class" && option.name === "ligand_type"){
 
             }
+
         }
 
     });

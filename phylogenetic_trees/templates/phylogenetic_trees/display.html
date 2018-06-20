@@ -13,33 +13,33 @@
     
     phylip_data = '{{ phylip|safe }}';
 
-    data_type = [{
-                            "name": "GPCR_class",
-                            "type": "class",
-                            "print_name": "Class",
-                            "shape": "rect",
-                            "color": "add a color palette "
-                          },
-                          {
-                            "name": "selectivity",
-                            "type": "category",
-                            "print_name": "Selectivity",
-                            "shape": "rect",
-                            "color": "add a color palette"
-                          },
+    data_type  = [{
+                                "name": "GPCR_class",
+                                "type": "class",
+                                "print_name": "Class",
+                                "shape": "rect",
+                                "color": "d3.schemeCategory10"
+                            },
+                            {
+                                "name": "ligand_type",
+                                "type": "class",
+                                "print_name": "Ligand Type",
+                                "shape": "circle",
+                                "color": "d3.schemeSet2"
 
-                          {"name": "coverage",
-                            "type": "quantity",
-                            "print_name": "Coverage"
-                          },
-
-                          {
-                              "name": "ligand_type",
-                              "type": "class",
-                              "print_name": "Ligand Type",
-                              "shape": "circle",
-                              "color": "add a color palette"
-                          }];
+                            },
+                            {
+                                "name": "selectivity",
+                                "type": "category",
+                                "print_name": "Selectivity",
+                                "shape": "rect",
+                                "color": "d3.schemeDark2"
+                            },
+                            {
+                                "name": "coverage",
+                                "type": "quantity",
+                                "print_name": "Coverage"
+                            }];
 
     receptor_data = {{ protein_data|safe }} ;
 
@@ -128,11 +128,11 @@
             </div>
 
             <div class="btn-group" id="the_form">
-                    <fieldset name="data_selection">
-                        <input type="checkbox" name="GPCR_class" value="class" /> Class
-                        <input type="checkbox" name="ligand_type" value="class" /> Ligand type
-                        <input type="checkbox" name="selectivity" value="category" /> Selectivity
-                        <input type="checkbox" name="coverage" value="quantity" /> Coverage
+                    <fieldset name="data_selection" id="data_selection_id">
+                        <!--<input type="checkbox" name="GPCR_class" value="class" /> Class-->
+                        <!--<input type="checkbox" name="ligand_type" value="class" /> Ligand type-->
+                        <!--<input type="checkbox" name="selectivity" value="category" /> Selectivity-->
+                        <!--<input type="checkbox" name="coverage" value="quantity" /> Coverage-->
                     </fieldset>
 
             </div>
