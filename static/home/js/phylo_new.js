@@ -102,7 +102,6 @@ function init() {
     });
 
 
-    selected_case = [];
     d3.select("fieldset[name=data_selection]").on("change", function() {
         selected_case = [];
         $(this).children("input:checked").map(function() {
@@ -111,26 +110,36 @@ function init() {
         });
     });
 
+
+    // d3.select("#remove_data").on("click", function (e) {
+    //     remove_annotations();
+    //     remove_annotations();
+    //
+    // });
+
     d3.select("#draw_data").on("click", function (e) {
         // TODO TAKE A LOOK HERE
         if(selected_case.length === 0){
-            alert("Please select data")
+            alert("Please select data");
+            remove_annotations();
+            remove_annotations();
         } else {
-            $(this).toggleClass('active');
-            if($(this).hasClass('active') ){
+            if($("#draw_data").hasClass('active') ){
+                remove_annotations();
+                remove_annotations();
+                $("#draw_data").removeClass('active');
+            } else {
                 data_type.forEach(function (obj, index) {
                     selected_case.forEach(function (option) {
-                        if (option.value === "class" && option.name === obj.name){
-                            draw_class_data(receptor_data, data_type[index])
-                        } else if(option.value === "category" && option.name === obj.name){
-                            draw_categorical_data(receptor_data, data_type[index])
+                        if ((option.value === "class" || option.value === "category") && option.name === obj.name){
+                            draw_class_categ_data(receptor_data, data_type[index]);
+                            $("#draw_data").addClass('active');
                         } else if(option.value === "quantity" && option.name === obj.name){
-                            draw_quantitative_data(receptor_data, data_type[index])
+                            draw_quantitative_data(receptor_data, data_type[index]);
+                            $("#draw_data").addClass('active');
                         }
                     })
                 });
-            } else {
-                remove_annotations()
             }
 
         }
@@ -226,24 +235,24 @@ function init() {
 }
 
 function remove_annotations() {
-    if (tree.align_tips ($(".phylotree-align-toggler").data("align") === "right")) {
-                tree.placenodes().update();
-    }
+    // if(!d3.selectAll(".receptor_class_obj").empty()){
+    //         d3.selectAll(".receptor_class_obj").remove()
+    // }
+
 
     /**
      * This function removes all data
      */
+
     // class
-    d3.selectAll(".receptor_class_obj").remove();
+    d3.selectAll(".annotation_shape").remove();
     d3.selectAll("#class_legend_box").remove();
     d3.selectAll(".class_legend_group").remove();
-
-    d3.selectAll(".ligand_class_obj").remove();
     d3.selectAll(".ligand_legend_group").remove();
     //    d3.selectAll(".class_tooltip").remove();
 
     // quantitative
-    d3.selectAll(".receptor_coverage_obj").remove();
+    d3.selectAll(".annotation_shape").remove();
     d3.selectAll("#quantity_legend_box").remove();
     d3.selectAll(".coverage_legend_group").remove();
 
@@ -256,6 +265,9 @@ function remove_annotations() {
     // if(d3.select("#draw_data").classed('active')){
     //     d3.select("#draw_data").classed('active', false)
     // }
+    if (tree.align_tips ($(".phylotree-align-toggler").data("align") === "right")) {
+
+    }
 
     update_controls("false");
 }
@@ -277,262 +289,671 @@ function get_class_index(class_name, class_array) {
     return index
 }
 
-function draw_class_data(select_data, data_type){
+function draw_class_categ_data(select_data, data_type){
     // work with a default mode and add colors and shapes in the data_type.json
+    tree.align_tips(true);
+    update_controls("true");
 
-        tree.align_tips(true);
-        update_controls("true");
+    var maximum_length = 0;
 
-        var maximum_length = 0;
-
-        if (data_type.name === "GPCR_class"){
-            var receptor_classes = {}; // create object of GPCR_classes to bind to element
-
-            tree.get_nodes().forEach(function (node) {
-                if (d3.layout.phylotree.is_leafnode(node)) {
-                    select_data.forEach(function (receptor) {
-                        if(node.name === receptor.name){
-                            receptor_classes[node.name] = [""].map(function () {
-                                return receptor.GPCR_class
-                            });
-                        }
-                    });
-                    maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
-                }
-            });
-
-            var set_of_classes = [];  // create a set of classes to get the index to look up in the color scale
+    var class_elements = {}; // create object of classes to bind to element
+    if(data_type.type === "class") {
+        tree.get_nodes().forEach(function (node) {
+        if (d3.layout.phylotree.is_leafnode(node)) {
             select_data.forEach(function (receptor) {
-                if (!set_of_classes.includes(receptor.GPCR_class)) // array of unique values
-                    set_of_classes.push(receptor.GPCR_class);
-            });
-
-            var class_colors = d3.scale.ordinal()
-                .domain([0, set_of_classes.length])
-                .range(["#6B5B95", "#92B558", "#E94B3C", "#6F9FD8", "#00A591", "#6C4F3D"]);
-
-            var class_tooltip = d3.select("body").append("div")
-                .attr("class", "class_tooltip")
-                .style("opacity", 0);
-
-            tree.style_nodes(function (element, node_data) {
-
-                if (node_data.name in receptor_classes) {   // see if the node has attributes
-                    var node_label = element.select("text");
-                    var font_size  = parseFloat(node_label.style("font-size"));
-
-                    var annotation = element.selectAll("rect").data(receptor_classes[node_data.name]);
-
-                    annotation.enter().append("rect").attr("class", "receptor_class_obj");
-                    annotation
-                        .attr ("width", font_size)
-                        .attr ("height", font_size)
-                        .attr ("y", -font_size/2)
-                        .style("fill", function (d) {
-                            return class_colors(get_class_index(d, set_of_classes))
-                        })
-
-                        .on("mouseover", function(d) { // add tooltip
-                            class_tooltip.transition()
-                                .style("opacity", .9);
-                            class_tooltip.html(function(){
-                                return ("Class: " + d)
-                            })
-                                .style("left", (d3.event.pageX) + "px")
-                                .style("top", (d3.event.pageY - 28) + "px");
-                        })
-
-                        .on("mouseout", function() {
-                            class_tooltip.transition().duration(100)
-                                .style("opacity", 0);
-                        });
-
-                    var move_past_label = maximum_length * 0.55 * font_size;
-
-                    if (tree.radial ()) {
-                        var shifter = tree.shift_tip(node_data)[0];
-                        annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
-                            .attr ("x", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
-                    } else {
-                        var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
-                        annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
-                    }
-
-                }
-
-            });
-            var svg_legend_wd_receptor_class = 200;
-            var svg_legend_hg_receptor_class = 100;
-
-            var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
-                .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
-                .attr("id", "class_legend_box");
-
-            // add specific title to legend
-            svg_legend_receptor_class.append("text")
-                .attr("x", 0)
-                .attr("y", 7)
-                .attr("dy", ".35em")
-                .text(data_type.print_name)
-                .attr("fill", "black")
-                .style("font-size", 14)
-                .style("font-weight", "bold");
-
-
-            //// Vertical Legend ////
-            var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
-                .data(set_of_classes)
-                .enter().append('g')
-                .attr("class", "class_legend_group")
-                .attr("transform", function (d, i) {
-                    return "translate(0," + i * 20 + ")"
-                });
-
-
-            class_legend.append('rect')
-                .attr("x", 0)
-                .attr("y", 20)
-                .attr("width", 10)
-                .attr("height", 10)
-                .style("fill", function (d) {
-                    return class_colors(get_class_index(d, set_of_classes))
-                });
-
-            class_legend.append('text')
-                .attr("x", 20)
-                .attr("y", 30)
-                .text(function (d) {
-                    return "Class " + d
-                })
-                .style("text-anchor", "start")
-                .style("font-size", 13);
-
-        } else if (data_type.name === "ligand_type"){
-
-            var ligand_classes = {}; // create object of ligand_type to bind to element
-
-            tree.get_nodes().forEach(function (node) {
-                if (d3.layout.phylotree.is_leafnode(node)) {
-                    select_data.forEach(function (receptor) {
-                        if(node.name === receptor.name){
-                            ligand_classes[node.name] = [""].map(function () {
-                                return receptor.ligand_type
-                            });
-                        }
+                if(node.name === receptor.name){
+                    class_elements[node.name] = [""].map(function () {
+                        return receptor[data_type.name]
                     });
-                    maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
                 }
             });
-
-            var set_of_ligands = [];  // create a set of classes to get the index to look up in the color scale
-            select_data.forEach(function (receptor) {
-                if (!set_of_ligands.includes(receptor.ligand_type)) // array of unique values
-                    set_of_ligands.push(receptor.ligand_type);
-            });
-
-            var ligands_colors = d3.scale.ordinal()
-                .domain([0, set_of_ligands.length])
-                .range(["#feb236", "#d64161", "#ff7b25", "#878f99", "#86af49", "#c1946a", "#b1cbbb", "#4040a1"]);
-
-            var ligands_tooltip = d3.select("body").append("div")
-                .attr("class", "ligand_tooltip")
-                .style("opacity", 0);
-
-            tree.style_nodes(function (element, node_data) {
-
-                if (node_data.name in ligand_classes) {   // see if the node has attributes
-                    var node_label = element.select("text");
-                    var font_size  = parseFloat(node_label.style("font-size"));
-
-                    var annotation = element.selectAll("circle").data(ligand_classes[node_data.name]);
-
-                    annotation.enter().append("circle").attr("class", "ligand_class_obj");
-                    annotation
-                        .attr("r", font_size/2)
-                        .attr ("cy", 0)
-                        .style("fill", function (d) {
-                            return ligands_colors(get_class_index(d, set_of_ligands))
-
-                        })
-                        .on("mouseover", function(d) { // add tooltip
-                            ligands_tooltip.transition()
-                                .style("opacity", .9);
-                            ligands_tooltip.html(function(){
-                                return ("" + d)
-                            })
-                                .style("left", (d3.event.pageX) + "px")
-                                .style("top", (d3.event.pageY - 28) + "px");
-                        })
-
-                        .on("mouseout", function() {
-                            ligands_tooltip.transition().duration(100)
-                                .style("opacity", 0);
-                        });
-
-                    var move_past_label = maximum_length * 0.60 * font_size;
-
-                    if (tree.radial ()) {
-                        var shifter = tree.shift_tip(node_data)[0];
-                        annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
-                            .attr ("cx", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
-                    } else {
-                        var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
-                        annotation.attr ("transform", null).attr("cx", function (d, i) { return  x_shift + font_size * i;});
-                    }
-
-                }
-
-            });
-
-            var svg_legend_wd = 200;
-            var svg_legend_hg = 150;
-
-            var svg_legend_ligand_class = d3.select(".class_legend").append("svg")
-                .attr("width", svg_legend_wd).attr("height", svg_legend_hg).attr("id", "class_legend_box");
-
-            // add specific title to legend
-            svg_legend_ligand_class.append("text")
-                .attr("x", 0)
-                .attr("y", 7)
-                .attr("dy", ".35em")
-                .text(data_type.print_name)
-                .attr("fill", "black")
-                .style("font-size", 14)
-                .style("font-weight", "bold");
-
-            //// Vertical Legend ////
-            var ligand_legend = svg_legend_ligand_class.selectAll('.class_legend')
-                .data(set_of_ligands)
-                .enter().append('g')
-                .attr("class", "ligand_legend_group")
-                .attr("transform", function (d, i) {
-                    return "translate(0," + i * 20 + ")"
-                });
-
-
-            ligand_legend.append('circle')
-                .attr("cx", 5)
-                .attr("cy", 25)
-                .attr("r", 5)
-                .style("fill", function (d) {
-                    return ligands_colors(get_class_index(d, set_of_ligands))
-                });
-
-            ligand_legend.append('text')
-                .attr("x", 20)
-                .attr("y", 30)
-                .text(function (d) {
-                    return d
-                })
-                .style("text-anchor", "start")
-                .style("font-size", 13);
-
+            maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
         }
+    });
 
-            tree.layout();
+    } else if (data_type.type === "category") {
+        // TODO uncomment this
+        // tree.get_nodes().forEach(function (node) {
+        //     if (d3.layout.phylotree.is_leafnode(node)) {
+        //             select_data.forEach(function (receptor) {
+        //             if(node.name === receptor.name){
+        //                 class_elements[node.name] = receptor[data_type.name]
+        //             }
+        //         });
+        //         maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+        //     }
+        // });
+        // TODO remove this lines once selectivity is fixed
+        tree.get_nodes().forEach(function (node) {
+        if (d3.layout.phylotree.is_leafnode(node)) {
+                select_data.forEach(function (receptor) {
+                if(node.name === receptor.name){
+                    var thr = Math.random();
+                    if(0<thr<0.3){
+                        class_elements[node.name] = ['Gq/G11 family', 'Gs family']
+                    } else if (0.3<thr<0.6){
+                        class_elements[node.name] = ['Gi/Go family', 'G12/G13 family']
+                    } else if (0.6<thr<1){
+                        class_elements[node.name] = ['Gi/Go family', 'G12/G13 family', 'Gs family']
+                    } else {
+                        class_elements[node.name] = ['Gi/Go family']
+                    }
 
+                }
+            });
+            maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+        }
+     });
+    } else {
+        alert("impossible")
+    }
+
+
+    var set_of_elements = [];  // create a set of class elements to get the index to look up in the color scale
+
+    if(data_type.type==="class"){
+        select_data.forEach(function (receptor) {
+        if (!set_of_elements.includes(receptor[data_type.name])) // array of unique values
+            set_of_elements.push(receptor[data_type.name]);
+        });
+
+    } else if (data_type.type==="category") {
+        // TODO uncomment this
+        // select_data.forEach(function (receptor) {
+        //     receptor[data_type.name].forEach(function (family) {
+        //         if (!set_of_class_elements.includes(family)) // array of unique values
+        //             set_of_class_elements.push(family);
+        //     });
+        // });
+
+        //TODO remove this
+        set_of_elements = ['Gi/Go family', 'G12/G13 family', 'Gs family', 'Gq/G11 family'];  // create a set of families to get the index to look up in the color scale
+
+    } else {
+        alert("impossible")
+    }
+
+    var class_colors = d3.scale.ordinal()
+        .domain([0, set_of_elements.length])
+        .range(data_type.color);
+
+    var class_tooltip = d3.select("body").append("div")
+            .attr("class", "class_tooltip")
+            .style("opacity", 0);
+
+    tree.style_nodes(function (element, node_data) {
+
+        if (node_data.name in class_elements) {   // see if the node has attributes
+
+            var node_label = element.select("text");
+            var font_size  = parseFloat(node_label.style("font-size"));
+
+            if(data_type.shape === "rect"){
+                var annotation_rect = element.selectAll(data_type.shape).data(class_elements[node_data.name]);
+                annotation_rect.enter().append(data_type.shape).attr("class", "annotation_shape");
+                annotation_rect
+                    .attr ("width", font_size)
+                    .attr ("height", font_size)
+                    .attr ("y", -font_size/2)
+                    .style("fill", function (d) {
+                        return class_colors(get_class_index(d, set_of_elements))
+                    })
+
+                .on("mouseover", function(d) { // add tooltip
+                    class_tooltip.transition()
+                        .style("opacity", .9);
+                    class_tooltip.html(function(){
+                        return ("Class: " + d)
+                    })
+                        .style("left", (d3.event.pageX) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+
+                .on("mouseout", function() {
+                    class_tooltip.transition().duration(100)
+                        .style("opacity", 0);
+                });
+
+                var move_past_label_rect = maximum_length * 0.55 * font_size;
+
+                if (tree.radial ()) {
+                    var shifter_rect = tree.shift_tip(node_data)[0];
+                    annotation_rect.attr("transform", "rotate (" + node_data.text_angle + ")")
+                        .attr ("x", function (d, i) { return   shifter_rect > 0 ? shifter_rect + font_size * i + move_past_label_rect : shifter_rect - font_size * (i+1) - move_past_label_rect;})
+                } else {
+                    var x_shift_rect = tree.shift_tip (node_data)[0] + move_past_label_rect;
+                    annotation_rect.attr("transform", null).attr("x", function (d, i) { return  x_shift_rect + font_size * i;})
+                }
+
+            } else if (data_type.shape === "circle"){
+
+                var annotation_circ = element.selectAll(data_type.shape).data(class_elements[node_data.name]);
+
+                annotation_circ.enter().append(data_type.shape).attr("class", "annotation_shape");
+                annotation_circ
+                    .attr("r", font_size/2)
+                    .attr ("cy", 0)
+                    .style("fill", function (d) {
+                        return class_colors(get_class_index(d, set_of_elements))
+
+                    })
+                    .on("mouseover", function(d) { // add tooltip
+                        class_tooltip.transition()
+                            .style("opacity", .9);
+                        class_tooltip.html(function(){
+                            return ("" + d)
+                        })
+                            .style("left", (d3.event.pageX) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
+
+                    .on("mouseout", function() {
+                        class_tooltip.transition().duration(100)
+                            .style("opacity", 0);
+                    });
+
+                var move_past_label_circ = maximum_length * 0.60 * font_size;
+
+                if (tree.radial ()) {
+                    var shifter_circ = tree.shift_tip(node_data)[0];
+                    annotation_circ.attr("transform", "rotate (" + node_data.text_angle + ")")
+                        .attr ("cx", function (d, i) { return   shifter_circ > 0 ? shifter_circ + font_size * i + move_past_label_circ : shifter_circ - font_size * (i+1) - move_past_label_circ;})
+                } else {
+                    var x_shift_circ = tree.shift_tip (node_data)[0] + move_past_label_circ;
+                    annotation_circ.attr ("transform", null).attr("cx", function (d, i) { return  x_shift_circ + font_size * i;});
+                }
+
+            } else {
+                alert("this shape is not supported");
+            }
+        }
+    });
+
+    var svg_legend_wd_receptor_class = 200;
+    var svg_legend_hg_receptor_class = 100;
+
+    var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
+        .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
+        .attr("id", "class_legend_box");
+
+    // add specific title to legend
+    svg_legend_receptor_class.append("text")
+        .attr("x", 0)
+        .attr("y", 7)
+        .attr("dy", ".35em")
+        .text(data_type.print_name)
+        .attr("fill", "black")
+        .style("font-size", 14)
+        .style("font-weight", "bold");
+
+
+    //// Vertical Legend ////
+    var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
+        .data(set_of_elements)
+        .enter().append('g')
+        .attr("class", "class_legend_group")
+        .attr("transform", function (d, i) {
+            return "translate(0," + i * 20 + ")"
+        });
+
+    if(data_type.shape === "rect"){
+        class_legend.append(data_type.shape)
+        .attr("x", 0)
+        .attr("y", 20)
+        .attr("width", 10)
+        .attr("height", 10)
+        .style("fill", function (d) {
+            return class_colors(get_class_index(d, set_of_elements))
+        });
+    } else if(data_type.shape === "circle"){
+        class_legend.append(data_type.shape)
+        .attr("cx", 5)
+        .attr("cy", 25)
+        .attr("r", 5)
+        .style("fill", function (d) {
+            return class_colors(get_class_index(d, set_of_elements))
+        });
+    } else {
+        alert("this shape is not supported")
+    }
+
+    class_legend.append('text')
+        .attr("x", 20)
+        .attr("y", 30)
+        .text(function (d) {
+            return "Class " + d
+        })
+        .style("text-anchor", "start")
+        .style("font-size", 13);
+
+
+    tree.layout();
 
 }
+
+// function draw_class_categ_data(select_data, data_type){
+//     // work with a default mode and add colors and shapes in the data_type.json
+//
+//         tree.align_tips(true);
+//         update_controls("true");
+//
+//         var maximum_length = 0;
+//
+//         if (data_type.name === "GPCR_class"){
+//             var receptor_classes = {}; // create object of GPCR_classes to bind to element
+//
+//             tree.get_nodes().forEach(function (node) {
+//                 if (d3.layout.phylotree.is_leafnode(node)) {
+//                     select_data.forEach(function (receptor) {
+//                         if(node.name === receptor.name){
+//                             receptor_classes[node.name] = [""].map(function () {
+//                                 return receptor[data_type.name]
+//                             });
+//                         }
+//                     });
+//                     maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+//                 }
+//             });
+//
+//             var set_of_classes = [];  // create a set of classes to get the index to look up in the color scale
+//             select_data.forEach(function (receptor) {
+//                 if (!set_of_classes.includes(receptor[data_type.name])) // array of unique values
+//                     set_of_classes.push(receptor[data_type.name]);
+//             });
+//
+//             console.log(data_type.color);
+//             // color_list=[d3.scale.category10(), d3.scale.category10(), d3.scale.category10()]
+//             var class_colors = d3.scale.ordinal()
+//                 .domain([0, set_of_classes.length])
+//                 .range(data_type.color);
+//
+//             var class_tooltip = d3.select("body").append("div")
+//                 .attr("class", "class_tooltip")
+//                 .style("opacity", 0);
+//
+//             tree.style_nodes(function (element, node_data) {
+//
+//                 if (node_data.name in receptor_classes) {   // see if the node has attributes
+//                     var node_label = element.select("text");
+//                     var font_size  = parseFloat(node_label.style("font-size"));
+//
+//                     var annotation = element.selectAll("rect").data(receptor_classes[node_data.name]);
+//
+//                     annotation.enter().append(data_type.shape).attr("class", "receptor_class_obj");
+//                     annotation
+//                         .attr ("width", font_size)
+//                         .attr ("height", font_size)
+//                         .attr ("y", -font_size/2)
+//                         .attr("id", "my_id")
+//                         .style("fill", function (d) {
+//                             return class_colors(get_class_index(d, set_of_classes))
+//                         })
+//
+//                         .on("mouseover", function(d) { // add tooltip
+//                             class_tooltip.transition()
+//                                 .style("opacity", .9);
+//                             class_tooltip.html(function(){
+//                                 return ("Class: " + d)
+//                             })
+//                                 .style("left", (d3.event.pageX) + "px")
+//                                 .style("top", (d3.event.pageY - 28) + "px");
+//                         })
+//
+//                         .on("mouseout", function() {
+//                             class_tooltip.transition().duration(100)
+//                                 .style("opacity", 0);
+//                         });
+//
+//                     var move_past_label = maximum_length * 0.55 * font_size;
+//
+//                     if (tree.radial ()) {
+//                         var shifter = tree.shift_tip(node_data)[0];
+//                         annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
+//                             .attr ("x", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
+//                     } else {
+//                         var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
+//                         annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
+//                     }
+//
+//                 }
+//
+//             });
+//             var svg_legend_wd_receptor_class = 200;
+//             var svg_legend_hg_receptor_class = 100;
+//
+//             var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
+//                 .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
+//                 .attr("id", "class_legend_box");
+//
+//             // add specific title to legend
+//             svg_legend_receptor_class.append("text")
+//                 .attr("x", 0)
+//                 .attr("y", 7)
+//                 .attr("dy", ".35em")
+//                 .text(data_type.print_name)
+//                 .attr("fill", "black")
+//                 .style("font-size", 14)
+//                 .style("font-weight", "bold");
+//
+//
+//             //// Vertical Legend ////
+//             var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
+//                 .data(set_of_classes)
+//                 .enter().append('g')
+//                 .attr("class", "class_legend_group")
+//                 .attr("transform", function (d, i) {
+//                     return "translate(0," + i * 20 + ")"
+//                 });
+//
+//
+//             class_legend.append('rect')
+//                 .attr("x", 0)
+//                 .attr("y", 20)
+//                 .attr("width", 10)
+//                 .attr("height", 10)
+//                 .style("fill", function (d) {
+//                     return class_colors(get_class_index(d, set_of_classes))
+//                 });
+//
+//             class_legend.append('text')
+//                 .attr("x", 20)
+//                 .attr("y", 30)
+//                 .text(function (d) {
+//                     return "Class " + d
+//                 })
+//                 .style("text-anchor", "start")
+//                 .style("font-size", 13);
+//
+//         } else if (data_type.name === "ligand_type"){
+//
+//             var ligand_classes = {}; // create object of ligand_type to bind to element
+//
+//             tree.get_nodes().forEach(function (node) {
+//                 if (d3.layout.phylotree.is_leafnode(node)) {
+//                     select_data.forEach(function (receptor) {
+//                         if(node.name === receptor.name){
+//                             ligand_classes[node.name] = [""].map(function () {
+//                                 return receptor.ligand_type
+//                             });
+//                         }
+//                     });
+//                     maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+//                 }
+//             });
+//
+//             var set_of_ligands = [];  // create a set of classes to get the index to look up in the color scale
+//             select_data.forEach(function (receptor) {
+//                 if (!set_of_ligands.includes(receptor.ligand_type)) // array of unique values
+//                     set_of_ligands.push(receptor.ligand_type);
+//             });
+//
+//             var ligands_colors = d3.scale.ordinal()
+//                 .domain([0, set_of_ligands.length])
+//                 .range(data_type.color);
+//
+//             var ligands_tooltip = d3.select("body").append("div")
+//                 .attr("class", "ligand_tooltip")
+//                 .style("opacity", 0);
+//
+//             tree.style_nodes(function (element, node_data) {
+//
+//                 if (node_data.name in ligand_classes) {   // see if the node has attributes
+//                     var node_label = element.select("text");
+//                     var font_size  = parseFloat(node_label.style("font-size"));
+//
+//                     var annotation = element.selectAll("circle").data(ligand_classes[node_data.name]);
+//
+//                     annotation.enter().append(data_type.shape).attr("class", "ligand_class_obj");
+//                     annotation
+//                         .attr("r", font_size/2)
+//                         .attr ("cy", 0)
+//                         .style("fill", function (d) {
+//                             return ligands_colors(get_class_index(d, set_of_ligands))
+//
+//                         })
+//                         .on("mouseover", function(d) { // add tooltip
+//                             ligands_tooltip.transition()
+//                                 .style("opacity", .9);
+//                             ligands_tooltip.html(function(){
+//                                 return ("" + d)
+//                             })
+//                                 .style("left", (d3.event.pageX) + "px")
+//                                 .style("top", (d3.event.pageY - 28) + "px");
+//                         })
+//
+//                         .on("mouseout", function() {
+//                             ligands_tooltip.transition().duration(100)
+//                                 .style("opacity", 0);
+//                         });
+//
+//                     var move_past_label = maximum_length * 0.60 * font_size;
+//
+//                     if (tree.radial ()) {
+//                         var shifter = tree.shift_tip(node_data)[0];
+//                         annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
+//                             .attr ("cx", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
+//                     } else {
+//                         var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
+//                         annotation.attr ("transform", null).attr("cx", function (d, i) { return  x_shift + font_size * i;});
+//                     }
+//
+//                 }
+//
+//             });
+//
+//             var svg_legend_wd = 200;
+//             var svg_legend_hg = 150;
+//
+//             var svg_legend_ligand_class = d3.select(".class_legend").append("svg")
+//                 .attr("width", svg_legend_wd).attr("height", svg_legend_hg).attr("id", "class_legend_box");
+//
+//             // add specific title to legend
+//             svg_legend_ligand_class.append("text")
+//                 .attr("x", 0)
+//                 .attr("y", 7)
+//                 .attr("dy", ".35em")
+//                 .text(data_type.print_name)
+//                 .attr("fill", "black")
+//                 .style("font-size", 14)
+//                 .style("font-weight", "bold");
+//
+//             //// Vertical Legend ////
+//             var ligand_legend = svg_legend_ligand_class.selectAll('.class_legend')
+//                 .data(set_of_ligands)
+//                 .enter().append('g')
+//                 .attr("class", "ligand_legend_group")
+//                 .attr("transform", function (d, i) {
+//                     return "translate(0," + i * 20 + ")"
+//                 });
+//
+//
+//             ligand_legend.append('circle')
+//                 .attr("cx", 5)
+//                 .attr("cy", 25)
+//                 .attr("r", 5)
+//                 .style("fill", function (d) {
+//                     return ligands_colors(get_class_index(d, set_of_ligands))
+//                 });
+//
+//             ligand_legend.append('text')
+//                 .attr("x", 20)
+//                 .attr("y", 30)
+//                 .text(function (d) {
+//                     return d
+//                 })
+//                 .style("text-anchor", "start")
+//                 .style("font-size", 13);
+//
+//         }
+//
+//             tree.layout();
+//
+//
+// }
+
+// function draw_categorical_data(select_data, data_type) {
+//
+//     tree.align_tips(true);
+//     update_controls("true");
+//
+//     var maximum_length = 0;
+//     var selectivity_families = {}; // create object of selectivity to bind to element
+//
+//     // TODO uncomment this code when selectivity is fixed
+//     // tree.get_nodes().forEach(function (node) {
+//     //     if (d3.layout.phylotree.is_leafnode(node)) {
+//     //             select_data.forEach(function (receptor) {
+//     //             if(node.name === receptor.name){
+//     //                 selectivity_families[node.name] = receptor[data_type.name]
+//     //             }
+//     //         });
+//     //         maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+//     //     }
+//     // });
+//     // var set_of_families = [];  // create a set of families to get the index to look up in the color scale
+//     // select_data.forEach(function (receptor) {
+//     //     receptor[data_type.name].forEach(function (family) {
+//     //         if (!set_of_families.includes(family)) // array of unique values
+//     //             set_of_families.push(family);
+//     //     });
+//     //
+//     // });
+//
+//     // TODO remove lines 698-719 when selectivity is fixed
+//      tree.get_nodes().forEach(function (node) {
+//         if (d3.layout.phylotree.is_leafnode(node)) {
+//                 select_data.forEach(function (receptor) {
+//                 if(node.name === receptor.name){
+//                     var thr = Math.random();
+//                     if(0<thr<0.3){
+//                         selectivity_families[node.name] = ['Gq/G11 family', 'Gs family']
+//                     } else if (0.3<thr<0.6){
+//                         selectivity_families[node.name] = ['Gi/Go family', 'G12/G13 family']
+//                     } else if (0.6<thr<1){
+//                         selectivity_families[node.name] = ['Gi/Go family', 'G12/G13 family', 'Gs family']
+//                     } else {
+//                         selectivity_families[node.name] = ['Gi/Go family']
+//                     }
+//
+//                 }
+//             });
+//             maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
+//         }
+//      });
+//
+//     var set_of_families = ['Gi/Go family', 'G12/G13 family', 'Gs family', 'Gq/G11 family'];  // create a set of families to get the index to look up in the color scale
+//     // remove until here
+//
+//     var selectivity_colors = d3.scale.ordinal()
+//         .domain([0, set_of_families.length])
+//         .range(data_type.color);
+//
+//     var selectivity_tooltip = d3.select("body").append("div")
+//         .attr("class", "selectivity_tooltip")
+//         .style("opacity", 0);
+//
+//     tree.style_nodes(function (element, node_data) {
+//
+//         if (node_data.name in selectivity_families) {   // see if the node has attributes
+//             var node_label = element.select("text");
+//             var font_size  = parseFloat(node_label.style("font-size"));
+//
+//             var annotation = element.selectAll("rect").data(selectivity_families[node_data.name]);
+//
+//             annotation.enter().append(data_type.shape).attr("class", "receptor_selectivity_obj");
+//
+//             annotation
+//                 .attr ("width", font_size)
+//                 .attr ("height", font_size)
+//                 .attr ("y", -font_size/2)
+//                 .style("fill", function (d, i, j) {
+//                     return selectivity_colors(get_class_index(d, set_of_families))
+//
+//                 })
+//
+//                 .on("mouseover", function(d) { // add tooltip
+//                     selectivity_tooltip.transition()
+//                         .style("opacity", .9);
+//                     selectivity_tooltip.html(function(){
+//                         return (d)
+//                     })
+//                         .style("left", (d3.event.pageX) + "px")
+//                         .style("top", (d3.event.pageY - 28) + "px");
+//                 })
+//
+//                 .on("mouseout", function() {
+//                     selectivity_tooltip.transition().duration(100)
+//                         .style("opacity", 0);
+//                 });
+//
+//             var move_past_label = maximum_length * 0.65 * font_size;
+//
+//             if (tree.radial ()) {
+//                 var shifter = tree.shift_tip(node_data)[0];
+//
+//                 annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
+//                     .attr ("x", function (d, i) {
+//                         return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;
+//                     })
+//             } else {
+//                 var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
+//                 annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
+//             }
+//
+//         }
+//
+//     });
+//
+//
+//     var svg_legend_wd_receptor_family = 200;
+//     var svg_legend_hg_receptor_family = 130;
+//
+//     var svg_legend_receptor_family = d3.select(".category_legend").append("svg")
+//         .attr("width", svg_legend_wd_receptor_family).attr("height", svg_legend_hg_receptor_family)
+//         .attr("id", "categorical_legend_box");
+//
+//     // add specific title to legend
+//     svg_legend_receptor_family.append("text")
+//         .attr("x", 0)
+//         .attr("y", 7)
+//         .attr("dy", ".35em")
+//         .text(data_type.print_name)
+//         .attr("fill", "black")
+//         .style("font-size", 14)
+//         .style("font-weight", "bold");
+//
+//
+//     //// Vertical Legend ////
+//     var selectivity_legend = svg_legend_receptor_family.selectAll('.category_legend')
+//         .data(set_of_families)
+//         .enter().append('g')
+//         .attr("class", "selectivity_legend_group")
+//         .attr("transform", function (d, i) {
+//             return "translate(0," + i * 20 + ")"
+//         });
+//
+//
+//     selectivity_legend.append(data_type.shape)
+//         .attr("x", 0)
+//         .attr("y", 20)
+//         .attr("width", 10)
+//         .attr("height", 10)
+//         .style("fill", function (d) {
+//             return selectivity_colors(get_class_index(d, set_of_families))
+//         });
+//
+//     selectivity_legend.append('text')
+//         .attr("x", 20)
+//         .attr("y", 30)
+//         .text(function (d) {
+//             return "Class " + d
+//         })
+//         .style("text-anchor", "start")
+//         .style("font-size", 13);
+//
+//     tree.layout();
+// }
+
 
 function draw_quantitative_data(select_data, data_type){
 
@@ -548,7 +969,7 @@ function draw_quantitative_data(select_data, data_type){
             select_data.forEach(function (receptor) {
                 if(node.name === receptor.name){
                     receptor_coverage[node.name] = [0].map(function () {
-                        return receptor.coverage
+                        return receptor[data_type.name]
                     });
                 }
             });
@@ -574,7 +995,7 @@ function draw_quantitative_data(select_data, data_type){
 
             var annotation = element.selectAll("rect").data(receptor_coverage[node_data.name]);
 
-            annotation.enter().append("rect").attr("class", "receptor_coverage_obj");
+            annotation.enter().append("rect").attr("class", "annotation_shape");
             annotation
                 .attr ("height", font_size)
                 .attr("width", function (d) {
@@ -648,168 +1069,6 @@ function draw_quantitative_data(select_data, data_type){
     tree.layout();
 }
 
-function draw_categorical_data(select_data, data_type) {
-
-    tree.align_tips(true);
-    update_controls("true");
-
-    var maximum_length = 0;
-    var selectivity_families = {}; // create object of selectivity to bind to element
-
-    // TODO uncomment this code when selectivity is fixed
-    // tree.get_nodes().forEach(function (node) {
-    //     if (d3.layout.phylotree.is_leafnode(node)) {
-    //             select_data.forEach(function (receptor) {
-    //             if(node.name === receptor.name){
-    //                 selectivity_families[node.name] = receptor.selectivity
-    //             }
-    //         });
-    //         maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
-    //     }
-    // });
-    // var set_of_families = [];  // create a set of families to get the index to look up in the color scale
-    // select_data.forEach(function (receptor) {
-    //     receptor.selectivity.forEach(function (family) {
-    //         if (!set_of_families.includes(family)) // array of unique values
-    //             set_of_families.push(family);
-    //     });
-    //
-    // });
-
-     tree.get_nodes().forEach(function (node) {
-        if (d3.layout.phylotree.is_leafnode(node)) {
-                select_data.forEach(function (receptor) {
-                if(node.name === receptor.name){
-                    var thr = Math.random();
-                    if(0<thr<0.3){
-                        selectivity_families[node.name] = ['Gq/G11 family', 'Gs family']
-                    } else if (0.3<thr<0.6){
-                        selectivity_families[node.name] = ['Gi/Go family', 'G12/G13 family']
-                    } else if (0.6<thr<1){
-                        selectivity_families[node.name] = ['Gi/Go family', 'G12/G13 family', 'Gs family']
-                    } else {
-                        selectivity_families[node.name] = ['Gi/Go family']
-                    }
-
-                }
-            });
-            maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
-        }
-    });
-
-    var set_of_families = ['Gi/Go family', 'G12/G13 family', 'Gs family', 'Gq/G11 family'];  // create a set of families to get the index to look up in the color scale
-
-
-    var selectivity_colors = d3.scale.ordinal()
-        .domain([0, set_of_families.length])
-        .range(["#383F51", "#5DA9E9", "#DDDBF1", "#F93943", "#A37871", "#8A4F7D"]);
-
-    var selectivity_tooltip = d3.select("body").append("div")
-        .attr("class", "selectivity_tooltip")
-        .style("opacity", 0);
-
-    tree.style_nodes(function (element, node_data) {
-
-        if (node_data.name in selectivity_families) {   // see if the node has attributes
-            var node_label = element.select("text");
-            var font_size  = parseFloat(node_label.style("font-size"));
-
-            var annotation = element.selectAll("rect").data(selectivity_families[node_data.name]);
-
-            annotation.enter().append("rect").attr("class", "receptor_selectivity_obj");
-
-            annotation
-                .attr ("width", font_size)
-                .attr ("height", font_size)
-                .attr ("y", -font_size/2)
-                .style("fill", function (d, i, j) {
-                    return selectivity_colors(get_class_index(d, set_of_families))
-
-                })
-
-                .on("mouseover", function(d) { // add tooltip
-                    selectivity_tooltip.transition()
-                        .style("opacity", .9);
-                    selectivity_tooltip.html(function(){
-                        return (d)
-                    })
-                        .style("left", (d3.event.pageX) + "px")
-                        .style("top", (d3.event.pageY - 28) + "px");
-                })
-
-                .on("mouseout", function() {
-                    selectivity_tooltip.transition().duration(100)
-                        .style("opacity", 0);
-                });
-
-            var move_past_label = maximum_length * 0.65 * font_size;
-
-            if (tree.radial ()) {
-                var shifter = tree.shift_tip(node_data)[0];
-
-                annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
-                    .attr ("x", function (d, i) {
-                        return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;
-                    })
-            } else {
-                var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
-                annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
-            }
-
-        }
-
-    });
-
-
-    var svg_legend_wd_receptor_family = 200;
-    var svg_legend_hg_receptor_family = 130;
-
-    var svg_legend_receptor_family = d3.select(".category_legend").append("svg")
-        .attr("width", svg_legend_wd_receptor_family).attr("height", svg_legend_hg_receptor_family)
-        .attr("id", "categorical_legend_box");
-
-    // add specific title to legend
-    svg_legend_receptor_family.append("text")
-        .attr("x", 0)
-        .attr("y", 7)
-        .attr("dy", ".35em")
-        .text(data_type.print_name)
-        .attr("fill", "black")
-        .style("font-size", 14)
-        .style("font-weight", "bold");
-
-
-    //// Vertical Legend ////
-    var selectivity_legend = svg_legend_receptor_family.selectAll('.category_legend')
-        .data(set_of_families)
-        .enter().append('g')
-        .attr("class", "selectivity_legend_group")
-        .attr("transform", function (d, i) {
-            return "translate(0," + i * 20 + ")"
-        });
-
-
-    selectivity_legend.append('rect')
-        .attr("x", 0)
-        .attr("y", 20)
-        .attr("width", 10)
-        .attr("height", 10)
-        .style("fill", function (d) {
-            return selectivity_colors(get_class_index(d, set_of_families))
-        });
-
-    selectivity_legend.append('text')
-        .attr("x", 20)
-        .attr("y", 30)
-        .text(function (d) {
-            return "Class " + d
-        })
-        .style("text-anchor", "start")
-        .style("font-size", 13);
-
-    tree.layout();
-}
-
 function sort_nodes (asc) {
     tree.traverse_and_compute (function (n) {
         var d = 1;
@@ -856,8 +1115,6 @@ function update_controls(variable) {
         $("[data-align='"  + (tree.align_tips () ? 'right' : 'left') + "']").click();
 
     }
-
-    //$("[data-mode='" + (tree.radial()      ? 'radial' : 'linear') + "']").click();
 }
 
 
