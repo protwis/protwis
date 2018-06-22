@@ -474,17 +474,19 @@ def SelectFullSequence(request):
 
     # get all segments
     if "protein_type" in request.GET:
+
         if request.GET['protein_type'] == 'gprotein':
             segmentlist = definitions.G_PROTEIN_SEGMENTS
+            pfam = 'Gprotein'
         else:
             segmentlist = definitions.ARRESTIN_SEGMENTS
-        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(segmentlist['Full'])])
-        segments = ProteinSegment.objects.filter(slug__in=segmentlist['Full'], partial=False).order_by(preserved)
+            pfam = 'Arrestin'
 
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(segmentlist['Full'])])
+        segments = ProteinSegment.objects.filter(slug__in=segmentlist['Full'], partial=False, proteinfamily=pfam).order_by(preserved)
 
     else:
         segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
-
 
     for segment in segments:
         selection_object = SelectionItem(segment.category, segment)
@@ -531,11 +533,13 @@ def SelectAlignableSegments(request):
     if "protein_type" in request.GET:
         if request.GET['protein_type'] == 'gprotein':
             segmentlist = definitions.G_PROTEIN_SEGMENTS
+            pfam = 'Gprotein'
         else:
             segmentlist = definitions.ARRESTIN_SEGMENTS
+            pfam = 'Arrestin'
 
         preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(segmentlist['Structured'])])
-        segments = ProteinSegment.objects.filter(slug__in = segmentlist['Structured'], partial=False).order_by(preserved)
+        segments = ProteinSegment.objects.filter(slug__in=segmentlist['Structured'], partial=False, proteinfamily=pfam).order_by(preserved)
     else:
         segments = ProteinSegment.objects.filter(partial=False, slug__startswith='TM')
 
@@ -567,17 +571,20 @@ def SelectAlignableResidues(request):
     if "protein_type" in request.GET:
         if request.GET['protein_type'] == 'gprotein':
             segmentlist = definitions.G_PROTEIN_SEGMENTS
+            pfam = 'Gprotein'
         else:
             segmentlist = definitions.ARRESTIN_SEGMENTS
+            pfam = 'Arrestin'
 
         preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(segmentlist['Structured'])])
-        segments = ProteinSegment.objects.filter(slug__in = segmentlist['Structured'], partial=False).order_by(preserved)
+        segments = ProteinSegment.objects.filter(slug__in=segmentlist['Structured'], partial=False, proteinfamily=pfam).order_by(preserved)
     else:
         segments = ProteinSegment.objects.filter(proteinfamily='GPCR').order_by('pk')
 
     numbering_scheme_slug = 'false'
 
     # find the relevant numbering scheme (based on target selection)
+
     cgn = False
     if numbering_scheme_slug == 'cgn':
         cgn = True

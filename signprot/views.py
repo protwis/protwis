@@ -295,22 +295,23 @@ def Ginterface(request, protein = None):
 
     return render(request, 'signprot/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': set(primary), 'secondary_Gprotein': set(secondary)} )
 
+
 def ajaxInterface(request, slug, **response_kwargs):
 
-    name_of_cache = 'ajaxInterface_'+slug
+    name_of_cache = 'ajaxInterface_' + slug
 
     jsondata = cache.get(name_of_cache)
 
     if jsondata == None:
 
-        if slug == "arrs_human": # TODO: FIX HERE GENERIC INPUT
+        p = Protein.objects.filter(entry_name=slug).get()
+
+        if p.family.slug.startswith('200'):
             rsets = ResiduePositionSet.objects.get(name="Arrestin interface")
         else:
             rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
-        # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
 
         jsondata = {}
-        positions = []
         for x, residue in enumerate(rsets.residue_position.all()):
             try:
                 pos = str(list(Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label))[0])

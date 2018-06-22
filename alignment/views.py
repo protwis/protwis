@@ -362,7 +362,14 @@ def render_family_alignment(request, slug):
         gsegments = definitions.G_PROTEIN_SEGMENTS
 
         preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Full'])])
-        segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
+        segments = ProteinSegment.objects.filter(slug__in=gsegments['Full'], partial=False).order_by(preserved)
+
+    elif slug.startswith('200'):
+        arrsegments = definitions.ARRESTIN_SEGMENTS
+
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(arrsegments['Full'])])
+        segments = ProteinSegment.objects.filter(slug__in=arrsegments['Full'], partial=False).order_by(preserved)
+
     else:
         segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
         if len(proteins)>50:
