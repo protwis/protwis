@@ -269,7 +269,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         ptms_dict[ptm.residue.sequence_number] = ptm.modification
 
     ## MICROSWITCHES
-    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    micro_switches_rset = ResiduePositionSet.objects.get(name="State (micro-)switches")
     ms_label = []
     for residue in micro_switches_rset.residue_position.all():
         ms_label.append(residue.label)
@@ -280,7 +280,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         ms_sequence_numbers.append(ms.sequence_number)
 
     ## SODIUM POCKET
-    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium ion pocket")
     sp_label = []
     for residue in sodium_pocket_rset.residue_position.all():
         sp_label.append(residue.label)
@@ -292,7 +292,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
 
     ## G PROTEIN INTERACTION POSITIONS
     # THIS SHOULD BE CLASS SPECIFIC (different set)
-    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    rset = ResiduePositionSet.objects.get(name='G-protein interface')
     gprotein_generic_set = []
     for residue in rset.residue_position.all():
         gprotein_generic_set.append(residue.label)
@@ -331,11 +331,15 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
             type = NM.type
 
             if type == 'missense':
-                effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
-                color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
+                if NM.sift_score != None and NM.polyphen_score != None:
+                    effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
+                    color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
+                else:
+                    effect = 'unknown'
+                    color = '#818181'
             else:
                 effect = 'deleterious'
-                color = '#575c9d'
+                color = '#65368e'
 
             functional_annotation = ''
             SN = NM.residue.sequence_number
@@ -344,15 +348,15 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
             else:
                 GN = ''
             if SN in sp_sequence_numbers:
-                functional_annotation +=  'SodiumPocket '
+                functional_annotation += 'SodiumPocket '
             if SN in ms_sequence_numbers:
-                functional_annotation +=  'MicroSwitch '
+                functional_annotation += 'MicroSwitch '
             if SN in ptms_dict:
-                functional_annotation +=  'PTM (' + ptms_dict[SN] + ') '
+                functional_annotation += 'PTM (' + ptms_dict[SN] + ') '
             if SN in interaction_data:
-                functional_annotation +=  'LB (' + ', '.join(interaction_data[SN]) + ') '
+                functional_annotation += 'LB (' + ', '.join(interaction_data[SN]) + ') '
             if GN in gprotein_generic_set:
-                functional_annotation +=  'GP (contact) '
+                functional_annotation += 'GP (contact) '
 
             if functional_annotation == '':
                 functional_annotation = '-'
