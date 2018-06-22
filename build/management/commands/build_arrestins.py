@@ -12,31 +12,29 @@ from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residu
 from signprot.models import SignprotStructure
 import pandas as pd
 
-from optparse import make_option
-
 import requests
 from xml.etree.ElementTree import fromstring
 
-import math, os, csv
-import numpy as np
+import os
 import logging
-import requests
-
 from urllib.request import urlopen
+
 
 class Command(BaseCommand):
     help = 'Build Arrestin proteins'
 
     # source file directory
-    arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'TableS2.xlsx']) # CAN_aln.csv
+    arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'ortholog_alignment.xlsx'])
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
     logger = logging.getLogger(__name__)
 
+
     def add_arguments(self, parser):
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
+
 
     def handle(self, *args, **options):
         if options['filename']:
@@ -44,132 +42,94 @@ class Command(BaseCommand):
         else:
             filenames = False
 
-        ## create protein families and infrastructure
         try:
             self.purge_can_residues()
             self.purge_can_proteins()
 
-            self.can_create_proteins_and_families()
+            # add proteins
+            self.can_create_families()
+            self.can_add_proteins()
+
+            # add residues
+            self.add_can_residues()
 
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
-        ## add residues from can db
-        try:
-            human_and_orths = self.can_add_proteins()
-
-            self.update_protein_conformation(human_and_orths)
-        except Exception as msg:
-            self.logger.error(msg)
-
     def purge_can_residues(self):
+        """Purge residues."""
         try:
             Residue.objects.filter(generic_number_id__scheme__slug="can").delete()
-        except:
-            self.logger.warning('Existing Residue data cannot be deleted')
+        except Exception as msg:
+            self.logger.warning('Existing Residue data cannot be deleted', msg)
 
     def purge_can_proteins(self):
+        """Purge proteins."""
         try:
             Protein.objects.filter(residue_numbering_scheme__slug='can').delete()
-        except:
-            self.logger.info('Protein to delete not found')
+        except Exception as msg:
+            self.logger.info('Protein to delete not found', msg)
 
-    def add_can_residues(self, arrestin_list):
-
+    def add_can_residues(self):
+        """Add CAN residues from source file provided by Andrija Sente."""
         # Parsing pdb uniprot file for residues
         self.logger.info('Start parsing ARRESTIN RESIDUES')
         self.logger.info('Parsing file ' + self.arrestin_data_file)
-        residue_data = pd.read_csv(self.arrestin_data_file)
-        # residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(arrestin_list)]
+        residue_data = pd.read_excel(self.arrestin_data_file)
 
         can_scheme = ResidueNumberingScheme.objects.get(slug='can')
 
-        for index, row in residue_data.iterrows():
-            # fetch protein for protein conformation
-            pr, c = Protein.objects.get_or_create(accession='P10523')
+        can_dict = residue_data[residue_data.ID == 'CAN_id'].iloc[:, 3:].to_dict('list')
 
-            # fetch protein conformation
-            pc, c = ProteinConformation.objects.get_or_create(protein_id=pr)
+        # Loop over data table, but skip "CAN_posand" and "CAN_id" from current input file
+        for index, row in residue_data[2:].iterrows():
 
-            # fetch residue generic number
-            rgnsp = []
-            if(int(row['CAN_id'].split('.')[2]) < 10):
-                rgnsp = row['CAN_id'].split('.')
-                rgn_new = rgnsp[0] + '.' + rgnsp[1] + '.0' + rgnsp[2]
-                rgn, c = ResidueGenericNumber.objects.get_or_create(label=rgn_new)
+            # for now only allow for ortholog with uniprot entries:
+            if not row['AccessionID'].startswith('ENS'):
+                # fetch protein for protein conformation
+                pr, c = Protein.objects.get_or_create(accession=row['AccessionID'])
 
+                # fetch protein conformation
+                pc, c = ProteinConformation.objects.get_or_create(protein_id=pr)
             else:
-                rgn, c = ResidueGenericNumber.objects.get_or_create(label=row['CAN_id'])
+                continue
 
-            ps, c = ProteinSegment.objects.get_or_create(slug=row['CAN_id'].split('.')[1], proteinfamily='Arrestin')
-            try:
-                Residue.objects.get_or_create(sequence_number=row['pdbPos'], protein_conformation=pc, amino_acid=row['res_id'][0], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
+            # loop over residue generic number
+            sequence_number = 1
+            for aln_pos in can_dict:
 
-            except:
-                print("failed to add residue")
-                self.logger.error("Failed to add residues")
+                canId = can_dict[aln_pos][0]
 
-             # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
-            try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=can_scheme) ## Update scheme_id
+                # Add '0' infront of single digit positions
+                if(int(canId.split('.')[2]) < 10):
+                    rgnsp = canId.split('.')
+                    canId = rgnsp[0] + '.' + rgnsp[1] + '.0' + rgnsp[2]
 
-            except:
-                print("failed to add residue generic number")
-                self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
+                ps, c = ProteinSegment.objects.get_or_create(slug=canId.split('.')[1], proteinfamily='Arrestin')
 
-    def update_protein_conformation(self, arrestin_list):
+                rgn, c = ResidueGenericNumber.objects.get_or_create(label=canId, scheme=can_scheme, protein_segment=ps)
 
-        state = ProteinState.objects.get(slug='active')
+                # only add AA information if not gap
+                if not row[aln_pos] == '-':
 
-        # add new can protein conformations
-        for p in arrestin_list:
-            arrestin = Protein.objects.get(accession=p)
+                    try:
+                        Residue.objects.get_or_create(sequence_number=sequence_number, protein_conformation=pc, amino_acid=row[aln_pos], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
+                        sequence_number += 1
+                    except Exception as msg:
+                        print("failed to add residue", msg)
+                        self.logger.error("Failed to add residues", msg)
 
-            try:
-                pc, created = ProteinConformation.objects.get_or_create(protein=arrestin, state=state, template_structure=None)
-                self.logger.info('Created protein conformation')
-            except:
-                self.logger.error('Failed to create protein conformation')
+                    # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
 
-        self.update_genericresiduenumber_and_proteinsegments(arrestin_list)
-
-    def update_genericresiduenumber_and_proteinsegments(self, arrestin_list):
-
-        # Parsing pdb uniprot file for generic residue numbers
-        self.logger.info('Start parsing ARRESTIN RESIDUE FILE')
-        self.logger.info('Parsing file ' + self.arrestin_data_file)
-        residue_data =  pd.read_excel(self.arrestin_data_file, sheetname=1)
-
-        # residue_data = residue_data[residue_data.Uniprot_ID.notnull()]
-        # residue_data = residue_data[residue_data['Uniprot_ACC'].isin(arrestin_list)]
-
-        # filtering for human arrestins using list above
-        residue_generic_numbers = residue_data['CAN'].unique()
-
-        can_scheme = ResidueNumberingScheme.objects.get(slug='can')
-
-        for rgn in residue_generic_numbers:
-            ps, c = ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Arrestin')
-
-            rgnsp = []
-
-            if(int(rgn.split('.')[2])<10):
-                rgnsp = rgn.split('.')
-                rgn_new = rgnsp[0] + '.' + rgnsp[1] + '.0' + rgnsp[2]
-            else:
-                rgn_new = rgn
-
-            try:
-                res_gen_num, created =  ResidueGenericNumber.objects.get_or_create(label=rgn_new, scheme=can_scheme, protein_segment=ps)
-                self.logger.info('Created generic residue number')
-
-            except:
-                self.logger.error('Failed creating generic residue number')
-
-        self.add_can_residues(arrestin_list)
+                    try:
+                        ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label, default_generic_number=rgn, scheme=can_scheme)  # Update scheme_id
+                    except Exception as msg:
+                        print("failed to add residue generic number", msg)
+                        self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
 
     def get_uniprot_accession_id(self, response_xml):
+        """Get Uniprot accession ID."""
         root = fromstring(response_xml)
         return next(
             el for el in root.getchildren()[0].getchildren()
@@ -177,6 +137,7 @@ class Command(BaseCommand):
         ).attrib['dbAccessionId']
 
     def map_pdb_to_uniprot(self, pdb_id):
+        """Get uniprot ID from PDB ID."""
         pdb_mapping_url = 'http://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment'
         pdb_mapping_response = requests.get(
             pdb_mapping_url, params={'query': pdb_id}
@@ -185,90 +146,41 @@ class Command(BaseCommand):
         return uniprot_id
 
     def can_add_proteins(self):
-
+        """Add arrestin proteins."""
         self.logger.info('Start adding ARRESTIN proteins')
         self.logger.info('Parsing file ' + self.arrestin_data_file)
 
         # parsing file for accessions
-        df = pd.read_excel(self.arrestin_data_file, sheetname=1)
-        pfm = ProteinFamily()
-
-        # PDB to Uniprot_ID
-        accessions = []
-        for pdb_id in df.pdb_id.unique():
-            accessions.append(self.map_pdb_to_uniprot(pdb_id))
-
-        # 4 arrestin subtypes, two of which are primarily expressed in the retina and bind only to visual opsins (arrestin 1 and arrestin 4), while the other two (β-arrestin 1 and β-arrestin 2) interact with the remaining ~800 GPCRs
-        translation = {'Beta':'200_000_001', 'Visual':'200_000_002'}
-
-        can_dict = {}
-        can_dict['Arrestin']=['Beta','Visual']
-        can_dict['200_000_001']=['arrb1_human','arrb2_human']
-        can_dict['200_000_002']=['arrc_human','arrs_human']
+        residue_data = pd.read_excel(self.arrestin_data_file)
 
         # Create new residue numbering scheme
         self.create_can_rns()
 
-        accessions = ['P49407','P10523','P32121','P36575']
         rns = ResidueNumberingScheme.objects.get(slug='can')
+        state = ProteinState.objects.get(slug='active')
 
-        for accession in list(set(accessions)):
-            up = self.parse_uniprot_file(accession)
+        arrestins = residue_data[2:].Ortholog.unique()
 
-            #Fetch Protein Family for arrestins
-            for k in can_dict.keys():
-                entry_name = str(up['entry_name']).lower()
+        for arrestin in arrestins:
 
-                if entry_name in can_dict[k]:
-                    pfm = ProteinFamily.objects.get(slug=k)
+            pfm = ProteinFamily.objects.get(name=arrestin)
 
-            # Create new Protein
-            self.can_create_arrestins(pfm, rns, accession, up)
+            for accession in residue_data[residue_data.Ortholog == arrestin].AccessionID.unique():
+                # only allow uniprot accession:
+                if not accession.startswith('ENS'):
+                    up = self.parse_uniprot_file(accession)
 
-        ################## ORTHOLOGS ##############
-        ## Add orthologs of arrestins
+                    # Create new Protein
+                    self.can_create_arrestins(pfm, rns, accession, up)
 
-        orthologs_pairs =[]
-        orthologs =[]
-        #
-        # # Orthologs for human arrestins
-        # allprots = list(df.Uniprot_ID.unique())
-        # allprots = list(set(allprots) - set(can_proteins_list))
-        #
-        # for gp in can_proteins_list:
-        #     for p in allprots:
-        #         if str(p).startswith(gp.split('_')[0]):
-        #             orthologs_pairs.append((str(p), gp))
-        #             orthologs.append(str(p))
-        #
-        # accessions_orth = df.loc[df['Uniprot_ID'].isin(orthologs)]
-        # accessions_orth = accessions_orth['Uniprot_ACC'].unique()
+                    # add new can protein conformations
+                    try:
+                        arrestin = Protein.objects.get(accession=accession)
 
-        # accessions_orth = []
-        # for accession in accessions_orth:
-        #     up = self.parse_uniprot_file(a)
-        #
-        #     # Fetch Protein Family for arrestins
-        #     for k in can_dict.keys():
-        #         name = str(up['entry_name']).upper()
-        #         name = name.split('_')[0]+'_'+'HUMAN'
-        #
-        #         if name in can_dict[k]:
-        #             pfm = ProteinFamily.objects.get(slug=k)
-        #
-        #     # Create new Protein
-        #     self.can_create_arrestins(pfm, rns, accession, up)
-        #
-        # # human arrestins
-        # orthologs_lower = [x.lower() for x in orthologs]
-        #
-        # # orthologs to human arrestins
-        # can_proteins_list_lower = [x.lower() for x in can_proteins_list]
-        #
-        # # all arrestins
-        # accessions_all = list(accessions_orth) + list(accessions)
-
-        return list(accessions)
+                        pc, created = ProteinConformation.objects.get_or_create(protein=arrestin, state=state, template_structure=None)
+                        self.logger.info('Created protein conformation')
+                    except Exception as msg:
+                        self.logger.error('Failed to create protein conformation', msg)
 
     def can_create_arrestins(self, family, residue_numbering_scheme, accession, uniprot):
         # get/create protein source
@@ -371,51 +283,40 @@ class Command(BaseCommand):
                 structure.origin.add(pcan)
                 structure.save()
 
-    def can_parent_protein_family(self):
-        ## New protein family entry
-
-        pf_can, created_pf = ProteinFamily.objects.get_or_create(slug='200', defaults={
-            'name': 'Arrestins'})
-
-        pff_can = ProteinFamily.objects.get(slug='200', name='Arrestins')
-        pf1_can = ProteinFamily.objects.get_or_create(slug='200_000', name='Arrestin', parent=pff_can)
-
     def create_can_rns(self):
-        ## New numbering scheme entry_name
-
+        """Add new numbering scheme entry_name."""
         rns_can, created= ResidueNumberingScheme.objects.get_or_create(slug='can', short_name='CAN', defaults={
             'name': 'Common arrestin numbering scheme'})
 
-    def can_create_proteins_and_families(self):
-
-        # Purge and create arrestin in "protein_family'
+    def can_create_families(self):
+        """Purge and create arrestin in protein_family."""
         ProteinFamily.objects.filter(slug__startswith="200").delete()
-        self.can_parent_protein_family()
+
+        # 4 arrestin subtypes, two of which are primarily expressed in the retina and bind only to visual opsins (arrestin 1 and arrestin 4), while the other two (β-arrestin 1 and β-arrestin 2) interact with the remaining ~800 GPCRs
 
         can_dict = {}
-        can_dict['Arrestin'] = ['000']
-        can_dict['000'] = ['Beta','Visual']
+        can_dict['Arrestin'] = ['Beta', 'Visual']
+        can_dict['Beta'] = ['ARRB1', 'ARRB2']
+        can_dict['Visual'] = ['ARRC', 'ARRS']
 
-        # Protein families to be added
-        # Key of dictionary is level in hierarchy
-        can_dict['1'] = ['Arrestins']
-        can_dict['2'] = ['000']
-        can_dict['3'] = ['Beta','Visual']
+        pff_can, created_pf = ProteinFamily.objects.get_or_create(slug='200', defaults={
+            'name': 'Arrestins'})
+        pf1_can = ProteinFamily.objects.get_or_create(slug='200_000', name='Arrestin', parent=pff_can)
 
-        # Protein lines not to be added to Protein families
-        can_dict['4'] = ['ARRB2','ARRB1','ARRS','ARRC']
-
-        for i,entry in enumerate(can_dict['000']):
+        for i, family in enumerate(can_dict['Arrestin']):
 
             # slug for the different levels
-            slug = '200' + '_000' + '_00' + str(i+1)
+            fam_slug = '200_000_00' + str(i + 1)
 
             pff_can = ProteinFamily.objects.get(slug='200_000')
+            new_pf, created = ProteinFamily.objects.get_or_create(slug=fam_slug, name=family, parent=pff_can)
 
-            new_pf, created = ProteinFamily.objects.get_or_create(slug=slug, name=entry, parent=pff_can)
+            for i, protein in enumerate(can_dict[family]):
 
-        ## function to create necessary arguments to add protein entry
-        self.can_add_proteins()
+                prot_slug = fam_slug + '_00' + str(i + 1)
+
+                pff_fam = ProteinFamily.objects.get(slug=fam_slug)
+                new_pf, created = ProteinFamily.objects.get_or_create(slug=prot_slug, name=protein, parent=pff_fam)
 
     def parse_uniprot_file(self, accession):
         filename = accession + '.txt'
