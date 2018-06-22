@@ -111,18 +111,14 @@ function init() {
     });
 
 
-    // d3.select("#remove_data").on("click", function (e) {
-    //     remove_annotations();
-    //     remove_annotations();
-    //
-    // });
+    d3.select("#remove_data").on("click", function (e) {
+        remove_annotations();
+    });
 
     d3.select("#draw_data").on("click", function (e) {
         // TODO TAKE A LOOK HERE
         if(selected_case.length === 0){
             alert("Please select data");
-            remove_annotations();
-            remove_annotations();
         } else {
             if($("#draw_data").hasClass('active') ){
                 remove_annotations();
@@ -183,10 +179,10 @@ function init() {
     $("#newick_file").on("change", function (e) {
     var files = e.target.files; // FileList object
     if (files.length === 1) {
-      var f = files[0];
-      var reader = new FileReader();
+        var f = files[0];
+        var reader = new FileReader();
 
-      reader.onload = function(e) {
+        reader.onload = function(e) {
             var res = d3.layout.newick_parser (e.target.result);
             if (res["json"]) {
                 if (!("children" in res["json"])) {
@@ -215,7 +211,7 @@ function init() {
                        .attr ("aria-hidden", "true")
                        .html ("&times;");
         };
-      reader.readAsText(f);
+        reader.readAsText(f);
     }
 });
 
@@ -227,7 +223,7 @@ function init() {
         warning_div.html (function (d) {return d;}).attr ("class", "alert-danger");
     } else {
         default_tree_settings ();
-         tree (res).svg (svg).layout();
+         tree(res).svg(svg).layout();
         $('#newick_modal').modal('hide');
     }
 });
@@ -235,40 +231,27 @@ function init() {
 }
 
 function remove_annotations() {
-    // if(!d3.selectAll(".receptor_class_obj").empty()){
-    //         d3.selectAll(".receptor_class_obj").remove()
-    // }
-
-
     /**
-     * This function removes all data
+     * This function removes all annotation data
      */
 
-    // class
-    d3.selectAll(".annotation_shape").remove();
-    d3.selectAll("#class_legend_box").remove();
-    d3.selectAll(".class_legend_group").remove();
-    d3.selectAll(".ligand_legend_group").remove();
-    //    d3.selectAll(".class_tooltip").remove();
-
-    // quantitative
-    d3.selectAll(".annotation_shape").remove();
-    d3.selectAll("#quantity_legend_box").remove();
-    d3.selectAll(".coverage_legend_group").remove();
-
-    // categorical
-    d3.selectAll(".receptor_selectivity_obj").remove();
-    d3.selectAll("#categorical_legend_box").remove();
-    d3.selectAll(".selectivity_legend_group").remove();
-
-
+    if(!d3.selectAll(".annotation_shape").empty()){
+        d3.selectAll(".annotation_shape").remove(); // removes all annotations
+        // legend removal
+        d3.selectAll("#class_legend_box").remove();
+        d3.selectAll(".class_legend_group").remove();
+        d3.selectAll("#quantity_legend_box").remove();
+        d3.selectAll("#categorical_legend_box").remove();
+    } else {
+        alert("no more annotations to remove")
+    }
     // if(d3.select("#draw_data").classed('active')){
     //     d3.select("#draw_data").classed('active', false)
     // }
-    if (tree.align_tips ($(".phylotree-align-toggler").data("align") === "right")) {
-
-    }
-
+    // if (tree.align_tips ($(".phylotree-align-toggler").data("align") === "right")) {
+    //
+    // }
+    //
     update_controls("false");
 }
 
@@ -403,7 +386,7 @@ function draw_class_categ_data(select_data, data_type){
                     class_tooltip.transition()
                         .style("opacity", .9);
                     class_tooltip.html(function(){
-                        return ("Class: " + d)
+                        return (data_type.print_name+ ": " + d)
                     })
                         .style("left", (d3.event.pageX) + "px")
                         .style("top", (d3.event.pageY - 28) + "px");
@@ -414,14 +397,15 @@ function draw_class_categ_data(select_data, data_type){
                         .style("opacity", 0);
                 });
 
-                var move_past_label_rect = maximum_length * 0.55 * font_size;
+                var move_past_label_rect = maximum_length*font_size*0.60;
 
                 if (tree.radial ()) {
                     var shifter_rect = tree.shift_tip(node_data)[0];
                     annotation_rect.attr("transform", "rotate (" + node_data.text_angle + ")")
-                        .attr ("x", function (d, i) { return   shifter_rect > 0 ? shifter_rect + font_size * i + move_past_label_rect : shifter_rect - font_size * (i+1) - move_past_label_rect;})
+                        .attr ("x", function (d, i) {
+                            return   shifter_rect > 0 ? shifter_rect + font_size * i + move_past_label_rect : shifter_rect - font_size * (i+1) - move_past_label_rect;})
                 } else {
-                    var x_shift_rect = tree.shift_tip (node_data)[0] + move_past_label_rect;
+                    var x_shift_rect = tree.shift_tip(node_data)[0] + move_past_label_rect;
                     annotation_rect.attr("transform", null).attr("x", function (d, i) { return  x_shift_rect + font_size * i;})
                 }
 
@@ -441,7 +425,7 @@ function draw_class_categ_data(select_data, data_type){
                         class_tooltip.transition()
                             .style("opacity", .9);
                         class_tooltip.html(function(){
-                            return ("" + d)
+                            return (data_type.print_name+ ": " + d)
                         })
                             .style("left", (d3.event.pageX) + "px")
                             .style("top", (d3.event.pageY - 28) + "px");
@@ -452,7 +436,7 @@ function draw_class_categ_data(select_data, data_type){
                             .style("opacity", 0);
                     });
 
-                var move_past_label_circ = maximum_length * 0.60 * font_size;
+                var move_past_label_circ = maximum_length * 0.65 * font_size;
 
                 if (tree.radial ()) {
                     var shifter_circ = tree.shift_tip(node_data)[0];
@@ -469,11 +453,11 @@ function draw_class_categ_data(select_data, data_type){
         }
     });
 
-    var svg_legend_wd_receptor_class = 200;
-    var svg_legend_hg_receptor_class = 100;
+    //var svg_legend_wd_receptor_class = 200;
+    //var svg_legend_hg_receptor_class = 100;
 
     var svg_legend_receptor_class = d3.select(".class_legend").append("svg")
-        .attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
+        //.attr("width", svg_legend_wd_receptor_class).attr("height", svg_legend_hg_receptor_class)
         .attr("id", "class_legend_box");
 
     // add specific title to legend
@@ -505,6 +489,7 @@ function draw_class_categ_data(select_data, data_type){
         .style("fill", function (d) {
             return class_colors(get_class_index(d, set_of_elements))
         });
+
     } else if(data_type.shape === "circle"){
         class_legend.append(data_type.shape)
         .attr("cx", 5)
@@ -521,7 +506,7 @@ function draw_class_categ_data(select_data, data_type){
         .attr("x", 20)
         .attr("y", 30)
         .text(function (d) {
-            return "Class " + d
+            return (d)
         })
         .style("text-anchor", "start")
         .style("font-size", 13);

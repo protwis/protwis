@@ -223,6 +223,8 @@ div.selectivity_tooltip{
 
 
 #class_legend_box{
+    width: auto;
+    height: auto;
     margin: 10px 10px 10px 10px;
     top: 10%;
     padding: 7px 10px 10px 10px;
