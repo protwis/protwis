@@ -101,7 +101,7 @@ function init() {
         sort_nodes(false);
     });
 
-
+    selected_case = [];
     d3.select("fieldset[name=data_selection]").on("change", function() {
         selected_case = [];
         $(this).children("input:checked").map(function() {
@@ -111,33 +111,54 @@ function init() {
     });
 
 
-    d3.select("#remove_data").on("click", function (e) {
-        remove_annotations();
-    });
+    // d3.select("#remove_data").on("click", function (e) {
+    //     remove_annotations();
+    //     if($("#draw_data").hasClass('active') ) {
+    //             $(this).removeClass('active');
+    //         }
+    // });
 
     d3.select("#draw_data").on("click", function (e) {
-        // TODO TAKE A LOOK HERE
         if(selected_case.length === 0){
             alert("Please select data");
-        } else {
-            if($("#draw_data").hasClass('active') ){
+            if($(this).hasClass('active') ) {
                 remove_annotations();
+                $(this).removeClass('active');
+            }
+        } else if(selected_case.length === 1){
+            if($(this).hasClass('active') ){
                 remove_annotations();
-                $("#draw_data").removeClass('active');
+                $(this).removeClass('active');
             } else {
                 data_type.forEach(function (obj, index) {
                     selected_case.forEach(function (option) {
                         if ((option.value === "class" || option.value === "category") && option.name === obj.name){
-                            draw_class_categ_data(receptor_data, data_type[index]);
+                            draw_class_categ_data(receptor_data, data_type[index], 0);
                             $("#draw_data").addClass('active');
                         } else if(option.value === "quantity" && option.name === obj.name){
-                            draw_quantitative_data(receptor_data, data_type[index]);
+                            draw_quantitative_data(receptor_data, data_type[index], 0);
                             $("#draw_data").addClass('active');
                         }
                     })
                 });
             }
-
+        } else if(selected_case.length > 1){ // for stacking
+            if($(this).hasClass('active') ){
+                remove_annotations();
+                $(this).removeClass('active');
+            } else {
+                data_type.forEach(function (obj, index) {
+                    selected_case.forEach(function (option) {
+                        if ((option.value === "class" || option.value === "category") && option.name === obj.name){
+                            draw_class_categ_data(receptor_data, data_type[index], index);
+                            $("#draw_data").addClass('active');
+                        } else if(option.value === "quantity" && option.name === obj.name){
+                            draw_quantitative_data(receptor_data, data_type[index], index);
+                            $("#draw_data").addClass('active');
+                        }
+                    })
+                });
+            }
         }
 
     });
@@ -272,10 +293,14 @@ function get_class_index(class_name, class_array) {
     return index
 }
 
-function draw_class_categ_data(select_data, data_type){
+function draw_class_categ_data(select_data, data_type, stacking_shifter){
     // work with a default mode and add colors and shapes in the data_type.json
     tree.align_tips(true);
     update_controls("true");
+
+    var stack_shift = stacking_shifter*35;
+    console.log("this is the stack_shift" + stack_shift);
+
 
     var maximum_length = 0;
 
@@ -349,7 +374,7 @@ function draw_class_categ_data(select_data, data_type){
         //     });
         // });
 
-        //TODO remove this
+        // TODO remove this
         set_of_elements = ['Gi/Go family', 'G12/G13 family', 'Gs family', 'Gq/G11 family'];  // create a set of families to get the index to look up in the color scale
 
     } else {
@@ -372,8 +397,8 @@ function draw_class_categ_data(select_data, data_type){
             var font_size  = parseFloat(node_label.style("font-size"));
 
             if(data_type.shape === "rect"){
-                var annotation_rect = element.selectAll(data_type.shape).data(class_elements[node_data.name]);
-                annotation_rect.enter().append(data_type.shape).attr("class", "annotation_shape");
+                var annotation_rect = element.selectAll(data_type.name).data(class_elements[node_data.name]);
+                annotation_rect.enter().append(data_type.shape).attr("class", "annotation_shape").attr("id", data_type.name);
                 annotation_rect
                     .attr ("width", font_size)
                     .attr ("height", font_size)
@@ -397,7 +422,7 @@ function draw_class_categ_data(select_data, data_type){
                         .style("opacity", 0);
                 });
 
-                var move_past_label_rect = maximum_length*font_size*0.60;
+                var move_past_label_rect = (maximum_length*font_size*0.60)+stack_shift;
 
                 if (tree.radial ()) {
                     var shifter_rect = tree.shift_tip(node_data)[0];
@@ -409,11 +434,13 @@ function draw_class_categ_data(select_data, data_type){
                     annotation_rect.attr("transform", null).attr("x", function (d, i) { return  x_shift_rect + font_size * i;})
                 }
 
+                annotation_rect.exit().remove()
+
             } else if (data_type.shape === "circle"){
 
-                var annotation_circ = element.selectAll(data_type.shape).data(class_elements[node_data.name]);
+                var annotation_circ = element.selectAll(data_type.name).data(class_elements[node_data.name]);
 
-                annotation_circ.enter().append(data_type.shape).attr("class", "annotation_shape");
+                annotation_circ.enter().append(data_type.shape).attr("class", "annotation_shape").attr("id", data_type.name);
                 annotation_circ
                     .attr("r", font_size/2)
                     .attr ("cy", 0)
@@ -436,7 +463,7 @@ function draw_class_categ_data(select_data, data_type){
                             .style("opacity", 0);
                     });
 
-                var move_past_label_circ = maximum_length * 0.65 * font_size;
+                var move_past_label_circ = (maximum_length * 0.65 * font_size) + stack_shift;
 
                 if (tree.radial ()) {
                     var shifter_circ = tree.shift_tip(node_data)[0];
@@ -446,7 +473,7 @@ function draw_class_categ_data(select_data, data_type){
                     var x_shift_circ = tree.shift_tip (node_data)[0] + move_past_label_circ;
                     annotation_circ.attr ("transform", null).attr("cx", function (d, i) { return  x_shift_circ + font_size * i;});
                 }
-
+                annotation_circ.exit().remove()
             } else {
                 alert("this shape is not supported");
             }
@@ -940,12 +967,15 @@ function draw_class_categ_data(select_data, data_type){
 // }
 
 
-function draw_quantitative_data(select_data, data_type){
+function draw_quantitative_data(select_data, data_type, stacking_shifter){
 
     tree.align_tips(true);
     update_controls("true");
 
     var maximum_length = 0;
+    var stack_shift = stacking_shifter*40;
+    console.log("this is the stack_shift" + stack_shift);
+
 
     var receptor_coverage = {}; // create object of coverages to bind to element
 
@@ -978,9 +1008,9 @@ function draw_quantitative_data(select_data, data_type){
             var node_label = element.select("text");
             var font_size  = parseFloat(node_label.style("font-size"));
 
-            var annotation = element.selectAll("rect").data(receptor_coverage[node_data.name]);
+            var annotation = element.selectAll(data_type.name).data(receptor_coverage[node_data.name]);
 
-            annotation.enter().append("rect").attr("class", "annotation_shape");
+            annotation.enter().append(data_type.shape).attr("class", "annotation_shape").attr("id", data_type.name);
             annotation
                 .attr ("height", font_size)
                 .attr("width", function (d) {
@@ -1004,16 +1034,17 @@ function draw_quantitative_data(select_data, data_type){
                         .style("opacity", 0);
                 });
 
-            var move_past_label = maximum_length * 0.65 * font_size;
+            var move_past_label = (maximum_length * 0.65 * font_size)+ stack_shift;
 
             if (tree.radial ()) {
-                var shifter = tree.shift_tip(node_data)[0];
+                var shifter = tree.shift_tip(node_data)[0] ;
                 annotation.attr("transform", "rotate (" + node_data.text_angle + ")")
                     .attr ("x", function (d, i) { return   shifter > 0 ? shifter + font_size * i + move_past_label : shifter - font_size * (i+1) - move_past_label;})
             } else {
                 var x_shift = tree.shift_tip (node_data)[0] + move_past_label;
                 annotation.attr ("transform", null).attr ("x", function (d, i) { return  x_shift + font_size * i;});
             }
+            annotation.exit().remove()
 
         }
 
