@@ -20,6 +20,14 @@
 
 }
 
+.node, text:hover {
+    font: 10px sans-serif;
+    font-weight: bold;
+    cursor: pointer;
+
+
+}
+
 .link {
     fill: none;
     stroke: #ccc;
