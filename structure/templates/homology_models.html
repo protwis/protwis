@@ -25,7 +25,7 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'iTlfrt',
-                'order': [[4, "asc"],[1, "asc"]], // order by class then receptor name
+                'order': [[5, "asc"],[2, "asc"]], // order by class then receptor name
 
                 'tableTools': {
                     "sRowSelect": "single",
@@ -37,7 +37,8 @@
                         sRangeFormat: "{from}:{to}",
                         aoColumns: [
                             null,
-                            { type: "text" }, // protein name
+                            { type: "text" }, // protein model name
+                            { type: "text" }, // uniprot name
                             { type: "select" }, // protein family
                             { type: "select"}, // state
                             { type: "select" }, // class
@@ -89,7 +90,7 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][9];
+                    div.innerHTML = checked_data[i][10];
                     
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
@@ -109,13 +110,12 @@
                 ClearSelection('reference');
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
-                    div.innerHTML = table.rows('.selected').data()[0][9];
-                    var state1 = table.rows('.selected').data()[0][3];
-
+                    div.innerHTML = table.rows('.selected').data()[0][10];
+                    var state1 = table.rows('.selected').data()[0][4];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('reference', 'structure_model_'.concat(state1), div.innerText.replace(/\s+/g, ''));
+                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
                     } else {
-                        AddToSelection('reference', 'structure_model_'.concat(state1), div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
                     }
 
                 }
@@ -123,8 +123,8 @@
                 var selected_ids = [];
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][9];
-                    var state2 = checked_data[i][3];
+                    div.innerHTML = checked_data[i][10];
+                    var state2 = checked_data[i][4];
                     if (typeof div.innerText !== "undefined") {
                         selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
                     } else {
@@ -186,17 +186,19 @@
                 <tr>
                     <th><input class="select-all" type="checkbox"> Select all</th>
                     <th class="protein-th">Receptor model</th>
+                    <th class="protein-th">Uniprot</th>
                     <th class="protein-th">Receptor family</th>
                     <th class="protein-th">State</th>
                     <th class="protein-th">Receptor class</th>
                     <th class="protein-th">Species</th>
                     <th class="pdb-th">Main template protein</th>
-                    <th class="pdb-th">Xtal</th>
-                    <th class="pdb-th">Version</th>
+                    <th class="pdb-th">PDB</th>
+                    <th class="version-th">Model version</th>
                     <th style="display:none;"></th>
 
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -215,6 +217,7 @@
                 <tr model_id='{{model.pk}}'>
                     <td><input class="alt" type="checkbox"></td>
                     <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
+                    <td>{{ model.protein.entry_short }}</td>
                     <td>{{ model.protein.family.parent.name|safe }}</td>
                     <td style="text-align: left;">{{ model.state.name }}</td>
                     <td>{{ model.protein.family.parent.parent.parent.name }}</td>

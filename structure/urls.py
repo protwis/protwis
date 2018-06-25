@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
     url(r'^selection_convert_signprot_model$', ConvertStructureComplexSignprotToProteins, name='convert_signprot'),
     url(r'^hommod_download$', HommodDownload, name='hommod_download'),
+    url(r'^complexmod_download$', ComplexmodDownload, name='complexmod_download'),
     url(r'^template_browser', TemplateBrowser.as_view(), name='structure_browser'),
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),

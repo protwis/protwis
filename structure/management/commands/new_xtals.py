@@ -42,7 +42,7 @@ class Command(BaseBuild):
             q.new_xtals(self.verbose)
         else:
             self.uniprots = self.get_all_GPCR_uniprots()
-            # self.uniprots = ['Q14832']
+            # self.uniprots = ['P42866']
             self.yamls = self.get_all_yamls()
             self.prepare_input(options['proc'], self.uniprots)
 
@@ -212,24 +212,25 @@ class QueryPDB():
                             struct_yaml_dict = {'construct': pdb_code.index.lower(), 'pdb': pdb_code.index, 'preferred_chain': preferred_chain, 'auxiliary_protein': '', 
                                                 'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
                             auxiliary_proteins, ligands = [], []
-                            for key, values in pdb_data_dict['ligands'].items():
-                                if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN']:
-                                    continue
-                                else:
-                                    ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
-                            for key, values in pdb_data_dict['auxiliary'].items():
-                                if pdb_data_dict['auxiliary'][key]['subtype'] in ['Expression tag', 'Linker']:
-                                    continue
-                                else:
-                                    auxiliary_proteins.append(pdb_data_dict['auxiliary'][key]['subtype'])
-                            for key, values in pdb_data_dict['construct_sequences'].items():
-                                if key!=protein.entry_name and key not in struct_yaml_dict['auxiliary_protein']:
-                                    if 'arrestin' in key:
-                                        struct_yaml_dict['signaling_protein'] = key
-                            if len(auxiliary_proteins)>1:
-                                struct_yaml_dict['auxiliary_protein'] = ', '.join(auxiliary_proteins)
-                            if len(ligands)>1:
-                                struct_yaml_dict['ligand'] = ligands
+                            if pdb_data_dict['ligands']!='None':
+                                for key, values in pdb_data_dict['ligands'].items():
+                                    if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE']:
+                                        continue
+                                    else:
+                                        ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
+                                for key, values in pdb_data_dict['auxiliary'].items():
+                                    if pdb_data_dict['auxiliary'][key]['subtype'] in ['Expression tag', 'Linker']:
+                                        continue
+                                    else:
+                                        auxiliary_proteins.append(pdb_data_dict['auxiliary'][key]['subtype'])
+                                for key, values in pdb_data_dict['construct_sequences'].items():
+                                    if key!=protein.entry_name and key not in struct_yaml_dict['auxiliary_protein']:
+                                        if 'arrestin' in key:
+                                            struct_yaml_dict['signaling_protein'] = key
+                                if len(auxiliary_proteins)>1:
+                                    struct_yaml_dict['auxiliary_protein'] = ', '.join(auxiliary_proteins)
+                                if len(ligands)>1:
+                                    struct_yaml_dict['ligand'] = ligands
                             yaml.dump(struct_yaml_dict, structure_file, indent=4, default_flow_style=False)
 
                         # Build residue table for structure

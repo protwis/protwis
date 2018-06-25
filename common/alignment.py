@@ -1288,7 +1288,6 @@ class AlignedReferenceTemplate(Alignment):
                 if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                     temp_list1.append((struct, temp_length1, similarity, float(struct.resolution), protein, struct.representative))
                     temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein, struct.representative))
-                    
         if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
             ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict(), ECL2_part='_1')
             ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref, ECL2_part='_mid')
@@ -1298,8 +1297,8 @@ class AlignedReferenceTemplate(Alignment):
                 self.loop_table=None
             return self.loop_table
         else:
-            if self.segment_labels[0]!='ICL2':
-                temp_list = temp_list[1:]
+            # if self.segment_labels[0]!='ICL2':
+            #     temp_list = temp_list[1:]
             return self.order_sim_table(temp_list, ref_seq, OrderedDict(), x50_ref)
                     
     def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None, ECL2_part=''):

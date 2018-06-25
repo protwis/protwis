@@ -12,6 +12,9 @@
 canvas {
     border:2px solid #888888;
 }
+.col-md-3 {
+    color: black;
+}
 </style>
 
 <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
@@ -212,9 +215,9 @@ canvas {
                     <th class="protein-th">Seq.num.</th>
                     <th class="protein-th">GPCRdb#</th>
                     <th class="pdb-th">Backbone</th>
-                    <th class="pdb-th">Xtal</th>
+                    <th class="pdb-th">PDB</th>
                     <th class="pub-th">Rotamer</th>
-                    <th class="pub-th">Xtal</th>
+                    <th class="pub-th">PDB</th>
                 </tr>
                 <tr>
                     <th></th>
@@ -280,20 +283,8 @@ canvas {
             }
             color_array.push(["darkorchid","*"])
 
-            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array
-                //[['yellow', '94-96'], ['white', '55-55 or 59-59 or 91-93 or 133-133 or 139-139 or 167-176 or 214-214 or 216-216 or 255-255 or 259-259'], 
-                // ['olive', '256-258'], ['orange', '56-58'], ['teal', '134-138 or 209-213 or 217-221'], ['fuchsia', '90-90'], ['lime', '215-215'], ['*', 'purple']]
-                //[['red', '334-340'], ['blue', '176-185'], ['yellow', '172-174'], ['aqua', '227-233'], ['white', '175-175 or 186-186 or 190-191 or 234-238 or 329-333 or 371-37'], ['maroon', '403-403'], //['purple', '*']]
-            );
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
             
-
-
-            //var stringBlob = new Blob( [ "pdb/{{pdbname}}" ], { type: 'text/plain'} );
-            // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
-            // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
-            //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
-            
-
             if ("{{state}}"=="refined") {
                 stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){
                     o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId } 
@@ -306,9 +297,6 @@ canvas {
                     o.centerView();
                 } );
             }
-
-            
-            //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
         } );
         $( "#fullscreen" ).click(function() {
             stage.toggleFullscreen();

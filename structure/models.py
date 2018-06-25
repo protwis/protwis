@@ -101,12 +101,13 @@ class StructureComplexModel(models.Model):
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdb = models.TextField()
     version = models.DateField()
+    prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
     
     def __repr__(self):
-        return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+' '+str(self.sign_protein)+'>'
+        return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+'-'+str(self.sign_protein.entry_name)+'>'
         
     def __str__(self):
-        return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+' '+str(self.sign_protein)+'>'
+        return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+'-'+str(self.sign_protein.entry_name)+'>'
 
     class Meta():
         db_table = 'structure_complex_model'
