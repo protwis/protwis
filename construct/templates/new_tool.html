@@ -2,9 +2,16 @@
 {% load staticfiles %}
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
 {% endblock %}
 {% block content %}
   <style>
+
+  .btn_break{
+    white-space:normal !important;
+        max-width:100px;
+  }
 
   .glyphicon-large {
     font-size: 25px;
@@ -274,36 +281,52 @@
 <table width=100%  id='possibilities' class='table table-bordered table-condensed table-striped'>
 <thead>
 <tr>
+  <th colspan=2>Total constructs:</th>
+  <th colspan=1 id='total_count'> 0 </th>
+  <th rowspan="1" colspan="1" class='possiblities_nterm'  id='fusion_count_nterm'></th>
+  <th rowspan="1" colspan="3" id='deletion_n-term_count'></th>
+    {% if class == 'A'  or class == 'F' %}
+  <th rowspan="1" colspan="3" id='deletion_ICL3_start_count'></th>
+  <th rowspan="1" colspan="3" class='possiblities_icl' id='fusion_count'></th>
+  <th rowspan="1" colspan="3" id='deletion_ICL3_end_count'></th>
+      {% elif class == 'B' or class == 'C' %}
+  <th rowspan="1" colspan="3" id='deletion_ICL2_start_count'></th>
+  <th rowspan="1" colspan="3" class='possiblities_icl' id='fusion_count'></th>
+  <th rowspan="1" colspan="3" id='deletion_ICL2_end_count'></th>
+      {% endif %}
+  <th rowspan="1" colspan="3" id='deletion_c-term_count'></th>
+  <th rowspan="1" colspan="1">  </th>
+  <th rowspan="1" colspan="1" id='mutation_count'> </th>
+
+<tr>
   <th rowspan="2">No</th>
   <th rowspan="2">Display snake-plot <br>
     <button type="button" id="delete_other" class="btn btn-primary btn-xs" onclick='delete_other();'>
           Delete other
     </button>
-  <!-- / mut scan / ref constr --></th>
-  <!-- <th rowspan="2">Add</th> -->
+  </th>
   <th rowspan="2">
-  <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("nterm");inserts_overview(true);'>
+  <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs btn_break" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("nterm");inserts_overview(true);'>
           N-term Inserts
   </button>
   </th>
   <th rowspan="1" colspan="1" class='possiblities_nterm'>
-
-    <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("fusion");inserts_overview(true);'>
+    <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs btn_break" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("fusion");inserts_overview(true);'>
       Fusion
     </button>
   </th>   
   <th rowspan="1" colspan="3">
-  <button type="button" id="nterm_button" class="btn btn-primary btn-xs" onclick='build_nterm_menu();showModal("N-term",tables["nterm"],"#nterm_sug");'>
+  <button type="button" id="nterm_button" class="btn btn-primary btn-xs btn_break" onclick='build_nterm_menu();showModal("N-term",tables["nterm"],"#nterm_sug");'>
       N-term truncation 
     </button>
     </th>
   <th rowspan="1" colspan="3">
     {% if class == 'A'  or class == 'F' %}
-        <button type="button" id="icl3_start_button" class="btn btn-primary btn-xs" onclick='build_icl3_menu();showModal("ICL3 (Start)",tables["icl3_start"],"#icl3_sug_start");'>
+        <button type="button" id="icl3_start_button" class="btn btn-primary btn-xs btn_break" onclick='build_icl3_menu();showModal("ICL3 (Start)",tables["icl3_start"],"#icl3_sug_start");'>
         Fusion/Deletion site start (last kept Rec res)*
         </button>
       {% elif class == 'B' or class == 'C' %}
-        <button type="button" id="icl2_start_button" class="btn btn-primary btn-xs" onclick='build_icl2_menu();showModal("ICL2 (Start)",tables["icl2_start"],"#icl2_sug_start");'>
+        <button type="button" id="icl2_start_button" class="btn btn-primary btn-xs btn_break" onclick='build_icl2_menu();showModal("ICL2 (Start)",tables["icl2_start"],"#icl2_sug_start");'>
         Fusion/Deletion site start (last kept Rec res)*
         </button>
       {% endif %}
@@ -311,7 +334,7 @@
   </th>
   <th rowspan="1" colspan="3" class='possiblities_icl'>
 
-        <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("fusion");inserts_overview(true);'>
+        <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs btn_break" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("fusion");inserts_overview(true);'>
           Fusion
         </button>
   
@@ -319,11 +342,11 @@
   <th rowspan="1" colspan="3">
 
     {% if class == 'A'  or class == 'F' %}
-        <button type="button" id="icl3_end_button" class="btn btn-primary btn-xs" onclick='build_icl3_menu();showModal("ICL3 (End)",tables["icl3_end"],"#icl3_sug_end");'>
+        <button type="button" id="icl3_end_button" class="btn btn-primary btn-xs btn_break" onclick='build_icl3_menu();showModal("ICL3 (End)",tables["icl3_end"],"#icl3_sug_end");'>
         Fusion/Deletion site end (first kept Rec res)*
         </button>
       {% elif class == 'B' or class == 'C' %}
-       <button type="button" id="icl2_end_button" class="btn btn-primary btn-xs" onclick='build_icl2_menu();showModal("ICL2 (End)",tables["icl2_end"],"#icl2_sug_start");'>
+       <button type="button" id="icl2_end_button" class="btn btn-primary btn-xs btn_break" onclick='build_icl2_menu();showModal("ICL2 (End)",tables["icl2_end"],"#icl2_sug_start");'>
         Fusion/Deletion site end (first kept Rec res)*
         </button>
       {% endif %}
@@ -331,18 +354,18 @@
 
     </th>
   <th rowspan="1" colspan="3">
-  <button type="button" id="cterm_button" class="btn btn-primary btn-xs" onclick='build_cterm_menu();showModal("C-term",tables["cterm"],"#cterm_sug");'>
+  <button type="button" id="cterm_button" class="btn btn-primary btn-xs btn_break" onclick='build_cterm_menu();showModal("C-term",tables["cterm"],"#cterm_sug");'>
       C-term truncation
     </button>
     </th>
   <th rowspan="2">
-  <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("cterm");inserts_overview(true);'>
+  <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs  btn_break" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("cterm");inserts_overview(true);'>
           C-term Inserts
   </button>
   </th>
 
   <th rowspan="2">
-    <button type="button" id="mutations_mode" class="btn btn-primary btn-xs" onclick='build_mutation_mode_table();showModal("Mutations",tables["mutations"],"#mutations");'> Mutations</button>
+    <button type="button" id="mutations_mode" class="btn btn-primary btn-xs  btn_break" onclick='build_mutation_mode_table();showModal("Mutations",tables["mutations"],"#mutations");'> Mutations</button>
   </th>
 </tr>
 <tr>
@@ -480,6 +503,8 @@
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/diagrams.js' %}"></script> 
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
 <script type="text/javascript" charset="utf-8">
 
 if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
@@ -727,13 +752,24 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     var segment_pretty = ['N-term','FusionSite','C-term']
      $.each(['nterm','fusionsite','cterm'], function(key,segment) {
     other_inserts_dropdown += "<tr class='fusion_inserts "+segment+" "+segment+"_site_inserts'><th width=75>"+segment_pretty[key] + "</th><td>";
-    other_inserts_dropdown += `<select id="`+segment+`_insert_type" name="protein_type" class='form-control'>
+
+    if (segment!='cterm') {
+        other_inserts_dropdown += `<select id="`+segment+`_insert_type" name="protein_type" class='form-control'>
                   <option value="" >Please select Type</option>
                   <option value="`+segment+`_signal">Signal Peptide</option>
                   <option value="`+segment+`_tag">Tag</option>
                   <option value="`+segment+`_linker">Linker sequence</option>
                   <option value="`+segment+`_prot_cleavage">Proteolytic Cleavage site</option>
                 </select>`;
+    } else {
+        other_inserts_dropdown += `<select id="`+segment+`_insert_type" name="protein_type" class='form-control'>
+                  <option value="" >Please select Type</option>
+                  <option value="`+segment+`_tag">Tag</option>
+                  <option value="`+segment+`_linker">Linker sequence</option>
+                  <option value="`+segment+`_prot_cleavage">Proteolytic Cleavage site</option>
+                </select>`;
+
+    }
 
     other_inserts_dropdown += `<select class="`+segment+`_insert_type form-control" id="`+segment+`_signal" name="signal">
                   <option value="">Please Select</option>
@@ -836,6 +872,38 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
                     .search( this.value )
                     .draw();
         } );
+        if (datatable == '#mutations') {
+          yadcf.init(db_table,
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "State",
+                            filter_reset_button_text: false,
+                            filter_match_mode : "exact",
+                        }
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+                );
+
+          yadcf.exResetAllFilters(db_table);
+      }
+    }
+
+    function has_changes() {
+      if (modifications.length>0) return true;
+      if (manual_constructs.length>0) return true;
+      if (manual_inserts.length>0) return true;
+
+      if (inserts['fusion'].length>0) return true;
+      if (inserts['cterm'].length>0) return true;
+      if (inserts['nterm'].length>0) return true;
+
+      return false;
+
     }
 
     function resetAll() {
@@ -1186,6 +1254,15 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         })
         level_num += 1;
       }) 
+
+
+      combi_options = "<select id=combi_mutations class='form-control'>";
+      c = 0;
+      $.each(getSortedKeys_advanced(show_table), function(i, val) {
+          c += 1;
+          combi_options += "<option>"+c+"</option>";
+      });
+
       // console.log('check existing nterm!');
       var existing_nterms = [];
       $.each(modifications, function(key,val) {
@@ -1227,7 +1304,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['nterm'] = result;
-      $("#nterm_button").html("N-term ("+Object.keys(show_table).length+")");
+      // $("#nterm_button").html("N-term ("+Object.keys(show_table).length+")");
       // $("#ModalBody").html(result);
     }
 
@@ -1306,7 +1383,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['cterm'] = result;
-      $("#cterm_button").html("C-term ("+Object.keys(show_table).length+")");
+      // $("#cterm_button").html("C-term ("+Object.keys(show_table).length+")");
 
     }
 
@@ -1586,7 +1663,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl2_end'] = result;
-      $("#icl2_start_button").html("ICL2 ("+Object.keys(show_table_start).length+")");
+      // $("#icl2_start_button").html("ICL2 ("+Object.keys(show_table_start).length+")");
     }
 
     function build_mutations() {
@@ -1754,7 +1831,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['site_removals'] = result;
-      $("#removals_button").html("Site removals ("+count+")");
+      // $("#removals_button").html("Site removals ("+count+")");
     }
 
     // ON CLICK FUNCTIONS
@@ -1860,9 +1937,17 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           // return false;
           var work_mode = $('input:radio[name=work_mode]:checked').val();
           if (work_mode=='combi_mode_button') {
-            $( "#dialogauto" ).dialog( "open");
+            if (has_changes()) {
+              $( "#dialogauto" ).dialog( "open");
+            } else {
+              combi_mode();
+            }
           } else if (work_mode=='combi_mode_mut_button') {
-            $( "#dialogauto_mut" ).dialog( "open" );
+            if (has_changes()) {
+              $( "#dialogauto_mut" ).dialog( "open");
+            } else {
+              combi_mode_mut();
+            }
           } else if (work_mode=='manual_mode_button') {
             edit_mode();
           }
@@ -2219,16 +2304,15 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           // if (!i.startsWith(state)){
           //   return true;
           // }
-          state = i.split("_")[0];
         } 
           c += 1;
           combi_options += "<option>"+c+"</option>";
       });
       combi_options += "</select>";
-      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>State</th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Use in all constructs</th><th>Use in one construct</th></tr></thead><tbody>"];
+      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Use in all constructs</th><th>Use in one construct</th></tr></thead><tbody>"];
       items_table.push('<p>Add top'+combi_options+" mutants to be used in <select id='mutant_where' class='form-control'><option>All constructs</option><option>In single constructs<input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
       if (edit_mode_on || 1==1) {
-      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>State</th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>"];
+      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>"];
 
       items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='All constructs'> <input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
       }
@@ -3419,6 +3503,12 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       possible_combinations = 1;
       modifications_to_do = []
       $.each(unique_groups, function(key,val) {
+        console.log(key,val[0]);
+        if (key=='fusion' && fusionpos == 'nterm'){
+          $("#"+key+"_count_nterm").html((val[0]+val[1]));
+        } else {
+          $("#"+key+"_count").html((val[0]+val[1]));
+        }
         $.each(val[3], function(key,ignored) {
           modifications[ignored]['ignored'] = "true";
         });
@@ -3459,6 +3549,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
       possible = allPossibleCases(modifications_to_do);
       console.log("Do comb",possible);
+      $("#total_count").html(possible.length);
       // console.log(possible);
       // console.log(modifications_to_do);
       // console.log(possible);
@@ -3583,8 +3674,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           }
 
           // ignore for now
-          icl_start_linker = '<td></td>';
-          icl_end_linker = '<td></td>';
+          icl_start_linker = '<td class="possiblities_icl"></td>';
+          icl_end_linker = '<td class="possiblities_icl"></td>';
 
           if (icl_end_pos && icl_start_pos && icl_end_pos<=icl_start_pos) {
             tr_class = 'error';
@@ -3815,7 +3906,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
               range.push(i);
           }
-          console.log('icl range',range);
+          // console.log('icl range',range);
         }
 
 
@@ -3888,7 +3979,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
           } else {
             // check for fusion site
-            console.log(key,fusion_site_location);
+            // console.log(key,fusion_site_location);
             if (fusion_site_location!=-1 && fusion_in_sequence) {
               if (key==fusion_site_location && fusionpos!='None') {
                   // console.log('WE ARE AT FUSION SITE!');
