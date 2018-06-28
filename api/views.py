@@ -68,7 +68,7 @@ class ProteinFamilyList(generics.ListAPIView):
     \n/proteinfamily/
     """
 
-    queryset = ProteinFamily.objects.all()
+    queryset = ProteinFamily.objects.all().prefetch_related('parent')
     serializer_class = ProteinFamilySerializer
 
 
