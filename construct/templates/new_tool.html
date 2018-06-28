@@ -150,7 +150,7 @@
     </div>
   </div>
 
-    <div class="row">
+<!--    <div class="row">
       <div class="col-sm-3">
       State: 
       </div>
@@ -169,6 +169,7 @@
 {% endif %}
       </div>
       </div>
+      -->
 <!-- <button class="btn btn-info" onclick='exportCSVsuggestions();'>Export all suggestions</button> -->
 
 <span id='load'>
@@ -272,11 +273,11 @@
 <br><br>
 <div class="table-responsive">
 
-<h4 id='combi_mode'>Automatic Mode
-        <button class="btn btn-warning btn-xs" onclick='showModal("Automatic Construct Design",tables["auto_combi"],"");automatic_helper();'>Automatic Construct Design</button>
+        <!-- <button class="btn btn-warning btn-xs" onclick='showModal("Automatic Construct Design",tables["auto_combi"],"");automatic_helper();'>Automatic Construct Design</button>
         <button type="button" id="mutations_button" class="btn btn-primary btn-xs" onclick='showModal("Custom",tables["custom"]);'>
           User-defined mutation or deletion
-        </button>
+        </button> -->
+<h4 id='combi_mode'>Truncation/fusion scan
       </h4>
 <table width=100%  id='possibilities' class='table table-bordered table-condensed table-striped'>
 <thead>
@@ -404,7 +405,7 @@
 
 <div class="table-responsive">
 
-<h4 id='manual_mode'>Manual mode
+<h4 id='manual_mode'>Custom constructs
     <button type="button" id="add_manual" class="btn btn-primary btn-xs" onclick='add_manual_row()'>
       Add Construct (row)
     </button></h4>
@@ -674,7 +675,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.<br> If there are several modfications chosen for the same form of deletion then you can either generate multiple construct sequences with combinations of the choices. Alternatively you can fix to a chosen modification by ticking the Fix box.<br> In the same fashion mutations can be fixed or used to make multiple sequences</p>';
     info_text['inserts_general'] = '<p class=info_text>See current inserts below. For inserts in N- or C-term you can change the order they come in.<br>If you choose several fusion proteins, they will be used for combinations.</p>';
     info_text['auto_combi'] = '<p class=info_text>Automatic work mode generates all combinations of the selected truncation and fusion sites.<br>You have the option to delete specific combinations/constructs afterwards.<br>Specify the number of:</p>';
-    info_text['mutations'] = '<p class=info_text>Below are all generated mutant suggestions based on rules and annotated thermostabilising mutants.<br></p>';
+    info_text['mutations'] = "Mutate: <input type='text' id='custom_pos' placeholder='sequence position'> to <input type='text' id='custom_mut' placeholder='aminoacid (1-letter)'> <input type='text'  id='custom_reason' placeholder='Reason'><input type=button value=Add onclick='custom_mut()'><div id=confirm_cus_mut></div><p class=info_text>Below are all generated mutant suggestions based on rules and annotated thermostabilising mutants.<br></p>";
 
 
     tables["custom"] = [info_text['custom']]
@@ -1206,6 +1207,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
   }
 
     function build_nterm_menu() {
+      console.log('"DOING NTERM');
       var state = $('input:radio[name=state]:checked').val();
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
       show_nterm = {};
@@ -1256,22 +1258,25 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       }) 
 
 
-      combi_options = "<select id=combi_mutations class='form-control'>";
+      combi_options = "<select id=combi_nterm class='form-control'>";
       c = 0;
       $.each(getSortedKeys_advanced(show_table), function(i, val) {
           c += 1;
           combi_options += "<option>"+c+"</option>";
       });
+      combi_options += "</select>";
 
-      // console.log('check existing nterm!');
+      console.log('check existing nterm!');
       var existing_nterms = [];
       $.each(modifications, function(key,val) {
         if (val['method']=='n-term') existing_nterms.push(parseInt(val['extra']));
       });
 
+      console.log(existing_nterms);
       export_list['nterm'] = [];
 
       var items_table = [info_text['nterm']];
+      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_nterm()'></p>");
       items_table.push( "Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'> or <input type='text' id='custom_nterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_nterm()'>");
       if (fusionpos=='nterm') {
         items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
@@ -1356,6 +1361,15 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         level_num += 1;
       }) 
 
+
+      combi_options = "<select id=combi_cterm class='form-control'>";
+      c = 0;
+      $.each(getSortedKeys_advanced(show_table), function(i, val) {
+          c += 1;
+          combi_options += "<option>"+c+"</option>";
+      });
+      combi_options += "</select>";
+
       var existing_cterms = [];
       $.each(modifications, function(key,val) {
         if (val['method']=='c-term') existing_cterms.push(parseInt(val['extra']));
@@ -1363,6 +1377,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       console.log('existing_cterms',existing_cterms);
       export_list['cterm'] = [];
       var items_table = [info_text['cterm']];
+      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_cterm()'></p>");
       items_table.push( "Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'> or <input type='text' id='custom_cterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_cterm()'>");
       items_table.push("<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
@@ -1482,9 +1497,27 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         if (val['method']=='ICL3_end') existing_icl_end.push(parseInt(val['extra']));
       });
 
+
+      combi_options = "<select id=combi_icl_start class='form-control'>";
+      c = 0;
+      $.each(getSortedKeys_advanced(show_table_start), function(i, val) {
+          c += 1;
+          combi_options += "<option>"+c+"</option>";
+      });
+      combi_options += "</select>";
+
+      combi_options2 = "<select id=combi_icl_end class='form-control'>";
+      c = 0;
+      $.each(getSortedKeys_advanced(show_table_end), function(i, val) {
+          c += 1;
+          combi_options2 += "<option>"+c+"</option>";
+      });
+      combi_options2 += "</select>";
+
       export_list['icl3_start'] = [];
       export_list['icl3_end'] = [];
        var items_table = [info_text['icl3_start']];
+      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p>");
       items_table.push( "Custom: 5.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(3)'>");
       items_table.push("<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
@@ -1506,6 +1539,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       result = items_table.join( "" );
       tables['icl3_start'] = result;
       var items_table = [info_text['icl3_end']];
+      items_table.push('<p>Add top'+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p>");
       items_table.push( "Custom: 6.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(3)'>");
       items_table.push( "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
@@ -1622,9 +1656,38 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       }) 
 
 
+      combi_options = "<select id=combi_icl_start class='form-control'>";
+      c = 0;
+      $.each(getSortedKeys_advanced(show_table_start), function(i, val) {
+          c += 1;
+          combi_options += "<option>"+c+"</option>";
+      });
+      combi_options += "</select>";
+
+
+      combi_options2 = "<select id=combi_icl_end class='form-control'>";
+      c = 0;
+      $.each(getSortedKeys_advanced(show_table_end), function(i, val) {
+          c += 1;
+          combi_options2 += "<option>"+c+"</option>";
+      });
+      combi_options2 += "</select>";
+
+
+
+      var existing_icl_start = [];
+      $.each(modifications, function(key,val) {
+        if (val['method']=='ICL2_start') existing_icl_start.push(parseInt(val['extra']));
+      });
+      var existing_icl_end = [];
+      $.each(modifications, function(key,val) {
+        if (val['method']=='ICL2_end') existing_icl_end.push(parseInt(val['extra']));
+      });
+
       export_list['icl2_start'] = [];
       export_list['icl2_end'] = [];
        var items_table = [info_text['icl2_start']];
+      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p>");
       items_table.push( "Custom: 3.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(2)'>");
       items_table.push("<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
@@ -1636,7 +1699,11 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         })
         seq_pos = {{residues_gn.3x50.sequence_number}}-(-val['start']);
         aa = residues_pos[seq_pos][0];
-        temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2_start(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
+
+        selected_row = "";
+        if ($.inArray( parseInt(val['start']), existing_icl_start )!==-1 ) selected_row = "checked";
+        // temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2_start(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
+        temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><input type=checkbox onclick='icl2_start(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from='' "+selected_row+"></tr>";
         items_table.push( temp );
         export_list['icl2_start'].push([pos,val['hits'],val['levels'],val['pdbs'],val['start']]) //,val['start'],val['end']
       });
@@ -1645,6 +1712,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       tables['icl2_start'] = result;
 
        var items_table = [info_text['icl2_end']];
+       items_table.push('<p>Add top'+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p>");
       items_table.push( "Custom: 4.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(2)'>");
       items_table.push("<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
@@ -1656,7 +1724,10 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         })
         seq_pos = {{residues_gn.4x50.sequence_number}}-(val['end']);
         aa = residues_pos[seq_pos][0];
-        temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
+        selected_row = "";
+        if ($.inArray( parseInt(val['end']), existing_icl_end )!==-1 ) selected_row = "checked";
+        // temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
+        temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><input type=checkbox onclick='icl2(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from='' "+selected_row+"></tr>";
         items_table.push( temp );
         export_list['icl2_end'].push([pos,val['hits'],val['levels'],val['pdbs'],val['end']]) //,val['start'],val['end']
       });
@@ -1985,6 +2056,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         resetAll();
 
       }
+      $("#combi_mode").html("Truncation/fusion scan");
       combi_mode_on = true;
     }
 
@@ -2007,6 +2079,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         resetAll();
 
       }
+      $("#combi_mode").html("Mutation scan");
       combi_mode_mut_on = true;
     }
 
@@ -2240,6 +2313,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           icl_end_linker = '';
 
           icl_total_cols = icl_start_cols + icl_start_linker + icl_mod + icl_end_linker + icl_end_cols;
+
+          custom_button = ''; // Remove custom button, as it's in menus
 
           // if (val['mutations_combi'].length == 0) val['mutations_combi'] = 'None';
           // if (val['mutations_fixed'].length == 0) val['mutations_fixed'] = 'None';
@@ -3147,9 +3222,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       $.each(mutations_mode_suggestions, function(i, val) {
         if (i.split("_").length>1) {
           // this has a active_ or inactive_ prefix
-          if (!i.startsWith(state)){
-            return true;
-          }
+          // if (!i.startsWith(state)){
+          //   return true;
+          // }
         } 
           c += 1;
          if (c>amount) return false;
@@ -3191,6 +3266,178 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           build_edit_table();
           overlay_modifications();
         }
+    }
+
+    function auto_nterm() {
+      amount = $("#combi_nterm").val();
+      for(var i = 0; i < amount; i++) {
+        // console.log(i,export_list['nterm'][i]);
+        if (i>=export_list['nterm'].length) break;
+        entry = export_list['nterm'][i];
+        from = entry[4];
+        n_val = entry[0];
+        until = {{residues.TM1.0.sequence_number}}-n_val-1;
+        range = new Array;
+        for (var ii = 1; 1 > 0 ? ii <= until : ii > until; ii += 1) {
+            range.push(ii);
+        }
+
+          $.each(modifications, function(key,val2) {
+              console.log(key,val2);
+              if (val2['type']=='deletion' && val2['method']=="n-term") {
+                  if (val2['extra']==n_val) {
+                    console.log('already checked! remove',val);
+                    remove_mod_by_id(key);
+                    return false;
+                  }
+              }
+            });
+
+        modi = {method: "n-term", type: "deletion", from: from, range: range, info: n_val+" from TM1 start. Based on "+from.join(", "), fixed: 'no', extra: n_val};
+        modifications.push(modi);
+      } 
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
+      build_nterm_menu();
+      $("#ModalBody").html(tables['nterm']);
+    }
+
+    function auto_icl_start() {
+      amount = $("#combi_icl_start").val();
+
+      {% if class == 'A' or class == 'F' %}
+      ICL_name = "icl3";
+      {% elif class == 'B' or class == 'C' %}
+      ICL_name = "icl2";
+      {% endif %}
+      for(var i = 0; i < amount; i++) {
+        // console.log(i,export_list[ICL_name+'_start'][i]);
+        if (i>=export_list[ICL_name+'_start'].length) break;
+        entry = export_list[ICL_name+'_start'][i];
+        from = entry[3];
+        {% if class == 'A' or class == 'F' %}
+        icl3_del_start = {{residues_gn.5x50.sequence_number}}-(-entry[4])+1;
+        modi = {method: "ICL3_start", type: "deletion", from: from, range: [icl3_del_start], info: "Based on "+from.join(", "), fixed: 'no', extra: entry[4]};
+        {% elif class == 'B' or class == 'C' %}
+        icl2_del_start = {{residues_gn.3x50.sequence_number}}-(-entry[4])+1;
+        modi = {method: "ICL2_start", type: "deletion", from: from, range: [icl2_del_start], info: "Based on "+from.join(", "), fixed: 'no', extra: entry[4]};
+        {% endif %}
+
+        $.each(modifications, function(key,val2) {
+              console.log(key,val2);
+        {% if class == 'A' or class == 'F' %}
+              if (val2['type']=='deletion' && val2['method']=="ICL3_start") {
+
+        {% elif class == 'B' or class == 'C' %}
+              if (val2['type']=='deletion' && val2['method']=="ICL2_start") {
+
+          {% endif %}
+
+                  if (val2['extra']==entry[4]) {
+                    console.log('already checked! remove',val);
+                    remove_mod_by_id(key);
+                    return false;
+                  }
+              }
+            });
+        
+        modifications.push(modi);
+      } 
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
+
+
+      {% if class == 'A' or class == 'F' %}
+      build_icl3_menu();
+      $("#ModalBody").html(tables['icl3_start']);
+      {% elif class == 'B' or class == 'C' %}
+      build_icl2_menu();
+      $("#ModalBody").html(tables['icl2_start']);
+      {% endif %}
+
+    }
+
+    function auto_icl_end() {
+      amount = $("#combi_icl_end").val();
+
+      {% if class == 'A' or class == 'F' %}
+      ICL_name = "icl3";
+      {% elif class == 'B' or class == 'C' %}
+      ICL_name = "icl2";
+      {% endif %}
+      for(var i = 0; i < amount; i++) {
+        if (i>=export_list[ICL_name+'_end'].length) break;
+        entry = export_list[ICL_name+'_end'][i];
+        from = entry[3];
+        {% if class == 'A' or class == 'F' %}
+        end = {{residues_gn.6x50.sequence_number}}-entry[4]-1;
+        modi = {method: "ICL3_end", type: "deletion", from: from, range: [end], info: "Based on "+from.join(", "), fixed: 'no', extra: entry[4]};
+        {% elif class == 'B' or class == 'C' %}
+        end = {{residues_gn.4x50.sequence_number}}-entry[4]-1;
+        modi = {method: "ICL2_end", type: "deletion", from: from, range: [end], info: "Based on "+from.join(", "), fixed: 'no', extra: entry[4]};
+        {% endif %}
+        
+        modifications.push(modi);
+      } 
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
+
+
+      {% if class == 'A' or class == 'F' %}
+      build_icl3_menu();
+      $("#ModalBody").html(tables['icl3_end']);
+      {% elif class == 'B' or class == 'C' %}
+      build_icl2_menu();
+      $("#ModalBody").html(tables['icl2_end']);
+      {% endif %}
+    }
+
+    function auto_cterm() {
+      console.log('AUTO CTERM!');
+      amount = $("#combi_cterm").val();
+      for(var i = 0; i < amount; i++) {
+        console.log('ADD C TERM!',i)
+        if (i>=export_list['cterm'].length) break;
+        entry = export_list['cterm'][i];
+        from = entry[3];
+        n_val = entry[0];
+        start = {{residues.Cterm.0.sequence_number}}+parseInt(n_val);
+        {% with residues.Cterm|last as last %}
+         end =   {{ last.sequence_number }};
+        {% endwith %}
+        range = new Array;
+        for (var ii = start; 1 > 0 ? ii <= end : ii > end; ii += 1) {
+            range.push(ii);
+        }
+
+          $.each(modifications, function(key,val2) {
+              console.log(key,val2);
+              if (val2['type']=='deletion' && val2['method']=="c-term") {
+                  if (val2['extra']==n_val) {
+                    console.log('already checked! remove',val);
+                    remove_mod_by_id(key);
+                    return false;
+                  }
+              }
+            });
+
+        modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'no', extra: n_val};
+        modifications.push(modi);
+
+
+      } 
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
+      build_cterm_menu();
+      $("#ModalBody").html(tables['cterm']);
     }
 
     function mut_new(elem, fixed) {
