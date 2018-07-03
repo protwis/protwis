@@ -1324,7 +1324,7 @@ def mutations(request, slug, **response_kwargs):
 
     simple_list = OrderedDict(sorted(simple_list.items(), key=lambda x: (x[1]['priority'],x[1]['pos']) ))
     for key, val in simple_list.items():
-        val['definitions'] = [x[1] for x in val['definitions']]
+        val['definitions'] = list(set([x[1] for x in val['definitions']]))
 
     jsondata = simple_list
     jsondata = json.dumps(jsondata)
