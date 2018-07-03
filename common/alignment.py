@@ -992,7 +992,7 @@ class AlignedReferenceTemplate(Alignment):
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
-        self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM'],
+        self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM','6G79'],
                                          'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000}
         
@@ -1200,7 +1200,7 @@ class AlignedReferenceTemplate(Alignment):
                         rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=main_temp_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
                         rota = [x for x in rota if x.pdbdata.pdb[21:22] in x.structure.preferred_chain]
                         if len(rota)==3:
-                            temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein, struct.representative))                        
+                            temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein, struct.representative))
                         if len(main_temp_ECL2[0])-1<=len(ref_ECL2[0])<=len(main_temp_ECL2[0])+1 and len(main_temp_ECL2[0])==len(main_parent_ECL2[0]):
                             temp_list1.append((struct, len(ref_ECL2[0]), similarity, float(struct.resolution),protein, struct.representative))
                         if len(ref_ECL2[2])==len(main_temp_ECL2[2]) and len(main_temp_ECL2[2])==len(main_parent_ECL2[2]):
@@ -1209,7 +1209,9 @@ class AlignedReferenceTemplate(Alignment):
                         # Allow for partial main loop template
                         if len(main_parent_ECL2[0])-1<=len(ref_ECL2[0])<=len(main_parent_ECL2[0])+1 and [i.sequence_number for i in main_temp_ECL2[0]]!=[i.sequence_number for i in main_parent_ECL2[0]]:
                             if abs(len(main_parent_ECL2[0])-len(main_temp_ECL2[0]))<=len(main_parent_ECL2[0])/2:
-                                temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein, struct.representative))
+                                # Ignore templates in loop partial except list
+                                if struct.pdb_code.index not in self.loop_partial_except_list['ECL2_1']:
+                                    temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein, struct.representative))
                         if len(ref_ECL2[2])==len(main_parent_ECL2[2]) and [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
                             if abs(len(main_parent_ECL2[2])-len(main_temp_ECL2[2]))<=len(main_parent_ECL2[2])/2:
                                 temp_list2.append((struct, len(ref_ECL2[2]), 0, float(struct.resolution), protein, struct.representative))
@@ -1475,17 +1477,16 @@ class GProteinAlignment(Alignment):
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
 
-    def run_alignment(self, reference_protein):
+    def run_alignment(self, reference_protein, template_protein, segments=None):
         self.load_reference_protein(reference_protein)
-        self.load_templates()
-        gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
+        self.load_proteins([template_protein])
+        if segments:
+            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein', name__in=segments)
+        else:
+            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
         self.load_segments(gprotein_segments)
         self.build_alignment()
         self.enhance_alignment(self.proteins[0], self.proteins[1])
-
-    def load_templates(self):
-        
-        self.load_proteins([Protein.objects.get(entry_name='gnas2_human')])
 
     def enhance_alignment(self, reference, template):
         for ref_seg, temp_seg in zip(reference.alignment, template.alignment):
@@ -1531,7 +1532,7 @@ class ClosestReceptorHomolog():
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
-        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo']
+        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
         if p.family.slug[:3]=='007':
