@@ -20,6 +20,9 @@ input.number_range_filter, input.date_range_filter {
 .pub-th {
     background-color: #ffbb78;
 }
+.version-th {
+    background-color: #c2c2d6;
+}
 .similarity-th {
     background-color: gold;
 }

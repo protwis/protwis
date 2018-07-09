@@ -8,7 +8,7 @@ from django.core.cache import cache
 
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
-from structure.models import Structure, StructureModel
+from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinGProtein, ProteinGProteinPair
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet
 from interaction.forms import PDBform
@@ -326,6 +326,12 @@ def AddToSelection(request):
 
         elif selection_subtype == 'structure_model':
             o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=selection_id)[0])
+
+        elif selection_subtype == 'structure_complex_receptor':
+            o.append(StructureComplexModel.objects.defer('pdb').filter(receptor_protein__entry_name=selection_id)[0])
+
+        elif selection_subtype == 'structure_complex_signprot':
+            o.append(StructureComplexModel.objects.defer('pdb').filter(sign_protein__entry_name=selection_id)[0])
 
         elif selection_subtype == 'structure_models_many':
             selection_subtype = 'structure_model'
