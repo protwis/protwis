@@ -473,8 +473,8 @@ class CrystallizationLigandConc(models.Model):
 
 class CrystallizationTypes(models.Model):
     # LCP/ in surfo/bicelles
-    name = models.CharField(max_length=100)
-    sub_name = models.CharField(max_length=100,null=True) #for type of LCP method -- maybe other uses too
+    name = models.CharField(max_length=300)
+    sub_name = models.CharField(max_length=300,null=True) #for type of LCP method -- maybe other uses too
 
     def __str__(self):
         return self.name
