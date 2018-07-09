@@ -27,7 +27,7 @@ class Command(BuildHumanProteins):
     segments = ProteinSegment.objects.filter(partial=False)
 
     # fetch families
-    families = ProteinFamily.objects.all()
+    families = ProteinFamily.objects.filter(slug__startswith='00').all()
 
     def handle(self, *args, **options):        
         try:
@@ -93,7 +93,7 @@ class Command(BuildHumanProteins):
             # get proteins in this family
             # Only do GPCRs
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
-                species__common_name="Human",family__slug__startswith='00').prefetch_related('species', 'residue_numbering_scheme')
+                species__common_name="Human").prefetch_related('species', 'residue_numbering_scheme')
 
             if proteins.count() <= 1:
                 continue
