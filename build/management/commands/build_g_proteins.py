@@ -130,6 +130,126 @@ class Command(BaseCommand):
         #     yaml.dump(dic, f, indent=4)
         # return 0
 
+        # with open(self.barcode_data_file,'r') as bdf:
+        #     bdf_lines = bdf.readlines()
+        #     new_lines = []
+        #     for line in bdf_lines:
+        #         line_split = line.split(',')
+        #         if line_split[4] in ['G.hgh4.09','G.hgh4.10','G.H4.01','G.H4.02','G.H4.03','G.H4.04','G.H4.05','G.H4.06','G.H4.07','G.H4.08','G.H4.09','G.H4.10','G.H4.11','G.H4.12','G.H4.13',
+        #                              'G.H4.14','G.H4.15','G.H4.16','G.H4.17','G.H4.18','G.H4.19','G.H4.20','G.H4.21','G.H4.22','G.H4.23','G.H4.24','G.H4.25','G.H4.26','G.H4.27']:
+        #             line_split[1] = str(0)
+        #             line_split[2] = str(0)
+        #             line_split[5] = str(0)+'\n'
+        #         if line_split[4] in ['G.hgh4.09','G.hgh4.10']:
+        #             if line_split[3] not in ['GNAS2', 'GNAL']:
+        #                 if line_split[4]=='G.hgh4.09':
+        #                     line_split[4] = 'G.H4.01'
+        #                 if line_split[4]=='G.hgh4.10':
+        #                     line_split[4] = 'G.H4.02'
+        #         elif line_split[4]=='G.H4.01':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.11'
+        #             else:
+        #                 line_split[4] = 'G.H4.03'
+        #         elif line_split[4]=='G.H4.02':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.12'
+        #             else:
+        #                 line_split[4] = 'G.H4.04'
+        #         elif line_split[4]=='G.H4.03':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.13'
+        #             else:
+        #                 line_split[4] = 'G.H4.05'
+        #         elif line_split[4]=='G.H4.04':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.14'
+        #             else:
+        #                 line_split[4] = 'G.H4.06'
+        #         elif line_split[4]=='G.H4.05':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.15'
+        #             else:
+        #                 line_split[4] = 'G.H4.07'
+        #         elif line_split[4]=='G.H4.06':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.16'
+        #             else:
+        #                 line_split[4] = 'G.H4.08'
+        #         elif line_split[4]=='G.H4.07':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.17'
+        #             else:
+        #                 line_split[4] = 'G.H4.09'
+        #         if line_split[3] in ['GNAS2', 'GNAL']:
+        #             if line_split[4]=='G.H4.08':
+        #                 line_split[4] = 'G.hgh4.18'
+        #             elif line_split[4]=='G.H4.09':
+        #                 line_split[4] = 'G.hgh4.19'
+        #             elif line_split[4]=='G.H4.10':
+        #                 line_split[4] = 'G.hgh4.20'
+        #             elif line_split[4]=='G.H4.11':
+        #                 line_split[4] = 'G.hgh4.21'
+        #             elif line_split[4]=='G.H4.12':
+        #                 line_split[4] = 'G.H4.01'
+        #             elif line_split[4]=='G.H4.13':
+        #                 line_split[4] = 'G.H4.02'
+        #             elif line_split[4]=='G.H4.14':
+        #                 line_split[4] = 'G.H4.03'
+        #             elif line_split[4]=='G.H4.15':
+        #                 line_split[4] = 'G.H4.04'
+        #             elif line_split[4]=='G.H4.16':
+        #                 line_split[4] = 'G.H4.05'
+        #             elif line_split[4]=='G.H4.17':
+        #                 line_split[4] = 'G.H4.06'
+        #             elif line_split[4]=='G.H4.18':
+        #                 line_split[4] = 'G.H4.07'
+        #             elif line_split[4]=='G.H4.19':
+        #                 line_split[4] = 'G.H4.08'
+        #             elif line_split[4]=='G.H4.20':
+        #                 line_split[4] = 'G.H4.10'
+        #             elif line_split[4]=='G.H4.21':
+        #                 line_split[4] = 'G.H4.11'
+        #             elif line_split[4]=='G.H4.22':
+        #                 line_split[4] = 'G.H4.12'
+        #             elif line_split[4]=='G.H4.23':
+        #                 line_split[4] = 'G.H4.13'
+        #             elif line_split[4]=='G.H4.24':
+        #                 line_split[4] = 'G.H4.14'
+        #             elif line_split[4]=='G.H4.25':
+        #                 line_split[4] = 'G.H4.15'
+        #             elif line_split[4]=='G.H4.26':
+        #                 line_split[4] = 'G.H4.16'
+        #             elif line_split[4]=='G.H4.27':
+        #                 line_split[4] = 'G.H4.17'
+        #         else:
+        #             if line_split[4]=='G.H4.20':
+        #                 line_split[4] = 'G.H4.10'
+        #             elif line_split[4]=='G.H4.21':
+        #                 line_split[4] = 'G.H4.11'
+        #             elif line_split[4]=='G.H4.22':
+        #                 line_split[4] = 'G.H4.12'
+        #             elif line_split[4]=='G.H4.23':
+        #                 line_split[4] = 'G.H4.13'
+        #             elif line_split[4]=='G.H4.24':
+        #                 line_split[4] = 'G.H4.14'
+        #             elif line_split[4]=='G.H4.25':
+        #                 line_split[4] = 'G.H4.15'
+        #             elif line_split[4]=='G.H4.26':
+        #                 line_split[4] = 'G.H4.16'
+        #             elif line_split[4]=='G.H4.27':
+        #                 line_split[4] = 'G.H4.17'
+        #         new_lines.append(line_split)
+        #     with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'barcode_test.csv']), 'w') as f:
+        #         out_lines = []
+        #         for l in new_lines:
+        #             out_line = ','.join(l)
+        #             out_lines.append(out_line)
+        #         out = ''.join(out_lines)
+        #         f.write(out)
+
+        # return 0
+
         if options['filename']:
             filenames = options['filename']
         else:

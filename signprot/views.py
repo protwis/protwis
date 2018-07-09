@@ -342,6 +342,8 @@ def ajaxBarcode(request, slug, cutoff, **response_kwargs):
 
         conserved = list(SignprotBarcode.objects.filter(protein__entry_name=slug, paralog_score__gte=cutoff, seq_identity__gte=cutoff).prefetch_related('residue__display_generic_number').values_list('residue__display_generic_number__label', flat=True))
 
+        na_data = list(SignprotBarcode.objects.filter(protein__entry_name=slug, seq_identity=0, paralog_score=0).values_list('residue__display_generic_number__label', flat=True))
+
         all_positions = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('display_generic_number')
 
         for res in all_positions:
@@ -351,6 +353,8 @@ def ajaxBarcode(request, slug, cutoff, **response_kwargs):
                 jsondata[res] = [0, 'Conserved', cgn]
             elif cgn in selectivity_pos and cgn not in conserved:
                 jsondata[res] = [1, 'Selectivity determining', cgn]
+            elif cgn in na_data:
+                jsondata[res] = [3, 'NA', cgn]
             else:
                 jsondata[res] = [2, 'Evolutionary neutral', cgn]
 
