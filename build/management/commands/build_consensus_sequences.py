@@ -24,7 +24,7 @@ class Command(BuildHumanProteins):
     schemes = parse_scheme_tables(generic_numbers_source_dir)
 
     # get all segments
-    segments = ProteinSegment.objects.filter(partial=False)
+    segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
 
     # fetch families
     families = ProteinFamily.objects.filter(slug__startswith='00').all()
@@ -91,7 +91,6 @@ class Command(BuildHumanProteins):
                 count.value +=1 
         # for family in families:
             # get proteins in this family
-            # Only do GPCRs
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
                 species__common_name="Human").prefetch_related('species', 'residue_numbering_scheme')
 
