@@ -98,6 +98,11 @@
 .table-nonfluid {
    width: auto !important;
 }
+.mutation_scan_th {
+  display: none;
+}
+
+
   </style>
 
 <div class="modal bd-example-modal-lg" id="myModal"  tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -284,20 +289,21 @@
 <tr>
   <th colspan=2>Total constructs:</th>
   <th colspan=1 id='total_count'> 0 </th>
-  <th rowspan="1" colspan="1" class='possiblities_nterm'  id='fusion_count_nterm'></th>
-  <th rowspan="1" colspan="3" id='deletion_n-term_count'></th>
+  <th rowspan="1" colspan="1" class='possiblities_nterm'  id='fusion_count_nterm'>0</th>
+  <th rowspan="1" colspan="3" id='deletion_n-term_count'>0</th>
     {% if class == 'A'  or class == 'F' %}
-  <th rowspan="1" colspan="3" id='deletion_ICL3_start_count'></th>
-  <th rowspan="1" colspan="3" class='possiblities_icl' id='fusion_count'></th>
-  <th rowspan="1" colspan="3" id='deletion_ICL3_end_count'></th>
+  <th rowspan="1" colspan="3" id='deletion_ICL3_start_count'>0</th>
+  <th rowspan="1" colspan="3" class='possiblities_icl' id='fusion_count'>0</th>
+  <th rowspan="1" colspan="3" id='deletion_ICL3_end_count'>0</th>
       {% elif class == 'B' or class == 'C' %}
-  <th rowspan="1" colspan="3" id='deletion_ICL2_start_count'></th>
-  <th rowspan="1" colspan="3" class='possiblities_icl' id='fusion_count'></th>
-  <th rowspan="1" colspan="3" id='deletion_ICL2_end_count'></th>
+  <th rowspan="1" colspan="3" id='deletion_ICL2_start_count'>0</th>
+  <th rowspan="1" colspan="3" class='possiblities_icl' id='fusion_count'>0</th>
+  <th rowspan="1" colspan="3" id='deletion_ICL2_end_count'>0</th>
       {% endif %}
-  <th rowspan="1" colspan="3" id='deletion_c-term_count'></th>
+  <th rowspan="1" colspan="3" id='deletion_c-term_count'>0</th>
   <th rowspan="1" colspan="1">  </th>
-  <th rowspan="1" colspan="1" id='mutation_count'> </th>
+  <th rowspan="1" colspan="1" id='mutation_count'>0</th>
+  <th rowspan="1" colspan="1" class='mutation_scan_th' id='mutation_count_scan'>0</th>
 
 <tr>
   <th rowspan="2">No</th>
@@ -366,7 +372,10 @@
   </th>
 
   <th rowspan="2">
-    <button type="button" id="mutations_mode" class="btn btn-primary btn-xs  btn_break" onclick='build_mutation_mode_table();showModal("Mutations",tables["mutations"],"#mutations");'> Mutations</button>
+    <button type="button" id="mutations_mode" class="btn btn-primary btn-xs  btn_break" onclick='build_mutation_mode_table("known");showModal("Mutations",tables["mutations"],"#mutations");'>Add known stabilising mutations to all constructs</button>
+  </th>
+  <th rowspan="2" class='mutation_scan_th'>
+    <button type="button" id="mutations_mode" class="btn btn-primary btn-xs  btn_break" onclick='build_mutation_mode_table("scan");showModal("Mutations",tables["mutations"],"#mutations");'>Add predicted mutations in separate constructs</button>
   </th>
 </tr>
 <tr>
@@ -567,7 +576,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
                 console.log(modi);
                 modifications.push(modi);
               });
-              console.log(modifications);
+              // console.log(modifications);
               rebuild_insert_order();
               modifications_overview();
               // overlay_modifications();
@@ -643,6 +652,10 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
     var manual_constructs = new Array;
     var manual_inserts = new Array;
+
+    var custom_additions = new Array;
+    custom_additions['nterm'] = [];
+    custom_additions['cterm'] = [];
 
     inserts['fusion'] = [];
     inserts['cterm'] = [];
@@ -1207,7 +1220,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
   }
 
     function build_nterm_menu() {
-      console.log('"DOING NTERM');
+      // console.log('"DOING NTERM');
       var state = $('input:radio[name=state]:checked').val();
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
       show_nterm = {};
@@ -1266,13 +1279,25 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       });
       combi_options += "</select>";
 
-      console.log('check existing nterm!');
+      // console.log('check existing nterm!');
       var existing_nterms = [];
       $.each(modifications, function(key,val) {
         if (val['method']=='n-term') existing_nterms.push(parseInt(val['extra']));
       });
 
-      console.log(existing_nterms);
+      $.each(custom_additions['nterm'], function(i,val) {
+        console.log("CUSTOM",val);
+        level = "Custom";
+        level_num = 0;
+          if(!show_table[val]) { show_table[val] = {'gn': val, 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
+
+          if(show_table[val]['levels'].indexOf(level)==-1) {
+            show_table[val]['levels'].push(level);
+          }
+
+          show_table[val]['levels_num'][level_num] += 1000;
+      });
+      // console.log(existing_nterms);
       export_list['nterm'] = [];
 
       var items_table = [info_text['nterm']];
@@ -1361,6 +1386,20 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         level_num += 1;
       }) 
 
+      console.log("show_table",show_table);
+      console.log("custom_additions",custom_additions['cterm']);
+      $.each(custom_additions['cterm'], function(i,val) {
+        console.log("CUSTOM",val);
+        level = "Custom";
+        level_num = 0;
+          if(!show_table[val[0]]) { show_table[val[0]] = {'gn': val[0], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
+
+          if(show_table[val[0]]['levels'].indexOf(level)==-1) {
+            show_table[val[0]]['levels'].push(level);
+          }
+
+          show_table[val[0]]['levels_num'][level_num] += 1000;
+      });
 
       combi_options = "<select id=combi_cterm class='form-control'>";
       c = 0;
@@ -1374,7 +1413,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       $.each(modifications, function(key,val) {
         if (val['method']=='c-term') existing_cterms.push(parseInt(val['extra']));
       });
-      console.log('existing_cterms',existing_cterms);
+      // console.log('existing_cterms',existing_cterms);
       export_list['cterm'] = [];
       var items_table = [info_text['cterm']];
       items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_cterm()'></p>");
@@ -2056,6 +2095,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         resetAll();
 
       }
+      $(".mutation_scan_th").hide();
       $("#combi_mode").html("Truncation/fusion scan");
       combi_mode_on = true;
     }
@@ -2079,6 +2119,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         resetAll();
 
       }
+      $(".mutation_scan_th").show();
       $("#combi_mode").html("Mutation scan");
       combi_mode_mut_on = true;
     }
@@ -2093,7 +2134,11 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         // create constructs with own "modifications"
         $.each(possible, function(p_key,p_val) {
           // ensure it is a string
-          pos_val = p_val.split(",");
+          if (String(p_val).indexOf(",")!= -1 ) {
+            pos_val = p_val.split(",");
+          } else {
+            pos_val = Array(String(p_val));
+          }
           c_modifications = [];
           $.each(modifications, function(m_key,m_val) {
             if ($.inArray(String(m_key), pos_val)==-1) { 
@@ -2368,7 +2413,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
     }
 
-    function build_mutation_mode_table() {
+    function build_mutation_mode_table(mut_mode) {
+      console.log(mut_mode);
       var state = $('input:radio[name=state]:checked').val();
       combi_options = "<select id=combi_mutations class='form-control'>";
       c = 0;
@@ -2380,16 +2426,29 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           //   return true;
           // }
         } 
+          if (val['definitions'].indexOf('same_receptor') >= 0 || val['definitions'].indexOf('custom') >= 0 ) {
+            // same receptor 
+          } else if (combi_mode_on || mut_mode=='known') {
+            // if not same receptor and not in mutant scan mode, skip.
+            return true;
+          }
           c += 1;
           combi_options += "<option>"+c+"</option>";
       });
       combi_options += "</select>";
-      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Use in all constructs</th><th>Use in one construct</th></tr></thead><tbody>"];
+      var items_table = [info_text['mutations'] + "<input type='hidden' id='mut_fixed' value='no'><table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Use in all constructs</th><th>Use in one construct</th></tr></thead><tbody>"];
       items_table.push('<p>Add top'+combi_options+" mutants to be used in <select id='mutant_where' class='form-control'><option>All constructs</option><option>In single constructs<input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
-      if (edit_mode_on || 1==1) {
-      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>"];
+      
 
-      items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='All constructs'> <input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
+      if (edit_mode_on || combi_mode_on || mut_mode=='known') {
+      var items_table = [info_text['mutations'] + "<input type='hidden' id='mut_fixed' value='yes'><table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>"];
+
+      items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='All constructs'> <input type=button value=Add onclick='auto_mutations(\"known\")'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations(\"known\")'></p>");
+      } else {
+      var items_table = [info_text['mutations'] + "<input type='hidden' id='mut_fixed' value='no'><table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>"];
+
+      items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='In single constructs'> <input type=button value=Add onclick='auto_mutations(\"scan\")'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations(\"scan\")'></p>");
+
       }
       $.each(mutations_mode_suggestions, function(i, val) {
         state = 'any';
@@ -2400,6 +2459,14 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           // }
           state = i.split("_")[0];
         }
+
+        if (val['definitions'].indexOf('same_receptor') >= 0 || val['definitions'].indexOf('custom') >= 0) {
+          // same receptor 
+        } else if (combi_mode_on || mut_mode=='known') {
+          // if not same receptor and not in mutant scan mode, skip.
+          return true;
+        }
+
         checked_fixed = '';
         checked_combi = '';
 
@@ -2424,7 +2491,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         td_add_unique = `<td><input class=mut_pick mut_id=`+i+` type=checkbox  onclick='mut_new(this, "no");'` +checked_combi+`></td>`
 
 
-        if (edit_mode_on || combi_mode_on) {
+        if (edit_mode_on || combi_mode_on || mut_mode=='known') {
           td_add_unique = '';
         } else {
           td_add_common = '';
@@ -2541,12 +2608,36 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           range.push(i);
       }
 
+      id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL2_end') {
+          if (parseInt(val['extra'])==parseInt($(elem).attr("tm4"))) id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+
+      console.log('check',$.inArray( n_val, custom_additions['nterm'] ));
+      if ($.inArray( n_val, custom_additions['nterm'] )!==-1) custom_additions['nterm'].push(n_val);
+
+      $.each(modifications, function(key,val2) {
+              console.log(key,val2);
+              if (val2['method']=='n-term') {
+                  if (val2['extra']==n_val) {
+                    console.log('already checked! remove',val);
+                    remove_mod_by_id(key);
+                    return false;
+                  }
+              }
+      });
+
       // reset_fixed("deletion_n-term");
       // $('#myModal').modal('hide');
       modi = {method: "n-term", type: "deletion", from: from, range: range, info: "Custom: "+n_val+" from TM1 start", fixed: 'no', extra: n_val};
       modifications.push(modi);
       modifications_overview();
       // overlay_modifications();
+      build_nterm_menu();
+      $("#ModalBody").html(tables['nterm']);
       $("#custom_nterm").val('');
       $("#custom_nterm_pos").val('');
     }
@@ -2625,11 +2716,27 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           range.push(i);
       }
 
+      if ($.inArray( n_val, custom_additions['cterm'] )!==-1) custom_additions['cterm'].push(n_val);
+
+      $.each(modifications, function(key,val2) {
+              console.log(key,val2);
+              if (val2['method']=='c-term') {
+                  if (val2['extra']==n_val) {
+                    console.log('already checked! remove',val);
+                    remove_mod_by_id(key);
+                    return false;
+                  }
+              }
+      });
+
       // reset_fixed("deletion_c-term");
-      $('#myModal').modal('hide');
+      // $('#myModal').modal('hide');
       modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Custom: "+n_val+" from TM8 end", fixed: 'no', extra: n_val};
       modifications.push(modi);
       modifications_overview();
+
+      build_cterm_menu();
+      $("#ModalBody").html(tables['cterm']);
       // overlay_modifications();
     }
 
@@ -2906,29 +3013,47 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     }
 
     function custom_mut(confirm) {
-      pos = $('#custom_pos').val();
+      mut_pos = $('#custom_pos').val();
       to = $('#custom_mut').val();
       reason = $('#custom_reason').val();
-      gn = residues_pos[pos][2];
-      wt = residues_pos[pos][0];
-      seg = residues_pos[pos][1];
+      fixed = $('#mut_fixed').val();
+      gn = residues_pos[mut_pos][2];
+      wt = residues_pos[mut_pos][0];
+      seg = residues_pos[mut_pos][1];
 
+      if (reason=='') reason='None given';
 
-      label = wt+pos+to;
+      label = wt+mut_pos+to;
       if (typeof(confirm)==='undefined'){
         $('#confirm_cus_mut').html('Custom! '+label+' ('+seg+'/'+gn+') '+'Reason:'+reason+' <input type=button value=Confirm onclick=custom_mut("1")>');
       } else {
         range = new Array;
-        range.push(pos);
-        modi = {method: label+" "+gn, type: "mutation", to: to, range: range, info: "Custom mutation. Reason:"+reason, fixed: 'yes'};
+        range.push(mut_pos);
+        modi = {method: label+" "+gn, type: "mutation", to: to, range: range, info: "Custom mutation. Reason:"+reason, fixed: fixed};
         modifications.push(modi);
         modifications_overview();
         // overlay_modifications();
         $('#confirm_cus_mut').html('Added '+label);
-        pos = $('#custom_pos').val('');
-        to = $('#custom_mut').val('');
-        reason = $('#custom_reason').val('');
+        $('#custom_pos').val('');
+        $('#custom_mut').val('');
+        $('#custom_reason').val('');
+
+        var new_entry = {}
+        new_entry[label] = {'definitions':['custom','Reason: '+reason], gpcrdb:gn, mut_aa:to, origin:[], pos:mut_pos, priority:1, segment:seg, wt_aa:wt};
+        $.extend( new_entry, mutations_mode_suggestions );
+        mutations_mode_suggestions = new_entry;
+        // mutations_mode_suggestions[label] = ;
+        console.log('ADD NEW');
+        console.log(mutations_mode_suggestions);
+        if (fixed=='yes') {
+          build_mutation_mode_table("known");
+        } else {
+          build_mutation_mode_table("scan");
+        }
+        showModal("Mutations",tables["mutations"],"#mutations");
+
       }
+
     }
 
 
@@ -3175,7 +3300,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
-    function uncheck_mutations() {
+    function uncheck_mutations(mut_type) {
       var state = $('input:radio[name=state]:checked').val();
       $.each(mutations_mode_suggestions, function(i, val) {
         if (i.split("_").length>1) {
@@ -3203,7 +3328,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             });
 
       });
-        build_mutation_mode_table();
+        build_mutation_mode_table(mut_type);
         showModal("Mutations",tables["mutations"],"#mutations");
         if (!edit_mode_on) {modifications_overview();} else {
           build_edit_table();
@@ -3211,7 +3336,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         }
     }
 
-    function auto_mutations() {
+    function auto_mutations(mut_type) {
       amount = $("#combi_mutations").val();
       where = $("#mutant_where").val();
       var state = $('input:radio[name=state]:checked').val();
@@ -3219,6 +3344,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       c = 0;
       fixed = 'no';
       if (where =='All constructs') fixed = 'yes';
+      console.log(mut_type,fixed,amount);
       $.each(mutations_mode_suggestions, function(i, val) {
         if (i.split("_").length>1) {
           // this has a active_ or inactive_ prefix
@@ -3260,7 +3386,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           modifications.push(modi);
 
       });
-        build_mutation_mode_table();
+        build_mutation_mode_table(mut_type);
         showModal("Mutations",tables["mutations"],"#mutations");
         if (!edit_mode_on) {modifications_overview();} else {
           build_edit_table();
@@ -3445,8 +3571,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       mut_id = $(elem).attr("mut_id");
       checked = $(elem).prop("checked");
 
-      console.log(mut_id);
-      console.log(mutations_mode_suggestions[mut_id]);
+      // console.log(mut_id);
+      // console.log(mutations_mode_suggestions[mut_id]);
 
       mutation = mutations_mode_suggestions[mut_id];
       gn = mutation["gpcrdb"];
@@ -3454,9 +3580,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       to = mutation["mut_aa"];
       wt = mutation["wt_aa"];
       method = wt+pos+to+" "+gn
-      console.log(modifications);
+      // console.log(modifications);
       $.each(modifications, function(key,val2) {
-          console.log(key,val2);
+          // console.log(key,val2);
           if (val2['type']=='mutation') {
               if (val2['full']==mutation || val2['method']==method) {
                 console.log('already checked! remove',val);
@@ -3546,7 +3672,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       tables["overview"] = [];
       tables["overview"].push(info_text['current'] + "<div><table class='table-striped table table-bordered'><tr><th>Type</th><th>Modification</th><th>Pos/Range</th><th>Based on</th><th>Fix</th><th>Extra</th></tr>");
 
-      console.log(modifications);
+      // console.log(modifications);
       modifications.sort(function(a, b) {
 
           var o1 = a.type.toLowerCase();
@@ -3711,7 +3837,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       //4 is the mutations that are fixed, to differenciate the ones that are combi
 
       combination_groups = [[],[],[],[],[],[]];
-
+      // console.log(modifications);
       $.each(modifications, function(key,val) {
           fix_type = val['type']+"_"+val['method'];
           if (val['type'] == 'fusion') {
@@ -3746,14 +3872,17 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           }
       });
 
-      console.log(unique_groups);
+      // console.log(unique_groups);
       possible_combinations = 1;
       modifications_to_do = []
       $.each(unique_groups, function(key,val) {
-        console.log(key,val[0]);
+        // console.log(key,val[0]);
         if (key=='fusion' && fusionpos == 'nterm'){
           $("#"+key+"_count_nterm").html((val[0]+val[1]));
-        } else {
+        } else if (key=='mutation') {
+          $("#"+key+"_count").html((val[1]));
+          $("#"+key+"_count_scan").html((val[0]));
+        }else {
           $("#"+key+"_count").html((val[0]+val[1]));
         }
         $.each(val[3], function(key,ignored) {
@@ -3795,7 +3924,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
 
       possible = allPossibleCases(modifications_to_do);
-      console.log("Do comb",possible);
+      // console.log("Do comb",possible);
       $("#total_count").html(possible.length);
       // console.log(possible);
       // console.log(modifications_to_do);
@@ -3818,7 +3947,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
        $("#possibilities > tbody").html("");
        // console.log('table rows',table_rows.length);
        $.each(table_rows, function(key,val) {
-          console.log(val);
+          // console.log(val);
             tr_class = '';
           icl_end_pos = false;
           icl_start_pos = false;
@@ -3944,7 +4073,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           if (combi_mode_on) {
             mutations = val['mutations_fixed'];
           } else {
-            mutations = val['mutations_combi'];
+            mutations = val['mutations_fixed'] + " </td><td> " + val['mutations_combi'];
           }
 
 
@@ -4217,8 +4346,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
              sequence_short += (key-1)+"]";
           }
           if (track_pos[key]['type']=='mutation') {
-            console.log(key);
-            console.log(track_pos[key]);
+            // console.log(key);
+            // console.log(track_pos[key]);
             sequence += track_pos[key]['to'];
             sequence_short += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
             sequence_short_2 += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
@@ -4469,7 +4598,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     }
 
     function generate_term_boxes(term) {
-        console.log('generate term box',term);
+        // console.log('generate term box',term);
             if (term=='C') {
               orientation = 1;
               first_visible_residue = parseInt($( "circle."+term+"-term.long:visible" ).last().attr('id'));
@@ -4884,7 +5013,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       add_forced_icl_linkers = false;
       $.each(modifications, function(key,val) {
 
-        console.log("key is " + key + " look in " + possible[possible_id]);
+        // console.log("key is " + key + " look in " + possible[possible_id]);
         //  && String(key)!=possible[possible_id]
         if ($.inArray(String(key), String(possible[possible_id]).split(","))==-1 && String(key)!=possible[possible_id] && !edit_mode_on) {
           return true;
@@ -4983,11 +5112,11 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     }
     function fix_snake_plot() {
       $("#snakeplot").height("100%")
-      console.log('CHECKHEIGHT',$("#snakeplot").height());
+      // console.log('CHECKHEIGHT',$("#snakeplot").height());
       if ($("#snakeplot").height()>350) {
         $("#snakeplot").height(350);
       }
-      console.log('CHECKHEIGHT',$("#snakeplot").height());
+      // console.log('CHECKHEIGHT',$("#snakeplot").height());
     }
     function color_residue(pos, type) {
 
@@ -4999,7 +5128,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
      } else if (type == 'mutation') {
         bg = 'yellow';
         fill = 'red';
-        console.log("mutate to this",track_pos[pos],track_pos[pos]['to'])
+        // console.log("mutate to this",track_pos[pos],track_pos[pos]['to'])
         $('#'+pos+'t').addClass('mutated');
         $('#'+pos+'t').attr('original_aa',$('#'+pos+'t').html());
         $('#'+pos+'t').html(track_pos[pos]['to']);
