@@ -538,7 +538,7 @@ def json_icl2(request, slug, **response_kwargs):
     print("icl2",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-# @cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24)
 def json_nterm(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -932,7 +932,7 @@ def structure_rules(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-# @cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24)
 def mutations(request, slug, **response_kwargs):
     from django.db import connection
     start_time = time.time()
