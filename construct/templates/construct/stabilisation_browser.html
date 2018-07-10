@@ -248,6 +248,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="seq-th over_header" colspan="4">MUTATIONS</th>
             <th class="protein-th over_header" colspan="4">FREQUENCY</th>
             <th class="seq-th over_header" colspan="3">SITES</th>
+            <th class="seq-th over_header" colspan="3">INTERFACES</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
@@ -267,6 +268,9 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class='seq-th'>Ionic Lock</th>
             <th class='seq-th'>Sodium Ion Binding Site</th>
             <th class='seq-th'>Switch</th>
+            <th class='seq-th'>LigandBinding</th>
+            <th class='seq-th'>Arrestin</th>
+            <th class='seq-th'>G-PROTEIN</th>
         </tr>
     </thead>
     <tbody>
@@ -357,6 +361,9 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.0.ionic_lock}}</td>
             <td>{{group.0.sodium_ion}}</td>
             <td>{{group.0.res_switch}}</td>
+            <td>{{group.0.ligand_binding}}</td>
+            <td>{{group.0.arrestin_binding}}</td>
+            <td>{{group.0.gprotein_binding}}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -371,6 +378,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th over_header" colspan="4">FREQUENCY</th>
             <th class="seq-th over_header" colspan="4">DATA (MUTANT)</th>
             <th class="protein-th over_header" colspan="3">SITES</th>
+            <th class="seq-th over_header" colspan="3">INTERFACES</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
@@ -394,6 +402,9 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class='protein-th'>Ionic Lock</th>
             <th class='protein-th'>Sodium Ion Binding Site</th>
             <th class='protein-th'>Switch</th>
+            <th class='seq-th'>LigandBinding</th>
+            <th class='seq-th'>Arrestin</th>
+            <th class='seq-th'>G-PROTEIN</th>
         </tr>
     </thead>
 
@@ -481,6 +492,9 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.0.ionic_lock}}</td>
             <td>{{group.0.sodium_ion}}</td>
             <td>{{group.0.res_switch}}</td>
+            <td>{{group.0.ligand_binding}}</td>
+            <td>{{group.0.arrestin_binding}}</td>
+            <td>{{group.0.gprotein_binding}}</td>
         </tr>
         {% endfor %}
 
@@ -496,6 +510,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th over_header" colspan="4">FREQUENCY</th>
             <th class="seq-th over_header" colspan="4">DATA (WILD TYPE)</th>
             <th class="protein-th over_header" colspan="3">SITES</th>
+            <th class="seq-th over_header" colspan="3">INTERFACES</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
@@ -519,6 +534,9 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class='protein-th'>Ionic Lock</th>
             <th class='protein-th'>Sodium Ion Binding Site</th>
             <th class='protein-th'>Switch</th>
+            <th class='seq-th'>LigandBinding</th>
+            <th class='seq-th'>Arrestin</th>
+            <th class='seq-th'>G-PROTEIN</th>
         </tr>
     </thead>
         {% for key, group in pos_and_wt.items %}
@@ -605,6 +623,9 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.0.ionic_lock}}</td>
             <td>{{group.0.sodium_ion}}</td>
             <td>{{group.0.res_switch}}</td>
+            <td>{{group.0.ligand_binding}}</td>
+            <td>{{group.0.arrestin_binding}}</td>
+            <td>{{group.0.gprotein_binding}}</td>
         </tr>
         {% endfor %}
 
@@ -620,6 +641,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th over_header" colspan="4">FREQUENCY</th>
             <th class="seq-th over_header" colspan="4">DATA (FOLD CHANGE (MUTANT/WILD TYPE))</th>
             <th class="protein-th over_header" colspan="3">SITES</th>
+            <th class="seq-th over_header" colspan="3">INTERFACES</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
@@ -643,6 +665,9 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class='protein-th'>Ionic Lock</th>
             <th class='protein-th'>Sodium Ion Binding Site</th>
             <th class='protein-th'>Switch</th>
+            <th class='seq-th'>LigandBinding</th>
+            <th class='seq-th'>Arrestin</th>
+            <th class='seq-th'>G-PROTEIN</th>
         </tr>
     </thead>
 
@@ -706,6 +731,9 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.0.ionic_lock}}</td>
             <td>{{group.0.sodium_ion}}</td>
             <td>{{group.0.res_switch}}</td>
+            <td>{{group.0.ligand_binding}}</td>
+            <td>{{group.0.arrestin_binding}}</td>
+            <td>{{group.0.gprotein_binding}}</td>
         </tr>
         {% endfor %}
 
