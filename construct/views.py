@@ -17,6 +17,7 @@ from protein.models import Protein, ProteinConformation, ProteinSegment
 from structure.models import Structure
 from mutation.models import Mutation
 from residue.models import ResiduePositionSet
+from interaction.models import ResidueFragmentInteraction
 
 
 
@@ -1486,10 +1487,73 @@ class ConstructMutations(TemplateView):
 def stabilisation_browser(request):
     ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
 
+
+    gpcr_class = ['001','002','003','004','005','006','007']
+    class_interactions_list = {}
+    for c in gpcr_class:
+        class_interactions = ResidueFragmentInteraction.objects.filter(
+            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, structure_ligand_pair__annotated=True).exclude(interaction_type__slug='acc').prefetch_related(
+            'rotamer__residue__generic_number','interaction_type',
+            'rotamer__residue__protein_conformation__protein__parent__family')
+
+        generic = {}
+        for i in class_interactions:
+            if i.rotamer.residue.generic_number:
+                gn = i.rotamer.residue.generic_number.label
+            else:
+                continue
+            protein = i.rotamer.residue.protein_conformation.protein.parent.family.slug
+            if gn not in generic.keys():
+                generic[gn] = set()
+            
+            generic[gn].add(protein)
+
+        class_interactions_list[c]=generic
+
+    arrestin_data = {'001': 
+                     {'12x49': 1, 
+                     '2x37': 1,
+                     '2x38': 1,
+                     '2x39': 1,
+                     '2x40': 1,
+                     '2x43': 1,
+                     '3x50': 1,
+                     '3x54': 1,
+                     '3x55': 1,
+                     '3x56': 1,
+                     '34x50': 1,
+                     '34x51': 1,
+                     '34x53': 1,
+                     '34x54': 1,
+                     '34x55': 1,
+                     '34x56': 1,
+                     '4x38': 1,
+                     '5x61': 1,
+                     '5x64': 1,
+                     '5x68': 1,
+                     '5x69': 1,
+                     '5x71': 1,
+                     '5x72': 1,
+                     '6x24': 1,
+                     '6x25': 1,
+                     '6x26': 1,
+                     '6x28': 1,
+                     '6x29': 1,
+                     '6x32': 1,
+                     '6x33': 1,
+                     '6x36': 1,
+                     '6x37': 1,
+                     '6x40': 1,
+                     '8x47': 1,
+                     '8x48': 1,
+                     '8x49': 1,
+                     '8x50': 1}}
+
+    gprotein_data = {}
+    
     # Set up: Restructure the STRUCTURAL_RULES for the constructs into a crude-tree like structure to enable
     # quick and concise searching within the for loops below.
     structural_rule_tree = create_structural_rule_trees(STRUCTURAL_RULES)
-
     # Get a list of all constructs.
     constructs = Construct.objects.all()\
             .order_by().only(
@@ -1559,9 +1623,11 @@ def stabilisation_browser(request):
         state = mutant.construct.structure.state.name
         prot = mutant.construct.protein
         p_class = prot.family.parent.parent.parent.short()
+        p_class_name = prot.family.parent.parent.parent.name
+        p_class_slug = prot.family.parent.parent.parent.slug
         p_ligand = prot.family.parent.parent.short()
         p_receptor = prot.family.parent.short()
-        print(p_receptor,'p_receptor')
+        # print(p_receptor,'p_receptor')
         real_receptor = prot.entry_short
         real_receptor_iuphar = prot.short()
         pdb = mutant.construct.crystal.pdb_code
@@ -1603,7 +1669,7 @@ def stabilisation_browser(request):
                                                  mutant_id['mutant'],
                                                  mutant_id['wild_type'],
                                                  generic_number,
-                                                 p_class,
+                                                 p_class_name,
                                                  p_receptor,
                                                  conservation)
 
@@ -1645,6 +1711,21 @@ def stabilisation_browser(request):
 
                     group[0]['ala_subset'] = in_ala_subset
 
+
+                if generic_number in class_interactions_list[p_class_slug]:
+                    group[0]['ligand_binding'] = len(class_interactions_list[p_class_slug][generic_number])
+                else:
+                    group[0]['ligand_binding'] = u'\u2014'
+
+                group[0]['arrestin_binding'] = u'\u2014'
+                if p_class_slug in arrestin_data:
+                    if generic_number in arrestin_data[p_class_slug]:
+                        group[0]['arrestin_binding'] = arrestin_data[p_class_slug][generic_number]
+
+                group[0]['gprotein_binding'] = u'\u2014'
+                if p_class_slug in gprotein_data:
+                    if generic_number in gprotein_data[p_class_slug]:
+                        group[0]['gprotein_binding'] = gprotein_data[p_class_slug][generic_number]
 
             # Count the number of construct mutations recorded in the row.
             group[0]['GPCR_count'] += 1
@@ -1734,9 +1815,9 @@ def get_calculated_columns(rule_tree, mutant, wild_type, g_n, prot_class, rec_fa
     related_rules = {
         'ionic_lock_tree':rule_tree["ionic_lock_tree"].get(prot_class[6], {}).get(g_n, {}),
         'sodium_ion_tree':rule_tree["sodium_ion_tree"].get(prot_class[6], {}).get(g_n, {}),
-        'residue_switch_tree':rule_tree["residue_switch_tree"].get(prot_class[6], {}).get(g_n, {}),
+        'residue_switch_tree':rule_tree["residue_switch_tree"].get(prot_class[6], {}).get(g_n, {})
     }
-
+    # print(related_rules,rule_tree["ionic_lock_tree"])
     # Return a dictionary consisting of the data and site column entries for each grouping / data analysis mode.
     return {
         'position_only': get_data_pos_grouping(related_rules),
@@ -1979,7 +2060,6 @@ def create_structural_rule_trees(rule_dictionary):
                         node[acid] = definition
                     else: # Add to the previous results
                         node[acid] = acid_node + ", " + definition
-
     return structural_rule_trees
 
 
