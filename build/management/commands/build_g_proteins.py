@@ -501,7 +501,6 @@ class Command(BaseCommand):
                     entry_name = row[0]
                     primary = row[8]
                     secondary = row[9]
-
                     # fetch protein
                     try:
                         p = Protein.objects.get(entry_name=entry_name)
@@ -562,41 +561,82 @@ class Command(BaseCommand):
         cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
 
 
-        for index, row in residue_data.iterrows():
-            #fetch protein for protein conformation
-            pr, c= Protein.objects.get_or_create(accession=row['Uniprot_ACC'])
+        # Temp files to speed things up
+        temp = {}
+        temp['proteins'] = {}
+        temp['rgn'] = {}
+        temp['segment'] = {}
+        temp['equivalent'] = {}
+        bulk = []
+        
 
-            #fetch protein conformation
-            pc, c= ProteinConformation.objects.get_or_create(protein_id=pr)
+        self.logger.info('Insert residues: {} rows'.format(len(residue_data)))
+        for index, row in residue_data.iterrows():
+
+            if row['Uniprot_ACC'] in temp['proteins']:
+                pr = temp['proteins'][row['Uniprot_ACC']][0]
+                pc = temp['proteins'][row['Uniprot_ACC']][1]
+            else:
+                #fetch protein for protein conformation
+                pr, c= Protein.objects.get_or_create(accession=row['Uniprot_ACC'])
+
+                #fetch protein conformation
+                pc, c= ProteinConformation.objects.get_or_create(protein_id=pr)
+                temp['proteins'][row['Uniprot_ACC']] = [pr,pc]
 
             #fetch residue generic number
             rgnsp=[]
+
+
             if(int(row['CGN'].split('.')[2])<10):
                 rgnsp = row['CGN'].split('.')
                 rgn_new = rgnsp[0]+'.'+rgnsp[1]+'.0'+rgnsp[2]
-                rgn, c= ResidueGenericNumber.objects.get_or_create(label=rgn_new)
+
+                if rgn_new in temp['rgn']:
+                    rgn = temp['rgn'][rgn_new]
+                else:
+                    rgn, c= ResidueGenericNumber.objects.get_or_create(label=rgn_new)
+                    temp['rgn'][rgn_new] = rgn
 
             else:
-                rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
+
+                if row['CGN'] in temp['rgn']:
+                    rgn = temp['rgn'][row['CGN']]
+                else:
+                    rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
+                    temp['rgn'][row['CGN']] = rgn
 
             #fetch protein segment id
-            ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Gprotein')
+            if row['CGN'].split(".")[1] in temp['segment']:
+                ps = temp['segment'][row['CGN'].split(".")[1]]
+            else:
+                ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Gprotein')
+                temp['segment'][row['CGN'].split(".")[1]] = ps
 
             try:
-                Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
+                bulk_r = Residue(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
                 # self.logger.info("Residues added to db")
-
+                bulk.append(bulk_r)
             except:
                 self.logger.error("Failed to add residues")
-
+            if len(bulk) % 10000 == 0:
+                self.logger.info('Inserted bulk {} (Index:{})'.format(len(bulk),index))
+                # print(len(bulk),"inserts!",index)
+                Residue.objects.bulk_create(bulk)
+                # print('inserted!')
+                bulk = []
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=cgn_scheme)
+                if rgn.label not in temp['equivalent']:
+                    ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=cgn_scheme)
+                    temp['equivalent'][rgn.label] = 1
                 # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
+        self.logger.info('Inserted bulk {} (Index:{})'.format(len(bulk),index))
+        Residue.objects.bulk_create(bulk)
 
     def update_protein_conformation(self, gprotein_list):
         #gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human', 'gna13_human']
