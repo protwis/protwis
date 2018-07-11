@@ -318,8 +318,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
             HelixBox = proteins[0].get_helical_box_no_buttons()
 
             mutations_pos_list = mutations_list_seq
-            print("Going for the protein")
-            print(mutations_list_seq)
         else:
             segments = ProteinSegment.objects.filter(proteinfamily='GPCR').exclude(slug__in = excluded_segment).prefetch_related()
             segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
