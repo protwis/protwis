@@ -187,7 +187,8 @@ def new_tool(request):
 
 
     context['signal_p'] = None
-    with open('construct/signal_p.txt', "r", encoding='UTF-8') as signal_p:
+    path_to_signal_p = os.sep.join([settings.BASE_DIR, "construct","signal_p.txt"])
+    with open(path_to_signal_p, "r", encoding='UTF-8') as signal_p:
             for row in signal_p:
                 r = row.split()
                 if r[0]==proteins[0].entry_name:
