@@ -136,43 +136,43 @@ def render_mutations(request, protein = None, family = None, download = None, re
                     original_segments.append(segment.item)
                 segments_ids.append(segment.item.id)
 
-            #scheme
-            used_schemes = {}
-            species_list = {}
-            longest_name = 0
-            for protein in proteins:
-                if protein.species.common_name=='Human':
-                    alignment_proteins.append(protein)
-                if protein.residue_numbering_scheme.slug not in used_schemes:
-                    used_schemes[protein.residue_numbering_scheme.slug] = 0
-                used_schemes[protein.residue_numbering_scheme.slug] += 1
-                if protein.species.common_name not in species_list:
-                    if len(protein.species.common_name)>10 and len(protein.species.common_name.split())>1:
-                        name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])
-                        if len(" ".join(protein.species.common_name.split()[1:]))>11:
-                            name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])[:8]+".."
-                    else:
-                        name = protein.species.common_name
-                    species_list[protein.species.common_name] = name
+        #scheme
+        used_schemes = {}
+        species_list = {}
+        longest_name = 0
+        for entry in proteins:
+            if entry.species.common_name=='Human':
+                alignment_proteins.append(entry)
+            if entry.residue_numbering_scheme.slug not in used_schemes:
+                used_schemes[entry.residue_numbering_scheme.slug] = 0
+            used_schemes[entry.residue_numbering_scheme.slug] += 1
+            if entry.species.common_name not in species_list:
+                if len(entry.species.common_name)>10 and len(entry.species.common_name.split())>1:
+                    name = entry.species.common_name.split()[0][0]+". "+" ".join(entry.species.common_name.split()[1:])
+                    if len(" ".join(entry.species.common_name.split()[1:]))>11:
+                        name = entry.species.common_name.split()[0][0]+". "+" ".join(entry.species.common_name.split()[1:])[:8]+".."
+                else:
+                    name = entry.species.common_name
+                species_list[entry.species.common_name] = name
 
-                    if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
-                        longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
+                if len(re.sub('<[^>]*>', '', entry.name)+" "+name)>longest_name:
+                    longest_name = len(re.sub('<[^>]*>', '', entry.name)+" "+name)
 
-            # Here we should reset protein as it comes from the loop, not the initial selection
-            protein = None
 
-            if len(alignment_proteins)==0:
-                alignment_proteins = proteins
+        if len(alignment_proteins)==0:
+            alignment_proteins = proteins
 
-            used_scheme = max(used_schemes, key=used_schemes.get)
-            mutations = MutationExperiment.objects.filter(
+        if len(proteins)==1:
+            protein = proteins[0]
+
+        used_scheme = max(used_schemes, key=used_schemes.get)
+        mutations = MutationExperiment.objects.filter(
                                 Q(protein__in=proteins),
                                 Q(residue__protein_segment__in=original_segments) | Q(residue__generic_number__label__in=original_positions)
                                 ).prefetch_related('residue__display_generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
-
     else:
         # print(gn,receptor_class,aa)
         protein_ids = ''
@@ -185,8 +185,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
-
-
 
     mutations_list = {}
     mutations_list_seq = {}
@@ -351,6 +349,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
                 # calculate consensus sequence + amino acid and feature frequency
                 a.calculate_statistics()
+
                 consensus = a.full_consensus
                 generic_number_objs = a.generic_number_objs
                 cache.set(str(protein_hash)+"&"+str(segment_hash)+"&consensus",consensus)
