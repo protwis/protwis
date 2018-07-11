@@ -135,33 +135,37 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 else:
                     original_segments.append(segment.item)
                 segments_ids.append(segment.item.id)
-           #scheme
-        used_schemes = {}
-        species_list = {}
-        longest_name = 0
-        for protein in proteins:
-            if protein.species.common_name=='Human':
-                alignment_proteins.append(protein)
-            if protein.residue_numbering_scheme.slug not in used_schemes:
-                used_schemes[protein.residue_numbering_scheme.slug] = 0
-            used_schemes[protein.residue_numbering_scheme.slug] += 1
-            if protein.species.common_name not in species_list:
-                if len(protein.species.common_name)>10 and len(protein.species.common_name.split())>1:
-                    name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])
-                    if len(" ".join(protein.species.common_name.split()[1:]))>11:
-                        name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])[:8]+".."
-                else:
-                    name = protein.species.common_name
-                species_list[protein.species.common_name] = name
 
-                if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
-                    longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
+            #scheme
+            used_schemes = {}
+            species_list = {}
+            longest_name = 0
+            for protein in proteins:
+                if protein.species.common_name=='Human':
+                    alignment_proteins.append(protein)
+                if protein.residue_numbering_scheme.slug not in used_schemes:
+                    used_schemes[protein.residue_numbering_scheme.slug] = 0
+                used_schemes[protein.residue_numbering_scheme.slug] += 1
+                if protein.species.common_name not in species_list:
+                    if len(protein.species.common_name)>10 and len(protein.species.common_name.split())>1:
+                        name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])
+                        if len(" ".join(protein.species.common_name.split()[1:]))>11:
+                            name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])[:8]+".."
+                    else:
+                        name = protein.species.common_name
+                    species_list[protein.species.common_name] = name
 
-        if len(alignment_proteins)==0:
-            alignment_proteins = proteins
+                    if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
+                        longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
 
-        used_scheme = max(used_schemes, key=used_schemes.get)
-        mutations = MutationExperiment.objects.filter(
+            # Here we should reset protein as it comes from the loop, not the initial selection
+            protein = None
+
+            if len(alignment_proteins)==0:
+                alignment_proteins = proteins
+
+            used_scheme = max(used_schemes, key=used_schemes.get)
+            mutations = MutationExperiment.objects.filter(
                                 Q(protein__in=proteins),
                                 Q(residue__protein_segment__in=original_segments) | Q(residue__generic_number__label__in=original_positions)
                                 ).prefetch_related('residue__display_generic_number',
@@ -210,7 +214,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
         # if not mutation.residue.generic_number: continue #cant map those without display numbers
         if mutation.residue.generic_number and mutation.residue.generic_number.label not in mutations_list: mutations_list[mutation.residue.generic_number.label] = []
-        if mutation.residue.generic_number and mutation.residue.generic_number.label not in mutations_list_seq: mutations_list_seq[mutation.residue.generic_number.label] = [[]]
+        if mutation.residue.sequence_number not in mutations_list_seq: mutations_list_seq[mutation.residue.sequence_number] = [[]]
 
         exp_type = "N/A"
         if mutation.exp_func and mutation.exp_type:
@@ -232,7 +236,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         else:
             qual = ''
 
-        mutations_list_seq[mutation.residue.generic_number.label][0].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
+        mutations_list_seq[mutation.residue.sequence_number][0].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
         if mutation.residue.generic_number:
             mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
             if mutation.residue.generic_number not in gn_lookup:
@@ -320,12 +324,15 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
             # Fix for plots: convert generic numbering of mutations_list_seq to protein positions
             # TODO: add support for non-generic positions
-            mutations_pos_list = {}
-            if len(mutations_list_seq) > 0:
-                residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(proteins[0]), generic_number__label__in=mutations_list_seq.keys()).prefetch_related('display_generic_number','generic_number')
-                for residue in residuelist:
-                    if residue.generic_number and residue.generic_number.label in mutations_list_seq:
-                        mutations_pos_list[residue.sequence_number] = mutations_list_seq[residue.generic_number.label]
+            if len(proteins)>1:
+                mutations_pos_list = {}
+                if len(mutations_list) > 0:
+                    residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(proteins[0]), generic_number__label__in=mutations_list.keys()).prefetch_related('display_generic_number','generic_number')
+                    for residue in residuelist:
+                        if residue.generic_number and residue.generic_number.label in mutations_list:
+                            mutations_pos_list[residue.sequence_number] = mutations_list[residue.generic_number.label]
+            else:
+                mutations_pos_list = mutations_list_seq
         else:
             segments = ProteinSegment.objects.filter(proteinfamily='GPCR').exclude(slug__in = excluded_segment).prefetch_related()
             segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
@@ -363,7 +370,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 if aa.family_generic_number and aa.family_generic_number in generic_number_objs:
                     r.generic_number = generic_number_objs[aa.family_generic_number] #FIXME
                     if aa.family_generic_number in mutations_list:
-                        print(r.sequence_number)
                         if r.sequence_number not in mutations_pos_list:
                             mutations_pos_list[r.sequence_number] = []
                         mutations_pos_list[r.sequence_number].append(mutations_list[aa.family_generic_number])
