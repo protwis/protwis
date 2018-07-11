@@ -670,6 +670,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
     {% if signal_p %}
     var signal_p = {{signal_p}};
+    {% else %}
+    var signal_p = '';
     {% endif %}
 
     var modifications = new Array;
