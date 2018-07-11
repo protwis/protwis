@@ -321,7 +321,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
             HelixBox = proteins[0].get_helical_box_no_buttons()
 
             # Fix for plots: convert generic numbering of mutations_list_seq to protein positions
-            # TODO: add support for non-generic positions
             if len(proteins)>1:
                 mutations_pos_list = {}
                 if len(mutations_list) > 0:
@@ -331,6 +330,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
                             mutations_pos_list[residue.sequence_number] = mutations_list[residue.generic_number.label]
             else:
                 mutations_pos_list = mutations_list_seq
+
+            segments = ProteinSegment.objects.filter(proteinfamily='GPCR', pk__in=segments_ids,category='helix')
         else:
             segments = ProteinSegment.objects.filter(proteinfamily='GPCR').exclude(slug__in = excluded_segment).prefetch_related()
             segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
@@ -391,8 +392,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
         numbering_schemes_selection = ['gpcrdb'] + numbering_schemes_selection #always use A for reference
         numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
 
-        segments = ProteinSegment.objects.filter(proteinfamily='GPCR', pk__in=segments_ids,category='helix')
-
         if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
             default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         else:
@@ -403,7 +402,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
     # default_generic_number or first scheme on the list is the key
     # value is a dictionary of other gn positions and residues from selected proteins
 
-    # TODO: this residue table is currently never shown - fix
         if len(protein_ids)<20 and receptor_class==None: #too many to make meaningful residuetable / not run when download
             data = OrderedDict()
             for segment in segments:
@@ -447,6 +445,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
             # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
             flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+
             for s in iter(flattened_data):
                 flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
 
