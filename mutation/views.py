@@ -207,9 +207,10 @@ def render_mutations(request, protein = None, family = None, download = None, re
     mutation_tables = ''
     for mutation in mutations:
         residue_table_list.append(mutation.residue.generic_number)
+
         # if not mutation.residue.generic_number: continue #cant map those without display numbers
         if mutation.residue.generic_number and mutation.residue.generic_number.label not in mutations_list: mutations_list[mutation.residue.generic_number.label] = []
-        if mutation.residue.sequence_number not in mutations_list_seq: mutations_list_seq[mutation.residue.sequence_number] = [[]]
+        if mutation.residue.generic_number and mutation.residue.generic_number.label not in mutations_list_seq: mutations_list_seq[mutation.residue.generic_number.label] = [[]]
 
         exp_type = "N/A"
         if mutation.exp_func and mutation.exp_type:
@@ -231,7 +232,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         else:
             qual = ''
 
-        mutations_list_seq[mutation.residue.sequence_number][0].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
+        mutations_list_seq[mutation.residue.generic_number.label][0].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
         if mutation.residue.generic_number:
             mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
             if mutation.residue.generic_number not in gn_lookup:
@@ -317,7 +318,14 @@ def render_mutations(request, protein = None, family = None, download = None, re
             SnakePlot = proteins[0].get_snake_plot_no_buttons()
             HelixBox = proteins[0].get_helical_box_no_buttons()
 
-            mutations_pos_list = mutations_list_seq
+            # Fix for plots: convert generic numbering of mutations_list_seq to protein positions
+            # TODO: add support for non-generic positions
+            mutations_pos_list = {}
+            if len(mutations_list_seq) > 0:
+                residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(proteins[0]), generic_number__label__in=mutations_list_seq.keys()).prefetch_related('display_generic_number','generic_number')
+                for residue in residuelist:
+                    if residue.generic_number and residue.generic_number.label in mutations_list_seq:
+                        mutations_pos_list[residue.sequence_number] = mutations_list_seq[residue.generic_number.label]
         else:
             segments = ProteinSegment.objects.filter(proteinfamily='GPCR').exclude(slug__in = excluded_segment).prefetch_related()
             segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
@@ -389,6 +397,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
     # each helix has a dictionary of positions
     # default_generic_number or first scheme on the list is the key
     # value is a dictionary of other gn positions and residues from selected proteins
+
+    # TODO: this residue table is currently never shown - fix
         if len(protein_ids)<20 and receptor_class==None: #too many to make meaningful residuetable / not run when download
             data = OrderedDict()
             for segment in segments:
