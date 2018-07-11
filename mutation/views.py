@@ -87,7 +87,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         if protein: # if protein static page
 
             proteins.append(Protein.objects.get(entry_name = protein))
-            segments_ids = ProteinSegment.objects.all().values('id')
+            segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
             original_segments = ProteinSegment.objects.all()
 
         elif family:
@@ -95,8 +95,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
             family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
             for fp in family_proteins:
                 proteins.append(fp)
-            segments_ids = ProteinSegment.objects.all().values('id')
-            original_segments = ProteinSegment.objects.all()
+            segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
+            original_segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
 
         else:
 
@@ -310,55 +310,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
         excluded_segment = ['C-term','N-term']
         excluded_segment = []
-        segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment).prefetch_related()
-        segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
 
-        consensus = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&consensus")
-        generic_number_objs = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs")
-        if generic_number_objs == None or consensus == None or consensus == []:
-            a = Alignment()
-
-            a.load_proteins(alignment_proteins)
-
-            a.load_segments(segments) #get all segments to make correct diagrams
-
-            # build the alignment data matrix
-            a.build_alignment()
-
-            # calculate consensus sequence + amino acid and feature frequency
-            a.calculate_statistics()
-            consensus = a.full_consensus
-            generic_number_objs = a.generic_number_objs
-            cache.set(str(protein_hash)+"&"+str(segment_hash)+"&consensus",consensus)
-            cache.set(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs",generic_number_objs)
-
-        residue_list = []
-        generic_numbers = []
-        reference_generic_numbers = {}
-        count = 1 #build sequence_number
-
-        mutations_pos_list = {}
-        for aa in consensus:
-            # for aa,v in a.full_consensus[seg].items():
-            r = Residue()
-            r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position?
-            #print(aa,aa.family_generic_number,aa.generic_number)
-            if aa.family_generic_number and aa.family_generic_number in generic_number_objs:
-                r.generic_number = generic_number_objs[aa.family_generic_number] #FIXME
-                if aa.family_generic_number in mutations_list:
-                    if r.sequence_number not in mutations_pos_list:
-                        mutations_pos_list[r.sequence_number] = []
-                    mutations_pos_list[r.sequence_number].append(mutations_list[aa.family_generic_number])
-                r.segment_slug = aa.segment_slug
-                r.family_generic_number = aa.family_generic_number
-            else:
-                r.segment_slug = aa.segment_slug
-                r.family_generic_number = aa.family_generic_number
-            r.amino_acid = aa.amino_acid
-            r.frequency = aa.frequency #Grab consensus information
-            residue_list.append(r)
-
-            count += 1
         protein_ids = list(set([x.id for x in proteins]))
         if protein:
             #if protein do something else
@@ -366,7 +318,60 @@ def render_mutations(request, protein = None, family = None, download = None, re
             HelixBox = proteins[0].get_helical_box_no_buttons()
 
             mutations_pos_list = mutations_list_seq
+            print("Going for the protein")
+            print(mutations_list_seq)
         else:
+            segments = ProteinSegment.objects.filter(proteinfamily='GPCR').exclude(slug__in = excluded_segment).prefetch_related()
+            segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
+
+            consensus = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&consensus")
+            generic_number_objs = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs")
+            if generic_number_objs == None or consensus == None or consensus == []:
+                a = Alignment()
+
+                a.load_proteins(alignment_proteins)
+
+                a.load_segments(segments) #get all segments to make correct diagrams
+
+                # build the alignment data matrix
+                a.build_alignment()
+
+                # calculate consensus sequence + amino acid and feature frequency
+                a.calculate_statistics()
+                consensus = a.full_consensus
+                generic_number_objs = a.generic_number_objs
+                cache.set(str(protein_hash)+"&"+str(segment_hash)+"&consensus",consensus)
+                cache.set(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs",generic_number_objs)
+
+            residue_list = []
+            generic_numbers = []
+            reference_generic_numbers = {}
+            count = 1 #build sequence_number
+
+            mutations_pos_list = {}
+            for aa in consensus:
+                # for aa,v in a.full_consensus[seg].items():
+                r = Residue()
+                r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position?
+                #print(aa,aa.family_generic_number,aa.generic_number)
+                if aa.family_generic_number and aa.family_generic_number in generic_number_objs:
+                    r.generic_number = generic_number_objs[aa.family_generic_number] #FIXME
+                    if aa.family_generic_number in mutations_list:
+                        print(r.sequence_number)
+                        if r.sequence_number not in mutations_pos_list:
+                            mutations_pos_list[r.sequence_number] = []
+                        mutations_pos_list[r.sequence_number].append(mutations_list[aa.family_generic_number])
+                    r.segment_slug = aa.segment_slug
+                    r.family_generic_number = aa.family_generic_number
+                else:
+                    r.segment_slug = aa.segment_slug
+                    r.family_generic_number = aa.family_generic_number
+                r.amino_acid = aa.amino_acid
+                r.frequency = aa.frequency #Grab consensus information
+                residue_list.append(r)
+
+                count += 1
+
             HelixBox = DrawHelixBox(consensus,'Class A',str(protein_ids), nobuttons = 1)
             SnakePlot = DrawSnakePlot(consensus,'Class A',str(protein_ids), nobuttons = 1)
 
@@ -375,7 +380,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         numbering_schemes_selection = ['gpcrdb'] + numbering_schemes_selection #always use A for reference
         numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
 
-        segments = ProteinSegment.objects.filter(pk__in=segments_ids,category='helix')
+        segments = ProteinSegment.objects.filter(proteinfamily='GPCR', pk__in=segments_ids,category='helix')
 
         if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
             default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
@@ -467,7 +472,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
             data.append(values)
         headers = ['submitting_group','reference','review','data_container','data_container_number', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to',
         'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
-        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value', 
+        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value',
         'exp_fold_change',
         'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_receptor_expression', 'opt_basal_activity',
         'opt_gain_of_activity', 'opt_ligand_emax', 'opt_agonist', 'added_date'
