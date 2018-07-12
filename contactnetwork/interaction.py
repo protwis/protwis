@@ -1,5 +1,6 @@
 from contactnetwork.residue import *
 
+import math
 
 class InteractingPair:
     'Common base class for all interactions'
@@ -7,6 +8,9 @@ class InteractingPair:
         self.res1 = res1
         self.res2 = res2
         self.interactions = interactions
+
+    def add_interaction(self, interaction):
+        self.interactions.append(interaction)
 
     def get_interactions(self):
         return self.interactions
@@ -50,6 +54,13 @@ class HydrophobicInteraction(Interaction):
     def get_name(self):
         return "hydrophobic"
 
+class HydrogenBondInteraction(Interaction):
+    def get_name(self):
+        return "h-bond"
+
+class IonicInteraction(Interaction):
+    def get_name(self):
+        return "ionic"
 
 class PolarInteraction(Interaction):
     def __init__(self, is_charged_res1, is_charged_res2):
@@ -75,6 +86,9 @@ class PolarSideChainBackboneInteraction(PolarInteraction):
     def get_name(self):
         return "polar-sidechain-backbone"
 
+class PolarWaterInteraction(Interaction):
+    def get_name(self):
+        return "polar-water"
 
 class AromaticInteraction(Interaction):
     def get_name(self):
@@ -105,6 +119,9 @@ class CationPiInteraction(AromaticInteraction):
     def get_name(self):
         return "cation-pi"
 
+class WaterMediated(Interaction):
+    def get_name(self):
+        return "water-mediated"
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
@@ -139,10 +156,11 @@ def has_face_to_face_interaction(res1, res2):
         print "Center of first ring is %f,%f,%f, second is %f,%f,%f!".format()
     '''
 
-    # Make sure that the acute angle between the planes are less than 20
-    # degrees and that the distance between centers is less than 5 Angstrom.
-    return any([(angle_between_plane_normals(r1[1], r2[1]) < 0.34906585)
-                and (numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) < 5.0)
+    # Make sure that the acute angle between the planes are less than (or eq.) 20
+    # degrees and that the distance between centers is less than  (or eq.) 5 Angstrom.
+    #return any([(angle_between_plane_normals(r1[1], r2[1]) <= 0.34906585)
+    return any([(math.degrees(angle_between_plane_normals(r1[1], r2[1])) <= 20)
+                and (numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) <= 5.0)
                 for r1 in rings_res1 for r2 in rings_res2])
 
 
@@ -155,8 +173,9 @@ def has_edge_to_face_interaction(res1, res2):
     # 4.5 angstroms and that the perpendicular angles is with
     # +/- 30 degrees, i.e. the acute angle is greater than 60
     # degrees = 1.04719755 radians.
-    return any([(abs(angle_between_plane_normals(r1[1], r2[1]) - 1.5707963267) < 0.523598776)
-                and (numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) < 5.2)
+    #return any([(abs(angle_between_plane_normals(r1[1], r2[1]) - 1.5707963267) < 0.523598776)
+    return any([(math.degrees(abs(angle_between_plane_normals(r1[1], r2[1]) - 1.5707963267)) <= 30)
+                and (numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) <= 5.2)
                 for r1 in res1_desc for r2 in res2_desc])
 
 
@@ -167,24 +186,92 @@ def has_pi_cation_interaction(res1, res2):
     # Only positively charged atoms will have charged atoms
     res2_pos_atom_names = get_pos_charged_atom_names(res2)
 
-    # Check if any charged residue atom is closer to any ring centroid than 4.2 angstroms.
+    # Check if any charged residue atom is closer to any ring centroid than 6 angstroms.
+    # TODO: also adjust this to add an angle check of 30 degrees
     try:
         close_enough = any(
             [any(
-                [distance_between(res2.child_dict[atom_name].coord, desc[0]) < 4.2 for desc in res1_descs]
+                [distance_between(res2.child_dict[atom_name].coord, desc[0]) <= 6 for desc in res1_descs]
             ) for atom_name in res2_pos_atom_names])
     except KeyError:
         return False
 
     # print "select chain A and (resi {0}+{1}); zoom sele; show sticks, sele".format(str(res1.id[1]), str(res2.id[1]))
 
-    # The epsilon carbon of LYS is 2.4 as likely to be closer
+    # The epsilon carbon of LYS is 2.4x as likely to be closer
     # to a center of a ring than the protonated nitrogen, see:
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC22230/
     # consider using this information!
 
     return close_enough
 
+def get_polar_hbonds_interactions(res1, res2):
+    if has_hbond_interaction(res1, res2):
+        return [HydrogenBondInteraction()]
+    else:
+        return []
+
+# TODO: cleanup + optimize this function
+def has_hbond_interaction(res1, res2, switch = 1):
+    # Initially focus on side-chain and water H-bonds
+    if is_hbd(res1) and is_hba(res2):
+        hbd = res1
+        hba = res2
+
+        # Get acceptors
+        acceptors = get_hbond_acceptors(hba)
+
+        # Get H-bond donor information
+        donors = get_hbond_donor_references(hbd)
+        for donor in donors:
+
+            # Pairs within 3.5A?
+            pairs = [ [donor, acceptor] for acceptor in acceptors if donor in hbd.child_dict and acceptor in hba.child_dict and distance_between(hbd.child_dict[donor].coord, hba.child_dict[acceptor].coord) <= 3.5 ]
+
+            # Check angles
+            if len(pairs) > 0:
+                if is_water(hbd):
+                    for pair in pairs:
+                        return True
+                else:
+                    for pair in pairs:
+                        donor = pair[0]
+                        acceptor = pair[1]
+
+                        for set in donors[donor]:
+                            p1 = hbd.child_dict[set[0]].coord
+                            p2 = hbd.child_dict[donor].coord
+
+                            p3 = hba.child_dict[acceptor].coord
+                            if len(set) == 4: # secondary
+                                p3 = hbd.child_dict[set[3]].coord
+
+                            # calculate optimal H-bonding vector to acceptor
+                            d=get_unit_vector(p2-p1)
+                            v=p3-p1
+                            t=numpy.dot(v, d)
+                            p4=p1+t*d
+                            best_vector=get_unit_vector(p3-p4)
+                            if len(set) == 4: # secondary
+                                best_vector=-1 * best_vector
+
+                            angle=math.radians(set[1]-90)
+                            x=abs(math.cos(angle)*set[2])
+                            y=abs(math.sin(angle)*set[2])
+                            hydrogen=p2+y*d+x*best_vector
+
+                            # check angle
+                            if 180 - math.degrees(angle_between(hydrogen - p2, hba.child_dict[acceptor].coord - hydrogen)) >= 120:
+                                return True
+
+#                            print("POTENTIAL pair " + res1.get_resname() + str(res1.id[1]) + " - " + res2.get_resname() + str(res2.id[1]))
+#                            print("ANGLE3 is " + str(180-math.degrees(angle_between(hydrogen-p2,hba.child_dict[acceptor].coord-hydrogen))))
+#                            print("HETATM{:5d} C    HYD A{:4d}    {:8.3f}{:8.3f}{:8.3f}   1.00  1.00           C  ".format(1, 1, hydrogen[0], hydrogen[1], hydrogen[2]))
+
+    if switch == 1:
+        return has_hbond_interaction(res2, res1, 0)
+    else:
+        return False
 
 def has_cation_pi_interaction(res1, res2):
     return has_pi_cation_interaction(res2, res1)
@@ -224,7 +311,7 @@ def get_hydrophobic_interactions(res1, res2):
     res1_carbons = [atom for atom in res1.child_list if atom.element == 'C']
     res2_carbons = [atom for atom in res2.child_list if atom.element == 'C']
 
-    if any([any([distance_between(a1.coord, a2.coord) < 4.5 for a1 in res1_carbons]) for a2 in res2_carbons]):
+    if any([any([distance_between(a1.coord, a2.coord) <= 4.5 for a1 in res1_carbons]) for a2 in res2_carbons]):
         return [HydrophobicInteraction()]
     else:
         return []
@@ -248,7 +335,7 @@ def get_polar_sidechain_backbone_interactions(res1, res2):
     sidechain_atoms = res1_sidechain_nitrogens + res1_sidechain_oxygens + res1_sidechain_sulfurs
     backbone_atoms = res2_backbone_nitrogen + res2_backbone_oxygen
 
-    polarInteraction = any([distance_between(sca.coord, bba.coord) < 4.5 for sca in sidechain_atoms for bba in backbone_atoms])
+    polarInteraction = any([distance_between(sca.coord, bba.coord) <= 4.5 for sca in sidechain_atoms for bba in backbone_atoms])
 
     if polarInteraction:
         return [PolarSideChainBackboneInteraction(is_charged(res1), is_charged(res2))]
@@ -274,16 +361,16 @@ def get_polar_sidechain_sidechain_interactions(res1, res2):
     res1_sidechain_sulfurs = [atom for atom in res1.child_list if atom.element == 'S']
 
     # Sidechain nitrogens and oxygens of residue 2
-    res2_sidechain_nitrogens = [atom for atom in res1.child_list if atom.element == 'N' and atom.name != 'N']
-    res2_sidechain_oxygens = [atom for atom in res1.child_list if atom.element == 'O' and atom.name != 'O']
-    res2_sidechain_sulfurs = [atom for atom in res1.child_list if atom.element == 'S']
+    res2_sidechain_nitrogens = [atom for atom in res2.child_list if atom.element == 'N' and atom.name != 'N']
+    res2_sidechain_oxygens = [atom for atom in res2.child_list if atom.element == 'O' and atom.name != 'O']
+    res2_sidechain_sulfurs = [atom for atom in res2.child_list if atom.element == 'S']
 
     # Compute all polar interacting pairs
     res1_sidechain_atoms = res1_sidechain_nitrogens + res1_sidechain_oxygens + res1_sidechain_sulfurs
     res2_sidechain_atoms = res2_sidechain_nitrogens + res2_sidechain_oxygens + res2_sidechain_sulfurs
 
     polarInteraction = any([
-       distance_between(sca1.coord, sca2.coord) < 4.5 for sca1 in res1_sidechain_atoms for
+       distance_between(sca1.coord, sca2.coord) <= 4.5 for sca1 in res1_sidechain_atoms for
        sca2 in res2_sidechain_atoms
     ])
 
@@ -292,13 +379,44 @@ def get_polar_sidechain_sidechain_interactions(res1, res2):
     else:
         return []
 
+# TODO: cleanup
+# Check if a water atom interacts with polar atoms of res2
+def get_polar_water_interactions(res1, res2):
+    if res1.resname == "HOH" or res2.resname == "HOH":
+        # nitrogens and oxygens of residue 1
+        res1_nitrogens = [atom for atom in res1.child_list if atom.element == 'N']
+        res1_oxygens = [atom for atom in res1.child_list if atom.element == 'O']
+        res1_sulfurs = [atom for atom in res1.child_list if atom.element == 'S']
 
-# Get polar interactions between 2 residues
+        # nitrogens and oxygens of residue 2
+        res2_nitrogens = [atom for atom in res2.child_list if atom.element == 'N']
+        res2_oxygens = [atom for atom in res2.child_list if atom.element == 'O']
+        res2_sulfurs = [atom for atom in res2.child_list if atom.element == 'S']
+
+        # Compute all polar interacting pairs
+        res1_atoms = res1_nitrogens + res1_oxygens + res1_sulfurs
+        res2_atoms = res2_nitrogens + res2_oxygens + res2_sulfurs
+
+        polarInteraction = any([
+           distance_between(sca1.coord, sca2.coord) <= 4.5 for sca1 in res1_atoms for
+           sca2 in res2_atoms
+        ])
+
+        if polarInteraction:
+            return [PolarWaterInteraction()]
+        else:
+            return []
+    else:
+        return []
+
+# Get polar contacts and interactions between 2 residues
 def get_polar_interactions(res1, res2):
     polar_interactions = []
     polar_interactions += get_polar_backbone_sidechain_interactions(res1, res2)
     polar_interactions += get_polar_sidechain_backbone_interactions(res1, res2)
     polar_interactions += get_polar_sidechain_sidechain_interactions(res1, res2)
+    polar_interactions += get_polar_water_interactions(res1, res2)
+    polar_interactions += get_polar_hbonds_interactions(res1, res2)
     return polar_interactions
 
 
@@ -307,7 +425,7 @@ def get_van_der_waals_interactions(res1, res2):
     res1_atoms = res1.child_list
     res2_atoms = res2.child_list
     # Consider just labeling all unlabeled interacting pairs as VDW
-    if any([distance_between(a1.coord, a2.coord) < ((VDW_RADII[a1.element] + VDW_RADII[a2.element]) * VDW_TRESHOLD_FACTOR) for a1 in res1_atoms for a2 in res2_atoms]):
+    if any([distance_between(a1.coord, a2.coord) <= ((VDW_RADII[a1.element] + VDW_RADII[a2.element]) * VDW_TRESHOLD_FACTOR) for a1 in res1_atoms for a2 in res2_atoms]):
         return [VanDerWaalsInteraction()]
     else:
         return []
@@ -326,6 +444,10 @@ def get_interactions(res1, res2):
 
     # Polar interactions
     interactions += get_polar_interactions(res1, res2)
+
+    # TODO: extend with C or N-terms and backbones?
+    if (is_hba(res1) and is_hbd(res2)) or (is_hbd(res1) and is_hba(res2)):
+        has_hbond_interaction(res1, res2)
 
     # Van der Waals interactions
     interactions += get_van_der_waals_interactions(res1, res2)

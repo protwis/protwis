@@ -87,7 +87,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         if protein: # if protein static page
 
             proteins.append(Protein.objects.get(entry_name = protein))
-            segments_ids = ProteinSegment.objects.all().values('id')
+            segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
             original_segments = ProteinSegment.objects.all()
 
         elif family:
@@ -95,8 +95,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
             family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
             for fp in family_proteins:
                 proteins.append(fp)
-            segments_ids = ProteinSegment.objects.all().values('id')
-            original_segments = ProteinSegment.objects.all()
+            segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
+            original_segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
 
         else:
 
@@ -135,30 +135,35 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 else:
                     original_segments.append(segment.item)
                 segments_ids.append(segment.item.id)
-           #scheme
+
+        #scheme
         used_schemes = {}
         species_list = {}
         longest_name = 0
-        for protein in proteins:
-            if protein.species.common_name=='Human':
-                alignment_proteins.append(protein)
-            if protein.residue_numbering_scheme.slug not in used_schemes:
-                used_schemes[protein.residue_numbering_scheme.slug] = 0
-            used_schemes[protein.residue_numbering_scheme.slug] += 1
-            if protein.species.common_name not in species_list:
-                if len(protein.species.common_name)>10 and len(protein.species.common_name.split())>1:
-                    name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])
-                    if len(" ".join(protein.species.common_name.split()[1:]))>11:
-                        name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])[:8]+".."
+        for entry in proteins:
+            if entry.species.common_name=='Human':
+                alignment_proteins.append(entry)
+            if entry.residue_numbering_scheme.slug not in used_schemes:
+                used_schemes[entry.residue_numbering_scheme.slug] = 0
+            used_schemes[entry.residue_numbering_scheme.slug] += 1
+            if entry.species.common_name not in species_list:
+                if len(entry.species.common_name)>10 and len(entry.species.common_name.split())>1:
+                    name = entry.species.common_name.split()[0][0]+". "+" ".join(entry.species.common_name.split()[1:])
+                    if len(" ".join(entry.species.common_name.split()[1:]))>11:
+                        name = entry.species.common_name.split()[0][0]+". "+" ".join(entry.species.common_name.split()[1:])[:8]+".."
                 else:
-                    name = protein.species.common_name
-                species_list[protein.species.common_name] = name
+                    name = entry.species.common_name
+                species_list[entry.species.common_name] = name
 
-                if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
-                    longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
+                if len(re.sub('<[^>]*>', '', entry.name)+" "+name)>longest_name:
+                    longest_name = len(re.sub('<[^>]*>', '', entry.name)+" "+name)
+
 
         if len(alignment_proteins)==0:
             alignment_proteins = proteins
+
+        if len(proteins)==1:
+            protein = proteins[0]
 
         used_scheme = max(used_schemes, key=used_schemes.get)
         mutations = MutationExperiment.objects.filter(
@@ -168,7 +173,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
-
     else:
         # print(gn,receptor_class,aa)
         protein_ids = ''
@@ -181,8 +185,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
-
-
 
     mutations_list = {}
     mutations_list_seq = {}
@@ -207,6 +209,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
     mutation_tables = ''
     for mutation in mutations:
         residue_table_list.append(mutation.residue.generic_number)
+
         # if not mutation.residue.generic_number: continue #cant map those without display numbers
         if mutation.residue.generic_number and mutation.residue.generic_number.label not in mutations_list: mutations_list[mutation.residue.generic_number.label] = []
         if mutation.residue.sequence_number not in mutations_list_seq: mutations_list_seq[mutation.residue.sequence_number] = [[]]
@@ -310,63 +313,77 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
         excluded_segment = ['C-term','N-term']
         excluded_segment = []
-        segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment).prefetch_related()
-        segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
 
-        consensus = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&consensus")
-        generic_number_objs = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs")
-        if generic_number_objs == None or consensus == None or consensus == []:
-            a = Alignment()
-
-            a.load_proteins(alignment_proteins)
-
-            a.load_segments(segments) #get all segments to make correct diagrams
-
-            # build the alignment data matrix
-            a.build_alignment()
-
-            # calculate consensus sequence + amino acid and feature frequency
-            a.calculate_statistics()
-            consensus = a.full_consensus
-            generic_number_objs = a.generic_number_objs
-            cache.set(str(protein_hash)+"&"+str(segment_hash)+"&consensus",consensus)
-            cache.set(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs",generic_number_objs)
-
-        residue_list = []
-        generic_numbers = []
-        reference_generic_numbers = {}
-        count = 1 #build sequence_number
-
-        mutations_pos_list = {}
-        for aa in consensus:
-            # for aa,v in a.full_consensus[seg].items():
-            r = Residue()
-            r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position?
-            #print(aa,aa.family_generic_number,aa.generic_number)
-            if aa.family_generic_number and aa.family_generic_number in generic_number_objs:
-                r.generic_number = generic_number_objs[aa.family_generic_number] #FIXME
-                if aa.family_generic_number in mutations_list:
-                    if r.sequence_number not in mutations_pos_list:
-                        mutations_pos_list[r.sequence_number] = []
-                    mutations_pos_list[r.sequence_number].append(mutations_list[aa.family_generic_number])
-                r.segment_slug = aa.segment_slug
-                r.family_generic_number = aa.family_generic_number
-            else:
-                r.segment_slug = aa.segment_slug
-                r.family_generic_number = aa.family_generic_number
-            r.amino_acid = aa.amino_acid
-            r.frequency = aa.frequency #Grab consensus information
-            residue_list.append(r)
-
-            count += 1
         protein_ids = list(set([x.id for x in proteins]))
         if protein:
             #if protein do something else
             SnakePlot = proteins[0].get_snake_plot_no_buttons()
             HelixBox = proteins[0].get_helical_box_no_buttons()
 
-            mutations_pos_list = mutations_list_seq
+            # Fix for plots: convert generic numbering of mutations_list_seq to protein positions
+            if len(proteins)>1:
+                mutations_pos_list = {}
+                if len(mutations_list) > 0:
+                    residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(proteins[0]), generic_number__label__in=mutations_list.keys()).prefetch_related('display_generic_number','generic_number')
+                    for residue in residuelist:
+                        if residue.generic_number and residue.generic_number.label in mutations_list:
+                            mutations_pos_list[residue.sequence_number] = mutations_list[residue.generic_number.label]
+            else:
+                mutations_pos_list = mutations_list_seq
+
+            segments = ProteinSegment.objects.filter(proteinfamily='GPCR', pk__in=segments_ids,category='helix')
         else:
+            segments = ProteinSegment.objects.filter(proteinfamily='GPCR').exclude(slug__in = excluded_segment).prefetch_related()
+            segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
+
+            consensus = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&consensus")
+            generic_number_objs = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs")
+            if generic_number_objs == None or consensus == None or consensus == []:
+                a = Alignment()
+
+                a.load_proteins(alignment_proteins)
+
+                a.load_segments(segments) #get all segments to make correct diagrams
+
+                # build the alignment data matrix
+                a.build_alignment()
+
+                # calculate consensus sequence + amino acid and feature frequency
+                a.calculate_statistics()
+
+                consensus = a.full_consensus
+                generic_number_objs = a.generic_number_objs
+                cache.set(str(protein_hash)+"&"+str(segment_hash)+"&consensus",consensus)
+                cache.set(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs",generic_number_objs)
+
+            residue_list = []
+            generic_numbers = []
+            reference_generic_numbers = {}
+            count = 1 #build sequence_number
+
+            mutations_pos_list = {}
+            for aa in consensus:
+                # for aa,v in a.full_consensus[seg].items():
+                r = Residue()
+                r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position?
+                #print(aa,aa.family_generic_number,aa.generic_number)
+                if aa.family_generic_number and aa.family_generic_number in generic_number_objs:
+                    r.generic_number = generic_number_objs[aa.family_generic_number] #FIXME
+                    if aa.family_generic_number in mutations_list:
+                        if r.sequence_number not in mutations_pos_list:
+                            mutations_pos_list[r.sequence_number] = []
+                        mutations_pos_list[r.sequence_number].append(mutations_list[aa.family_generic_number])
+                    r.segment_slug = aa.segment_slug
+                    r.family_generic_number = aa.family_generic_number
+                else:
+                    r.segment_slug = aa.segment_slug
+                    r.family_generic_number = aa.family_generic_number
+                r.amino_acid = aa.amino_acid
+                r.frequency = aa.frequency #Grab consensus information
+                residue_list.append(r)
+
+                count += 1
+
             HelixBox = DrawHelixBox(consensus,'Class A',str(protein_ids), nobuttons = 1)
             SnakePlot = DrawSnakePlot(consensus,'Class A',str(protein_ids), nobuttons = 1)
 
@@ -374,8 +391,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
         numbering_schemes_selection = list(used_schemes.keys())
         numbering_schemes_selection = ['gpcrdb'] + numbering_schemes_selection #always use A for reference
         numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
-
-        segments = ProteinSegment.objects.filter(pk__in=segments_ids,category='helix')
 
         if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
             default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
@@ -386,6 +401,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
     # each helix has a dictionary of positions
     # default_generic_number or first scheme on the list is the key
     # value is a dictionary of other gn positions and residues from selected proteins
+
         if len(protein_ids)<20 and receptor_class==None: #too many to make meaningful residuetable / not run when download
             data = OrderedDict()
             for segment in segments:
@@ -429,6 +445,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
             # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
             flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+
             for s in iter(flattened_data):
                 flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
 
@@ -467,7 +484,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
             data.append(values)
         headers = ['submitting_group','reference','review','data_container','data_container_number', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to',
         'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
-        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value', 
+        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value',
         'exp_fold_change',
         'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_receptor_expression', 'opt_basal_activity',
         'opt_gain_of_activity', 'opt_ligand_emax', 'opt_agonist', 'added_date'
