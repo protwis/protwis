@@ -324,7 +324,11 @@
   </th>   
   <th rowspan="1" colspan="3">
   <button type="button" id="nterm_button" class="btn btn-primary btn-xs btn_break" onclick='build_nterm_menu();showModal("N-term",tables["nterm"],"#nterm_sug");'>
-      N-term truncation 
+      {% if signal_p %}
+      N-term / Signal Peptide truncation
+      {% else %}
+      N-term truncation
+      {% endif %}
     </button>
     </th>
   <th rowspan="1" colspan="3">
@@ -452,7 +456,11 @@
   Fusion
   </th>   
   <th rowspan="1" colspan="3">
-      N-term truncation 
+      {% if signal_p %}
+      N-term / Signal Peptide truncation
+      {% else %}
+      N-term truncation
+      {% endif %}
     </th>
   <th rowspan="1" colspan="3">
     {% if class == 'A'  or class == 'F' %}
