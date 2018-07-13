@@ -270,7 +270,10 @@ class ConstructStatistics(TemplateView):
 
             if fusions:
                 fusion_name = fusions[0][2]
-                fusion_by_pdb[pdb_code] = fusions_short[fusion_name]
+                if fusion_name in fusions_short:
+                    fusion_by_pdb[pdb_code] = fusions_short[fusion_name]
+                else:
+                    fusion_by_pdb[pdb_code] = fusion_name
                 if fusion_name not in track_fusions2:
                     track_fusions2[fusion_name] = {'found':[],'for_print':[]}
             # if entry_name=='aa2ar_human':

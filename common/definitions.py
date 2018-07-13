@@ -336,7 +336,7 @@ DESIGN_SUBSTITUTION_MATRIX = OrderedDict([
         })
     ])
 
-STRUCTURAL_RULES = {'All': [
+STRUCTURAL_RULES_OLD = {'All': [
     # OrderedDict([('Class', 'All'), ('State', 'all'), ('Definition', 'Contract salt-bridge'), ('Generic Position', 'E in upper half of TM, not facing the membrane'), ('Wt AA', 'E'), ('Mut AA', 'D'), ('Note', '')]),
 
     OrderedDict([('Class', 'All'), ('State', 'all'), ('Definition', 'Residue Switch Y7x53 switch removal'),

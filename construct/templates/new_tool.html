@@ -138,54 +138,27 @@
 </div>
 
 
-
-
-<div class="row">
-  <div class="col-sm-6">
-
     <div class="row">
-      <div class="col-sm-12">
+      <div class="col-sm-9">
+
         <h1 class="display-4">Construct Design Tool </h1>
-            <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
+        <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
                               <span class="glyphicon glyphicon-film"></span>
                             </button></p>
 
-    Target: <strong>{{target.name|safe}} ({{target.entry_name}})</strong> | 
-    Class: {{class}}<br><br>
-    </div>
-  </div>
+      Target: <strong>{{target.name|safe}} ({{target.entry_name}})</strong> | 
+      Class: {{class}}<br><br>
 
-<!--    <div class="row">
-      <div class="col-sm-3">
-      State: 
-      </div>
-      <div class="col-sm-9">
-{% if active_xtals  %}
-  <div class="btn-group" data-toggle="buttons">
-    <label class="btn btn-default active">
-      <input type="radio" name="state" value="inactive" checked=""> Inactive
-    </label>
-    <label class="btn btn-default">
-      <input type="radio" name="state" value="active"> Active
-    </label>
-  </div>
-{% else %}
-  <input type="radio" class="hidden" name="state" value="inactive" checked="">
-{% endif %}
-      </div>
-      </div>
-      -->
-<!-- <button class="btn btn-info" onclick='exportCSVsuggestions();'>Export all suggestions</button> -->
 
-<span id='load'>
-<span id=loadstatus>Please wait for the dataset to load</span>
-<span id='method_options' style='display: none;'>
-
-    <div class="row">
-      <div class="col-sm-3">
+<div class="row">
+      <div class="col-sm-12">
       Applications:
       </div>
-      <div class="col-sm-9">
+
+
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
 
         <div class="btn-group" data-toggle="buttons">
 
@@ -205,24 +178,21 @@
         <button class="btn btn-default" onclick='$( "#dialog" ).dialog( "open" )'>Reset</button>
         <span onclick='showModal("Applications",tables["help_application"]);' class='glyphicon glyphicon-large glyphicon-question-sign'></span>
       </div>
+
     </div>
 
-<!--     <div class="row">
-      <div class="col-sm-2">
-      Mutations:
-      </div>
-      <div class="col-sm-8">
-        <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();showModal("Site removals",tables["site_removals"],"#site_sug");'>
-          Site Removal
-        </button>
-      </div>
-    </div> -->
-
-<div class="row">
+    <div class="row">
       <div class="col-sm-3">
       Fusion Site: 
       </div>
-      <div class="col-sm-9">
+
+      <div class="col-sm-3">
+      File (Excel):
+      </div>
+
+    </div>
+    <div class="row">
+      <div class="col-sm-3">
         <div class="btn-group" data-toggle="buttons">
           <label class="btn btn-default">
             <input type="radio" name="fusionpos" value="nterm"> N-term
@@ -246,13 +216,8 @@
           </label>
         </div>
       </div>
-</div>
 
-    <div class="row">
       <div class="col-sm-3">
-      File (Excel):
-      </div>
-      <div class="col-sm-9">
         <button class="btn btn-default" onclick='exportToExcel();'>Save</button>
           <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
               <label class="btn btn-default btn-file">
@@ -261,21 +226,33 @@
           </form>
 
       </div>
+        
     </div>
 
-  </div>
-  <div class="col-sm-6" style="">
+<!-- <button class="btn btn-info" onclick='exportCSVsuggestions();'>Export all suggestions</button> -->
 
-    <div id="snakeplot_div">
-  <!--   <span id='close' <button class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span></button></span> -->
-    <span id='fullscreensvg'><button id='fullscreenbutton' class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span> Fullscreen </button></span>
-    {{ target.get_snake_plot_no_buttons }}
+
+      </div>
+
+      <div class="col-sm-3" style="">
+
+        <div id="snakeplot_div" style='height:300px;'>
+      <!--   <span id='close' <button class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span></button></span> -->
+        <span id='fullscreensvg'><button id='fullscreenbutton' class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span> Fullscreen </button></span>
+        {{ target.get_snake_plot_no_buttons }}
+        </div>
+      </div>
+
+
     </div>
-  </div>
-</div>
+    
+
+<span id='load'>
+<span id=loadstatus>Please wait for the dataset to load</span>
+<span id='method_options' style='display: none;'>
 
 </span>
-<br><br>
+<br>
 <div class="table-responsive">
 
         <!-- <button class="btn btn-warning btn-xs" onclick='showModal("Automatic Construct Design",tables["auto_combi"],"");automatic_helper();'>Automatic Construct Design</button>
@@ -550,6 +527,7 @@
 
 <div class="row">
 </div>
+
 
 
 

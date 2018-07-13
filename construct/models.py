@@ -90,14 +90,14 @@ class Construct(models.Model):
         schematic = cache.get(cache_key)
         if schematic==None:
             temp = self.schematic()
-            schematic = temp['schematic_2_c']
-            cache.set(cache_key,schematic,60*60*24*7)
             cache_key = self.name + "_wt_schematic"
             schematic = temp['schematic_2_wt']
             cache.set(cache_key,schematic,60*60*24*7)
             cache_key = self.name + "_chem_summary"
             summary = temp['summary']
             cache.set(cache_key,summary,60*60*24*7)
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
 
         return schematic
 
@@ -106,14 +106,14 @@ class Construct(models.Model):
         schematic = cache.get(cache_key)
         if schematic==None:
             temp = self.schematic()
-            schematic = temp['schematic_2_wt']
-            cache.set(cache_key,schematic,60*60*24*7)
             cache_key = self.name + "_cons_schematic"
             schematic = temp['schematic_2_c']
             cache.set(cache_key,schematic,60*60*24*7)
             cache_key = self.name + "_chem_summary"
             summary = temp['summary']
             cache.set(cache_key,summary,60*60*24*7)
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
 
 
         return schematic
