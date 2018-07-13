@@ -139,17 +139,14 @@
 
 
     <div class="row">
-      <div class="col-sm-9">
+      <div class="col-sm-8">
 
-        <h1 class="display-4">Construct Design Tool </h1>
-        <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
+        <h1 class="display-4">Construct Design Tool</h1>
+        <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href="http://docs.gpcrdb.org/constructs.html#construct-design-tool"  target="_blank">Read about the tool here.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
                               <span class="glyphicon glyphicon-film"></span>
                             </button></p>
 
-      Target: <strong>{{target.name|safe}} ({{target.entry_name}})</strong> | 
-      Class: {{class}}<br><br>
-
-
+Target: {{target.name|safe}} ({{target.entry_name}})
 <div class="row">
       <div class="col-sm-12">
       Applications:
@@ -181,52 +178,44 @@
 
     </div>
 
-    <div class="row">
-      <div class="col-sm-3">
-      Fusion Site: 
-      </div>
 
-      <div class="col-sm-3">
-      File (Excel):
-      </div>
+      <div style='width:500px'>
+            <div class="row">
+        <div class="col-sm-5">
+              Fusion Site: <br>
+          <div class="btn-group" data-toggle="buttons">
+            <label class="btn btn-default">
+              <input type="radio" name="fusionpos" value="nterm"> N-term
+            </label>
 
-    </div>
-    <div class="row">
-      <div class="col-sm-3">
-        <div class="btn-group" data-toggle="buttons">
-          <label class="btn btn-default">
-            <input type="radio" name="fusionpos" value="nterm"> N-term
-          </label>
+              {% if class == 'A' or class == 'F' %}
+            <label class="btn btn-default active">
+              <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
+            </label>
+            {% elif class == 'B' or class == 'C' %}
+            <label class="btn btn-default active">
+              <input type="radio" name="fusionpos" value="icl3" checked=""> ICL2
+            </label>
+            {% endif %}
+            <!-- <label class="btn btn-default">
+              <input type="radio" name="fusionpos" value="both"> Both
+            </label> -->
+            <label class="btn btn-default">
+              <input type="radio" name="fusionpos" value="None"> None
+            </label>
+          </div>
+        </div>
 
-            {% if class == 'A' or class == 'F' %}
-          <label class="btn btn-default active">
-            <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
-          </label>
-          {% elif class == 'B' or class == 'C' %}
-          <label class="btn btn-default active">
-            <input type="radio" name="fusionpos" value="icl3" checked=""> ICL2
-          </label>
-          {% endif %}
-          <!-- <label class="btn btn-default">
-            <input type="radio" name="fusionpos" value="both"> Both
-          </label> -->
-
-          <label class="btn btn-default">
-            <input type="radio" name="fusionpos" value="None"> None
-          </label>
+        <div class="col-sm-5">
+              File (Excel):<br>
+          <button class="btn btn-default" onclick='exportToExcel();'>Save</button>
+            <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
+                <label class="btn btn-default btn-file">
+                  Open<input  id="id_file_source" name="file_source" type="file" style="display: none;">
+                </label>
+            </form>
         </div>
       </div>
-
-      <div class="col-sm-3">
-        <button class="btn btn-default" onclick='exportToExcel();'>Save</button>
-          <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
-              <label class="btn btn-default btn-file">
-                Open<input  id="id_file_source" name="file_source" type="file" style="display: none;">
-              </label>
-          </form>
-
-      </div>
-        
     </div>
 
 <!-- <button class="btn btn-info" onclick='exportCSVsuggestions();'>Export all suggestions</button> -->
@@ -234,7 +223,7 @@
 
       </div>
 
-      <div class="col-sm-3" style="">
+      <div class="col-sm-4" style="">
 
         <div id="snakeplot_div" style='height:300px;'>
       <!--   <span id='close' <button class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span></button></span> -->
@@ -920,7 +909,12 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       build_tooltips();
       if (typeof(datatable)!=='undefined'){
         default_sort["order"] = [];
-        var db_table = $(datatable).DataTable(default_sort);
+        var db_table = $(datatable).DataTable({scrollY:'50vh',
+                                                scrollCollapse: true,
+                                                paging:         false,
+                                                "info":     false,
+                                                "order": []
+                                                });
       }
 
         var title = $('#fusion_search').text();
@@ -1227,7 +1221,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         $("#fullscreenbutton").addClass("btn-xs");
         $("#close").hide();
         fix_snake_plot();
+        $("#snakeplot_div").height('300px');
     } else {
+        $("#snakeplot_div").height('');
         $("#snakeplot").height("100%")
         $("#snakeplot_div").addClass("fadeMe");
         $("#fullscreenbutton").removeClass("btn-xs");
@@ -1346,18 +1342,17 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       // console.log(existing_nterms);
       export_list['nterm'] = [];
 
+      signal_p_text = ''
       if (signal_p) {
-          var items_table = [ "Signal P (http://www.cbs.dtu.dk/services/SignalP/) suggestion: Cut 1-{{signal_p}} <input type='hidden' id='custom_nterm_pos_signal' placeholder='Position' value={{signal_p}}><input type=button value='Add truncation' onclick='custom_nterm(\"SignalP\")'>"];
-      } else {
-        var items_table = [];
-
-      }
-      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_nterm()'></p>");
-      items_table.push( "Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'> or <input type='text' id='custom_nterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_nterm()'>");
+          signal_p_text =  "<hr><p align=center><a href='http://www.cbs.dtu.dk/services/SignalP/'>Signal P</a> suggestion: Remove the signal peptide signal around 1-{{signal_p}} <input type='hidden' id='custom_nterm_pos_signal' placeholder='Position' value={{signal_p}}><input type=button value='Truncate' onclick='custom_nterm(\"SignalP\")'></p><hr>";
+      } 
+      var items_table = [];
+      add_top = "<div> Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'> or <input type='text' id='custom_nterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_nterm()'>" + '<p class="pull-right">Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_nterm()'></p></div>";
+      items_table.push( "");
       if (fusionpos=='nterm') {
-        items_table.push(info_text['nterm'],"<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
+        items_table.push(info_text['nterm'],signal_p_text,add_top,"<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       } else {
-        items_table.push(info_text['nterm'],"<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
+        items_table.push(info_text['nterm'],signal_p_text,add_top,"<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
       }
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
@@ -1467,8 +1462,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       // console.log('existing_cterms',existing_cterms);
       export_list['cterm'] = [];
       var items_table = [info_text['cterm']];
-      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_cterm()'></p>");
-      items_table.push( "Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'> or <input type='text' id='custom_cterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_cterm()'>");
+      add_top = "<div> Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'> or <input type='text' id='custom_cterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_cterm()'>" + '<p class="pull-right">Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_cterm()'></p></div>";
+
+      items_table.push( add_top);
       items_table.push("<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
@@ -1623,8 +1619,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       export_list['icl3_start'] = [];
       export_list['icl3_end'] = [];
        var items_table = [info_text['icl3_start']];
-      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p>");
-      items_table.push( "Custom: 5.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(3)'>");
+      items_table.push("<div>Custom: 5.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(3)'><p class='pull-right'>Add top"+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p></div>");
       items_table.push("<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>"+generic_label+"</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
@@ -1645,8 +1640,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       result = items_table.join( "" );
       tables['icl3_start'] = result;
       var items_table = [info_text['icl3_end']];
-      items_table.push('<p>Add top'+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p>");
-      items_table.push( "Custom: 6.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(3)'>");
+      items_table.push("<div>Custom: 6.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(3)'><p class='pull-right'>Add top"+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p></div>");
       items_table.push( "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>"+generic_label+"</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
@@ -1812,8 +1806,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       export_list['icl2_start'] = [];
       export_list['icl2_end'] = [];
        var items_table = [info_text['icl2_start']];
-      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p>");
-      items_table.push( "Custom: 3.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(2)'>");
+
+      items_table.push("<div>Custom: 3.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(2)'><p class='pull-right'>Add top"+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p></div>");
+
       items_table.push("<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>"+generic_label+"</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
@@ -1837,8 +1832,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       tables['icl2_start'] = result;
 
        var items_table = [info_text['icl2_end']];
-       items_table.push('<p>Add top'+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p>");
-      items_table.push( "Custom: 4.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(2)'>");
+      items_table.push("<div>Custom: 4.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(2)'><p class='pull-right'>Add top"+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p></div>");
       items_table.push("<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>"+generic_label+"</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
@@ -5260,8 +5254,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     function fix_snake_plot() {
       $("#snakeplot").height("100%")
       // console.log('CHECKHEIGHT',$("#snakeplot").height());
-      if ($("#snakeplot").height()>350) {
-        $("#snakeplot").height(350);
+      if ($("#snakeplot").height()>300) {
+        $("#snakeplot").height(300);
       }
       // console.log('CHECKHEIGHT',$("#snakeplot").height());
     }
