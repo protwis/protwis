@@ -28,11 +28,11 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'iTlfrt',
-                'order': [[18, "desc"]], // order by date
+                'order': [[21, "desc"]], // order by date
                 'aoColumnDefs': [
                     { 'bSortable' : false, 'aTargets': [0] },
                     { 'sType': 'string', 'aTargets': [1] },
-                    { 'sType': 'string', 'aTargets': [12] },
+                    { 'sType': 'string', 'aTargets': [15] },
                 ],
                 'tableTools': {
                     "sRowSelect": "single",
@@ -53,7 +53,10 @@
                             { type: "text" }, // preferred chain
                             { type: "select" }, // state
                             { type: "number-range" }, // delta distance
-                            { type: "text" }, // stabilizing agent - left as type-in for now
+                            { type: "text" }, // G-protein - left as type-in for now
+                            { type: "text" }, // Arrestin - left as type-in for now
+                            { type: "text" }, // Fusion - left as type-in for now
+                            { type: "select" }, // Antibody - left as type-in for now
                             { type: "text" }, // endogenous ligand name
                             { type: "text" }, // endogenous ligand type
                             { type: "text" }, // x-ray ligand
@@ -197,9 +200,10 @@
                     <th class="pdb-th">Pre. chain</th>
                     <th class="pdb-th">State</th>
                     <th class="pdb-th">&#916; distance (&#8491;)</th>
-                    <th class='pdb-th'>Signalling prot.</th>
-                    <th class='pdb-th'>Fusion prot.</th>
-                    <th class='pdb-th'>Anti/Nanobodies</th>
+                    <th class='pdb-th'>G-protein</th>
+                    <th class='pdb-th'>Arrestin</th>
+                    <th class='pdb-th'>Fusion</th>
+                    <th class='pdb-th '>Antibodies</th>
                     <th class="ligand-th">Endo. ligand</th>
                     <th class="ligand-th">Ligand type</th>
                     <th class="ligand-th">X-ray ligand</th>
@@ -214,6 +218,7 @@
                     <th class="pub-th">Na<sup>+</sup> in xtal</th>
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -260,23 +265,30 @@
                     <td class="text-center">{{ structure.preferred_chain }}</td>
                     <td class="text-center">{{ structure.state.name }}</td>
                     <td class="text-center">{{ structure.distance|floatformat:"2" }}</td>
-                    <td>
-                        {% for sa in structure.get_signalling_proteins %}
+                    <td class="text-center">
+                        {% for sa in structure.get_gproteins %}
                           {{ sa }}<br />
                         {% empty %}
                           -
                         {% endfor %}
                     </td>
-                    <td>
+                    <td class="text-center">
+                        {% for sa in structure.get_arrestins %}
+                          {{ sa }}<br />
+                        {% empty %}
+                          -
+                        {% endfor %}
+                    </td>
+                    <td class="text-center">
                         {% for sa in structure.get_fusion_proteins %}
-                          {{ sa }}<br />
+                        {{ sa }}<br />
                         {% empty %}
                           -
                         {% endfor %}
                     </td>
-                    <td>
+                    <td class="text-center">
                         {% for sa in structure.get_antibodies %}
-                          {{ sa }}<br />
+                          {{ sa }}
                         {% empty %}
                           -
                         {% endfor %}

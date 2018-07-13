@@ -73,12 +73,23 @@ class Structure(models.Model):
             cache.set(self.pdb_code.index+'_refined',refined, 24*60*60)
         return refined
 
-    def get_signalling_proteins(self):
+    # TODO: Move these functions to stab. agents class and generalize
+    def get_arrestins(self):
         tmp = []
         for agent in self.stabilizing_agents.all():
             # Legacy, should not allow multiple agents defined as one
             for element in agent.name.split(','):
-                if re.match(".*Sign.*|.*G.*|.*restin.*", element) and not re.match(".*thase.*", element):
+                if re.match(".*rrestin.*", element):
+                    tmp.append(element.strip())
+
+        return tmp
+
+    def get_gproteins(self):
+        tmp = []
+        for agent in self.stabilizing_agents.all():
+            # Legacy, should not allow multiple agents defined as one
+            for element in agent.name.split(','):
+                if re.match(".*G.*", element) and not re.match(".*thase.*|PGS", element):
                     tmp.append(element.strip())
 
         return tmp
@@ -88,7 +99,7 @@ class Structure(models.Model):
         for agent in self.stabilizing_agents.all():
             # Legacy, should not allow multiple agents defined as one
             for element in agent.name.split(','):
-                if re.match(".*body.*|.*Ab.*", element):
+                if re.match(".*bod.*|.*Ab.*", element):
                     tmp.append(element.strip())
 
         return tmp
@@ -96,12 +107,13 @@ class Structure(models.Model):
     def get_fusion_proteins(self):
         tmp = []
         for agent in self.stabilizing_agents.all():
-            # Also additional filtering for double entries (e.g. 5ZBQ)
+            # Also additional filtering for double entries (e.g. 5ZBQ) => removed later on
             for element in list(set(agent.name.split(','))):
-                if not re.match(".*body.*|.*Ab.*|.*Sign.*|.*G.*|.*restin.*", element):
+                if not re.match(".*bod.*|.*Ab.*|.*Sign.*|.*G.*|.*restin.*", element) or re.match(".*thase.*|PGS", element):
                     tmp.append(element.strip())
 
         return tmp
+    # ENDTODO
 
     class Meta():
         db_table = 'structure'
@@ -259,6 +271,8 @@ class StructureStabilizingAgent(models.Model):
 
     def __str__(self):
         return self.name
+
+    # add typesetter here
 
     class Meta():
         db_table = "structure_stabilizing_agent"
