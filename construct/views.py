@@ -78,15 +78,15 @@ class ConstructStatistics(TemplateView):
 
         #PREPARE DATA
         proteins_ids = Construct.objects.all().values_list('protein', flat = True)
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__generic_number__label__in=['1x50','7x50','8x50','5x50','6x50','3x50','4x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__display_generic_number__label__in=['1.50x50','7.50x50','8.50x50','5.50x50','6.50x50','3.50x50','4.50x50']).values_list('protein__entry_name','residue__sequence_number','residue__display_generic_number__label')
 
         x50s = {}
         for pc in pconfs:
             if pc[0] not in x50s:
                 x50s[pc[0]] = {}
-            x50s[pc[0]][pc[2]] = pc[1]
-        print(x50s)
-        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__protein_segment__slug__in=['TM3','TM4','TM5','TM6']).values('protein__entry_name','residue__protein_segment__slug').annotate(start=Min('residue__sequence_number'),GN=Max('residue__generic_number__label'),GN2=Min('residue__generic_number__label'),end=Max('residue__sequence_number'))
+            x50s[pc[0]][pc[2].replace(".50","")] = pc[1]
+        # print(x50s)
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins_ids).filter(residue__protein_segment__slug__in=['TM3','TM4','TM5','TM6']).values('protein__entry_name','residue__protein_segment__slug').annotate(start=Min('residue__sequence_number'),GN=Max('residue__display_generic_number__label'),GN2=Min('residue__display_generic_number__label'),end=Max('residue__sequence_number'))
         # print(pconfs)
         # x50s = {}
         track_anamalities = {}
