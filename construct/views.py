@@ -270,7 +270,10 @@ class ConstructStatistics(TemplateView):
 
             if fusions:
                 fusion_name = fusions[0][2]
-                fusion_by_pdb[pdb_code] = fusions_short[fusion_name]
+                if fusion_name in fusions_short:
+                    fusion_by_pdb[pdb_code] = fusions_short[fusion_name]
+                else:
+                    fusion_by_pdb[pdb_code] = fusion_name
                 if fusion_name not in track_fusions2:
                     track_fusions2[fusion_name] = {'found':[],'for_print':[]}
             # if entry_name=='aa2ar_human':
@@ -2263,7 +2266,7 @@ class design(AbsTargetSelection):
     # Left panel
     step = 1
     number_of_steps = 1
-    # docs = 'generic_numbering.html'  # FIXME
+    docs = 'constructs.html#construct-design-tool'  # FIXME
 
     # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
     #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
@@ -2271,7 +2274,7 @@ class design(AbsTargetSelection):
     #     + ' have selected all your receptors, click the green button.'
 
     description = '''This is a tool to design structure constructs based on all published GPCR structures.
-                    A modification can be based on a closest template, most frequent solution or structural rationale (mutations)'''
+                    A modification can be based on a closest template, most frequent solution or structural rationale (mutations).'''
 
     # Middle section
     numbering_schemes = False
