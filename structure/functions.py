@@ -13,7 +13,7 @@ from django.conf import settings
 from common.selection import SimpleSelection
 from common.alignment import Alignment
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
-from residue.functions import dgn
+from residue.functions import dgn, ggn
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer
 
@@ -983,13 +983,46 @@ class PdbStateIdentifier():
                 
             except:
                 print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
-                return False
-
-            
+                return False   
 
     def calculate_CA_distance(self, residue1, residue2):
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
         return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
+
+
+class HomologyModelingSupportFunctions():
+    def __init__(self):
+        pass
+
+
+def update_template_source(template_source, keys, struct, segment, just_rot=False):
+    ''' Update the template_source dictionary with structure info for backbone and rotamers.
+    '''
+    for k in keys:
+        if just_rot==True:
+            try:
+                template_source[segment][k][1] = struct
+            except:
+                pass
+        else:
+            try:
+                template_source[segment][k][0] = struct
+                template_source[segment][k][1] = struct
+            except:
+                pass
+    return template_source
+
+def compare_and_update_template_source(template_source, segment, signprot_pdb_array, i, cgn, template_source_key, segs_for_alt_complex_struct, alt_complex_struct, main_structure):
+    if cgn in signprot_pdb_array[segment]:
+        if segment in segs_for_alt_complex_struct and signprot_pdb_array[segment][cgn]!='x':
+            update_template_source(template_source, [str(template_source_key)], alt_complex_struct, segment)
+        elif signprot_pdb_array[segment][cgn]!='x':
+            update_template_source(template_source, [str(template_source_key)], main_structure, segment)
+        else:
+            update_template_source(template_source, [str(template_source_key)], None, segment)
+    else:
+        update_template_source(template_source, [str(template_source_key)], None, segment)
+    return template_source
 
 
 def right_rotamer_select(rotamer, chain=None):
