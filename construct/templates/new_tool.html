@@ -138,54 +138,24 @@
 </div>
 
 
-
-
-<div class="row">
-  <div class="col-sm-6">
-
     <div class="row">
-      <div class="col-sm-12">
-        <h1 class="display-4">Construct Design Tool </h1>
-            <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
+      <div class="col-sm-8">
+
+        <h1 class="display-4">Construct Design Tool</h1>
+        <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href="http://docs.gpcrdb.org/constructs.html#construct-design-tool"  target="_blank">Read about the tool here.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool3.mp4" type="button" class="videoLink btn btn-xs btn-default">
                               <span class="glyphicon glyphicon-film"></span>
                             </button></p>
 
-    Target: <strong>{{target.name|safe}} ({{target.entry_name}})</strong> | 
-    Class: {{class}}<br><br>
-    </div>
-  </div>
-
-<!--    <div class="row">
-      <div class="col-sm-3">
-      State: 
-      </div>
-      <div class="col-sm-9">
-{% if active_xtals  %}
-  <div class="btn-group" data-toggle="buttons">
-    <label class="btn btn-default active">
-      <input type="radio" name="state" value="inactive" checked=""> Inactive
-    </label>
-    <label class="btn btn-default">
-      <input type="radio" name="state" value="active"> Active
-    </label>
-  </div>
-{% else %}
-  <input type="radio" class="hidden" name="state" value="inactive" checked="">
-{% endif %}
-      </div>
-      </div>
-      -->
-<!-- <button class="btn btn-info" onclick='exportCSVsuggestions();'>Export all suggestions</button> -->
-
-<span id='load'>
-<span id=loadstatus>Please wait for the dataset to load</span>
-<span id='method_options' style='display: none;'>
-
-    <div class="row">
-      <div class="col-sm-3">
+Target: {{target.name|safe}} ({{target.entry_name}})
+<div class="row">
+      <div class="col-sm-12">
       Applications:
       </div>
-      <div class="col-sm-9">
+
+
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
 
         <div class="btn-group" data-toggle="buttons">
 
@@ -205,77 +175,73 @@
         <button class="btn btn-default" onclick='$( "#dialog" ).dialog( "open" )'>Reset</button>
         <span onclick='showModal("Applications",tables["help_application"]);' class='glyphicon glyphicon-large glyphicon-question-sign'></span>
       </div>
+
     </div>
 
-<!--     <div class="row">
-      <div class="col-sm-2">
-      Mutations:
-      </div>
-      <div class="col-sm-8">
-        <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();showModal("Site removals",tables["site_removals"],"#site_sug");'>
-          Site Removal
-        </button>
-      </div>
-    </div> -->
 
-<div class="row">
-      <div class="col-sm-3">
-      Fusion Site: 
-      </div>
-      <div class="col-sm-9">
-        <div class="btn-group" data-toggle="buttons">
-          <label class="btn btn-default">
-            <input type="radio" name="fusionpos" value="nterm"> N-term
-          </label>
+      <div style='width:500px'>
+            <div class="row">
+        <div class="col-sm-5">
+              Fusion Site: <br>
+          <div class="btn-group" data-toggle="buttons">
+            <label class="btn btn-default">
+              <input type="radio" name="fusionpos" value="nterm"> N-term
+            </label>
 
-            {% if class == 'A' or class == 'F' %}
-          <label class="btn btn-default active">
-            <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
-          </label>
-          {% elif class == 'B' or class == 'C' %}
-          <label class="btn btn-default active">
-            <input type="radio" name="fusionpos" value="icl3" checked=""> ICL2
-          </label>
-          {% endif %}
-          <!-- <label class="btn btn-default">
-            <input type="radio" name="fusionpos" value="both"> Both
-          </label> -->
+              {% if class == 'A' or class == 'F' %}
+            <label class="btn btn-default active">
+              <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
+            </label>
+            {% elif class == 'B' or class == 'C' %}
+            <label class="btn btn-default active">
+              <input type="radio" name="fusionpos" value="icl3" checked=""> ICL2
+            </label>
+            {% endif %}
+            <!-- <label class="btn btn-default">
+              <input type="radio" name="fusionpos" value="both"> Both
+            </label> -->
+            <label class="btn btn-default">
+              <input type="radio" name="fusionpos" value="None"> None
+            </label>
+          </div>
+        </div>
 
-          <label class="btn btn-default">
-            <input type="radio" name="fusionpos" value="None"> None
-          </label>
+        <div class="col-sm-5">
+              File (Excel):<br>
+          <button class="btn btn-default" onclick='exportToExcel();'>Save</button>
+            <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
+                <label class="btn btn-default btn-file">
+                  Open<input  id="id_file_source" name="file_source" type="file" style="display: none;">
+                </label>
+            </form>
         </div>
       </div>
-</div>
-
-    <div class="row">
-      <div class="col-sm-3">
-      File (Excel):
-      </div>
-      <div class="col-sm-9">
-        <button class="btn btn-default" onclick='exportToExcel();'>Save</button>
-          <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
-              <label class="btn btn-default btn-file">
-                Open<input  id="id_file_source" name="file_source" type="file" style="display: none;">
-              </label>
-          </form>
-
-      </div>
     </div>
 
-  </div>
-  <div class="col-sm-6" style="">
+<!-- <button class="btn btn-info" onclick='exportCSVsuggestions();'>Export all suggestions</button> -->
 
-    <div id="snakeplot_div">
-  <!--   <span id='close' <button class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span></button></span> -->
-    <span id='fullscreensvg'><button id='fullscreenbutton' class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span> Fullscreen </button></span>
-    {{ target.get_snake_plot_no_buttons }}
+
+      </div>
+
+      <div class="col-sm-4" style="">
+
+        <div id="snakeplot_div" style='height:300px;'>
+      <!--   <span id='close' <button class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span></button></span> -->
+        <span id='fullscreensvg'><button id='fullscreenbutton' class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span> Fullscreen </button></span>
+        {{ target.get_snake_plot_no_buttons }}
+        </div>
+      </div>
+
+
     </div>
-  </div>
-</div>
+    
+
+<span id='load'>
+<span id=loadstatus>Please wait for the dataset to load</span>
+<span id='method_options' style='display: none;'>
 
 </span>
-<br><br>
+<br>
 <div class="table-responsive">
 
         <!-- <button class="btn btn-warning btn-xs" onclick='showModal("Automatic Construct Design",tables["auto_combi"],"");automatic_helper();'>Automatic Construct Design</button>
@@ -324,7 +290,11 @@
   </th>   
   <th rowspan="1" colspan="3">
   <button type="button" id="nterm_button" class="btn btn-primary btn-xs btn_break" onclick='build_nterm_menu();showModal("N-term",tables["nterm"],"#nterm_sug");'>
-      N-term truncation 
+      {% if signal_p %}
+      N-term / Signal Peptide truncation
+      {% else %}
+      N-term truncation
+      {% endif %}
     </button>
     </th>
   <th rowspan="1" colspan="3">
@@ -384,7 +354,17 @@
   <th>N-term res kept before to TM1*</th>
   <th>Pos</th>
   <th>AA</th>
-  <th>BW**</th>
+   {% if class == 'A' %}
+  <th>BW</th>
+  {% elif class == 'B' %}
+  <th>Woot</th>
+  {% elif class == 'C' %}
+  <th>Pin</th>
+  {% elif class == 'F' %}
+  <th>Wang</th>
+  {% else %}
+  <th>BW</th>
+  {% endif %}
   <th>Pos</th>
   <th>AA</th>
 
@@ -398,7 +378,17 @@
     <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th>
   {% endif %}
 
-  <th>BW**</th>
+   {% if class == 'A' %}
+  <th>BW</th>
+  {% elif class == 'B' %}
+  <th>Woot</th>
+  {% elif class == 'C' %}
+  <th>Pin</th>
+  {% elif class == 'F' %}
+  <th>Wang</th>
+  {% else %}
+  <th>BW</th>
+  {% endif %}
   <th>Pos</th>
   <th>AA</th>
   <th>C-term res kept after h8*</th>
@@ -432,7 +422,11 @@
   Fusion
   </th>   
   <th rowspan="1" colspan="3">
-      N-term truncation 
+      {% if signal_p %}
+      N-term / Signal Peptide truncation
+      {% else %}
+      N-term truncation
+      {% endif %}
     </th>
   <th rowspan="1" colspan="3">
     {% if class == 'A'  or class == 'F' %}
@@ -473,7 +467,17 @@
   <th>N-term res kept rel. to TM1*</th>
   <th>Pos</th>
   <th>AA</th>
-  <th>BW**</th>
+   {% if class == 'A' %}
+  <th>BW</th>
+  {% elif class == 'B' %}
+  <th>Woot</th>
+  {% elif class == 'C' %}
+  <th>Pin</th>
+  {% elif class == 'F' %}
+  <th>Wang</th>
+  {% else %}
+  <th>BW</th>
+  {% endif %}
   <th>Pos</th>
   <th>AA</th>
 
@@ -487,7 +491,17 @@
     <!-- <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th> -->
   {% endif %}
 
-  <th>BW**</th>
+   {% if class == 'A' %}
+  <th>BW</th>
+  {% elif class == 'B' %}
+  <th>Woot</th>
+  {% elif class == 'C' %}
+  <th>Pin</th>
+  {% elif class == 'F' %}
+  <th>Wang</th>
+  {% else %}
+  <th>BW</th>
+  {% endif %}
   <th>Pos</th>
   <th>AA</th>
   <th>C-term res kept after h8*</th>
@@ -502,6 +516,7 @@
 
 <div class="row">
 </div>
+
 
 
 
@@ -628,6 +643,12 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
     var receptor_name = "{{target.entry_name}}".split("_")[0];
 
+    {% if signal_p %}
+    var signal_p = {{signal_p}};
+    {% else %}
+    var signal_p = '';
+    {% endif %}
+
     var modifications = new Array;
     var tables = new Array;
     var mutations_browser = new Array;
@@ -672,6 +693,20 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     export_list['sequences'] = [];
     var info_text = {};
 
+
+
+   {% if class == 'A' %}
+     generic_label = 'BW';
+    {% elif class == 'B' %}
+     generic_label = 'Woot';
+    {% elif class == 'C' %}
+     generic_label = 'Pin';
+    {% elif class == 'F' %}
+     generic_label = 'Wang';
+    {% else %}
+     generic_label = 'BW';
+    {% endif %}
+
     info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
 
     info_text['icl2_start'] = '<p class=info_text>Select the start position for the truncation within ICL2. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
@@ -688,7 +723,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.<br> If there are several modfications chosen for the same form of deletion then you can either generate multiple construct sequences with combinations of the choices. Alternatively you can fix to a chosen modification by ticking the Fix box.<br> In the same fashion mutations can be fixed or used to make multiple sequences</p>';
     info_text['inserts_general'] = '<p class=info_text>See current inserts below. For inserts in N- or C-term you can change the order they come in.<br>If you choose several fusion proteins, they will be used for combinations.</p>';
     info_text['auto_combi'] = '<p class=info_text>Automatic work mode generates all combinations of the selected truncation and fusion sites.<br>You have the option to delete specific combinations/constructs afterwards.<br>Specify the number of:</p>';
-    info_text['mutations'] = "Mutate: <input type='text' id='custom_pos' placeholder='sequence position'> to <input type='text' id='custom_mut' placeholder='aminoacid (1-letter)'> <input type='text'  id='custom_reason' placeholder='Reason'><input type=button value=Add onclick='custom_mut()'><div id=confirm_cus_mut></div><p class=info_text>Below are all generated mutant suggestions based on rules and annotated thermostabilising mutants.<br></p>";
+    info_text['mutations'] = "<strong>Manually add mutation</strong>: <input type='text' id='custom_pos' placeholder='sequence position'> to <input type='text' id='custom_mut' placeholder='aminoacid (1-letter)'> <input type='text'  id='custom_reason' placeholder='Reason'><input type=button value=Add onclick='custom_mut()'><div id=confirm_cus_mut></div>";
 
 
     tables["custom"] = [info_text['custom']]
@@ -702,7 +737,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     tables["auto_combi"].push( "<table class='table combitable'><tr><td>N-term truncation:</td><td><select id=combi_nterm class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>ICL start cut:</td><td><select id=combi_icl_start class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>ICL end cut:</td><td><select id=combi_icl_end class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>C-term truncation:</td><td><select id=combi_cterm class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td></td><td><span id=combi_summary></span><button type='submit' class='btn btn-primary pull-right' onclick='auto_generate()'>Add</button></td></tr></table>");
     tables["auto_combi"] = tables["auto_combi"].join( "" );  
 
-    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
+    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="http://files.gpcrdb.org/video/constructtool3.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
                         '<span class="glyphicon glyphicon-film"></span>' +
                         '</button>']  
   
@@ -874,7 +909,12 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       build_tooltips();
       if (typeof(datatable)!=='undefined'){
         default_sort["order"] = [];
-        var db_table = $(datatable).DataTable(default_sort);
+        var db_table = $(datatable).DataTable({scrollY:'50vh',
+                                                scrollCollapse: true,
+                                                paging:         false,
+                                                "info":     false,
+                                                "order": []
+                                                });
       }
 
         var title = $('#fusion_search').text();
@@ -1181,7 +1221,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         $("#fullscreenbutton").addClass("btn-xs");
         $("#close").hide();
         fix_snake_plot();
+        $("#snakeplot_div").height('300px');
     } else {
+        $("#snakeplot_div").height('');
         $("#snakeplot").height("100%")
         $("#snakeplot_div").addClass("fadeMe");
         $("#fullscreenbutton").removeClass("btn-xs");
@@ -1300,13 +1342,17 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       // console.log(existing_nterms);
       export_list['nterm'] = [];
 
-      var items_table = [info_text['nterm']];
-      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_nterm()'></p>");
-      items_table.push( "Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'> or <input type='text' id='custom_nterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_nterm()'>");
+      signal_p_text = ''
+      if (signal_p) {
+          signal_p_text =  "<hr><p align=center><a href='http://www.cbs.dtu.dk/services/SignalP/'>Signal P</a> suggestion: Remove the signal peptide signal around 1-{{signal_p}} <input type='hidden' id='custom_nterm_pos_signal' placeholder='Position' value={{signal_p}}><input type=button value='Truncate' onclick='custom_nterm(\"SignalP\")'></p><hr>";
+      } 
+      var items_table = [];
+      add_top = "<div> Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'> or <input type='text' id='custom_nterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_nterm()'>" + '<p class="pull-right">Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_nterm()'></p></div>";
+      items_table.push( "");
       if (fusionpos=='nterm') {
-        items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
+        items_table.push(info_text['nterm'],signal_p_text,add_top,"<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       } else {
-        items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
+        items_table.push(info_text['nterm'],signal_p_text,add_top,"<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
       }
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
@@ -1416,8 +1462,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       // console.log('existing_cterms',existing_cterms);
       export_list['cterm'] = [];
       var items_table = [info_text['cterm']];
-      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_cterm()'></p>");
-      items_table.push( "Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'> or <input type='text' id='custom_cterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_cterm()'>");
+      add_top = "<div> Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'> or <input type='text' id='custom_cterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_cterm()'>" + '<p class="pull-right">Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_cterm()'></p></div>";
+
+      items_table.push( add_top);
       items_table.push("<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
@@ -1457,9 +1504,25 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             if (state==vals[2] || 1==1) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) {
                 find = 1;
-                range = "5."+(50+vals[0])+"-"+"6."+(50-vals[1]);
-                range_start = "5."+(50+vals[0]);
-                range_end = "6."+(50-vals[1]);
+
+                // 5x50    5.50 A
+                // 6x50    6.50 A
+
+                // 5x50    3.54 F
+                // 6x50    4.50 F
+
+                {% if class == 'A' %}
+                  gn_550 = 50;
+                  gn_650 = 50;
+                {% elif class == 'F' %}
+                  gn_550 = 54;
+                  gn_650 = 49;
+                {% endif %}
+
+
+                range = "5."+(gn_550+vals[0])+"-"+"6."+(gn_650-vals[1]);
+                range_start = "5."+(gn_550+vals[0]);
+                range_end = "6."+(gn_650-vals[1]);
 
                 // TABLE
                 if(!show_table_start[range_start]) { show_table_start[range_start] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
@@ -1556,9 +1619,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       export_list['icl3_start'] = [];
       export_list['icl3_end'] = [];
        var items_table = [info_text['icl3_start']];
-      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p>");
-      items_table.push( "Custom: 5.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(3)'>");
-      items_table.push("<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
+      items_table.push("<div>Custom: 5.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(3)'><p class='pull-right'>Add top"+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p></div>");
+      items_table.push("<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>"+generic_label+"</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -1578,9 +1640,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       result = items_table.join( "" );
       tables['icl3_start'] = result;
       var items_table = [info_text['icl3_end']];
-      items_table.push('<p>Add top'+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p>");
-      items_table.push( "Custom: 6.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(3)'>");
-      items_table.push( "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
+      items_table.push("<div>Custom: 6.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(3)'><p class='pull-right'>Add top"+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p></div>");
+      items_table.push( "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>"+generic_label+"</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -1627,10 +1688,29 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             if (state==vals[2] || 1==1) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) { //use icl3 cos thats how it is
                 find = 1;
-                range = "3."+(50+vals[0])+"-"+"4."+(50-vals[1]);
 
-                range_start = "3."+(50+vals[0]);
-                range_end = "4."+(50-vals[1]);
+                // 3x50    3.54 C
+                // 4x50    4.40 C
+
+                // 3x50    3.54 B
+                // 4x50    4.50 B
+
+                {% if class == 'B' %}
+                  gn_350 = 54;
+                  gn_450 = 50;
+                {% elif class == 'C' %}
+                  gn_350 = 54;
+                  gn_450 = 40;
+                {% endif %}
+
+
+
+
+
+                range = "3."+(gn_350+vals[0])+"-"+"4."+(gn_450-vals[1]);
+
+                range_start = "3."+(gn_350+vals[0]);
+                range_end = "4."+(gn_450-vals[1]);
 
                 // TABLE
                 if(!show_table_start[range_start]) { show_table_start[range_start] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
@@ -1726,9 +1806,10 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       export_list['icl2_start'] = [];
       export_list['icl2_end'] = [];
        var items_table = [info_text['icl2_start']];
-      items_table.push('<p>Add top'+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p>");
-      items_table.push( "Custom: 3.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(2)'>");
-      items_table.push("<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
+
+      items_table.push("<div>Custom: 3.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(2)'><p class='pull-right'>Add top"+combi_options+" suggestions<input type=button value=Add onclick='auto_icl_start()'></p></div>");
+
+      items_table.push("<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>"+generic_label+"</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -1751,9 +1832,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       tables['icl2_start'] = result;
 
        var items_table = [info_text['icl2_end']];
-       items_table.push('<p>Add top'+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p>");
-      items_table.push( "Custom: 4.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(2)'>");
-      items_table.push("<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
+      items_table.push("<div>Custom: 4.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(2)'><p class='pull-right'>Add top"+combi_options2+" suggestions<input type=button value=Add onclick='auto_icl_end()'></p></div>");
+      items_table.push("<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>"+generic_label+"</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -2285,15 +2365,32 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             cterm_cols = "<td>"+c_term_button+"</td><td></td><td></td>";
           }
 
+          {% if class == 'A' %}
+                gn_550 = 50;
+                gn_650 = 50;
+          {% elif class == 'F' %}
+                gn_550 = 54;
+                gn_650 = 49;
+          {% endif %}
+            
+          {% if class == 'B' %}
+              gn_350 = 54;
+              gn_450 = 50;
+          {% elif class == 'C' %}
+            gn_350 = 54;
+            gn_450 = 40;
+          {% endif %}
+
+          
           if (val["icl3_start_pos"]){
             icl_start_pos = parseInt(val["icl3_start_pos"])-1
-            icl_start_val = "5."+(50+icl_start_pos-{{residues_gn.5x50.sequence_number}});
+            icl_start_val = "5."+(gn_550+icl_start_pos-{{residues_gn.5x50.sequence_number}});
             icl_start_aa = residues_pos[icl_start_pos][0];
             icl_start_cols = "<td>"+icl_start_val+icl_start_button+"</td><td>"+icl_start_pos+"</td><td>"+icl_start_aa+"</td>";
           } else if (val["icl2_start_pos"]){
             icl_start_pos = parseInt(val["icl2_start_pos"])-1
             console.log('icl2!',icl_start_pos);
-            icl_start_val = "3."+(50+icl_start_pos-{{residues_gn.3x50.sequence_number}});
+            icl_start_val = "3."+(gn_350+icl_start_pos-{{residues_gn.3x50.sequence_number}});
             icl_start_aa = residues_pos[icl_start_pos][0];
             icl_start_cols = "<td>"+icl_start_val+icl_start_button+"</td><td>"+icl_start_pos+"</td><td>"+icl_start_aa+"</td>";
           } else {
@@ -2302,12 +2399,12 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
           if (val["icl3_end_pos"]){
             icl_end_pos = parseInt(val["icl3_end_pos"])+1
-            icl_end_val = "6."+(50+parseInt(icl_end_pos)-{{residues_gn.6x50.sequence_number}});
+            icl_end_val = "6."+(gn_650+parseInt(icl_end_pos)-{{residues_gn.6x50.sequence_number}});
             icl_end_aa = residues_pos[icl_end_pos][0];
             icl_end_cols = "<td>"+icl_end_val+icl_end_button+"</td><td>"+icl_end_pos+"</td><td>"+icl_end_aa+"</td>";
           } else if (val["icl2_end_pos"]){
             icl_end_pos = parseInt(val["icl2_end_pos"])+1
-            icl_end_val = "4."+(50+parseInt(icl_end_pos)-{{residues_gn.4x50.sequence_number}});
+            icl_end_val = "4."+(gn_450+parseInt(icl_end_pos)-{{residues_gn.4x50.sequence_number}});
             icl_end_aa = residues_pos[icl_end_pos][0];
             icl_end_cols = "<td>"+icl_end_val+icl_end_button+"</td><td>"+icl_end_pos+"</td><td>"+icl_end_aa+"</td>";
           } else {
@@ -2440,91 +2537,110 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       items_table.push('<p>Add top'+combi_options+" mutants to be used in <select id='mutant_where' class='form-control'><option>All constructs</option><option>In single constructs<input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
       
 
-      if (edit_mode_on || combi_mode_on || mut_mode=='known') {
-      var items_table = [info_text['mutations'] + "<input type='hidden' id='mut_fixed' value='yes'><table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>"];
 
-      items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='All constructs'> <input type=button value=Add onclick='auto_mutations(\"known\")'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations(\"known\")'></p>");
-      } else {
-      var items_table = [info_text['mutations'] + "<input type='hidden' id='mut_fixed' value='no'><table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>"];
-
-      items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='In single constructs'> <input type=button value=Add onclick='auto_mutations(\"scan\")'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations(\"scan\")'></p>");
-
-      }
-      $.each(mutations_mode_suggestions, function(i, val) {
-        state = 'any';
-        if (i.split("_").length>1) {
-          // this has a active_ or inactive_ prefix
-          // if (!i.startsWith(state)){
-          //   return true;
-          // }
-          state = i.split("_")[0];
-        }
-
-        if (val['definitions'].indexOf('same_receptor') >= 0 || val['definitions'].indexOf('custom') >= 0) {
-          // same receptor 
-        } else if (combi_mode_on || mut_mode=='known') {
-          // if not same receptor and not in mutant scan mode, skip.
-          return true;
-        }
-
-        checked_fixed = '';
-        checked_combi = '';
-
-        $.each(modifications, function(key,val2) {
-            if (val2['type']=='mutation') {
-
-                gn = val["gpcrdb"];
-                pos = val["pos"];
-                to = val["mut_aa"];
-                wt = val["wt_aa"];
-                method = wt+pos+to+" "+gn
-                if (val2['full']==val || val2['method']==method) {
-                  console.log('already checked!',val);
-                  if (val2['fixed']=='yes') checked_fixed = 'checked';
-                  if (val2['fixed']=='no') checked_combi = 'checked';
-                  if (edit_mode_on && val2['fixed']=='no') checked_fixed = 'checked';
-                }
-            }
-          });
-
-        td_add_common = `<td><input class=mut_fixed mut_id=`+i+` type=checkbox  onclick='mut_new(this, "yes");'` +checked_fixed+`></td>`
-        td_add_unique = `<td><input class=mut_pick mut_id=`+i+` type=checkbox  onclick='mut_new(this, "no");'` +checked_combi+`></td>`
-
+      var items_table = [info_text['mutations']];
 
         if (edit_mode_on || combi_mode_on || mut_mode=='known') {
-          td_add_unique = '';
-        } else {
-          td_add_common = '';
+            items_table.push( "<input type='hidden' id='mut_fixed' value='yes'>");
+          } else {
+            items_table.push( "<input type='hidden' id='mut_fixed' value='no'>");
         }
 
-        if (i.split("_").length>2) {
-          row = `<tr>
-                <td>`+state+`</td>
-                <td>`+val['priority']+`</td>
-                <td>`+val['segment1']+` & `+val['segment2']+`</td>
-                <td>`+val['gpcrdb1']+` & `+val['gpcrdb2']+`</td>
-                <td>`+val['wt_aa1']+val['pos']+val['mut_aa1']+` & `+val['wt_aa2']+val['pos2']+val['mut_aa2']+`</td>
-                <td>`+val['definitions']+`</td>
-                ` +td_add_common+`
-                ` +td_add_unique+`
-                </tr>`;
+      if (c>0 ){
+        if (edit_mode_on || combi_mode_on || mut_mode=='known') {
+
+            items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='All constructs'> <input type=button value=Add onclick='auto_mutations(\"known\")'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations(\"known\")'></p>");
 
         } else {
-          row = `<tr>
-                <td>`+state+`</td>
-                <td>`+val['priority']+`</td>
-                <td>`+val['segment']+`</td>
-                <td>`+val['gpcrdb']+`</td>
-                <td>`+val['wt_aa']+val['pos']+val['mut_aa']+`</td>
-                <td>`+val['definitions']+`</td>
-                ` +td_add_common+`
-                ` +td_add_unique+`
-                </tr>`;
-            }
-        items_table.push(row);
-      });
 
-      items_table.push( "</tbody></table>" );
+            items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='In single constructs'> <input type=button value=Add onclick='auto_mutations(\"scan\")'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations(\"scan\")'></p>");
+
+        }
+
+            items_table.push("<p class=info_text>Below are all generated mutant suggestions based on rules and annotated thermostabilising mutants.<br></p>");
+            items_table.push("<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>");
+
+        console.log(mut_mode, c);
+        $.each(mutations_mode_suggestions, function(i, val) {
+          state = 'any';
+          if (i.split("_").length>1) {
+            // this has a active_ or inactive_ prefix
+            // if (!i.startsWith(state)){
+            //   return true;
+            // }
+            state = i.split("_")[0];
+          }
+
+          if (val['definitions'].indexOf('same_receptor') >= 0 || val['definitions'].indexOf('custom') >= 0) {
+            // same receptor 
+          } else if (combi_mode_on || mut_mode=='known') {
+            // if not same receptor and not in mutant scan mode, skip.
+            return true;
+          }
+
+          checked_fixed = '';
+          checked_combi = '';
+
+          $.each(modifications, function(key,val2) {
+              if (val2['type']=='mutation') {
+
+                  gn = val["gpcrdb"];
+                  gn = val["display_gn"];
+                  pos = val["pos"];
+                  to = val["mut_aa"];
+                  wt = val["wt_aa"];
+                  method = wt+pos+to+" "+gn
+                  if (val2['full']==val || val2['method']==method) {
+                    console.log('already checked!',val);
+                    if (val2['fixed']=='yes') checked_fixed = 'checked';
+                    if (val2['fixed']=='no') checked_combi = 'checked';
+                    if (edit_mode_on && val2['fixed']=='no') checked_fixed = 'checked';
+                  }
+              }
+            });
+
+          td_add_common = `<td><input class=mut_fixed mut_id=`+i+` type=checkbox  onclick='mut_new(this, "yes");'` +checked_fixed+`></td>`
+          td_add_unique = `<td><input class=mut_pick mut_id=`+i+` type=checkbox  onclick='mut_new(this, "no");'` +checked_combi+`></td>`
+
+
+          if (edit_mode_on || combi_mode_on || mut_mode=='known') {
+            td_add_unique = '';
+          } else {
+            td_add_common = '';
+          }
+
+          if (i.split("_").length>2) {
+            row = `<tr>
+                  <td>`+state+`</td>
+                  <td>`+val['priority']+`</td>
+                  <td>`+val['segment1']+` & `+val['segment2']+`</td>
+                  <td>`+val['gpcrdb1']+` & `+val['gpcrdb2']+`</td>
+                  <td>`+val['wt_aa1']+val['pos']+val['mut_aa1']+` & `+val['wt_aa2']+val['pos2']+val['mut_aa2']+`</td>
+                  <td>`+val['definitions']+`</td>
+                  ` +td_add_common+`
+                  ` +td_add_unique+`
+                  </tr>`;
+
+          } else {
+            row = `<tr>
+                  <td>`+state+`</td>
+                  <td>`+val['priority']+`</td>
+                  <td>`+val['segment']+`</td>
+                  <td>`+val['display_gn']+`</td>
+                  <td>`+val['wt_aa']+val['pos']+val['mut_aa']+`</td>
+                  <td>`+val['definitions']+`</td>
+                  ` +td_add_common+`
+                  ` +td_add_unique+`
+                  </tr>`;
+              }
+          items_table.push(row);
+        });
+
+        items_table.push( "</tbody></table>" );
+      } else {
+
+        items_table.push( "<br><br>There are no suggestions as there are no proven mutations with effect in our database." );
+      }
       result = items_table.join( "" );
       tables['mutations'] = result;
 
@@ -2592,8 +2708,12 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
 
     function custom_nterm(elem) {
-      n_val = $("#custom_nterm").val();
-      n_val_pos = $("#custom_nterm_pos").val();
+      if (elem=='SignalP') {
+        n_val_pos = $("#custom_nterm_pos_signal").val();
+      } else {
+        n_val = $("#custom_nterm").val();
+        n_val_pos = $("#custom_nterm_pos").val();
+      }
       from = ["custom"];
       // until = {{residues_gn.1x50.sequence_number}}-n_val;
       if (n_val_pos) {
@@ -2616,8 +2736,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         });
         if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
 
-      console.log('check',$.inArray( n_val, custom_additions['nterm'] ));
-      if ($.inArray( n_val, custom_additions['nterm'] )!==-1) custom_additions['nterm'].push(n_val);
+      if ($.inArray( n_val, custom_additions['nterm'] )==-1) custom_additions['nterm'].push(n_val);
 
       $.each(modifications, function(key,val2) {
               console.log(key,val2);
@@ -3018,6 +3137,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       reason = $('#custom_reason').val();
       fixed = $('#mut_fixed').val();
       gn = residues_pos[mut_pos][2];
+      gn = residues_pos[mut_pos][3];
       wt = residues_pos[mut_pos][0];
       seg = residues_pos[mut_pos][1];
 
@@ -3025,7 +3145,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
       label = wt+mut_pos+to;
       if (typeof(confirm)==='undefined'){
-        $('#confirm_cus_mut').html('Custom! '+label+' ('+seg+'/'+gn+') '+'Reason:'+reason+' <input type=button value=Confirm onclick=custom_mut("1")>');
+        $('#confirm_cus_mut').html('<br><strong>Please confirm custom mutation</strong>:  '+label+' ('+seg+'/'+gn+') '+'Reason:'+reason+' <input type=button value=Confirm onclick=custom_mut("1")>');
       } else {
         range = new Array;
         range.push(mut_pos);
@@ -3042,9 +3162,6 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         new_entry[label] = {'definitions':['custom','Reason: '+reason], gpcrdb:gn, mut_aa:to, origin:[], pos:mut_pos, priority:1, segment:seg, wt_aa:wt};
         $.extend( new_entry, mutations_mode_suggestions );
         mutations_mode_suggestions = new_entry;
-        // mutations_mode_suggestions[label] = ;
-        console.log('ADD NEW');
-        console.log(mutations_mode_suggestions);
         if (fixed=='yes') {
           build_mutation_mode_table("known");
         } else {
@@ -3576,6 +3693,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
       mutation = mutations_mode_suggestions[mut_id];
       gn = mutation["gpcrdb"];
+      gn = mutation["display_gn"];
       pos = mutation["pos"];
       to = mutation["mut_aa"];
       wt = mutation["wt_aa"];
@@ -3594,6 +3712,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
         if (checked) {
           gn = mutation["gpcrdb"];
+          gn = mutation["display_gn"];
           pos = mutation["pos"];
           to = mutation["mut_aa"];
           wt = mutation["wt_aa"];
@@ -3979,15 +4098,37 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             cterm_cols = "<td></td><td></td><td></td>";
           }
 
+
+          {% if class == 'A' %}
+                gn_550 = 50;
+                gn_650 = 50;
+          {% elif class == 'F' %}
+                gn_550 = 54;
+                gn_650 = 49;
+          {% endif %}
+
+          {% if class == 'B' %}
+              gn_350 = 54;
+              gn_450 = 50;
+          {% elif class == 'C' %}
+            gn_350 = 54;
+            gn_450 = 40;
+          {% endif %}
+
+
           if (val["icl3_start_pos"]){
+
+
+
+
             icl_start_pos = parseInt(val["icl3_start_pos"])-1
-            icl_start_val = "5."+(50+icl_start_pos-{{residues_gn.5x50.sequence_number}});
+            icl_start_val = "5."+(gn_550+icl_start_pos-{{residues_gn.5x50.sequence_number}});
             icl_start_aa = residues_pos[icl_start_pos][0];
             icl_start_cols = "<td>"+icl_start_val+"</td><td>"+icl_start_pos+"</td><td>"+icl_start_aa+"</td>";
           } else if (val["icl2_start_pos"]){
             icl_start_pos = parseInt(val["icl2_start_pos"])-1
             console.log('icl2!',icl_start_pos);
-            icl_start_val = "3."+(50+icl_start_pos-{{residues_gn.3x50.sequence_number}});
+            icl_start_val = "3."+(gn_350+icl_start_pos-{{residues_gn.3x50.sequence_number}});
             icl_start_aa = residues_pos[icl_start_pos][0];
             icl_start_cols = "<td>"+icl_start_val+"</td><td>"+icl_start_pos+"</td><td>"+icl_start_aa+"</td>";
           } else {
@@ -3996,12 +4137,12 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
           if (val["icl3_end_pos"]){
             icl_end_pos = parseInt(val["icl3_end_pos"])+1
-            icl_end_val = "6."+(50+parseInt(icl_end_pos)-{{residues_gn.6x50.sequence_number}});
+            icl_end_val = "6."+(gn_650+parseInt(icl_end_pos)-{{residues_gn.6x50.sequence_number}});
             icl_end_aa = residues_pos[icl_end_pos][0];
             icl_end_cols = "<td>"+icl_end_val+"</td><td>"+icl_end_pos+"</td><td>"+icl_end_aa+"</td>";
           } else if (val["icl2_end_pos"]){
             icl_end_pos = parseInt(val["icl2_end_pos"])+1
-            icl_end_val = "4."+(50+parseInt(icl_end_pos)-{{residues_gn.4x50.sequence_number}});
+            icl_end_val = "4."+(gn_450+parseInt(icl_end_pos)-{{residues_gn.4x50.sequence_number}});
             icl_end_aa = residues_pos[icl_end_pos][0];
             icl_end_cols = "<td>"+icl_end_val+"</td><td>"+icl_end_pos+"</td><td>"+icl_end_aa+"</td>";
           } else {
@@ -5113,8 +5254,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     function fix_snake_plot() {
       $("#snakeplot").height("100%")
       // console.log('CHECKHEIGHT',$("#snakeplot").height());
-      if ($("#snakeplot").height()>350) {
-        $("#snakeplot").height(350);
+      if ($("#snakeplot").height()>300) {
+        $("#snakeplot").height(300);
       }
       // console.log('CHECKHEIGHT',$("#snakeplot").height());
     }

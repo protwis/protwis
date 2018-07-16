@@ -5,7 +5,7 @@ import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB.AbstractPropertyMap import AbstractPropertyMap
 from Bio.PDB.Polypeptide import CaPPBuilder, is_aa
 try:
-    from Bio.PDB.Vector import rotaxis
+    from Bio.PDB.vectors import rotaxis
 except:
     from Bio.PDB import rotaxis
 
@@ -980,7 +980,7 @@ class PdbStateIdentifier():
                     line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)
-                
+
             except:
                 print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
                 return False   

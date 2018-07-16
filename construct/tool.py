@@ -70,6 +70,27 @@ def compare_family_slug(a,b):
     b = b.split("_")
 
     if a[0]!=b[0]:
+        if a[0] == '001':
+            # class A doesnt borrow from other classes
+            return -1, 'ignore'
+        elif a[0] == '002':
+            # if Class B1 only use if B2
+            if b[0]!= '003':
+                return -1, 'ignore'
+        elif a[0] == '003':
+            # if Class B1 only use if B2
+            if b[0]!= '002':
+                return -1, 'ignore'
+        elif a[0] == '004':
+            # if Class C ignore others
+            return -1, 'ignore'
+        elif a[0] == '005':
+            # if Class F ignore others
+            return -1, 'ignore'
+        elif a[0] == '006':
+            # if Class Taste take for A
+            if b[0]!= '001':
+                return -1, 'ignore'
         return 0,"Different Class"
     elif a[1]!=b[1]:
         return 1,"Class"
@@ -163,6 +184,16 @@ def new_tool(request):
     context['active_xtals'] = active_xtals
     context['inserts'] = inserts
     context['form'] = FileUploadForm
+
+
+    context['signal_p'] = None
+    path_to_signal_p = os.sep.join([settings.BASE_DIR, "construct","signal_p.txt"])
+    with open(path_to_signal_p, "r", encoding='UTF-8') as signal_p:
+            for row in signal_p:
+                r = row.split()
+                if r[0]==proteins[0].entry_name:
+                    context['signal_p'] = r[4]
+                    print(row.split())
     #print(residues)
 
     return render(request,'new_tool.html',context)
@@ -405,6 +436,7 @@ def json_icl3(request, slug, **response_kwargs):
         entry_name = p.entry_name
         p_level = p.family.slug
         d_level, d_level_name = compare_family_slug(level,p_level)
+        if d_level==-1: continue
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
         if pdb not in states:
@@ -478,6 +510,7 @@ def json_icl2(request, slug, **response_kwargs):
         entry_name = p.entry_name
         p_level = p.family.slug
         d_level, d_level_name = compare_family_slug(level,p_level)
+        if d_level==-1: continue
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
         if pdb not in states:
@@ -532,6 +565,7 @@ def json_nterm(request, slug, **response_kwargs):
         entry_name = p.entry_name
         p_level = p.family.slug
         d_level, d_level_name = compare_family_slug(level,p_level)
+        if d_level==-1: continue
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
         fusion, f_results, linkers = c.fusion()
@@ -586,6 +620,7 @@ def json_cterm(request, slug, **response_kwargs):
         entry_name = p.entry_name
         p_level = p.family.slug
         d_level, d_level_name = compare_family_slug(level,p_level)
+        if d_level==-1: continue
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
         fusion, f_results, linkers = c.fusion()
@@ -898,11 +933,11 @@ def structure_rules(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-# @cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24)
 def mutations(request, slug, **response_kwargs):
     from django.db import connection
     start_time = time.time()
-
+    print('hi')
     protein = Protein.objects.get(entry_name=slug)
     protein_class_slug = protein.family.slug.split("_")[0]
     protein_rf_name = protein.family.parent.name
@@ -951,7 +986,7 @@ def mutations(request, slug, **response_kwargs):
         gn = r.generic_number.label
         from_start = r.sequence_number-start_end_segments[r.protein_segment.slug]['start']
         from_end = start_end_segments[r.protein_segment.slug]['end'] - r.sequence_number
-        wt_lookup[gn] = [r.amino_acid, r.sequence_number,r.protein_segment.slug]
+        wt_lookup[gn] = [r.amino_acid, r.sequence_number,r.protein_segment.slug, r.display_generic_number.label]
         if r.amino_acid in ["G","P"] and from_start>=4 and from_end>=4:
             # build a list of potential GP removals (ignore those close to helix borders)
             GP_residues_in_target.append(gn)
@@ -1082,7 +1117,6 @@ def mutations(request, slug, **response_kwargs):
     POS_RESIDUES = 'HKR'
 
     if protein_rf_count>1:
-        print('RF')
         # Only perform on RF families with more than one member
         rf_conservation = calculate_conservation(slug=protein_rf_slug)
         rf_cutoff = 7
@@ -1324,7 +1358,10 @@ def mutations(request, slug, **response_kwargs):
 
     simple_list = OrderedDict(sorted(simple_list.items(), key=lambda x: (x[1]['priority'],x[1]['pos']) ))
     for key, val in simple_list.items():
+        if val['gpcrdb']: 
+            val['display_gn'] = wt_lookup[val['gpcrdb']][3]
         val['definitions'] = list(set([x[1] for x in val['definitions']]))
+        print(val)
 
     jsondata = simple_list
     jsondata = json.dumps(jsondata)
@@ -1673,6 +1710,7 @@ def calculate_conservation(proteins = None, slug = None):
                 return alignment_consensus
             a = pickle.loads(alignment_consensus.alignment)
         except: 
+            print('no saved alignment')
             proteins = Protein.objects.filter(family__slug__startswith=slug, source__name='SWISSPROT',species__common_name='Human')
             align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
             a = Alignment()
@@ -1681,6 +1719,7 @@ def calculate_conservation(proteins = None, slug = None):
             a.build_alignment()
             # calculate consensus sequence + amino acid and feature frequency
             a.calculate_statistics()
+            alignment_consensus = None
     elif proteins:
         align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
         a = Alignment()
@@ -1695,7 +1734,6 @@ def calculate_conservation(proteins = None, slug = None):
     consensus = {}
     for seg, aa_list in a.consensus.items():
         for gn, aal in aa_list.items():
-            print(gn)
             aa_count_dict = {}
             for aa, num in a.aa_count[seg][gn].items():
                 if num:
