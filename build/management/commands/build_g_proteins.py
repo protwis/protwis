@@ -11,7 +11,7 @@ from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, Protei
 
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 
-from signprot.models import SignprotStructure, SignprotBarcode
+from signprot.models import SignprotStructure, SignprotBarcode, SignprotComplex
 import pandas as pd
 
 from optparse import make_option
@@ -262,6 +262,7 @@ class Command(BaseCommand):
         else:
             #add gproteins from cgn db
             try:
+                self.purge_signprot_complex_data()
                 self.purge_coupling_data()
                 self.purge_cgn_residues()
                 self.purge_cgn_proteins()
@@ -448,6 +449,12 @@ class Command(BaseCommand):
         except:
             self.logger.warning('Existing Residue data cannot be deleted')
 
+    def purge_signprot_complex_data(self):
+        try:
+            SignprotComplex.objects.all().delete()
+        except:
+            self.logger.warning('SignprotComplex data cannot be deleted')
+
     def create_barcode(self):
 
         barcode_data =  pd.read_csv(self.barcode_data_file, low_memory=False)
@@ -619,6 +626,7 @@ class Command(BaseCommand):
                 bulk.append(bulk_r)
             except:
                 self.logger.error("Failed to add residues")
+            if row['Uniprot_ACC']
             if len(bulk) % 10000 == 0:
                 self.logger.info('Inserted bulk {} (Index:{})'.format(len(bulk),index))
                 # print(len(bulk),"inserts!",index)

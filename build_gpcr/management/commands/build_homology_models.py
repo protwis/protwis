@@ -1886,8 +1886,6 @@ class HomologyModeling(object):
                         except:
                             continue
                 elif self.complex and first_gn!=None and len(first_gn.split('.'))==3:
-                    print(list_keys[0])
-                    print(self.signprot_protconf)
                     first_seqnum = Residue.objects.get(protein_conformation=self.signprot_protconf,display_generic_number__label=list_keys[0]).sequence_number
                 else:
                     first_seqnum = int(first_gn)
