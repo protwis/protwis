@@ -707,15 +707,15 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
      generic_label = 'BW';
     {% endif %}
 
-    info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
+    info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from GPCR/receptor structures and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
 
-    info_text['icl2_start'] = '<p class=info_text>Select the start position for the truncation within ICL2. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
+    info_text['icl2_start'] = '<p class=info_text>Select the start position for the truncation within ICL2. The data comes from GPCR/receptor structures and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
     info_text['icl2_end'] = '<p class=info_text>Select the ending position for the ICL2 truncation.</p>';
 
-    info_text['icl3_start'] = '<p class=info_text>Select the start position for the truncation within ICL3. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
+    info_text['icl3_start'] = '<p class=info_text>Select the start position for the truncation within ICL3. The data comes from GPCR/receptor structures and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
     info_text['icl3_end'] = '<p class=info_text>Select the ending position for the ICL3 truncation.</p>';
 
-    info_text['cterm'] = '<p class=info_text>Here you select the C-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM8. It is possible to sort the data by occurrances (frequence) or by homology (Levels).</p>';
+    info_text['cterm'] = '<p class=info_text>Here you select the C-term truncation. The data comes from GPCR/receptor structures and is grouped by the truncation\'s distance to TM8. It is possible to sort the data by occurrances (frequence) or by homology (Levels).</p>';
     info_text['termo'] = '<p class=info_text>Select mutation by click the mutation suggestion in the <i>Mutation</i> column.</p>';
 
     info_text['sites'] = '<p class=info_text>The tool recognizes possible site motifs. These can be attempted to be removed using the following mutations.</p>';
@@ -741,8 +741,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
                         '<span class="glyphicon glyphicon-film"></span>' +
                         '</button>']  
   
-    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>State</strong></div><div class='col-sm-10'>Select either Inactive or Active to limit the dataset to be crystals with chosen state.</div></div>");
-    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Fusion site</strong></div><div class='col-sm-10'>Select if and where the fusion protein to be inserted. This is used to make suggestions for the intercelluar loop (ICL) truncation based on crystals with fusion protein in same region.</div></div>");
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>State</strong></div><div class='col-sm-10'>Select either Inactive or Active to limit the dataset to be GPCR/receptor structures with chosen state.</div></div>");
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Fusion site</strong></div><div class='col-sm-10'>Select if and where the fusion protein to be inserted. This is used to make suggestions for the intercelluar loop (ICL) truncation based on structures with fusion protein in same region.</div></div>");
     tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Export</strong></div><div class='col-sm-10'>Export all suggestions to an excel sheet for local analysis.</div></div>");
     tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Upload</strong></div><div class='col-sm-10'>Upload a previous construct design to continue work.</div></div>");
     tables["help"].push( "<br><div class='row'><div class='col-sm-2'><strong>Deletions</strong></div><div class='col-sm-10'>Methods to help guide truncations in different regions</div></div>");
@@ -751,8 +751,8 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     tables["help"] = tables["help"].join( "" );  
 
     tables["help_application"] = []  
-    tables["help_application"].push("<div class='row'><div class='col-sm-3'><strong>Truncation/fusion scan</strong></div><div class='col-sm-8'>Generates constructs covering all the unique combinations of user-selected truncations and/or fusions.</div></div>");
-    tables["help_application"].push( "<div class='row'><div class='col-sm-3'><strong>Mutation scan</strong></div><div class='col-sm-8'>First designs one reference construct and then selects a number of stabilising mutations which are individually added to generate as many constructs.</div></div>");
+    tables["help_application"].push("<div class='row'><div class='col-sm-3'><strong>Truncation/fusion scan</strong></div><div class='col-sm-8'>Generates constructs covering all the unique combinations of user-selected truncations and/or fusions.</div></div><br>");
+    tables["help_application"].push( "<div class='row'><div class='col-sm-3'><strong>Mutation scan</strong></div><div class='col-sm-8'>First designs one reference construct and then selects a number of stabilising mutations which are individually added to generate as many constructs.</div></div><br>");
     tables["help_application"].push( "<div class='row'><div class='col-sm-3'><strong>Custom constructs</strong></div><div class='col-sm-8'>Constructs are designed one at the time by repeated custom selection of truncations, fusions and mutations.</div></div>");
     tables["help_application"] = tables["help_application"].join( "" );  
 
@@ -790,7 +790,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       }
     }
 
-    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published crystals.<br><table><tr class='fusion_inserts fusion fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_inserts fusion fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr>";
+    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published structures.<br><table><tr class='fusion_inserts fusion fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_inserts fusion fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr>";
     // other_inserts_dropdown += `<select id="insert_type_where"  class="form-control">
     //               <option value="" >Please select Type</option>
     //               <option value="nterm">N-term</option>
