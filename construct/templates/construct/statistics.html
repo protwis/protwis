@@ -32,7 +32,8 @@
               try {
                 d = dynamine_data[entry_name]['N-term'];
               } catch (e) {
-                  return True;
+                  console.log('ERROR:' +  index + ": " + entry_name + ' ' + cut);
+                  return true;
               }
               length = Object.keys(d).length;
               seq_pos = length-pos+1;
@@ -67,7 +68,8 @@
               try {
                 d = dynamine_data[entry_name]['C-term'];
               } catch (e) {
-                  return True;
+                  console.log('ERROR:' +  index + ": " + entry_name + ' ' + cut);
+                  return true;
               }
               length = Object.keys(d).length;
               seq_pos = Object.keys(d)[pos-1];
