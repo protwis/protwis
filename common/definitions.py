@@ -176,7 +176,7 @@ if AMINO_ACID_GROUPS_AA == None:
         for feature, members in AMINO_ACID_GROUPS.items():
             if amino_acid in members:
                 AMINO_ACID_GROUPS_AA[amino_acid].append(feature)
-    cache.get(cache_name, AMINO_ACID_GROUPS_AA, 3600*24*7) # cache a week
+    cache.set(cache_name, AMINO_ACID_GROUPS_AA, 3600*24*7) # cache a week
 
 
 AMINO_ACID_GROUP_NAMES = OrderedDict([
