@@ -612,6 +612,8 @@ class Alignment:
                     # Now we want
                     if amino_acid in self.gaps:
                         amino_acid = '-'
+                    elif amino_acid == 'X':
+                        continue
 
                     # init counters
                     if generic_number not in self.aa_count[j]:
