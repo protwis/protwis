@@ -544,16 +544,19 @@ class SequenceSignature:
 
 class SignatureMatch():
 
-    def __init__(self, common_positions, numbering_schemes, segments, difference_matrix, protein_set, cutoff=40):
+    def __init__(self, common_positions, numbering_schemes, segments, difference_matrix, protein_set_pos, protein_set_neg, cutoff=40):
 
         self.cutoff = cutoff
+        self.norm = 0.0
         self.common_gn = common_positions
         self.schemes = numbering_schemes
         self.segments = segments
         self.diff_matrix = difference_matrix
         self.signature_matrix_filtered = OrderedDict()
         self.signature_consensus = OrderedDict()
-        self.protein_set = protein_set
+        self.protein_set = protein_set_pos + protein_set_neg
+        self.protein_set_pos = protein_set_pos
+        self.protein_set_neg = protein_set_neg
         self.relevant_gn = OrderedDict([(x[0], OrderedDict()) for x in self.schemes])
         self.relevant_segments = OrderedDict()
         self.scored_proteins = []
@@ -572,6 +575,11 @@ class SignatureMatch():
                     self.residue_to_feat[res].add(fidx)
                 except KeyError:
                     self.residue_to_feat['-'].add(fidx)
+
+        self._find_norm()
+        self.scores_pos, self.signatures_pos, self.scored_proteins_pos = self.score_protein_set(self.protein_set_pos)
+        self.scores_neg, self.signatures_neg, self.scored_proteins_neg = self.score_protein_set(self.protein_set_neg)
+
 
     def _assign_preferred_features(self, signature, segment, ref_matrix):
 
@@ -598,6 +606,14 @@ class SignatureMatch():
             if efeat in tmp:
                 return efeat
         return argmax
+
+
+    def _find_norm(self):
+
+        norm = 0.0
+        for segment in self.relevant_segments:
+            norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
+        self.norm = norm
 
     def find_relevant_gns(self):
         """
@@ -681,9 +697,38 @@ class SignatureMatch():
         print("Total time: ", end - start)
 
 
+    def score_protein_set(self, protein_set):
+
+        start = time.time()
+        protein_scores = {}
+        protein_signature_match = {}
+        pcfs = ProteinConformation.objects.order_by(
+            'protein__family__slug',
+            'protein__entry_name'
+            ).filter(
+                protein__in=protein_set,
+                protein__sequence_type__slug='wt'
+                ).exclude(protein__entry_name__endswith='-consensus')
+        for pcf in pcfs:
+            p_start = time.time()
+            score, nscore, signature_match = self.score_protein(pcf)
+            protein_scores[pcf] = (score, nscore)
+            protein_signature_match[pcf] = signature_match
+            p_end = time.time()
+            print("Time elapsed for {}: ".format(pcf.protein.entry_name), p_end - p_start)
+        end = time.time()
+        protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1][0], reverse=True))
+        protein_signatures = OrderedDict()
+        for prot in protein_report.items():
+            protein_signatures[prot[0]] = protein_signature_match[prot[0]]
+        scored_proteins = list(protein_report.keys())
+        print("Total time: ", end - start)
+
+        return (protein_report, protein_signatures, scored_proteins)
+
     def score_protein(self, pcf):
         prot_score = 0.0
-        norm = 0.0
+        #norm = 0.0
         consensus_match = OrderedDict([(x, []) for x in self.relevant_segments])
 
         relevant_gns_total = []
@@ -705,7 +750,7 @@ class SignatureMatch():
             signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
             signature_map = self._assign_preferred_features(signature_map, segment, self.signature_matrix_filtered)
 
-            norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
+            #norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
 
             for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
                 feat = signature_map[idx]
@@ -786,9 +831,9 @@ class SignatureMatch():
                                 pos
                                 ])
             consensus_match[segment] = tmp
-        return (prot_score/100, prot_score/norm*100, consensus_match)
+        return (prot_score/100, prot_score/self.norm*100, consensus_match)
 
-def signature_score_excel(workbook, scores, protein_signatures, signature_filtered, relevant_gn, relevant_segments, numbering_schemes):
+def signature_score_excel(workbook, scores, protein_signatures, signature_filtered, relevant_gn, relevant_segments, numbering_schemes, scores_positive=None, scores_negative=None, signatures_positive=None, signatures_negative=None):
 
     worksheet = workbook.add_worksheet('scored_proteins')
     #wrap = workbook.add_format({'text_wrap': True})
@@ -905,6 +950,105 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                 )
             col_offset += len(data)
         row_offset += 1
+
+
+    static_offset = 3 + 3 * len(numbering_schemes) + len(protein_signatures.items())
+    #Scores for positive set (if specified)
+    if scores_positive:
+        worksheet.write(
+            static_offset,
+            0,
+            'Positive set'
+        )
+        static_offset += 1
+
+        row_offset = 0
+        for protein, score in scores_positive.items():
+            worksheet.write(
+                static_offset + row_offset,
+                0,
+                protein.protein.entry_name,
+            )
+            worksheet.write(
+                static_offset + row_offset,
+                1,
+                "{} / {}".format(
+                    protein.protein.family.parent.parent.name,
+                    protein.protein.family.parent.name
+                )
+            )
+            worksheet.write(
+                static_offset + row_offset,
+                2,
+                score[0],
+            )
+            worksheet.write(
+                static_offset + row_offset,
+                3,
+                score[1],
+            )
+            col_offset = 0
+            for segment, data in signatures_positive[protein].items():
+                for col, res in enumerate(data):
+                    cell_format = workbook.add_format({'bg_color': res[3],})
+                    worksheet.write(
+                        static_offset + row_offset,
+                        4 + col + col_offset,
+                        res[4],
+                        cell_format
+                    )
+                col_offset += len(data)
+            row_offset += 1
+        static_offset += len(scores_positive.items())
+
+
+
+    #Scores for negative set (if specified)
+    if scores_negative:
+        worksheet.write(
+            static_offset,
+            0,
+            'Negative set'
+        )
+        static_offset += 1
+
+        row_offset = 0
+        for protein, score in scores_negative.items():
+            worksheet.write(
+                static_offset + row_offset,
+                0,
+                protein.protein.entry_name,
+            )
+            worksheet.write(
+                static_offset + row_offset,
+                1,
+                "{} / {}".format(
+                    protein.protein.family.parent.parent.name,
+                    protein.protein.family.parent.name
+                )
+            )
+            worksheet.write(
+                static_offset + row_offset,
+                2,
+                score[0],
+            )
+            worksheet.write(
+                static_offset + row_offset,
+                3,
+                score[1],
+            )
+            col_offset = 0
+            for segment, data in signatures_negative[protein].items():
+                for col, res in enumerate(data):
+                    cell_format = workbook.add_format({'bg_color': res[3],})
+                    worksheet.write(
+                        static_offset + row_offset,
+                        4 + col + col_offset,
+                        res[4],
+                        cell_format
+                    )
+                col_offset += len(data)
+            row_offset += 1
 
 def prepare_aa_group_preference():
 
