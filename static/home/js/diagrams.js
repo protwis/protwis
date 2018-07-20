@@ -820,6 +820,9 @@ function ajaxBarcode(plotid,protein) {
         } else if (val[1]=='Evolutionary neutral') {
             color = "#f8dfb4";
             extra = "\n" + String(val[1]);
+        } else if (val[1]=='NA') {
+            color = "#ffffff"
+            extra = "\n" + String(val[1]);
         } else  {
             color = "#4dc7e6";
             extra = "\n" + String(val[1]);

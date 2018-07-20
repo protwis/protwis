@@ -64,7 +64,7 @@ class Command(BaseCommand):
             ], 
             'Gprotein Barcode': [
                 'cgn', 
-                ['G.hns1.02','G.hns1.03','G.S1.02','G.s2s3.01','G.S3.01','G.S3.03','G.H4.26','G.H4.27','G.h4s6.03','G.h4s6.20','G.H5.08','G.H5.11','G.H5.12',
+                ['G.hns1.02','G.hns1.03','G.S1.02','G.s2s3.01','G.S3.01','G.S3.03','G.H4.16','G.H4.17','G.h4s6.03','G.h4s6.20','G.H5.08','G.H5.11','G.H5.12',
                  'G.H5.13','G.H5.15','G.H5.16','G.H5.17','G.H5.19','G.H5.20','G.H5.21','G.H5.22','G.H5.23','G.H5.24','G.H5.25','G.H5.26'],
                  'Barcode',
                  'gprotein'
@@ -89,9 +89,11 @@ class Command(BaseCommand):
         for set_name in residue_sets.keys():
             residues = []
             for res in residue_sets[set_name][1]:
+                print(res)
                 try:
                     residues.append(ResidueGenericNumberEquivalent.objects.get(label=res, scheme__slug=residue_sets[set_name][0]))
                 except Exception as e:
+                    print('ERROR: ', res)
                     print(e)
             if residues:
                 try:

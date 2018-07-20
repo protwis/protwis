@@ -3,19 +3,16 @@
 
 {% block content %}
 
-    <script type="text/javascript" src="{% static 'home/js/jquery-3.1.1.min.js' %}"> </script>
-    <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
-    <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
     
         <ul class="nav nav-tabs">
 			<li class="active">
-                <a href="#single-crystal-tab" data-toggle="tab">Single crystal</a>
+                <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
 			</li>
 			<li>
-                <a href="#single-crystal-group-tab" data-toggle="tab">Single group of crystals</a>
+                <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
 			</li>
 			<li>
-                <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of crystals</a>
+                <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
 			</li>
 		</ul>
 
@@ -24,8 +21,8 @@
 		    <div class="tab-pane active" id="single-crystal-tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <h1 class="page-header">Single crystal interactions</h1>
-                        <p>Display interaction heatmap for a single crystal. Choose a PDB and options below.</p>
+                        <h1 class="page-header">Single structure interactions</h1>
+                        <p>Display interaction heatmap for a single structure. Choose a PDB and options below.</p>
                     </div>
                 </div>
                 <div class="row">
@@ -37,8 +34,9 @@
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
                                 <input class="crystal-pdb" type="hidden" value="[]" />
-                                <h5><span class="crystal-count">No crystal selected.</span></h5>
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button>
+                                <h5><span class="crystal-count">No structure selected.</span></h5>
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br>
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB (new)</button>
                             </div>
                         </div>
                     </div>
@@ -107,8 +105,8 @@
             <div class="tab-pane" id="single-crystal-group-tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <h1 class="page-header">Single group of crystals interactions</h1>
-                        <p>Display similarity heatmap for a group of crystals. Choose PDBs and options below.</p>
+                        <h1 class="page-header">Single group of structures interactions</h1>
+                        <p>Display similarity heatmap for a group of structures. Choose PDBs and options below.</p>
                     </div>
                 </div>
                 <div class="row">
@@ -119,7 +117,7 @@
                             </div>
                             <div class="panel-body">
                                 <input class="crystal-pdb" type="hidden" value="[]" />
-                                <h5><span class="crystal-count">0</span> crystal(s) selected.</h5>
+                                <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select PDBs</button>
                             </div>
                         </div>
@@ -207,8 +205,8 @@
             <div class="tab-pane" id="two-crystal-groups-tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <h1 class="page-header">Two groups of crystals interactions</h1>
-                        <p>Display similarity/dissimilarity heatmap for two groups of crystals. Choose PDBs and options below.</p>
+                        <h1 class="page-header">Two groups of structures interactions</h1>
+                        <p>Display similarity/dissimilarity heatmap for two groups of structures. Choose PDBs and options below.</p>
                     </div>
                 </div>
                 <div class="row">
@@ -220,9 +218,9 @@
                             <div class="panel-body">
                                 <input class="crystal-group-1-pdbs" type="hidden" value="[]" />
                                 <input class="crystal-group-2-pdbs" type="hidden" value="[]" />
-                                <h5><span class="crystal-count-1">0</span> crystal(s) selected.</h5>
+                                <h5><span class="crystal-count-1">0</span> structure(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1">Select PDBs</button>
-                                <h5><span class="crystal-count-2">0</span> crystal(s) selected.</h5>
+                                <h5><span class="crystal-count-2">0</span> structure(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2">Select PDBs</button>
                             </div>
                         </div>
@@ -315,13 +313,36 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
                         <p><strong>Legend:</strong></p>
                         <p>(A): Active, (I): Inactive, (R): Representative, (N): Non-representative </p>
                         <div class="treeview"></div>
+                        </div>
+                      <div class="clearfix"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
+
+    <!-- BEGIN SINGLE CRYSTAL PDB CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-pdb-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures from table</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <div class="tableview"></div>
                         </div>
                       <div class="clearfix"></div>
                </div>
@@ -340,7 +361,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -370,7 +391,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                     <div class="modal-pdbs">
@@ -392,7 +413,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -422,7 +443,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -444,7 +465,16 @@
         </div>
     </div>
     <!-- END TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
+{% endblock %}
+{% block addon_js %}
+    <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
 
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> 
     <script>
         window.zoomHeatmap = {};
 
@@ -2084,7 +2114,7 @@
                             $(pdbsInputSelector).val(JSON.stringify(pdbs));
 
                             // Update view
-                            $(pdbsCountSelector).html('No crystal selected.');
+                            $(pdbsCountSelector).html('No structure selected.');
                         }
                     },
                     // Multiple crystal selection
@@ -2154,9 +2184,118 @@
             });
         }
 
+        function thisPDB(ReceptorName, pdbName) {
+          console.log(pdbName);
+
+          var pdbs = [];
+          pdbs.push(pdbName);
+          $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
+
+          // Update view
+          $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
+        }
+
+
+        $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
+
+          if ( ! $.fn.DataTable.isDataTable( '#single-crystal-pdb-modal-table .tableview table' ) ) {
+              var oTable = $('#single-crystal-pdb-modal-table .tableview table').DataTable({
+                'scrollX': true,
+                // 'paging': true,
+                // 'autoWidth': true,
+
+                scrollY:        '80vh',
+                // scrollCollapse: true,
+                paging:         false,
+                columnDefs: [
+                  { targets: 'no-sort', orderable: false }
+                ],
+                "aaSorting": []
+              });
+
+              yadcf.init(oTable,
+                [
+                    {
+                        column_number : 0,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Class",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number : 1,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                          width: '70px'
+                        },
+                        filter_default_label: "PDB",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number : 2,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Receptor",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number : 3,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        html_data_type: "text",
+                        select_type_options: {
+                          width: '150px'
+                        },
+                        filter_default_label: "Family",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number : 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Species",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            minimumResultsForSearch: -1 // remove search box
+                        },
+                        filter_default_label: "State",
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+
+                    }, 
+                ],
+                {
+                    cumulative_filtering: false
+                }
+            );
+
+            yadcf.exResetAllFilters(oTable);
+
+          };
+        })
+
+        function initializePdbChooserTable(treeSelector) {
+          $.get('pdbtabledata', function ( data ) {
+            $(treeSelector + ' .tableview').html(data);
+          });
+        }
+
 
         function initalizeSingleCrystalView() {
             initializePdbChooser('#single-crystal-pdb-modal .treeview', '#single-crystal-tab .crystal-count', '#single-crystal-tab .crystal-pdb', false);
+            initializePdbChooserTable("#single-crystal-pdb-modal-table");
             initializeSegmentButtons('#single-crystal-tab');
             initializeGoButton('#single-crystal-tab', renderSingleCrystalHeatmap);
             initializeFullscreenButton('#single-crystal-tab');
@@ -2178,7 +2317,6 @@
             initializeFullscreenButton('#two-crystal-groups-tab');
             initializeInteractionButtons('#two-crystal-groups-tab');
         }
-
         $(document).ready(function() {
             // Single PDB files
             initalizeSingleCrystalView();
@@ -2190,8 +2328,56 @@
             initializeTwoCrystalGroupsView();
         });
     </script>
+{% endblock %}
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute; 
+          background:white; 
+          border: 1px solid #D1C9C2; 
+          border-top: 1; 
+          width: 400px; 
+          margin: 0 auto; 
+          padding:  7px 15px; 
+          text-align: left; 
+          -webkit-border-bottom-right-radius: 6px; 
+          -webkit-border-bottom-left-radius: 6px; 
+          -moz-border-radius-bottomright: 6px; 
+          -moz-border-radius-bottomleft: 6px; 
+          border-bottom-right-radius: 6px; 
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+    </style>
 
     <style type="text/css">
+
+        .modal-wide {
+          width: 1200px;
+        }
+
         #single-crystal-pdbs {
             height: 400px;
             overflow: scroll;

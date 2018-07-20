@@ -155,7 +155,7 @@ class Command(BaseCommand):
                 try:
                     exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
                     if not exists:
-                        print(pdbname)
+                        # print(pdbname)
                         protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
                         d = fetch_pdb_info(pdbname,protein)
                         add_construct(d)

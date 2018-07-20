@@ -13,7 +13,7 @@ from protein.models import Protein, ProteinSegment
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from collections import OrderedDict
 
 
@@ -71,6 +71,36 @@ def PdbTreeData(request):
         data_dict[s0 + ',' + l0][s1 + ',' + l1][s2 + ',' + l2][s3 + ',' + l3].append(pdb + ' (' + state + ')'  + '(' + rep + ')')
 
     return JsonResponse(data_dict)
+
+def PdbTableData(request):
+
+    data = Structure.objects.filter(refined=False).select_related(
+                "state",
+                "pdb_code__web_resource",
+                "protein_conformation__protein__species",
+                "protein_conformation__protein__source",
+                "protein_conformation__protein__family__parent__parent__parent",
+                "publication__web_link__web_resource").prefetch_related(
+                "stabilizing_agents", "construct__crystallization__crystal_method",
+                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+                "protein_conformation__site_protein_conformation__site")
+        
+    data_dict = OrderedDict()
+    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th class='no-sort'></th></thead><tbody>\n"
+    for s in data:
+        pdb_id = s.pdb_code.index
+        r = {}
+        r['protein'] = s.protein_conformation.protein.parent.entry_short()
+        r['protein_long'] = s.protein_conformation.protein.parent.short()
+        r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
+        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
+        r['species'] = s.protein_conformation.protein.species.common_name
+        r['date'] = s.publication_date
+        r['state'] = s.state.name
+        data_dict[pdb_id] = r
+        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td><button class='btn btn-default btn-sm' onclick='thisPDB(\"{}\",\"{}\");'>Select</button></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['date'],r['protein_long'],pdb_id)
+    data_table += "</tbody></table>"
+    return HttpResponse(data_table)
 
 def InteractionData(request):
 

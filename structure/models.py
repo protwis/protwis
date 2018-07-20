@@ -4,6 +4,8 @@ from django.core.cache import cache
 from io import StringIO
 from Bio.PDB import PDBIO
 
+import re
+
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
@@ -28,7 +30,7 @@ class Structure(models.Model):
         return self.pdb_code.index
 
     def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
-        
+
         tmp = []
         for line in self.pdb_data.pdb.split('\n'):
             save_line = False
@@ -80,6 +82,48 @@ class Structure(models.Model):
             cache.set(self.pdb_code.index+'_refined',refined, 24*60*60)
         return refined
 
+    # TODO: Move these functions to stab. agents class and generalize
+    def get_arrestins(self):
+        tmp = []
+        for agent in self.stabilizing_agents.all():
+            # Legacy, should not allow multiple agents defined as one
+            for element in agent.name.split(','):
+                if re.match(".*rrestin.*", element):
+                    tmp.append(element.strip())
+
+        return tmp
+
+    def get_gproteins(self):
+        tmp = []
+        for agent in self.stabilizing_agents.all():
+            # Legacy, should not allow multiple agents defined as one
+            for element in agent.name.split(','):
+                if re.match(".*G.*", element) and not re.match(".*thase.*|PGS", element):
+                    tmp.append(element.strip())
+
+        return tmp
+
+    def get_antibodies(self):
+        tmp = []
+        for agent in self.stabilizing_agents.all():
+            # Legacy, should not allow multiple agents defined as one
+            for element in agent.name.split(','):
+                if re.match(".*bod.*|.*Ab.*", element):
+                    tmp.append(element.strip())
+
+        return tmp
+
+    def get_fusion_proteins(self):
+        tmp = []
+        for agent in self.stabilizing_agents.all():
+            # Also additional filtering for double entries (e.g. 5ZBQ) => removed later on
+            for element in list(set(agent.name.split(','))):
+                if not re.match(".*bod.*|.*Ab.*|.*Sign.*|.*G.*|.*restin.*", element) or re.match(".*thase.*|PGS", element):
+                    tmp.append(element.strip())
+
+        return tmp
+    # ENDTODO
+
     class Meta():
         db_table = 'structure'
 
@@ -90,10 +134,10 @@ class StructureModel(models.Model):
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdb = models.TextField()
     version = models.DateField()
-    
+
     def __repr__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
-        
+
     def __str__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
@@ -101,7 +145,28 @@ class StructureModel(models.Model):
         db_table = 'structure_model'
 
     def get_cleaned_pdb(self):
-        return self.pdb 
+        return self.pdb
+
+
+class StructureComplexModel(models.Model):
+    receptor_protein = models.ForeignKey('protein.Protein', related_name='+', on_delete=models.CASCADE)
+    sign_protein = models.ForeignKey('protein.Protein', related_name='+', on_delete=models.CASCADE)
+    main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    pdb = models.TextField()
+    version = models.DateField()
+    prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
+
+    def __repr__(self):
+        return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+'-'+str(self.sign_protein.entry_name)+'>'
+
+    def __str__(self):
+        return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+'-'+str(self.sign_protein.entry_name)+'>'
+
+    class Meta():
+        db_table = 'structure_complex_model'
+
+    def get_cleaned_pdb(self):
+        return self.pdb
 
 
 class StructureModelStatsRotamer(models.Model):
@@ -115,6 +180,20 @@ class StructureModelStatsRotamer(models.Model):
 
     class Meta():
         db_table = 'structure_model_stats_rotamer'
+
+
+class StructureComplexModelStatsRotamer(models.Model):
+    homology_model = models.ForeignKey('structure.StructureComplexModel', on_delete=models.CASCADE)
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE)
+    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
+    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
+
+    def __repr__(self):
+        return '<StructureComplexModelStatsRotamer: seqnum '+str(self.residue.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_complex_model_stats_rotamer'
 
 
 class StructureRefinedStatsRotamer(models.Model):
@@ -140,6 +219,18 @@ class StructureModelSeqSim(models.Model):
 
     class Meta():
         db_table = 'structure_model_seqsim'
+
+
+class StructureComplexModelSeqSim(models.Model):
+    homology_model = models.ForeignKey('structure.StructureComplexModel', on_delete=models.CASCADE)
+    template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    similarity = models.IntegerField()
+
+    def __repr__(self):
+        return '<StructureComplexModelSeqSim: {}>'.format(self.homology_model.protein.entry_name)
+
+    class Meta():
+        db_table = 'structure_complex_model_seqsim'
 
 
 class StructureRefinedSeqSim(models.Model):
@@ -189,6 +280,8 @@ class StructureStabilizingAgent(models.Model):
 
     def __str__(self):
         return self.name
+
+    # add typesetter here
 
     class Meta():
         db_table = "structure_stabilizing_agent"

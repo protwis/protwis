@@ -1235,7 +1235,8 @@ class Command(BaseBuild):
 
                                     # create empty properties
                                     lp = LigandProperities.objects.create()
-
+                                    lp.ligand_type = lt
+                                    lp.save()
                                     # create the ligand
                                     try:
                                         l, created = Ligand.objects.get_or_create(name=ligand['name'], canonical=True,
