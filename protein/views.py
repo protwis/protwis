@@ -149,11 +149,12 @@ def SelectionAutocomplete(request):
                 species__in=(species_list),
                 source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
         else:
-            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
+            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
                 species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
-            if ps.count() == 0:
-                # Try matching after stripping html tags
-                ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
+
+        # Try matching protein name after stripping html tags
+        if ps.count() == 0:
+            ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
 
         for p in ps:
             p_json = {}
