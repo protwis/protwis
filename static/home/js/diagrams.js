@@ -1221,6 +1221,8 @@ $(".pick-color").click(function() {
 $( document ).ready(function() {
   if ( $( "#cp2_helixbox" ).length ) {
     $('#cp2_helixbox').colorpicker();
+  }
+  if ( $( "#cp2_snakeplot" ).length ) {
     $('#cp2_snakeplot').colorpicker();
   }
 });
