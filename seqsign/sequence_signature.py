@@ -2,7 +2,7 @@
 A module for generating sequence signatures for the given two sets of proteins.
 """
 from django.conf import settings
-from django.core import exceptions
+#from django.core import exceptions
 
 from alignment.functions import strip_html_tags, get_format_props
 Alignment = getattr(__import__(
@@ -36,8 +36,15 @@ class SequenceSignature:
         self.features_frequency_difference = OrderedDict()
         self.features_frequency_diff_display = []
 
+        self.features_consensus_pos = OrderedDict()
+        self.features_consensus_neg = OrderedDict()
+
         self.freq_cutoff = 30
         self.common_gn = OrderedDict()
+        self.common_segments = OrderedDict()
+        self.common_schemes = {}
+
+        self.signature = OrderedDict()
 
         self.feature_preference = prepare_aa_group_preference()
         self.group_lengths = dict([
@@ -65,9 +72,23 @@ class SequenceSignature:
             if efeat in tmp and self.group_lengths[efeat] < min_len:
                 pref_feat = efeat
                 min_len = self.group_lengths[efeat]
+            # when two features have the same aa count, take the one from positive set
+            elif efeat in tmp and self.group_lengths[efeat] == min_len:
+                if ref_matrix[segment][pref_feat][pos] < 0 and ref_matrix[segment][efeat][pos] > 0:
+                    pref_feat = efeat
         return pref_feat
 
-    def setup_alignments(self, segments, protein_set_positive = None, protein_set_negative = None):
+    def setup_alignments(self, segments, protein_set_positive=None, protein_set_negative=None):
+        """Setup (fetch and normalize) the data necessary for calculation of the signature.
+
+        Arguments:
+            segments {list} -- List of segments to calculate the signature from
+
+        Keyword Arguments:
+            protein_set_positive {list} -- list of Protein objects - a positive (reference) set (default: {None})
+            protein_set_negative {list} -- list of Protein objects - a negative set (default: {None})
+        """
+
 
         if protein_set_positive:
             self.aln_pos.load_proteins(protein_set_positive)
@@ -231,8 +252,8 @@ class SequenceSignature:
         self.signature = OrderedDict([(x, []) for x in self.aln_neg.segments])
         for segment in self.aln_neg.segments:
             tmp = np.array(self.features_frequency_difference[segment])
-            #signature_map = np.absolute(tmp).argmax(axis=0)
-            signature_map = tmp.argmax(axis=0)
+            signature_map = np.absolute(tmp).argmax(axis=0)
+            #signature_map = tmp.argmax(axis=0)
             # Update mapping to prefer features with fewer amino acids
             signature_map = self._assign_preferred_features(signature_map, segment, self.features_frequency_difference)
 
@@ -240,7 +261,7 @@ class SequenceSignature:
             for col, pos in enumerate(list(signature_map)):
                 self.signature[segment].append([
                     list(AMINO_ACID_GROUPS.keys())[pos],
-                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos] if self.features_frequency_difference[segment][pos][col] > 0 else "Not " + list(AMINO_ACID_GROUP_NAMES.values())[pos], # latest implementation of NOT... properties
                     self.features_frequency_difference[segment][pos][col],
                     int(self.features_frequency_difference[segment][pos][col]/20)+5
                 ])
@@ -447,7 +468,7 @@ class SequenceSignature:
         for row, item in enumerate(numbering_schemes):
             scheme = item[0]
             offset = 1
-            for sn, gn_list in generic_numbers_set[scheme].items():
+            for _, gn_list in generic_numbers_set[scheme].items():
                 for col, gn_pair in enumerate(gn_list.items()):
                     try:
                         tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
@@ -612,7 +633,7 @@ class SignatureMatch():
 
         norm = 0.0
         for segment in self.relevant_segments:
-            norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
+            norm += np.sum(np.amax(np.absolute(self.signature_matrix_filtered[segment]), axis=0))
         self.norm = norm
 
     def find_relevant_gns(self):
@@ -623,11 +644,12 @@ class SignatureMatch():
         matrix_consensus = OrderedDict()
         for segment in self.segments:
             segment_consensus = []
-            signature_map = self.diff_matrix[segment].argmax(axis=0)
+            #signature_map = self.diff_matrix[segment].argmax(axis=0)
+            signature_map = np.absolute(self.diff_matrix[segment]).argmax(axis=0)
             # Update mapping to prefer features with fewer amino acids
             signature_map = self._assign_preferred_features(signature_map, segment, self.diff_matrix)
             for col, pos in enumerate(list(signature_map)):
-                if self.diff_matrix[segment][pos][col] >= self.cutoff:
+                if abs(self.diff_matrix[segment][pos][col]) >= self.cutoff:
                     segment_consensus.append(self.diff_matrix[segment][ : , col])
                     for scheme in self.schemes:
                         gnum = list(self.common_gn[scheme[0]][segment].items())[col]
@@ -650,10 +672,11 @@ class SignatureMatch():
 
         signature = OrderedDict([(x[0], []) for x in matrix_consensus.items()])
         for segment in self.relevant_segments:
-            signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            # signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self._assign_preferred_features(signature_map, segment, self.signature_matrix_filtered)
             tmp = np.array(self.signature_matrix_filtered[segment])
-
+            print(signature_map)
             for col, pos in enumerate(list(signature_map)):
                 signature[segment].append([
                     list(AMINO_ACID_GROUPS.keys())[pos],
@@ -747,7 +770,8 @@ class SignatureMatch():
 
         for segment in self.relevant_segments:
             tmp = []
-            signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            # signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)
+            signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self._assign_preferred_features(signature_map, segment, self.signature_matrix_filtered)
 
             #norm += np.sum(np.amax(self.signature_matrix_filtered[segment], axis=0))
@@ -779,6 +803,8 @@ class SignatureMatch():
                     else:
                         #David doesn't want the negative values in the score
                         # prot_score -= val
+                        if val < 0:
+                            prot_score -= val #if a receptor does NOT have the negative property, add the score
                         tmp.append([
                             feat_abr,
                             feat_name,
@@ -790,7 +816,7 @@ class SignatureMatch():
                                 feat_abr,
                                 feat_name,
                                 val,
-                                "white",
+                                "green",
                                 res.amino_acid,
                                 pos
                                 ])
@@ -864,7 +890,7 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
     for row, item in enumerate(numbering_schemes):
         scheme = item[0]
         offset = 1
-        for sn, gn_list in relevant_gn[scheme].items():
+        for _, gn_list in relevant_gn[scheme].items():
             for col, gn_pair in enumerate(gn_list.items()):
                 try:
                     tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
