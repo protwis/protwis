@@ -6,13 +6,13 @@
     
         <ul class="nav nav-tabs">
 			<li class="active">
-                <a href="#single-crystal-tab" data-toggle="tab">Single crystal</a>
+                <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
 			</li>
 			<li>
-                <a href="#single-crystal-group-tab" data-toggle="tab">Single group of crystals</a>
+                <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
 			</li>
 			<li>
-                <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of crystals</a>
+                <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
 			</li>
 		</ul>
 
@@ -21,8 +21,8 @@
 		    <div class="tab-pane active" id="single-crystal-tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <h1 class="page-header">Single crystal interactions</h1>
-                        <p>Display interaction heatmap for a single crystal. Choose a PDB and options below.</p>
+                        <h1 class="page-header">Single structure interactions</h1>
+                        <p>Display interaction heatmap for a single structure. Choose a PDB and options below.</p>
                     </div>
                 </div>
                 <div class="row">
@@ -34,7 +34,7 @@
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
                                 <input class="crystal-pdb" type="hidden" value="[]" />
-                                <h5><span class="crystal-count">No crystal selected.</span></h5>
+                                <h5><span class="crystal-count">No structure selected.</span></h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB (new)</button>
                             </div>
@@ -105,8 +105,8 @@
             <div class="tab-pane" id="single-crystal-group-tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <h1 class="page-header">Single group of crystals interactions</h1>
-                        <p>Display similarity heatmap for a group of crystals. Choose PDBs and options below.</p>
+                        <h1 class="page-header">Single group of structures interactions</h1>
+                        <p>Display similarity heatmap for a group of structures. Choose PDBs and options below.</p>
                     </div>
                 </div>
                 <div class="row">
@@ -117,7 +117,7 @@
                             </div>
                             <div class="panel-body">
                                 <input class="crystal-pdb" type="hidden" value="[]" />
-                                <h5><span class="crystal-count">0</span> crystal(s) selected.</h5>
+                                <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select PDBs</button>
                             </div>
                         </div>
@@ -205,8 +205,8 @@
             <div class="tab-pane" id="two-crystal-groups-tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <h1 class="page-header">Two groups of crystals interactions</h1>
-                        <p>Display similarity/dissimilarity heatmap for two groups of crystals. Choose PDBs and options below.</p>
+                        <h1 class="page-header">Two groups of structures interactions</h1>
+                        <p>Display similarity/dissimilarity heatmap for two groups of structures. Choose PDBs and options below.</p>
                     </div>
                 </div>
                 <div class="row">
@@ -218,9 +218,9 @@
                             <div class="panel-body">
                                 <input class="crystal-group-1-pdbs" type="hidden" value="[]" />
                                 <input class="crystal-group-2-pdbs" type="hidden" value="[]" />
-                                <h5><span class="crystal-count-1">0</span> crystal(s) selected.</h5>
+                                <h5><span class="crystal-count-1">0</span> structure(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1">Select PDBs</button>
-                                <h5><span class="crystal-count-2">0</span> crystal(s) selected.</h5>
+                                <h5><span class="crystal-count-2">0</span> structure(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2">Select PDBs</button>
                             </div>
                         </div>
@@ -313,7 +313,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -338,7 +338,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals from table</h4>
+                    <h4 class="modal-title">Select a group of structures from table</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -361,7 +361,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -391,7 +391,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                     <div class="modal-pdbs">
@@ -413,7 +413,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -443,7 +443,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of crystals</h4>
+                    <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -2114,7 +2114,7 @@
                             $(pdbsInputSelector).val(JSON.stringify(pdbs));
 
                             // Update view
-                            $(pdbsCountSelector).html('No crystal selected.');
+                            $(pdbsCountSelector).html('No structure selected.');
                         }
                     },
                     // Multiple crystal selection
