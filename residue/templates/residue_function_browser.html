@@ -1,0 +1,186 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/jquery.fixedHeader.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/residue_function_browser.css' %}" type="text/css" />
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.fixedHeader.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+
+<script type="text/javascript" charset="utf-8">
+  // make table interactive
+  $(document).ready( function () {
+    $('#residue_function_browser').DataTable({
+      'bScrollCollapse': true,
+      'paging': false,
+      'orderCellsTop': true,
+      fixedHeader: true,
+      'dom': 'ilfrt'
+    });
+  });
+
+</script>
+{% endblock %}
+
+{% block content %}
+<div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+    <table width="100%" class="display" id="residue_function_browser">
+        <thead>
+            <tr>
+                <th class="general-th">Position</th>
+                <!-- Class A data -->
+                <th class="general-th">Consensus AA</th>
+                <th class="general-th">Seq. conservation (%)</th>
+                <th class="general-th">Consensus property</th>
+                <th class="general-th">Prop. conservation (%)</th>
+
+                <!-- Positional data -->
+                <th class="general-th">#AA Above membrane center</th>
+                <th class="general-th">Micro-switch</th>
+                <th class="general-th">Sodium pocket</th>
+
+
+                <!-- Mutation data -->
+                <th class="general-th">Natural mutations</th>
+                <th class="general-th">>30% change basal act. mut.</th>
+                <th class="general-th">>5-fold ligand mut.</th>
+                <th class="general-th">PT modifications</th>
+                <th class="general-th">Thermostabilizing mutants</th>
+
+                <!-- X-ray data -->
+                <th class="general-th">Ligand contacts</th>
+                <th class="general-th">Unique active contacts</th>
+                <th class="general-th">Unique inactive contacts</th>
+                <th class="general-th">Intra-segment contacts</th>
+                <th class="general-th">G-protein interface</th>
+                <th class="general-th">Arrestin interface</th>
+
+                <!-- Signatures data-->
+                <th class="general-th">High CA SignScore (%)</th>
+                <th class="general-th">High CA SignProp</th>
+                <th class="general-th">High CA Symbol</th>
+                <th class="general-th">Low CA SignScore (%)</th>
+                <th class="general-th">Low CA SignProp</th>
+                <th class="general-th">Low CA Symbol</th>
+                <th class="general-th">Gs SignScore (%)</th>
+                <th class="general-th">Gs SignProp</th>
+                <th class="general-th">Gs Symbol</th>
+                <th class="general-th">Gi/o SignScore (%)</th>
+                <th class="general-th">Gi/o SignProp</th>
+                <th class="general-th">Gi/o Symbol</th>
+                <th class="general-th">Gq/11 SignScore (%)</th>
+                <th class="general-th">Gq/11 SignProp</th>
+                <th class="general-th">Gq/11 Symbol</th>
+                <th class="general-th">G12/13 SignScore (%)</th>
+                <th class="general-th">G12/13 SignProp</th>
+                <th class="general-th">G12/13 Symbol</th>
+            </tr>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in signatures %}
+              {% if entry|length > 1 %}
+                <tr>
+                    <td>{{ entry.position }}</td>
+
+                    <!-- Class A data -->
+                    <td>{{ entry.class_a_aa }}</td>
+                    <td>{{ entry.class_a_aa_cons }}</td>
+                    <td>{{ entry.class_a_prop }}</td>
+                    <td>{{ entry.class_a_prop_cons }}</td>
+
+                    <!-- Positional data -->
+                    <td>{{ entry.membane_placement }}</td>
+                    <td>{{ entry.microswitch }}</td>
+                    <td>{{ entry.sodium }}</td>
+
+                    <!-- Mutation data -->
+                    <td>{{ entry.natural_mutations }}</td>
+                    <td>{{ entry.basal_mutations }}</td>
+                    <td>{{ entry.ligand_mutations }}</td>
+                    <td>{{ entry.ptms }}</td>
+                    <td>{{ entry.thermo }}</td>
+
+                    <!-- X-ray data -->
+                    <td>{{ entry.ligand_binding }}</td>
+                    <td>{{ entry.active_contacts }}</td>
+                    <td>{{ entry.inactive_contacts }}</td>
+                    <td>{{ entry.segment_contacts }}</td>
+                    <td>{{ entry.gprotein_interface }}</td>
+                    <td>{{ entry.arrestin_interface }}</td>
+
+                    <!-- Signatures data-->
+                    <td>{{ entry.cah_score }}</td>
+                    <td>{{ entry.cah_prop }}</td>
+                    <td>{{ entry.cah_symb }}</td>
+                    <td>{{ entry.cal_score }}</td>
+                    <td>{{ entry.cal_prop }}</td>
+                    <td>{{ entry.cal_symb }}</td>
+                    <td>{{ entry.gs_score }}</td>
+                    <td>{{ entry.gs_prop }}</td>
+                    <td>{{ entry.gs_symb }}</td>
+                    <td>{{ entry.gio_score }}</td>
+                    <td>{{ entry.gio_prop }}</td>
+                    <td>{{ entry.gio_symb }}</td>
+                    <td>{{ entry.gq_score }}</td>
+                    <td>{{ entry.gq_prop }}</td>
+                    <td>{{ entry.gq_symb }}</td>
+                    <td>{{ entry.g12_score }}</td>
+                    <td>{{ entry.g12_prop }}</td>
+                    <td>{{ entry.g12_symb }}</td>
+                </tr>
+              {% else %}
+<!--                <tr>
+                  <td><h3><b>{{ entry.position }}</b></h3></td>
+                </tr>-->
+              {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
