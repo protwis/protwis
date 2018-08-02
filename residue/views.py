@@ -262,69 +262,71 @@ class ResidueFunctionBrowser(TemplateView):
             rfb_panel["class_a_aa"] = signature.aln_pos.consensus
             rfb_panel["class_a_prop"] = signature.features_consensus_pos
 
-            cache.set(cache_name, rfb_panel, 3600*24*1) # cache a day (set to a week or something)
+            # Add X-ray ligand contacts
+            # Optionally include the curation with the following filter: structure_ligand_pair__annotated=True
+            class_a_interactions = ResidueFragmentInteraction.objects.filter(
+                structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith="001").exclude(interaction_type__type='hidden')\
+                .values("rotamer__residue__generic_number__label").annotate(unique_receptors=Count("rotamer__residue__protein_conformation__protein__family_id", distinct=True))
 
-        # Add X-ray ligand contacts
-        # Optionally include the curation with the following filter: structure_ligand_pair__annotated=True
-        class_a_interactions = ResidueFragmentInteraction.objects.filter(
-            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith="001").exclude(interaction_type__type='hidden')\
-            .values("rotamer__residue__generic_number__label").annotate(unique_receptors=Count("rotamer__residue__protein_conformation__protein__family_id", distinct=True))
+            rfb_panel["ligand_binding"] = {entry["rotamer__residue__generic_number__label"] : entry["unique_receptors"] for entry in list(class_a_interactions)}
 
-        ligand_binding = {entry["rotamer__residue__generic_number__label"] : entry["unique_receptors"] for entry in list(class_a_interactions)}
+            # Add genetic variations
+            all_nat_muts = NaturalMutations.objects.filter(protein__family__slug__startswith="001").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["natural_mutations"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_nat_muts)}
+    #        print(natural_mutations)
 
-        # Add genetic variations
-        all_nat_muts = NaturalMutations.objects.filter(protein__family__slug__startswith="001").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
-        natural_mutations = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_nat_muts)}
-#        print(natural_mutations)
+            # Add PTMs
+            all_ptms = PTMs.objects.filter(protein__family__slug__startswith="001").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["ptms"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_ptms)}
 
-        # Add PTMs
-        all_ptms = PTMs.objects.filter(protein__family__slug__startswith="001").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
-        ptms = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_ptms)}
-
-        # Thermostabilizing
-        all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith="001", effects__slug='thermostabilising')\
-                    .values("residue__generic_number__label").annotate(unique_receptors=Count("construct__protein__family_id", distinct=True))
-        thermo_mutations = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_thermo)}
+            # Thermostabilizing
+            all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith="001", effects__slug='thermostabilising')\
+                        .values("residue__generic_number__label").annotate(unique_receptors=Count("construct__protein__family_id", distinct=True))
+            rfb_panel["thermo_mutations"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_thermo)}
 
 
-        # Class A ligand mutations >5 fold effect - count unique receptors
-        all_ligand_mutations = MutationExperiment.objects.filter(Q(foldchange__gte = 5) | Q(foldchange__lte = -5), protein__family__slug__startswith="001")\
-                        .values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
-        ligand_mutations = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_ligand_mutations)}
+            # Class A ligand mutations >5 fold effect - count unique receptors
+            all_ligand_mutations = MutationExperiment.objects.filter(Q(foldchange__gte = 5) | Q(foldchange__lte = -5), protein__family__slug__startswith="001")\
+                            .values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["ligand_mutations"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_ligand_mutations)}
 
-        # Class A mutations with >30% increase/decrease basal activity
-        all_basal_mutations = MutationExperiment.objects.filter(Q(opt_basal_activity__gte = 130) | Q(opt_basal_activity__lte = 70), protein__family__slug__startswith="001")\
-                        .values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
-        basal_mutations = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_basal_mutations)}
+            # Class A mutations with >30% increase/decrease basal activity
+            all_basal_mutations = MutationExperiment.objects.filter(Q(opt_basal_activity__gte = 130) | Q(opt_basal_activity__lte = 70), protein__family__slug__startswith="001")\
+                            .values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["basal_mutations"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_basal_mutations)}
 
-        # Intrasegment contacts
-        all_contacts = InteractingResiduePair.objects.filter(~Q(res1__protein_segment_id = F('res2__protein_segment_id')), referenced_structure__protein_conformation__protein__family__slug__startswith="001")\
-                        .values("res1__generic_number__label").annotate(unique_receptors=Count("referenced_structure__protein_conformation__protein__family_id", distinct=True))
-        intrasegment_contacts = {entry["res1__generic_number__label"] : entry["unique_receptors"] for entry in list(all_contacts)}
+            # Intrasegment contacts
+            all_contacts = InteractingResiduePair.objects.filter(~Q(res1__protein_segment_id = F('res2__protein_segment_id')), referenced_structure__protein_conformation__protein__family__slug__startswith="001")\
+                            .values("res1__generic_number__label").annotate(unique_receptors=Count("referenced_structure__protein_conformation__protein__family_id", distinct=True))
+            rfb_panel["intrasegment_contacts"] = {entry["res1__generic_number__label"] : entry["unique_receptors"] for entry in list(all_contacts)}
 
 
-        # Active/Inactive contacts
-        all_active_contacts = InteractingResiduePair.objects.filter(~Q(res2__generic_number__label = None), ~Q(res1__generic_number__label = None),\
-                referenced_structure__state__slug = "active", referenced_structure__protein_conformation__protein__family__slug__startswith="001")\
-                .values("res1__generic_number__label", "res2__generic_number__label")
+            # Active/Inactive contacts
+            all_active_contacts = InteractingResiduePair.objects.filter(~Q(res2__generic_number__label = None), ~Q(res1__generic_number__label = None),\
+                    referenced_structure__state__slug = "active", referenced_structure__protein_conformation__protein__family__slug__startswith="001")\
+                    .values("res1__generic_number__label", "res2__generic_number__label")
 
-        # OPTIMIZE
-        active_contacts = {}
-        for entry in list(all_active_contacts):
-            if entry["res1__generic_number__label"] not in active_contacts:
-                active_contacts[entry["res1__generic_number__label"]] = set()
-            active_contacts[entry["res1__generic_number__label"]].update([entry["res2__generic_number__label"]])
+            # OPTIMIZE
+            active_contacts = {}
+            for entry in list(all_active_contacts):
+                if entry["res1__generic_number__label"] not in active_contacts:
+                    active_contacts[entry["res1__generic_number__label"]] = set()
+                active_contacts[entry["res1__generic_number__label"]].update([entry["res2__generic_number__label"]])
+            rfb_panel["active_contacts"] = active_contacts
 
-        all_inactive_contacts = InteractingResiduePair.objects.filter(~Q(res2__generic_number__label = None), ~Q(res1__generic_number__label = None),\
-                referenced_structure__state__slug = "inactive", referenced_structure__protein_conformation__protein__family__slug__startswith="001")\
-                .values("res1__generic_number__label", "res2__generic_number__label")
+            all_inactive_contacts = InteractingResiduePair.objects.filter(~Q(res2__generic_number__label = None), ~Q(res1__generic_number__label = None),\
+                    referenced_structure__state__slug = "inactive", referenced_structure__protein_conformation__protein__family__slug__startswith="001")\
+                    .values("res1__generic_number__label", "res2__generic_number__label")
 
-        # OPTIMIZE
-        inactive_contacts = {}
-        for entry in list(all_inactive_contacts):
-            if entry["res1__generic_number__label"] not in inactive_contacts:
-                    inactive_contacts[entry["res1__generic_number__label"]] = set()
-            inactive_contacts[entry["res1__generic_number__label"]].update([entry["res2__generic_number__label"]])
+            # OPTIMIZE
+            inactive_contacts = {}
+            for entry in list(all_inactive_contacts):
+                if entry["res1__generic_number__label"] not in inactive_contacts:
+                        inactive_contacts[entry["res1__generic_number__label"]] = set()
+                inactive_contacts[entry["res1__generic_number__label"]].update([entry["res2__generic_number__label"]])
+            rfb_panel["inactive_contacts"] = inactive_contacts
+
+            cache.set(cache_name, rfb_panel, 3600*24*7) # cache a week
 
         # Other rules
 #        structural_rule_tree = create_structural_rule_trees(STRUCTURAL_RULES)
@@ -433,6 +435,20 @@ class ResidueFunctionBrowser(TemplateView):
         # Reference: ['1x44', '2x52', '3x36', '4x54', '5x46', '6x48', '7x43']
         mid_membrane = {'TM1': 44,'TM2': 52,'TM3': 36,'TM4': 54,'TM5': 46, 'TM6': 48, 'TM7': 43}
 
+        # Positions within membrane layer selected using 4BVN together with OPM membrane positioning
+        core_membrane = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+
+        # Residue oriented outward of bundle (based on inactive 4BVN and active 3SN6)
+        outward_orientation = {
+            'TM1' : [29, 30, 33, 34, 36, 37, 38, 40, 41, 44, 45, 48, 51, 52, 54, 55, 58],
+            'TM2' : [38, 41, 45, 48, 52, 55, 56, 58, 59, 60, 62, 63, 66],
+            'TM3' : [23, 24, 27, 31, 48, 51, 52, 55],
+            'TM4' : [40, 41, 43, 44, 47, 48, 50, 51, 52, 54, 55, 58, 59, 62, 63, 81],
+            'TM5' : [36, 37, 38, 40, 41, 42, 44, 45, 46, 48, 49, 52, 53, 55, 56, 57, 59, 60, 62, 63, 64, 66, 67, 68, 70, 71, 73, 74],
+            'TM6' : [25, 28, 29, 31, 32, 34, 35, 38, 39, 42, 43, 45, 46, 49, 50, 53, 54, 56, 57, 60],
+            'TM7' : [33, 34, 35, 37, 40, 41, 43, 44, 48, 51, 52, 54, 55]
+        }
+
         ########
 
         # prepare context for output
@@ -451,48 +467,50 @@ class ResidueFunctionBrowser(TemplateView):
 
                     # Add data
                     context["signatures"].append({})
+                    context["signatures"][index]["segment"] = segment
+                    context["signatures"][index]["sort"] = index
                     context["signatures"][index]["position"] = position
 
-                    # Calculate membrane placement
+                    # Normalized position in TM
+                    partial_position = int(position.split('x')[1][:2])
+
+                    # RESIDUE PLACEMENT
                     context["signatures"][index]["membane_placement"] = "-"
+                    context["signatures"][index]["membane_segment"] = "Extracellular"
+                    context["signatures"][index]["residue_orientation"] = "-"
                     if segment in mid_membrane: # TM helix
                         # parse position
-                        context["signatures"][index]["membane_placement"] = int(position.split('x')[1][:2]) - mid_membrane[segment]
+                        context["signatures"][index]["membane_placement"] = partial_position - mid_membrane[segment]
+
                         # negative is toward cytoplasm
                         if segment in ['TM1', 'TM3', 'TM5', 'TM7']: # downwards
                             context["signatures"][index]["membane_placement"] = -1 * context["signatures"][index]["membane_placement"]
 
-                    # COUNTS: TODO merge in singe loop of few lines
+                        # Segment selection
+                        if partial_position >= core_membrane[segment][0] and partial_position <= core_membrane[segment][1]:
+                            context["signatures"][index]["membane_segment"] = "Membrane"
+                        elif segment in ['TM1', 'TM3', 'TM5', 'TM7']:
+                            if partial_position > core_membrane[segment][1]:
+                                context["signatures"][index]["membane_segment"] = "Intracellular"
+                        else:
+                            if partial_position < core_membrane[segment][0]:
+                                context["signatures"][index]["membane_segment"] = "Intracellular"
 
-                    # Ligand binding
-                    context["signatures"][index]["ligand_binding"] = 0
-                    if position in ligand_binding:
-                        context["signatures"][index]["ligand_binding"] = ligand_binding[position]
+                        # Orientation
+                        if partial_position in outward_orientation[segment]:
+                            context["signatures"][index]["residue_orientation"] = "Outward"
+                        else:
+                            if partial_position > min(outward_orientation[segment]) and partial_position < max(outward_orientation[segment]):
+                                context["signatures"][index]["residue_orientation"] = "Inward"
+                    # Intracellular segments
+                    elif segment in ['ICL1', 'ICL2', 'ICL3', 'TM8', 'C-term']:
+                        context["signatures"][index]["membane_segment"] = "Intracellular"
 
-                    # Natural mutations
-                    context["signatures"][index]["natural_mutations"] = 0
-                    if position in natural_mutations:
-                        context["signatures"][index]["natural_mutations"] = natural_mutations[position]
-
-                    # Thermostabilizing
-                    context["signatures"][index]["thermo"] = 0
-                    if position in thermo_mutations:
-                        context["signatures"][index]["thermo"] = thermo_mutations[position]
-
-                    # Ligand mutations
-                    context["signatures"][index]["ligand_mutations"] = 0
-                    if position in ligand_mutations:
-                        context["signatures"][index]["ligand_mutations"] = ligand_mutations[position]
-
-                    # Basal activity change by mutations
-                    context["signatures"][index]["basal_mutations"] = 0
-                    if position in basal_mutations:
-                        context["signatures"][index]["basal_mutations"] = basal_mutations[position]
-
-                    # Intra-segment contacts
-                    context["signatures"][index]["segment_contacts"] = 0
-                    if position in intrasegment_contacts:
-                        context["signatures"][index]["segment_contacts"] = intrasegment_contacts[position]
+                    # COUNTS: all db results in a singe loop
+                    for key in ["ligand_binding", "natural_mutations", "thermo_mutations", "ligand_mutations", "basal_mutations", "intrasegment_contacts", "ptms"]: # Add in future "gprotein_interface", "arrestin_interface"
+                        context["signatures"][index][key] = 0
+                        if position in rfb_panel[key]:
+                            context["signatures"][index][key] = rfb_panel[key][position]
 
                     # G-protein interface
                     context["signatures"][index]["gprotein_interface"] = 0
@@ -504,12 +522,7 @@ class ResidueFunctionBrowser(TemplateView):
                     if position in arrestin_labels:
                         context["signatures"][index]["arrestin_interface"] = len(arrestin_labels[position])
 
-                    # PTMs
-                    context["signatures"][index]["ptms"] = 0
-                    if position in ptms:
-                        context["signatures"][index]["ptms"] = ptms[position]
-
-                    # BINARY: TODO merge in singe loop of few lines
+                    # BINARY
 
                     # Microswitch
                     context["signatures"][index]["microswitch"] = position in ms_labels
@@ -519,16 +532,16 @@ class ResidueFunctionBrowser(TemplateView):
 
                     # contacts
                     context["signatures"][index]["active_contacts"] = False
-                    if position in active_contacts:
-                        if position in inactive_contacts:
-                            context["signatures"][index]["active_contacts"] = len(active_contacts[position].difference(inactive_contacts[position])) > 0
+                    if position in rfb_panel["active_contacts"]:
+                        if position in rfb_panel["inactive_contacts"]:
+                            context["signatures"][index]["active_contacts"] = len(rfb_panel["active_contacts"][position].difference(rfb_panel["inactive_contacts"][position])) > 0
                         else:
                             context["signatures"][index]["active_contacts"] = True
 
                     context["signatures"][index]["inactive_contacts"] = False
-                    if position in inactive_contacts:
-                        if position in active_contacts:
-                            context["signatures"][index]["inactive_contacts"] = len(inactive_contacts[position].difference(active_contacts[position])) > 0
+                    if position in rfb_panel["inactive_contacts"]:
+                        if position in rfb_panel["active_contacts"]:
+                            context["signatures"][index]["inactive_contacts"] = len(rfb_panel["inactive_contacts"][position].difference(rfb_panel["active_contacts"][position])) > 0
                         else:
                             context["signatures"][index]["inactive_contacts"] = True
 
