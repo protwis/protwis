@@ -157,6 +157,7 @@ class Alignment:
                 continue
 
             # fetch split segments (e.g. ECL2_before and ECL2_after)
+            # AJK: point for optimization
             alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)
 
             for segment in alt_segments:
@@ -263,7 +264,7 @@ class Alignment:
                     'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
                     'display_generic_number__scheme')
 
-        # TODO optimize query for rs
+        # AJK: point for optimization (DB) - primary bottleneck
         self.number_of_residues_total = len(rs)
         if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
             return "Too large"
