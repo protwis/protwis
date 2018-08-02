@@ -6,7 +6,7 @@ from django.views.generic import TemplateView
 
 
 from common.views import AbsTargetSelection
-from common.definitions import STRUCTURAL_RULES
+from common.definitions import STRUCTURAL_RULES, STRUCTURAL_SWITCHES
 from common.selection import Selection
 Alignment = getattr(__import__(
     'common.alignment_' + settings.SITE_NAME,
@@ -335,10 +335,18 @@ class ResidueFunctionBrowser(TemplateView):
         ######## CREATE REFERENCE sets (or use structural rules)
 
         ## MICROSWITCHES
-        ms_labels = sp_label = [residue.label for residue in ResiduePositionSet.objects.get(name="Microswitches").residue_position.all()]
+        ms_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Microswitches").residue_position.all()]
 
         ## SODIUM POCKET
         sp_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Sodium pocket").residue_position.all()]
+
+        ## ROTAMER SWITCHES
+        rotamer_labels = []
+        for entry in STRUCTURAL_SWITCHES["A"]:
+            if entry["Rotamer Switch"] != "-":
+                rotamer_labels.append(entry["AA1 Pos"])
+                rotamer_labels.append(entry["AA2 Pos"])
+
 
         ## G PROTEIN INTERACTION POSITIONS
 #        gprotein_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Signalling protein pocket").residue_position.all()]
@@ -529,6 +537,9 @@ class ResidueFunctionBrowser(TemplateView):
 
                     # Sodium pocket
                     context["signatures"][index]["sodium"] = position in sp_labels
+
+                    # Rotamer switch
+                    context["signatures"][index]["rotamer_switch"] = position in rotamer_labels
 
                     # contacts
                     context["signatures"][index]["active_contacts"] = False
