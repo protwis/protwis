@@ -34,7 +34,9 @@ class SignprotBarcode(models.Model):
 class SignprotComplex(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    chain = models.CharField(max_length=1)
+    alpha = models.CharField(max_length=1)
+    beta = models.CharField(max_length=1)
+    gamma = models.CharField(max_length=1)
 
     def __str__(self):
         return '<SignprotComplex: {} {}>'.format(self.protein.entry_name, self.structure.pdb_code.index)

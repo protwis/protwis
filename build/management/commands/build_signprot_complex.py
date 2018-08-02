@@ -25,4 +25,4 @@ class Command(BaseCommand):
                 for i in data:
                     signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=protein), 
                                                                                       structure=Structure.objects.get(pdb_code__index=i['pdb']),
-                                                                                      chain=i['chain'])
+                                                                                      alpha=i['alpha'], beta=i['beta'], gamma=i['gamma'])

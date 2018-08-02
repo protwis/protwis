@@ -7,7 +7,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, HomologyModelingSupportFunctions, update_template_source
+from structure.functions import HSExposureCB, PdbStateIdentifier, HomologyModelingSupportFunctions, update_template_source, ImportHomologyModel
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
 from common.models import WebLink
@@ -47,6 +47,7 @@ logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 structure_path = './structure/'
 pir_path = os.sep.join([structure_path, 'PIR'])
+path = "./structure/homology_models/"
 
 build_date = date.today()
 atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
@@ -237,11 +238,26 @@ class Command(BaseBuild):
             # then check db
 
             mod_startTime = datetime.now()
-            self.run_HomologyModeling(receptor[0].entry_name, receptor[1])
+            chm = CallHomologyModeling(receptor[0].entry_name, receptor[1], iterations=self.modeller_iterations, debug=self.debug, update=self.update, complex_model=self.complex,
+                                       signprot=self.signprot, force_main_temp=self.force_main_temp)
+            chm.run()
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
         
-    def run_HomologyModeling(self, receptor, state):
-        try:
+
+class CallHomologyModeling():
+    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False):
+        self.receptor = receptor
+        self.state = state
+        self.modeller_iterations = iterations
+        self.debug = debug
+        self.update = update
+        self.complex = complex_model
+        self.signprot = signprot
+        self.force_main_temp = force_main_temp
+
+
+    def run(self, import_receptor=False):
+        # try:
             seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
 
             ##### Ignore output from that can come from BioPDB! #####
@@ -249,14 +265,34 @@ class Command(BaseBuild):
                 _stdout = sys.stdout
                 sys.stdout = open(os.devnull, 'w')
 
-            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
+            Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
                                               force_main_temp=self.force_main_temp)
-            alignment = Homology_model.run_alignment([state])
-            
-            Homology_model.build_homology_model(alignment)
+            if import_receptor:
+                ihm = ImportHomologyModel(self.receptor)
+                model, templates, similarities = ihm.find_files()
+                Homology_model.alignment.reference_dict, Homology_model.alignment.template_dict, Homology_model.alignment.alignment_dict, Homology_model.main_pdb_array = ihm.parse_model(model)
+                Homology_model.template_source = ihm.parse_template_source(templates)
+                Homology_model.similarity_table_all = ihm.parse_similarities(similarities)
+                Homology_model.trimmed_residues = []
+                Homology_model.main_template_preferred_chain = 'R'
+                Homology_model.main_structure = Homology_model.template_source['TM1']['1x50'][0]
+
+                cm = SignprotModeling(Homology_model.main_structure, self.signprot, Homology_model.template_source, Homology_model.trimmed_residues, Homology_model.alignment, Homology_model.main_pdb_array)
+                cm.run()
+                Homology_model.template_source = cm.template_source
+                Homology_model.trimmed_residues = cm.trimmed_residues
+                Homology_model.alignment = cm.a
+                Homology_model.main_pdb_array = cm.main_pdb_array
+                Homology_model.target_signprot = cm.target_signprot
+                Homology_model.signprot_protconf = cm.signprot_protconf
+            else:
+                alignment = Homology_model.run_alignment([self.state])
+                Homology_model.build_homology_model(alignment)
+
+            Homology_model.build_homology_model_second_part()
             formatted_model = Homology_model.format_final_model()
             if formatted_model==None:
-                raise ValueError('Incorrect assignment of generic numbers in {} {}'.format(receptor, state))
+                raise ValueError('Incorrect assignment of generic numbers in {} {}'.format(self.receptor, self.state))
 
             if Homology_model.changes_on_db!=[]:
                 cutoff = seq_nums_overwrite_cutoff_dict[Homology_model.main_structure.pdb_code.index]
@@ -279,7 +315,7 @@ class Command(BaseBuild):
             residue_shift = False
             db_res = ''
             for chain in post_model[0]:
-                if self.complex and chain.id=='A':
+                if self.complex and chain.id!='R':
                     continue
                 for res in chain:
                     try:
@@ -325,7 +361,10 @@ class Command(BaseBuild):
                 sys.stdout.close()
 
             # Output as zip
-            path = './structure/homology_models_zip/'
+            if self.complex:
+                path = './structure/complex_models_zip/'
+            else:
+                path = './structure/homology_models_zip/'
             if not os.path.exists(path):
                 os.mkdir(path)
             out_stream = BytesIO()
@@ -343,44 +382,47 @@ class Command(BaseBuild):
             # Upload to db
             if self.update and not residue_shift:
                 # Homology_model.upload_to_db(formatted_model)
-                new_args = shlex.split('/env/bin/python3 manage.py build_homology_models_zip -f {}.zip'.format(Homology_model.modelname))
+                if self.complex:
+                    new_args = shlex.split('/env/bin/python3 manage.py build_homology_models_zip -c -f {}.zip'.format(Homology_model.modelname))
+                else:
+                    new_args = shlex.split('/env/bin/python3 manage.py build_homology_models_zip -f {}.zip'.format(Homology_model.modelname))
                 subprocess.call(new_args)
-                # logger.info('{} ({}) homology model uploaded to db'.format(Homology_model.reference_entry_name,state))
+                # logger.info('{} ({}) homology model uploaded to db'.format(Homology_model.reference_entry_name,self.state))
                 if self.debug:
                     print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
 
             with open('./structure/homology_models/done_models.txt','a') as f:
-                f.write(receptor+'\n')
+                f.write(self.receptor+'\n')
 
-        except Exception as msg:
-            try:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                if self.debug:
-                    print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-                                                                                            Homology_model.main_structure,msg))
-                    print(''.join(traceback.format_tb(exc_tb)))
-                logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
-                t = tests.HomologyModelsTests()
-                if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-                    t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-                                             Homology_model.main_structure)
-                    if Homology_model.complex:
-                        t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.target_signprot.entry_name)]),
-                                           os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.target_signprot.entry_name)]))
-                    else:
-                        t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.state)]),
-                                           os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.state)]))
-                elif 'No such residue:' in str(msg):
-                    if self.debug:
-                        t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)  
-                with open('./structure/homology_models/done_models.txt','a') as f:
-                    f.write(receptor+'\n')
-            except:
-                try:
-                    Protein.objects.get(entry_name=receptor)
-                except:
-                    logger.error('Invalid receptor name: {}'.format(receptor))
-                    print('Invalid receptor name: {}'.format(receptor))
+        # except Exception as msg:
+        #     try:
+        #         exc_type, exc_obj, exc_tb = sys.exc_info()
+        #         if self.debug:
+        #             print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, self.receptor,
+        #                                                                                     Homology_model.main_structure,msg))
+        #             print(''.join(traceback.format_tb(exc_tb)))
+        #         logger.error('Failed to build model {} {}\n    {}'.format(self.receptor, self.state, msg))
+        #         t = tests.HomologyModelsTests()
+        #         if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+        #             t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+        #                                      Homology_model.main_structure)
+        #             if Homology_model.complex:
+        #                 t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.target_signprot.entry_name)]),
+        #                                    os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.target_signprot.entry_name)]))
+        #             else:
+        #                 t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.state)]),
+        #                                    os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.state)]))
+        #         elif 'No such residue:' in str(msg):
+        #             if self.debug:
+        #                 t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)  
+        #         with open('./structure/homology_models/done_models.txt','a') as f:
+        #             f.write(self.receptor+'\n')
+        #     except:
+        #         try:
+        #             Protein.objects.get(entry_name=self.receptor)
+        #         except:
+        #             logger.error('Invalid receptor name: {}'.format(self.receptor))
+        #             print('Invalid receptor name: {}'.format(self.receptor))
         
 
 class HomologyModeling(object):
@@ -436,6 +478,7 @@ class HomologyModeling(object):
         self.alignment = OrderedDict()
         self.main_pdb_array = OrderedDict()
         self.disulfide_pairs = []
+        self.trimmed_residues = []
         for r in Residue.objects.filter(protein_conformation=self.prot_conf):
             if r.protein_segment.slug not in self.template_source:
                 self.template_source[r.protein_segment.slug] = OrderedDict()
@@ -679,16 +722,35 @@ class HomologyModeling(object):
         io = PDB.PDBIO()
         io.set_structure(pdb_struct)
         io.save(path+self.modelname+'.pdb')
+
+        # include beta and gamma subunits from main template
+        beta_gamma = ''
+        if self.complex:
+            spc = SignprotComplex.objects.get(structure=self.main_structure)
+            p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(self.main_structure.pdb_data.pdb))[0]
+            beta = p[spc.beta]
+            gamma = p[spc.gamma]
+            io = PDB.PDBIO()
+            io.set_structure(beta)
+            io.save('./structure/homology_models/{}_beta.pdb'.format(self.modelname))
+            with open('./structure/homology_models/{}_beta.pdb'.format(self.modelname),'r') as beta_f:
+                beta_string = beta_f.read()
+            io.set_structure(gamma)
+            io.save('./structure/homology_models/{}_gamma.pdb'.format(self.modelname))
+            with open('./structure/homology_models/{}_gamma.pdb'.format(self.modelname),'r') as gamma_f:
+                gamma_string = gamma_f.read()
+            os.remove('./structure/homology_models/{}_beta.pdb'.format(self.modelname))
+            os.remove('./structure/homology_models/{}_gamma.pdb'.format(self.modelname))
+            beta_gamma = beta_string[:-4]+gamma_string[:-5]
+
         with open (path+self.modelname+'.pdb', 'r+') as f:
             content = f.read()
             first_line  = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE, VERSION {}\n'.format(self.reference_entry_name, build_date)
             second_line = 'REMARK    2 MAIN TEMPLATE: {}\n'.format(self.main_structure)
             f.seek(0,0)
-            f.write(first_line+second_line+ssbond+content[:-4]+conect+'END')
+            f.write(first_line+second_line+ssbond+content[:-4]+beta_gamma+conect+'END')
 
         return first_line+second_line+content
-        
-    
         
     def run_alignment(self, query_states, core_alignment=True,  
                       segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','TM5','TM6','TM7','H8'], 
@@ -1337,7 +1399,6 @@ class HomologyModeling(object):
                     pass
 
         self.statistics.add_info('pdb_db_inconsistencies', pdb_db_inconsistencies)
-        path = "./structure/homology_models/"
         if not os.path.exists(path):
             os.mkdir(path)
   
@@ -1677,15 +1738,20 @@ class HomologyModeling(object):
             self.target_signprot = cm.target_signprot
             self.signprot_protconf = cm.signprot_protconf
         ######## end of complex modeling
+        self.alignment = a
+        self.main_pdb_array = main_pdb_array
+        self.trimmed_residues = trimmed_residues
+        return self
 
+    def build_homology_model_second_part(self):
         # write to file
         if self.complex:
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:
             post_file = path+self.reference_entry_name+'_'+self.state+"_post.pdb"
         trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums, complex_start = self.write_homology_model_pdb(post_file, 
-                                                                                                                    main_pdb_array, a, 
-                                                                                                                    trimmed_residues=trimmed_residues, 
+                                                                                                                    self.main_pdb_array, self.alignment, 
+                                                                                                                    trimmed_residues=self.trimmed_residues, 
                                                                                                                     disulfide_pairs=self.disulfide_pairs, complex=self.complex)
         self.statistics.add_info('template_source',self.template_source)
 
@@ -1748,7 +1814,7 @@ class HomologyModeling(object):
             try:
                 try:
                     segment1 = self.segment_coding[int(gn1.split('x')[0])]
-                    for s in a.alignment_dict:
+                    for s in self.alignment.alignment_dict:
                         if s.startswith(segment1):
                             segment1 = s
                             break
@@ -1756,7 +1822,7 @@ class HomologyModeling(object):
                     first_non_TM = True
                 try:
                     segment2 = self.segment_coding[int(gn2.split('x')[0])]
-                    for s in a.alignment_dict:
+                    for s in self.alignment.alignment_dict:
                         if s.startswith(segment2):
                             segment2 = s
                             break
@@ -1765,11 +1831,11 @@ class HomologyModeling(object):
                 ref_gap_counter = 0
                 break_loop = False
                 try:
-                    start_dif = int(list(a.reference_dict['N-term'].keys())[0])-1
+                    start_dif = int(list(self.alignment.reference_dict['N-term'].keys())[0])-1
                 except:
                     start_dif = None
-                if first_non_TM==True or a.alignment_dict[segment1][gn1]=='.':
-                    for seg, resis in a.reference_dict.items():
+                if first_non_TM==True or self.alignment.alignment_dict[segment1][gn1]=='.':
+                    for seg, resis in self.alignment.reference_dict.items():
                         for gn, res in resis.items():
                             if res=='-':
                                 ref_gap_counter+=1
@@ -1786,8 +1852,8 @@ class HomologyModeling(object):
                                 pass
                         if break_loop==True:
                             break
-                if second_non_TM==True or a.alignment_dict[segment2][gn2]=='.':
-                    for seg, resis in a.reference_dict.items():
+                if second_non_TM==True or self.alignment.alignment_dict[segment2][gn2]=='.':
+                    for seg, resis in self.alignment.reference_dict.items():
                         for gn, res in resis.items():
                             if res=='-':
                                 ref_gap_counter+=1
@@ -1805,7 +1871,7 @@ class HomologyModeling(object):
                         if break_loop==True:
                             break
                 else:
-                    for seg, resis in a.reference_dict.items():
+                    for seg, resis in self.alignment.reference_dict.items():
                         for gn, res in resis.items():
                             if res=='-':
                                 ref_gap_counter+=1
@@ -1821,18 +1887,15 @@ class HomologyModeling(object):
         # Check improved sequence identity
         self.identicals = 0
         counter = 0
-        for r_s, t_s in zip(a.reference_dict, a.template_dict):
-            for r, t in zip(a.reference_dict[r_s], a.template_dict[t_s]):
-                if a.reference_dict[r_s][r]==a.template_dict[t_s][t]:
+        for r_s, t_s in zip(self.alignment.reference_dict, self.alignment.template_dict):
+            for r, t in zip(self.alignment.reference_dict[r_s], self.alignment.template_dict[t_s]):
+                if self.alignment.reference_dict[r_s][r]==self.alignment.template_dict[t_s][t]:
                     self.identicals+=1
                 counter+=1
         # print(self.state, counter, self.identicals)
 
         # Model with MODELLER
-        self.create_PIR_file(a.reference_dict, a.template_dict, post_file, hetatm_count, water_count)
-        
-        self.alignment = a
-        self.main_pdb_array = main_pdb_array
+        self.create_PIR_file(self.alignment.reference_dict, self.alignment.template_dict, post_file, hetatm_count, water_count)
 
         if self.revise_xtal==False:
             if self.complex:

@@ -24,6 +24,7 @@ import math
 import yaml
 import traceback
 import subprocess
+from copy import deepcopy
 
 gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
 gprotein_segment_slugs = [i.slug for i in gprotein_segments]
@@ -53,7 +54,7 @@ class SignprotModeling():
         sign_a.run_alignment(self.target_signprot, structure_signprot)
         io = StringIO(self.main_structure.pdb_data.pdb)
         assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=structure_signprot)
-        signprot_pdb_array = assign_cgn.assign_cgn_with_sequence_parser(self.signprot_complex.chain)
+        signprot_pdb_array = assign_cgn.assign_cgn_with_sequence_parser(self.signprot_complex.alpha)
         new_array = OrderedDict()
 
         # Initiate complex part of template source
@@ -75,7 +76,7 @@ class SignprotModeling():
             io = StringIO(alt_complex_struct.pdb_data.pdb)
             alt_signprot_complex = SignprotComplex.objects.get(structure__pdb_code__index='3SN6')
             alt_assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code='3SN6', sequence_parser=True, signprot=alt_signprot_complex.protein)
-            alt_signprot_pdb_array = alt_assign_cgn.assign_cgn_with_sequence_parser(alt_signprot_complex.chain)
+            alt_signprot_pdb_array = alt_assign_cgn.assign_cgn_with_sequence_parser(alt_signprot_complex.alpha)
             before_cgns = ['G.HN.50', 'G.HN.51', 'G.HN.52', 'G.HN.53']
             after_cgns =  ['G.H5.03', 'G.H5.04', 'G.H5.05', 'G.H5.06']
             orig_residues1 = parse.fetch_residues_from_array(signprot_pdb_array['HN'], before_cgns)
@@ -123,9 +124,7 @@ class SignprotModeling():
                 for r in right_order:
                     hahb_dict[r] = signprot_pdb_array['hahb'][r]
                 signprot_pdb_array['hahb'] = hahb_dict
-                print("HBHC")
-                pprint.pprint(signprot_pdb_array['hbhc'])
-
+                
             # Let Modeller model buffer regions
             self.trimmed_residues.append('s1h1_6')
             self.trimmed_residues.append('G.S2.01')
@@ -226,6 +225,7 @@ class SignprotModeling():
                                                                                   ref_loop_residues[c-1].sequence_number, segs_for_alt_complex_struct, alt_complex_struct, self.main_structure)
                         c+=1
                 c = 1
+
                 # update alignment dict
                 for i, j in zip(list(ref_out.values()), list(temp_out.values())):
                     key = r_seg+'_'+str(c)
@@ -252,7 +252,14 @@ class SignprotModeling():
                             j+=1
                     else:
                         new_pdb_array[t_c] = 'x'
-                        j+=1
+                        # j+=1
+
+                # pprint.pprint(new_pdb_array)
+                # for i,j in new_pdb_array.items():
+                #     try:
+                #         print(i, PDB.Polypeptide.three_to_one(j[0].get_parent().get_resname()))
+                #     except:
+                #         print(i, j)
 
                 # update dictionary keys with '?' if no backbone template
                 ref_out_final, temp_out_final, align_out_final, new_pdb_array_final = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
@@ -268,7 +275,6 @@ class SignprotModeling():
                         temp_out_final[i] = temp_out[i]
                         align_out_final[i] = align_out[i]
                         new_pdb_array_final[i] = new_pdb_array[i]
-
                 sign_a.reference_dict[r_seg] = ref_out_final
                 sign_a.template_dict[t_seg] = temp_out_final
                 sign_a.alignment_dict[a_seg] = align_out_final
@@ -276,9 +282,14 @@ class SignprotModeling():
                 
                 align_loop = list(sign_a.alignment_dict[a_seg].values())
 
+        self.a.reference_dict = deepcopy(self.a.reference_dict)
+        self.a.template_dict = deepcopy(self.a.template_dict)
+        self.a.alignment_dict = deepcopy(self.a.alignment_dict)
+
         for seg, values in sign_a.reference_dict.items():
             new_array[seg] = OrderedDict()
             # self.template_source[seg] = OrderedDict()
+            final_values = deepcopy(values)
             for key, res in values.items():
                 try:
                     if signprot_pdb_array[seg][key]=='x':
@@ -290,25 +301,27 @@ class SignprotModeling():
                     if res!='-':
                         new_array[seg][key] = '-'
                         self.template_source = update_template_source(self.template_source, [key], None, seg)
-            self.a.reference_dict[seg] = values
+            self.a.reference_dict[seg] = final_values
         for seg, values in sign_a.template_dict.items():
             for key, res in values.items():
                 if new_array[seg][key]=='x':
-                    values[key] = 'x'
+                    sign_a.template_dict[seg][key] = 'x'
                 else:
                     if new_array[seg][key]=='-':
-                        values[key] = '-'
+                        sign_a.template_dict[seg][key] = '-'
                     else:
                         pdb_res = PDB.Polypeptide.three_to_one(new_array[seg][key][0].get_parent().get_resname())
-                        if pdb_res!=values[key]:
-                            values[key] = pdb_res
-            self.a.template_dict[seg] = values
+                        if pdb_res!=sign_a.template_dict[seg][key]:
+                            sign_a.template_dict[seg][key] = pdb_res
+            self.a.template_dict[seg] = sign_a.template_dict[seg]
+
         for seg, values in sign_a.alignment_dict.items():
             for key, res in values.items():
                 if new_array[seg][key]=='x':
                     values[key] = 'x'
             self.a.alignment_dict[seg] = values
         signprot_pdb_array = new_array
+
         for seg, values in signprot_pdb_array.items():
             self.main_pdb_array[seg] = values
 
@@ -317,10 +330,17 @@ class SignprotModeling():
             if i=='G.HN.30':
                 break
             delete_HN_begin.append(i)
+
         for d in delete_HN_begin:
             del self.a.reference_dict['HN'][d]
-            del self.a.template_dict['HN'][d]
-            del self.a.alignment_dict['HN'][d]
+            try:
+                del self.a.template_dict['HN'][d]
+            except:
+                pass
+            try:
+                del self.a.alignment_dict['HN'][d]
+            except:
+                pass
             del self.main_pdb_array['HN'][d]
             try:
                 del self.template_source['HN'][d]
@@ -376,6 +396,8 @@ class SignprotModeling():
                         if atom_num_dict[PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())]>len(atoms):
                             self.trimmed_residues.append(key)
 
+
+        # raise AssertionError
         # for i,j,k,l in zip(sign_a.reference_dict, sign_a.template_dict, sign_a.alignment_dict, signprot_pdb_array):
         #     pprint.pprint(self.template_source[i])
         #     for v,b,n,m in zip(sign_a.reference_dict[i], sign_a.template_dict[j], sign_a.alignment_dict[k], signprot_pdb_array[l]):

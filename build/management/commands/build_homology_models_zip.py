@@ -56,9 +56,13 @@ class Command(BaseBuild):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('-f', help='Specify file name to be uploaded to GPCRdb', default=False, type=str, nargs='+')
+        parser.add_argument('-c', help='Upload only complex models to GPCRdb', default=False, action='store_true')
         
     def handle(self, *args, **options):
-        path = './structure/homology_models_zip/'
+        if options['c']:
+            path = './structure/complex_models_zip/'
+        else:
+            path = './structure/homology_models_zip/'
         if not os.path.exists(path):
             os.mkdir(path)
         if options['f']:
@@ -74,9 +78,9 @@ class Command(BaseBuild):
                 zip_mod = zipfile.ZipFile(path+f, 'r')
                 zip_mod.extractall(mod_dir)
                 zip_mod.close()
-                self.upload_to_db(modelname)
+                self.upload_to_db(modelname, path)
 
-    def upload_to_db(self, modelname, path='./structure/homology_models_zip'):
+    def upload_to_db(self, modelname, path):
         ''' Upload to model to StructureModel and upload segment and rotamer info to StructureModelStatsSegment and
             StructureModelStatsRotamer.
         '''
