@@ -29,7 +29,7 @@ class Alignment:
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
         self.generic_number_objs = {}
-        self.positions = []
+        self.positions = set()
         self.consensus = OrderedDict()
         self.forced_consensus = OrderedDict() # consensus sequence where all conflicts are solved by rules
         self.full_consensus = [] # consensus sequence with full residue objects
@@ -463,7 +463,7 @@ class Alignment:
 
                         # add position to the list of positions that are not empty
                         if pos not in self.positions:
-                            self.positions.append(pos)
+                            self.positions.add(pos)
 
                         # add display number to list of display numbers for this position
                         if r.display_generic_number:
@@ -642,9 +642,9 @@ class Alignment:
                         self.aa_count_with_protein[generic_number][amino_acid].add(entry_name)
 
 
-        # AJK: Only update at the end of loop
-        # update most frequent amino_acids for this generic number
-        # Update feature counter for this generic number
+        # AJK: Only need for update at the end of loop
+        # 1. Update most frequent amino_acids for this generic number
+        # 2. Update feature counter for this generic number
         features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
         self.features = list(AMINO_ACID_GROUP_NAMES.values())
         for j in self.aa_count:
