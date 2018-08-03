@@ -16,6 +16,8 @@ from operator import itemgetter
 from Bio.SubsMat import MatrixInfo
 import logging
 
+import time
+
 class Alignment:
     """A class representing a protein sequence alignment, with or without a reference sequence"""
     def __init__(self):
@@ -158,11 +160,11 @@ class Alignment:
 
             # fetch split segments (e.g. ECL2_before and ECL2_after)
             # AJK: point for optimization
-            alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)
+            alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)#.prefetch_related('proteinfamily__protein__residue__generic_number', 'proteinfamily__protein__residue__generic_number__generic_number__scheme')
 
             for segment in alt_segments:
                 segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
-                    scheme=self.default_numbering_scheme).order_by('label')
+                    scheme=self.default_numbering_scheme)
 
                 # segments
                 unsorted_segments[segment.pk] = []
@@ -236,6 +238,7 @@ class Alignment:
         # order and convert numbering scheme dict to tuple
         self.numbering_schemes = sorted(self.numbering_schemes.items(), key=itemgetter(0))
 
+    # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
     def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
         # fetch segment residues
@@ -264,7 +267,6 @@ class Alignment:
                     'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
                     'display_generic_number__scheme')
 
-        # AJK: point for optimization (DB) - primary bottleneck
         self.number_of_residues_total = len(rs)
         if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
             return "Too large"
@@ -531,33 +533,43 @@ class Alignment:
                 row_list.append(s) # FIXME redundant, remove when dependecies are removed
             pc.alignment = row
             pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
+
         self.sort_generic_numbers()
         self.merge_generic_numbers()
         self.clear_empty_positions()
 
     def clear_empty_positions(self):
         """Remove empty columns from the segments and matrix"""
-        # segments and
-        # deepcopy is required because the dictionary changes during the loop
-        generic_numbers = deepcopy(self.generic_numbers)
-        for ns, segments in generic_numbers.items():
+        # segments
+
+        # AJK optimized cleaning alignment - deepcopy not required and faster removal
+        #generic_numbers = deepcopy(self.generic_numbers) # deepcopy is required because the dictionary changes during the loop
+        for ns, segments in self.generic_numbers.items():
             for segment, positions in segments.items():
-                for pos, dn in positions.items():
-                    if pos not in self.positions:
+                self.generic_numbers[ns][segment] = { pos: self.generic_numbers[ns][segment][pos] for pos in self.generic_numbers[ns][segment].keys() & self.positions}
+                self.segments[segment] = [ pos for pos in self.segments[segment] if pos in self.positions ]
+
+                # Deprecated
+#                for pos, dn in positions.items():
+#                    if pos not in self.positions:
                         # remove position from generic numbers dict
-                        del self.generic_numbers[ns][segment][pos]
+#                        del self.generic_numbers[ns][segment][pos]
 
                         # remove position from segment dict
-                        if pos in self.segments[segment]:
-                            self.segments[segment].remove(pos)
+#                        if pos in self.segments[segment]:
+#                            self.segments[segment].remove(pos)
 
         # proteins
+        # AJK optimized cleaning alignment - deepcopy not required and faster removal
         proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
         for i, protein in enumerate(proteins):
             for j, s in protein.alignment.items():
-                for p in s:
-                    if p[0] not in self.positions:
-                        self.proteins[i].alignment[j].remove(p)
+                self.proteins[i].alignment[j] = [ p for p in s if p[0] in self.positions ]
+
+                # Deprecated
+#                for p in s:
+#                    if p[0] not in self.positions:
+#                        self.proteins[i].alignment[j].remove(p)
 
     def merge_generic_numbers(self):
         """Check whether there are many display numbers for each position, and merge them if there are"""
@@ -596,33 +608,29 @@ class Alignment:
         most_freq_aa = OrderedDict()
         amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
         self.amino_acids = list(AMINO_ACIDS.keys())
-        features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
-        self.features = list(AMINO_ACID_GROUP_NAMES.values())
 
+        # AJK: optimized for speed - split into multiple steps
         for i, p in enumerate(self.proteins):
             entry_name = p.protein.entry_name
             for j, s in p.alignment.items():
                 if i == 0:
                     self.aa_count[j] = OrderedDict()
-                    feature_count[j] = OrderedDict()
                 for p in s:
                     generic_number = p[0]
                     amino_acid = p[2]
 
-                    # stop here if this is gapped position (no need to collect stats on those)
-                    # Now we want
+                    # Indicate gap and collect statistics
                     if amino_acid in self.gaps:
                         amino_acid = '-'
+                    # Skip when unknown amino acid type
                     elif amino_acid == 'X':
                         continue
 
-                    # init counters
+                    # Init counters
                     if generic_number not in self.aa_count[j]:
                         self.aa_count[j][generic_number] = amino_acids.copy()
 #                        if generic_number in self.generic_number_objs:
                         self.aa_count_with_protein[generic_number] = {}
-#                    if generic_number not in feature_count[j]:
-                        feature_count[j][generic_number] = features.copy()
 
                     # update amino acid counter for this generic number
                     self.aa_count[j][generic_number][amino_acid] += 1
@@ -633,22 +641,30 @@ class Alignment:
                     elif entry_name not in self.aa_count_with_protein[generic_number][amino_acid]:
                         self.aa_count_with_protein[generic_number][amino_acid].add(entry_name)
 
-                    # update feature counter for this generic number
-                    for feature in AMINO_ACID_GROUPS_AA[amino_acid]:
-                        feature_count[j][generic_number][feature] += 1
 
+        # AJK: Only update at the end of loop
         # update most frequent amino_acids for this generic number
-        # Only update at the end of loop
+        # Update feature counter for this generic number
+        features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
+        self.features = list(AMINO_ACID_GROUP_NAMES.values())
         for j in self.aa_count:
             most_freq_aa[j] = OrderedDict();
+            feature_count[j] = OrderedDict()
             for generic_number in self.aa_count[j]:
+                feature_count[j][generic_number] = features.copy()
                 most_freq_aa[j][generic_number] = [[], 0]
                 for amino_acid in self.aa_count[j][generic_number]:
+                    # Most frequent AA
                     if self.aa_count[j][generic_number][amino_acid] > most_freq_aa[j][generic_number][1]:
                         most_freq_aa[j][generic_number] = [[amino_acid], self.aa_count[j][generic_number][amino_acid]]
                     elif self.aa_count[j][generic_number][amino_acid] == most_freq_aa[j][generic_number][1]:
                         if amino_acid not in most_freq_aa[j][generic_number][0]:
                             most_freq_aa[j][generic_number][0].append(amino_acid)
+
+                    # create property frequency
+                    if self.aa_count[j][generic_number][amino_acid] > 0:
+                        for feature in AMINO_ACID_GROUPS_AA[amino_acid]:
+                            feature_count[j][generic_number][feature] += self.aa_count[j][generic_number][amino_acid]
 
         # merge the amino acid counts into a consensus sequence
         num_proteins = len(self.proteins)
