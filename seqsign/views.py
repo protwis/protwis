@@ -187,6 +187,7 @@ def render_signature_excel(request):
         'negative',
         'alignment'
     )
+    signature.per_gn_signature_excel(wb)
 
     wb.close()
     outstream.seek(0)

@@ -260,7 +260,7 @@ class SequenceSignature:
             self.signature[segment] = []
             for col, pos in enumerate(list(signature_map)):
                 self.signature[segment].append([
-                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUPS.keys())[pos] if self.features_frequency_difference[segment][pos][col] > 0 else '-' + list(AMINO_ACID_GROUPS.keys())[pos], # latest implementation of NOT... properties
                     list(AMINO_ACID_GROUP_NAMES.values())[pos] if self.features_frequency_difference[segment][pos][col] > 0 else "Not " + list(AMINO_ACID_GROUP_NAMES.values())[pos], # latest implementation of NOT... properties
                     self.features_frequency_difference[segment][pos][col],
                     int(self.features_frequency_difference[segment][pos][col]/20)+5
@@ -561,6 +561,29 @@ class SequenceSignature:
                     )
 
                 col_offset += len(sequence.items())
+
+    def per_gn_signature_excel(self, workbook, worksheet_name='SignByCol'):
+
+        per_gn_signature = []
+        for segment in self.common_segments:
+            for pos, item in enumerate(self.signature[segment]):
+                gn = list(self.common_gn[self.common_schemes[0][0]][segment].keys())[pos]
+                if 'x' not in gn:
+                    continue # skip positions without a generic number
+                prop = item[0]
+                prop_name = item[1]
+                score = abs(item[2])
+
+                per_gn_signature.append([gn, score, prop, prop_name])
+
+        worksheet = workbook.add_worksheet(worksheet_name)
+        worksheet.write_row(0, 0, ['Pos', 'Score', 'Prop_sh', 'Property'])
+        for row, pos in enumerate(sorted(per_gn_signature, key=lambda x: x[1], reverse=True)):
+            worksheet.write_row(
+                row + 1,
+                0,
+                pos,
+            )
 
 
 class SignatureMatch():
