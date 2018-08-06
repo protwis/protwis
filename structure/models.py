@@ -50,6 +50,15 @@ class Structure(models.Model):
                 tmp.append(line)
 
         return '\n'.join(tmp)
+    
+    def get_ligand_pdb(self, ligand):
+
+        tmp = []
+        for line in self.pdb_data.pdb.split('\n'):
+            if line.startswith('HET') and line[21] == self.preferred_chain[0]:
+                if line[17:20] != 'HOH' and line[17:20] == ligand:
+                    tmp.append(line)
+        return '\n'.join(tmp)
 
     def get_preferred_chain_pdb(self):
 
