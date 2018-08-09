@@ -546,7 +546,8 @@ class Alignment:
         #generic_numbers = deepcopy(self.generic_numbers) # deepcopy is required because the dictionary changes during the loop
         for ns, segments in self.generic_numbers.items():
             for segment, positions in segments.items():
-                self.generic_numbers[ns][segment] = { pos: self.generic_numbers[ns][segment][pos] for pos in self.generic_numbers[ns][segment].keys() & self.positions}
+                #self.generic_numbers[ns][segment] = { pos: self.generic_numbers[ns][segment][pos] for pos in self.generic_numbers[ns][segment].keys() & self.positions}
+                self.generic_numbers[ns][segment] = OrderedDict([(pos, self.generic_numbers[ns][segment][pos]) for pos in self.generic_numbers[ns][segment].keys() if pos in self.positions ])
                 self.segments[segment] = [ pos for pos in self.segments[segment] if pos in self.positions ]
 
                 # Deprecated
@@ -561,8 +562,8 @@ class Alignment:
 
         # proteins
         # AJK optimized cleaning alignment - deepcopy not required and faster removal
-        proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
-        for i, protein in enumerate(proteins):
+        #proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
+        for i, protein in enumerate(self.proteins):
             for j, s in protein.alignment.items():
                 self.proteins[i].alignment[j] = [ p for p in s if p[0] in self.positions ]
 
