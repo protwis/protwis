@@ -546,7 +546,6 @@ class Alignment:
         #generic_numbers = deepcopy(self.generic_numbers) # deepcopy is required because the dictionary changes during the loop
         for ns, segments in self.generic_numbers.items():
             for segment, positions in segments.items():
-                #self.generic_numbers[ns][segment] = { pos: self.generic_numbers[ns][segment][pos] for pos in self.generic_numbers[ns][segment].keys() & self.positions}
                 self.generic_numbers[ns][segment] = OrderedDict([(pos, self.generic_numbers[ns][segment][pos]) for pos in self.generic_numbers[ns][segment].keys() if pos in self.positions ])
                 self.segments[segment] = [ pos for pos in self.segments[segment] if pos in self.positions ]
 
