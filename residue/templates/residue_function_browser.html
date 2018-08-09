@@ -11,7 +11,7 @@
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
-<script src="{% static 'home/js/jquery.dataTables.fixedHeader.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.fixedColumns.js' %}"> </script>
 <script src="{% static 'home/js/table2csv.js' %}"> </script>
 <script src="{% static 'home/js/selection.js' %}"> </script>
 
@@ -19,10 +19,11 @@
   // make table interactive
   $(document).ready( function () {
     $('#residue_function_browser').DataTable({
-      'bScrollCollapse': true,
-      'paging': false,
-      'orderCellsTop': true,
-      fixedHeader: true,
+      ScrollCollapse: true,
+      scrollX: true,
+      scrollY: $(window).height() - 200,
+      paging: false,
+      fixedColumns: true,
       'dom': 'ilfrt'
     });
   });
