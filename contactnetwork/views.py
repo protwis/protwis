@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
+from django.views.decorators.cache import cache_page
 
 from collections import defaultdict
 from django.conf import settings
@@ -72,6 +73,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
+@cache_page(1)
 def PdbTableData(request):
 
     data = Structure.objects.filter(refined=False).select_related(
@@ -86,7 +88,7 @@ def PdbTableData(request):
                 "protein_conformation__site_protein_conformation__site")
         
     data_dict = OrderedDict()
-    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th class='no-sort'></th></thead><tbody>\n"
+    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th></th></thead><tbody>\n"
     for s in data:
         pdb_id = s.pdb_code.index
         r = {}
@@ -98,12 +100,11 @@ def PdbTableData(request):
         r['date'] = s.publication_date
         r['state'] = s.state.name
         data_dict[pdb_id] = r
-        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td><button class='btn btn-default btn-sm' onclick='thisPDB(\"{}\",\"{}\");'>Select</button></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['date'],r['protein_long'],pdb_id)
+        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['date'],r['protein_long'],pdb_id)
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
 
 def InteractionData(request):
-
     def gpcrdb_number_comparator(e1, e2):
             t1 = e1.split('x')
             t2 = e2.split('x')
@@ -181,7 +182,6 @@ def InteractionData(request):
         segment_filter_res1 & segment_filter_res2 & i_types_filter
     )
 
-
     # Initialize response dictionary
     data = {}
     data['interactions'] = {}
@@ -201,9 +201,9 @@ def InteractionData(request):
     a.load_proteins(proteins)
     a.load_segments(segments) #get all segments to make correct diagrams
     # build the alignment data matrix
-    a.build_alignment()
+    a.build_alignment(fetch_alternative_GN=False)
     # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+    # a.calculate_statistics()
     consensus = a.full_consensus
 
     data['gn_map'] = OrderedDict()

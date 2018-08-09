@@ -35,8 +35,8 @@
                                 <input type="hidden" class="interactions-input" value="[]" />
                                 <input class="crystal-pdb" type="hidden" value="[]" />
                                 <h5><span class="crystal-count">No structure selected.</span></h5>
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br>
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB (new)</button>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB</button>
                             </div>
                         </div>
                     </div>
@@ -118,7 +118,8 @@
                             <div class="panel-body">
                                 <input class="crystal-pdb" type="hidden" value="[]" />
                                 <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select PDBs</button>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select PDBs</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select PDBs</button>
                             </div>
                         </div>
                     </div>
@@ -219,9 +220,11 @@
                                 <input class="crystal-group-1-pdbs" type="hidden" value="[]" />
                                 <input class="crystal-group-2-pdbs" type="hidden" value="[]" />
                                 <h5><span class="crystal-count-1">0</span> structure(s) selected.</h5>
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1">Select PDBs</button>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1">Select PDBs</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select PDBs</button>
                                 <h5><span class="crystal-count-2">0</span> structure(s) selected.</h5>
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2">Select PDBs</button>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2">Select PDBs</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select PDBs</button>
                             </div>
                         </div>
                     </div>
@@ -385,8 +388,8 @@
     <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
 
     <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
-    <div class="modal fade" id="single-crystal-group-pdbs-modal-2" role="dialog">
-        <div class="modal-dialog">
+    <div class="modal fade" id="single-crystal-group-pdbs-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
@@ -394,9 +397,9 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="modal-pdbs">
-                        <!-- Content goes here -->
-                    </div>
+                      <div class="col-md-12">
+                        <div class="tableview"></div>
+                      </div>
                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -434,6 +437,25 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="two-crystal-group-pdbs-modal-1-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures</h4>
+                </div>
+                <div class="modal-body">
+                        <div class="tableview group-number-1" group-number="1"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- END TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
 
     <!-- BEGIN TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
@@ -457,6 +479,24 @@
                         <div class="treeview"></div>
                       </div>
                       <div class="clearfix"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="two-crystal-group-pdbs-modal-2-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures</h4>
+                </div>
+                <div class="modal-body">
+                        <div class="tableview group-number-2" group-number="2"></div>
                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -1975,7 +2015,10 @@
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-
+                $(".heatmap").hide();
+                $(".heatmap-legend").hide();
+                
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
                 if (!$(selector + ' .interactions-input').val() == null) 
                     interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
@@ -1988,7 +2031,10 @@
                 },
                 function( data ) {
                     // Re-render heatmap
+                    $(".heatmap").show();
+                    $(".heatmap-legend").show();
                     heatmapFunction(data, selector + ' .heatmap-container');
+                    $("#svgloading").remove()
                 });
             });
         }
@@ -1999,6 +2045,9 @@
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                $(".heatmap").hide();
+                $(".heatmap-legend").hide();
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
 
                 $.getJSON( '/contactnetwork/interactiondata',
                 {
@@ -2025,6 +2074,7 @@
                         }, function ( data3 ) {
                         // Re-render heatmap
                         heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
+                        $("#svgloading").remove()
                         });
                     });
                 });
@@ -2184,22 +2234,70 @@
             });
         }
 
-        function thisPDB(ReceptorName, pdbName) {
-          console.log(pdbName);
+        function thisPDB(elem) {
+          var mode = $('ul.nav-tabs').find('li.active').find('a').text().trim();
+          console.log('mode',mode)
+          var ReceptorName = $(elem).attr('long');
+          var pdbName = $(elem).attr('id');
+          if (mode=='Single structure') {
+            $('.pdb_selected').not(elem).prop("checked",false);
+            var pdbs = [];
+            if ($(elem).prop("checked")) {
+              pdbs.push(pdbName);
+              // Update view
+              $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
+            } else {
+              // Update view
+              $(".crystal-count:visible").html('No structure selected.');
+            }
+            $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
+          } else if (mode=='Single group of structures') {
+            var pdbs = [];
+            $('.pdb_selected:checked').each(function() {
+                pdbs.push($(this).attr('id'));
+                $(this).parent().attr('data-sort',1);
+            });
+            $('.pdb_selected:not(:checked)').each(function() {
+                $(this).parent().attr('data-sort',0);
+            });
+            var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
+            var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
+            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+            // Update view
+            $(pdbsCountSelector).html(pdbs.length);
+          }  else if (mode=='Two groups of structures') {
 
-          var pdbs = [];
-          pdbs.push(pdbName);
-          $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
+            group = $(elem).closest('.tableview').attr('group-number');
+            console.log(group);
 
-          // Update view
-          $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
+            var pdbs = [];
+            $('.group-number-'+group+' .pdb_selected:checked').each(function() {
+                pdbs.push($(this).attr('id'));
+                $(this).parent().attr('data-sort',1);
+            });
+            $('.group-number-'+group+' .pdb_selected:not(:checked)').each(function() {
+                $(this).parent().attr('data-sort',0);
+            });
+
+            var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
+            var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
+            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+            // Update view
+            $(pdbsCountSelector).html(pdbs.length);
+          } 
+
         }
+        
+        $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
+          {
+              return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
+                  return $('input', td).prop('checked') ? '1' : '0';
+              } );
+          };
 
-
-        $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
-
-          if ( ! $.fn.DataTable.isDataTable( '#single-crystal-pdb-modal-table .tableview table' ) ) {
-              var oTable = $('#single-crystal-pdb-modal-table .tableview table').DataTable({
+        function showPDBtable(element) {
+          if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
+              var oTable = $(element+' .tableview table').DataTable({
                 'scrollX': true,
                 // 'paging': true,
                 // 'autoWidth': true,
@@ -2210,7 +2308,17 @@
                 columnDefs: [
                   { targets: 'no-sort', orderable: false }
                 ],
-                "aaSorting": []
+                "aaSorting": [],
+                 "columns": [
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                { "orderDataType": "dom-checkbox" }
+                            ]
               });
 
               yadcf.init(oTable,
@@ -2284,12 +2392,34 @@
             yadcf.exResetAllFilters(oTable);
 
           };
+        }
+
+
+        $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-crystal-pdb-modal-table');
+        })
+        $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-crystal-group-pdbs-modal-table');
+        })
+        $('#two-crystal-group-pdbs-modal-1-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#two-crystal-group-pdbs-modal-1-table');
+        })
+        $('#two-crystal-group-pdbs-modal-2-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#two-crystal-group-pdbs-modal-2-table');
         })
 
+
+        var pdbtabledata = null;
         function initializePdbChooserTable(treeSelector) {
-          $.get('pdbtabledata', function ( data ) {
-            $(treeSelector + ' .tableview').html(data);
-          });
+          if (pdbtabledata == null) {
+            $.get('pdbtabledata', function ( data ) {
+              $(treeSelector + ' .tableview').html(data);
+              pdbtabledata = data;
+            });
+          } else {
+              console.log(treeSelector,'using cache');
+              $(treeSelector + ' .tableview').html(pdbtabledata);
+          }
         }
 
 
@@ -2303,6 +2433,7 @@
 
         function initializeSingleGroupCrystalView() {
             initializePdbChooser('#single-crystal-group-pdbs-modal .treeview', '#single-crystal-group-tab .crystal-count', '#single-crystal-group-tab .crystal-pdb', true, '#single-crystal-group-pdbs-modal .choose-active', '#single-crystal-group-pdbs-modal .choose-inactive', '#single-crystal-group-pdbs-modal .choose-representative', '#single-crystal-group-pdbs-modal .choose-non-representative');
+            initializePdbChooserTable("#single-crystal-group-pdbs-modal-table");
             initializeSegmentButtons('#single-crystal-group-tab');
             initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
             initializeFullscreenButton('#single-crystal-group-tab');
@@ -2312,6 +2443,10 @@
         function initializeTwoCrystalGroupsView() {
             initializePdbChooser('#two-crystal-group-pdbs-modal-1 .treeview', '#two-crystal-groups-tab .crystal-count-1', '#two-crystal-groups-tab .crystal-group-1-pdbs', true, '#two-crystal-group-pdbs-modal-1 .choose-active', '#two-crystal-group-pdbs-modal-1 .choose-inactive', '#two-crystal-group-pdbs-modal-1 .choose-representative', '#two-crystal-group-pdbs-modal-1 .choose-non-representative');
             initializePdbChooser('#two-crystal-group-pdbs-modal-2 .treeview', '#two-crystal-groups-tab .crystal-count-2', '#two-crystal-groups-tab .crystal-group-2-pdbs', true, '#two-crystal-group-pdbs-modal-2 .choose-active', '#two-crystal-group-pdbs-modal-2 .choose-inactive', '#two-crystal-group-pdbs-modal-2 .choose-representative', '#two-crystal-group-pdbs-modal-2 .choose-non-representative');
+
+            initializePdbChooserTable("#two-crystal-group-pdbs-modal-1-table");
+            initializePdbChooserTable("#two-crystal-group-pdbs-modal-2-table");
+
             initializeSegmentButtons('#two-crystal-groups-tab');
             initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
             initializeFullscreenButton('#two-crystal-groups-tab');
