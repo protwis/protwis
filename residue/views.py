@@ -13,7 +13,7 @@ Alignment = getattr(__import__(
     fromlist=['Alignment']
     ), 'Alignment')
 
-from common.sequence_signature import SequenceSignature, SignatureMatch
+from seqsign.sequence_signature import SequenceSignature, SignatureMatch
 
 from alignment.functions import get_proteins_from_selection
 from construct.views import create_structural_rule_trees, ConstructMutation
