@@ -12,6 +12,7 @@
 <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.fixedHeader.js' %}"> </script>
+<script src="{% static 'home/js/table2csv.js' %}"> </script>
 <script src="{% static 'home/js/selection.js' %}"> </script>
 
 <script type="text/javascript" charset="utf-8">
@@ -26,10 +27,15 @@
     });
   });
 
+  // enable CSV download
+  function download(){
+    $('#residue_function_browser').table2csv({filename: 'GPCRdb_residue_function.csv', quoteFields: true});
+  }
 </script>
 {% endblock %}
 
 {% block content %}
+<a id="download_btn" class="btn btn-primary btn-mini " href="javascript:download()"><span class="glyphicon glyphicon-download"></span> CSV Download</a>
 <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
     <table width="100%" class="display" id="residue_function_browser">
         <thead>

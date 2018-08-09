@@ -217,12 +217,14 @@ class ResidueFunctionBrowser(TemplateView):
             high_ca_gpcrs = Protein.objects.filter(entry_name__in=high_ca).select_related('residue_numbering_scheme', 'species')
             low_ca_gpcrs = Protein.objects.filter(entry_name__in=low_ca).select_related('residue_numbering_scheme', 'species')
 
+            print("Grabbing CA sets - HIGH vs LOW")
             signature = SequenceSignature()
             signature.setup_alignments(segments, high_ca_gpcrs, low_ca_gpcrs)
             signature.calculate_signature()
             rfb_panel["signatures"]["cah"] = signature.signature
             rfb_panel["signatures"]["cah_positions"] = signature.common_gn
 
+            print("Grabbing CA sets - LOW vs HIGH")
             signature = SequenceSignature()
             signature.setup_alignments(segments, low_ca_gpcrs, high_ca_gpcrs)
             signature.calculate_signature()
