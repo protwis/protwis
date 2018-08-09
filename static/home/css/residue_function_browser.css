@@ -1,0 +1,41 @@
+﻿input.form-control, select.form-control {
+    width: 50px;
+  	height: 20px;
+  	font-size: 9px;
+  	padding: 2px 2px;
+}
+
+input.number_range_filter, input.date_range_filter {
+    width: 20px;
+    font-size: 8px;
+}
+
+.general-th {
+    background-color: #98df8a;
+}
+
+.positional-th {
+    background-color: #aec7e8;
+}
+
+.mutational-th {
+    background-color: #ff9896;
+}
+
+.structural-th {
+    background-color: #FFEEA0;
+}
+
+.signatures-th {
+    background-color: #ffbb78;
+}
+
+table {
+    min-width: 100%;
+}
+.display td,th {
+    text-align: center;
+}
+.dt-left {
+    text-align: left;
+}

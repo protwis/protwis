@@ -3,6 +3,8 @@
 from collections import OrderedDict
 from decimal import Decimal
 
+from django.core.cache import cache
+
 AMINO_ACIDS = OrderedDict([
     ('A', 'Ala'),
     ('C', 'Cys'),
@@ -163,6 +165,19 @@ AMINO_ACID_GROUPS = OrderedDict([
     # ('-W', ('A', 'L', 'R', 'M', 'K', 'Q', 'E', 'I', 'S', 'Y', 'F', 'V', 'H', 'N', 'T', 'C', 'D', 'G', 'P', '-', '_')),
     # ('--', ('A', 'L', 'R', 'M', 'K', 'Q', 'E', 'I', 'W', 'S', 'Y', 'F', 'V', 'H', 'N', 'T', 'C', 'D', 'G', 'P')),
 ])
+
+# Save time by creating a reverse lookup table
+cache_name = "reverse_aa_groups"
+AMINO_ACID_GROUPS_AA = cache.get(cache_name)
+if AMINO_ACID_GROUPS_AA == None:
+    AMINO_ACID_GROUPS_AA = OrderedDict()
+    for amino_acid in AMINO_ACIDS.keys():
+        AMINO_ACID_GROUPS_AA[amino_acid] = []
+        for feature, members in AMINO_ACID_GROUPS.items():
+            if amino_acid in members:
+                AMINO_ACID_GROUPS_AA[amino_acid].append(feature)
+    cache.set(cache_name, AMINO_ACID_GROUPS_AA, 3600*24*7) # cache a week
+
 
 AMINO_ACID_GROUP_NAMES = OrderedDict([
     ('Hy_-', 'Hydrophobic'),
