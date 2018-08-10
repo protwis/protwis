@@ -73,7 +73,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-@cache_page(1)
+@cache_page(60*60*24)
 def PdbTableData(request):
 
     data = Structure.objects.filter(refined=False).select_related(
@@ -88,7 +88,7 @@ def PdbTableData(request):
                 "protein_conformation__site_protein_conformation__site")
         
     data_dict = OrderedDict()
-    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th></th></thead><tbody>\n"
+    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></thead><tbody>\n"
     for s in data:
         pdb_id = s.pdb_code.index
         r = {}
@@ -99,8 +99,9 @@ def PdbTableData(request):
         r['species'] = s.protein_conformation.protein.species.common_name
         r['date'] = s.publication_date
         r['state'] = s.state.name
+        r['representative'] = 'Yes' if s.representative else 'No'
         data_dict[pdb_id] = r
-        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['date'],r['protein_long'],pdb_id)
+        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['representative'],r['date'],r['protein_long'],pdb_id)
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
 
