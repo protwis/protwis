@@ -5,6 +5,7 @@ Created on Mon Apr 25 15:50:57 2016
 @author: Gaspar Pandy
 """
 from build.management.commands.base_build import Command as BaseBuild
+from django.db.models import Q
 
 from protein.models import Protein, ProteinConformation, ProteinSequenceType, ProteinSource, ProteinState
 from residue.models import Residue
@@ -61,7 +62,12 @@ class Command(BaseBuild):
 
     def get_all_GPCR_uniprots(self):
         try:
-            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False)]
+            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False).filter(Q(family__slug__istartswith='001') |
+                                                                                                    Q(family__slug__istartswith='002') |
+                                                                                                    Q(family__slug__istartswith='003') |
+                                                                                                    Q(family__slug__istartswith='004') |
+                                                                                                    Q(family__slug__istartswith='005') |
+                                                                                                    Q(family__slug__istartswith='006'))]
             if len(uniprots)<100:
                 raise Exception()
         except:

@@ -52,7 +52,7 @@ path = "./structure/homology_models/"
 build_date = date.today()
 atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
-gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
+gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
 gprotein_segment_slugs = [i.slug for i in gprotein_segments]
 
 import warnings
@@ -728,8 +728,8 @@ class HomologyModeling(object):
         if self.complex:
             spc = SignprotComplex.objects.get(structure=self.main_structure)
             p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(self.main_structure.pdb_data.pdb))[0]
-            beta = p[spc.beta]
-            gamma = p[spc.gamma]
+            beta = p[spc.beta_chain]
+            gamma = p[spc.gamma_chain]
             io = PDB.PDBIO()
             io.set_structure(beta)
             io.save('./structure/homology_models/{}_beta.pdb'.format(self.modelname))
@@ -764,7 +764,7 @@ class HomologyModeling(object):
             @param order_by: str, order results by identity, similarity or simscore
         '''
         alignment = AlignedReferenceTemplate()
-        alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex, force_main_temp=self.force_main_temp)
+        alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp)
         main_pdb_array = OrderedDict()
         if core_alignment==True:
             if self.debug:

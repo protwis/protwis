@@ -67,6 +67,13 @@
             font-size: 100%;
             font-weight: bold;
         }
+        .yadcf-filter-range-date, .yadcf-filter-range-number {
+            width: 30px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+
+        }
     </style>
 {% endblock %}
 
@@ -86,7 +93,7 @@
                 scrollX:        true,
                 scrollCollapse: true,
                 paging:         false,
-                "order": [],
+                "order": [22, 'desc'],
                   columnDefs: [
                     { targets: 'no-sort', orderable: false }
 
@@ -181,22 +188,17 @@
                     }, 
                     {
                         column_number : 7,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Resolution",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '70px',
-                        }
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
                     },
                     {
                         column_number : 8,
-                        filter_type: "text",
+                        filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Pre. chain",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '50px',
+                            width: '70px',
                         }
                     },
                     {
@@ -205,33 +207,29 @@
                         select_type: 'select2',
                         filter_default_label: "State",
                         filter_reset_button_text: false,
+                        filter_match_mode : "exact",
                         select_type_options: {
                             width: '100px',
                         }
                     },
                     {
                         column_number : 10,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "distance",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
                     },
                     {
                         column_number : 11,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "G-protein",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '100px',
+                            width: '70px',
                         }
                     },
                     {
                         column_number : 12,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Arrestin",
                         filter_reset_button_text: false,
@@ -241,7 +239,7 @@
                     },
                     {
                         column_number : 13,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Fusion",
                         filter_reset_button_text: false,
@@ -251,7 +249,7 @@
                     },
                     {
                         column_number : 14,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Antibodies",
                         filter_reset_button_text: false,
@@ -261,7 +259,7 @@
                     },
                     {
                         column_number : 15,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Endo. ligand",
                         filter_reset_button_text: false,
@@ -281,19 +279,20 @@
                     },
                     {
                         column_number : 17,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
                         html_data_type: "text",
                         filter_default_label: "Structure ligand",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '100px',
+                            width: '200px',
                         }
                     },
                     {
                         column_number : 18,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
+                        html_data_type: "text",
                         filter_default_label: "Structure lig. function",
                         filter_reset_button_text: false,
                         select_type_options: {
@@ -302,7 +301,7 @@
                     },
                     {
                         column_number : 19,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Structure lig. type",
                         filter_reset_button_text: false,
@@ -332,13 +331,11 @@
                     },
                     {
                         column_number : 22,
-                        filter_type: "multi_select",
+                        filter_type: "range_date",
+                        date_format: "yyyy-mm-dd",
                         select_type: 'select2',
-                        filter_default_label: "Date",
+                        filter_default_label: ["From", "To"],
                         filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
                     },
                     {
                         column_number : 23,
@@ -598,22 +595,22 @@
                     <th></th>
                     <th  class='rightborder'></th>
                     <th></th>
+                    <th>Resolution</th>
+                    <th></th>
+                    <th></th>
+                    <th  class='rightborder'>Δ distance (Å)</th>
+                    <th></th>
+                    <th  class='rightborder'></th>
+                    <th></th>
+                    <th  class='rightborder'></th>
+                    <th></th>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
                     <th  class='rightborder'></th>
                     <th></th>
-                    <th  class='rightborder'></th>
-                    <th></th>
-                    <th  class='rightborder'></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th  class='rightborder'></th>
-                    <th></th>
-                    <th></th>
+                    <th>Date</th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -663,7 +660,7 @@
                     </td>
                     <td>
                         {% for sa in structure.get_antibodies %}
-                          {{ sa }}
+                          {{ sa }}<br />
                         {% empty %}
                           -
                         {% endfor %}

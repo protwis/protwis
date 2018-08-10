@@ -26,7 +26,7 @@ import traceback
 import subprocess
 from copy import deepcopy
 
-gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
+gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
 gprotein_segment_slugs = [i.slug for i in gprotein_segments]
 atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
@@ -133,7 +133,7 @@ class SignprotModeling():
             self.trimmed_residues.append('s4h3_5')
 
         # New loop alignments for signprot. If length differs between ref and temp, buffer is created in the middle of the loop
-        loops = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='Gprotein', category='loop')]
+        loops = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='Alpha', category='loop')]
         loops_to_model = []
         for r_seg, t_seg, a_seg in zip(sign_a.reference_dict, sign_a.template_dict, sign_a.alignment_dict):
             if r_seg in loops:
@@ -348,7 +348,7 @@ class SignprotModeling():
                 pass
 
         # add residues to model to self.trimmed_residues
-        gprot_segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='Gprotein')]
+        gprot_segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='Alpha')]
         for i,j in self.a.reference_dict.items():
             if i in gprot_segments:
                 for k,l in j.items():

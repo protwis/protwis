@@ -41,7 +41,7 @@ class BrowseSelection(AbsTargetSelection):
         ('segments', False),
     ])
     try:
-        ppf_g = ProteinFamily.objects.get(slug="100_000")
+        ppf_g = ProteinFamily.objects.get(slug="100_001")
         # ppf_a = ProteinFamily.objects.get(slug="200_000")
         # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
         pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])

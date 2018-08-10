@@ -53,7 +53,7 @@ pir_path = os.sep.join([structure_path, 'PIR'])
 build_date = date.today()
 atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
-gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
+gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
 gprotein_segment_slugs = [i.slug for i in gprotein_segments]
 
 import warnings

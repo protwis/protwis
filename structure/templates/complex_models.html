@@ -67,6 +67,13 @@
             font-size: 100%;
             font-weight: bold;
         }
+        .yadcf-filter-range-date, .yadcf-filter-range-number {
+            width: 30px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+
+        }
     </style>
 {% endblock %}
 
@@ -117,20 +124,18 @@
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '60px',
+                            width: '120px',
                         }
                     },
                     {
                         column_number : 2,
-                        filter_type: "multi_select",
+                        filter_type: "range_date",
+                        date_format: "yyyy-mm-dd",
                         select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Date",
-                        filter_match_mode : "exact",
+                        filter_default_label: ["From", "To"],
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '60px',
+                            width: '100px',
                         }
                     },
                     {
@@ -193,6 +198,7 @@
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "G protein",
+                        column_data_type: "html",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -210,12 +216,12 @@
                     },
                     {
                         column_number : 10,
-                        filter_type: "text",
+                        filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Transducer",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '50px',
+                            width: '100px',
                         }
                     },
                     {
@@ -232,6 +238,7 @@
                         column_number : 12,
                         filter_type: "multi_select",
                         select_type: 'select2',
+                        column_data_type: "html",
                         filter_default_label: "G protein",
                         filter_reset_button_text: false,
                         select_type_options: {
@@ -242,6 +249,7 @@
                         column_number : 13,
                         filter_type: "multi_select",
                         select_type: 'select2',
+                        column_data_type: "html",
                         filter_default_label: "PDB",
                         filter_reset_button_text: false,
                         select_type_options: {
@@ -450,7 +458,7 @@
                 <tr>
                     <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th></th>
-                    <th  class='rightborder'></th>
+                    <th  class='rightborder'>Date</th>
                     <th></th>
                     <th></th>
                     <th ></th>

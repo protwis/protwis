@@ -998,10 +998,11 @@ class AlignedReferenceTemplate(Alignment):
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, 
-                             complex_model=False, force_main_temp=False):
+                             complex_model=False, signprot=None, force_main_temp=False):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         self.complex = complex_model
+        self.signprot = signprot
         self.force_main_temp = force_main_temp
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
@@ -1087,13 +1088,15 @@ class AlignedReferenceTemplate(Alignment):
             self.main_template_protein = [i for i in self.ordered_proteins if i.protein==st.protein_conformation.protein.parent][0]
             return st
         i = 1
+        if self.complex:
+            complex_templates = self.get_template_from_gprotein(self.signprot)
         try:
             for st in self.similarity_table:
                 if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                     i+=1
                     continue
                 # only use complex main template in table signprot_complex
-                if self.complex and st.pdb_code.index not in [x.structure.pdb_code.index for x in SignprotComplex.objects.all()]:
+                if self.complex and st.pdb_code.index not in complex_templates:
                     i+=1
                     continue
                 if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
@@ -1103,6 +1106,16 @@ class AlignedReferenceTemplate(Alignment):
                     return st
         except:
             pass
+
+    def get_template_from_gprotein(self, signprot):
+        gprotein = Protein.objects.get(entry_name=signprot)
+        templates = SignprotComplex.objects.filter(protein=gprotein).values_list('structure__pdb_code__index', flat=True)
+        if len(templates)==0:
+            subfamily = Protein.objects.filter(family=gprotein.family).exclude(entry_name=gprotein.entry_name)
+            templates = SignprotComplex.objects.filter(protein__in=subfamily).values_list('structure__pdb_code__index', flat=True)
+        if len(templates)==0:
+            templates = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
+        return templates
 
     def overwrite_db_seq_nums(self, structure, cutoff):
         resis = Residue.objects.filter(protein_conformation=structure.protein_conformation, 

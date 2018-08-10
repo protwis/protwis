@@ -12,7 +12,7 @@ class Protein(models.Model):
     family = models.ForeignKey('ProteinFamily', on_delete=models.CASCADE)
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
     source = models.ForeignKey('ProteinSource', on_delete=models.CASCADE)
-    residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme', on_delete=models.CASCADE)
+    residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme', on_delete=models.CASCADE, null=True)
     sequence_type = models.ForeignKey('ProteinSequenceType', on_delete=models.CASCADE)
     states = models.ManyToManyField('ProteinState', through='ProteinConformation')
     endogenous_ligands = models.ManyToManyField('ligand.Ligand')

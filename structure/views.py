@@ -175,7 +175,7 @@ def ComplexModelDetails(request, modelname, signprot):
         ).order_by('residue__sequence_number').all()
 
     main_template_seqsim = StructureComplexModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
-    loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Gprotein')
+    loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
     
 
     signprot_template = SignprotComplex.objects.get(structure=model_main_template).protein
