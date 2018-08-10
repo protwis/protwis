@@ -446,35 +446,31 @@
             $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
 
 
-        $('.column_toggle').change(function(evt) {
-            console.log('start toggle');
-            // evt.stopPropagation();
-            // evt.stopImmediatePropagation();
-            // evt.preventDefault();
-            columns = $(this).attr('data-column').split(",");
-            var checked = this.checked;
-            var checked = (this.checked ? false : true);
-            columns.forEach(function(column) {
-                // console.log('hiding column');
-                var column = oTable.column( column );
-                try {
-                    column.visible( checked );
-                }
-                catch(err) {
-                    column.visible( checked );
-                }
-            });
-<<<<<<< HEAD
-            // var Table = $('#constructs').dataTable();
-            // Table.fnDraw();
-            console.log('done toggle');
-            oTable.draw();
-            console.log('done draw');
-        } );
+            $('.column_toggle').change(function(evt) {
+                console.log('start toggle');
+                // evt.stopPropagation();
+                // evt.stopImmediatePropagation();
+                // evt.preventDefault();
+                columns = $(this).attr('data-column').split(",");
+                var checked = this.checked;
+                var checked = (this.checked ? false : true);
+                columns.forEach(function(column) {
+                    // console.log('hiding column');
+                    var column = oTable.column( column );
+                    try {
+                        column.visible( checked );
+                    }
+                    catch(err) {
+                        column.visible( checked );
+                    }
+                });
+                // var Table = $('#constructs').dataTable();
+                // Table.fnDraw();
+                console.log('done toggle');
+                oTable.draw();
+                console.log('done draw');
+            } );
 
-
-=======
->>>>>>> dcdf03df68be50ef58b1afdbaf5b6e508806b8d7
         });
 
         function select_all(e) {
@@ -640,13 +636,20 @@
                     <td class="text-center">{{ structure.preferred_chain }}</td>
                     <td>{{ structure.state.name }}</td>
                     <td class="text-center">{{ structure.distance|floatformat:"2" }}</td>
-                    <td class="text-center gprotein">
-                        {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }}
+                    <td class="text-center">
+                        {% for sa in structure.get_gproteins %}
+                          {{ sa }}<br />
+                        {% empty %}
+                          -
+                        {% endfor %}
                     </td>
-                    <td class="text-center arrestin">
-                        {{ structure.stabilizing_agents.all|only_arrestins }}
+                    <td class="text-center">
+                        {% for sa in structure.get_arrestins %}
+                          {{ sa }}<br />
+                        {% empty %}
+                          -
+                        {% endfor %}
                     </td>
-<<<<<<< HEAD
                     <td>
                         {% for sa in structure.get_fusion_proteins %}
                         {{ sa }}<br />
@@ -656,17 +659,10 @@
                     </td>
                     <td>
                         {% for sa in structure.get_antibodies %}
-                          {{ sa }}<br />
+                          {{ sa }}
                         {% empty %}
                           -
                         {% endfor %}
-=======
-                    <td class="text-center fusion">
-                        {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
-                    </td>
-                    <td class="text-center antibody">
-                        {{ structure.stabilizing_agents.all|only_antibodies }}
->>>>>>> dcdf03df68be50ef58b1afdbaf5b6e508806b8d7
                     </td>
                     <td>
                         {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
