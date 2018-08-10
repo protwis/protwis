@@ -464,7 +464,7 @@
                     column.visible( checked );
                 }
             });
-// <<<<<<< HEAD
+<<<<<<< HEAD
             // var Table = $('#constructs').dataTable();
             // Table.fnDraw();
             console.log('done toggle');
@@ -473,9 +473,9 @@
         } );
 
 
-// =======
-// >>>>>>> dcdf03df68be50ef58b1afdbaf5b6e508806b8d7
-//         });
+=======
+>>>>>>> dcdf03df68be50ef58b1afdbaf5b6e508806b8d7
+        });
 
         function select_all(e) {
             var checkedStatus = $(e).prop("checked");
@@ -646,11 +646,27 @@
                     <td class="text-center arrestin">
                         {{ structure.stabilizing_agents.all|only_arrestins }}
                     </td>
+<<<<<<< HEAD
+                    <td>
+                        {% for sa in structure.get_fusion_proteins %}
+                        {{ sa }}<br />
+                        {% empty %}
+                          -
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for sa in structure.get_antibodies %}
+                          {{ sa }}<br />
+                        {% empty %}
+                          -
+                        {% endfor %}
+=======
                     <td class="text-center fusion">
                         {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
                     </td>
                     <td class="text-center antibody">
                         {{ structure.stabilizing_agents.all|only_antibodies }}
+>>>>>>> dcdf03df68be50ef58b1afdbaf5b6e508806b8d7
                     </td>
                     <td>
                         {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
