@@ -93,7 +93,7 @@
                             <div class="panel-body">
                                 <div class="heatmap-container">
                                     <div class="heatmap-legend"></div>
-                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin none"></svg>
+                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
                                 </div>
                             </div>
                          </div>
@@ -194,7 +194,7 @@
                             <div class="panel-body">
                                 <div class="heatmap-container">
                                     <div class="heatmap-legend"></div>
-                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin none"></svg>
+                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
                                 </div>
                             </div>
                          </div>
@@ -299,7 +299,7 @@
                             <div class="panel-body">
                                 <div class="heatmap-container">
                                     <div class="heatmap-legend"></div>
-                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin none"></svg>
+                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
                                 </div>
                             </div>
                          </div>
@@ -398,6 +398,7 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
+                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span><br>
                         <div class="tableview"></div>
                       </div>
                </div>
@@ -447,6 +448,7 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
+                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span><br>
                         <div class="tableview group-number-1" group-number="1"></div>
                </div>
                 <div class="modal-footer">
@@ -496,6 +498,7 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
+                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span><br>
                         <div class="tableview group-number-2" group-number="2"></div>
                </div>
                 <div class="modal-footer">
@@ -2047,7 +2050,7 @@
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
                 $(".heatmap-legend").hide();
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
 
                 $.getJSON( '/contactnetwork/interactiondata',
                 {
@@ -2057,6 +2060,9 @@
                     'interaction_types': interactionTypes
                 },
                 function( data1 ) {
+ 
+                    $("#svgloading").remove();
+                    $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (33%)</span>');
                     $.getJSON( '/contactnetwork/interactiondata',
                     {
                         'segments': segments,
@@ -2065,6 +2071,8 @@
                         'interaction_types': interactionTypes
                     },
                     function( data2 ) {
+                        $("#svgloading").remove();
+                        $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (66%)</span>');
                         $.getJSON( '/contactnetwork/interactiondata',
                         {
                             'segments': segments,
@@ -2073,8 +2081,10 @@
                             'interaction_types': interactionTypes
                         }, function ( data3 ) {
                         // Re-render heatmap
-                        heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
+                        $(".heatmap").show();
+                        $(".heatmap-legend").show();
                         $("#svgloading").remove()
+                        heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
                         });
                     });
                 });
@@ -2234,9 +2244,36 @@
             });
         }
 
+        function update_text_in_modal() {
+          var mode = $('ul.nav-tabs').find('li.active').find('a').text().trim();
+
+          if (mode=='Single group of structures') {
+            var total_selected = $('.pdb_selected:checked', oTable.cells().nodes()).length
+            var selected_visible = $('.pdb_selected:checked').length 
+            var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
+
+            if (total_selected==selected_visible) {
+              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
+            } else {
+              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
+            }
+          } else if (mode=='Two groups of structures') {
+            group = $('.tableview:visible').attr('group-number');
+            var ModalpdbsCountSelector = '#two-crystal-group-pdbs-modal-'+group+'-text';
+            var total_selected = $('.pdb_selected:checked', oTable.cells().nodes()).length
+            var selected_visible = $('.pdb_selected:checked').length 
+            if (total_selected==selected_visible) {
+              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
+            } else {
+              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
+            }
+          }
+
+
+        }
+
         function thisPDB(elem) {
           var mode = $('ul.nav-tabs').find('li.active').find('a').text().trim();
-          console.log('mode',mode)
           var ReceptorName = $(elem).attr('long');
           var pdbName = $(elem).attr('id');
           if (mode=='Single structure') {
@@ -2253,13 +2290,55 @@
             $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
           } else if (mode=='Single group of structures') {
             var pdbs = [];
-            $('.pdb_selected:checked').each(function() {
+            $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
                 pdbs.push($(this).attr('id'));
-                $(this).parent().attr('data-sort',1);
             });
-            $('.pdb_selected:not(:checked)').each(function() {
-                $(this).parent().attr('data-sort',0);
+            var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
+            var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
+            var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
+
+            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+            // Update view
+            $(pdbsCountSelector).html(pdbs.length);
+          }  else if (mode=='Two groups of structures') {
+
+            group = $(elem).closest('.tableview').attr('group-number');
+
+            var pdbs = [];
+            $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
+                pdbs.push($(this).attr('id'));
             });
+
+            var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
+            var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
+            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+            // Update view
+            $(pdbsCountSelector).html(pdbs.length);
+          } 
+          update_text_in_modal();
+        }
+
+        function check_all(elem) {
+          var mode = $('ul.nav-tabs').find('li.active').find('a').text().trim();
+          show_all = $(elem).prop("checked");
+
+
+          if (mode=='Single group of structures') {
+            var pdbs = [];
+
+            // REMOVE EXISITING? Probably not, more logically that filtering adds more 
+            // $('input', oTable.cells().nodes()).prop('checked',false); 
+
+            if (show_all) {
+              $('.pdb_selected:visible').prop("checked",true);
+            } else {
+              $('.pdb_selected:visible').prop("checked",false);
+            }
+
+            $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
+                pdbs.push($(this).attr('id'));
+            });
+
             var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
             var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
             $(pdbsInputSelector).val(JSON.stringify(pdbs));
@@ -2268,15 +2347,16 @@
           }  else if (mode=='Two groups of structures') {
 
             group = $(elem).closest('.tableview').attr('group-number');
-            console.log(group);
-
             var pdbs = [];
-            $('.group-number-'+group+' .pdb_selected:checked').each(function() {
+
+            if (show_all) {
+              $('.pdb_selected:visible').prop("checked",true);
+            } else {
+              $('.pdb_selected:visible').prop("checked",false);
+            }
+
+            $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
                 pdbs.push($(this).attr('id'));
-                $(this).parent().attr('data-sort',1);
-            });
-            $('.group-number-'+group+' .pdb_selected:not(:checked)').each(function() {
-                $(this).parent().attr('data-sort',0);
             });
 
             var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
@@ -2286,6 +2366,7 @@
             $(pdbsCountSelector).html(pdbs.length);
           } 
 
+          update_text_in_modal();
         }
         
         $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
@@ -2295,9 +2376,10 @@
               } );
           };
 
+        var oTable;
         function showPDBtable(element) {
           if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
-              var oTable = $(element+' .tableview table').DataTable({
+              oTable = $(element+' .tableview table').DataTable({
                 'scrollX': true,
                 // 'paging': true,
                 // 'autoWidth': true,
@@ -2310,6 +2392,7 @@
                 ],
                 "aaSorting": [],
                  "columns": [
+                                null,
                                 null,
                                 null,
                                 null,
@@ -2382,6 +2465,14 @@
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
 
+                    },
+                    {
+                        column_number : 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Representative",
+                        filter_reset_button_text: false,
+
                     }, 
                 ],
                 {
@@ -2390,6 +2481,10 @@
             );
 
             yadcf.exResetAllFilters(oTable);
+
+            oTable.on('draw.dt', function (e, oSettings) {
+                update_text_in_modal();
+            });
 
           };
         }
@@ -2409,31 +2504,28 @@
         })
 
 
-        var pdbtabledata = null;
-        function initializePdbChooserTable(treeSelector) {
-          if (pdbtabledata == null) {
-            $.get('pdbtabledata', function ( data ) {
-              $(treeSelector + ' .tableview').html(data);
-              pdbtabledata = data;
-            });
-          } else {
-              console.log(treeSelector,'using cache');
-              $(treeSelector + ' .tableview').html(pdbtabledata);
-          }
+        function initializePdbChooserTables() {
+          $.get('pdbtabledata', function ( data ) {
+            $('#single-crystal-pdb-modal-table .tableview').html(data);
+            $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
+            $('#two-crystal-group-pdbs-modal-1-table .tableview').html(data);
+            $('#two-crystal-group-pdbs-modal-2-table .tableview').html(data);
+            pdbtabledata = data;
+          });
         }
 
 
         function initalizeSingleCrystalView() {
-            initializePdbChooser('#single-crystal-pdb-modal .treeview', '#single-crystal-tab .crystal-count', '#single-crystal-tab .crystal-pdb', false);
-            initializePdbChooserTable("#single-crystal-pdb-modal-table");
+            // initializePdbChooser('#single-crystal-pdb-modal .treeview', '#single-crystal-tab .crystal-count', '#single-crystal-tab .crystal-pdb', false);
+            // initializePdbChooserTable("#single-crystal-pdb-modal-table");
             initializeSegmentButtons('#single-crystal-tab');
             initializeGoButton('#single-crystal-tab', renderSingleCrystalHeatmap);
             initializeFullscreenButton('#single-crystal-tab');
         }
 
         function initializeSingleGroupCrystalView() {
-            initializePdbChooser('#single-crystal-group-pdbs-modal .treeview', '#single-crystal-group-tab .crystal-count', '#single-crystal-group-tab .crystal-pdb', true, '#single-crystal-group-pdbs-modal .choose-active', '#single-crystal-group-pdbs-modal .choose-inactive', '#single-crystal-group-pdbs-modal .choose-representative', '#single-crystal-group-pdbs-modal .choose-non-representative');
-            initializePdbChooserTable("#single-crystal-group-pdbs-modal-table");
+            // initializePdbChooser('#single-crystal-group-pdbs-modal .treeview', '#single-crystal-group-tab .crystal-count', '#single-crystal-group-tab .crystal-pdb', true, '#single-crystal-group-pdbs-modal .choose-active', '#single-crystal-group-pdbs-modal .choose-inactive', '#single-crystal-group-pdbs-modal .choose-representative', '#single-crystal-group-pdbs-modal .choose-non-representative');
+            // initializePdbChooserTable("#single-crystal-group-pdbs-modal-table");
             initializeSegmentButtons('#single-crystal-group-tab');
             initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
             initializeFullscreenButton('#single-crystal-group-tab');
@@ -2441,11 +2533,11 @@
         }
 
         function initializeTwoCrystalGroupsView() {
-            initializePdbChooser('#two-crystal-group-pdbs-modal-1 .treeview', '#two-crystal-groups-tab .crystal-count-1', '#two-crystal-groups-tab .crystal-group-1-pdbs', true, '#two-crystal-group-pdbs-modal-1 .choose-active', '#two-crystal-group-pdbs-modal-1 .choose-inactive', '#two-crystal-group-pdbs-modal-1 .choose-representative', '#two-crystal-group-pdbs-modal-1 .choose-non-representative');
-            initializePdbChooser('#two-crystal-group-pdbs-modal-2 .treeview', '#two-crystal-groups-tab .crystal-count-2', '#two-crystal-groups-tab .crystal-group-2-pdbs', true, '#two-crystal-group-pdbs-modal-2 .choose-active', '#two-crystal-group-pdbs-modal-2 .choose-inactive', '#two-crystal-group-pdbs-modal-2 .choose-representative', '#two-crystal-group-pdbs-modal-2 .choose-non-representative');
+            // initializePdbChooser('#two-crystal-group-pdbs-modal-1 .treeview', '#two-crystal-groups-tab .crystal-count-1', '#two-crystal-groups-tab .crystal-group-1-pdbs', true, '#two-crystal-group-pdbs-modal-1 .choose-active', '#two-crystal-group-pdbs-modal-1 .choose-inactive', '#two-crystal-group-pdbs-modal-1 .choose-representative', '#two-crystal-group-pdbs-modal-1 .choose-non-representative');
+            // initializePdbChooser('#two-crystal-group-pdbs-modal-2 .treeview', '#two-crystal-groups-tab .crystal-count-2', '#two-crystal-groups-tab .crystal-group-2-pdbs', true, '#two-crystal-group-pdbs-modal-2 .choose-active', '#two-crystal-group-pdbs-modal-2 .choose-inactive', '#two-crystal-group-pdbs-modal-2 .choose-representative', '#two-crystal-group-pdbs-modal-2 .choose-non-representative');
 
-            initializePdbChooserTable("#two-crystal-group-pdbs-modal-1-table");
-            initializePdbChooserTable("#two-crystal-group-pdbs-modal-2-table");
+            // initializePdbChooserTable("#two-crystal-group-pdbs-modal-1-table");
+            // initializePdbChooserTable("#two-crystal-group-pdbs-modal-2-table");
 
             initializeSegmentButtons('#two-crystal-groups-tab');
             initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
@@ -2453,6 +2545,9 @@
             initializeInteractionButtons('#two-crystal-groups-tab');
         }
         $(document).ready(function() {
+            // Get PDBs for table build
+            initializePdbChooserTables();
+
             // Single PDB files
             initalizeSingleCrystalView();
 
@@ -2511,6 +2606,10 @@
 
         .modal-wide {
           width: 1200px;
+        }
+
+        .modal-footer {
+            border-top: 0px;
         }
 
         #single-crystal-pdbs {
