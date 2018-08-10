@@ -464,6 +464,7 @@
                     column.visible( checked );
                 }
             });
+// <<<<<<< HEAD
             // var Table = $('#constructs').dataTable();
             // Table.fnDraw();
             console.log('done toggle');
@@ -472,7 +473,9 @@
         } );
 
 
-        });
+// =======
+// >>>>>>> dcdf03df68be50ef58b1afdbaf5b6e508806b8d7
+//         });
 
         function select_all(e) {
             var checkedStatus = $(e).prop("checked");
@@ -637,33 +640,17 @@
                     <td class="text-center">{{ structure.preferred_chain }}</td>
                     <td>{{ structure.state.name }}</td>
                     <td class="text-center">{{ structure.distance|floatformat:"2" }}</td>
-                    <td class="text-center">
-                        {% for sa in structure.get_gproteins %}
-                          {{ sa }}<br />
-                        {% empty %}
-                          -
-                        {% endfor %}
+                    <td class="text-center gprotein">
+                        {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }}
                     </td>
-                    <td class="text-center">
-                        {% for sa in structure.get_arrestins %}
-                          {{ sa }}<br />
-                        {% empty %}
-                          -
-                        {% endfor %}
+                    <td class="text-center arrestin">
+                        {{ structure.stabilizing_agents.all|only_arrestins }}
                     </td>
-                    <td>
-                        {% for sa in structure.get_fusion_proteins %}
-                        {{ sa }}<br />
-                        {% empty %}
-                          -
-                        {% endfor %}
+                    <td class="text-center fusion">
+                        {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
                     </td>
-                    <td>
-                        {% for sa in structure.get_antibodies %}
-                          {{ sa }}<br />
-                        {% empty %}
-                          -
-                        {% endfor %}
+                    <td class="text-center antibody">
+                        {{ structure.stabilizing_agents.all|only_antibodies }}
                     </td>
                     <td>
                         {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}

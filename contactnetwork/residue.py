@@ -189,23 +189,9 @@ def get_hbond_acceptors(res):
     else:
         return []
 
-# Given two support coordinates (atoms), determine vector from third atom
-# Mimicking placement of hydrogen atoms for H-bond interactions
-def get_directionality_vector(atom1, atom2, atom3):
-    return [atom3.coord, get_unit_vector(atom3.coord - (atom1.coord + atom2.coord)/2)]
-
 # redefine the unit_vector function to replace the internal function
 def get_unit_vector(vector):
     return vector / numpy.linalg.norm(vector)
-
-# Given two support coordinates (atoms) and angle, determine both vectors from third atom
-# Mimicking placement of hydrogen atoms for H-bond interactions
-def get_plane_directionality_vectors(atom1, atom2, angle, atom3):
-    # atom1 atom2 atom3 define plane definition
-    return []
-    # atom2 + atom3 + angle define circle in plane
-
-    # find vectors
 
 # Returns a list of positively charges atoms in a residue
 def get_pos_charged_atom_names(res):

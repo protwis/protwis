@@ -395,7 +395,9 @@ class StructureStatistics(TemplateView):
         
         unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-        unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
+        # unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
+        unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family')
+
         #FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
         unique_gprots = unique_structs.filter(stabilizing_agents__slug='gs')
         unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
@@ -416,7 +418,7 @@ class StructureStatistics(TemplateView):
         context['unique_structures'] = len(unique_structs)
         context['unique_structures_by_class'] = self.count_by_class(unique_structs, lookup)
         context['unique_complexes'] = len(unique_complexes)
-        context['unique_complexes_by_class'] = self.count_by_class(unique_complexes, lookup)
+        context['unique_complexes_by_class'] = self.count_by_class([x.structure for x in unique_complexes], lookup)
         context['unique_gprots'] = len(unique_gprots)
         context['unique_gprots_by_class'] = self.count_by_class(unique_gprots, lookup)
         context['unique_active'] = len(unique_active)

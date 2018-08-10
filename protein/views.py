@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views import generic
 from django.http import HttpResponse
-from django.db.models import Q
+from django.db.models import Q, F, Func, Value
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
@@ -149,8 +149,13 @@ def SelectionAutocomplete(request):
                 species__in=(species_list),
                 source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
         else:
-            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
+            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
                 species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+
+        # Try matching protein name after stripping html tags
+        if ps.count() == 0:
+            ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
+
         for p in ps:
             p_json = {}
             p_json['id'] = p.id
