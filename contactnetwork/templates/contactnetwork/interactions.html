@@ -84,6 +84,8 @@
                 </div>
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#matrix-tab" data-toggle="tab">Matrix</a></li>
+                  <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
+                  <li><a href="#single-schematic-tab" data-toggle="tab" id="single-schematic-tab-link">2D Schematic</a></li>
                   <li><a href="#single-table-tab" data-toggle="tab" id="single-table-tab-link">Browser</a></li>
                 </ul>
                 <div class="row">
@@ -103,12 +105,12 @@
                               </div>
                            </div>
                       </div>
+
                       <div class="col-md-12 tab-pane" id="single-table-tab">
                       </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
+
+                      <div class="col-md-12 tab-pane" id="single-flareplot-tab">
+
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Flareplot</h3>
@@ -120,6 +122,25 @@
                                 </div>
                             </div>
                          </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-schematic-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
                     </div>
                 </div>
             </div>
@@ -569,12 +590,14 @@
         function getInteractionTypesFromPdbObject(obj) {
 
             var interactions = new Set();
-
             for (var key in obj) {
-                if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                    for (var k in obj[key])
+              Object.keys(obj[key]).forEach(function(k,index) {
                         interactions.add(obj[key][k]);
-                }
+              });
+                // if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                //     for (var k in obj[key])
+                //         interactions.add(obj[key][k]);
+                // }
             }
 
             // Sort according to strength
@@ -2104,13 +2127,10 @@
                     $(".heatmap").show();
                     $(".heatmap-legend").show();
                     heatmapFunction(data, selector + ' .heatmap-container');
-<<<<<<< HEAD
                     $("#svgloading").remove()
-=======
-
                     // Re-render flareplot
-                    createFlareplot(600, parseGPCRdb2flare(data), ".flareplot-container");
->>>>>>> bf3e10ca... Added Flareplot
+                    createFlareplot(600, parseGPCRdb2flare(data), ".flareplot-container"); //flareplot-container
+                    createSchematicPlot(data, ".schematic-container"); //.schematic-container
                 });
             });
         }
@@ -2700,6 +2720,10 @@
 
     <!-- Flareplot -->
     <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare.js' %}"> </script>
+
+    <!-- 2D schematics -->
+
+    <script type="text/javascript" src="{% static 'home/js/schematicplot.js' %}"> </script>
     
     <script type="text/javascript" src="https://d3js.org/d3.v3.min.js"> </script>
 
