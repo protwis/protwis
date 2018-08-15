@@ -256,7 +256,8 @@ class Rotamer(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdbdata = models.ForeignKey('PdbData', on_delete=models.CASCADE)
     missing_atoms = models.BooleanField(default=False)
-
+    # TODO
+    # Values: Angles
     def __str__(self):
         return '{} {}{}'.format(self.structure.pdb_code.index, self.residue.amino_acid, self.residue.sequence_number)
 
