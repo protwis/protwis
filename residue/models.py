@@ -14,6 +14,12 @@ class Residue(models.Model):
     def __str__(self):
         return self.amino_acid + str(self.sequence_number)
 
+    def short_display_generic_number(self):
+        if self.display_generic_number:
+            return '%sx%s' % (self.display_generic_number.label.split(".")[0], self.display_generic_number.label.split("x")[1])
+        else:
+            return None
+
     class Meta():
         db_table = 'residue'
         ordering = ['sequence_number']
