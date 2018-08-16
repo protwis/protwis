@@ -153,35 +153,35 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         // non-contiguous plot
         switch (col) {
           case 0:
-            x = 740;
+            x = 0;
             y = config.margin.top + 250 + (i - oldI) * height;
             break;
           case 1:
-            x = 620;
-            y = config.h - config.margin.bottom - 400 - (i - oldI) * height;
+            x = 300;
+            y = config.h - config.margin.bottom - 200 - (i - oldI) * height;
             break;
           case 2:
-            x = 380;
-            y = config.margin.top + (i - oldI) * height;
+            x = 600;
+            y = config.margin.top + 50 + (i - oldI) * height;
             break;
           case 3:
-            x = 140;
-            y = config.h - config.margin.bottom - 400 - (i - oldI) * height;
+            x = 900;
+            y = config.h - config.margin.bottom - 100 - (i - oldI) * height;
             break;
           case 4:
-            x = 20;
-            y = config.margin.top + 250 + (i - oldI) * height;
+            x = 750;
+            y = config.margin.top  + (i - oldI) * height;
             break;
           case 5:
-            x = 260;
-            y = config.h - config.margin.bottom - (i - oldI) * height;
+            x = 450;
+            y = config.h - config.margin.bottom - 400 - (i - oldI) * height;
             break;
           case 6:
-            x = 500;
-            y = config.margin.top + 350 + (i - oldI) * height;
+            x = 150;
+            y = config.margin.top + 0 + (i - oldI) * height;
             break;
           case 7:
-            x = 530 + (i - oldI) * (rectWidth + 1);
+            x = 0 + (i - oldI) * (rectWidth + 1);
             y = config.h - config.margin.bottom;
             break;
           default:
@@ -600,7 +600,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           const matches = regex.exec(transformValue);
 
           const y = parseFloat(matches[2]);
-          console.log(matches);
           if ( y > max_y ) max_y = y;
 
         });
@@ -609,7 +608,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         // console.log(segment,contactCount,gradientSum,-gradientMean);
       }
     });
-    console.log(max_y);
     svg.attr('height', max_y + config.margin.top + config.margin.bottom);
   }
 
@@ -626,10 +624,20 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         targetY: parseFloat(coordTargetAA.y) + rectHeight / 2,
       };
     }
+
+    // Deduce side of rect to start line
+    sourceXpush = 0;
+    targetXpush = 0;
+    if (coordSourceAA.x<coordTargetAA.x){
+      sourceXpush = rectWidth;
+    } else {
+      targetXpush = rectWidth;
+    }
+
     return {
       sourceY: parseFloat(coordSourceAA.y) + rectHeight / 2,
-      sourceX: parseFloat(coordSourceAA.x),
-      targetX: parseFloat(coordTargetAA.x) + rectWidth,
+      sourceX: parseFloat(coordSourceAA.x) + sourceXpush,
+      targetX: parseFloat(coordTargetAA.x) + targetXpush,
       targetY: parseFloat(coordTargetAA.y) + rectHeight / 2,
     };
   }
@@ -677,12 +685,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function getCoordAA(aa) {
-    const translate = d3.select(`.aa-${aa}`).attr('transform');
+    const translate = d3.select(containerSelector + ' .aa-'+aa).attr('transform');
 
     const regex = /(-?[0-9]+),(-?[0-9]+)/;
 
     const matches = regex.exec(translate);
-
     return {
       x: matches[1],
       y: matches[2],

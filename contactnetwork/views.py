@@ -312,3 +312,28 @@ def InteractionData(request):
 
     return JsonResponse(data)
 
+def ServePDB(request, pdbname):
+    structure=Structure.objects.filter(pdb_code__index=pdbname)
+    if structure.exists():
+        structure=structure.get()
+    else:
+         quit() #quit!
+
+    if structure.pdb_data is None:
+        quit()
+
+    only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number').all())
+    only_gn = []
+    segments = {}
+    for gn in only_gns:
+        only_gn.append(gn[1])
+        if gn[0] not in segments:
+            segments[gn[0]] = []
+        segments[gn[0]].append(gn[1])
+    data = {}
+    data['pdb'] = structure.pdb_data.pdb
+    data['only_gn'] = only_gn
+    data['segments'] = segments
+    data['chain'] = structure.preferred_chain
+    
+    return JsonResponse(data)
