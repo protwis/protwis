@@ -83,7 +83,7 @@
                     </div>
                 </div>
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#matrix-tab" data-toggle="tab">Matrix</a></li>
+                  <li class="active"><a href="#single-matrix-tab" data-toggle="tab">Matrix</a></li>
                   <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
                   <li><a href="#single-schematic-con-tab" data-toggle="tab" id="single-schematic-con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-schematic-non-tab" data-toggle="tab" id="single-schematic-non-tab-link">2D Schematic (Non)</a></li>
@@ -92,7 +92,7 @@
                 </ul>
                 <div class="row">
                   <div class="tab-content">
-                      <div class="col-md-12 tab-pane active" id="matrix-tab">
+                      <div class="col-md-12 tab-pane active" id="single-matrix-tab">
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Interactions</h3>
@@ -263,23 +263,104 @@
                         <div class="btn btn-success btn-lg pull-right go-button">Go</div>
                     </div>
                 </div>
+
+
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#single-group-matrix-tab" data-toggle="tab">Matrix</a></li>
+                  <li><a href="#single-group-flareplot-tab" data-toggle="tab" id="single-group-flareplot-tab-link">Flareplot</a></li>
+                  <li><a href="#single-group-schematic-con-tab" data-toggle="tab" id="single-group-schematic-con-tab-link">2D Schematic (Con)</a></li>
+                  <li><a href="#single-group-schematic-non-tab" data-toggle="tab" id="single-group-schematic-non-tab-link">2D Schematic (Non)</a></li>
+                  <li><a href="#single-group-table-tab" data-toggle="tab" id="single-group-table-tab-link">Browser</a></li>
+                  <li><a href="#single-group-NGL-tab" data-toggle="tab" id="single-group-NGL-link">NGL</a></li>
+                </ul>
                 <div class="row">
-                    <div class="col-md-12">
+                  <div class="tab-content">
+                      <div class="col-md-12 tab-pane active" id="single-group-matrix-tab">
+                           <div class="panel panel-default no-top-border">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Interactions</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <div class="heatmap-legend"></div>
+                                      <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-table-tab">
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-flareplot-tab">
+
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">Interactions</h3>
+                                <h3 class="panel-title pull-left">Flareplot</h3>
                                 <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="heatmap-container">
-                                    <div class="heatmap-legend"></div>
-                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                <div class="flareplot-container">
                                 </div>
                             </div>
                          </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-schematic-con-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-con-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-schematic-non-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic Non</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-non-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-NGL-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">NGL</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
                     </div>
                 </div>
+
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
             <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
@@ -368,23 +449,104 @@
                         <div class="btn btn-success btn-lg pull-right go-button">Go</div>
                     </div>
                 </div>
+
+
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#two-groups-matrix-tab" data-toggle="tab">Matrix</a></li>
+                  <li><a href="#two-groups-flareplot-tab" data-toggle="tab" id="two-groups-flareplot-tab-link">Flareplot</a></li>
+                  <li><a href="#two-groups-schematic-con-tab" data-toggle="tab" id="two-groups-schematic-con-tab-link">2D Schematic (Con)</a></li>
+                  <li><a href="#two-groups-schematic-non-tab" data-toggle="tab" id="two-groups-schematic-non-tab-link">2D Schematic (Non)</a></li>
+                  <li><a href="#two-groups-table-tab" data-toggle="tab" id="two-groups-table-tab-link">Browser</a></li>
+                  <li><a href="#two-groups-NGL-tab" data-toggle="tab" id="two-groups-NGL-link">NGL</a></li>
+                </ul>
                 <div class="row">
-                    <div class="col-md-12">
+                  <div class="tab-content">
+                      <div class="col-md-12 tab-pane active" id="two-groups-matrix-tab">
+                           <div class="panel panel-default no-top-border">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Interactions</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <div class="heatmap-legend"></div>
+                                      <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-table-tab">
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-flareplot-tab">
+
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">Interactions</h3>
+                                <h3 class="panel-title pull-left">Flareplot</h3>
                                 <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="heatmap-container">
-                                    <div class="heatmap-legend"></div>
-                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                <div class="flareplot-container">
                                 </div>
                             </div>
                          </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-schematic-con-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-con-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-schematic-non-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic Non</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-non-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-NGL-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">NGL</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
                     </div>
                 </div>
+
             </div>
             <!-- END TWO CRYSTAL GROUPS TAB -->
         </div>
@@ -2164,7 +2326,7 @@
                     heatmapFunction(data, selector + ' .heatmap-container');
                     $("#svgloading").remove()
                     // Re-render flareplot
-                    createFlareplot(600, parseGPCRdb2flare(data), ".flareplot-container"); //flareplot-container
+                    createFlareplot(600, parseGPCRdb2flare(data), selector + " .flareplot-container"); //flareplot-container
                     createSchematicPlot(data, ".schematic-con-container"); //.schematic-container
 
                     createSchematicPlot(data, ".schematic-non-container", {isContiguousPlot: false})
