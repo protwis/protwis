@@ -121,6 +121,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   const rectWidth = 30;
   const rectHeight = 14;
 
+  const paths = svg.append('g');
+
   const g = svg
     .selectAll('g')
     .data(isGeneric ? Object.keys(segment_map_full_gn) : Object.keys(segment_map_full))
@@ -214,11 +216,13 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   switch (config.type) {
     case 'singleCrystal':
+      svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystal(getInteractionsSingleCrystal());
       createLegendSingleCrystal();
       break;
     case 'singleCrystalGroup':
       // getInteractionsCrystalGroup();
+      svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystalGroup();
       createLegendSingleCrystalGroup();
       break;
@@ -231,6 +235,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     default:
       break;
   }
+
+
 
   function getInteractionsSingleCrystal() {
     const interactionsList = [];
@@ -275,8 +281,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function renderSchematicSingleCrystal(interactionsList) {
-    svg
-      .append('g')
+    paths
       .selectAll('path')
       .data(interactionsList)
       .enter()
@@ -303,8 +308,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function renderSchematicSingleCrystalGroup() {
-    svg
-      .append('g')
+    paths
       .selectAll('path')
       .data(Object.keys(interactions))
       .enter()
@@ -312,7 +316,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       .filter((d) => {
         const pair = separatePair(d);
         if (pair[0] in segment_map_full_gn && pair[1] in segment_map_full_gn) {
-          if (isContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])) {
+          if (
+              config.isContiguousPlot
+              ? isContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])
+              : isNonContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])
+             ) {
             return d;
           }
         }
@@ -373,8 +381,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function renderSchematicTwoCrystalGroups() {
-    svg
-      .append('g')
+    paths
       .selectAll('path')
       .data(Object.keys(interactions))
       .enter()
@@ -382,7 +389,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       .filter((d) => {
         const pair = separatePair(d);
         if (pair[0] in segment_map_full_gn && pair[1] in segment_map_full_gn) {
-          if (isContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])) {
+          if (
+              config.isContiguousPlot
+              ? isContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])
+              : isNonContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])
+             ) {
             return d;
           }
         }
