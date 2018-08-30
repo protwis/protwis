@@ -326,10 +326,10 @@ class ResidueFunctionBrowser(TemplateView):
         ######## CREATE REFERENCE sets (or use structural rules)
 
         ## MICROSWITCHES
-        ms_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Microswitches").residue_position.all()]
+        ms_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="State (micro-)switches").residue_position.all()]
 
         ## SODIUM POCKET
-        sp_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Sodium pocket").residue_position.all()]
+        sp_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Sodium ion pocket").residue_position.all()]
 
         ## ROTAMER SWITCHES
         rotamer_labels = []
