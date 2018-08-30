@@ -517,7 +517,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         if (shiftY<5 && shiftY>-5) run = 10;
 
         // Reposition each node
-        $(`g.node[data-segment='${segment}'`).each((i, g) => {
+        $(`g.node[data-segment='${segment}']`).each((i, g) => {
           const transformValue = g.getAttribute('transform');
 
           const regex = /\((.+),(.+)\)/;
@@ -604,7 +604,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           contactCount += 1;
         });
 
-        $(`g.node[data-segment='${segment}'`).each((i, g) => {
+        $(`g.node[data-segment='${segment}']`).each((i, g) => {
           const transformValue = g.getAttribute('transform');
 
           const regex = /\((.+),(.+)\)/;
