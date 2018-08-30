@@ -83,14 +83,16 @@
                     </div>
                 </div>
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#matrix-tab" data-toggle="tab">Matrix</a></li>
+                  <li class="active"><a href="#single-matrix-tab" data-toggle="tab">Matrix</a></li>
                   <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
-                  <li><a href="#single-schematic-tab" data-toggle="tab" id="single-schematic-tab-link">2D Schematic</a></li>
+                  <li><a href="#single-schematic-con-tab" data-toggle="tab" id="single-schematic-con-tab-link">2D Schematic (Con)</a></li>
+                  <li><a href="#single-schematic-non-tab" data-toggle="tab" id="single-schematic-non-tab-link">2D Schematic (Non)</a></li>
                   <li><a href="#single-table-tab" data-toggle="tab" id="single-table-tab-link">Browser</a></li>
+                  <li><a href="#single-NGL-tab" data-toggle="tab" id="single-NGL-link">NGL</a></li>
                 </ul>
                 <div class="row">
                   <div class="tab-content">
-                      <div class="col-md-12 tab-pane active" id="matrix-tab">
+                      <div class="col-md-12 tab-pane active" id="single-matrix-tab">
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Interactions</h3>
@@ -125,7 +127,7 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-schematic-tab">
+                      <div class="col-md-12 tab-pane" id="single-schematic-con-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -134,7 +136,39 @@
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="schematic-container" style="margin: auto; display: block">
+                                <div class="schematic-con-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-schematic-non-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic Non</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-non-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-NGL-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">NGL</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
                                 </div>
                             </div>
                          </div>
@@ -143,6 +177,8 @@
 
                     </div>
                 </div>
+
+
             </div>
             <!-- END SINGLE CRYSTAL TAB -->
             <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
@@ -227,23 +263,104 @@
                         <div class="btn btn-success btn-lg pull-right go-button">Go</div>
                     </div>
                 </div>
+
+
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#single-group-matrix-tab" data-toggle="tab">Matrix</a></li>
+                  <li><a href="#single-group-flareplot-tab" data-toggle="tab" id="single-group-flareplot-tab-link">Flareplot</a></li>
+                  <li><a href="#single-group-schematic-con-tab" data-toggle="tab" id="single-group-schematic-con-tab-link">2D Schematic (Con)</a></li>
+                  <li><a href="#single-group-schematic-non-tab" data-toggle="tab" id="single-group-schematic-non-tab-link">2D Schematic (Non)</a></li>
+                  <li><a href="#single-group-table-tab" data-toggle="tab" id="single-group-table-tab-link">Browser</a></li>
+                  <li><a href="#single-group-NGL-tab" data-toggle="tab" id="single-group-NGL-link">NGL</a></li>
+                </ul>
                 <div class="row">
-                    <div class="col-md-12">
+                  <div class="tab-content">
+                      <div class="col-md-12 tab-pane active" id="single-group-matrix-tab">
+                           <div class="panel panel-default no-top-border">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Interactions</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <div class="heatmap-legend"></div>
+                                      <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-table-tab">
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-flareplot-tab">
+
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">Interactions</h3>
+                                <h3 class="panel-title pull-left">Flareplot</h3>
                                 <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="heatmap-container">
-                                    <div class="heatmap-legend"></div>
-                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                <div class="flareplot-container">
                                 </div>
                             </div>
                          </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-schematic-con-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-con-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-schematic-non-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic Non</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-non-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-group-NGL-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">NGL</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
                     </div>
                 </div>
+
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
             <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
@@ -332,23 +449,104 @@
                         <div class="btn btn-success btn-lg pull-right go-button">Go</div>
                     </div>
                 </div>
+
+
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#two-groups-matrix-tab" data-toggle="tab">Matrix</a></li>
+                  <li><a href="#two-groups-flareplot-tab" data-toggle="tab" id="two-groups-flareplot-tab-link">Flareplot</a></li>
+                  <li><a href="#two-groups-schematic-con-tab" data-toggle="tab" id="two-groups-schematic-con-tab-link">2D Schematic (Con)</a></li>
+                  <li><a href="#two-groups-schematic-non-tab" data-toggle="tab" id="two-groups-schematic-non-tab-link">2D Schematic (Non)</a></li>
+                  <li><a href="#two-groups-table-tab" data-toggle="tab" id="two-groups-table-tab-link">Browser</a></li>
+                  <li><a href="#two-groups-NGL-tab" data-toggle="tab" id="two-groups-NGL-link">NGL</a></li>
+                </ul>
                 <div class="row">
-                    <div class="col-md-12">
+                  <div class="tab-content">
+                      <div class="col-md-12 tab-pane active" id="two-groups-matrix-tab">
+                           <div class="panel panel-default no-top-border">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Interactions</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <div class="heatmap-legend"></div>
+                                      <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-table-tab">
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-flareplot-tab">
+
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">Interactions</h3>
+                                <h3 class="panel-title pull-left">Flareplot</h3>
                                 <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="heatmap-container">
-                                    <div class="heatmap-legend"></div>
-                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                <div class="flareplot-container">
                                 </div>
                             </div>
                          </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-schematic-con-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-con-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-schematic-non-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">2D schematic Non</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="schematic-non-container" style="margin: auto; display: block">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="two-groups-NGL-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">NGL</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
                     </div>
                 </div>
+
             </div>
             <!-- END TWO CRYSTAL GROUPS TAB -->
         </div>
@@ -812,7 +1010,6 @@
           $('#single-table-tab').html(table.join( "" ));
 
           $("#single-table-tab-link").click(function(e){
-              console.log('RENDER');
               setTimeout(renderSingleTable,100);
           });
 
@@ -2129,8 +2326,12 @@
                     heatmapFunction(data, selector + ' .heatmap-container');
                     $("#svgloading").remove()
                     // Re-render flareplot
-                    createFlareplot(600, parseGPCRdb2flare(data), ".flareplot-container"); //flareplot-container
-                    createSchematicPlot(data, ".schematic-container"); //.schematic-container
+                    createFlareplot(600, parseGPCRdb2flare(data), selector + " .flareplot-container"); //flareplot-container
+                    createSchematicPlot(data, ".schematic-con-container"); //.schematic-container
+
+                    createSchematicPlot(data, ".schematic-non-container", {isContiguousPlot: false})
+
+                    createNGLview("single",pdb);
                 });
             });
         }
@@ -2448,6 +2649,324 @@
         }
 
 
+        var stage = [];
+        var color_schemes = [];
+        var schemeId_grey
+        function createNGLview(mode,pdb) {
+            var gpcr_rep
+            $("#ngl-"+mode).html("");
+            stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
+
+            var pdb_data
+            var original_o 
+            blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
+            var reps = {} // store ngl representations
+
+        
+
+            $.getJSON( "pdb/"+pdb,
+              function( data ) {
+
+                pdb_data = data;
+                color_schemes['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
+                        [blue_colors[1], pdb_data['segments']['TM1'].join(", ")],
+                        [blue_colors[2], pdb_data['segments']['TM2'].join(", ")],
+                        [blue_colors[3], pdb_data['segments']['TM3'].join(", ")],
+                        [blue_colors[4], pdb_data['segments']['TM4'].join(", ")],
+                        [blue_colors[5], pdb_data['segments']['TM5'].join(", ")],
+                        [blue_colors[6], pdb_data['segments']['TM6'].join(", ")],
+                        [blue_colors[7], pdb_data['segments']['TM7'].join(", ")],
+                        [blue_colors[8], pdb_data['segments']['H8'].join(", ")],
+                        [ "white", "*" ]
+                        ])
+
+                color_schemes['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
+                          ["#ccc", pdb_data['segments']['TM1'].join(", ")],
+                          ["#bbb", pdb_data['segments']['TM2'].join(", ")],
+                          ["#aaa", pdb_data['segments']['TM3'].join(", ")],
+                          ["#888", pdb_data['segments']['TM4'].join(", ")],
+                          ["#666", pdb_data['segments']['TM5'].join(", ")],
+                          ["#444", pdb_data['segments']['TM6'].join(", ")],
+                          ["#333", pdb_data['segments']['TM7'].join(", ")],
+                          ["#111", pdb_data['segments']['H8'].join(", ")],
+                          [ "white", "*" ]
+                          ])
+
+
+                var stringBlob = new Blob( [ pdb_data['pdb'] ], { type: 'text/plain'} );
+                stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
+                    original_o = o
+                    console.log(pdb_data['segments']['TM1'].join(", "))
+                    
+
+
+                    gpcr_rep = o.addRepresentation( "cartoon", {
+                    sele: ":"+pdb_data['chain'], 
+                    // radiusType: '',
+                    radiusSize: 1,
+                    radiusScale: 0.7, 
+                    // color: "atomindex",
+                    // colorScale: "Accent",
+                    // color: "residueindex",
+                    // colorScale: "greys",
+                    color: color_schemes['grey'],
+                    metalness: 0,
+                    colorMode: "hcl",
+                    roughness: 1,
+                    opacity: 1,
+                    depthWrite: true
+                    });  
+
+                    if (mode=='single') {
+                      var links = []
+                      var links_gn = []
+                      var res_int = []
+                      $('#single-crystal-tab rect[data-interaction-type]').each(function(e) {
+                          var rect = $(this);
+                          var resNo1 = rect.data('res-no-1');
+                          var resNo2 = rect.data('res-no-2');
+                          var seg1 = rect.data('seg-1');
+                          var seg2 = rect.data('seg-2');
+                          var genNo1 = rect.data('gen-no-1');
+                          var genNo2 = rect.data('gen-no-2');
+                          var aa1 = rect.data('aa-1');
+                          var aa2 = rect.data('aa-2');
+                          var iType = rect.data('interaction-type');
+                          if (getInteractionStrength(iType)<3) return
+                          res_int.push(resNo1);
+                          res_int.push(resNo2);
+                          links.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
+                          console.log(genNo1,genNo2)
+                          if ((genNo1=='-') || (genNo2=='-')) return
+                          links_gn.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
+                        });
+                    }
+                    console.log(links_gn);
+
+                    var linkMap = {}
+                    links.forEach(function (link) {
+                      var atoms = link.atoms
+                      linkMap[atoms[0].split(".")[0] + "-" + atoms[1].split(".")[0]] = link
+                    })
+
+                    var initColourSchemes = function () {
+                      var linkColourScheme = function () {
+                        this.bondColor = function (b) {
+                          var origLink = linkMap[b.atom1.resno + "-" + b.atom2.resno]
+                          if (origLink) {
+                            // console.log('FOUND!',origLink,origLink.data.color);
+                            r = origLink.data.color
+                            return (r["r"] << 16) + (r["g"] << 8) + r["b"]
+                          }
+                          return (8 << 16) + (8 << 8) + 8 // (128 << 16) + (128 << 8) + 128 // grey default
+                        }
+                      }
+                      reps.linkColourScheme = NGL.ColormakerRegistry.addScheme(linkColourScheme, "xlink")
+                    }
+                    initColourSchemes()
+
+                    // return unique atom indices as a selection from a set of pairs of atom indices
+                    // var makeAtomSelection = function (someLinks) {
+                    //   var atomSet = new Set()
+                    //   someLinks.forEach(function (link) {
+                    //     atomSet.add(link.atoms[0].split(".")[0])
+                    //     atomSet.add(link.atoms[1].split(".")[0])
+                    //   })
+                    //   var atomSelection = "(" + Array.from(atomSet).join(", ") + ") and .CA"
+                    //   return atomSelection
+                    // }
+                    // var startAtomSel = makeAtomSelection(links)
+                    // console.log(startAtomSel,"startAtomSel")
+
+
+                    var baseLinkScale = 20
+                    reps.links = o.addRepresentation("distance", {
+                      atomPair: links.map(function (l) {
+                        return l.atoms
+                      }),
+                      // colorValue: "yellow",
+                      colorScheme: reps.linkColourScheme,
+                      useCylinder: false,
+                      labelVisible: false,
+                      linewidth: 2
+                    })
+                    reps.links_gn = o.addRepresentation("distance", {
+                      atomPair: links_gn.map(function (l) {
+                        return l.atoms
+                      }),
+                      // colorValue: "yellow",
+                      colorScheme: reps.linkColourScheme,
+                      useCylinder: false,
+                      labelVisible: false,
+                      linewidth: 2,
+                      visible: false
+                    })
+
+                    reps.int_res = o.addRepresentation( "spacefill", {
+                      sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and (.CA)", 
+                      color: "red",
+                      // colorScale: ["#44f", "#444"],
+                      radiusScale: .2,
+                      name: "res",
+                      visible: false
+                    });  
+
+
+                    reps.ball_all = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data['chain']+" and sidechainAttached",
+                      visible: false
+                      })
+
+                    reps.ball = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and sidechainAttached",
+                      visible: false
+                      })
+
+                    reps.ball_int = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                      visible: false
+                      })
+
+
+                    // reps.residues = o.addRepresentation("spacefill", {
+                    //   sele: ".CA",
+                    //   color: "#000",
+                    //   // colorScale: ["#44f", "#444"],
+                    //   radiusScale: .2,
+                    //   name: "res"
+                    // })
+
+
+                    // reps.residues = o.addRepresentation("spacefill", {
+                    //   sele: startAtomSel,
+                    //   color: "#ccc",
+                    //   // colorScale: ["#44f", "#444"],
+                    //   radiusScale: .2,
+                    //   name: "res"
+                    // })
+
+
+                    // o.addRepresentation( "distance", { 
+                    //   atomPair: links.map(function (l) {
+                    //     return l.atoms
+                    //   }),
+                    //   radiusScale: 1,
+                    //   labelVisible: false,
+                    //   useCylinder: true,
+                    // } );
+
+
+                    reps.ngl_contacts = o.addRepresentation("contact", {
+                      sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")",
+                      radiusSize: 0.07,
+                      weakHydrogenBond: false,
+                      waterHydrogenBond: false,
+                      backboneHydrogenBond: false,
+                      visible:false
+                    })
+
+                    o.autoView();
+
+
+                } );
+
+            });
+
+            var newDiv = document.createElement("div");
+            newDiv.setAttribute("style", "position: absolute; top: 50px; left: 20px")
+            newDiv.innerHTML = '<div class="controls">'
+                              +'<h3>Controls</h3>'
+                              +'<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option></select></p>'
+                              +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
+                              +'<p>Highlight interacting res: <input type=checkbox id="highlight_res"></p>'
+                              +'<p>Hide interaction lines: <input type=checkbox id="toogle_interactions"></p>'
+                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains_all"></p>'
+                              +'<p>Show GN side-chains: <input type=checkbox id="toggle_sidechains"></p>'
+                              +'<p>Show GN side-chains (only interacting): <input type=checkbox id="toggle_sidechains_int"></p>'
+                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
+                              +'</div>';
+
+            $("#ngl-single").append(newDiv);
+
+            $("#"+mode+"-NGL-link").click(function(e){
+                $(function() {
+                  stage[mode].handleResize();
+                });
+            });
+
+
+            $("#ngl-"+mode+" #ngl_color").change(function(e){
+                console.log('changed color!',$(this).val(),"tothis");
+                gpcr_rep.setParameters({
+                  color: color_schemes[$(this).val()]
+                });
+            });
+
+            $("#ngl-"+mode+" #ngl_only_gns").change(function(e){
+                if ($(this).prop('checked')) {
+                  sele = ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")";
+                  reps.links.setVisibility(false);
+                  reps.links_gn.setVisibility(true);
+                } else {
+                  sele = ":"+pdb_data['chain'];
+                  reps.links.setVisibility(true);
+                  reps.links_gn.setVisibility(false);
+                }
+                gpcr_rep.setSelection(sele);
+                original_o.autoView();
+            });
+
+            $("#ngl-"+mode+" #highlight_res").change(function(e){
+                if ($(this).prop('checked')) {
+                  reps.int_res.setVisibility(true);
+                } else {
+                  reps.int_res.setVisibility(false);
+                }
+            });
+
+            $("#ngl-"+mode+" #toogle_interactions").change(function(e){
+                if ($(this).prop('checked')) {
+                  reps.links.setVisibility(false);
+                  reps.links_gn.setVisibility(false);
+                } else {
+                  reps.links.setVisibility(true);
+                }
+            });
+
+            $("#ngl-"+mode+" #toggle_sidechains_all").change(function(e){
+                if ($(this).prop('checked')) {
+                  reps.ball_all.setVisibility(true);
+                } else {
+                  reps.ball_all.setVisibility(false);
+                }
+            });
+
+            $("#ngl-"+mode+" #toggle_sidechains").change(function(e){
+                if ($(this).prop('checked')) {
+                  reps.ball.setVisibility(true);
+                } else {
+                  reps.ball.setVisibility(false);
+                }
+            });
+
+            $("#ngl-"+mode+" #toggle_sidechains_int").change(function(e){
+                if ($(this).prop('checked')) {
+                  reps.ball_int.setVisibility(true);
+                } else {
+                  reps.ball_int.setVisibility(false);
+                }
+            });
+
+            $("#ngl-"+mode+" #ngl_contacts").change(function(e){
+                if ($(this).prop('checked')) {
+                  reps.ngl_contacts.setVisibility(true);
+                } else {
+                  reps.ngl_contacts.setVisibility(false);
+                }
+            });
+            
+        }
+
         $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
           showPDBtable('#single-crystal-pdb-modal-table');
         })
@@ -2717,6 +3236,9 @@
             margin-top: 6px;
         }
     </style>
+
+    <!-- NGL -->
+    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
 
     <!-- Flareplot -->
     <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare.js' %}"> </script>
