@@ -983,7 +983,7 @@ class Command(BaseCommand):
     def cgn_parent_protein_family(self):
 
         pf_cgn, created_pf = ProteinFamily.objects.get_or_create(slug='100', defaults={
-            'name': 'G-Protein'})
+            'name': 'G-Protein'}, parent=ProteinFamily.objects.get(slug='000'))
 
         pff_cgn = ProteinFamily.objects.get(slug='100', name='G-Protein')
 

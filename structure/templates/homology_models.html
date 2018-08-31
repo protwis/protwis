@@ -154,7 +154,7 @@
                         select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
-                        filter_default_label: "Gene",
+                        filter_default_label: "UniProt",
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
@@ -167,7 +167,7 @@
                         select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
-                        filter_default_label: "Receptor",
+                        filter_default_label: "IUPHAR",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -293,33 +293,119 @@
             $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
 
 
-        $('.column_toggle').change(function(evt) {
-            console.log('start toggle');
-            // evt.stopPropagation();
-            // evt.stopImmediatePropagation();
-            // evt.preventDefault();
-            columns = $(this).attr('data-column').split(",");
-            var checked = this.checked;
-            var checked = (this.checked ? false : true);
-            columns.forEach(function(column) {
-                // console.log('hiding column');
-                var column = oTable.column( column );
-                try {
-                    column.visible( checked );
-                }
-                catch(err) {
-                    column.visible( checked );
-                }
-            });
-            // var Table = $('#constructs').dataTable();
-            // Table.fnDraw();
-            console.log('done toggle');
-            oTable.draw();
-            console.log('done draw');
-        } );
+            $('.column_toggle').change(function(evt) {
+                console.log('start toggle');
+                // evt.stopPropagation();
+                // evt.stopImmediatePropagation();
+                // evt.preventDefault();
+                columns = $(this).attr('data-column').split(",");
+                var checked = this.checked;
+                var checked = (this.checked ? false : true);
+                columns.forEach(function(column) {
+                    // console.log('hiding column');
+                    var column = oTable.column( column );
+                    try {
+                        column.visible( checked );
+                    }
+                    catch(err) {
+                        column.visible( checked );
+                    }
+                });
+                // var Table = $('#constructs').dataTable();
+                // Table.fnDraw();
+                console.log('done toggle');
+                oTable.draw();
+                console.log('done draw');
+            } );
 
+            $('#superpose_btn').click(function () {
+                ClearSelection('targets');
+                ClearSelection('reference');
+                if (oTable.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = oTable.rows('.selected').data()[0][11];
+                    var state1 = oTable.rows('.selected').data()[0][3];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                var checked_data = oTable.rows('.alt_selected').data();
+                var selected_ids = [];
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][11];
+                    var state2 = checked_data[i][3];
+                    if (typeof div.innerText !== "undefined") {
+                        selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
+                    } else {
+                        selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
+                    }
+                }
+                AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
+                window.location.href = '/structure/superposition_workflow_index';
+            });
+            
+            $('#download_btn').click(function () {
+                var selected_ids = [];
+                 $.each($(".alt_selected"), function(){            
+                    hom_id = $(this).closest('tr').attr('model_id');
+                    selected_ids.push(hom_id);
+                });
+                window.location.href = '/structure/hommod_download?ids='+selected_ids.join(",");
+            });
+            $('#align_btn').click(function () {
+                var checked_data = oTable.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][11];
+                    
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                window.location.href = '/structure/selection_convert_model';
+            });
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
+            });
 
         });
+
+        function ClearSelection(selection_type) {
+            $.ajax({
+                'url': '/common/clearselection',
+                'data': {
+                    selection_type: selection_type
+                },
+                'type': 'GET',
+                'async': false,
+                'success': function (data) {
+                    $("#selection-" + selection_type).html(data);
+                }
+            });
+        }
+
+        function AddToSelection(selection_type, selection_subtype, selection_id) {
+            $.ajax({
+                'url': '/common/addtoselection',
+                'data': {
+                    selection_type: selection_type,
+                    selection_subtype: selection_subtype,
+                    selection_id: selection_id
+                },
+                'type': 'GET',
+                'async': false,
+                'success': function(data) {
+                    $("#selection-" + selection_type).html(data);
+                },
+            });
+        }
 
         function select_all(e) {
             var checkedStatus = $(e).prop("checked");
@@ -385,15 +471,12 @@
 {% block content %}
 <h2>GPCR Homology Model Browser</h2>
 
-    <!-- <div class="dropdown btn-group">
-          <button class="btn btn-default dropdown-toggle btn-xs" type="button" data-toggle="dropdown">Selection options
-          <span class="caret"></span></button>
-          <ul class="dropdown-menu">
-            <li><a href="#">Toggle all <input class="select-all" type="checkbox" onclick="select_all(this)"></a></li>
-            <li><a href="#" id="remove_sel">Remove Selected</a></li>
-            <li><a href="#" id="remove_non_sel">Remove Non-selected</a></li>
-          </ul>
-    </div> -->
+<div class="btn-group">
+    <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">Align</label>
+    <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
+    <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label>
+</div>
+<br /><br />
     Show/hide columns:
 <div class="btn-group" data-toggle="buttons">
   <label class="btn btn-default btn-xs">
@@ -402,11 +485,8 @@
   <label class="btn btn-default btn-xs">
     <input class="column_toggle" type="checkbox" value="Purification" data-column="9,10" checked="checked"> Template
   </label>
-
-  <!-- <label class="btn btn-default btn-xs">
-    <input class="column_toggle" type="checkbox" value="Purification" data-column="11,12,13" checked="checked"> Template
-  </label> -->
 </div>
+
 <div class="btn-group" style="float: right">
         <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="glyphicon glyphicon-download"></span> Archive <span class="caret"></span>
@@ -456,11 +536,8 @@
                     <th></th>
                     <th  class='rightborder'></th>
                     <th></th>
-                    <!-- <th></th> -->
                     <th  class='rightborder'></th>
-                    <!-- <th></th>
-                    <th></th>
-                    <th  class='rightborder'></th> -->
+                    <th style="display:none;"></th>
                 </tr>
 
             </thead>
@@ -471,7 +548,7 @@
                     <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
                     <td>{{ model.version|date:"Y-m-d" }}</td>
                     <td>{{ model.state.name }}</td>
-                    <td><span>{{ model.protein.entry_short|safe }}</span></td>
+                    <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein.accession }}">{{ model.protein.entry_short|safe }}</a></span></td>
                     <td><span><a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.short|safe }}</span></td>
                     <td><span>{{ model.protein.family.parent.short|safe }}</span></td>
                     <td>{{ model.protein.family.parent.parent.parent.short }}</td>
@@ -485,7 +562,8 @@
                     {% endif %} -->
                     <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
                     <!-- <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.protein.name|safe }}</a></td> -->
-                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>                
+                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>  
+                    <td style="display:none;">{{ model.protein.entry_name }}</td>           
                 </tr>
                 {% endfor %}
             </tbody>

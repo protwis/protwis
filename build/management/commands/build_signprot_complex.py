@@ -15,7 +15,7 @@ class Command(BaseCommand):
     signprot_complex_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'complex_model_templates.yaml'])
 
     def handle(self, *args, **options):
-    	self.create_signprot_complex()
+        self.create_signprot_complex()
 
     def create_signprot_complex(self):
         with open(self.signprot_complex_data_file, 'r') as f:

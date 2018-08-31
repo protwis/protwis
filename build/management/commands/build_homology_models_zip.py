@@ -170,6 +170,8 @@ class Command(BaseBuild):
             m_s = Structure.objects.get(pdb_code__index=main_structure)
             r_prot = Protein.objects.get(entry_name=gpcr_prot)
             s_prot = Protein.objects.get(entry_name=sign_prot)
+            signprot_complex = SignprotComplex.objects.get(structure__pdb_code__index=main_structure)
+            
             try:
                 pair = ProteinGProteinPair.objects.get(protein=r_prot, g_protein__slug=s_prot.family.slug)
             except:
@@ -179,6 +181,7 @@ class Command(BaseBuild):
                 hommod.main_template = m_s
                 hommod.pdb = pdb_data
                 hommod.version = build_date
+                hommod.prot_signprot_pair = pair
                 hommod.save()
 
                 # Delete previous data
@@ -188,13 +191,18 @@ class Command(BaseBuild):
                 hommod = StructureComplexModel.objects.create(receptor_protein=r_prot, sign_protein=s_prot, 
                                                                 main_template=m_s, 
                                                                 pdb=pdb_data, 
-                                                                version=build_date)
+                                                                version=build_date,
+                                                                prot_signprot_pair=pair)
             res_prot = r_prot
             bulk_residues = []
             for r in templates[1:]:
                 r = r.split(',')
                 if r[0]=='HN':
                     res_prot = s_prot
+                elif r[0]=='Beta':
+                    res_prot = signprot_complex.beta_protein
+                elif r[0]=='Gamma':
+                    res_prot = signprot_complex.gamma_protein
                 res = Residue.objects.get(protein_conformation__protein=res_prot, sequence_number=r[1])
                 scmsr = StructureComplexModelStatsRotamer()
                 if r[4]=='None':

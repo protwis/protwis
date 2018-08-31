@@ -2121,7 +2121,13 @@ def SingleComplexModelDownload(request, modelname, signprot, csv=False):
                 gn = r.residue.generic_number.label
             else:
                 gn = '-'
-            text_out+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+            if r.residue.protein_segment:
+                prot_seg = r.residue.protein_segment.slug
+            elif r.residue.protein_conformation.protein.family.parent.name=='Beta':
+                prot_seg = 'Beta'
+            elif r.residue.protein_conformation.protein.family.parent.name=='Gamma':
+                prot_seg = 'Gamma'
+            text_out+='{},{},{},{},{},{}\n'.format(prot_seg, r.residue.sequence_number, gn, r.residue.protein_conformation.protein.entry_name, bt, rt)
         response = HttpResponse(text_out, content_type="homology_models/csv")
         # if state=='refined':
         #     file_name = 'Class{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,

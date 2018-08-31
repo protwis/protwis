@@ -113,7 +113,12 @@ class Command(BaseBuild):
                             'Gq/11':['gnaq_human','gna11_human','gna14_human','gna15_human'], 'G12/13':['gna12_human','gna13_human']}
 
         c=0
-        classA_receptors = Protein.objects.filter(entry_name='ackr2_human')
+        classA_receptors = Protein.objects.filter(entry_name='drd2_human')
+
+        mod = CallHomologyModeling('drd2_human', 'Active', debug=True, complex_model=True, signprot='gnao_human')
+        mod.run(import_receptor=True)
+        return 0
+
         for receptor in classA_receptors:
             if receptor.entry_name not in excludees:
                 c+=1
@@ -122,7 +127,7 @@ class Command(BaseBuild):
                 for gprotein_subfam, targets in gprotein_targets.items():
                     for target in targets:
                         if first_in_subfam:
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot='gnat1_human')
+                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot='gnai1_human')
                             mod.run()
                         ihm = ImportHomologyModel(receptor.entry_name)
                         if ihm.find_files()!=None:

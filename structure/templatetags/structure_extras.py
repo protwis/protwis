@@ -39,3 +39,11 @@ def only_antibodies ( objs ):
         return "\n".join(elements)
     else:
         return '-'
+
+@register.filter
+def senior_author ( objs ):
+    return objs.split(',')[-1]
+
+@register.filter
+def cut_at_20 ( objs ):
+    return objs[:20]

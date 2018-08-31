@@ -105,6 +105,59 @@ canvas {
     </div>
 </div>
 
+<style>
+.inline {display:inline;}
+.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+</style>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>MODEL</h4>
+    </div>
+    <div class="col-md-9">
+        <div style="float: left; width: 60%;">
+            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+            </div>
+            <div style='width: 70%; display:table; position:relative;'>
+                <div style='width: 20%; display: table-cell;'>
+                    <button id="fullscreen">Full Screen</button>
+                </div>
+                <div style='display: table-cell;'>
+                    {% for prot, bts in backbone_templates.items %}
+                        {% for bt in bts %}
+                            <div class="graphcolor" style="background-color:{{ bt.color }}; width: 12%; margin-top: 5px;">{{ bt.pdb_code.index }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                            <div class="graphcolor" style="background-color:white; width: 12%;">None</div>
+                </div>
+            </div>
+            <br>
+            <div class="btn-group">
+                {% if model.refined %}
+                    <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download .pdb</a>
+                {% else %}
+                    <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download .pdb</a>
+                {% endif %}
+            </div>
+            <div class="btn-group">
+                {% if model.refined %}
+                    <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_csv">Download .csv</a>
+                {% else %}
+                    <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_csv">Download .csv</a>
+                {% endif %}
+            </div>
+            <div class="btn-group">
+                <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
+            </div>
+            <div>
+                <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>TEMPLATES</h4>
@@ -151,109 +204,59 @@ canvas {
         <br>
         Number of backbone templates: {{ backbone_templates_number }}<br>
         Number of rotamer templates: {{ rotamer_templates_number }}<br>
-    </div>
-</div>
-
-<br>
-<style>
-.inline {display:inline;}
-.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
-</style>
-
-<div class="inline">
-    <div>
-        <div style="float: left; width: 50%;">
-            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
-            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
-            </div>
-            <div style='width: 90%; display:table; position:relative;'>
-                <div style='width: 20%; display: table-cell;'>
-                    <button id="fullscreen">Full Screen</button>
-                </div>
-                <div style='display: table-cell;'>
-                    {% for prot, bts in backbone_templates.items %}
-                        {% for bt in bts %}
-                            <div class="graphcolor" style="background-color:{{ bt.color }}; width: 12%; margin-top: 5px;">{{ bt.pdb_code.index }}</div>
-                        {% endfor %}
-                    {% endfor %}
-                            <div class="graphcolor" style="background-color:white; width: 12%;">None</div>
-                </div>
-            </div>
+        <br>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
             
-        </div>
-    </div>
-    
-    <div style="padding-top: 0px; float: right; font-size: 10px; white-space: nowrap; width: 50%;">
-        <div class="btn-group">
-            {% if model.refined %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download .pdb</a>
-            {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download .pdb</a>
-            {% endif %}
-        </div>
-        <div class="btn-group">
-            {% if model.refined %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_csv">Download .csv</a>
-            {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_csv">Download .csv</a>
-            {% endif %}
-        </div>
-        <div class="btn-group">
-            <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
-        </div>
-        <div>
-            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
-        </div>
-        <style>
-            table.dataTable thead th {padding: 3px 1px 3px 3px;}
-        </style>
-        <table class="display" id="rotamers">
-            <thead>
-                <tr>
-                    <th>Segment</th>
-                    <th>Seq.num.</th>
-                    <th>GPCRdb#</th>
-                    <th>Backbone</th>
-                    <th>PDB</th>
-                    <th>Rotamer</th>
-                    <th>PDB</th>
-                </tr>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for rota in rotamers %}
-                <tr>
-                    <td>{{ rota.residue.protein_segment.slug }}</td>
-                    <td>{{ rota.residue.sequence_number }}</td>
-                    <td>{{ rota.residue.display_generic_number.label }}</td>
+            <style>
+                table.dataTable thead th {padding: 3px 1px 3px 3px;}
+            </style>
+            <table class="display" id="rotamers">
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>GPCRdb#</th>
+                        <th>Backbone</th>
+                        <th>PDB</th>
+                        <th>Rotamer</th>
+                        <th>PDB</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rota in rotamers %}
+                    <tr>
+                        <td>{{ rota.residue.protein_segment.slug }}</td>
+                        <td>{{ rota.residue.sequence_number }}</td>
+                        <td>{{ rota.residue.display_generic_number.label }}</td>
 
-                    {% if rota.backbone_template %}
-                        <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                        <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
-                    {% else %}
-                        <td>-</td>
-                        <td>-</td>
-                    {% endif %}
-                    {% if rota.rotamer_template %}
-                        <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                        <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
-                    {% else %}
-                        <td>-</td>
-                        <td>-</td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        {% if rota.backbone_template %}
+                            <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                        {% if rota.rotamer_template %}
+                            <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

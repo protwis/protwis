@@ -285,6 +285,7 @@ class CallHomologyModeling():
                 Homology_model.main_pdb_array = cm.main_pdb_array
                 Homology_model.target_signprot = cm.target_signprot
                 Homology_model.signprot_protconf = cm.signprot_protconf
+                Homology_model.signprot_complex = cm.signprot_complex
             else:
                 alignment = Homology_model.run_alignment([self.state])
                 Homology_model.build_homology_model(alignment)
@@ -525,9 +526,18 @@ class HomologyModeling(object):
                         except:
                             pass
                 pos_list.append(num)
+        if self.complex:
+            first_beta_res = list(self.template_source['Beta'].keys())[0]
+            first_gamma_res = list(self.template_source['Gamma'].keys())[0]
 
         if self.complex:
-            first_signprot_i = [(i,j) for i,j in enumerate(pos_list) if j==first_signprot_res][-1][0]
+            # first_signprot_i = [(i,j) for i,j in enumerate(pos_list) if j==first_signprot_res][-1][0]
+            prev_p = int(pos_list[0])
+            sp_first_indeces = []
+            for i,p in enumerate(pos_list):
+                if int(p)<prev_p:
+                    sp_first_indeces.append(i)
+                prev_p = int(p)
 
         i = 0
         path = './structure/homology_models/'
@@ -547,13 +557,14 @@ class HomologyModeling(object):
             first_hetatm = False
             water_count = 0
             first_signprot_res_found = False
+            atom_num = 1
 
             for line in pdblines:
                 try:
                     if prev_num==None:
-                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sAB]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCD]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                         prev_num = int(pdb_re.group(3))
-                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sAB]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCD]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                     if int(pdb_re.group(3))>prev_num:
                         i+=1
                         prev_num = int(pdb_re.group(3))
@@ -572,22 +583,34 @@ class HomologyModeling(object):
                         whitespace = (whitespace-3)*' '
                     group1 = pdb_re.group(1)
                     if self.complex:
-                        if i<first_signprot_i:
+                        if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
                                 whitespace = whitespace[0]+'R'
                             else:
                                 whitespace = whitespace[0]+'R'+whitespace[2:]
-                        else:
+                        elif sp_first_indeces[0]<=i<sp_first_indeces[1]:
                             if len(whitespace)==2:
                                 whitespace = whitespace[0]+'A'
                             else:
                                 whitespace = whitespace[0]+'A'+whitespace[2:]
+                        elif sp_first_indeces[1]<=i<sp_first_indeces[2]:
+                            if len(whitespace)==2:
+                                whitespace = whitespace[0]+'B'
+                            else:
+                                whitespace = whitespace[0]+'B'+whitespace[2:]
+                        else:
+                            if len(whitespace)==2:
+                                whitespace = whitespace[0]+'G'
+                            else:
+                                whitespace = whitespace[0]+'G'+whitespace[2:]
                     out_line = group1+whitespace+pos_list[i]+pdb_re.group(4)
                     out_list.append(out_line)
-                except:
+                except Exception as msg:
+                    print(msg)
+                    print(line)
                     try:
                         if line.startswith('TER'):
-                            pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sAB]+)(\d+)',line)
+                            pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sABCD]+)(\d+)',line)
                             out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
                             atom_num+=1
                         else:
@@ -597,7 +620,7 @@ class HomologyModeling(object):
                             pref_chain = str(self.main_structure.preferred_chain)
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
-                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sAB]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
+                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sABCD]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
                             
                             alternate_water = False 
                             whitespace3 = len(pdb_re.group(3))*' '
@@ -725,23 +748,37 @@ class HomologyModeling(object):
 
         # include beta and gamma subunits from main template
         beta_gamma = ''
-        if self.complex:
-            spc = SignprotComplex.objects.get(structure=self.main_structure)
-            p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(self.main_structure.pdb_data.pdb))[0]
-            beta = p[spc.beta_chain]
-            gamma = p[spc.gamma_chain]
-            io = PDB.PDBIO()
-            io.set_structure(beta)
-            io.save('./structure/homology_models/{}_beta.pdb'.format(self.modelname))
-            with open('./structure/homology_models/{}_beta.pdb'.format(self.modelname),'r') as beta_f:
-                beta_string = beta_f.read()
-            io.set_structure(gamma)
-            io.save('./structure/homology_models/{}_gamma.pdb'.format(self.modelname))
-            with open('./structure/homology_models/{}_gamma.pdb'.format(self.modelname),'r') as gamma_f:
-                gamma_string = gamma_f.read()
-            os.remove('./structure/homology_models/{}_beta.pdb'.format(self.modelname))
-            os.remove('./structure/homology_models/{}_gamma.pdb'.format(self.modelname))
-            beta_gamma = beta_string[:-4]+gamma_string[:-5]
+        # if self.complex:
+        #     spc = SignprotComplex.objects.get(structure=self.main_structure)
+        #     p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(self.main_structure.pdb_data.pdb))[0]
+        #     beta = p[spc.beta_chain]
+        #     gamma = p[spc.gamma_chain]
+        #     for b_res in beta:
+        #         for b_a in b_res:
+        #             atom_num+=1
+        #             b_a.set_serial_number(atom_num)
+        #     for g_res in gamma:
+        #         for g_a in g_res:
+        #             atom_num+=1
+        #             g_a.set_serial_number(atom_num)
+        #     io = PDB.PDBIO()
+        #     io.set_structure(beta)
+        #     io.save('./structure/homology_models/{}_beta.pdb'.format(self.modelname), preserve_atom_numbering=True)
+        #     with open('./structure/homology_models/{}_beta.pdb'.format(self.modelname),'r') as beta_f:
+        #         beta_string = beta_f.read()
+        #     io.set_structure(gamma)
+        #     io.save('./structure/homology_models/{}_gamma.pdb'.format(self.modelname), preserve_atom_numbering=True)
+        #     with open('./structure/homology_models/{}_gamma.pdb'.format(self.modelname),'r') as gamma_f:
+        #         gamma_string = gamma_f.read()
+        #     os.remove('./structure/homology_models/{}_beta.pdb'.format(self.modelname))
+        #     os.remove('./structure/homology_models/{}_gamma.pdb'.format(self.modelname))
+        #     beta_gamma = beta_string[:-4]+gamma_string[:-5]
+        #     # add to templates.csv file
+        #     with open(path+self.modelname+'.templates.csv','a') as s_file:
+        #         for b_res in beta:
+        #             s_file.write('Beta,{},None,{},{},{}\n'.format(b_res.get_id()[1], spc.beta_protein.entry_name, self.main_structure.pdb_code.index, self.main_structure.pdb_code.index))
+        #         for g_res in gamma:
+        #             s_file.write('Gamma,{},None,{},{},{}\n'.format(g_res.get_id()[1], spc.gamma_protein.entry_name, self.main_structure.pdb_code.index, self.main_structure.pdb_code.index))
 
         with open (path+self.modelname+'.pdb', 'r+') as f:
             content = f.read()
@@ -750,7 +787,7 @@ class HomologyModeling(object):
             f.seek(0,0)
             f.write(first_line+second_line+ssbond+content[:-4]+beta_gamma+conect+'END')
 
-        return first_line+second_line+content
+        return first_line+second_line+ssbond+content[:-4]+beta_gamma+conect+'END'
         
     def run_alignment(self, query_states, core_alignment=True,  
                       segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','TM5','TM6','TM7','H8'], 
@@ -1737,10 +1774,12 @@ class HomologyModeling(object):
             main_pdb_array = cm.main_pdb_array
             self.target_signprot = cm.target_signprot
             self.signprot_protconf = cm.signprot_protconf
+            self.signprot_complex = cm.signprot_complex
         ######## end of complex modeling
         self.alignment = a
         self.main_pdb_array = main_pdb_array
         self.trimmed_residues = trimmed_residues
+
         return self
 
     def build_homology_model_second_part(self):
@@ -1749,7 +1788,7 @@ class HomologyModeling(object):
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:
             post_file = path+self.reference_entry_name+'_'+self.state+"_post.pdb"
-        trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums, complex_start = self.write_homology_model_pdb(post_file, 
+        trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums, complex_start, beta_start, gamma_start = self.write_homology_model_pdb(post_file, 
                                                                                                                     self.main_pdb_array, self.alignment, 
                                                                                                                     trimmed_residues=self.trimmed_residues, 
                                                                                                                     disulfide_pairs=self.disulfide_pairs, complex=self.complex)
@@ -1920,7 +1959,8 @@ class HomologyModeling(object):
             pir_file = "./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir"
         self.run_MODELLER(pir_file, post_file, 
                           self.uniprot_id, self.modeller_iterations, path+self.modelname+'.pdb', 
-                          atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start)
+                          atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start, beta_start=beta_start,
+                          gamma_start=gamma_start)
         # Resume output
         if not self.debug:
             sys.stdout.close()
@@ -1966,7 +2006,14 @@ class HomologyModeling(object):
                         curr_seqnum = seq_num
                         gn = None
 
-                    rot_table.append([seg,seq_num,gn,ref_prot.entry_name,res[0],res[1]])
+                    if seg in gprotein_segment_slugs:
+                        rot_table.append([seg,seq_num,gn,self.target_signprot.entry_name,res[0],res[1]])
+                    elif seg=='Beta':
+                        rot_table.append([seg,seq_num,gn,self.signprot_complex.beta_protein.entry_name,res[0],res[1]])
+                    elif seg=='Gamma':
+                        rot_table.append([seg,seq_num,gn,self.signprot_complex.gamma_protein.entry_name,res[0],res[1]])
+                    else:
+                        rot_table.append([seg,seq_num,gn,ref_prot.entry_name,res[0],res[1]])
                     
                     seqnum_minus = False
                     if res[0]!=first_temp:
@@ -2289,7 +2336,7 @@ class HomologyModeling(object):
         prev_seg = '0'
         icl3_mid = None
         disulfide_nums = [[0,0],[0,0]]
-        complex_start = None
+        complex_start, beta_start, gamma_start = None, None, None
         with open(filename,'w+') as f:
             for seg_id, segment in main_pdb_array.items():
                 if seg_id!='TM1' and prev_seg!='0' and seg_id.startswith('T') and prev_seg.startswith('T'):
@@ -2297,6 +2344,7 @@ class HomologyModeling(object):
                     # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
                 trimmed_segment = OrderedDict()
                 for key in segment:
+                    print(key, segment[key])
                     res_num+=1
                     counter_num+=1
                     for i, d_p in enumerate(disulfide_pairs):
@@ -2323,6 +2371,12 @@ class HomologyModeling(object):
                     if seg_id=='HN':
                         if complex_start==None:
                             complex_start = counter_num
+                    if seg_id=='Beta':
+                        if beta_start==None:
+                            beta_start = counter_num
+                    if seg_id=='Gamma':
+                        if gamma_start==None:
+                            gamma_start = counter_num
                     if segment[key]=='/':
                         atom_num+=1
                         icl3_mid = counter_num
@@ -2384,7 +2438,8 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
             if self.reference_entry_name!=self.main_structure.protein_conformation.protein.parent.entry_name:
                 atom_num+=1
                 # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
-        return trimmed_resi_nums, helix_restraints, icl3_mid, disulfide_nums, complex_start
+
+        return trimmed_resi_nums, helix_restraints, icl3_mid, disulfide_nums, complex_start, beta_start, gamma_start
                     
     def create_PIR_file(self, reference_dict, template_dict, template_file, hetatm_count, water_count):
         ''' Create PIR file from reference and template alignment (AlignedReferenceAndTemplate).
@@ -2413,7 +2468,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                     except:
                         pass
         for ref_seg, temp_seg in zip(reference_dict, template_dict):
-            if ref_seg=='HN':
+            if ref_seg in ['HN','Beta','Gamma']:
                 ref_sequence+='/'
                 temp_sequence+='/'
             for ref_res, temp_res in zip(reference_dict[ref_seg], template_dict[temp_seg]):
@@ -2458,7 +2513,7 @@ sequence:{uniprot}::::::::
             output_file.write(template.format(**context))
             
     def run_MODELLER(self, pir_file, template, reference, number_of_models, output_file_name, atom_dict=None, 
-                     helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None):
+                     helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None, beta_start=None, gamma_start=None):
         ''' Build homology model with MODELLER.
         
             @param pir_file: str, file name of PIR file with path \n
@@ -2487,7 +2542,7 @@ sequence:{uniprot}::::::::
         else:
             a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference, 
                                  assess_methods=(assess.DOPE), atom_selection=atom_dict, 
-                                 helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start)
+                                 helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start, beta_start=beta_start, gamma_start=gamma_start)
         
         a.starting_model = 1
         a.ending_model = number_of_models
@@ -2535,7 +2590,7 @@ class SilentModeller(object):
 
         
 class HomologyMODELLER(automodel):
-    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection, helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None):
+    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection, helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None, beta_start=None, gamma_start=None):
         super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
                                                assess_methods=assess_methods)
         self.atom_dict = atom_selection
@@ -2545,7 +2600,9 @@ class HomologyMODELLER(automodel):
         print('DISULFIDE')
         print(self.disulfide_nums)
         self.complex_start = complex_start
-
+        self.beta_start = beta_start
+        self.gamma_start = gamma_start
+        print(self.complex_start, self.beta_start, self.gamma_start)
     
     def identify_chain(self, seq_num):
         if self.complex_start!=None:
@@ -2558,6 +2615,15 @@ class HomologyMODELLER(automodel):
                     return ''
             elif len(self.chains)==3:
                 ValueError('DEBUG me: 3 chains during modeller run. Complex model with long ICL3')
+            elif len(self.chains)==4:
+                if seq_num<self.complex_start:
+                    return 'A'
+                elif self.complex_start<=seq_num<self.beta_start:
+                    return 'B'
+                elif self.beta_start<=seq_num<self.gamma_start:
+                    return 'C'
+                elif seq_num>=self.gamma_start:
+                    return 'D'
             else:
                 return ''
 
@@ -2627,11 +2693,11 @@ class HomologyMODELLER(automodel):
             if d[0]==0:
                 continue
             try:
-                if self.identify_chain(d[0]) in ['A','B']:
+                if self.identify_chain(d[0]) in ['A','B','C','D']:
                     formatted_res_id1 = '{}:{}'.format(d[0], self.identify_chain(d[0]))
                 else:
                     formatted_res_id1 = str(d[0])
-                if self.identify_chain(d[1]) in ['A','B']:
+                if self.identify_chain(d[1]) in ['A','B','C','D']:
                     formatted_res_id2 = '{}:{}'.format(d[1], self.identify_chain(d[1]))
                 else:
                     formatted_res_id2 = str(d[1])

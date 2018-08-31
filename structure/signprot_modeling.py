@@ -396,6 +396,36 @@ class SignprotModeling():
                         if atom_num_dict[PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())]>len(atoms):
                             self.trimmed_residues.append(key)
 
+        # Add Beta and Gamma chains
+        p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(self.main_structure.pdb_data.pdb))[0]
+        beta = p[self.signprot_complex.beta_chain]
+        gamma = p[self.signprot_complex.gamma_chain]
+        self.a.reference_dict['Beta'] = OrderedDict()
+        self.a.template_dict['Beta'] = OrderedDict()
+        self.a.alignment_dict['Beta'] = OrderedDict()
+        self.main_pdb_array['Beta'] = OrderedDict()
+        self.template_source['Beta'] = OrderedDict()
+        self.a.reference_dict['Gamma'] = OrderedDict()
+        self.a.template_dict['Gamma'] = OrderedDict()
+        self.a.alignment_dict['Gamma'] = OrderedDict()
+        self.main_pdb_array['Gamma'] = OrderedDict()
+        self.template_source['Gamma'] = OrderedDict()
+        for b_res in beta:
+            key = str(b_res.get_id()[1])
+            self.a.reference_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
+            self.a.template_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
+            self.a.alignment_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
+            atoms = [atom for atom in b_res]
+            self.main_pdb_array['Beta'][key] = atoms
+            self.template_source['Beta'][key] = [self.main_structure, self.main_structure]
+        for g_res in gamma:
+            key = str(g_res.get_id()[1])
+            self.a.reference_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
+            self.a.template_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
+            self.a.alignment_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
+            atoms = [atom for atom in g_res]
+            self.main_pdb_array['Gamma'][key] = atoms
+            self.template_source['Gamma'][key] = [self.main_structure, self.main_structure]
 
         # raise AssertionError
         # for i,j,k,l in zip(sign_a.reference_dict, sign_a.template_dict, sign_a.alignment_dict, signprot_pdb_array):
