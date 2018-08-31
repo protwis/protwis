@@ -11,6 +11,7 @@ import functools
 from contactnetwork.models import *
 from structure.models import Structure
 from protein.models import Protein, ProteinSegment
+from residue.models import Residue
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -190,6 +191,8 @@ def InteractionData(request):
     data['generic'] = generic
     data['segments'] = set()
     data['segment_map'] = {}
+    # For Max schematics TODO -- make smarter.
+    data['segment_map'] = {}
     data['aa_map'] = {}
 
     # Create a consensus sequence.
@@ -198,21 +201,35 @@ def InteractionData(request):
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs).all()
 
-    a = Alignment()
-    a.load_proteins(proteins)
-    a.load_segments(segments) #get all segments to make correct diagrams
-    # build the alignment data matrix
-    a.build_alignment(fetch_alternative_GN=False)
-    # calculate consensus sequence + amino acid and feature frequency
-    # a.calculate_statistics()
-    consensus = a.full_consensus
-
     data['gn_map'] = OrderedDict()
     data['pos_map'] = OrderedDict()
-    for aa in consensus:
-        if 'x' in aa.family_generic_number:
-            data['gn_map'][aa.family_generic_number] = aa.amino_acid
-            data['pos_map'][aa.sequence_number] = aa.amino_acid
+    data['segment_map_full'] = OrderedDict()
+    data['segment_map_full_gn'] = OrderedDict()
+    data['generic_map_full'] = OrderedDict()
+
+    if len(proteins)>1:
+        a = Alignment()
+        a.load_proteins(proteins)
+        a.load_segments(segments) #get all segments to make correct diagrams
+        # build the alignment data matrix
+        a.build_alignment(fetch_alternative_GN=False)
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+        consensus = a.full_consensus
+
+        for aa in consensus:
+            if 'x' in aa.family_generic_number:
+                data['gn_map'][aa.family_generic_number] = aa.amino_acid
+                data['pos_map'][aa.sequence_number] = aa.amino_acid
+                data['segment_map_full_gn'][aa.family_generic_number] = aa.segment_slug
+    else:
+        rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
+        for r in rs:
+            if (not generic):
+                data['pos_map'][r.sequence_number] = r.amino_acid
+                data['segment_map_full'][r.sequence_number] = r.protein_segment.slug
+                if r.display_generic_number:
+                    data['generic_map_full'][r.sequence_number] = r.short_display_generic_number()
 
     for i in interactions:
         pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']
@@ -295,3 +312,28 @@ def InteractionData(request):
 
     return JsonResponse(data)
 
+def ServePDB(request, pdbname):
+    structure=Structure.objects.filter(pdb_code__index=pdbname)
+    if structure.exists():
+        structure=structure.get()
+    else:
+         quit() #quit!
+
+    if structure.pdb_data is None:
+        quit()
+
+    only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number').all())
+    only_gn = []
+    segments = {}
+    for gn in only_gns:
+        only_gn.append(gn[1])
+        if gn[0] not in segments:
+            segments[gn[0]] = []
+        segments[gn[0]].append(gn[1])
+    data = {}
+    data['pdb'] = structure.pdb_data.pdb
+    data['only_gn'] = only_gn
+    data['segments'] = segments
+    data['chain'] = structure.preferred_chain
+
+    return JsonResponse(data)
