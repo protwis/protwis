@@ -86,49 +86,25 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 .radius(function(d) { return d.y; })
                 .angle(function(d) { return d.x / 180 * Math.PI; });
 
+            // create reference list of edges
+            var edges = new Array();
+            var edgeIndex = new Array();
             if (contiguousOutward) {
-              // create dictionary of edges
-              var edges = new Array();
-              var edgeIndex = new Array();
-              var previous = null;
-              var first = null;
-              for (var i=0; i < nodes.length; i++ ){
-                  if (nodes[i].depth==2){
-                      if (first == null){
-                          first = nodes[i];
-                      } else if (nodes[i].parent != previous.parent) {
-                          // add middle point now and previous
-                          edgeIndex.push(previous.parent.name + "_" + nodes[i].parent.name);
-                          edges.push([(previous.x + nodes[i].x)/ 2, (previous.y + nodes[i].y)/ 2]);
-                      }
-                      previous = nodes[i];
-                  }
-              }
-              if (first != null){
-                  edgeIndex.push(previous.parent.name + "_" + first.parent.name);
-                  edges.push([(previous.x + first.x)/ 2, (previous.y + first.y)/ 2]);
+              var subset = structures.filter(value => -1 !== Object.keys(graph.segments).indexOf(value));
+              for (var i = 1; i < subset.length; i++) {
+                  edgeIndex.push(subset[i-1] + "_" + subset[i]);
+                  if (i == (subset.length-1))
+                    edgeIndex.push(subset[i] + "_" + subset[0]);
               }
 
-              // Only TMs
-              var previous = null;
-              var first = null;
-              for (var i=0; i < nodes.length; i++ ){
-                  if (nodes[i].depth==2 && (nodes[i].parent.name.indexOf('TM') !== -1)){
-                      if (first == null){
-                          first = nodes[i];
-                      } else if (nodes[i].parent != previous.parent) {
-                          if (! edgeIndex.includes(previous.parent.name + "_" + nodes[i].parent.name)){
-                            // add middle point now and previous
-                            edgeIndex.push(previous.parent.name + "_" + nodes[i].parent.name);
-                            edges.push([(previous.x + nodes[i].x)/ 2, (previous.y + nodes[i].y)/ 2]);
-                          }
-                      }
-                      previous = nodes[i];
-                  }
-              }
-              if (first != null){
-                  edgeIndex.push(previous.parent.name + "_" + first.parent.name);
-                  edges.push([(previous.x + first.x)/ 2, (previous.y + first.y)/ 2]);
+              // contiguous TMs
+              subset = structures.filter(value => -1 !== Object.keys(graph.segments).indexOf(value) && value.substring(0,2)=="TM");
+              for (var i = 1; i < subset.length; i++) {
+                  var match = subset[i-1] + "_" + subset[i];
+                  if (edgeIndex.indexOf(match) === -1)
+                      edgeIndex.push(match);
+                  if (i == (subset.length-1) && edgeIndex.indexOf(subset[i] + "_" + subset[0]) === -1)
+                    edgeIndex.push(subset[i] + "_" + subset[0]);
               }
 
               if (edgeIndex.length <= 5){
@@ -158,7 +134,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                           d[2] = {
                               //x: edges[findPos][0],
                               x: (d[0].x + d[4].x)/2,
-                              y: edges[findPos][1] + discRad + outwardShift*w/2 * (Math.abs(d[4].x-d[0].x)/180) * 4.5
+                              y: d[0].y + outwardShift*w/2 * (Math.abs(d[4].x-d[0].x)/180) * 4.5
                           }
                           d[3] = {
                             x: d[4].x,
