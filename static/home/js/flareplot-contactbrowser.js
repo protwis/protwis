@@ -18,7 +18,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
     var ry = rx;
 
     var rotate = 0;
-    var discRad = 45;
+    var discRad = 50;
 
     if( typeof inputGraph == "string" ){
         inputGraph = JSON.parse(inputGraph);
@@ -442,10 +442,9 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     var edge = {
                         source: t.tree[e.name1],
                         target: t.tree[e.name2],
-                        key: "" + t.tree[e.name1].key + "-" + t.tree[e.name2].key,
+                        key: "" + t.tree[e.name1].key + "-" + t.tree[e.name2].key ,
                         color: e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
-                        interaction: e.interaction || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
-                        frequency: e.frequency || e.count || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
+                        interactions: e.interactions,
                         segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
                         opacity: e.opacity || graph.defaults.edgeOpacity || 1,
                         width: e.width || graph.defaults.edgeWidth || 1
@@ -458,9 +457,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             target: edge.target,
                             key: edge.key,
                             color: edge.color,
-                            interaction: edge.interaction,
-                            count: edge.count,
-                            frequency: edge.frequency,
+                            interactions: edge.interactions,
                             segment: edge.segment,
                             opacity: edge.opacity,
                             width: edge.width
@@ -470,9 +467,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             target: edge.target,
                             key: edge.key,
                             color: edge.color,
-                            interaction: edge.interaction,
-                            count: edge.count,
-                            frequency: edge.frequency,
+                            interactions: edge.interactions,
                             segment: edge.segment,
                             opacity: edge.opacity,
                             width: edge.width
@@ -627,6 +622,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
                         ret += " toggled";
                     }
+                    ret += " " + Object.keys(d.interactions).join(" ");
                     return ret;
                 })
                 //.attr("class", function(d) { return "link source-" + d.source.key + " target-" + d.target.key; })
@@ -669,6 +665,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
                         ret += " toggled";
                     }
+                    ret += " " + Object.keys(d.interactions).join(" ");
                     return ret;
                 })
                 //.attr("class", function(d) { return "link source-" + d.source.key + " target-" + d.target.key; })
@@ -712,8 +709,10 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 })
                 .attr("class", function(d) {
                     var ret = "link source-" + d.source.key + " target-" + d.target.key;
-                    if( d.source.key in toggledNodes || d.target.key in toggledNodes)
+                    if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
                         ret+=" toggled";
+                    }
+                    ret += " " + Object.keys(d.interactions).join(" ");
                     return ret;
                 })
                 .style("stroke",function(d){ return d.color; })
@@ -1126,7 +1125,9 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             return visibleEdges;
         }
 
-        function updateColors(color) {
+        var edgeColoring = "none";
+        function updateColors(color, interactions) {
+            edgeColoring = color;
             switch(color){
               case "frequency":
                 svg.selectAll("path.link")
@@ -1134,7 +1135,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 break;
               case "interactions":
                 svg.selectAll("path.link")
-                    .style("stroke", function(d){ return d.interaction; });
+                    .style("stroke", function(d){ return getColorStrongestInteraction(Object.keys(d.interactions).filter(value => -1 !== interactions.indexOf(value)), false); });
                 break;
               case "segment":
                 svg.selectAll("path.link")
@@ -1144,6 +1145,23 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return d.color; });
                 break;
+            }
+        }
+
+        function showInteractions(interactions) {
+            // hide all paths
+            svg.selectAll("path.link")
+                .style("visibility", "hidden");
+
+            // update coloring (if based on interactions)
+            if (edgeColoring == "interactions")
+              updateColors(edgeColoring, interactions);
+
+
+            // show all with interaction in list (class)
+            for (var i = 0; i < interactions.length; i++) {
+                svg.selectAll("path.link."+interactions[i])
+                    .style("visibility", "visible");
             }
         }
 
@@ -1185,6 +1203,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             addEdgeHoverListener: addEdgeHoverListener,
             addFrameListener: addFrameListener,
             updateColors: updateColors,
+            showInteractions: showInteractions,
             graph: graph//, for debugging purposes
         }
     }) ();

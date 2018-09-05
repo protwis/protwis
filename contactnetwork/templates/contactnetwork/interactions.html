@@ -3,7 +3,7 @@
 
 {% block content %}
 
-    
+
       <ul class="nav nav-tabs" id='mode_nav'>
   			<li class="active">
                   <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
@@ -82,8 +82,8 @@
                         <div class="btn btn-success btn-lg pull-right go-button"><span>Go</span></div>
                     </div>
                 </div>
-                <ul class="nav nav-tabs">
-                  <li class="active"><a href="#single-matrix-tab" data-toggle="tab">Matrix</a></li>
+                <ul class="nav nav-tabs" id="single-crystal-tabs">
+                  <li class="active"><a href="#single-matrix-tab" data-toggle="tab" id="single-matrix-tab-link">Matrix</a></li>
                   <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
                   <li><a href="#single-schematic-con-tab" data-toggle="tab" id="single-schematic-con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-schematic-non-tab" data-toggle="tab" id="single-schematic-non-tab-link">2D Schematic (Non)</a></li>
@@ -265,8 +265,8 @@
                 </div>
 
 
-                <ul class="nav nav-tabs">
-                  <li class="active"><a href="#single-group-matrix-tab" data-toggle="tab">Matrix</a></li>
+                <ul class="nav nav-tabs" id="single-crystal-group-tabs">
+                  <li class="active"><a href="#single-group-matrix-tab" data-toggle="tab" id="single-group-matrix-tab-link">Matrix</a></li>
                   <li><a href="#single-group-flareplot-tab" data-toggle="tab" id="single-group-flareplot-tab-link">Flareplot</a></li>
                   <li><a href="#single-group-schematic-con-tab" data-toggle="tab" id="single-group-schematic-con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-group-schematic-non-tab" data-toggle="tab" id="single-group-schematic-non-tab-link">2D Schematic (Non)</a></li>
@@ -451,8 +451,8 @@
                 </div>
 
 
-                <ul class="nav nav-tabs">
-                  <li class="active"><a href="#two-groups-matrix-tab" data-toggle="tab">Matrix</a></li>
+                <ul class="nav nav-tabs" id="two-crystal-groups-tabs">
+                  <li class="active"><a href="#two-groups-matrix-tab" data-toggle="tab" id="two-groups-matrix-tab-link">Matrix</a></li>
                   <li><a href="#two-groups-flareplot-tab" data-toggle="tab" id="two-groups-flareplot-tab-link">Flareplot</a></li>
                   <li><a href="#two-groups-schematic-con-tab" data-toggle="tab" id="two-groups-schematic-con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#two-groups-schematic-non-tab" data-toggle="tab" id="two-groups-schematic-non-tab-link">2D Schematic (Non)</a></li>
@@ -551,7 +551,7 @@
             <!-- END TWO CRYSTAL GROUPS TAB -->
         </div>
 
-                      
+
 
     <!-- BEGIN SINGLE CRYSTAL PDB CHOOSER MODAL -->
     <div class="modal fade" id="single-crystal-pdb-modal-table" role="dialog">
@@ -650,7 +650,7 @@
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
     <script src="{% static 'home/js/select2.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> 
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script>
         window.zoomHeatmap = {};
@@ -673,7 +673,7 @@
 
         function hidePopovers() {
             $('.popover').each(function(){
-                $(this).popover('hide');
+                $(this).remove();
             });
         }
 
@@ -720,7 +720,7 @@
         }
 
         function getInteractionStrength(i) {
-            switch (i) { 
+            switch (i) {
                 case getFriendlyInteractionName('polarsidechainsidechaininteraction'):
                 case getFriendlyInteractionName('polarbackbonesidechaininteraction'):
                 case'polarsidechainsidechaininteraction':
@@ -744,9 +744,30 @@
             }
         }
 
+        function getColorStrongestInteraction(interactions, rgb = true) {
+            var maxStrength = 0;
+            for (var i = 0; i < interactions.length; i++)
+              maxStrength = Math.max(maxStrength, getInteractionStrength(interactions[i].replace(/-/g, ' ')));
+
+            return getInteractionColor(maxStrength, rgb);
+        }
+
+        function getFrequencyColor(interactions, rgb = true) {
+            var maxCount = 0;
+
+            // if no selection return any frequency color
+
+            // else filter and return highest frequency color?
+            Object(interactions.keys).forEach( key => {
+                // TODO add check for disabled interactions
+                //maxCount = Math.max(maxStength, getInteractionStrength(interactions[i]));
+
+            });
+
+            return getInteractionColor(maxStength, rgb);
+        }
 
         function getStrongestInteractionType(interactions) {
-
             if ($.inArray('polarsidechainsidechaininteraction', interactions) > -1)
                 return 'polarsidechainsidechaininteraction';
 
@@ -808,8 +829,7 @@
         }
 
 
-        function getInteractionColor(interaction) {
-
+        function getInteractionColor(interaction, rgb = true) {
             var r, g, b;
 
             switch (interaction) {
@@ -817,7 +837,9 @@
                 case 'polarbackbonesidechaininteraction':
                 case getFriendlyInteractionName('polarsidechainsidechaininteraction'):
                 case getFriendlyInteractionName('polarbackbonesidechaininteraction'):
-                    r = 254; g = 0; b = 16;
+                case 4:
+                    //r = 254; g = 0; b = 16;
+                    r = 255; g = 98; b = 108;
                     break;
                 case 'facetofaceinteraction':
                 case 'facetoedgeinteraction':
@@ -825,21 +847,30 @@
                 case getFriendlyInteractionName('facetofaceinteraction'):
                 case getFriendlyInteractionName('facetoedgeinteraction'):
                 case getFriendlyInteractionName('picationinteraction'):
-                    r = 94; g = 241; b = 242;
+                case 3:
+                    //r = 94; g = 241; b = 242;
+                    r = 255; g = 166; b = 98;
                     break;
                 case 'hydrophobicinteraction':
                 case getFriendlyInteractionName('hydrophobicinteraction'):
-                    r = 0; g = 117; b = 220;
+                case 2:
+                    //r = 0; g = 117; b = 220;
+                    r = 5; g = 200; b = 90;
                     break;
                 case 'vanderwaalsinteraction':
                 case getFriendlyInteractionName('vanderwaalsinteraction'):
-                    r = 89; g = 252; b = 197;
+                case 1:
+                    //r = 89; g = 252; b = 197;
+                    r = 100; g = 100; b = 100;
                     break;
                 default:
                     r = 0; g = 0; b = 0;
             }
 
-            return { r: r, g: g, b: b };
+            if (rgb)
+              return { r: r, g: g, b: b };
+            else
+              return rgb2hex(r, g, b);
         }
 
         function getFriendlyInteractionName(interaction) {
@@ -859,6 +890,27 @@
                     return 'Unknown';
             }
         }
+
+        /*function getFriendlyInteractionName(interaction) {
+            switch (interaction) {
+                case 'polarsidechainsidechaininteraction':
+                return 'Polar (SC-SC)';
+                case 'polarbackbonesidechaininteraction':
+                    return 'Polar (BB-SC)';
+                case 'facetofaceinteraction':
+                  return 'Aromatic (F-F)';
+                case 'facetoedgeinteraction':
+                  return 'Aromatic (F-E)';
+                case 'picationinteraction':
+                    return 'Cation - pi';
+                case 'hydrophobicinteraction':
+                    return 'Hydrophobic';
+                case 'vanderwaalsinteraction':
+                    return 'Van der Waals';
+                default:
+                    return 'Unknown';
+            }
+        }*/
 
         function getSegmentColor(segmentName) {
             var r, g, b;
@@ -901,45 +953,45 @@
 
         function getAminoAcidOneLetterCode(threeLetterCode) {
             switch (threeLetterCode.toUpperCase()) {
-                case 'ALA': 
-                    return 'A'; 
-                case 'ARG': 
-                    return 'R'; 
-                case 'ASN': 
-                    return 'N'; 
-                case 'ASP': 
+                case 'ALA':
+                    return 'A';
+                case 'ARG':
+                    return 'R';
+                case 'ASN':
+                    return 'N';
+                case 'ASP':
                     return 'D';
-                case 'CYS': 
-                    return 'C'; 
-                case 'GLN': 
-                    return 'Q'; 
-                case 'GLU': 
-                    return 'E'; 
-                case 'GLY': 
+                case 'CYS':
+                    return 'C';
+                case 'GLN':
+                    return 'Q';
+                case 'GLU':
+                    return 'E';
+                case 'GLY':
                     return 'G';
-                case 'HIS': 
-                    return 'H'; 
-                case 'ILE': 
-                    return 'I'; 
-                case 'LEU': 
-                    return 'L'; 
-                case 'LYS': 
+                case 'HIS':
+                    return 'H';
+                case 'ILE':
+                    return 'I';
+                case 'LEU':
+                    return 'L';
+                case 'LYS':
                     return 'K';
-                case 'MET': 
-                    return 'M'; 
-                case 'PHE': 
-                    return 'F'; 
-                case 'PRO': 
-                    return 'P'; 
-                case 'SER': 
+                case 'MET':
+                    return 'M';
+                case 'PHE':
+                    return 'F';
+                case 'PRO':
+                    return 'P';
+                case 'SER':
                     return 'S';
-                case 'THR': 
-                    return 'T'; 
-                case 'TRP': 
-                    return 'W'; 
-                case 'TYR': 
-                    return 'Y'; 
-                case 'VAL': 
+                case 'THR':
+                    return 'T';
+                case 'TRP':
+                    return 'W';
+                case 'TYR':
+                    return 'Y';
+                case 'VAL':
                     return 'V';
                 default:
                     return null;
@@ -949,7 +1001,7 @@
         function downloadSVG(svgSelector, name) {
           var svgClone = $(svgSelector).clone();
           svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
-          
+
           var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
 
           downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
@@ -1040,35 +1092,35 @@
                         select_type: 'select2',
                         filter_default_label: "Residue #1",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 1,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Residue #2",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 2,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Segment #1",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 3,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Segment #2",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "GN #1",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 5,
                         filter_type: "multi_select",
@@ -1084,14 +1136,14 @@
                         filter_default_label: "Amino acid #1",
                         filter_reset_button_text: false,
 
-                    }, 
+                    },
                     {
                         column_number : 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Amino acid #2",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 8,
                         filter_type: "multi_select",
@@ -1099,7 +1151,7 @@
                         filter_default_label: "Interaction Type",
                         filter_reset_button_text: false,
 
-                    }, 
+                    },
                 ],
                 {
                     cumulative_filtering: false
@@ -1404,13 +1456,13 @@
 
                             contentGroup.add(cell);
 
-                            // Add tooltip to cell
                             cell = $(heatMapSelector + ' rect.heatmap-interaction#' + interactionId);
 
+                            // Add tooltip to cell
                             cell.tooltip({
                                 'container': heatMapSelector,
                                 'placement': 'top',
-                                'delay': 75,
+                                'delay': 0,
                                 'html': true,
                                 'title': title
                             });
@@ -1766,7 +1818,7 @@
               '</button>';
 
 
-            $(heatMapSelector + ' .heatmap-legend').append(legendHtml); 
+            $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
 
             $( function() {
               $( ".slider-range" ).slider({
@@ -1795,7 +1847,7 @@
                             $(this).show();
                         }
                     });
-                
+
             }
 
             // Make zoomable
@@ -1993,9 +2045,9 @@
 
                         var cell = heatmap.rect(i, j, 1, 1);
 
-                        var title =  'Residues ' + seq_i + ', ' + seq_j + '<br />' 
-                                   + 'Frequency group 1: ' + f1.toFixed(2)+ '<br />' 
-                                   + 'Frequency group 2: ' + f2.toFixed(2)+ '<br />' 
+                        var title =  'Residues ' + seq_i + ', ' + seq_j + '<br />'
+                                   + 'Frequency group 1: ' + f1.toFixed(2)+ '<br />'
+                                   + 'Frequency group 2: ' + f2.toFixed(2)+ '<br />'
                                    + 'Frequency difference: ' + fDiff.toFixed(2)+ '<br />' ;
 
                         var popoverTable = '<table class="table">'
@@ -2090,7 +2142,7 @@
             legendHtml += '<br /><button onclick="downloadTwoCrystalGroupsCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
               '</button>';
 
-            $(heatMapSelector + ' .heatmap-legend').append(legendHtml); 
+            $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
 
             $( function() {
               $( ".slider-range" ).slider({
@@ -2220,7 +2272,7 @@
                         });
                     }
 
-                }); 
+                });
 
                 // Update data
                 var segments = [];
@@ -2286,7 +2338,7 @@
                             }
                         });
                     }
-                }); 
+                });
 
                 // Update data
                 var interactions = [];
@@ -2302,37 +2354,51 @@
 
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
-                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
-                var segments = JSON.parse($(selector + ' .segments-input').val());
-                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                $(".heatmap").hide();
-                $(".heatmap-legend").hide();
-                
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
-                if (!$(selector + ' .interactions-input').val() == null) 
-                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                //var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+                var pdb = ['3rze'];
+                if (pdb.length > 0 ){
+                    var segments = JSON.parse($(selector + ' .segments-input').val());
+                    var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                    $(".heatmap").hide();
+                    $(".heatmap-legend").hide();
 
-                $.getJSON( '/contactnetwork/interactiondata',
-                {
-                    'segments': segments,
-                    'generic': generic,
-                    'pdbs': pdb,
-                    'interaction_types': interactionTypes
-                },
-                function( data ) {
-                    // Re-render heatmap
-                    $(".heatmap").show();
-                    $(".heatmap-legend").show();
-                    heatmapFunction(data, selector + ' .heatmap-container');
-                    $("#svgloading").remove()
-                    // Re-render flareplot
-                    createFlareplot(600, parseGPCRdb2flare(data), selector + " .flareplot-container"); //flareplot-container
-                    createSchematicPlot(data, ".schematic-con-container"); //.schematic-container
+                    $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                    if (!$(selector + ' .interactions-input').val() == null)
+                        interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
-                    createSchematicPlot(data, ".schematic-non-container", {isContiguousPlot: false})
+                    $.getJSON( '/contactnetwork/interactiondata',
+                    {
+                        'segments': segments,
+                        'generic': generic,
+                        'pdbs': pdb,
+                        'interaction_types': interactionTypes
+                    },
+                    function( data ) {
+                        // Re-render heatmap
+                        $(".heatmap").show();
+                        $(".heatmap-legend").show();
 
-                    createNGLview("single",pdb);
-                });
+                        // make sure heatmap is enabled an if necessary switch back
+                        var activeTab = $("ul" + selector + "s li.active")[0].firstChild.id;
+                        if (activeTab.indexOf("matrix") < 0)
+                            $("ul" + selector+ "s a:first").tab('show');
+
+                        heatmapFunction(data, selector + ' .heatmap-container');
+                        $("#svgloading").remove();
+
+                        // switch (back?) to previously active tab
+                        //$("ul" + selector+ "s a#"+activeTab).tab('show');
+
+                        // Re-render flareplot
+                        createFlareplotBox(data, selector + " .flareplot-container");
+
+                        createSchematicPlot(data, ".schematic-con-container"); //.schematic-container
+
+                        createSchematicPlot(data, ".schematic-non-container", {isContiguousPlot: false})
+
+                        createNGLview("single",pdb);
+                    });
+                }
             });
         }
 
@@ -2344,7 +2410,7 @@
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
                 $(".heatmap-legend").hide();
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
+                $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (0%)</span>');
 
                 $.getJSON( '/contactnetwork/interactiondata',
                 {
@@ -2354,9 +2420,8 @@
                     'interaction_types': interactionTypes
                 },
                 function( data1 ) {
- 
                     $("#svgloading").remove();
-                    $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (33%)</span>');
+                    $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (33%)</span>');
                     $.getJSON( '/contactnetwork/interactiondata',
                     {
                         'segments': segments,
@@ -2366,19 +2431,20 @@
                     },
                     function( data2 ) {
                         $("#svgloading").remove();
-                        $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (66%)</span>');
+                        $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
                         $.getJSON( '/contactnetwork/interactiondata',
                         {
                             'segments': segments,
                             'generic': generic,
                             'pdbs': pdbs1.concat(pdbs2),
                             'interaction_types': interactionTypes
-                        }, function ( data3 ) {
-                        // Re-render heatmap
-                        $(".heatmap").show();
-                        $(".heatmap-legend").show();
-                        $("#svgloading").remove()
-                        heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
+                        },
+                        function( data3 ) {
+                            // Re-render heatmap
+                            $(".heatmap").show();
+                            $(".heatmap-legend").show();
+                            $("#svgloading").remove()
+                            heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
                         });
                     });
                 });
@@ -2398,7 +2464,7 @@
 
           if (mode=='Single group of structures') {
             var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-            var selected_visible = $('.pdb_selected:checked').length 
+            var selected_visible = $('.pdb_selected:checked').length
             var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
 
             if (total_selected==selected_visible) {
@@ -2409,10 +2475,10 @@
           } else if (mode=='Two groups of structures') {
             group = $('.tableview:visible').attr('group-number');
             if (group) mode = mode + group;
-            //#FIXME 
+            //#FIXME
             var ModalpdbsCountSelector = '#two-crystal-group-pdbs-modal-'+group+'-text';
             var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-            var selected_visible = $('.pdb_selected:checked:visible').length 
+            var selected_visible = $('.pdb_selected:checked:visible').length
             if (total_selected==selected_visible) {
               $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
             } else {
@@ -2466,7 +2532,7 @@
             $(pdbsInputSelector).val(JSON.stringify(pdbs));
             // Update view
             $(pdbsCountSelector).html(pdbs.length);
-          } 
+          }
           update_text_in_modal();
         }
 
@@ -2478,8 +2544,8 @@
           if (mode=='Single group of structures') {
             var pdbs = [];
 
-            // REMOVE EXISITING? Probably not, more logically that filtering adds more 
-            // $('input', oTable.cells().nodes()).prop('checked',false); 
+            // REMOVE EXISITING? Probably not, more logically that filtering adds more
+            // $('input', oTable.cells().nodes()).prop('checked',false);
 
             if (show_all) {
               $('.pdb_selected:visible').prop("checked",true);
@@ -2518,11 +2584,11 @@
             $(pdbsInputSelector).val(JSON.stringify(pdbs));
             // Update view
             $(pdbsCountSelector).html(pdbs.length);
-          } 
+          }
 
           update_text_in_modal();
         }
-        
+
         $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
           {
               return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
@@ -2571,7 +2637,7 @@
                         select_type: 'select2',
                         filter_default_label: "Class",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 1,
                         filter_type: "multi_select",
@@ -2581,7 +2647,7 @@
                         },
                         filter_default_label: "PDB",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 2,
                         filter_type: "multi_select",
@@ -2591,7 +2657,7 @@
                         filter_default_label: "Receptor",
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 3,
                         filter_type: "multi_select",
@@ -2603,14 +2669,14 @@
                         filter_default_label: "Family",
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Species",
                         filter_reset_button_text: false,
-                    }, 
+                    },
                     {
                         column_number : 5,
                         filter_type: "multi_select",
@@ -2632,7 +2698,7 @@
                         filter_default_label: "Representative",
                         filter_reset_button_text: false,
 
-                    }, 
+                    },
                 ],
                 {
                     cumulative_filtering: false
@@ -2648,6 +2714,100 @@
           };
         }
 
+        var flareplot = {};
+        var contiguous = false;
+        var interactionsToggleList = [];
+        function createFlareplotBox(data, container, toggle = false) {
+            // clean
+            if (toggle){
+                $(container).children().last().remove();
+            } else {
+                // in case refresh with new parameters => reset
+                contiguous = false;
+                $(container).html("");
+            }
+
+            // add menu
+            if (!toggle){
+                var newDiv = document.createElement("div");
+                // TODO make IDs unique for mode
+                newDiv.setAttribute("class", "flareplot-legend");
+//                newDiv.setAttribute("style", "position: absolute; top: 0px; left: 0px")
+                var content = '<div class="controls">'
+                                  +'<h3>Controls</h3>'
+                                  +'<p>Line colors: <select id="flareplot_color"><option value="none">None (gray)</option><option value="segment">GPCR segment</option><option value="interactions">Interaction Type</option><option value="frequency">Interaction Frequency/Count</option></select></p>'
+
+
+
+                // only possible with more than 4 segments, otherwise it will become a mess
+                if (data.segments.length > 4)
+                    content += '<p>Contacts contiguous segments outwards: <input type=checkbox id="flareplot_contiguous"></p>';
+
+                // Populate heatmap legend
+
+                // TODO Optimize/generalize interaction set selection - code duplication
+                var interactionTypes = new Set(["Polar", "Aromatic", "Hydrophobic", "Van der Waals"]);
+
+                // Add interactions color legend
+                content += '<h3>Toggle interactions</h3><ul>';
+
+                interactionTypes = Array.from(interactionTypes).sort(function (i1, i2) {
+                    return getInteractionStrength(i2) - getInteractionStrength(i1);
+                });
+
+                interactionTypes.forEach(function(i) {
+                    var rgb = getInteractionColor(i, false);
+                    content += '<li>'
+                            + '<div class="color-box" style="background-color: ' + rgb + '">' + '<input type="checkbox" data-interaction-type="' + i.replace(/ /g,"-") +'"></input>' + '</div><p>' + i + '</p>'
+                            + '</li>';
+                });
+                content += '</ul></div>';
+
+                newDiv.innerHTML = content;
+
+                $(container).append(newDiv);
+
+                $(container+" #flareplot_contiguous").click(function(e){
+                    $(function() {
+                      contiguous = !contiguous;
+                      createFlareplotBox(data, container, true);
+                    });
+                });
+
+
+                $(container+" #flareplot_color").data({ "referenceContainer" : container })
+                $(container+" #flareplot_color").change(function(e){
+                    flareplot[$(this).data("referenceContainer")].updateColors($(this).val(), interactionsToggleList);
+                });
+
+                $(container + ' .flareplot-legend .color-box input[type=checkbox]').each(function() {
+                    $(this).prop('checked', true);
+                    // init toggle list
+                    interactionsToggleList.push($(this).data('interaction-type'));
+                    $(this).data({ "referenceContainer" : container })
+                    $(this).change(function() {
+                        // toggle interactions in flareplot
+                        interactionsToggleList = [];
+                        $(container + ' .flareplot-legend input[type=checkbox]').each(function() {
+                          if ($(this).prop('checked'))
+                              interactionsToggleList.push($(this).data('interaction-type'));
+                        });
+
+                        // toggle interactions in flareplot
+                        flareplot[$(this).data("referenceContainer")].showInteractions(interactionsToggleList);
+                    });
+                });
+            }
+
+            // create flareplot
+            flareplot[container] = createFlareplot(800, parseGPCRdb2flare(data), container, contiguous);
+
+            // update coloring and visibility if toggled
+            if (toggle) {
+                flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
+                flareplot[container].showInteractions(interactionsToggleList);
+            }
+        }
 
         var stage = [];
         var color_schemes = [];
@@ -2658,11 +2818,11 @@
             stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
 
             var pdb_data
-            var original_o 
+            var original_o
             blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
             var reps = {} // store ngl representations
 
-        
+
 
             $.getJSON( "pdb/"+pdb,
               function( data ) {
@@ -2697,14 +2857,14 @@
                 stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
                     original_o = o
                     console.log(pdb_data['segments']['TM1'].join(", "))
-                    
+
 
 
                     gpcr_rep = o.addRepresentation( "cartoon", {
-                    sele: ":"+pdb_data['chain'], 
+                    sele: ":"+pdb_data['chain'],
                     // radiusType: '',
                     radiusSize: 1,
-                    radiusScale: 0.7, 
+                    radiusScale: 0.7,
                     // color: "atomindex",
                     // colorScale: "Accent",
                     // color: "residueindex",
@@ -2715,7 +2875,7 @@
                     roughness: 1,
                     opacity: 1,
                     depthWrite: true
-                    });  
+                    });
 
                     if (mode=='single') {
                       var links = []
@@ -2736,12 +2896,12 @@
                           res_int.push(resNo1);
                           res_int.push(resNo2);
                           links.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
-                          console.log(genNo1,genNo2)
+//                          console.log(genNo1,genNo2)
                           if ((genNo1=='-') || (genNo2=='-')) return
                           links_gn.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
                         });
                     }
-                    console.log(links_gn);
+//                    console.log(links_gn);
 
                     var linkMap = {}
                     links.forEach(function (link) {
@@ -2803,13 +2963,13 @@
                     })
 
                     reps.int_res = o.addRepresentation( "spacefill", {
-                      sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and (.CA)", 
+                      sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and (.CA)",
                       color: "red",
                       // colorScale: ["#44f", "#444"],
                       radiusScale: .2,
                       name: "res",
                       visible: false
-                    });  
+                    });
 
 
                     reps.ball_all = o.addRepresentation("ball+stick", {
@@ -2846,7 +3006,7 @@
                     // })
 
 
-                    // o.addRepresentation( "distance", { 
+                    // o.addRepresentation( "distance", {
                     //   atomPair: links.map(function (l) {
                     //     return l.atoms
                     //   }),
@@ -2896,7 +3056,6 @@
 
 
             $("#ngl-"+mode+" #ngl_color").change(function(e){
-                console.log('changed color!',$(this).val(),"tothis");
                 gpcr_rep.setParameters({
                   color: color_schemes[$(this).val()]
                 });
@@ -2964,7 +3123,7 @@
                   reps.ngl_contacts.setVisibility(false);
                 }
             });
-            
+
         }
 
         $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
@@ -3044,19 +3203,19 @@
         #filters{
             float:left;
           display:none;
-          position:absolute; 
-          background:white; 
-          border: 1px solid #D1C9C2; 
-          border-top: 1; 
-          width: 400px; 
-          margin: 0 auto; 
-          padding:  7px 15px; 
-          text-align: left; 
-          -webkit-border-bottom-right-radius: 6px; 
-          -webkit-border-bottom-left-radius: 6px; 
-          -moz-border-radius-bottomright: 6px; 
-          -moz-border-radius-bottomleft: 6px; 
-          border-bottom-right-radius: 6px; 
+          position:absolute;
+          background:white;
+          border: 1px solid #D1C9C2;
+          border-top: 1;
+          width: 400px;
+          margin: 0 auto;
+          padding:  7px 15px;
+          text-align: left;
+          -webkit-border-bottom-right-radius: 6px;
+          -webkit-border-bottom-left-radius: 6px;
+          -moz-border-radius-bottomright: 6px;
+          -moz-border-radius-bottomleft: 6px;
+          border-bottom-right-radius: 6px;
           border-bottom-left-radius: 6px;
           z-index: 1;
             font-size: 10px;
@@ -3092,7 +3251,7 @@
         .heatmap {
             border: 1px lightslategrey solid;
             width: 100%;
-            height: 500px;
+            height: 800px;
         }
 
         @media screen and (max-width: 992px) {
@@ -3118,7 +3277,7 @@
           border: none;
         }
 
-        .heatmap-legend {
+        .heatmap-legend, .flareplot-legend {
             position: absolute;
             right: 15px;
             top: 15px;
@@ -3127,31 +3286,31 @@
             background-color: white;
         }
 
-        .heatmap-legend ul {
+        .heatmap-legend ul, .flareplot-legend ul {
             list-style-type: none;
             padding: 0;
             margin: 0;
         }
 
-        .heatmap-legend ul li {
+        .heatmap-legend ul li, .flareplot-legend ul li {
             padding: 0;
             margin: 0;
         }
 
-        .heatmap-legend ul li p {
+        .heatmap-legend ul li p, .flareplot-legend ul li p {
             padding: 0;
             margin: 0;
             margin-left: 20px;
         }
 
-        .heatmap-legend .color-box {
+        .heatmap-legend .color-box, .flareplot-legend .color-box {
             width: 18px;
             height: 18px;
             float: left;
             margin-top: 2px;
         }
 
-        .heatmap-legend input[type=checkbox] { 
+        .heatmap-legend input[type=checkbox], .flareplot-legend input[type=checkbox] {
             position: relative;
             bottom: 2px;
             left: 3px;
@@ -3246,23 +3405,23 @@
     <!-- 2D schematics -->
 
     <script type="text/javascript" src="{% static 'home/js/schematicplot.js' %}"> </script>
-    
+
     <script type="text/javascript" src="https://d3js.org/d3.v3.min.js"> </script>
 
     <!-- TODO: Solve the conflict between flareplot-main.js and the existing PDB selector -->
-    <script type="text/javascript" src="{% static 'home/js/flareplot-main.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/flareplot-contactbrowser.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/flareplot-selectors.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/flareplot-rangeslider.js' %}"> </script>
 
-    <link href="{% static 'home/css/flareplot-main.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
 
     <style>
-        .flareplot-container div{
+        .flareplot-container div.flareplot{
             position: relative;
             left: 50%;
-            margin-left: -300px;
+            margin-left: -400px;
         }
         #sliderDiv {
             height: 30px;
