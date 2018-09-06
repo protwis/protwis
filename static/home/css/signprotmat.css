@@ -1,0 +1,111 @@
+/* make the svg responsive to the page width */
+.svg-container {
+    display: inline-block;
+    position: relative;
+    width: 80%;
+    padding-bottom: 70%;
+    /* aspect ratio */
+    vertical-align: top;
+    overflow: hidden;
+}
+
+.svg-content {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+
+/* styling for hover tooltip */
+.d3-tip {
+    line-height: 1;
+    font-weight: bold;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    border-radius: 2px;
+    pointer-events: none;
+    text-align: center;
+}
+
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+    box-sizing: border-box;
+    display: inline;
+    font-size: 10px;
+    width: 100%;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.8);
+    position: absolute;
+    pointer-events: none;
+}
+.d3-tip.n:after {
+    content: "\25BC";
+    margin: -2px 0 0 0;
+    top: 100%;
+    left: 0;
+    text-align: center;
+}
+
+
+/* styling for the major ticks of the grid */
+.x.grid line {
+    stroke-opacity: 0.3;
+    stroke-dasharray: 3, 6;
+    stroke-linecap: round;
+    stroke-width: 0.5;
+}
+.y.grid line {
+    stroke-opacity: 0.3;
+    stroke-dasharray: 3, 6;
+    stroke-linecap: round;
+    stroke-width: 0.5;
+}
+
+
+/* hover effect for rects */
+rect {
+    opacity: 1;
+    transition: opacity 400ms;
+}
+
+rect:hover {
+    /* can at least make the selected element brighter */
+    opacity: 0.6;
+    /* does not work in chrome
+    filter: brightness(85%); */
+    transition: opacity 200ms;
+}
+
+
+/* legend label style */
+text.legend {
+    font-size: 75%;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    font-weight: normal;
+}
+
+/* thick outline around matrix, some problem with double lines */
+/* .x.axis path.domain {
+    stroke-width: 2;
+}
+.y.axis path.domain {
+    stroke-width: 2;
+}
+line {
+    stroke-width: 2;
+} */
+
+
+/* removing unnecessary paths via assigning no stroke */
+.x.grid path {
+    stroke: none;
+}
+
+.y.grid path {
+    stroke: none;
+}
