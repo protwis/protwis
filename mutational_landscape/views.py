@@ -269,7 +269,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         ptms_dict[ptm.residue.sequence_number] = ptm.modification
 
     ## MICROSWITCHES
-    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    micro_switches_rset = ResiduePositionSet.objects.get(name="State (micro-)switches")
     ms_label = []
     for residue in micro_switches_rset.residue_position.all():
         ms_label.append(residue.label)
@@ -280,7 +280,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         ms_sequence_numbers.append(ms.sequence_number)
 
     ## SODIUM POCKET
-    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium ion pocket")
     sp_label = []
     for residue in sodium_pocket_rset.residue_position.all():
         sp_label.append(residue.label)
@@ -292,7 +292,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
 
     ## G PROTEIN INTERACTION POSITIONS
     # THIS SHOULD BE CLASS SPECIFIC (different set)
-    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    rset = ResiduePositionSet.objects.get(name='G-protein interface')
     gprotein_generic_set = []
     for residue in rset.residue_position.all():
         gprotein_generic_set.append(residue.label)
@@ -604,7 +604,7 @@ def get_functional_sites(protein):
     ptms = list(PTMs.objects.filter(protein=protein).values_list('residue', flat=True).distinct())
 
     ## MICROSWITCHES
-    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    micro_switches_rset = ResiduePositionSet.objects.get(name="State (micro-)switches")
     ms_label = []
     for residue in micro_switches_rset.residue_position.all():
         ms_label.append(residue.label)
@@ -612,7 +612,7 @@ def get_functional_sites(protein):
     ms_object = list(Residue.objects.filter(protein_conformation__protein=protein, generic_number__label__in=ms_label).values_list('id', flat=True).distinct())
 
     ## SODIUM POCKET
-    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium ion pocket")
     sp_label = []
     for residue in sodium_pocket_rset.residue_position.all():
         sp_label.append(residue.label)
@@ -621,7 +621,7 @@ def get_functional_sites(protein):
 
     ## G PROTEIN INTERACTION POSITIONS
     # THIS SHOULD BE CLASS SPECIFIC (different set)
-    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    rset = ResiduePositionSet.objects.get(name='G-protein interface')
     gprotein_generic_set = []
     for residue in rset.residue_position.all():
         gprotein_generic_set.append(residue.label)
