@@ -752,19 +752,30 @@
             return getInteractionColor(maxStrength, rgb);
         }
 
-        function getFrequencyColor(interactions, rgb = true) {
+        function getFrequencyColor(frequency, rgb = true) {
             var maxCount = 0;
 
-            // if no selection return any frequency color
+            // Return highest frequency color?
+/*            for (var i = 0; i < keys.length; i++){
+                maxCount = Math.max(maxCount, interactions[key]);
+            }*/
+            console.log(frequency);
+            return getGradientColor(maxCount, rgb);
+        }
 
-            // else filter and return highest frequency color?
-            Object(interactions.keys).forEach( key => {
-                // TODO add check for disabled interactions
-                //maxCount = Math.max(maxStength, getInteractionStrength(interactions[i]));
+        function getGradientColor(fDiff, rgb){
+          var color;
+            if (fDiff <= 0)
+                // If fDiff is close to -1, we want a red color
+                color = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
+            else
+                // If fDiff is close to 1 we want a blue color
+                color = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
 
-            });
-
-            return getInteractionColor(maxStength, rgb);
+            if (rgb)
+                return color;
+            else
+                return rgb2hex(color.r, color.g, color.b);
         }
 
         function getStrongestInteractionType(interactions) {
@@ -2035,13 +2046,7 @@
                         var f2 = (n2 / data2.pdbs.length);
                         var fDiff = (n1 / data1.pdbs.length) - (n2 / data2.pdbs.length);
 
-                        if (fDiff <= 0) {
-                            // If fDiff is close to -1, we want a red color
-                            var rgb = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
-                        } else {
-                            // If fDiff is close to 1 we want a blue color
-                            var rgb = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
-                        }
+                        var rgb = getGradientColor(fDiff, true);
 
                         var cell = heatmap.rect(i, j, 1, 1);
 
@@ -2730,38 +2735,64 @@
             // add menu
             if (!toggle){
                 var newDiv = document.createElement("div");
-                // TODO make IDs unique for mode
                 newDiv.setAttribute("class", "flareplot-legend");
-//                newDiv.setAttribute("style", "position: absolute; top: 0px; left: 0px")
+
                 var content = '<div class="controls">'
-                                  +'<h3>Controls</h3>'
-                                  +'<p>Line colors: <select id="flareplot_color"><option value="none">None (gray)</option><option value="segment">GPCR segment</option><option value="interactions">Interaction Type</option><option value="frequency">Interaction Frequency/Count</option></select></p>'
-
-
+                                  +'<h3>Controls</h3>';
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
                     content += '<p>Contacts contiguous segments outwards: <input type=checkbox id="flareplot_contiguous"></p>';
 
+                content += '<p>Line colors: <select id="flareplot_color">'
+                        +'<option value="none">None (gray)</option>'
+                        +'<option value="segment">GPCR segment</option>';
+
+                // if single structure - use interaction coloring
+                if (container.indexOf("single-crystal-tab") >= 0)
+                    content += '<option value="interactions">Interaction Type</option>'
+                // if group(s) of structures - use frequency coloring (gradient)
+                else
+                    content += '<option value="frequency">Interaction Frequency/Count</option>'
+
+                content += '</select></p>';
+
+
                 // Populate heatmap legend
+                if (container.indexOf("single-crystal-tab") >= 0) {
+                    // TODO Optimize/generalize interaction set selection - code duplication
+                    var interactionTypes = new Set(["Polar", "Aromatic", "Hydrophobic", "Van der Waals"]);
 
-                // TODO Optimize/generalize interaction set selection - code duplication
-                var interactionTypes = new Set(["Polar", "Aromatic", "Hydrophobic", "Van der Waals"]);
+                    // Add interactions color legend
+                    content += '<h3>Toggle interactions</h3><ul>';
 
-                // Add interactions color legend
-                content += '<h3>Toggle interactions</h3><ul>';
+                    interactionTypes = Array.from(interactionTypes).sort(function (i1, i2) {
+                        return getInteractionStrength(i2) - getInteractionStrength(i1);
+                    });
 
-                interactionTypes = Array.from(interactionTypes).sort(function (i1, i2) {
-                    return getInteractionStrength(i2) - getInteractionStrength(i1);
-                });
-
-                interactionTypes.forEach(function(i) {
-                    var rgb = getInteractionColor(i, false);
-                    content += '<li>'
-                            + '<div class="color-box" style="background-color: ' + rgb + '">' + '<input type="checkbox" data-interaction-type="' + i.replace(/ /g,"-") +'"></input>' + '</div><p>' + i + '</p>'
-                            + '</li>';
-                });
-                content += '</ul></div>';
+                    interactionTypes.forEach(function(i) {
+                        var rgb = getInteractionColor(i, false);
+                        content += '<li>'
+                                + '<div class="color-box" style="background-color: ' + rgb + '">' + '<input type="checkbox" data-interaction-type="' + i.replace(/ /g,"-") +'"></input>' + '</div><p>' + i + '</p>'
+                                + '</li>';
+                    });
+                    content += '</ul></div>';
+                } else {
+                    // TODO add sliders for frequency cutoff
+                    if (container.indexOf("single-crystal-group-tab") >= 0) {
+                        // slider 0 to count
+                        content += '<h4 class="center">Frequency (#PDBs)</h4>'
+                            + '<p>Range: <span id="pdbs-range">0 - ' + data.pdbs.length + '</span></p>'
+                            + '<div class="slider-range" data-text-id="pdbs-range" id="pdbs-range-slider"></div>'
+                            + '<div class="temperature-scale">'
+                            + '<span class="gray-to-red"></span>'
+                            + '</div>';
+                    } else {
+                        // slider group 1
+                        // slider group 2
+                        // slider diff -1 to 1
+                    }
+                }
 
                 newDiv.innerHTML = content;
 
@@ -3316,6 +3347,19 @@
             left: 3px;
         }
 
+        .flareplot-legend .temperature-scale .gray-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#FF0000',GradientType=1 );
+        }
+
         .heatmap-legend .temperature-scale .white-to-red {
             height: 10px;
             width: 100%;
@@ -3420,7 +3464,7 @@
     <style>
         .flareplot-container div.flareplot{
             position: relative;
-            left: 50%;
+            left: 35%;
             margin-left: -400px;
         }
         #sliderDiv {
