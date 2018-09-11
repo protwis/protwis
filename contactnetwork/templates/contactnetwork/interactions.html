@@ -2532,8 +2532,8 @@
 
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
-                //var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
-                var pdb = ['2RH1', '3RZE', '3SN6', '4BVN']
+                // var pdb = ['2RH1', '3RZE', '3SN6', '4BVN']
+                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
