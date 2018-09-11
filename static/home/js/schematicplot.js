@@ -97,6 +97,10 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     // 'C-term',
   ];
 
+
+  //
+  // $(containerSelector).html('')
+
   // Remove whatever chart with the same id/class was present before
   d3
     .select(containerSelector)
@@ -120,6 +124,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   const rectWidth = 30;
   const rectHeight = 14;
+
+  const paths = svg.append('g');
 
   const g = svg
     .selectAll('g')
@@ -214,11 +220,13 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   switch (config.type) {
     case 'singleCrystal':
+      svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystal(getInteractionsSingleCrystal());
       createLegendSingleCrystal();
       break;
     case 'singleCrystalGroup':
       // getInteractionsCrystalGroup();
+      svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystalGroup();
       createLegendSingleCrystalGroup();
       break;
@@ -231,6 +239,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     default:
       break;
   }
+
+
 
   function getInteractionsSingleCrystal() {
     const interactionsList = [];
@@ -275,8 +285,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function renderSchematicSingleCrystal(interactionsList) {
-    svg
-      .append('g')
+    paths
       .selectAll('path')
       .data(interactionsList)
       .enter()
@@ -303,8 +312,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function renderSchematicSingleCrystalGroup() {
-    svg
-      .append('g')
+    paths
       .selectAll('path')
       .data(Object.keys(interactions))
       .enter()
@@ -312,7 +320,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       .filter((d) => {
         const pair = separatePair(d);
         if (pair[0] in segment_map_full_gn && pair[1] in segment_map_full_gn) {
-          if (isContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])) {
+          if (
+              config.isContiguousPlot
+              ? isContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])
+              : isNonContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])
+             ) {
             return d;
           }
         }
@@ -373,8 +385,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function renderSchematicTwoCrystalGroups() {
-    svg
-      .append('g')
+    paths
       .selectAll('path')
       .data(Object.keys(interactions))
       .enter()
@@ -382,7 +393,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       .filter((d) => {
         const pair = separatePair(d);
         if (pair[0] in segment_map_full_gn && pair[1] in segment_map_full_gn) {
-          if (isContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])) {
+          if (
+              config.isContiguousPlot
+              ? isContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])
+              : isNonContiguous(segment_map_full_gn[pair[0]], segment_map_full_gn[pair[1]])
+             ) {
             return d;
           }
         }
@@ -496,7 +511,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         let contactCount = 0;
 
         const done_paths = [];
-        $(`path[data-target-segment='${segment}']`).each((i, path) => {
+        $(containerSelector + ` path[data-target-segment='${segment}']`).each((i, path) => {
           const d = path.getAttribute('d');
 
           const regex = /M (.+) (.+) L (.+) (.+)/;
@@ -517,7 +532,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         if (shiftY<5 && shiftY>-5) run = 10;
 
         // Reposition each node
-        $(`g.node[data-segment='${segment}']`).each((i, g) => {
+        $(containerSelector + ` g.node[data-segment='${segment}'`).each((i, g) => {
           const transformValue = g.getAttribute('transform');
 
           const regex = /\((.+),(.+)\)/;
@@ -534,7 +549,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         });
 
         // Reposition the edges TERMINATING at the repositioned nodes
-        $(`path[data-target-segment='${segment}']`).each((i, path) => {
+        $(containerSelector + ` path[data-target-segment='${segment}']`).each((i, path) => {
           const d = path.getAttribute('d');
 
           const regex = /M (.+) (.+) L (.+) (.+)/;
@@ -549,7 +564,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         });
 
         // Reposition the edges ORIGINATING at the repositioned nodes
-        $(`path[data-source-segment='${segment}']`).each((i, path) => {
+        $(containerSelector + ` path[data-source-segment='${segment}']`).each((i, path) => {
           const d = path.getAttribute('d');
 
           const regex = /M (.+) (.+) L (.+) (.+)/;
@@ -581,7 +596,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     // console.log('=================');
     // console.log('Gradient After');
     // console.log('vvvvvvvvvvvvvvvvv');
-    let max_y = 0;
     segmentList.forEach((segment) => {
       if (segment !== 'TM1') {
         let gradientSum = 0;
@@ -611,7 +625,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           const matches = regex.exec(transformValue);
 
           const y = parseFloat(matches[2]);
-          if ( y > max_y ) max_y = y;
 
         });
 
@@ -619,8 +632,29 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         // console.log(segment,contactCount,gradientSum,-gradientMean);
       }
     });
-    svg.attr('height', max_y + config.margin.top + config.margin.bottom);
   }
+
+    max_y = 0;
+    min_y = 0;
+    segmentList.forEach((segment) => {
+      $(containerSelector + ` g.node[data-segment='${segment}'`).each((i, g) => {
+          const transformValue = g.getAttribute('transform');
+
+          const regex = /\((.+),(.+)\)/;
+          const matches = regex.exec(transformValue);
+
+          const y = parseFloat(matches[2]);
+          if ( y > max_y ) max_y = y;
+          if ( y < min_y ) min_y = y;
+
+        });
+    });
+
+    width = config.w + config.margin.left + config.margin.right
+    height = max_y-min_y+ config.margin.top + config.margin.bottom
+
+    svg.attr('height', height);
+    svg.attr('viewBox', "0 "+(min_y- config.margin.top)+" "+width+" "+height);
 
   function getCoordPair(pair) {
     const AAs = separatePair(pair);
@@ -722,6 +756,9 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       const friendlyName = getFriendlyInteractionName($(this).data('interaction-type'));
       interactionTypes.add(friendlyName);
     });
+
+    // empty previous one
+    $(`${containerSelector} .schematic-legend`).html('');
 
     // Add interactions color legend
     let legendHtml = '<ul>';

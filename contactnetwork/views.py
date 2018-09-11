@@ -200,7 +200,6 @@ def InteractionData(request):
     excluded_segment = ['C-term','N-term']
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs).all()
-    print(len(proteins),'proteins')
 
     data['gn_map'] = OrderedDict()
     data['pos_map'] = OrderedDict()
@@ -216,13 +215,14 @@ def InteractionData(request):
         # build the alignment data matrix
         a.build_alignment()
         # calculate consensus sequence + amino acid and feature frequency
-        # a.calculate_statistics()
+        a.calculate_statistics()
         consensus = a.full_consensus
 
         for aa in consensus:
             if 'x' in aa.family_generic_number:
                 data['gn_map'][aa.family_generic_number] = aa.amino_acid
                 data['pos_map'][aa.sequence_number] = aa.amino_acid
+                data['segment_map_full_gn'][aa.family_generic_number] = aa.segment_slug
     else:
         rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
         for r in rs:
