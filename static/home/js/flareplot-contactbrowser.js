@@ -107,7 +107,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     edgeIndex.push(subset[i] + "_" + subset[0]);
               }
 
-              if (edgeIndex.length <= 5){
+              if (edgeIndex.length <= 5) {
                 contiguousOutward = false;
               }
             }
@@ -421,6 +421,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         key: "" + t.tree[e.name1].key + "-" + t.tree[e.name2].key ,
                         color: e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
                         interactions: e.interactions,
+                        frequency: e.frequency,
                         segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
                         opacity: e.opacity || graph.defaults.edgeOpacity || 1,
                         width: e.width || graph.defaults.edgeWidth || 1
@@ -434,6 +435,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             key: edge.key,
                             color: edge.color,
                             interactions: edge.interactions,
+                            frequency: edge.frequency,
                             segment: edge.segment,
                             opacity: edge.opacity,
                             width: edge.width
@@ -444,6 +446,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             key: edge.key,
                             color: edge.color,
                             interactions: edge.interactions,
+                            frequency: edge.frequency,
                             segment: edge.segment,
                             opacity: edge.opacity,
                             width: edge.width
@@ -1107,7 +1110,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             switch(color){
               case "frequency":
                 svg.selectAll("path.link")
-                    .style("stroke", function(d){ return d.frequency; });
+                    .style("stroke", function(d){ return getFrequencyColor(d.frequency, false); });
                 break;
               case "interactions":
                 svg.selectAll("path.link")

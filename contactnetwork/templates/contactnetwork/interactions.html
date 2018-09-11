@@ -709,9 +709,9 @@
         }
 
         function rgb2hex(r,g,b) {
-            r = r.toString(16);
-            g = g.toString(16);
-            b = b.toString(16);
+            r = Math.round(r).toString(16);
+            g = Math.round(g).toString(16);
+            b = Math.round(b).toString(16);
 
             if (r.length == 1)
                 r = '0' + r;
