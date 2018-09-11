@@ -1999,7 +1999,7 @@
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
 
             $( function() {
-              $( ".slider-range" ).slider({
+              $( heatMapSelector+" .slider-range" ).slider({
                 range: true,
                 min: 0,
                 max: data.pdbs.length,
@@ -2529,8 +2529,8 @@
 
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
-                //var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
-                var pdb = ['2RH1', '3RZE', '3SN6', '4BVN']
+                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+                // var pdb = ['2RH1', '3RZE', '3SN6', '4BVN']
                 var segments = JSON.parse($(selector + ' .segments-input').val());
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
@@ -2941,16 +2941,32 @@
                     });
                     content += '</ul></div>';
                 } else {
-                    // TODO add sliders for frequency cutoff
+                    // Add sliders for frequency cutoff
                     if (container.indexOf("single-crystal-group-tab") >= 0) {
                         // slider 0 to count
                         content += '<h4 class="center">Frequency (#PDBs)</h4>'
-                            + '<p>Range: <span id="pdbs-range">0 - ' + data.pdbs.length + '</span></p>'
-                            + '<div class="slider-range" data-text-id="pdbs-range" id="pdbs-range-slider"></div>'
+                            + '<p>Range: <span id="pdbs-range-flare">0 - ' + data.pdbs.length + '</span></p>'
+                            + '<div class="slider-range" data-text-id="pdbs-range-flare" id="pdbs-range-flare-slider"></div>'
                             + '<div class="temperature-scale">'
                             + '<span class="gray-to-red"></span>'
                             + '</div>';
+
+                        $( function() {
+                          $( container+" .slider-range" ).data({ "referenceContainer" : container })
+                          $( container+" .slider-range" ).slider({
+                            range: true,
+                            min: 0,
+                            max: data.pdbs.length,
+                            step: 1,
+                            values: [0,data.pdbs.length],
+                            slide: function( event, ui ) {
+                              $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+                              flareplot[$(this).data("referenceContainer")].updateRange(ui.values[ 0 ], ui.values[ 1 ]);
+                            }
+                          });
+                        } );
                     } else {
+                        // TODO two group sliders
                         // slider group 1
                         // slider group 2
                         // slider diff -1 to 1
@@ -2976,12 +2992,15 @@
 
                 $(container + ' .flareplot-legend .color-box input[type=checkbox]').each(function() {
                     $(this).prop('checked', true);
+
                     // init toggle list
                     interactionsToggleList.push($(this).data('interaction-type'));
                     $(this).data({ "referenceContainer" : container })
+
                     $(this).change(function() {
                         // toggle interactions in flareplot
                         interactionsToggleList = [];
+
                         $(container + ' .flareplot-legend input[type=checkbox]').each(function() {
                           if ($(this).prop('checked'))
                               interactionsToggleList.push($(this).data('interaction-type'));
@@ -2998,8 +3017,12 @@
 
             // update coloring and visibility if toggled
             if (toggle) {
+                var range = $( container+" .slider-range" ).slider("values");
+                flareplot[container].updateRange(range[0], range[1]);
+
                 flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
-                flareplot[container].showInteractions(interactionsToggleList);
+                if ($(container + ' .flareplot-legend .color-box input[type=checkbox]').length > 0)
+                  flareplot[container].showInteractions(interactionsToggleList);
             }
         }
 

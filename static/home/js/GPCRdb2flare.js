@@ -143,6 +143,7 @@ function parseGPCRdb2flare(data) {
       interactions: interactions, // For frequency and type coloring
       // split between 1 and 2 groups
       frequency: interactions["any"]/data.pdbs.length,
+      count: interactions["any"],
       segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
     });
   });

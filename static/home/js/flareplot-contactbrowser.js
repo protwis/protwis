@@ -420,10 +420,11 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         target: t.tree[e.name2],
                         key: "" + t.tree[e.name1].key + "-" + t.tree[e.name2].key ,
                         color: e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
-                        interactions: e.interactions,
+                        count: e.count,
                         frequency: e.frequency,
-                        segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
+                        interactions: e.interactions,
                         opacity: e.opacity || graph.defaults.edgeOpacity || 1,
+                        segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
                         width: e.width || graph.defaults.edgeWidth || 1
                     };
 
@@ -434,10 +435,11 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             target: edge.target,
                             key: edge.key,
                             color: edge.color,
-                            interactions: edge.interactions,
+                            count: edge.count,
                             frequency: edge.frequency,
-                            segment: edge.segment,
+                            interactions: edge.interactions,
                             opacity: edge.opacity,
+                            segment: edge.segment,
                             width: edge.width
                         };
                         t.allEdges.push({
@@ -445,10 +447,11 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             target: edge.target,
                             key: edge.key,
                             color: edge.color,
-                            interactions: edge.interactions,
+                            count: edge.count,
                             frequency: edge.frequency,
-                            segment: edge.segment,
+                            interactions: edge.interactions,
                             opacity: edge.opacity,
+                            segment: edge.segment,
                             width: edge.width
                         });
                     } else {
@@ -1110,7 +1113,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             switch(color){
               case "frequency":
                 svg.selectAll("path.link")
-                    .style("stroke", function(d){ return getFrequencyColor(d.frequency, false); });
+                    .style("stroke", function(d){ return getFrequencyColor( d.frequency, false); });
                 break;
               case "interactions":
                 svg.selectAll("path.link")
@@ -1125,6 +1128,12 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     .style("stroke", function(d){ return d.color; });
                 break;
             }
+        }
+
+        function updateRange(min, max) {
+          // Hide/Show based on frequency
+          svg.selectAll("path.link")
+              .style("visibility", function(d){ if (d.count>=min && d.count <= max) return "visible"; else return "hidden"; });
         }
 
         function showInteractions(interactions) {
@@ -1182,6 +1191,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             addEdgeHoverListener: addEdgeHoverListener,
             addFrameListener: addFrameListener,
             updateColors: updateColors,
+            updateRange: updateRange,
             showInteractions: showInteractions,
             graph: graph//, for debugging purposes
         }
