@@ -141,6 +141,8 @@ function parseGPCRdb2flare(data) {
       frames: [0],
       color: "#A0A0A0", // Default gray coloring of edges
       interactions: interactions, // For frequency and type coloring
+      // split between 1 and 2 groups
+      frequency: interactions["any"]/data.pdbs.length,
       segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
     });
   });
