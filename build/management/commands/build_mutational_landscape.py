@@ -59,33 +59,33 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.mutation_data_path) if fn.endswith('exac.csv')]
+            filenames = [fn for fn in os.listdir(self.mutation_data_path) if fn.endswith('SigProts_exac.csv')]
 
         for filename in filenames:
             filepath = os.sep.join([self.mutation_data_path, filename])
 
-            snp_data =  pd.read_csv(filepath, low_memory=False)
+            snp_data = pd.read_csv(filepath, low_memory=False)
 
             for index, entry in enumerate(snp_data.iterrows()):
 
-                entry_name = snp_data[index:index+1]['EntryName'].values[0]
-                sequence_number = snp_data[index:index+1]['SequenceNumber'].values[0]
-                allele_frequency = float(snp_data[index:index+1]['Allele Frequency'].values[0])
-                allele_count = int(snp_data[index:index+1]['Allele Count'].values[0])
-                allele_number = int(snp_data[index:index+1]['Allele Number'].values[0])
-                number_homozygotes = int(snp_data[index:index+1]['Number of Homozygotes'].values[0])
-                type = snp_data[index:index+1]['type'].values[0]
+                entry_name = snp_data[index:index + 1]['EntryName'].values[0]
+                sequence_number = snp_data[index:index + 1]['SequenceNumber'].values[0]
+                allele_frequency = float(snp_data[index:index + 1]['af'].values[0]) # af/Allele Frequency
+                allele_count = int(snp_data[index:index + 1]['ac'].values[0]) # ac/Allele Count
+                allele_number = int(snp_data[index:index + 1]['an'].values[0]) # an/Allele Number
+                number_homozygotes = int(snp_data[index:index + 1]['ac_hom'].values[0]) # ac_hm/ Number of Homozygotes
+                type = snp_data[index:index + 1]['Type'].values[0]
 
-                if 'lof' in filename:
-                    prot_con = snp_data[index:index+1]['Protein Consequence'].values[0]
+                if type != 'missense':
+                    prot_con = snp_data[index:index + 1]['Protein Consequence'].values[0]
                     splitterm = re.findall(r'\d+', prot_con)[0]
                     amino_acid = prot_con.split(splitterm)[1]
                     sift_score = None
                     polyphen_score = None
                 else:
-                    amino_acid = snp_data[index:index+1]['NMaa'].values[0]
-                    sift_score = float(snp_data[index:index+1]['sift_score'].values[0])
-                    polyphen_score = float(snp_data[index:index+1]['polyphen_score'].values[0])
+                    amino_acid = snp_data[index:index + 1]['NMaa'].values[0]
+                    sift_score = float(snp_data[index:index + 1]['sift_score'].values[0])
+                    polyphen_score = float(snp_data[index:index + 1]['polyphen_score'].values[0])
 
 
                 try:
