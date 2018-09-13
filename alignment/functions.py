@@ -15,7 +15,7 @@ def strip_html_tags(text):
     """
     return re.sub('<.*?>', '', text)
 
-def get_format_props(freq=None, res=None):
+def get_format_props(freq=None, res=None, feat=None):
     """
     Get the excel cell format for residues/frequencies.
 
@@ -155,13 +155,133 @@ def get_format_props(freq=None, res=None):
         },
     }
 
-    if freq:
+    property_group = {
+        'HY': {
+            'bg_color': '#93d050'
+        },
+        'HA': {
+            'bg_color': '#ffff00',
+        },
+        'M': {
+            'bg_color': '#ffff00',
+        },
+        'A': {
+            'bg_color': '#ffff00',
+        },
+        'I': {
+            'bg_color': '#ffff00',
+        },
+        'L': {
+            'bg_color': '#ffff00',
+        },
+        'V': {
+            'bg_color': '#ffff00',
+        },
+        'HR': {
+            'bg_color': '#07b050',
+        },
+        'W': {
+            'bg_color': '#07b050',
+        },
+        'Y': {
+            'bg_color': '#07b050',
+        },
+        'F': {
+            'bg_color': '#07b050',
+        },
+        'Hb': {
+            'bg_color': '#7030a0',
+            'font_color': '#ffffff',
+        },
+        'N': {
+            'bg_color': '#7030a0',
+            'font_color': '#ffffff',
+        },
+        'Q': {
+            'bg_color': '#7030a0',
+            'font_color': '#ffffff',
+        },
+        'S': {
+            'bg_color': '#7030a0',
+            'font_color': '#ffffff',
+        },
+        'T': {
+            'bg_color': '#7030a0',
+            'font_color': '#ffffff',
+        },
+        'Hu': {
+            'bg_color': '#7030a0',
+            'font_color': '#ffffff',
+        },
+        'Ha': {
+            'bg_color': '#7030a0',
+            'font_color': '#ff0000',
+        },
+        'Hd': {
+            'bg_color': '#7030a0',
+            'font_color': '#0070c0',
+        },
+        '+-': {
+            'bg_color': '#0070c0',
+            'font_color': '#ff0000',
+        },
+        '+': {
+            'bg_color': '#0070c0',
+            'font_color': '#000000',
+        },
+        'H': {
+            'bg_color': '#0070c0',
+            'font_color': '#000000',
+        },
+        'K': {
+            'bg_color': '#0070c0',
+            'font_color': '#000000',
+        },
+        'R': {
+            'bg_color': '#0070c0',
+            'font_color': '#000000',
+        },
+        '-': {
+            'bg_color': '#ff0000',
+        },
+        'D': {
+            'bg_color': '#ff0000',
+        },
+        'E': {
+            'bg_color': '#ff0000',
+        },
+        'Sm': {
+            'bg_color': '#ffffff',
+        },
+        'aH': {
+            'bg_color': '#d9d9d9',
+        },
+        'G': {
+            'bg_color': '#ff02ff',
+        },
+        'P': {
+            'bg_color': '#d603ff',
+            'font_color': '#ffffff',
+        },
+        'C': {
+            'bg_color': '#bf8f00',
+        },
+    }
+
+    if freq is not None:
         try:
             return properties[freq]
         except KeyError:
             return properties[int(freq)]
-    elif res:
+    elif res is not None:
         return residue[res]
+    elif feat is not None:
+        print(feat)
+        try:
+            print(property_group[feat])
+            return property_group[feat]
+        except KeyError as msg:
+            return {'bg_color': '#ffffff'}
 
 def get_proteins_from_selection(simple_selection):
 
@@ -181,7 +301,7 @@ def get_proteins_from_selection(simple_selection):
             protein_source_list = []
             for protein_source in simple_selection.annotation:
                 protein_source_list.append(protein_source.item)
-            
+
             if species_list:
                 family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
                     species__in=(species_list), source__in=(protein_source_list)).select_related(

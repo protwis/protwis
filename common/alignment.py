@@ -39,6 +39,7 @@ class Alignment:
         self.aa_count = OrderedDict()
         self.aa_count_with_protein = OrderedDict()
         self.features = []
+        self.features_combo = []
         self.feature_stats = []
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
@@ -233,10 +234,15 @@ class Alignment:
         for pc in self.proteins:
             if pc.protein.residue_numbering_scheme.slug not in self.numbering_schemes:
                 rnsn = pc.protein.residue_numbering_scheme.name
-                self.numbering_schemes[pc.protein.residue_numbering_scheme.slug] = rnsn
+                try:
+                    #New way of breaking down the numbering scheme
+                    rnsn_parent = prot.protein.residue_numbering_scheme.parent.short_name
+                except:
+                    rnsn_parent = ''
+                self.numbering_schemes[pc.protein.residue_numbering_scheme.slug] = (rnsn, rnsn_parent)
 
         # order and convert numbering scheme dict to tuple
-        self.numbering_schemes = sorted(self.numbering_schemes.items(), key=itemgetter(0))
+        self.numbering_schemes = sorted([(x[0], x[1][0], x[1][1]) for x in self.numbering_schemes.items()], key=itemgetter(0))
 
     # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
     def build_alignment(self, fetch_alternative_GN = True):
@@ -646,9 +652,11 @@ class Alignment:
         # 1. Update most frequent amino_acids for this generic number
         # 2. Update feature counter for this generic number
         features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
+        self.features_combo = [(x, y['display_name_short'], y['length']) for x,y in zip(list(AMINO_ACID_GROUP_NAMES.values()), list(AMINO_ACID_GROUP_PROPERTIES.values()))]
         self.features = list(AMINO_ACID_GROUP_NAMES.values())
+
         for j in self.aa_count:
-            most_freq_aa[j] = OrderedDict();
+            most_freq_aa[j] = OrderedDict()
             feature_count[j] = OrderedDict()
             for generic_number in self.aa_count[j]:
                 feature_count[j][generic_number] = features.copy()

@@ -270,3 +270,171 @@
 .res-cons-10 {
     background-color: #00ff00;
 }
+.signature-section-header {
+    height: 40px;
+    font-size: 16px;
+}
+.signature-section-header-row {
+    height: 40px;
+}
+.column-long {
+    float: left;
+    width: 70%;
+    align-content: center;
+    height: 25px;
+}
+.column-short {
+    float: left;
+    width: 15%;
+    text-align: center;
+    height: 25px;
+}
+.feat-HY {
+    background-color: #93d050;
+}
+.feat-HA {
+    background-color: #ffff00;
+}
+.feat-M {
+    background-color: #ffff00;
+    font-style: italic;
+    text-align: center;
+}
+.feat-A {
+    background-color: #ffff00;
+    font-style: italic;
+    text-align: center;
+}
+.feat-I {
+    background-color: #ffff00;
+    font-style: italic;
+    text-align: center;
+}
+.feat-L {
+    background-color: #ffff00;
+    font-style: italic;
+    text-align: center;
+}
+.feat-V {
+    background-color: #ffff00;
+    font-style: italic;
+    text-align: center;
+}
+.feat-HR {
+    background-color: #07b050;
+}
+.feat-W {
+    background-color: #07b050;
+    font-style: italic;
+    text-align: center;
+}
+.feat-Y {
+    background-color: #07b050;
+    font-style: italic;
+    text-align: center;
+}
+.feat-F {
+    background-color: #07b050;
+    font-style: italic;
+    text-align: center;
+}
+.feat-Hb {
+    background-color: #7030a0;
+    color: #ffffff;
+}
+.feat-N {
+    background-color: #7030a0;
+    color: #ffffff;
+    font-style: italic;
+    text-align: center;
+}
+.feat-Q {
+    background-color: #7030a0;
+    color: #ffffff;
+    font-style: italic;
+    text-align: center;
+}
+.feat-S {
+    background-color: #7030a0;
+    color: #ffffff;
+    font-style: italic;
+    text-align: center;
+}
+.feat-T {
+    background-color: #7030a0;
+    color: #ffffff;
+    font-style: italic;
+    text-align: center;
+}
+.feat-Hu {
+    background-color: #7030a0;
+    color: #ffffff;
+}
+.feat-Ha {
+    background-color: #7030a0;
+    color: #ff0000;
+}
+.feat-Hd {
+    background-color: #7030a0;
+    color: #0070c0;
+}
+.feat-\+\- {
+    background-color: #0070c0;
+    color: #ff0000;
+}
+.feat-\+ {
+    background-color: #0070c0;
+    color: #000000;
+}
+.feat-H {
+    background-color: #0070c0;
+    color: #000000;
+    font-style: italic;
+    text-align: center;
+}
+.feat-K {
+    background-color: #0070c0;
+    color: #000000;
+    font-style: italic;
+    text-align: center;
+}
+.feat-R {
+    background-color: #0070c0;
+    color: #000000;
+    font-style: italic;
+    text-align: center;
+}
+.feat-- {
+    background-color: #ff0000;
+}
+.feat-D {
+    background-color: #ff0000;
+    font-style: italic;
+}
+.feat-E {
+    background-color: #ff0000;
+    font-style: italic;
+    text-align: center;
+}
+.feat-Sm {
+    background-color: #ffffff;
+}
+.feat-αH {
+    background-color: #d9d9d9;
+}
+.feat-G {
+    background-color: #ff02ff;
+    font-style: italic;
+    text-align: center;
+}
+.feat-P {
+    background-color: #d603ff;
+    color: #ffffff;
+    font-style: italic;
+    text-align: center;
+}
+.feat-C {
+    background-color: #bf8f00;
+    font-style: italic;
+    text-align: center;
+}

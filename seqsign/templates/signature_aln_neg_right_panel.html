@@ -2,21 +2,21 @@
 
     <!-- Subheader -->
     <tr>
-        <td class="ali-td-header-row" colspan="{{ num_residue_columns_neg }}">PROTEIN SET 2 (<a target="_blank" href="alignment/render_negative">open </a> in new window)</td>
+        <td class="ali-td-header-row signature-section-header-row" colspan="{{ num_residue_columns_neg }}"> (<a target="_blank" href="alignment/render_negative">open </a> in new window)</td>
     </tr>
 
     <!-- GENERIC NUMBERS -->
 
     <!-- segment title line -->
-    <tr id='segments'>
+    <!-- <tr id='segments'>
         {% for s, num in common_segments.items %}
             <td id='segment-{{ s }}' class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
             <td id='anchor' class="ali-td-anchor">&nbsp;</td>
         {% endfor %}
-    </tr>
+    </tr> -->
 
     <!-- generic number lines -->
-    {% for ns, segments in common_generic_numbers.items %}
+    <!-- {% for ns, segments in common_generic_numbers.items %}
     <tr>
         {% for s, num in segments.items %}
             {% for n, dn in num.items %}
@@ -29,14 +29,14 @@
             <td class="ali-td-anchor">&nbsp;</td>
         {% endfor %}
     </tr>
-    {% endfor %}
+    {% endfor %} -->
 
     <!-- FEATURE CONSENSUS -->
 
     <tr>
         {% for segment, cons in feats_cons_neg.items %}
             {% for pos in cons %}
-                <td class="ali-td-stat-summary ali-residue">
+                <td class="ali-td-stat-summary ali-residue feat-{% if pos.0 == '-' and pos.4 == ''%}_{% else %}{{ pos.0 }}{% endif %}">
                     <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.1|safe }}">
                         {{ pos.0 }}
                     </div>
@@ -45,7 +45,19 @@
             <td class="ali-td-anchor">&nbsp;</td>
         {% endfor %}
     </tr>
-
+    <!-- Length row -->
+    <tr>
+        {% for segment, cons in feats_cons_neg.items %}
+            {% for pos in cons %}
+                <td class="ali-td-stat-summary ali-residue">
+                    <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.1|safe }}">
+                        {{ pos.4 }}
+                    </div>
+                </td>
+            {% endfor %}
+            <td class="ali-td-anchor">&nbsp;</td>
+        {% endfor %}
+    </tr>
     <!-- Consensus values -->
     <tr>
         {% for segment, cons in feats_cons_neg.items %}
@@ -101,14 +113,14 @@
 
     {% if a_neg.consensus %}
         <!-- segment title line -->
-        <tr id='segments'>
+        <!-- <tr id='segments'>
             {% for s, num in common_segments.items %}
                 <td id='segment-{{ s }}' class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
                 <td id="anchor" class="ali-td-anchor">&nbsp;</td>
             {% endfor %}
-        </tr>
+        </tr> -->
         <!-- generic number lines -->
-        {% for ns, segments in common_generic_numbers.items %}
+        <!-- {% for ns, segments in common_generic_numbers.items %}
             <tr>
                 {% for s, num in segments.items %}
                     {% for n, dn in num.items %}
@@ -121,7 +133,7 @@
                     <td class="ali-td-anchor">&nbsp;</td>
                 {% endfor %}
             </tr>
-        {% endfor %}
+        {% endfor %} -->
 
 
         <!-- consensus sequence -->
