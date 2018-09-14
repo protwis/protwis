@@ -9,3 +9,5 @@ env
 static/home/js/node_modules
 static/home/js/package-lock.json
 static/home/js/package.json
+.vscode
+tsconfig.json
