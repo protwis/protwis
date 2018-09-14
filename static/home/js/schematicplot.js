@@ -541,7 +541,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           const x = matches[1];
           const y = matches[2] - shiftY;
 
-          g.setAttribute('transform', `translate(${x},${y})`);
+          if (Number.isNaN(x) || Number.isNaN(y)) {
+            // FIXME: handle error
+          } else {
+            g.setAttribute('transform', `translate(${x},${y})`);
+          }
         });
 
         // Reposition the edges TERMINATING at the repositioned nodes
@@ -552,8 +556,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           const matches = regex.exec(d);
 
           const newTargetY = matches[4] - shiftY;
-
-          path.setAttribute('d', `M ${matches[1]} ${matches[2]} L ${matches[3]} ${newTargetY}`);
+          if (Number.isNaN(matches[1]) || Number.isNaN(matches[2]) || Number.isNaN(matches[3]) || Number.isNaN(newTargetY)) {
+            // FIXME: handle error
+          } else {
+            path.setAttribute('d', `M ${matches[1]} ${matches[2]} L ${matches[3]} ${newTargetY}`);
+          }
         });
 
         // Reposition the edges ORIGINATING at the repositioned nodes
@@ -565,7 +572,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
           const newSourceY = matches[2] - shiftY;
 
-          path.setAttribute('d', `M ${matches[1]} ${newSourceY} L ${matches[3]} ${matches[4]}`);
+          if (Number.isNaN(matches[1]) || Number.isNaN(matches[3]) || Number.isNaN(matches[4]) || Number.isNaN(newSourceY)) {
+            // FIXME: handle error
+          } else {
+            path.setAttribute('d', `M ${matches[1]} ${newSourceY} L ${matches[3]} ${matches[4]}`);
+          }
         });
         run += 1;
       }
@@ -607,7 +618,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           contactCount += 1;
         });
 
-        $(`g.node[data-segment='${segment}'`).each((i, g) => {
+        $(`g.node[data-segment='${segment}']`).each((i, g) => {
           const transformValue = g.getAttribute('transform');
 
           const regex = /\((.+),(.+)\)/;

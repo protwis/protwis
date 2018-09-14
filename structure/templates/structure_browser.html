@@ -268,13 +268,13 @@
                         {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }}
                     </td>
                     <td class="text-center arrestin">
-                        {{ structure.stabilizing_agents.all|only_arrestins }}
+                        {{ structure.stabilizing_agents.all|only_arrestins|linebreaksbr }}
                     </td>
                     <td class="text-center fusion">
                         {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
                     </td>
                     <td class="text-center antibody">
-                        {{ structure.stabilizing_agents.all|only_antibodies }}
+                        {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
                     </td>
                     <td>
                         {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}

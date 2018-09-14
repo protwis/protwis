@@ -279,10 +279,10 @@ class Alignment:
         self.numbering_schemes = sorted([(x[0], x[1][0], x[1][1]) for x in self.numbering_schemes.items()], key=itemgetter(0))
 
     # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
-    def build_alignment(self, fetch_alternative_GN = True):
+    def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
         # fetch segment residues
-        if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1 and fetch_alternative_GN:
+        if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
             rs = Residue.objects.filter(
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
                 'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
@@ -516,7 +516,7 @@ class Alignment:
                                 self.generic_numbers[ns_slug][segment][pos] = []
 
                         # add display numbers for other numbering schemes of selected proteins
-                        if (not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1 and fetch_alternative_GN):
+                        if (not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1):
                             if r.generic_number:
                                 for arn in r.alternative_generic_numbers.all():
                                     for ns in self.numbering_schemes:
