@@ -2,7 +2,7 @@
 var margin = { top: 0, right: 150, bottom: 180, left: 130 };
 var w = 650 - margin.left - margin.right, h = 550 - margin.top - margin.bottom;
 // * DATA
-// var dataset = interactions;
+// let dataset = interactions;
 var dataset = {
     '3sn6': [
         ['R', '139', '34.51x51', 'A', '376', ["edge-to-face", "face-to-edge", "hydrophobic", "van-der-waals"]],
@@ -646,6 +646,8 @@ var yScale = d3
     .range([h, 0])
     // .round(true)
     .padding(1);
+// * SETTING THE PDB/SIG-PROT SCALE
+// TODO: DEFINE SCALE FOR PDB ID AND SIGPROT ID
 // * SETTING THE COLOR SCALE
 var colScale = d3
     .scaleOrdinal()
@@ -730,8 +732,8 @@ svg
 })
     .on("click", function (d) {
     var index;
-    // var rect_x = d3.event.target.getAttribute('x')
-    // var rect_y = d3.event.target.getAttribute('y')
+    // let rect_x = d3.event.target.getAttribute('x')
+    // let rect_y = d3.event.target.getAttribute('y')
     // console.log(rect_x, rect_y)
     // https://stackoverflow.com/a/20251369/8160230
     // select the rect under cursor
