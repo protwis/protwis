@@ -581,10 +581,10 @@ data_t = flattenOnce(data_t);
 
 var keys = [
   "rec_aa",
-  "rec_pos",
   "rec_gn",
+  "rec_pos",
   "sig_aa",
-  "sig_pos",
+  "sig_gn",
   "int_ty",
   "pdb_id"
 ];
@@ -739,7 +739,7 @@ svg
     if (d.int_ty === undefined) {
       return "none";
     } else {
-      return colScale(d.int_ty);
+      return colScale(d.int_ty[0]);
     }
   })
   .on("mouseover", function(d) {
@@ -856,6 +856,9 @@ svg
   .append("text")
   .attr("x", function(d: any) {
     return xScale(d.rec_gn);
+  })
+  .attr("y", function(d: any, i) {
+    return d * 20;
   })
   .attr("text-anchor", "middle")
   .attr("dy", 75)
@@ -977,51 +980,21 @@ svg
   .attr("y", 0.8 * yScale.step())
   .text("G-Protein");
 
-// debugging purposes to inspect data
-// https://stackoverflow.com/a/9507713/8160230
-function tabulate(data, columns) {
-  var table = d3
-    .select("div#content")
-    .append("table")
-    .attr("width", 2 * w);
-  var thead = table.append("thead");
-  var tbody = table.append("tbody");
+// TODO: ADD THE PDB ID AS LABEL
 
-  // append the header row
-  thead
-    .append("tr")
-    .selectAll("th")
-    .data(columns)
-    .enter()
-    .append("th")
-    .text(function(column) {
-      return column;
-    });
 
-  // create a row for each object in the data
-  var rows = tbody
-    .selectAll("tr")
-    .attr("padding-right", "10px")
-    .data(data)
-    .enter()
-    .append("tr");
 
-  // create a cell in each row for each column
-  var cells = rows
-    .selectAll("td")
-    .data(function(row) {
-      return columns.map(function(column) {
-        return { column: column, value: row[column] };
-      });
-    })
-    .enter()
-    .append("td")
-    .text(function(d) {
-      return d.value;
-    });
-
-  return table;
-}
-
-// render the table(s)
-// tabulate(data_t, keys);
+$(document).ready( function () {
+  $('#table_data').DataTable({
+    data: data_t,
+    columns: [
+      // { data: 'int_ty' },
+      { data: 'pdb_id' },
+      { data: 'rec_aa' },
+      { data: 'rec_gn' },
+      { data: 'rec_pos' },
+      { data: 'sig_aa' },
+      { data: 'sig_gn' }
+    ]
+  });
+});
