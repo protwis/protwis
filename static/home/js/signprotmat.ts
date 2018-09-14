@@ -666,6 +666,16 @@ let yScale = d3
 
 // * SETTING THE PDB/SIG-PROT SCALE
 // TODO: DEFINE SCALE FOR PDB ID AND SIGPROT ID
+let pdbScale = d3
+  .scaleBand()
+  .domain(
+    d3
+      .map(data_t, (d: any) => d.pdb_id)
+      .keys()
+      .sort(d3.descending)
+  )
+  .range([120,0])
+  .padding(1);
 
 
 // * SETTING THE COLOR SCALE
@@ -861,8 +871,8 @@ svg
   .attr("x", function(d: any) {
     return xScale(d.rec_gn);
   })
-  .attr("y", function(d: any, i) {
-    return d * 20;
+  .attr("y", function(d: any) {
+    return pdbScale(d.pdb_id);
   })
   .attr("text-anchor", "middle")
   .attr("dy", 75)
@@ -893,14 +903,14 @@ svg
 
 // * AMINOACID SEQUENCE BOX
 let seq_rect_h = 20;
-d3.select("g#recAA")
-  .append("rect")
-  .style("stroke", "black")
-  .style("fill", "none")
-  .attr("x", yScale.step() / 2)
-  .attr("y", 60)
-  .attr("width", w - xScale.step())
-  .attr("height", seq_rect_h);
+// d3.select("g#recAA")
+//   .append("rect")
+//   .style("stroke", "black")
+//   .style("fill", "none")
+//   .attr("x", yScale.step() / 2)
+//   .attr("y", 60)
+//   .attr("width", w - xScale.step())
+//   .attr("height", seq_rect_h);
 
 d3.select("g#sigAA")
   .append("rect")
@@ -984,11 +994,29 @@ svg
   .attr("y", 0.8 * yScale.step())
   .text("G-Protein");
 
-// TODO: ADD THE PDB ID AS LABEL
+
+// TODO: ADD THE PDB ID/SIG-PROT AS LABEL
+svg
+  .append("g")
+  .attr("id", "recPDB")
+  .attr("transform", "translate(" + 0 + "," + h + ")")
+  .selectAll("text")
+  .data(Object.keys(dataset))
+  .enter()
+  .append("text")
+  .attr("class", "x label")
+  .attr("x", 0)
+  .attr("y", function(d: any) {
+    return pdbScale(d);
+  })
+  .attr("text-anchor", "end")
+  .attr("dy", 75)
+  .text(function(d: any) {
+    return d;
+  });
 
 
-
-$(document).ready( function () {
+ $(document).ready( function () {
   $('#table_data').DataTable({
     data: data_t,
     columns: [
