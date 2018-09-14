@@ -1,5 +1,6 @@
 from django.conf import settings
 
+from alignment.functions import prepare_aa_group_preference
 from common.selection import Selection
 from common.definitions import *
 from protein.models import Protein, ProteinConformation, ProteinState, ProteinSegment, ProteinFusionProtein, ProteinFamily
@@ -15,6 +16,7 @@ from copy import deepcopy
 from operator import itemgetter
 from Bio.SubsMat import MatrixInfo
 import logging
+import numpy as np
 
 import time
 
@@ -41,6 +43,7 @@ class Alignment:
         self.features = []
         self.features_combo = []
         self.feature_stats = []
+        self.feat_consensus = OrderedDict()
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
         self.use_residue_groups = False
@@ -61,8 +64,39 @@ class Alignment:
         # when true, gaps at the beginning or end of a segment have a different symbol than other gaps
         self.show_padding = True
 
+        # prepare the selection order of the property groups for calculation of the feature consensus
+        self.feature_preference = prepare_aa_group_preference()
+        self.group_lengths = dict([
+            (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
+        ])
+
     def __str__(self):
         return str(self.__dict__)
+
+    def _assign_preferred_features(self, signature, segment, ref_matrix):
+
+        new_signature = []
+        for pos, argmax in enumerate(signature):
+            new_signature.append(self._calculate_best_feature(pos, segment, argmax, ref_matrix))
+        return new_signature
+
+
+    def _calculate_best_feature(self, pos, segment, argmax, ref_matrix):
+
+        tmp = self.feature_preference[argmax]
+        equiv_feat = np.where(np.isin(ref_matrix[segment][:, pos], ref_matrix[segment][argmax][pos]))[0]
+        pref_feat = argmax
+        min_len = self.group_lengths[argmax]
+
+        for efeat in equiv_feat:
+            if efeat in tmp and self.group_lengths[efeat] < min_len:
+                pref_feat = efeat
+                min_len = self.group_lengths[efeat]
+            # when two features have the same aa count, take the one from positive set
+            elif efeat in tmp and self.group_lengths[efeat] == min_len:
+                if ref_matrix[segment][pref_feat][pos] < 0 and ref_matrix[segment][efeat][pos] > 0:
+                    pref_feat = efeat
+        return pref_feat
 
     def load_reference_protein(self, protein):
         """Loads a protein into the alignment as a reference"""
@@ -752,8 +786,6 @@ class Alignment:
                     k += 1
                 j += 1
 
-        # process feature frequency
-
         # create index and prepare stats array
         index_AAG = {}
         for i, feature in enumerate(AMINO_ACID_GROUPS):
@@ -787,6 +819,29 @@ class Alignment:
                     self.feature_stats[i][j][k] = [frequency, freq_interval]
                 k += 1
             j += 1
+
+        # process feature frequency
+        feats = OrderedDict()
+        self.feat_consensus = OrderedDict([(x, []) for x in self.segments])
+        for sid, segment in enumerate(self.segments):
+            feats[segment] = np.array(
+                [[x[0] for x in feat[sid]] for feat in self.feature_stats],
+                dtype='int'
+                )
+            feat_cons_tmp = feats[segment].argmax(axis=0)
+            feat_cons_tmp = self._assign_preferred_features(feat_cons_tmp, segment, feats)
+            for col, pos in enumerate(list(feat_cons_tmp)):
+                self.feat_consensus[segment].append([
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    feats[segment][pos][col],
+                    int(feats[segment][pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                    list(AMINO_ACID_GROUPS.keys())[pos]
+                ])
+            #print(self.feat_consensus[segment])
+        del feats
+        del feat_cons_tmp
 
     def calculate_aa_count_per_generic_number(self):
         ''' Small function to return a dictionary of display_generic_number and the frequency of each AA '''

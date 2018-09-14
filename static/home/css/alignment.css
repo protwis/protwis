@@ -234,6 +234,7 @@
     background-color: #EDEDED;
     color: #000000;
 }
+/* Traffic light color scheme for stats */
 .res-cons--1 {
     background-color: #FFFFFF;
 }
@@ -277,18 +278,49 @@
 .signature-section-header-row {
     height: 40px;
 }
-.column-long {
-    float: left;
-    width: 70%;
-    align-content: center;
-    height: 25px;
+/* Greyscale frequencies */
+.feat-freq-gs-0 {
+    background-color: #ffffff;
 }
-.column-short {
-    float: left;
-    width: 15%;
-    text-align: center;
-    height: 25px;
+.feat-freq-gs-1 {
+    background-color: #e0e0e0;
 }
+.feat-freq-gs-2 {
+    background-color: #d0d0d0;
+}
+.feat-freq-gs-3 {
+    background-color: #c0c0c0;
+}
+.feat-freq-gs-4 {
+    background-color: #b0b0b0;
+    color: #ffffff;
+}
+.feat-freq-gs-5 {
+    background-color: #a0a0a0;
+    color: #ffffff;
+}
+.feat-freq-gs-6 {
+    background-color: #909090;
+    color: #ffffff;
+}
+.feat-freq-gs-7 {
+    background-color: #808080;
+    color: #ffffff;
+}
+.feat-freq-gs-8 {
+    background-color: #707070;
+    color: #ffffff;
+}
+.feat-freq-gs-9 {
+    background-color: #606060;
+    color: #ffffff;
+}
+.feat-freq-gs-10 {
+    background-color: #505050;
+    color: #ffffff;
+}
+
+/* Property groups (left panel with legend) */
 .feat-HY {
     background-color: #93d050;
 }

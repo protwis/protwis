@@ -81,7 +81,7 @@
             <tr>
             {% for segment in feature %}
                 {% for freq in segment %}
-                    <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
+                    <td class="ali-td-stat-summary ali-residue feat-freq-gs-{{ freq.1 }}">
                         {{ freq.0 }}
                     </td>
                 {% endfor %}

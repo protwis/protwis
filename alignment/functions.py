@@ -15,7 +15,7 @@ def strip_html_tags(text):
     """
     return re.sub('<.*?>', '', text)
 
-def get_format_props(freq=None, res=None, feat=None):
+def get_format_props(freq=None, freq_gs=None, res=None, feat=None):
     """
     Get the excel cell format for residues/frequencies.
 
@@ -154,7 +154,48 @@ def get_format_props(freq=None, res=None, feat=None):
             'bg_color': '#00ff00',
         },
     }
-
+    properties_gs = {
+        0: {
+            'bg_color': '#ffffff',
+        },
+        1: {
+            'bg_color': '#e0e0e0',
+        },
+        2: {
+            'bg_color': '#d0d0d0',
+        },
+        3: {
+            'bg_color': '#c0c0c0',
+        },
+        4: {
+            'bg_color': '#b0b0b0',
+            'font_color': '#ffffff',
+        },
+        5: {
+            'bg_color': '#a0a0a0',
+            'font_color': '#ffffff',
+        },
+        6: {
+            'bg_color': '#909090',
+            'font_color': '#ffffff',
+        },
+        7: {
+            'bg_color': '#808080',
+            'font_color': '#ffffff',
+        },
+        8: {
+            'bg_color': '#707070',
+            'font_color': '#ffffff',
+        },
+        9: {
+            'bg_color': '#606060',
+            'font_color': '#ffffff',
+        },
+        10: {
+            'bg_color': '#505050',
+            'font_color': '#ffffff',
+        },
+    }
     property_group = {
         'HY': {
             'bg_color': '#93d050'
@@ -273,6 +314,11 @@ def get_format_props(freq=None, res=None, feat=None):
             return properties[freq]
         except KeyError:
             return properties[int(freq)]
+    elif freq_gs is not None:
+        try:
+            return properties_gs[freq_gs]
+        except KeyError:
+            return properties_gs[int(freq_gs)]
     elif res is not None:
         return residue[res]
     elif feat is not None:
@@ -314,3 +360,22 @@ def get_proteins_from_selection(simple_selection):
                 proteins.append(fp)
 
     return proteins
+
+def prepare_aa_group_preference():
+
+    pref_dict = {}
+    lengths = {}
+    for row, group in enumerate(definitions.AMINO_ACID_GROUPS.items()):
+        tmp_len = len(group[1])
+        try:
+            lengths[tmp_len].append(row)
+        except KeyError:
+            lengths[tmp_len] = [row,]
+    l_heap = sorted(lengths.keys())
+    while l_heap:
+        tmp = l_heap.pop()
+        for feat_row in lengths[tmp]:
+            pref_dict[feat_row] = []
+            for pref_feat in l_heap:
+                pref_dict[feat_row].extend(lengths[pref_feat])
+    return pref_dict

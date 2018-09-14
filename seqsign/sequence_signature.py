@@ -4,7 +4,7 @@ A module for generating sequence signatures for the given two sets of proteins.
 from django.conf import settings
 #from django.core import exceptions
 
-from alignment.functions import strip_html_tags, get_format_props
+from alignment.functions import strip_html_tags, get_format_props, prepare_aa_group_preference
 Alignment = getattr(__import__(
     'common.alignment_' + settings.SITE_NAME,
     fromlist=['Alignment']
@@ -536,7 +536,11 @@ class SequenceSignature:
                         # if aln == 'signature':
                         #     cell_format = workbook.add_format(get_format_props(freq[1] if freq[0] != 0 else 5))
                         # else:
-                        cell_format = workbook.add_format(get_format_props(freq[1]))
+                        if aln == 'signature':
+                            cell_format = workbook.add_format(get_format_props(freq[1]))
+                        else:
+                            cell_format = workbook.add_format(get_format_props(freq_gs=freq[1]))
+
                         worksheet.write(
                             offset + row,
                             1 + col + col_offset,
@@ -1186,22 +1190,3 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                     )
                 col_offset += len(data)
             row_offset += 1
-
-def prepare_aa_group_preference():
-
-    pref_dict = {}
-    lengths = {}
-    for row, group in enumerate(AMINO_ACID_GROUPS.items()):
-        tmp_len = len(group[1])
-        try:
-            lengths[tmp_len].append(row)
-        except KeyError:
-            lengths[tmp_len] = [row,]
-    l_heap = sorted(lengths.keys())
-    while l_heap:
-        tmp = l_heap.pop()
-        for feat_row in lengths[tmp]:
-            pref_dict[feat_row] = []
-            for pref_feat in l_heap:
-                pref_dict[feat_row].extend(lengths[pref_feat])
-    return pref_dict
