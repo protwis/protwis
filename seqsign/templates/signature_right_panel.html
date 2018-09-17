@@ -9,7 +9,7 @@
     </tr>
     <!-- SEQUENCE SIGNATURE -->
     <tr>
-        <td class="ali-td-header-row" colspan="{{ num_residue_columns }}">SEQUENCE SIGNATURE</td>
+        <td class="ali-td-header-row signature-section-header-row" colspan="{{ num_residue_columns }}"></td>
     </tr>
 
     <!-- GENERIC NUMBERS -->
@@ -44,9 +44,22 @@
     <tr>
         {% for segment, cons in signature_consensus.items %}
             {% for pos in cons %}
-                <td class="ali-td-stat-summary ali-residue">
+                <td class="ali-td-stat-summary ali-residue feat-{% if pos.6 == '-' and pos.4 == ''%}_{% else %}{{ pos.6 }}{% endif %}">
                     <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.1|safe }}">
                         {{ pos.0 }}
+                    </div>
+                </td>
+            {% endfor %}
+            <td class="ali-td-anchor">&nbsp;</td>
+        {% endfor %}
+    </tr>
+    <!-- Length row -->
+    <tr>
+        {% for segment, cons in signature_consensus.items %}
+            {% for pos in cons %}
+                <td class="ali-td-stat-summary ali-residue">
+                    <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.1|safe }}">
+                        {{ pos.4 }}
                     </div>
                 </td>
             {% endfor %}
