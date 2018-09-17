@@ -1,7 +1,7 @@
 {% block content %}
 <!-- sequence alignment starts -->
 
-Segment selection: 
+Segment: 
 <label class="checkbox-inline"><input type="checkbox" value="align_N-term" {% if 'N-term' in segments %}checked{% endif %}>N-term</label>
 <label class="checkbox-inline"><input type="checkbox" value="align_TM1" {% if 'TM1' in segments %}checked{% endif %}>TM1</label>
 <label class="checkbox-inline"><input type="checkbox" value="align_ICL1" {% if 'ICL1' in segments %}checked{% endif %}>ICL1</label>
@@ -19,8 +19,14 @@ Segment selection:
 <label class="checkbox-inline"><input type="checkbox" value="align_ICL4" {% if 'ICL4' in segments %}checked{% endif %}>ICL4</label>
 <label class="checkbox-inline"><input type="checkbox" value="align_H8" {% if 'H8' in segments %}checked{% endif %}>H8</label>
 <label class="checkbox-inline"><input type="checkbox" value="align_C-term" {% if 'C-term' in segments %}checked{% endif %}>C-term</label>
-<input type='button' value='align' class="btn" id='re-align' onclick='realign()'>
+<input type='button' value='align' class="btn btn-xs btn-default" id='re-align' onclick='realign()'>
 <input type='hidden' value="{{c_ids}}" id="c_ids">
+<br>
+
+{% if numbering_schemes_list|length > 1 %}
+You have chosen a selection that spans several classes ({{numbering_schemes_list|join:", "}}) -- the GPCRdb generic numbers have reverted to Class A numbers 
+{% endif %}
+
 
 <table>
     <tr>
@@ -35,9 +41,15 @@ Segment selection:
                     </tr>
                     
                     <!-- numbering scheme lines -->
+                    {% if numbering_schemes_list|length > 1 %}
                     <tr>
-                        <td class="ali-td-generic-num ali-td-first-col">GPCRdb gn</td>
+                        <td class="ali-td-generic-num ali-td-first-col">GPCRdb (Class A)</td>
                     </tr>
+                    {% else %}
+                    <tr>
+                        <td class="ali-td-generic-num ali-td-first-col">{{numbering_schemes_list|join:""}}</td>
+                    </tr>
+                    {% endif %}
 
                     <!-- protein names -->
                     {% for c,p in constructs.items %}
@@ -51,9 +63,15 @@ Segment selection:
                     {% endfor %}
 
                     <!-- numbering scheme lines -->
+                    {% if numbering_schemes_list|length > 1 %}
                     <tr>
-                        <td class="ali-td-generic-num ali-td-first-col">GPCRdb gn</td>
+                        <td class="ali-td-generic-num ali-td-first-col">GPCRdb (Class A)</td>
                     </tr>
+                    {% else %}
+                    <tr>
+                        <td class="ali-td-generic-num ali-td-first-col">{{numbering_schemes_list|join:""}}</td>
+                    </tr>
+                    {% endif %}
 
                     {% if a.consensus %}
                     <!-- consensus sequence -->

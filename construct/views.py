@@ -2340,7 +2340,7 @@ def align(request):
         annotations[c.name] = c.schematic()['annotations']
 
 
-    print(annotations)
+    # print(annotations)
 
     if len(s_ids):
         rs = Residue.objects.filter(protein_conformation__protein__in=proteins, protein_segment__slug__in=s_ids).prefetch_related(
@@ -2352,7 +2352,21 @@ def align(request):
         'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
         'generic_number__scheme', 'display_generic_number__scheme')
 
-    print("residues",len(rs))
+    # print("residues",len(rs))
+
+    numbering_schemes = {}
+    numbering_schemes_list = []
+    for pc in proteins:
+        if pc.residue_numbering_scheme.slug not in numbering_schemes:
+            rnsn = pc.residue_numbering_scheme.name
+            numbering_schemes[pc.residue_numbering_scheme.slug] = rnsn
+            numbering_schemes_list.append(rnsn)
+
+    # order and convert numbering scheme dict to tuple
+    numbering_schemes = sorted(numbering_schemes.items(), key=itemgetter(0))
+
+    # print(numbering_schemes_list)
+
 
     distinct_gn = []
     ordered_gn = OrderedDict()
@@ -2364,7 +2378,7 @@ def align(request):
         segment_length[s] = {'aligned':0, 'before':0,'after':0,'total':0}
 
     protein_lookup = {}
-    print('build stuff')
+    # print('build stuff')
 
     segment = ''
     protein = ''
@@ -2396,9 +2410,14 @@ def align(request):
         if r.generic_number:
             no_encountered_gn = False
             gn = r.generic_number.label
-            protein_lookup[protein][gn] = {'aa':r.amino_acid,'pos':r.sequence_number}
             gn_sort = gn.split('x')[1]
             gn_sort = float("0."+gn_sort)
+            if len(numbering_schemes) == 1:
+                gn = r.display_generic_number.label
+                gn_sort = gn.split('x')[1]
+                gn_sort = float("0."+gn_sort)
+
+            protein_lookup[protein][gn] = {'aa':r.amino_acid,'pos':r.sequence_number,'display_gn':r.display_generic_number.label,'scheme':r.display_generic_number.scheme.name}
             if gn not in distinct_gn:
                 distinct_gn.append(gn)
                 overview[segment][gn_sort] = [gn,{'aa':'-','pos':''}]
@@ -2431,7 +2450,7 @@ def align(request):
             for _ in range(segment_length[seg]['before']):
                 gn_list += """<td class="ali-td">&nbsp;</td>"""
         for gn in sorted(gns):
-            ordered_summary[seg][gns[gn][0]] = {'aa':'-','pos':''}
+            ordered_summary[seg][gns[gn][0]] = {'aa':'-','pos':'', 'display_gn':'', 'scheme':''}
             gn_list += """<td class="ali-td-generic-num">{}</td>""".format("x"+gns[gn][0].split("x")[1])
 
         if seg=='C-term':
@@ -2488,7 +2507,7 @@ def align(request):
                     annotation_text = ''
                 alignment_print_sequence += """<td class="ali-td ali-residue res-color-{}">
                                                 <div data-toggle="tooltip" data-placement="top" data-html="true"
-                                                title="{}{}<br>SCHEME: {}{}">{}</div></td>""".format(annotation,aa['aa'],aa['pos'],gn,annotation_text,aa['aa'])
+                                                title="{}{}<br>{}: {}{}">{}</div></td>""".format(annotation,aa['aa'],aa['pos'],aa['scheme'],aa['display_gn'],annotation_text,aa['aa'])
 
             for aa in track_unaligned[p][seg]['after']:
                 if aa['pos'] in annotations[c]:
@@ -2511,7 +2530,7 @@ def align(request):
 
         alignment_print_sequence += '</tr>'
 
-    print('done',len(alignment_print_sequence))
-    context = {'constructs': constructs,'alignment_print_sequence': alignment_print_sequence, 'segment_length' : segment_length, 'gn_list' : gn_list, 'segments': s_ids, 'c_ids': json.dumps(c_ids)} #, 'alignment_print_sequence': alignment_print_sequence
+    # print('done',len(alignment_print_sequence),numbering_schemes_list)
+    context = {'constructs': constructs,'numbering_schemes_list':numbering_schemes_list,'alignment_print_sequence': alignment_print_sequence, 'segment_length' : segment_length, 'gn_list' : gn_list, 'segments': s_ids, 'c_ids': json.dumps(c_ids)} #, 'alignment_print_sequence': alignment_print_sequence
 
     return render(request,'align.html',context)
