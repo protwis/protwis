@@ -1,6 +1,6 @@
 // * CONSTANTS
 let margin = { top: 0, right: 150, bottom: 180, left: 130 };
-let w = 650 - margin.left - margin.right,
+let w = 50 - margin.left - margin.right,
   h = 550 - margin.top - margin.bottom;
 
 // * DATA
@@ -682,7 +682,7 @@ let pdbScale = d3
 let colScale = d3
   .scaleOrdinal()
   .domain(int_ty)
-  .range(d3.schemeDark2);
+  .range(d3.schemeSet3);
 
 // * DEFINING AXIS FOR X/Y AND GRID
 let xAxis = d3

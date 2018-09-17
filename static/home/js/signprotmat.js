@@ -1,6 +1,6 @@
 // * CONSTANTS
 var margin = { top: 0, right: 150, bottom: 180, left: 130 };
-var w = 650 - margin.left - margin.right, h = 550 - margin.top - margin.bottom;
+var w = 50 - margin.left - margin.right, h = 550 - margin.top - margin.bottom;
 // * DATA
 // let dataset = interactions;
 var dataset = {
@@ -660,7 +660,7 @@ var pdbScale = d3
 var colScale = d3
     .scaleOrdinal()
     .domain(int_ty)
-    .range(d3.schemeDark2);
+    .range(d3.schemeSet3);
 // * DEFINING AXIS FOR X/Y AND GRID
 var xAxis = d3
     .axisBottom(xScale)
