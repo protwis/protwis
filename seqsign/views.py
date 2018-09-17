@@ -36,6 +36,7 @@ class PosTargetSelection(AbsTargetSelection):
 
 class NegTargetSelection(AbsTargetSelection):
 
+    default_species = 'Human'
     step = 2
     number_of_steps = 4
     docs = 'sequences.html#structure-based-alignments'
@@ -162,28 +163,28 @@ def render_signature_excel(request):
     # Feature stats for positive group alignment
     signature.prepare_excel_worksheet(
         wb,
-        'positive_group_properties',
+        'protein_set1_properties',
         'positive',
         'features'
     )
     # Positive group alignment
     signature.prepare_excel_worksheet(
         wb,
-        'positive_group_aln',
+        'protein_set1_aln',
         'positive',
         'alignment'
     )
     # Feature stats for negative group alignment
     signature.prepare_excel_worksheet(
         wb,
-        'negative_group_properties',
+        'protein_set2_properties',
         'negative',
         'features'
     )
     # Negative group alignment
     signature.prepare_excel_worksheet(
         wb,
-        'negative_group_aln',
+        'protein_set2_aln',
         'negative',
         'alignment'
     )
@@ -213,32 +214,23 @@ def render_signature_match_scores(request, cutoff):
         signature_data['numbering_schemes'],
         signature_data['common_segments'],
         signature_data['diff_matrix'],
-        # get_proteins_from_selection(ss_pos) + get_proteins_from_selection(ss_neg),
         get_proteins_from_selection(ss_pos),
         get_proteins_from_selection(ss_neg),
         cutoff = int(cutoff)
     )
-    signature_match.score_protein_class()
-    # scores_pos, signatures_pos, protein_set_pos = signature_match.score_protein_set(signature_match.protein_set_pos)
-    # scores_neg, signatures_neg, protein_set_neg = signature_match.score_protein_set(signature_match.protein_set_neg)
+    signature_match.score_protein_class(get_proteins_from_selection(ss_pos)[0].family.slug[:3])
     request.session['signature_match'] = {
         'scores': signature_match.protein_report,
-        # 'scores_pos': scores_pos,
-        # 'scores_neg': scores_neg,
+
         'scores_pos': signature_match.scores_pos,
         'scores_neg': signature_match.scores_neg,
         'protein_signatures': signature_match.protein_signatures,
-        # 'signatures_pos': signatures_pos,
-        # 'signatures_neg': signatures_neg,
         'signatures_pos': signature_match.signatures_pos,
         'signatures_neg': signature_match.signatures_neg,
         'signature_filtered': signature_match.signature_consensus,
         'relevant_gn': signature_match.relevant_gn,
         'relevant_segments': signature_match.relevant_segments,
         'numbering_schemes': signature_match.schemes,
-        #FIXME: Is it really necessary?
-        # 'proteins_positive': signature_match.protein_set_pos,
-        # 'proteins_negative': signature_match.protein_set_neg,
     }
 
     response = render(
