@@ -1087,7 +1087,7 @@ def InteractionMatrix(request):
             },
         }
 
-    rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
+    # rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
 
     interactions = SignprotInteractions.objects.all().values_list(
         'gpcr_residue__sequence_number',
