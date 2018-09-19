@@ -2549,42 +2549,44 @@
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
-                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                $(".heatmap").hide();
-                $(".heatmap-legend").hide();
-                $(".matrix-tab:visible").click();
+                if (pdb.length > 0 && segments.length > 0) {
+                    var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                    $(".heatmap").hide();
+                    $(".heatmap-legend").hide();
+                    $(".matrix-tab:visible").click();
 
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
-                if (!$(selector + ' .interactions-input').val() == null)
-                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                    $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                    if (!$(selector + ' .interactions-input').val() == null)
+                        interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
-                $.getJSON( '/contactnetwork/interactiondata',
-                {
-                    'segments': segments,
-                    'generic': generic,
-                    'pdbs': pdb,
-                    'interaction_types': interactionTypes
-                },
-                function( data ) {
-                    // Re-render heatmap
-                    $(".heatmap").show();
-                    $(".heatmap-legend").show();
-                    heatmapFunction(data, selector + ' .heatmap-container');
-                    $("#svgloading").remove()
-                    // Re-render flareplot
-                    createFlareplotBox(data, selector + " .flareplot-container");
+                    $.getJSON( '/contactnetwork/interactiondata',
+                    {
+                        'segments': segments,
+                        'generic': generic,
+                        'pdbs': pdb,
+                        'interaction_types': interactionTypes
+                    },
+                    function( data ) {
+                        // Re-render heatmap
+                        $(".heatmap").show();
+                        $(".heatmap-legend").show();
+                        heatmapFunction(data, selector + ' .heatmap-container');
+                        $("#svgloading").remove()
+                        // Re-render flareplot
+                        createFlareplotBox(data, selector + " .flareplot-container");
 
-                    if (selector == '#single-crystal-group-tab') {
-                      createSchematicPlot(data, selector + " .schematic-con-container", {type: 'singleCrystalGroup'}); //.schematic-container
-                      createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'})
-                    } else {
-                      createSchematicPlot(data, selector + " .schematic-con-container"); //.schematic-container
-                      createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false})
+                        if (selector == '#single-crystal-group-tab') {
+                          createSchematicPlot(data, selector + " .schematic-con-container", {type: 'singleCrystalGroup'}); //.schematic-container
+                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'})
+                        } else {
+                          createSchematicPlot(data, selector + " .schematic-con-container"); //.schematic-container
+                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false})
 
-                    }
+                        }
 
-                    // createNGLview("single",pdb);
-                });
+                        createNGLview("single",pdb);
+                    });
+                }
             });
         }
 
@@ -2593,53 +2595,55 @@
                 var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
-                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                $(".heatmap").hide();
-                $(".heatmap-legend").hide();
-                $(".matrix-tab:visible").click();
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
+                if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
+                    var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                    $(".heatmap").hide();
+                    $(".heatmap-legend").hide();
+                    $(".matrix-tab:visible").click();
+                    $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
 
-                $.getJSON( '/contactnetwork/interactiondata',
-                {
-                    'segments': segments,
-                    'generic': generic,
-                    'pdbs': pdbs1,
-                    'interaction_types': interactionTypes
-                },
-                function( data1 ) {
-                    $("#svgloading").remove();
-                    $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (33%)</span>');
                     $.getJSON( '/contactnetwork/interactiondata',
                     {
                         'segments': segments,
                         'generic': generic,
-                        'pdbs': pdbs2,
+                        'pdbs': pdbs1,
                         'interaction_types': interactionTypes
                     },
-                    function( data2 ) {
+                    function( data1 ) {
                         $("#svgloading").remove();
-                        $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
-                        // NOTE: this call seems redundant, shouldn't we already have all the data we need from the previous two calls
+                        $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (33%)</span>');
                         $.getJSON( '/contactnetwork/interactiondata',
                         {
                             'segments': segments,
                             'generic': generic,
-                            'pdbs': pdbs1.concat(pdbs2),
+                            'pdbs': pdbs2,
                             'interaction_types': interactionTypes
-                        }, function ( data3 ) {
-                            // Re-render heatmap
-                            $(".heatmap").show();
-                            $(".heatmap-legend").show();
-                            $("#svgloading").remove()
-                            heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
-                            createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data2, data3); //.schematic-container
-                            createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data2, data3)
+                        },
+                        function( data2 ) {
+                            $("#svgloading").remove();
+                            $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
+                            // NOTE: this call seems redundant, shouldn't we already have all the data we need from the previous two calls
+                            $.getJSON( '/contactnetwork/interactiondata',
+                            {
+                                'segments': segments,
+                                'generic': generic,
+                                'pdbs': pdbs1.concat(pdbs2),
+                                'interaction_types': interactionTypes
+                            }, function ( data3 ) {
+                                // Re-render heatmap
+                                $(".heatmap").show();
+                                $(".heatmap-legend").show();
+                                $("#svgloading").remove()
+                                heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
+                                createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data2, data3); //.schematic-container
+                                createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data2, data3)
 
-                            // Re-render flareplot
-                            createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
+                                // Re-render flareplot
+                                createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
+                            });
                         });
                     });
-                });
+                }
             });
         }
 
