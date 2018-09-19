@@ -1,4 +1,5 @@
 from contactnetwork.residue import *
+from Bio.PDB.Polypeptide import *
 
 import math
 
@@ -22,6 +23,7 @@ class InteractingPair:
         return self.res2
 
     def get_pymol_selection_code(self):
+        # TODO fix static chain selection
         return "select chain A and (resi {0}+{1}); zoom sele; show sticks, sele".format(str(self.res1.id[1]), str(self.res2.id[1]))
 
     def get_interaction_text(self):
@@ -36,6 +38,21 @@ class InteractingPair:
                 text += i.get_name()
 
         text += ')'
+
+        return text
+
+    def get_interaction_json(self, generic):
+        text = '[\'{0}\',\'{1}\',{2},\'{3}\',\'{4}\',\'{5}\',{6}, ["'.format(self.res1.parent.id, three_to_one(self.res1.get_resname()), self.res1.id[1], generic, self.res2.parent.id, three_to_one(self.res2.get_resname()), self.res2.id[1])
+        first = True
+
+        if self.interactions:
+            for i in self.interactions:
+                if not first:
+                    text += ', "'
+                first = False
+                text += i.get_name() + '"'
+
+        text += ']]'
 
         return text
 

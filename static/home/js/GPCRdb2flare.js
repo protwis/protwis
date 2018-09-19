@@ -135,16 +135,31 @@ function parseGPCRdb2flare(data) {
     new Set(allInteractions).forEach( i => { interactions[i] = 0; });
     allInteractions.forEach( i => { interactions[i] = interactions[i] + 1; });
 
-    dataFlare.edges.push({
-      name1: pairResidues[0],
-      name2: pairResidues[1],
-      frames: [0],
-      color: "#A0A0A0", // Default gray coloring of edges
-      interactions: interactions, // For frequency and type coloring
-      // split between 1 and 2 groups
-      frequency: interactions["any"]/data.pdbs.length,
-      segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
-    });
+    if ("frequency" in data){
+        dataFlare.edges.push({
+          name1: pairResidues[0],
+          name2: pairResidues[1],
+          frames: [0],
+          color: "#A0A0A0", // Default gray coloring of edges
+          interactions: interactions, // For frequency and type coloring
+          // split between 1 and 2 groups
+          frequency: data.frequency[pair],
+          count: data.count[pair],
+          segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
+        });
+    } else {
+        dataFlare.edges.push({
+          name1: pairResidues[0],
+          name2: pairResidues[1],
+          frames: [0],
+          color: "#A0A0A0", // Default gray coloring of edges
+          interactions: interactions, // For frequency and type coloring
+          // split between 1 and 2 groups
+          frequency: interactions["any"]/data.pdbs.length,
+          count: interactions["any"],
+          segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
+        });
+    }
   });
 
   return dataFlare;
