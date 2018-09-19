@@ -762,6 +762,24 @@
             return getGradientColor(-1*frequency, rgb);
         }
 
+        function getFlareGradientColor(fDiff, rgb){
+            var color;
+            var shift = 80;
+            var basal = 255 - shift;
+
+            if (fDiff <= 0)
+                // If fDiff is close to -1, we want a red color
+                color = { r: basal + (fDiff * -1*shift), g: basal-basal*(-fDiff), b: basal-basal*(-fDiff) };
+            else
+                // If fDiff is close to 1 we want a blue color
+                color = { r: basal-basal*fDiff, g: basal-basal*fDiff, b: basal + (fDiff * shift)};
+
+            if (rgb)
+                return color;
+            else
+                return rgb2hex(color.r, color.g, color.b);
+        }
+
         function getGradientColor(fDiff, rgb){
           var color;
             if (fDiff <= 0)
@@ -2530,7 +2548,6 @@
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
-                // var pdb = ['2RH1', '3RZE', '3SN6', '4BVN']
                 var segments = JSON.parse($(selector + ' .segments-input').val());
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
@@ -2602,6 +2619,7 @@
                     function( data2 ) {
                         $("#svgloading").remove();
                         $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
+                        // NOTE: this call seems redundant, shouldn't we already have all the data we need from the previous two calls
                         $.getJSON( '/contactnetwork/interactiondata',
                         {
                             'segments': segments,
@@ -2616,6 +2634,9 @@
                             heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
                             createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data2, data3); //.schematic-container
                             createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data2, data3)
+
+                            // Re-render flareplot
+                            createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
                         });
                     });
                 });
@@ -2882,6 +2903,33 @@
           };
         }
 
+        function createTwoGroupFlareplotBox(data1, data2, data3, container, toggle = false) {
+          // prepare two group data for visualization
+          var data = data3;
+
+          // frequency + count holder
+          data["frequency"] = {};
+          data["count"] = {};
+
+          Object.keys(data.interactions).forEach(function(pair) {
+            var f1 = 0, f2 = 0, c1 = 0, c2 = 0;;
+            if (pair in data1.interactions) {
+                c1 = Object.keys(data1.interactions[pair]).length;
+                f1 = c1/data1.pdbs.length;
+            }
+            if (pair in data2.interactions) {
+                c2 = Object.keys(data2.interactions[pair]).length;
+                f2 = c2/data2.pdbs.length;
+            }
+            var f3 = f1 - f2;
+            var c3 = c1 + c2;
+            data["frequency"][pair] = [f1, f2, f3];
+            data["count"][pair] = [c1, c2, c3];
+          });
+
+          createFlareplotBox(data, container, toggle = false);
+        }
+
         var flareplot = {};
         var contiguous = false;
         var interactionsToggleList = [];
@@ -2913,10 +2961,10 @@
 
                 // if single structure - use interaction coloring
                 if (container.indexOf("single-crystal-tab") >= 0)
-                    content += '<option value="interactions">Interaction Type</option>'
+                    content += '<option value="interactions" selected>Interaction Type</option>'
                 // if group(s) of structures - use frequency coloring (gradient)
                 else
-                    content += '<option value="frequency">Interaction Frequency/Count</option>'
+                    content += '<option value="frequency" selected>Interaction Frequency/Count</option>'
 
                 content += '</select></p>';
 
@@ -2940,37 +2988,81 @@
                                 + '</li>';
                     });
                     content += '</ul></div>';
+                } else if (container.indexOf("single-crystal-group-tab") >= 0) {
+                    // slider 0 to count
+                    content += '<h4 class="center">Frequency (#PDBs)</h4>'
+                        + '<p>Range: <span id="pdbs-range-flare">0 - ' + data.pdbs.length + '</span></p>'
+                        + '<div class="slider-range" data-text-id="pdbs-range-flare" id="pdbs-range-flare-slider"></div>'
+                        + '<div class="temperature-scale">'
+                        + '<span class="gray-to-red"></span>'
+                        + '</div>';
+
+                    $( function() {
+                      $( container+" .slider-range" ).data({ "referenceContainer" : container })
+                      $( container+" .slider-range" ).slider({
+                        range: true,
+                        min: 0,
+                        max: data.pdbs.length,
+                        step: 1,
+                        values: [0,data.pdbs.length],
+                        slide: function( event, ui ) {
+                          $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+                          flareplot[$(this).data("referenceContainer")].updateRange(ui.values[ 0 ], ui.values[ 1 ]);
+                        }
+                      });
+                    } );
                 } else {
-                    // Add sliders for frequency cutoff
-                    if (container.indexOf("single-crystal-group-tab") >= 0) {
-                        // slider 0 to count
-                        content += '<h4 class="center">Frequency (#PDBs)</h4>'
-                            + '<p>Range: <span id="pdbs-range-flare">0 - ' + data.pdbs.length + '</span></p>'
-                            + '<div class="slider-range" data-text-id="pdbs-range-flare" id="pdbs-range-flare-slider"></div>'
-                            + '<div class="temperature-scale">'
-                            + '<span class="gray-to-red"></span>'
-                            + '</div>';
+                    content += '<h4 class="center">Frequency</h4>'
+                        + '<p>Group 1 range: <span id="freq-flare-range-1">0 - 1</span></p>'
+                        + '<div class="slider-range" data-text-id="freq-flare-range-1" id="freq-flare-slider-range-1"></div>'
+                        + '<p>Group 2 range: <span id="freq-flare-range-2">0 - 1</span></p>'
+                        + '<div class="slider-range" data-text-id="freq-flare-range-2" id="freq-flare-slider-range-2"></div>'
+                        + '<p>Freq difference range: <span id="freq-flare-range-3">-1 - 1</span></p>'
+                        + '<div class="slider-range-diff" data-text-id="freq-flare-range-3" id="freq-flare-slider-range-3"></div>'
+                        + '<div class="temperature-scale">'
+                        + '<span class="red-to-gray"></span>'
+                        + '<span class="gray-to-blue"></span>'
+                        + '</div>'
+                        + '</div>';
 
                         $( function() {
-                          $( container+" .slider-range" ).data({ "referenceContainer" : container })
-                          $( container+" .slider-range" ).slider({
+                          $( container+" #freq-flare-slider-range-1" ).data({ "referenceContainer" : container });
+                          $( container+" #freq-flare-slider-range-2" ).data({ "referenceContainer" : container });
+                          $( container+" #freq-flare-slider-range-3" ).data({ "referenceContainer" : container });
+                          $( container+" #freq-flare-slider-range-1" ).slider({
                             range: true,
                             min: 0,
-                            max: data.pdbs.length,
-                            step: 1,
-                            values: [0,data.pdbs.length],
+                            max: 1,
+                            step: 0.01,
+                            values: [0,1],
                             slide: function( event, ui ) {
                               $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
-                              flareplot[$(this).data("referenceContainer")].updateRange(ui.values[ 0 ], ui.values[ 1 ]);
+                              updateTwoGroupSliders($(this)[0].id, ui);
                             }
                           });
-                        } );
-                    } else {
-                        // TODO two group sliders
-                        // slider group 1
-                        // slider group 2
-                        // slider diff -1 to 1
-                    }
+                          $( container+" #freq-flare-slider-range-2" ).slider({
+                            range: true,
+                            min: 0,
+                            max: 1,
+                            step: 0.01,
+                            values: [0,1],
+                            slide: function( event, ui ) {
+                              $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+                              updateTwoGroupSliders($(this)[0].id, ui);
+                            }
+                          });
+                          $( container+" #freq-flare-slider-range-3" ).slider({
+                            range: true,
+                            min: -1,
+                            max: 1,
+                            step: 0.01,
+                            values: [-1,1],
+                            slide: function( event, ui ) {
+                              $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+                              updateTwoGroupSliders($(this)[0].id, ui);
+                            }
+                          });
+                        });
                 }
 
                 newDiv.innerHTML = content;
@@ -3023,7 +3115,29 @@
                 flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
                 if ($(container + ' .flareplot-legend .color-box input[type=checkbox]').length > 0)
                   flareplot[container].showInteractions(interactionsToggleList);
+                if (container.indexOf("two-crystal-groups-tab") >= 0)
+                  updateTwoGroupSliders("skip", []);
+            } else {
+              flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
             }
+        }
+
+        function updateTwoGroupSliders(origin, ui) {
+            // grab data from all sliders
+            var g1 = $( "#freq-flare-slider-range-1").slider("values");
+            var g2 = $( "#freq-flare-slider-range-2" ).slider("values");
+            var diff = $( "#freq-flare-slider-range-3" ).slider("values");
+
+            // update with current slide values
+            if (origin == "freq-flare-slider-range-1")
+                g1 = ui.values;
+            else if (origin == "freq-flare-slider-range-2")
+                g2 = ui.values;
+            else if (origin == "freq-flare-slider-range-3")
+                diff = ui.values;
+
+            // apply cutoffs
+            flareplot[$( "#freq-flare-slider-range-1").data("referenceContainer")].updateRangeTwoGroups(g1[0], g1[1], g2[0], g2[1], diff[0], diff[1]);
         }
 
         var stage = [];
@@ -3645,6 +3759,32 @@
             background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
             background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
             filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .flareplot-legend .temperature-scale .red-to-gray {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(220,220,220,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#DCDCDC',GradientType=1 );
+        }
+
+        .flareplot-legend .temperature-scale .gray-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#0000FF',GradientType=1 );
         }
 
         .heatmap-legend .temperature-scale .white-to-red {
