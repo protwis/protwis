@@ -1022,24 +1022,24 @@ svg
     "translate(" + (w + (1 / 3) * margin.right) + "," + yScale.step() / 2 + ")"
   )
   .append("rect")
-  .style("stroke", "black")
   .style("fill", "#eaeaea")
-  .attr("y", 2)
-  .attr("width", sigScale.range()[0])
-  .attr("height", yScale.range()[0])
+  .attr("x", 0 + sigScale.step()/2)
+  .attr("y", yScale.step()/2)
+  .attr("width", sigScale.range()[0] - sigScale.step())
+  .attr("height", yScale.range()[0] - yScale.step();
 
 let each_res = svg
   .select('g#sigAA')
   .selectAll("text")
   .data(data_t_sig)
   .enter()
-  .append('g')
+  .append('g');
 
 each_res
   .append('rect')
   .style("fill", (d: any) => colScale(d.int_ty))
   .attr("x", (d: any) => sigScale(d.pdb_id) - sigScale.step()/2)
-  .attr("y", (d: any) => 5 + yScale(d.sig_gn) - yScale.step())
+  .attr("y", (d: any) => yScale(d.sig_gn) - yScale.step()/2)
   .attr('width', sigScale.step())
   .attr('height', yScale.step());
 
@@ -1051,6 +1051,14 @@ each_res
   .attr("text-anchor", "middle")
   .attr("dy", 5)
   .text((d: any) => d.sig_aa);
+
+d3.select('g#sigAA').append("rect")
+  .style("stroke", "black")
+  .style("fill", "none")
+  .attr("x", 0 + sigScale.step()/2)
+  .attr("y", yScale.step()/2)
+  .attr("width", sigScale.range()[0] - sigScale.step())
+  .attr("height", yScale.range()[0] - yScale.step());
 
 
 
