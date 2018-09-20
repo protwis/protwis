@@ -1,6 +1,6 @@
 // * CONSTANTS
-var margin = { top: 20, right: 200, bottom: 180, left: 130 };
-var w = 1100 - margin.left - margin.right, h = 800 - margin.top - margin.bottom;
+var margin = { top: 40, right: 200, bottom: 180, left: 130 };
+var w = 1200 - margin.left - margin.right, h = 900 - margin.top - margin.bottom;
 // * DATA
 // let dataset = interactions;
 var dataset = {
@@ -877,6 +877,47 @@ svg
     .selectAll("text")
     .attr("class", "legend")
     .attr("text-anchor", "end");
+// * APPENDING COL TICK ANNOTATION FOR RECEPTOR GNs
+svg
+    .append("g")
+    .attr("id", "recPDB")
+    .attr("transform", "translate(" + 0 + "," + h + ")")
+    .selectAll("text")
+    .data(Object.keys(dataset))
+    .enter()
+    .append("text")
+    .attr("class", "x label")
+    .attr("x", 0)
+    .attr("y", function (d) {
+    return pdbScale(d);
+})
+    .attr("text-anchor", "end")
+    .attr("dy", 75)
+    .text(function (d) {
+    return d;
+});
+// * APPENDING ROW TICK ANNOTATION FOR SIGPROT GNs
+svg
+    .append("g")
+    .attr("id", "sigPDB")
+    .attr("transform", "translate(" + w + "," + 0 + ")rotate(-45)")
+    .selectAll("text")
+    .data(Object.keys(dataset))
+    .enter()
+    .append("text")
+    .attr("class", "x label")
+    .attr("x", function (d) {
+    return sigScale(d);
+})
+    .attr("y", function (d) {
+    return sigScale(d);
+})
+    .attr("text-anchor", "begin")
+    .attr("dx", 45)
+    .attr("dy", 45)
+    .text(function (d) {
+    return d;
+});
 // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
 svg
     .append("g")
@@ -886,6 +927,7 @@ svg
     .data(data_t_rec)
     .enter()
     .append("text")
+    .attr("class", "res_label")
     .attr("x", function (d) {
     return xScale(d.rec_gn);
 })
@@ -906,6 +948,7 @@ svg
     .data(data_t_sig)
     .enter()
     .append("text")
+    .attr("class", "res_label")
     .attr("x", function (d) {
     return sigScale(d.pdb_id);
 })
@@ -997,25 +1040,6 @@ svg
     .attr("x", w - 0.8 * xScale.step())
     .attr("y", 0.8 * yScale.step())
     .text("G-Protein");
-// TODO: ADD THE PDB ID/SIG-PROT AS LABEL
-svg
-    .append("g")
-    .attr("id", "recPDB")
-    .attr("transform", "translate(" + 0 + "," + h + ")")
-    .selectAll("text")
-    .data(Object.keys(dataset))
-    .enter()
-    .append("text")
-    .attr("class", "x label")
-    .attr("x", 0)
-    .attr("y", function (d) {
-    return pdbScale(d);
-})
-    .attr("text-anchor", "end")
-    .attr("dy", 75)
-    .text(function (d) {
-    return d;
-});
 $(document).ready(function () {
     $('#table_data').DataTable({
         data: data_t,

@@ -100,6 +100,17 @@ line {
     stroke-width: 2;
 } */
 
+.res_label {
+    display: inline;
+    padding: .2em .6em .3em;
+    font-size: 75%;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25em;
+}
 
 /* removing unnecessary paths via assigning no stroke */
 .x.grid path {
