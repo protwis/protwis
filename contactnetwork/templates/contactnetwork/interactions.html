@@ -355,7 +355,7 @@
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                                <div class="ngl-container" id="ngl-single-group" style="margin: auto; width:100%; height:1000px;">
                                 </div>
                             </div>
                          </div>
@@ -2577,14 +2577,13 @@
 
                         if (selector == '#single-crystal-group-tab') {
                           createSchematicPlot(data, selector + " .schematic-con-container", {type: 'singleCrystalGroup'}); //.schematic-container
-                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'})
+                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
+                          createNGLview("single-group",pdb[0]);
                         } else {
                           createSchematicPlot(data, selector + " .schematic-con-container"); //.schematic-container
-                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false})
-
+                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false});
+                          createNGLview("single",pdb[0]);
                         }
-
-                        createNGLview("single",pdb);
                     });
                 }
             });
@@ -3380,7 +3379,7 @@
                               +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                               +'</div>';
 
-            $("#ngl-single").append(newDiv);
+            $("#ngl-"+mode).append(newDiv);
 
             $("#"+mode+"-NGL-link").click(function(e){
                 $(function() {
