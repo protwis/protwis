@@ -1,5 +1,6 @@
 from django.conf import settings
 
+from alignment.functions import prepare_aa_group_preference
 from common.selection import Selection
 from common.definitions import *
 from protein.models import Protein, ProteinConformation, ProteinState, ProteinSegment, ProteinFusionProtein, ProteinFamily
@@ -15,6 +16,7 @@ from copy import deepcopy
 from operator import itemgetter
 from Bio.SubsMat import MatrixInfo
 import logging
+import numpy as np
 
 import time
 
@@ -39,7 +41,9 @@ class Alignment:
         self.aa_count = OrderedDict()
         self.aa_count_with_protein = OrderedDict()
         self.features = []
+        self.features_combo = []
         self.feature_stats = []
+        self.feat_consensus = OrderedDict()
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
         self.use_residue_groups = False
@@ -60,8 +64,39 @@ class Alignment:
         # when true, gaps at the beginning or end of a segment have a different symbol than other gaps
         self.show_padding = True
 
+        # prepare the selection order of the property groups for calculation of the feature consensus
+        self.feature_preference = prepare_aa_group_preference()
+        self.group_lengths = dict([
+            (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
+        ])
+
     def __str__(self):
         return str(self.__dict__)
+
+    def _assign_preferred_features(self, signature, segment, ref_matrix):
+
+        new_signature = []
+        for pos, argmax in enumerate(signature):
+            new_signature.append(self._calculate_best_feature(pos, segment, argmax, ref_matrix))
+        return new_signature
+
+
+    def _calculate_best_feature(self, pos, segment, argmax, ref_matrix):
+
+        tmp = self.feature_preference[argmax]
+        equiv_feat = np.where(np.isin(ref_matrix[segment][:, pos], ref_matrix[segment][argmax][pos]))[0]
+        pref_feat = argmax
+        min_len = self.group_lengths[argmax]
+
+        for efeat in equiv_feat:
+            if efeat in tmp and self.group_lengths[efeat] < min_len:
+                pref_feat = efeat
+                min_len = self.group_lengths[efeat]
+            # when two features have the same aa count, take the one from positive set
+            elif efeat in tmp and self.group_lengths[efeat] == min_len:
+                if ref_matrix[segment][pref_feat][pos] < 0 and ref_matrix[segment][efeat][pos] > 0:
+                    pref_feat = efeat
+        return pref_feat
 
     def load_reference_protein(self, protein):
         """Loads a protein into the alignment as a reference"""
@@ -233,16 +268,21 @@ class Alignment:
         for pc in self.proteins:
             if pc.protein.residue_numbering_scheme.slug not in self.numbering_schemes:
                 rnsn = pc.protein.residue_numbering_scheme.name
-                self.numbering_schemes[pc.protein.residue_numbering_scheme.slug] = rnsn
+                try:
+                    #New way of breaking down the numbering scheme
+                    rnsn_parent = prot.protein.residue_numbering_scheme.parent.short_name
+                except:
+                    rnsn_parent = ''
+                self.numbering_schemes[pc.protein.residue_numbering_scheme.slug] = (rnsn, rnsn_parent)
 
         # order and convert numbering scheme dict to tuple
-        self.numbering_schemes = sorted(self.numbering_schemes.items(), key=itemgetter(0))
+        self.numbering_schemes = sorted([(x[0], x[1][0], x[1][1]) for x in self.numbering_schemes.items()], key=itemgetter(0))
 
     # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
-    def build_alignment(self, fetch_alternative_GN = True):
+    def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
         # fetch segment residues
-        if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1 and fetch_alternative_GN:
+        if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
             rs = Residue.objects.filter(
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
                 'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
@@ -476,7 +516,7 @@ class Alignment:
                                 self.generic_numbers[ns_slug][segment][pos] = []
 
                         # add display numbers for other numbering schemes of selected proteins
-                        if (not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1 and fetch_alternative_GN):
+                        if (not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1):
                             if r.generic_number:
                                 for arn in r.alternative_generic_numbers.all():
                                     for ns in self.numbering_schemes:
@@ -646,9 +686,11 @@ class Alignment:
         # 1. Update most frequent amino_acids for this generic number
         # 2. Update feature counter for this generic number
         features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
+        self.features_combo = [(x, y['display_name_short'], y['length']) for x,y in zip(list(AMINO_ACID_GROUP_NAMES.values()), list(AMINO_ACID_GROUP_PROPERTIES.values()))]
         self.features = list(AMINO_ACID_GROUP_NAMES.values())
+
         for j in self.aa_count:
-            most_freq_aa[j] = OrderedDict();
+            most_freq_aa[j] = OrderedDict()
             feature_count[j] = OrderedDict()
             for generic_number in self.aa_count[j]:
                 feature_count[j][generic_number] = features.copy()
@@ -744,8 +786,6 @@ class Alignment:
                     k += 1
                 j += 1
 
-        # process feature frequency
-
         # create index and prepare stats array
         index_AAG = {}
         for i, feature in enumerate(AMINO_ACID_GROUPS):
@@ -779,6 +819,29 @@ class Alignment:
                     self.feature_stats[i][j][k] = [frequency, freq_interval]
                 k += 1
             j += 1
+
+        # process feature frequency
+        feats = OrderedDict()
+        self.feat_consensus = OrderedDict([(x, []) for x in self.segments])
+        for sid, segment in enumerate(self.segments):
+            feats[segment] = np.array(
+                [[x[0] for x in feat[sid]] for feat in self.feature_stats],
+                dtype='int'
+                )
+            feat_cons_tmp = feats[segment].argmax(axis=0)
+            feat_cons_tmp = self._assign_preferred_features(feat_cons_tmp, segment, feats)
+            for col, pos in enumerate(list(feat_cons_tmp)):
+                self.feat_consensus[segment].append([
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    feats[segment][pos][col],
+                    int(feats[segment][pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                    list(AMINO_ACID_GROUPS.keys())[pos]
+                ])
+            #print(self.feat_consensus[segment])
+        del feats
+        del feat_cons_tmp
 
     def calculate_aa_count_per_generic_number(self):
         ''' Small function to return a dictionary of display_generic_number and the frequency of each AA '''

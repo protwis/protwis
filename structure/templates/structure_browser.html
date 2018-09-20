@@ -919,14 +919,15 @@
                     <td>
                         {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }}
                     </td>
-                    <td>
-                        {{ structure.stabilizing_agents.all|only_arrestins }}
+                    <td class="text-center arrestin">
+                        {{ structure.stabilizing_agents.all|only_arrestins|linebreaksbr }}
                     </td>
                     <td>
                         {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
                     </td>
-                    <td>
-                        {{ structure.stabilizing_agents.all|only_antibodies }}
+
+                    <td class="text-center antibody">
+                        {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
                     </td>
 
                     <td>
