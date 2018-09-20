@@ -930,24 +930,27 @@ svg
     .attr("y", 70)
     .attr("width", xScale.range()[1] - xScale.step() / 2)
     .attr("height", pdbScale.range()[0]);
-svg
+var each_res = svg
     .select('g#recAA')
     .selectAll("text")
     .data(data_t_rec)
     .enter()
+    .append('g');
+each_res
+    .append('rect')
+    .style("fill", function (d) { return colScale(d.int_ty); })
+    .attr("x", function (d) { return xScale(d.rec_gn) - xScale.step() / 2; })
+    .attr("y", function (d) { return 75 + pdbScale(d.pdb_id) - pdbScale.step(); })
+    .attr('width', xScale.step())
+    .attr('height', pdbScale.step());
+each_res
     .append("text")
     .attr("class", "res_label")
-    .attr("x", function (d) {
-    return xScale(d.rec_gn);
-})
-    .attr("y", function (d) {
-    return pdbScale(d.pdb_id);
-})
+    .attr("x", function (d) { return xScale(d.rec_gn); })
+    .attr("y", function (d) { return pdbScale(d.pdb_id); })
     .attr("text-anchor", "middle")
     .attr("dy", 75)
-    .text(function (d) {
-    return d.rec_aa;
-});
+    .text(function (d) { return d.rec_aa; });
 // * APPENDING AMINOACID SEQUENCE [SIGPROT]
 svg
     .append("g")
