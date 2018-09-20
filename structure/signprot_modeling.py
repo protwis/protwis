@@ -434,6 +434,24 @@ class SignprotModeling():
         #         print(v, b, n, m, sign_a.reference_dict[i][v], sign_a.template_dict[j][b], sign_a.alignment_dict[k][n], signprot_pdb_array[l][m])
 
 
+class SignprotFunctions(object):
+    def __init__(self):
+        pass
+
+    def get_subfamilies_with_templates(self):
+        subfams = []
+        for i in SignprotComplex.objects.all():
+            if i.protein.family.name not in subfams:
+                subfams.append(i.protein.family.name)
+        return subfams
+
+    def get_subfam_subtype_dict(self, subfamilies):
+        d = {}
+        for s in subfamilies:
+            d[s] = [i.entry_name for i in Protein.objects.filter(family__name=s, species__common_name='Human')]
+        return d
+
+
 class GPCRDBParsingPDB(object):
     ''' Class to manipulate cleaned pdb files of GPCRs.
     '''

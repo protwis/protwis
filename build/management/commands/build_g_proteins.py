@@ -268,7 +268,7 @@ class Command(BaseCommand):
                 self.purge_signprot_complex_data()
                 self.purge_coupling_data()
                 self.purge_cgn_residues()
-                self.purge_other_residues()
+                self.purge_other_subunit_residues()
                 self.purge_cgn_proteins()
                 self.purge_other_subunit_proteins()
 

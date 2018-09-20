@@ -1523,15 +1523,17 @@ class GProteinAlignment(Alignment):
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
 
-    def run_alignment(self, reference_protein, template_protein, segments=None):
+    def run_alignment(self, reference_protein, template_protein, segments=None, calculate_similarity=False):
         self.load_reference_protein(reference_protein)
         self.load_proteins([template_protein])
         if segments:
-            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein', name__in=segments)
+            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha', name__in=segments)
         else:
-            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
+            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
         self.load_segments(gprotein_segments)
         self.build_alignment()
+        if calculate_similarity:
+            self.calculate_similarity()
         self.enhance_alignment(self.proteins[0], self.proteins[1])
 
     def enhance_alignment(self, reference, template):

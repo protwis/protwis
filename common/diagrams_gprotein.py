@@ -98,7 +98,9 @@ class DrawGproteinPlot(Diagram):
         self.count = 1
         self.count_sheet = 0
         for s in G_PROTEIN_SEGMENTS['Full']:
+            print(self.segments_full[s], self.segments_full[s].category)
             if self.segments_full[s].category=='helix':
+                print(s)
                 self.helixoutput += self.drawSnakePlotHelix(s)
                 self.count += 1
             if self.segments_full[s].category=='sheet':
@@ -112,7 +114,7 @@ class DrawGproteinPlot(Diagram):
                 self.drawSnakePlotLoop(s)
             else:
                 self.count += 1
-
+        print(self.helixoutput)
 
 
     def __str__(self):

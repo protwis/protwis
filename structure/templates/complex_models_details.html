@@ -81,6 +81,31 @@ canvas {
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
+        <h4>MODEL</h4>
+    </div>
+    <div class="col-md-9">
+        <div class="btn-group">
+            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download .pdb</a>
+        </div>
+        <div>
+            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+        </div>
+        <div style="float: left; width: 60%;">
+            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+            </div>
+            
+            <!-- <div class="btn-group">
+                <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
+            </div> -->
+            
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
         <h4>MAIN TEMPLATE</h4>
     </div>
     <div class="col-md-9">
@@ -90,54 +115,12 @@ canvas {
             <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
         </div>
         <br>
-        <a href="/signprot/{{ signprot_template.entry_name }}">{{ signprot_template.name|safe }}</a> PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
+        <a href="/signprot/{{ signprot_template.entry_name }}">{{ signprot_template.name|safe }}</a> (sequence similarity: {{ signprot_sim }}%)
         {% if signprot_template.entry_name != model.sign_protein.entry_name %}
             <div class="btn-group", style="padding: 0px 0px 5px 5px;">
                 <a id="align_btn2" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
             </div>
         {% endif %}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>MODEL</h4>
-    </div>
-    <div class="col-md-9">
-        <div style="float: left; width: 60%;">
-            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
-            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
-            </div>
-            <div style='width: 70%; display:table; position:relative;'>
-                <div style='width: 20%; display: table-cell;'>
-                    <button id="fullscreen">Full Screen</button>
-                </div>
-                <div style='display: table-cell;'>
-                    {% for prot, bts in backbone_templates.items %}
-                        {% for bt in bts %}
-                            <div class="graphcolor" style="background-color:{{ bt.color }}; width: 15%; margin-top: 5px;">{{ bt.pdb_code.index }}</div>
-                        {% endfor %}
-                    {% endfor %}
-                            <div class="graphcolor" style="background-color:white; width: 15%;">None</div>
-                </div>
-            </div>
-            
-            <br>
-        
-            <div class="btn-group">
-                    <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download .pdb</a>
-            </div>
-            <div class="btn-group">
-                    <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_csv">Download .csv</a>
-            </div>
-            <!-- <div class="btn-group">
-                <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
-            </div> -->
-            <div>
-                <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -161,6 +144,20 @@ canvas {
         }
     </style>
     <div class="col-md-9">
+        <div style='width: 70%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+                {% for prot, bts in backbone_templates.items %}
+                    {% for bt in bts %}
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
+                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
+                        
+                        
+                    {% endfor %}
+                {% endfor %}
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
+                        None
+            </div>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -186,7 +183,10 @@ canvas {
         </table>
         <br>
         Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+        <div class="btn-group">
+            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_csv">Download .csv</a>
+        </div>
         <style>
             table.dataTable thead th {padding: 3px 1px 3px 3px;}
         </style>

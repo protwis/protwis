@@ -257,7 +257,7 @@ class CallHomologyModeling():
 
 
     def run(self, import_receptor=False):
-        # try:
+        try:
             seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
 
             ##### Ignore output from that can come from BioPDB! #####
@@ -267,6 +267,7 @@ class CallHomologyModeling():
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
                                               force_main_temp=self.force_main_temp)
+            print(self.signprot)
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor)
                 model, templates, similarities = ihm.find_files()
@@ -395,35 +396,35 @@ class CallHomologyModeling():
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(self.receptor+'\n')
 
-        # except Exception as msg:
-        #     try:
-        #         exc_type, exc_obj, exc_tb = sys.exc_info()
-        #         if self.debug:
-        #             print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, self.receptor,
-        #                                                                                     Homology_model.main_structure,msg))
-        #             print(''.join(traceback.format_tb(exc_tb)))
-        #         logger.error('Failed to build model {} {}\n    {}'.format(self.receptor, self.state, msg))
-        #         t = tests.HomologyModelsTests()
-        #         if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-        #             t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-        #                                      Homology_model.main_structure)
-        #             if Homology_model.complex:
-        #                 t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.target_signprot.entry_name)]),
-        #                                    os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.target_signprot.entry_name)]))
-        #             else:
-        #                 t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.state)]),
-        #                                    os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.state)]))
-        #         elif 'No such residue:' in str(msg):
-        #             if self.debug:
-        #                 t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)  
-        #         with open('./structure/homology_models/done_models.txt','a') as f:
-        #             f.write(self.receptor+'\n')
-        #     except:
-        #         try:
-        #             Protein.objects.get(entry_name=self.receptor)
-        #         except:
-        #             logger.error('Invalid receptor name: {}'.format(self.receptor))
-        #             print('Invalid receptor name: {}'.format(self.receptor))
+        except Exception as msg:
+            try:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                if self.debug:
+                    print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, self.receptor,
+                                                                                            Homology_model.main_structure,msg))
+                    print(''.join(traceback.format_tb(exc_tb)))
+                logger.error('Failed to build model {} {}\n    {}'.format(self.receptor, self.state, msg))
+                t = tests.HomologyModelsTests()
+                if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+                    t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+                                             Homology_model.main_structure)
+                    if Homology_model.complex:
+                        t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.target_signprot.entry_name)]),
+                                           os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.target_signprot.entry_name)]))
+                    else:
+                        t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.state)]),
+                                           os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.state)]))
+                elif 'No such residue:' in str(msg):
+                    if self.debug:
+                        t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)  
+                with open('./structure/homology_models/done_models.txt','a') as f:
+                    f.write(self.receptor+'\n')
+            except:
+                try:
+                    Protein.objects.get(entry_name=self.receptor)
+                except:
+                    logger.error('Invalid receptor name: {}'.format(self.receptor))
+                    print('Invalid receptor name: {}'.format(self.receptor))
         
 
 class HomologyModeling(object):
@@ -538,7 +539,7 @@ class HomologyModeling(object):
                 if int(p)<prev_p:
                     sp_first_indeces.append(i)
                 prev_p = int(p)
-
+            print(sp_first_indeces)
         i = 0
         path = './structure/homology_models/'
         # if self.revise_xtal==False:
@@ -560,6 +561,7 @@ class HomologyModeling(object):
             atom_num = 1
 
             for line in pdblines:
+                print(line)
                 try:
                     if prev_num==None:
                         pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCD]+)(\d+)([A-Z\s\d.-]{49,53})',line)
@@ -583,6 +585,7 @@ class HomologyModeling(object):
                         whitespace = (whitespace-3)*' '
                     group1 = pdb_re.group(1)
                     if self.complex:
+                        print(i)
                         if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
                                 whitespace = whitespace[0]+'R'
@@ -598,7 +601,8 @@ class HomologyModeling(object):
                                 whitespace = whitespace[0]+'B'
                             else:
                                 whitespace = whitespace[0]+'B'+whitespace[2:]
-                        else:
+                        elif sp_first_indeces[2]<=i:
+                            print(i, 'G')
                             if len(whitespace)==2:
                                 whitespace = whitespace[0]+'G'
                             else:
@@ -606,8 +610,6 @@ class HomologyModeling(object):
                     out_line = group1+whitespace+pos_list[i]+pdb_re.group(4)
                     out_list.append(out_line)
                 except Exception as msg:
-                    print(msg)
-                    print(line)
                     try:
                         if line.startswith('TER'):
                             pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sABCD]+)(\d+)',line)
@@ -733,9 +735,6 @@ class HomologyModeling(object):
                 ws1 = ' '*(5-len(str(c1.sequence_number)))
                 ws2 = ' '*(5-len(str(c2.sequence_number)))
                 ssbond+='SSBOND   {} CYS {}{}{}    CYS {}{}{}\n'.format(count, chain, ws1, str(c1.sequence_number), chain, ws2, str(c2.sequence_number))
-                print(i,j)
-                print(pdb_struct[chain][c1.sequence_number])
-                print(pdb_struct[chain][c2.sequence_number])
                 sg1 = pdb_struct[chain][c1.sequence_number]['SG'].get_serial_number()
                 sg2 = pdb_struct[chain][c2.sequence_number]['SG'].get_serial_number()
                 ws3 = ' '*(5-len(str(sg1)))
@@ -2344,7 +2343,6 @@ class HomologyModeling(object):
                     # f.write("\nTER{}      {} {}{}".format(str(atom_num).rjust(8),atom.get_parent().get_resname(),str(self.main_template_preferred_chain)[0],str(res_num).rjust(4)))
                 trimmed_segment = OrderedDict()
                 for key in segment:
-                    print(key, segment[key])
                     res_num+=1
                     counter_num+=1
                     for i, d_p in enumerate(disulfide_pairs):
@@ -2546,7 +2544,7 @@ sequence:{uniprot}::::::::
         
         a.starting_model = 1
         a.ending_model = number_of_models
-        a.md_level = refine.slow
+        a.md_level = refine.very_fast
         path = "./structure/homology_models/"
         if not os.path.exists(path):
             os.mkdir(path)

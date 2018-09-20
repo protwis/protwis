@@ -16,7 +16,7 @@ from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
-from structure.signprot_modeling import SignprotModeling, GPCRDBParsingPDB
+from structure.signprot_modeling import SignprotModeling, GPCRDBParsingPDB, SignprotFunctions
 
 import Bio.PDB as PDB
 from modeller import *
@@ -109,31 +109,38 @@ class Command(BaseBuild):
 
         excludees = SignprotComplex.objects.all().values_list('structure__protein_conformation__protein__parent__entry_name', flat=True)
         classA_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', family__parent__parent__parent__name='Class A (Rhodopsin)')
-        gprotein_targets = {'Gs':['gnas2_human', 'gnal_human'], 'Gi/o':['gnai1_human', 'gnai2_human','gnai3_human','gnao_human','gnat1_human','gnat2_human','gnat3_human','gnaz_human'], 
-                            'Gq/11':['gnaq_human','gna11_human','gna14_human','gna15_human'], 'G12/13':['gna12_human','gna13_human']}
+        # gprotein_targets = {'Gs':['gnas2_human', 'gnal_human'], 'Gi/o':['gnai1_human', 'gnai2_human','gnai3_human','gnao_human','gnat1_human','gnat2_human','gnat3_human','gnaz_human'], 
+        #                     'Gq/11':['gnaq_human','gna11_human','gna14_human','gna15_human'], 'G12/13':['gna12_human','gna13_human']}
+
+        sf = SignprotFunctions()
+        subfams = sf.get_subfamilies_with_templates()
+        gprotein_targets = sf.get_subfam_subtype_dict(subfams)
+
+        del gprotein_targets['Gi/o']
 
         c=0
-        classA_receptors = Protein.objects.filter(entry_name='drd2_human')
-
-        mod = CallHomologyModeling('drd2_human', 'Active', debug=True, complex_model=True, signprot='gnao_human')
-        mod.run(import_receptor=True)
-        return 0
+        # classA_receptors = Protein.objects.filter(entry_name='drd2_human')
 
         for receptor in classA_receptors:
             if receptor.entry_name not in excludees:
                 c+=1
-                print(receptor)
+                
                 first_in_subfam = True
                 for gprotein_subfam, targets in gprotein_targets.items():
                     for target in targets:
                         if first_in_subfam:
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot='gnai1_human')
+                            print(receptor, target)
+                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
                             mod.run()
-                        ihm = ImportHomologyModel(receptor.entry_name)
-                        if ihm.find_files()!=None:
-                            break
-                    # mod = CallHomologyModeling('receptor.entry_name', 'Active', debug=True, update=True, complex_model=True, signprot='gnat1_human')
-                    # mod.run(import_receptor=True)
+                            first_in_subfam = False
+                        else:
+                            print(receptor, target, 'IMPORT')
+                            ihm = ImportHomologyModel(receptor.entry_name)
+                            if ihm.find_files()!=None:
+                                mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                                mod.run(import_receptor=True)
+                        break
+            break
         print(c)
 
         

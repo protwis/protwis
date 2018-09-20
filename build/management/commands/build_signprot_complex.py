@@ -25,7 +25,14 @@ class Command(BaseCommand):
                 for i in data:
                     b_protein = Protein.objects.get(entry_name=i['beta']['protein'])
                     g_protein = Protein.objects.get(entry_name=i['gamma']['protein'])
+                    structure = Structure.objects.get(pdb_code__index=i['pdb'])
                     signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=protein), 
-                                                                                      structure=Structure.objects.get(pdb_code__index=i['pdb']),
+                                                                                      structure=structure,
                                                                                       alpha=i['alpha'], beta_chain=i['beta']['chain'], gamma_chain=i['gamma']['chain'],
                                                                                       beta_protein=b_protein, gamma_protein=g_protein)
+                    
+                    structure.signprot_complex = signprot_complex
+                    structure.save()
+                    print(signprot_complex)
+                    print(structure.signprot_complex)
+                    

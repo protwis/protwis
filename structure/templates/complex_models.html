@@ -531,7 +531,7 @@
     <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label> -->
 </div>
 <br /><br />
-
+<!-- 
     Show/hide columns:
 <div class="btn-group" data-toggle="buttons">
   <label class="btn btn-default btn-xs">
@@ -545,7 +545,7 @@
     <input class="column_toggle" type="checkbox" value="Purification" data-column="11,12,13" checked="checked"> Template
   </label>
 </div>
-<br><br>
+<br><br> -->
 
     <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
     <br>Loading...
@@ -600,7 +600,7 @@
                         <td>no evidence</td>
                     {% endif %}
                     <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
-                    <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
+                    <td><a href="/signprot/{{ model.main_template.signprot_complex.protein.entry_name }}">{{ model.main_template.signprot_complex.protein.name|safe }}</a></td>
                     <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                     <td style="display:none;">{{ model.receptor_protein.entry_name }}</td>
                     <td style="display:none;">{{ model.sign_protein.entry_name }}</td>          

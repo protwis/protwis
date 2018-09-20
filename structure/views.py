@@ -24,6 +24,7 @@ from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
 from common.models import ReleaseNotes
+from common.alignment import GProteinAlignment
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -104,13 +105,17 @@ class ServeComplexModels(TemplateView):
         context = super(ServeComplexModels, self).get_context_data(**kwargs)
         try:
             context['structure_complex_model'] = StructureComplexModel.objects.all().defer('pdb').prefetch_related(
+                "receptor_protein",
                 "receptor_protein__family",
                 "receptor_protein__family__parent__parent__parent",
                 "receptor_protein__species",
+                "sign_protein",
                 "sign_protein__family",
                 "sign_protein__family__parent__parent__parent",
                 "main_template__protein_conformation__protein__parent__family",
-                "main_template__pdb_code")
+                "main_template__pdb_code",
+                "main_template__signprot_complex",
+                "prot_signprot_pair")
         except StructureComplexModel.DoesNotExist as e:
             pass
 
@@ -180,13 +185,12 @@ def ComplexModelDetails(request, modelname, signprot):
 
     signprot_template = SignprotComplex.objects.get(structure=model_main_template).protein
     bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, model_main_template, color_palette, chain='R')
-    print(colors)
     signprot_color_palette = [i for i in color_palette if i not in list(colors.values())]
 
     bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, model_main_template, signprot_color_palette, chain='A', used_colors=colors)
-    import pprint
  
-   
+    gp = GProteinAlignment()
+    gp.run_alignment(model.sign_protein, signprot_template, calculate_similarity=True)
 
     for b,n in bb_temps2.items():
         for s in n:
@@ -196,14 +200,12 @@ def ComplexModelDetails(request, modelname, signprot):
                 if s not in bb_temps[s.protein_conformation.protein.parent]:
                     bb_temps[s.protein_conformation.protein.parent].append(s)
                     break
-    print(segments_out2)
-    
 
     return render(request,'complex_models_details.html',{'model': model, 'modelname': modelname, 'signprot': signprot, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                          'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
                                                          'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1), 
                                                          'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 
-                                                         'template_list': template_list, 'model_main_template': model_main_template, 'state': None, 
+                                                         'template_list': template_list, 'model_main_template': model_main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
                                                          'signprot_color_residues': segments_out2, 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
 
 def format_model_details(rotamers, model_main_template, color_palette, chain=None, used_colors=None):
