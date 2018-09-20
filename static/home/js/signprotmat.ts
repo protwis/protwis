@@ -927,7 +927,7 @@ svg
   .enter()
   .append("text")
   .attr("class", "x label")
-  .attr("x", 0)
+  .attr("x", -10)
   .attr("y", function(d: any) {
     return pdbScale(d);
   })
@@ -967,6 +967,16 @@ svg
   .append("g")
   .attr("id", "recAA")
   .attr("transform", "translate(" + -xScale.step() / 2 + "," + h + ")")
+  .append("rect")
+  .style("stroke", "black")
+  .style("fill", "#eaeaea")
+  .attr("x", yScale.step() / 2)
+  .attr("y", 70)
+  .attr("width", xScale.range()[1] - xScale.step()/2)
+  .attr("height", pdbScale.range()[0])
+
+svg
+  .select('g#recAA')
   .selectAll("text")
   .data(data_t_rec)
   .enter()
@@ -992,6 +1002,15 @@ svg
     "transform",
     "translate(" + (w + (1 / 3) * margin.right) + "," + yScale.step() / 2 + ")"
   )
+  .append("rect")
+  .style("stroke", "black")
+  .style("fill", "#eaeaea")
+  .attr("y", 2)
+  .attr("width", sigScale.range()[0])
+  .attr("height", yScale.range()[0])
+
+svg
+  .select('g#sigAA')
   .selectAll("text")
   .data(data_t_sig)
   .enter()
@@ -1007,27 +1026,8 @@ svg
   .attr("dy", 5)
   .text(function(d: any) {
     return d.sig_aa;
-  });
+  })
 
-// * AMINOACID SEQUENCE BOX
-let seq_rect_h = 20;
-// d3.select("g#recAA")
-//   .append("rect")
-//   .style("stroke", "black")
-//   .style("fill", "none")
-//   .attr("x", yScale.step() / 2)
-//   .attr("y", 60)
-//   .attr("width", w - xScale.step())
-//   .attr("height", seq_rect_h);
-
-// d3.select("g#sigAA")
-//   .append("rect")
-//   .style("stroke", "black")
-//   .style("fill", "none")
-//   .attr("x", -seq_rect_h / 2)
-//   .attr("y", yScale.step() / 2)
-//   .attr("width", seq_rect_h)
-//   .attr("height", h - yScale.step());
 
 // * DRAWING AXES
 svg
