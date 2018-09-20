@@ -593,7 +593,8 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
-                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span><br>
+                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span> 
+                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview"></div>
                       </div>
                </div>
@@ -615,7 +616,8 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span><br>
+                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span> 
+                        <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview group-number-1" group-number="1"></div>
                </div>
                 <div class="modal-footer">
@@ -637,7 +639,8 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span><br>
+                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span> 
+                        <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview group-number-2" group-number="2"></div>
                </div>
                 <div class="modal-footer">
@@ -2728,6 +2731,37 @@
             // Update view
             $(pdbsCountSelector).html(pdbs.length);
           }
+          update_text_in_modal();
+        }
+
+        function resetselection(elem) {
+          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+
+          $('.check_all:visible').prop('checked',false);
+
+          if (mode=='Single group of structures') {
+            var pdbs = [];
+
+            $('input', oTable[mode].cells().nodes()).prop('checked',false); 
+
+            var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
+            var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
+            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+            $(pdbsCountSelector).html(pdbs.length);
+          }  else if (mode=='Two groups of structures') {
+
+            group = $('.tableview:visible').attr('group-number');
+            if (group) mode = mode + group;
+            var pdbs = [];
+
+            $('input', oTable[mode].cells().nodes()).prop('checked',false); 
+
+            var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
+            var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
+            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+            $(pdbsCountSelector).html(pdbs.length);
+          } 
+
           update_text_in_modal();
         }
 
