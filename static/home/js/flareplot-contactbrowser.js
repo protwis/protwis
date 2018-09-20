@@ -255,19 +255,24 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                   var segment = graph.segments[key];
 
                   if (segment.nodes.length > 0 ){
+                    var lastDrawn = segment.nodes[(segment.nodes.length - 1)];
+
+                    // correct order of nodes
+                    segment.nodes.sort();
                     var last = segment.nodes[(segment.nodes.length - 1)];
                     var x = (graph.trees[selectedTree].tree[segment.nodes[0]].x + graph.trees[selectedTree].tree[last].x)/2 - 90;
+
                     // base label color on intensity of band color
                     var segmentColor = invertColor(segment.color, true);
 
-                    // move to short labels if not enough nodes
-                    // Consider changing all labels to short if necesary for consistency
+                    // move to short labels if not enough nodes (i.e. space)
+                    // Consider changing all labels to short if desired necesary for consistency
                     var label = key;
                     if (segment.nodes.length < 4 && structures.indexOf(key) >= 0){
                         label = structuresShort[structures.indexOf(key)];
                     }
 
-                    svg.selectAll("g#trackElement-" + last)
+                    svg.selectAll("g#trackElement-" + lastDrawn)
                       .append("text")
                       .attr("class", "segmentElement")
                       .attr("transform", "rotate("+x+") translate(" + (ry - 13) + ") rotate(90)") // 13 is based on width segment band of 15
@@ -420,10 +425,11 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         target: t.tree[e.name2],
                         key: "" + t.tree[e.name1].key + "-" + t.tree[e.name2].key ,
                         color: e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
-                        interactions: e.interactions,
+                        count: e.count,
                         frequency: e.frequency,
-                        segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
+                        interactions: e.interactions,
                         opacity: e.opacity || graph.defaults.edgeOpacity || 1,
+                        segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
                         width: e.width || graph.defaults.edgeWidth || 1
                     };
 
@@ -434,10 +440,11 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             target: edge.target,
                             key: edge.key,
                             color: edge.color,
-                            interactions: edge.interactions,
+                            count: edge.count,
                             frequency: edge.frequency,
-                            segment: edge.segment,
+                            interactions: edge.interactions,
                             opacity: edge.opacity,
+                            segment: edge.segment,
                             width: edge.width
                         };
                         t.allEdges.push({
@@ -445,10 +452,11 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             target: edge.target,
                             key: edge.key,
                             color: edge.color,
-                            interactions: edge.interactions,
+                            count: edge.count,
                             frequency: edge.frequency,
-                            segment: edge.segment,
+                            interactions: edge.interactions,
                             opacity: edge.opacity,
+                            segment: edge.segment,
                             width: edge.width
                         });
                     } else {
@@ -1110,7 +1118,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             switch(color){
               case "frequency":
                 svg.selectAll("path.link")
-                    .style("stroke", function(d){ return getFrequencyColor(d.frequency, false); });
+                    .style("stroke", function(d){ if (Array.isArray(d.frequency)){ return getFlareGradientColor( d.frequency[2], false);} else { return getFlareGradientColor( -1*d.frequency, false);} });
                 break;
               case "interactions":
                 svg.selectAll("path.link")
@@ -1125,6 +1133,18 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     .style("stroke", function(d){ return d.color; });
                 break;
             }
+        }
+
+        function updateRange(min, max) {
+          // Hide/Show based on frequency
+          svg.selectAll("path.link")
+              .style("visibility", function(d){ if (d.count>=min && d.count <= max) return "visible"; else return "hidden"; });
+        }
+
+        function updateRangeTwoGroups(minG1, maxG1, minG2, maxG2, minDiff, maxDiff) {
+          // Hide/Show based on frequency
+          svg.selectAll("path.link")
+              .style("visibility", function(d){ if (d.frequency[0]>=minG1 && d.frequency[0] <= maxG1 && d.frequency[1]>=minG2 && d.frequency[1] <= maxG2 && d.frequency[2]>=minDiff && d.frequency[2] <= maxDiff ) return "visible"; else return "hidden"; });
         }
 
         function showInteractions(interactions) {
@@ -1182,6 +1202,8 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             addEdgeHoverListener: addEdgeHoverListener,
             addFrameListener: addFrameListener,
             updateColors: updateColors,
+            updateRange: updateRange,
+            updateRangeTwoGroups: updateRangeTwoGroups,
             showInteractions: showInteractions,
             graph: graph//, for debugging purposes
         }
