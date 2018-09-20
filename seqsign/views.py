@@ -54,11 +54,11 @@ class NegTargetSelection(AbsTargetSelection):
     }
 
     def get_context_data(self, **kwargs):
-        #A bit ugly solution to having two target sets without modifying half of common.selection
-        context = super(NegTargetSelection, self).get_context_data(**kwargs)
-
         self.request.session['targets_pos'] = deepcopy(self.request.session.get('selection', False))
         del self.request.session['selection']
+
+        #A bit ugly solution to having two target sets without modifying half of common.selection
+        context = super(NegTargetSelection, self).get_context_data(**kwargs)
 
         return context
 
