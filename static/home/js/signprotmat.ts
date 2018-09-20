@@ -948,7 +948,7 @@ svg
 svg
   .append("g")
   .attr("id", "sigPDB")
-  .attr("transform", "translate(" + w + "," + 0 + ")rotate(-45)")
+  .attr("transform", "translate(" + w + "," + yScale.step() + ")rotate(-45)")
   .selectAll("text")
   .data(Object.keys(dataset))
   .enter()
