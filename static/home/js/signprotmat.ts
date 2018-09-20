@@ -646,15 +646,22 @@ let keys = [
 data_t = data_t.map(function(e) {
   let obj = {};
   keys.forEach(function(key, i) {
+    // comment this out later
+    if (key === 'sig_gn') {
+      obj[key] = Math.floor(e[i] / 10);
+      return;
+    }
     obj[key] = e[i];
   });
   return obj;
 });
 
+
 // * DEFINE ADDITIONAL DATASETS
 // These are used as the x and y axis tick mark labels
 let data_t_rec = _.uniqBy(data_t, (t) => [t.rec_gn, t.pdb_id].join());
 let data_t_sig = _.uniqBy(data_t, (t) => [t.sig_gn, t.pdb_id].join());
+
 
 let int_ty = []
 for (let i = 0; i < data_t.length; i++) {
@@ -711,7 +718,6 @@ let yScale = d3
   .padding(1);
 
 // * SETTING THE PDB/SIG-PROT SCALE
-// TODO: DEFINE SCALE FOR PDB ID AND SIGPROT ID
 let pdbScale = d3
   .scaleBand()
   .domain(
@@ -720,7 +726,7 @@ let pdbScale = d3
       .keys()
       .sort(d3.descending)
   )
-  .range([120,0])
+  .range([180,0])
   .padding(1);
 
 let sigScale = d3
@@ -926,7 +932,7 @@ svg
   .data(Object.keys(dataset))
   .enter()
   .append("text")
-  .attr("class", "x label")
+  .attr("class", "x axis_label")
   .attr("x", -10)
   .attr("y", function(d: any) {
     return pdbScale(d);
@@ -947,7 +953,7 @@ svg
   .data(Object.keys(dataset))
   .enter()
   .append("text")
-  .attr("class", "x label")
+  .attr("class", "x axis_label")
   .attr("x", function(d: any) {
     return sigScale(d);
   })
@@ -968,12 +974,11 @@ svg
   .attr("id", "recAA")
   .attr("transform", "translate(" + -xScale.step() / 2 + "," + h + ")")
   .append("rect")
-  .style("stroke", "black")
   .style("fill", "#eaeaea")
-  .attr("x", yScale.step() / 2)
-  .attr("y", 70)
-  .attr("width", xScale.range()[1] - xScale.step()/2)
-  .attr("height", pdbScale.range()[0])
+  .attr("x", xScale.step()/2)
+  .attr("y", 75)
+  .attr("width", xScale.range()[1] - xScale.step())
+  .attr("height", pdbScale.range()[0] - pdbScale.step())
 
 let each_res = svg
   .select('g#recAA')
@@ -999,6 +1004,14 @@ each_res
   .attr("dy", 75)
   .text((d: any) => d.rec_aa);
 
+d3.select('g#recAA').append('rect')
+  .style("stroke", "black")
+  .style("fill", "none")
+  .attr("x", xScale.step()/2)
+  .attr("y", 75)
+  .attr("width", xScale.range()[1] - xScale.step())
+  .attr("height", pdbScale.range()[0] - pdbScale.step())
+
 
 // * APPENDING AMINOACID SEQUENCE [SIGPROT]
 svg
@@ -1015,24 +1028,30 @@ svg
   .attr("width", sigScale.range()[0])
   .attr("height", yScale.range()[0])
 
-svg
+let each_res = svg
   .select('g#sigAA')
   .selectAll("text")
   .data(data_t_sig)
   .enter()
+  .append('g')
+
+each_res
+  .append('rect')
+  .style("fill", (d: any) => colScale(d.int_ty))
+  .attr("x", (d: any) => sigScale(d.pdb_id) - sigScale.step()/2)
+  .attr("y", (d: any) => 5 + yScale(d.sig_gn) - yScale.step())
+  .attr('width', sigScale.step())
+  .attr('height', yScale.step());
+
+each_res
   .append("text")
   .attr("class", "res_label")
-  .attr("x", function(d: any) {
-    return sigScale(d.pdb_id);
-  })
-  .attr("y", function(d: any) {
-    return yScale(d.sig_gn);
-  })
+  .attr("x", (d: any) => sigScale(d.pdb_id))
+  .attr("y", (d: any) => yScale(d.sig_gn))
   .attr("text-anchor", "middle")
   .attr("dy", 5)
-  .text(function(d: any) {
-    return d.sig_aa;
-  })
+  .text((d: any) => d.sig_aa);
+
 
 
 // * DRAWING AXES
@@ -1094,7 +1113,7 @@ svg
 // * ADD AXIS LABELS
 svg
   .append("text")
-  .attr("class", "x label")
+  .attr("class", "x axis_label")
   .attr("text-anchor", "end")
   .attr("x", 0)
   .attr("y", h + 15)
@@ -1102,7 +1121,7 @@ svg
 
 svg
   .append("text")
-  .attr("class", "y label")
+  .attr("class", "y axis_label")
   .attr("text-anchor", "begin")
   .attr("x", w - 0.8 * xScale.step())
   .attr("y", 0.8 * yScale.step())
