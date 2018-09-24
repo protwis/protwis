@@ -80,6 +80,7 @@ AA_ZSCALES = {
     "W": [-4.36,  3.94,  0.59,  3.44, -1.59],
     "Y": [-2.54,  2.44,  0.43,  0.04, -1.47]
 }
+ZSCALES = ["Z1", "Z2", "Z3", "Z4", "Z5"]
 
 # The Octanol-Interface scale from the Wimley-White scale uis used here.
 HYDROPHOBICITY = {
