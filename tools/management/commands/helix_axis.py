@@ -98,48 +98,17 @@ class Command(BaseCommand):
         
         #better if no tmlist
         #db_set = {r.sequence_number for r in db_reslist if r.generic_number and  r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"]} # r.protein_segment.label in [1,2,3,4,5,6,7] } #
-        
-        class MySelect2(pdb.Select):
-            def accept_atom(self, atom):
-                return (True if (atom.get_id() == "CA") else False)
-            
-            def accept_residue(self, residue):
-                return (True if residue.get_id()[1] in db_set else False)
-            
-            def accept_chain(self, chain):
-                return (True if chain.get_id() == preferred_chain else False)
-            
-            def accept_model(self, model):
-                return (True if model.get_id() == 0 else False)
-        
-        select = MySelect2()
-        for model in structure:
-            if not select.accept_model(model):
-                structure.detach_child(model.get_id())
-            else:
-                for chain in model.get_list():
-                    if not select.accept_chain(chain):
-                        model.detach_child(chain.get_id())
-                    else: 
-                        for residue in chain.get_unpacked_list():
-                            if not select.accept_residue(residue):
-                                chain.detach_child(residue.get_id())
-                            else:
-                                for atom in residue.get_unpacked_list():
-                                    if not select.accept_atom(atom):
-                                        residue.detach_child(atom.get_id())
 
-#        sel_list = [lambda entity: True if entity.get_id() == 0 else False,
-#                    lambda entity: True if entity.get_id() == preferred_chain else False,
-#                    lambda entity: True if entity.get_id() in db_set else False,
-#                    lambda entity: True if entity.get_id() == "CA" else False]
-#        
-#        def recurse(entity,slist):
-#            if slist:
-#                for subenty in entity.get_list():
-#                    if not slist[0](subenty): entity.detach_child(subenty.get_id())
-#                    else: recurse(subenty, slist[1:])
-#        recurse(structure,sel_list)
+        def recurse(entity,slist):
+            if slist:
+                for subenty in entity.get_list():
+                    if not slist[0](subenty): entity.detach_child(subenty.get_id())
+                    else: recurse(subenty, slist[1:])
+
+        recurse(structure,[lambda entity: True if entity.get_id() == 0 else False, #model
+                           lambda entity: True if entity.get_id() == preferred_chain else False, #chain
+                           lambda entity: True if entity.get_id()[1] in db_set else False, # residue
+                           lambda entity: True if entity.get_id() == "CA" else False])
 
         io1 = pdb.PDBIO()
         io1.set_structure(structure)
