@@ -260,7 +260,8 @@ def get_format_props(freq=None, freq_gs=None, res=None, feat=None):
         },
         'Hd': {
             'bg_color': '#7030a0',
-            'font_color': '#0070c0',
+            # 'font_color': '#0070c0',
+            'font_color': '#02b0f0',
         },
         '+-': {
             'bg_color': '#0070c0',
