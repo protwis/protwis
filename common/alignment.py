@@ -939,22 +939,24 @@ class Alignment:
         self.zscales = { zscale: OrderedDict() for zscale in ZSCALES }
 
         # Calculates distribution per GN position
-        for j in self.aa_count:
-            for generic_number in self.aa_count[j]:
+        for segment in self.aa_count:
+            for zscale in ZSCALES:
+                self.zscales[zscale][segment] = OrderedDict()
+            for generic_number in self.aa_count[segment]:
                 zscale_position = { zscale: [] for zscale in ZSCALES }
 
-                for amino_acid in self.aa_count[j][generic_number]:
-                    if amino_acid != "-" and self.aa_count[j][generic_number][amino_acid] > 0:
+                for amino_acid in self.aa_count[segment][generic_number]:
+                    if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
                         for key in range(len(ZSCALES)):
                             # Frequency AA at this position * value
-                            zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[j][generic_number][amino_acid])
+                            zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
 
                 # store average + stddev + count
                 for zscale in ZSCALES:
                     if len(zscale_position[zscale]) == 1:
-                        self.zscales[zscale][generic_number] = [zscale_position[zscale][0], 0, 1]
+                        self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1]
                     else:
-                        self.zscales[zscale][generic_number] = [np.mean(zscale_position[zscale]), np.std(zscale_position[zscale], ddof=1), len(zscale_position[zscale])]
+                        self.zscales[zscale][segment][generic_number] = [np.mean(zscale_position[zscale]), np.std(zscale_position[zscale], ddof=1), len(zscale_position[zscale])]
 
     def evaluate_sites(self, request):
         """Evaluate which user selected site definitions match each protein sequence"""

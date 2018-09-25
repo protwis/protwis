@@ -119,6 +119,8 @@ def render_signature(request):
     # calculate the signature
     signature.calculate_signature()
 
+    # calculate the Z-scores signatures
+    signature.calculate_zscales_signature()
 
     # save for later
     # signature_map = feats_delta.argmax(axis=0)

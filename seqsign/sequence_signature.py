@@ -10,7 +10,7 @@ Alignment = getattr(__import__(
     fromlist=['Alignment']
     ), 'Alignment')
 
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES
+from common.definitions import AA_ZSCALES, AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES, ZSCALES
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
 
@@ -20,6 +20,7 @@ from copy import deepcopy
 import numpy as np
 from operator import itemgetter
 import re
+from scipy.stats import t
 import time
 
 class SequenceSignature:
@@ -46,6 +47,8 @@ class SequenceSignature:
         self.common_schemes = {}
 
         self.signature = OrderedDict()
+
+        self.zscales_signature = OrderedDict()
 
         self.feature_preference = prepare_aa_group_preference()
         self.group_lengths = dict([
@@ -311,6 +314,69 @@ class SequenceSignature:
         self._convert_feature_stats(self.features_normalized_pos, self.aln_pos)
         self._convert_feature_stats(self.features_normalized_neg, self.aln_neg)
 
+    def calculate_zscales_signature(self):
+        """
+        Calculates the Z-scales (Z1-Z5) difference between two protein sets for each GN residue position
+        Generates the full difference matrix and calculates the relevance (P-value) for each z-scale & position combination.
+        """
+        # Prepare zscales for both sets
+        self.aln_pos.calculate_zscales()
+        self.aln_neg.calculate_zscales()
+
+        # Difference + p-value calculation for shared residues
+        ZSCALES.sort()
+        self.zscales_signature = { zscale: OrderedDict() for zscale in ZSCALES }
+        for zscale in ZSCALES:
+            for segment in self.aln_pos.zscales[ZSCALES[0]].keys():
+                self.zscales_signature[zscale][segment] = OrderedDict()
+
+                all_keys = set(self.aln_pos.zscales[zscale][segment].keys()).union(self.aln_neg.zscales[zscale][segment].keys())
+                shared_keys = set(self.aln_pos.zscales[zscale][segment].keys()).intersection(self.aln_neg.zscales[zscale][segment].keys())
+                for entry in sorted(all_keys):
+                    if entry in shared_keys:
+                        var1 = self.aln_pos.zscales[zscale][segment][entry]
+                        var2 = self.aln_neg.zscales[zscale][segment][entry]
+
+                        # t-Test
+                        # One-liner alternative : sed = np.sqrt(var1[1]**2.0/var1[2] + var2[1]**2.0/var2[2])
+                        se1 = var1[1]/np.sqrt(var1[2])
+                        se2 = var2[1]/np.sqrt(var2[2])
+                        sed = np.sqrt(se1**2.0 + se2**2.0)
+
+                        t_value = 1
+                        p = 100
+                        color = 0
+                        if sed != 0:
+                            t_value = (var1[0] - var2[0])/sed
+
+                            # Grab P-value
+                            df = var1[2] + var2[2] - 2
+                            p = (1.0 - t.cdf(abs(t_value), df)) * 2.0
+                            if p <= 0.05:
+                                color = int(round(10 - 9 * p/0.05, 0))
+                            else:
+                                color = 0
+
+                        tooltip = entry + "<br/>" + \
+                                  "Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>" + \
+                                  "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>" + \
+                                  "P-value: " + str(round(p, 4))
+
+                        self.zscales_signature[zscale][segment][entry] = [round(var1[0]-var2[0],2), color, tooltip] # diff, P-value, tooltip
+                    else:
+                        tooltip = entry + "<br/>Set 1: GAP<br/>"
+                        if entry in self.aln_pos.zscales[zscale][segment]:
+                            var1 = self.aln_pos.zscales[zscale][segment][entry]
+                            tooltip = entry + "<br/>Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>"
+
+                        if entry in self.aln_neg.zscales[zscale][segment]:
+                            var2 = self.aln_neg.zscales[zscale][segment][entry]
+                            tooltip += "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>"
+                        else:
+                            tooltip += "Set 2: GAP<br/>"
+
+                        self.zscales_signature[zscale][segment][entry] = ["X", 0, tooltip] # diff, P-value, tooltip
+
     def prepare_display_data(self):
 
         options = {
@@ -323,11 +389,13 @@ class SequenceSignature:
             'common_generic_numbers': self.common_gn,
             'feats_signature': self.features_frequency_diff_display,
             'signature_consensus': self.signature,
+            'zscales_signature': self.zscales_signature,
             'feats_cons_pos': self.features_consensus_pos,
             'feats_cons_neg': self.features_consensus_neg,
             'a_pos': self.aln_pos,
             'a_neg': self.aln_neg,
         }
+
         return options
 
     def prepare_session_data(self):
