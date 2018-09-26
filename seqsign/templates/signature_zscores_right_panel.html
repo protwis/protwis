@@ -10,7 +10,7 @@
         <tr>
           {% for segment, cons in zscale_items.items %}
               {% for residue, pos in cons.items %}
-                  <td class="ali-td-stat-summary ali-residue feat-freq-gs-{{ pos.1 }}">
+                  <td class="ali-td ali-residue res-cons-{{ pos.1 }}">
                       <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.2|safe }}">
                           {{ pos.0 }}
                       </div>

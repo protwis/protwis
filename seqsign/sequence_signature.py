@@ -325,8 +325,8 @@ class SequenceSignature:
 
         # Difference + p-value calculation for shared residues
         ZSCALES.sort()
-        self.zscales_signature = { zscale: OrderedDict() for zscale in ZSCALES }
         for zscale in ZSCALES:
+            self.zscales_signature[zscale] = OrderedDict()
             for segment in self.aln_pos.zscales[ZSCALES[0]].keys():
                 self.zscales_signature[zscale][segment] = OrderedDict()
 
@@ -337,32 +337,45 @@ class SequenceSignature:
                         var1 = self.aln_pos.zscales[zscale][segment][entry]
                         var2 = self.aln_neg.zscales[zscale][segment][entry]
 
-                        # t-Test
+                        # Welch's t-test
                         # One-liner alternative : sed = np.sqrt(var1[1]**2.0/var1[2] + var2[1]**2.0/var2[2])
-                        se1 = var1[1]/np.sqrt(var1[2])
-                        se2 = var2[1]/np.sqrt(var2[2])
-                        sed = np.sqrt(se1**2.0 + se2**2.0)
+                        # se1 = var1[1]/np.sqrt(var1[2])
+                        # se2 = var2[1]/np.sqrt(var2[2])
+                        # sed = np.sqrt(se1**2.0 + se2**2.0)
+
+                        # Student t-test assuming similar variance different sample sizes
+                        sed = np.sqrt(((var1[2] - 1) * var1[1]**2.0 + (var2[2]-1)*var2[1]**2.0)/(var1[2]+var2[2]-2)) * np.sqrt(1/var1[2] + 1/var2[2])
 
                         t_value = 1
                         p = 100
-                        color = 0
+                        color = -1
                         if sed != 0:
-                            t_value = (var1[0] - var2[0])/sed
+                            mean_diff = var1[0] - var2[0]
+                            t_value = mean_diff / sed
 
                             # Grab P-value
                             df = var1[2] + var2[2] - 2
                             p = (1.0 - t.cdf(abs(t_value), df)) * 2.0
-                            if p <= 0.05:
-                                color = int(round(10 - 9 * p/0.05, 0))
-                            else:
-                                color = 0
 
-                        tooltip = entry + "<br/>" + \
+                            # Coloring based on statistical significance
+                            #if p <= 0.05:
+                            #    color = int(round(10 - 9 * p/0.05, 0))
+                            #else:
+                            #    color = 0
+
+                            # Coloring difference Z-scale means when statistically significant
+                            if p <= 0.05 and abs(mean_diff) > 0.6:
+                                color = round(mean_diff / 4 * 5, 0)
+                                if abs(color) > 5:
+                                    color = color/abs(color) * 5
+                                color = int(color + 5)
+
+                        tooltip = entry + " ("+ zscale + ")<br/>" + \
                                   "Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>" + \
                                   "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>" + \
-                                  "P-value: " + str(round(p, 4))
+                                  "P-value:  {0:.3f}".format(p)
 
-                        self.zscales_signature[zscale][segment][entry] = [round(var1[0]-var2[0],2), color, tooltip] # diff, P-value, tooltip
+                        self.zscales_signature[zscale][segment][entry] = [round(var1[0]-var2[0],1), color, tooltip] # diff, P-value, tooltip
                     else:
                         tooltip = entry + "<br/>Set 1: GAP<br/>"
                         if entry in self.aln_pos.zscales[zscale][segment]:
@@ -375,7 +388,7 @@ class SequenceSignature:
                         else:
                             tooltip += "Set 2: GAP<br/>"
 
-                        self.zscales_signature[zscale][segment][entry] = ["X", 0, tooltip] # diff, P-value, tooltip
+                        self.zscales_signature[zscale][segment][entry] = ["-", -1, tooltip] # diff, P-value, tooltip
 
     def prepare_display_data(self):
 
