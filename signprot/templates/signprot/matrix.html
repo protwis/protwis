@@ -20,7 +20,7 @@
             </div>
 
             <div class="panel-body">
-                <h5><span class="crystal-count">No interface selected.</span></h5>
+                <h5><span id='interface-count' class="crystal-count">0 interfaces selected.</span></h5>
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#interface-modal-table">Select Interface</button>
             </div>
 
@@ -60,15 +60,16 @@
     const interactions = {{ interactions | safe}};
     const interactions_metadata = {{ interactions_metadata | safe}};
 </script>
-<script src="{% static 'home/js/lodash.min.js' %}"></script>
 <script src="{% static 'home/js/d3.v5.7.min.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
 <script src="{% static 'home/js/d3-legend.min.js' %}"></script>
+<script src="{% static 'home/js/lodash.min.js' %}"></script>
 <script src="{% static 'home/js/chroma.min.js' %}"></script>
-<script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'home/js/dataTables.select.min.js' %}"></script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
+<!-- visualization script -->
+<script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script>
     $(document).ready(function () {
         $('[data-toggle="tooltip"]').tooltip();
@@ -92,7 +93,7 @@
                 style: 'os',
                 selector: 'td:first-child'
             },
-            "paging": false,
+            paging: false,
             buttons: [
                 {
                     text: 'Select all',
@@ -105,15 +106,32 @@
                     action: function () {
                         table.rows().deselect();
                     }
-                }
+                },
             ]
         });
-    });
 
-    // $('#interface-modal-table').on('shown.bs.modal', function (e) {
-    //     console.log('Fill modal with table.')
-    //     // TODO: WRITE FUNCTION TO FILL MODAL
-    // });
+        table
+            .on( 'select', function ( e, dt, type, indexes ) {
+                const row_count = table.rows( { selected: true } ).count()
+                if (row_count >= 2 || row_count === 0) {
+                    $('#interface-count').text(row_count + ' interfaces selected.');
+                } else {
+                    $('#interface-count').text(row_count + ' interface selected.');
+                }
+            } )
+            .on( 'deselect', function ( e, dt, type, indexes ) {
+                const row_count = table.rows( { selected: true } ).count()
+                if (row_count >= 2 || row_count === 0) {
+                    $('#interface-count').text(row_count + ' interfaces selected.');
+                } else {
+                    $('#interface-count').text(row_count + ' interface selected.');
+                }
+            } );
+
+        // Default: Select all rows on page load
+        table.rows().select();
+
+    });
 </script>
 
 <table id="table-data" class="display">
