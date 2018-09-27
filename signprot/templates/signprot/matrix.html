@@ -4,6 +4,8 @@
 {% block addon_css %}
 <link href="{% static 'home/css/signprotmat.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/jquery.dataTables.min.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/select.dataTables.min.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/buttons.dataTables.min.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -37,8 +39,8 @@
 
             <div class="modal-body">
                 <div class="col-md-12">
-                        <table id="table-interface" class="display">
-                        </table>
+                    <table id="table-interface" class="display">
+                    </table>
                 </div>
                 <div class="clearfix"></div>
             </div>
@@ -65,17 +67,46 @@
 <script src="{% static 'home/js/chroma.min.js' %}"></script>
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'home/js/dataTables.select.min.js' %}"></script>
+<script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
 <script>
     $(document).ready(function () {
         $('[data-toggle="tooltip"]').tooltip();
 
-        $('#table-interface').DataTable({
+        const table = $('#table-interface').DataTable({
+            dom: 'Bfrtip',
             data: interactions_metadata,
-            columns: [
-                { data: 'pdb_id' , title: 'PDB'}
-            ],
+            columnDefs: [
+                {
+                    data: null,
+                    targets: 0,
+                    defaultContent: '',
+                    orderable: false,
+                    className: 'select-checkbox',
+                }, {
+                    data: 'pdb_id',
+                    title: 'PDB',
+                    targets: 1,
+                }],
+            select: {
+                style: 'os',
+                selector: 'td:first-child'
+            },
             "paging": false,
-            "order": [[ 1, "asc" ]]
+            buttons: [
+                {
+                    text: 'Select all',
+                    action: function () {
+                        table.rows().select();
+                    }
+                },
+                {
+                    text: 'Select none',
+                    action: function () {
+                        table.rows().deselect();
+                    }
+                }
+            ]
         });
     });
 
