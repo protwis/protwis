@@ -1063,7 +1063,7 @@ svg
     .attr("y", 0.8 * yScale.step())
     .text("G-Protein");
 $(document).ready(function () {
-    $('#table_data').DataTable({
+    $('#table-data').DataTable({
         data: data_t,
         columns: [
             // { data: 'int_ty' },

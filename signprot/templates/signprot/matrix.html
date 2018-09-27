@@ -3,7 +3,7 @@
 
 {% block addon_css %}
 <link href="{% static 'home/css/signprotmat.css' %}" rel="stylesheet">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+<link href="{% static 'home/css/jquery.dataTables.min.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -18,46 +18,74 @@
             </div>
 
             <div class="panel-body">
-                <input type="hidden" class="interactions-input" value="[]" />
-                <input class="crystal-pdb" type="hidden" value="[]" />
                 <h5><span class="crystal-count">No interface selected.</span></h5>
-                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select Interface</button><br><br> #}
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Interface</button>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#interface-modal-table">Select Interface</button>
             </div>
 
         </div>
     </div>
-
-    <div class="col-md-1">
-        <div class="btn btn-success btn-lg pull-right go-button"><span>Go</span></div>
-    </div>
-
 </div>
+
+<div class="modal fade" id="interface-modal-table" role="dialog">
+    <div class="modal-dialog modal-wide">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Select interfaces from the table</h4>
+            </div>
+
+            <div class="modal-body">
+                <div class="col-md-12">
+                        <table id="table-interface" class="display">
+                        </table>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block addon_js %}
 <script type="text/javascript">
-    var interactions = {{ interactions| safe}};
-  // console.log(interactions);
-  // for (i of interactions) {
-  //   console.log(i);
-  // }
+    const interactions = {{ interactions | safe}};
+    const interactions_metadata = {{ interactions_metadata | safe}};
 </script>
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js"></script>
-
+<script src="{% static 'home/js/lodash.min.js' %}"></script>
 <script src="{% static 'home/js/d3.v5.7.min.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
 <script src="{% static 'home/js/d3-legend.min.js' %}"></script>
 <script src="{% static 'home/js/chroma.min.js' %}"></script>
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
 <script>
     $(document).ready(function () {
         $('[data-toggle="tooltip"]').tooltip();
+
+        $('#table-interface').DataTable({
+            data: interactions_metadata,
+            columns: [
+                { data: 'pdb_id' , title: 'PDB'}
+            ],
+            "paging": false,
+            "order": [[ 1, "asc" ]]
+        });
     });
+
+    // $('#interface-modal-table').on('shown.bs.modal', function (e) {
+    //     console.log('Fill modal with table.')
+    //     // TODO: WRITE FUNCTION TO FILL MODAL
+    // });
 </script>
 
-<table id="table_data" class="display">
+<table id="table-data" class="display">
     <thead>
         <tr>
             <!-- <th>int_ty</th> -->

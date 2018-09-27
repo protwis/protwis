@@ -1014,78 +1014,86 @@ def InteractionMatrix(request):
             ]
 }
 
-    complex_info = {
-        '3sn6': {
+    complex_info = [
+        {
+            'pdb_id': '3sn6',
             'receptor': 'beta2',
             'gprotein': 'GNAS2_BOVIN',
             'alternative_gprotein': 'GNAS2_HUMAN'
             },
-        '3sn6': {
+        {
+            'pdb_id': '4x1h',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '4x1h': {
+        {
+            'pdb_id': '5g53',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '5g53': {
+        {
+            'pdb_id': '5g53',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '5g53': {
+        {
+            'pdb_id': '5uz7',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '5uz7': {
+        {
+            'pdb_id': '5vai',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '5vai': {
+        {
+            'pdb_id': '6b3j',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '6b3j': {
+        {
+            'pdb_id': '6cmo',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '6cmo': {
+        {
+            'pdb_id': '6d9h',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '6d9h': {
+        {
+            'pdb_id': '6dde',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '6dde': {
+        {
+            'pdb_id': '6ddf',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '6ddf': {
+        {
+            'pdb_id': '6g79',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '6g79': {
+        {
+            'pdb_id': '6gdg',
             'receptor': '',
             'gprotein': '',
             'alternative_protein': ''
             },
-        '6gdg': {
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        }
+    ]
 
     # rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
 
@@ -1096,8 +1104,11 @@ def InteractionMatrix(request):
         'signprot_residue__sequence_number',
         'signprot_residue__display_generic_number__label'
         )
+
+    interactions_metadata = complex_info
     context = {
-        'interactions':json.dumps(list(interactions))
+        'interactions': json.dumps(list(interactions)),
+        'interactions_metadata': interactions_metadata
         }
 
     return render(request, 'signprot/matrix.html', context)

@@ -1026,7 +1026,7 @@ svg
   .attr("x", 0 + sigScale.step()/2)
   .attr("y", yScale.step()/2)
   .attr("width", sigScale.range()[0] - sigScale.step())
-  .attr("height", yScale.range()[0] - yScale.step();
+  .attr("height", yScale.range()[0] - yScale.step());
 
 let each_res = svg
   .select('g#sigAA')
@@ -1136,8 +1136,8 @@ svg
   .text("G-Protein");
 
 
- $(document).ready( function () {
-  $('#table_data').DataTable({
+$(document).ready( function () {
+  $('#table-data').DataTable({
     data: data_t,
     columns: [
       // { data: 'int_ty' },
