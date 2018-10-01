@@ -19,6 +19,7 @@
     </ul>
 </div>
 {% endblock %}
+
 <!-- sequence alignment starts -->
 <table>
     <tr>
@@ -131,7 +132,7 @@
             </div>
             <div class="ali-main-div">
                 <div class="dynamic-div">
-                    <table>
+                    <table style="display: none" class="displayTableAfterLoad">
 
                         <!-- segment title line -->
                         <tr>
@@ -296,4 +297,10 @@
 
 {% block addon_js %}
 <script src="{% static 'home/js/alignment.js' %}"></script>
+<!-- increase browser drawing performance for displaying (larger) alignments -->
+<script>
+  $(document).ready(function () {
+    $('.displayTableAfterLoad').css("display", "table");
+  });
+</script>
 {% endblock %}
