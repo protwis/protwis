@@ -474,3 +474,6 @@
     font-style: italic;
     text-align: center;
 }
+table.displayTableAfterLoad {
+    display: none;
+}

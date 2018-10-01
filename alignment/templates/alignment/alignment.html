@@ -132,7 +132,7 @@
             </div>
             <div class="ali-main-div">
                 <div class="dynamic-div">
-                    <table style="display: none" class="displayTableAfterLoad">
+                    <table class="displayTableAfterLoad">
 
                         <!-- segment title line -->
                         <tr>
@@ -299,7 +299,7 @@
 <script src="{% static 'home/js/alignment.js' %}"></script>
 <!-- increase browser drawing performance for displaying (larger) alignments -->
 <script>
-  $(document).ready(function () {
+  $(window).ready(function () {
     $('.displayTableAfterLoad').css("display", "table");
   });
 </script>
