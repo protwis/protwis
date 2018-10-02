@@ -344,7 +344,9 @@ class SequenceSignature:
                         # sed = np.sqrt(se1**2.0 + se2**2.0)
 
                         # Student t-test assuming similar variance different sample sizes
-                        sed = np.sqrt(((var1[2] - 1) * var1[1]**2.0 + (var2[2]-1)*var2[1]**2.0)/(var1[2]+var2[2]-2)) * np.sqrt(1/var1[2] + 1/var2[2])
+                        sed = 0
+                        if var1[2] > 0 and var2[2] > 0 and (var1[2]+var2[2] - 2) > 0:
+                            sed = np.sqrt(((var1[2] - 1) * var1[1]**2.0 + (var2[2]-1)*var2[1]**2.0)/(var1[2]+var2[2]-2)) * np.sqrt(1/var1[2] + 1/var2[2])
 
                         t_value = 1
                         p = 100
