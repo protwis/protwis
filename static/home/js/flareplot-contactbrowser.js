@@ -258,7 +258,8 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     var lastDrawn = segment.nodes[(segment.nodes.length - 1)];
 
                     // correct order of nodes
-                    segment.nodes.sort();
+                    // Issue: is an alphabetical sort, not numerical
+                    segment.nodes.sort(sortNumber);
                     var last = segment.nodes[(segment.nodes.length - 1)];
                     var x = (graph.trees[selectedTree].tree[segment.nodes[0]].x + graph.trees[selectedTree].tree[last].x)/2 - 90;
 
@@ -1291,6 +1292,10 @@ function invertColor(hex, bw) {
 
 Array.prototype.indexUpDown = indexUpDown;
 Array.prototype.rangeCount = rangeCount;
+
+function sortNumber(a,b) {
+    return a - b;
+}
 
 // var list = [1,2,5,10,15,16];
 // function testRange(l,s,e, expected){
