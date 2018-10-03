@@ -1,20 +1,28 @@
 var hivesvg, hiveTooltip;
 function createHiveplot(data, container) {
     var width = 1200,
-        height = 800,
-        innerRadius = 0.15*height,
-        outerRadius = 0.42*height;
+        height = 1000,
+        innerRadius = 0.15*(height*0.9),
+        outerRadius = 0.42*(height*0.9);
 
-    var angle = d3.scale.ordinal()
-                  .domain(d3.range(8))
-                  .rangePoints([2 * Math.PI, 0]),
-        angleLine = d3.scale.ordinal()
+    var angleLineCore = d3.scale.ordinal()
                       .domain(d3.range(71))
                       .rangePoints([2 * Math.PI, 0]),
         radius = d3.scale.linear()
                   .range([innerRadius, outerRadius]),
         color = d3.scale.category10()
                   .domain(d3.range(20));
+
+        var angle = function(e){
+          // TODO optimize placement of TMs based on angle, but possibly also starting position
+          //matching = [1.8, 2.8, 4.2, 5, 5.7, 6.8, 0.5];
+          //return angleLineCore( matching[e] * 10);
+
+          return angleLineCore( ((e+0.5) % 7) * 10);
+        };
+        var angleLine = function(e){
+          return angleLineCore( (e+5) % 70 );
+        };
 
     // create TM residue count
     // replace later with data.segments
@@ -74,7 +82,9 @@ function createHiveplot(data, container) {
     hiveTooltip = d3.select("body").append("div")
                   .style("display", "none")
                   .style("position", "absolute")
+//                  .attr("class", "rounded")
                   .attr("id", "hiveTooltip");
+
     hivesvg = d3.select(container).append("svg")
         .attr("width", width)
         .attr("height", height)
