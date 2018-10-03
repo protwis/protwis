@@ -2567,8 +2567,7 @@
 
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
-                //var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
-                var pdb = ['3rze'];
+                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
                 if (pdb.length > 0 && segments.length > 0) {
                     var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
@@ -3162,7 +3161,7 @@
 
             // create flareplot
             flareplot[container] = createFlareplot(800, parseGPCRdb2flare(data), container, contiguous);
- 
+
             // update coloring and visibility if toggled
             if (toggle) {
                 var range = $( container+" .slider-range" ).slider("values");
