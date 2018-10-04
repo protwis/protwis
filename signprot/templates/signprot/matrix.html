@@ -131,6 +131,11 @@
         // Default: Select all rows on page load
         table.rows().select();
 
+        // https://www.datatables.net/examples/api/tabs_and_scrolling.html
+        $('#interface-modal-table').on('shown.bs.modal', function (e) {
+            $.fn.dataTable.tables( {visible: true, api: true} ).columns.adjust();
+        })
+
     });
 </script>
 
