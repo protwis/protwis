@@ -113,7 +113,6 @@
                 }],
             select: {
                 style: 'os',
-                // selector: 'td:first-child'
             },
             paging: false,
             buttons: [
@@ -163,6 +162,35 @@
             const selection = table.rows( { selected: true } ).data();
             pdb_sel = whichPdb(selection)
             console.log(pdb_sel)
+
+            $('.svg-container').remove();
+
+            data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
+            svg = signprotmat.d3.setup();
+            xScale = signprotmat.d3.xScale(data);
+            yScale = signprotmat.d3.yScale(data);
+            xAxis = signprotmat.d3.xAxis(xScale);
+            yAxis = signprotmat.d3.yAxis(yScale);
+            xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
+            yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
+            pdbScale = signprotmat.d3.pdbScale(data);
+            sigScale = signprotmat.d3.sigScale(data);
+            colScale = signprotmat.d3.colScale(data);
+            tooltip = signprotmat.d3.tooltip(svg);
+            signprotmat.d3.renderData(
+                    svg,
+                    data,
+                    xScale,
+                    yScale,
+                    xAxis,
+                    yAxis,
+                    xAxisGrid,
+                    yAxisGrid,
+                    colScale,
+                    pdbScale,
+                    sigScale,
+                    tooltip
+                );
         });
 
         let keys = [
