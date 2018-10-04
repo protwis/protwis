@@ -6,16 +6,15 @@ from django.core.management.base import BaseCommand#, CommandError
 import contactnetwork.pdb as pdb
 
 from structure.models import Structure
-from protein.models import Protein #, ProteinSegment
 from residue.models import Residue
 
-#from Bio.PDB import PDBParser, PPBuilder, parse_pdb_header 
-
-import logging, os #, json, os
-from time import time
+import logging, os
 import numpy as np
-from sklearn import linear_model
 from sklearn.decomposition import PCA
+from copy import deepcopy
+from numpy.core.umath_tests import inner1d
+
+TMNUM = 7
 
 class Command(BaseCommand):
 
@@ -26,7 +25,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('pdb_code')
-        
+    
+    ###########################################################################
+    ############################ Helper  Functions ############################
+    ###########################################################################
         
     def load_pdb(self,pdb_code, no_save=False):
         if no_save:
@@ -55,145 +57,142 @@ class Command(BaseCommand):
         io1.set_structure(pseudopdb)
         io1.save(pname + '.pdb')
         
-    def write_cgo_arrow_pml(self, name, pos_list):
-        with open(name + ".pml", "w") as ps:
+    def write_cgo_arrow_pml(self, pdb_code, name, pos_list):
+        with open(pdb_code + name + ".pml", "w") as ps:
             ps.write("run cgo_arrow.py\n")
             for i, p in enumerate(pos_list):
-                ps.write("cgo_arrow  " + str(list(p[0])) +", "+ str(list(p[1])) + ", name="+ name + str(i) +"\n")
+                ps.write("cgo_arrow  " + str(list(p[0])) +", "+ str(list(p[1])) + ", name="+pdb_code + name + str(i) +"\n")
+
+    def save_pdb(strct, name):
+        io1 = pdb.PDBIO()
+        io1.set_structure(strct)
+        io1.save(name)
 
     def handle(self, *args, **options):
-        
-        begin = time()
         
         # grab PDB
         pdb_code = options.get('pdb_code', None).upper()
         
-        t1 = time()
         # read pdb structure (from RCSB) using Biopython
         structure = self.load_pdb(pdb_code)
-        t2 = time()
-        print("PDB file loaded:", t2-t1)
+        orig_structure = deepcopy(structure)
         
         # get preferred chain for PDB-code
         reference = Structure.objects.get(pdb_code__index=pdb_code)
         preferred_chain = reference.preferred_chain.split(',')[0]
 
         # grab residues with the generic numbering for this structure
-        # TODO: one query?
-        p = Protein.objects.get(protein=reference.protein_conformation.protein)
-        db_reslist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related( 'generic_number')
-        
-        start = time()
-        print("Database structures fetched:",start-t2)
+        db_reslist = list(Residue.objects.exclude(generic_number__isnull=True).filter(protein_conformation__protein=reference.protein_conformation.protein).prefetch_related('generic_number'))
         
         #######################################################################
         ############################# filter  pdb #############################
         
+        os.chdir("pymol_output")
+        
         db_tmlist = [[] for i in range(7)]
         db_set    = set()
         for r in db_reslist:
-            if r.generic_number and r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"]:
-                db_tmlist[int(r.generic_number.label[0])-1].append(r)
-                db_set.add(r.sequence_number)
+            if r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"]:
+                db_tmlist[int(r.generic_number.label[0])-1].append(r.sequence_number)
+                db_set.add((' ',r.sequence_number,' '))
         
-        #better if no tmlist
-        #db_set = {r.sequence_number for r in db_reslist if r.generic_number and  r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"]} # r.protein_segment.label in [1,2,3,4,5,6,7] } #
-
         def recurse(entity,slist):
-            if slist:
-                for subenty in entity.get_list():
-                    if not slist[0](subenty): entity.detach_child(subenty.get_id())
-                    else: recurse(subenty, slist[1:])
+            for subenty in entity:
+                if not subenty.id in slist[0]: entity.detach_child(subenty.id)
+                elif slist[1:]: recurse(subenty, slist[1:])
 
-        recurse(structure,[lambda entity: True if entity.get_id() == 0 else False, #model
-                           lambda entity: True if entity.get_id() == preferred_chain else False, #chain
-                           lambda entity: True if entity.get_id()[1] in db_set else False, # residue
-                           lambda entity: True if entity.get_id() == "CA" else False])
-
-        io1 = pdb.PDBIO()
-        io1.set_structure(structure)
-        io1.save('outS.pdb')
+        recurse(structure, [[0], preferred_chain, db_set,["CB","CA"]])
+        
+        recurse(orig_structure,[[0], preferred_chain, db_set])
         
         pchain = structure[0][preferred_chain]
-        
-        end = time()
-        print("pdb filtered and out:", end-start)
         
         #######################################################################
         ############### Calculate the axes through the helices ################
         #######################################################################
         N = 3
         
-        # TODO: "in" inefficient?
-        hres_list = [np.asarray([pchain[r.sequence_number]["CA"].get_coord() for r in sl if r.sequence_number in pchain], dtype=float) for sl in db_tmlist]
-
+        hres_list = [np.asarray([pchain[r]["CA"].get_coord() for r in sl], dtype=float) for sl in db_tmlist]
+        h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else np.array([None,None,None]) for r in sl], dtype=float) for sl in db_tmlist]
+        
         # fast and fancy way to take the average of N consecutive elements
         hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list])
-        helix_mean = np.asarray([np.mean(h, axis=0) for h in hres_three ])
-        self.save_pseudo(hres_three, "helper")
-        
-        #######################################################################
-        ################################ Mean #################################
-        
-        pos_list = [(np.average(tm[-6:-3],axis=0), np.average(tm[3:6],axis=0)) for tm in hres_list]
-        self.write_cgo_arrow_pml("no_first_three",pos_list)
-
-        vmean = np.asarray([sum( np.sum(h[i+2:] - l,axis=0) for i,l in enumerate(h[:-2])) for h in hres_three])
-        vmean /= vmean[:,0].reshape(-1,1)
-
-        pos_list = [(h[0],h[0]+5*v) for h,v in zip(hres_three,vmean)]
-        self.write_cgo_arrow_pml("vvv",pos_list)
-        
-        #######################################################################
-        ################################## LR #################################
-        
-        def lr_line(regr,s):
-            regr.fit(s[:,:2],s[:,2].reshape(-1,1))
-            return regr.predict(s[[0,-1],:2])
-
-        regr = linear_model.LinearRegression()
-        
-        pos_list = [np.hstack((s[[0,-1],:2],lr_line(regr, s))) for s in hres_three]
-        self.write_cgo_arrow_pml("LR",pos_list)
-        
-        pos_list = [np.hstack((s[[0,-1],:2],lr_line(regr, s))) for s in [np.vstack(hres_three)]]
-        self.write_cgo_arrow_pml("LR_all",pos_list)
+        helices_mn = np.asarray([np.mean(h, axis=0) for h in hres_three ])
+        self.save_pseudo(hres_three, pdb_code+"helper")
         
         #######################################################################
         ################################# PCA #################################
+        #######################################################################
         
-        pca = PCA()
-        #def pca_line(pca,h, r=0): return (pca.inverse_transform(np.asarray([[-20,0,0],[20,0,0]])) if ((not r) if pca.fit_transform(h)[0][0] < 0 else r) else pca.inverse_transform(np.asarray([[20,0,0],[-20,0,0]])))
         def pca_line(pca,h, r=0):
             if ((not r) if pca.fit_transform(h)[0][0] < 0 else r):
                 return pca.inverse_transform(np.asarray([[-20,0,0],[20,0,0]]))
-            else:return pca.inverse_transform(np.asarray([[20,0,0],[-20,0,0]]))        
+            else:return pca.inverse_transform(np.asarray([[20,0,0],[-20,0,0]]))  
         
-        pos_list = np.asarray([pca_line(pca, h,i%2) for i,h in enumerate(hres_three)])
-        self.write_cgo_arrow_pml("pca",pos_list)
-        comb = pos_list[:,1] - pos_list[:,0]
-        print("TM:",repr(comb / np.linalg.norm(comb,axis=1).reshape(-1,1)),sep="\n")
+        helix_pcas = [PCA() for i in range(7)]
+        pos_list = np.asarray([pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)])
+        self.write_cgo_arrow_pml(pdb_code, "pca",pos_list)
         
         pos_list = np.mean(pos_list,axis=0)
-        self.write_cgo_arrow_pml("pca_mean",[pos_list])
-        comb = pos_list[1] - pos_list[0]
-        print("Mean:",repr(comb / np.linalg.norm(comb)),sep="\n")
+        self.write_cgo_arrow_pml(pdb_code, "pca_mean",[pos_list])
         
+        pca = PCA()
         pos_list = pca_line(pca, np.vstack(hres_three))
-        self.write_cgo_arrow_pml("pca_all",[pos_list])
-        comb = pos_list[1] - pos_list[0]
-        print("All:",repr(comb / np.linalg.norm(comb)),sep="\n")
+        self.write_cgo_arrow_pml(pdb_code, "pca_all",[pos_list])
         
-        pos_list = np.asarray([pca_line(pca, h[:len(h)//2:-(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
-        self.write_cgo_arrow_pml("pca_intra",pos_list)
+        pos_list = np.asarray([pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
+        pos_list = pos_list - (np.mean(pos_list,axis=1)-helices_mn).reshape(-1,1,3)
+        self.write_cgo_arrow_pml(pdb_code, "pca_extra",pos_list)
+        self.write_cgo_arrow_pml(pdb_code, "pca_extra_mean",[np.mean(pos_list,axis=0)])
         
-        pos_list = np.asarray([pca_line(pca, h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
-        self.write_cgo_arrow_pml("pca_extra",pos_list)
+        pca_extra = PCA()
+        pos_list = pca_line(pca_extra, np.vstack(pos_list))
+        self.write_cgo_arrow_pml(pdb_code, "pca_extra_pca",[pos_list])
         
-        pos_list = pos_list - (np.mean(pos_list,axis=1)-helix_mean).reshape(-1,1,3)
-        self.write_cgo_arrow_pml("pca_extra2",pos_list)
+        #######################################################################
+        ################################ Angles ###############################
+        #######################################################################
         
-        self.write_cgo_arrow_pml("pca_extra2_mean",[np.mean(pos_list,axis=0)])
+        def  calc_angle(b,c):
+            ba = -b
+            bc = c + ba
+            ba[:,0] = 0
+            return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
         
-        print("Total runtime:", time()-begin)
-        # Use db numbering for figuring out the rigid half
+        def ca_cb_calc(i,pca):
+            fin = np.isfinite(h_cb_list[i][:,0])
+            return calc_angle(pca.transform(hres_list[i][fin]),pca.transform(h_cb_list[i][fin]))
+        
+        def axes_calc(i,pca_list,pca):
+            p = pca_list[i]
+            h = hres_list[i]
+            a = (np.roll(np.vstack((h,h[0])),1,axis=0)[:-1] + h + np.roll(np.vstack((h,h[-1])),-1,axis=0)[:-1])/3
+            b = p.transform(h)
+            b[:,1:] = p.transform(a)[:,1:]
+            b = p.inverse_transform(b)
+            return calc_angle(pca.transform(b),pca.transform(h))
+        
+        def set_bfactor(structure,angles):
+            for r,an in zip(structure[0][preferred_chain].get_list(),angles):
+                for a in r: a.set_bfactor(an)
+        
+        centerpca = pca
+        
+        ########################### Axis to CA to CB ##########################
+
+        tv = np.isfinite(np.concatenate(h_cb_list)[:,0])
+        angle = np.full_like(tv,-1,dtype=float)
+        angle[tv] = np.concatenate([ca_cb_calc(i,centerpca) for i in range(TMNUM)])
+        set_bfactor(orig_structure,angle)
+        
+        self.save_pdb(orig_structure, pdb_code+'angle_colored_ca_cb.pdb')
+        
+        ######################### Axis to Axis to CA ##########################
+        
+        angle2 = np.concatenate([axes_calc(i,helix_pcas,centerpca) for i in range(TMNUM)])
+        
+        set_bfactor(orig_structure,angle2)
+
+        self.save_pdb(structure, pdb_code+'filtered.pdb')
+        self.save_pdb(orig_structure, pdb_code+'angle_colored_axes.pdb')
+        
