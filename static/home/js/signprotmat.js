@@ -3,6 +3,9 @@ var margin = { top: 40, right: 200, bottom: 180, left: 130 };
 var w = 1200 - margin.left - margin.right, h = 900 - margin.top - margin.bottom;
 // * DATA
 var dataset = interactions;
+// THIS RIGHT HERE TO SUBSET THE DATA
+var b = { name: 'test' };
+console.log(['a', 'b', 'c', 'test'].includes(b.name));
 var pdb_ids = Object.keys(dataset);
 var data_t = Object.keys(dataset).map(function (key) { return dataset[key]; });
 for (var i = 0; i < pdb_ids.length; i++) {
@@ -14,7 +17,21 @@ for (var i = 0; i < pdb_ids.length; i++) {
 ;
 // https://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript/25804569#comment50580016_10865042
 var flattenOnce = function (array) { return [].concat.apply([], array); };
-data_t = flattenOnce(data_t);
+var labelData = function (data, key_labels) {
+    var data_labeled = data.map(function (e) {
+        var obj = {};
+        keys.forEach(function (key, i) {
+            // comment this out later
+            if (key === 'sig_gn') {
+                obj[key] = Math.floor(e[i] / 10);
+                return;
+            }
+            obj[key] = e[i];
+        });
+        return obj;
+    });
+    return data_labeled;
+};
 var keys = [
     "rec_chain",
     "rec_aa",
@@ -27,18 +44,8 @@ var keys = [
     "int_ty",
     "pdb_id"
 ];
-data_t = data_t.map(function (e) {
-    var obj = {};
-    keys.forEach(function (key, i) {
-        // comment this out later
-        if (key === 'sig_gn') {
-            obj[key] = Math.floor(e[i] / 10);
-            return;
-        }
-        obj[key] = e[i];
-    });
-    return obj;
-});
+data_t = flattenOnce(data_t);
+data_t = labelData(data_t, keys);
 // * DEFINE ADDITIONAL DATASETS
 // These are used as the x and y axis tick mark labels
 var data_t_rec = _.uniqBy(data_t, function (t) { return [t.rec_gn, t.pdb_id].join(); });
