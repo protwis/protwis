@@ -1,6 +1,8 @@
 // * CONSTANTS
 var margin = { top: 40, right: 200, bottom: 180, left: 130 };
 var w = 1200 - margin.left - margin.right, h = 900 - margin.top - margin.bottom;
+// array for data in infobox
+var info_data = [];
 var signprotmat = {
     // * DATA TRANSFORMATION FUNCTIONS
     data: {
@@ -196,8 +198,6 @@ var signprotmat = {
             var scale_size = shift_left - shift_top;
             var offset = 1;
             var each_res;
-            // array for data in infobox
-            var info_data = [];
             svg
                 .append("g")
                 .attr("id", "interact")

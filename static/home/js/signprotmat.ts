@@ -3,6 +3,9 @@ const margin = { top: 40, right: 200, bottom: 180, left: 130 };
 const w = 1200 - margin.left - margin.right,
   h = 900 - margin.top - margin.bottom;
 
+// array for data in infobox
+let info_data = [];
+
 const signprotmat = {
   // * DATA TRANSFORMATION FUNCTIONS
   data: {
@@ -256,9 +259,6 @@ const signprotmat = {
       let scale_size: number = shift_left - shift_top;
       let offset: number = 1;
       let each_res;
-
-      // array for data in infobox
-      let info_data = [];
 
       svg
         .append("g")
