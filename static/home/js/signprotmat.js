@@ -1,23 +1,28 @@
 // * CONSTANTS
 var margin = { top: 40, right: 200, bottom: 180, left: 130 };
 var w = 1200 - margin.left - margin.right, h = 900 - margin.top - margin.bottom;
-// * DATA
-var dataset = interactions;
-// THIS RIGHT HERE TO SUBSET THE DATA
-var b = { name: 'test' };
-console.log(['a', 'b', 'c', 'test'].includes(b.name));
-var pdb_ids = Object.keys(dataset);
-var data_t = Object.keys(dataset).map(function (key) { return dataset[key]; });
-for (var i = 0; i < pdb_ids.length; i++) {
-    var pdb = pdb_ids[i];
-    for (var j = 0; j < data_t[i].length; j++) {
-        data_t[i][j].push(pdb);
-    }
+// * DATA TRANSFORMATION FUNCTIONS
+function extractPdbIDs(dataset) {
+    return Object.keys(dataset);
 }
 ;
+function objectToArray(dataset) {
+    return Object.keys(dataset).map(function (key) { return dataset[key]; });
+}
+;
+function moveKeyToArray(dataset, pdb_ids) {
+    for (var i = 0; i < pdb_ids.length; i++) {
+        var pdb = pdb_ids[i];
+        for (var j = 0; j < dataset[i].length; j++) {
+            dataset[i][j].push(pdb);
+        }
+    }
+    ;
+    return dataset;
+}
 // https://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript/25804569#comment50580016_10865042
 var flattenOnce = function (array) { return [].concat.apply([], array); };
-var labelData = function (data, key_labels) {
+var labelData = function (data, keys) {
     var data_labeled = data.map(function (e) {
         var obj = {};
         keys.forEach(function (key, i) {
@@ -32,6 +37,19 @@ var labelData = function (data, key_labels) {
     });
     return data_labeled;
 };
+function getInteractionTypes(dataset) {
+    var int_ty = [];
+    for (var i = 0; i < dataset.length; i++) {
+        var int_arr = dataset[i].int_ty;
+        int_ty.push(int_arr);
+    }
+    int_ty = flattenOnce(int_ty).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    var rm_index = int_ty.indexOf("undefined");
+    if (rm_index > -1) {
+        int_ty.splice(rm_index, 1);
+    }
+    return int_ty;
+}
 var keys = [
     "rec_chain",
     "rec_aa",
@@ -44,22 +62,29 @@ var keys = [
     "int_ty",
     "pdb_id"
 ];
-data_t = flattenOnce(data_t);
-data_t = labelData(data_t, keys);
-// * DEFINE ADDITIONAL DATASETS
-// These are used as the x and y axis tick mark labels
-var data_t_rec = _.uniqBy(data_t, function (t) { return [t.rec_gn, t.pdb_id].join(); });
-var data_t_sig = _.uniqBy(data_t, function (t) { return [t.sig_gn, t.pdb_id].join(); });
-var int_ty = [];
-for (var i = 0; i < data_t.length; i++) {
-    var int_arr = data_t[i].int_ty;
-    int_ty.push(int_arr);
+// * DATA
+var dataset = interactions;
+// THIS RIGHT HERE TO SUBSET THE DATA
+var b = { name: 'test' };
+console.log(['a', 'b', 'c', 'test'].includes(b.name));
+function dataTransformationWrapper(dataset, keys) {
+    var pdb_ids = extractPdbIDs(dataset);
+    var data_t = objectToArray(dataset);
+    data_t = moveKeyToArray(data_t, pdb_ids);
+    data_t = flattenOnce(data_t);
+    data_t = labelData(data_t, keys);
+    var data_t_rec = _.uniqBy(data_t, function (t) { return [t.rec_gn, t.pdb_id].join(); });
+    var data_t_sig = _.uniqBy(data_t, function (t) { return [t.sig_gn, t.pdb_id].join(); });
+    var int_ty = getInteractionTypes(data_t);
+    var data = {
+        transformed: data_t,
+        receptor: data_t_rec,
+        signprot: data_t_sig,
+        inttypes: int_ty
+    };
+    return data;
 }
-int_ty = flattenOnce(int_ty).filter(function (v, i, a) { return a.indexOf(v) === i; });
-var rm_index = int_ty.indexOf("undefined");
-if (rm_index > -1) {
-    int_ty.splice(rm_index, 1);
-}
+var data = dataTransformationWrapper(dataset, keys);
 // * SETTING UP SVG FOR OUTPUT
 var svg = d3
     .select("body")
@@ -79,7 +104,7 @@ var svg = d3
 var xScale = d3
     .scaleBand()
     .domain(d3
-    .map(data_t, function (d) { return d.rec_gn; })
+    .map(data.transformed, function (d) { return d.rec_gn; })
     .keys()
     .sort(d3.ascending))
     .range([0, w])
@@ -88,7 +113,7 @@ var xScale = d3
 var yScale = d3
     .scaleBand()
     .domain(d3
-    .map(data_t, function (d) { return d.sig_gn; })
+    .map(data.transformed, function (d) { return d.sig_gn; })
     .keys()
     .sort(d3.descending))
     .range([h, 0])
@@ -98,7 +123,7 @@ var yScale = d3
 var pdbScale = d3
     .scaleBand()
     .domain(d3
-    .map(data_t, function (d) { return d.pdb_id; })
+    .map(data.transformed, function (d) { return d.pdb_id; })
     .keys()
     .sort(d3.descending))
     .range([180, 0])
@@ -106,7 +131,7 @@ var pdbScale = d3
 var sigScale = d3
     .scaleBand()
     .domain(d3
-    .map(data_t, function (d) { return d.pdb_id; })
+    .map(data.transformed, function (d) { return d.pdb_id; })
     .keys()
     .sort(d3.descending))
     .range([120, 0])
@@ -114,7 +139,7 @@ var sigScale = d3
 // * SETTING THE COLOR SCALE
 var colScale = d3
     .scaleOrdinal()
-    .domain(int_ty)
+    .domain(data.inttypes)
     .range(d3.schemeSet3);
 // * DEFINING AXIS FOR X/Y AND GRID
 var xAxis = d3
@@ -152,7 +177,7 @@ svg
     .append("g")
     .attr("id", "interact")
     .selectAll("rects")
-    .data(data_t)
+    .data(data.transformed)
     .enter()
     .append("rect")
     .attr("x", function (d) {
@@ -162,7 +187,7 @@ svg
     return yScale(d.sig_gn) + shift_top * yScale.step() + offset;
 })
     .attr("rx", function () {
-    if (data_t.length < 15) {
+    if (data.transformed.length < 15) {
         return 5;
     }
     else {
@@ -170,7 +195,7 @@ svg
     }
 })
     .attr("ry", function () {
-    if (data_t.length < 15) {
+    if (data.transformed.length < 15) {
         return 5;
     }
     else {
@@ -221,7 +246,7 @@ svg
 svg
     .append("g")
     .attr("id", "infobox")
-    .attr("transform", "translate(-15," + (int_ty.length + 2) * 20 + ")");
+    .attr("transform", "translate(-15," + (data.inttypes.length + 2) * 20 + ")");
 function infoBoxUpdate() {
     // create selection and bind data
     var info_box = d3
@@ -261,7 +286,7 @@ svg
     .attr("transform", "translate(-30," + yScale.step() + ")");
 var legendOrdinal = d3
     .legendColor()
-    .cells(int_ty.length)
+    .cells(data.inttypes.length)
     .scale(colScale)
     // .cellFilter(function (d) { return d.label !== "undefined" })
     .orient("vertical")
@@ -332,7 +357,7 @@ svg
 var each_res = svg
     .select('g#recAA')
     .selectAll("text")
-    .data(data_t_rec)
+    .data(data.receptor)
     .enter()
     .append('g');
 each_res
@@ -371,7 +396,7 @@ svg
 var each_res = svg
     .select('g#sigAA')
     .selectAll("text")
-    .data(data_t_sig)
+    .data(data.signprot)
     .enter()
     .append('g');
 each_res
@@ -460,7 +485,7 @@ svg
     .text("G-Protein");
 $(document).ready(function () {
     $('#table-data').DataTable({
-        data: data_t,
+        data: data.transformed,
         columns: [
             // { data: 'int_ty' },
             { data: 'pdb_id' },

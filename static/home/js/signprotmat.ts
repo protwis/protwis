@@ -3,26 +3,28 @@ let margin = { top: 40, right: 200, bottom: 180, left: 130 };
 let w = 1200 - margin.left - margin.right,
   h = 900 - margin.top - margin.bottom;
 
-// * DATA
-let dataset = interactions;
+// * DATA TRANSFORMATION FUNCTIONS
+function extractPdbIDs(dataset:object) {
+  return Object.keys(dataset);
+};
 
-// THIS RIGHT HERE TO SUBSET THE DATA
-let b = {name: 'test'}
-console.log(['a', 'b', 'c', 'test'].includes(b.name))
+function objectToArray(dataset:object) {
+  return Object.keys(dataset).map(key => dataset[key]);
+};
 
-let pdb_ids = Object.keys(dataset);
-let data_t = Object.keys(dataset).map(key => dataset[key]);
-
-for (let i = 0; i < pdb_ids.length; i++) {
-  const pdb = pdb_ids[i];
-  for (let j = 0; j < data_t[i].length; j++) {
-    data_t[i][j].push(pdb);
-}};
+function moveKeyToArray(dataset:Array, pdb_ids:Array) {
+  for (let i = 0; i < pdb_ids.length; i++) {
+    const pdb = pdb_ids[i];
+    for (let j = 0; j < dataset[i].length; j++) {
+      dataset[i][j].push(pdb);
+  }};
+  return dataset
+}
 
 // https://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript/25804569#comment50580016_10865042
 const flattenOnce = (array) => {return [].concat(...array)};
 
-const labelData = function (data, key_labels) {
+const labelData = function (data, keys) {
   const data_labeled = data.map(function(e) {
     let obj = {};
     keys.forEach(function(key, i) {
@@ -39,6 +41,21 @@ const labelData = function (data, key_labels) {
   return data_labeled;
 }
 
+function getInteractionTypes(dataset:Array) {
+  let int_ty = []
+  for (let i = 0; i < dataset.length; i++) {
+    const int_arr = dataset[i].int_ty;
+    int_ty.push(int_arr)
+  }
+  int_ty = flattenOnce(int_ty).filter((v, i, a) => a.indexOf(v) === i);
+  let rm_index = int_ty.indexOf("undefined");
+  if (rm_index > -1) {
+    int_ty.splice(rm_index, 1);
+  }
+
+  return int_ty;
+}
+
 let keys = [
   "rec_chain",
   "rec_aa",
@@ -52,25 +69,36 @@ let keys = [
   "pdb_id"
 ];
 
-data_t = flattenOnce(data_t);
-data_t = labelData(data_t, keys)
+// * DATA
+let dataset = interactions;
 
-// * DEFINE ADDITIONAL DATASETS
-// These are used as the x and y axis tick mark labels
-let data_t_rec = _.uniqBy(data_t, (t) => [t.rec_gn, t.pdb_id].join());
-let data_t_sig = _.uniqBy(data_t, (t) => [t.sig_gn, t.pdb_id].join());
+// THIS RIGHT HERE TO SUBSET THE DATA
+let b = {name: 'test'}
+console.log(['a', 'b', 'c', 'test'].includes(b.name))
 
 
-let int_ty = []
-for (let i = 0; i < data_t.length; i++) {
-  const int_arr = data_t[i].int_ty;
-  int_ty.push(int_arr)
+function dataTransformationWrapper(dataset, keys) {
+  let pdb_ids = extractPdbIDs(dataset);
+  let data_t = objectToArray(dataset);
+  data_t = moveKeyToArray(data_t, pdb_ids);
+  data_t = flattenOnce(data_t);
+  data_t = labelData(data_t, keys);
+
+  let data_t_rec = _.uniqBy(data_t, (t) => [t.rec_gn, t.pdb_id].join());
+  let data_t_sig = _.uniqBy(data_t, (t) => [t.sig_gn, t.pdb_id].join());
+  let int_ty = getInteractionTypes(data_t);
+
+  let data = {
+    transformed: data_t,
+    receptor: data_t_rec,
+    signprot: data_t_sig,
+    inttypes: int_ty
+  };
+
+  return data;
 }
-int_ty = flattenOnce(int_ty).filter((v, i, a) => a.indexOf(v) === i);
-let rm_index = int_ty.indexOf("undefined");
-if (rm_index > -1) {
-  int_ty.splice(rm_index, 1);
-}
+
+let data = dataTransformationWrapper(dataset, keys)
 
 // * SETTING UP SVG FOR OUTPUT
 let svg = d3
@@ -96,7 +124,7 @@ let xScale = d3
   .scaleBand()
   .domain(
     d3
-      .map(data_t, (d: any) => d.rec_gn)
+      .map(data.transformed, (d: any) => d.rec_gn)
       .keys()
       .sort(d3.ascending)
   )
@@ -107,7 +135,7 @@ let yScale = d3
   .scaleBand()
   .domain(
     d3
-      .map(data_t, (d: any) => d.sig_gn)
+      .map(data.transformed, (d: any) => d.sig_gn)
       .keys()
       .sort(d3.descending)
   )
@@ -120,7 +148,7 @@ let pdbScale = d3
   .scaleBand()
   .domain(
     d3
-      .map(data_t, (d: any) => d.pdb_id)
+      .map(data.transformed, (d: any) => d.pdb_id)
       .keys()
       .sort(d3.descending)
   )
@@ -131,7 +159,7 @@ let sigScale = d3
   .scaleBand()
   .domain(
     d3
-      .map(data_t, (d: any) => d.pdb_id)
+      .map(data.transformed, (d: any) => d.pdb_id)
       .keys()
       .sort(d3.descending)
   )
@@ -142,7 +170,7 @@ let sigScale = d3
 // * SETTING THE COLOR SCALE
 let colScale = d3
   .scaleOrdinal()
-  .domain(int_ty)
+  .domain(data.inttypes)
   .range(d3.schemeSet3);
 
 // * DEFINING AXIS FOR X/Y AND GRID
@@ -185,7 +213,7 @@ svg
   .append("g")
   .attr("id", "interact")
   .selectAll("rects")
-  .data(data_t)
+  .data(data.transformed)
   .enter()
   .append("rect")
   .attr("x", function(d: any) {
@@ -195,14 +223,14 @@ svg
     return yScale(d.sig_gn) + shift_top * yScale.step() + offset;
   })
   .attr("rx", function() {
-    if (data_t.length < 15) {
+    if (data.transformed.length < 15) {
       return 5;
     } else {
       return 3;
     }
   })
   .attr("ry", function() {
-    if (data_t.length < 15) {
+    if (data.transformed.length < 15) {
       return 5;
     } else {
       return 3;
@@ -255,7 +283,7 @@ svg
 svg
   .append("g")
   .attr("id", "infobox")
-  .attr("transform", "translate(-15," + (int_ty.length + 2) * 20 + ")");
+  .attr("transform", "translate(-15," + (data.inttypes.length + 2) * 20 + ")");
 
 function infoBoxUpdate() {
   // create selection and bind data
@@ -302,7 +330,7 @@ svg
 
 let legendOrdinal = d3
   .legendColor()
-  .cells(int_ty.length)
+  .cells(data.inttypes.length)
   .scale(colScale)
   // .cellFilter(function (d) { return d.label !== "undefined" })
   .orient("vertical")
@@ -381,7 +409,7 @@ svg
 let each_res = svg
   .select('g#recAA')
   .selectAll("text")
-  .data(data_t_rec)
+  .data(data.receptor)
   .enter()
   .append('g')
 
@@ -429,7 +457,7 @@ svg
 let each_res = svg
   .select('g#sigAA')
   .selectAll("text")
-  .data(data_t_sig)
+  .data(data.signprot)
   .enter()
   .append('g');
 
@@ -536,7 +564,7 @@ svg
 
 $(document).ready( function () {
   $('#table-data').DataTable({
-    data: data_t,
+    data: data.transformed,
     columns: [
       // { data: 'int_ty' },
       { data: 'pdb_id' },
