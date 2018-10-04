@@ -1,195 +1,231 @@
 // * CONSTANTS
-let margin = { top: 40, right: 200, bottom: 180, left: 130 };
-let w = 1200 - margin.left - margin.right,
+const margin = { top: 40, right: 200, bottom: 180, left: 130 };
+const w = 1200 - margin.left - margin.right,
   h = 900 - margin.top - margin.bottom;
 
-// * DATA TRANSFORMATION FUNCTIONS
-function extractPdbIDs(dataset:object) {
-  return Object.keys(dataset);
-};
+const signprotmat = {
 
-function objectToArray(dataset:object) {
-  return Object.keys(dataset).map(key => dataset[key]);
-};
+  data: {
 
-function moveKeyToArray(dataset:Array, pdb_ids:Array) {
-  for (let i = 0; i < pdb_ids.length; i++) {
-    const pdb = pdb_ids[i];
-    for (let j = 0; j < dataset[i].length; j++) {
-      dataset[i][j].push(pdb);
-  }};
-  return dataset
-}
+    // * DATA TRANSFORMATION FUNCTIONS
+    extractPdbIDs: function(dataset:object) {
+      return Object.keys(dataset);
+    },
 
-// https://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript/25804569#comment50580016_10865042
-const flattenOnce = (array) => {return [].concat(...array)};
+    objectToArray: function(dataset:object) {
+      return Object.keys(dataset).map(key => dataset[key]);
+    },
 
-const labelData = function (data, keys) {
-  const data_labeled = data.map(function(e) {
-    let obj = {};
-    keys.forEach(function(key, i) {
-      // comment this out later
-      if (key === 'sig_gn') {
-        obj[key] = Math.floor(e[i] / 10);
-        return;
+    moveKeyToArray: function(dataset:Array, pdb_ids:Array) {
+      for (let i = 0; i < pdb_ids.length; i++) {
+        const pdb = pdb_ids[i];
+        for (let j = 0; j < dataset[i].length; j++) {
+          dataset[i][j].push(pdb);
+      }};
+      return dataset
+    },
+
+    // https://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript/25804569#comment50580016_10865042
+    flattenOnce: (array) => {return [].concat(...array)},
+
+    labelData: function (data, keys) {
+      const data_labeled = data.map(function(e) {
+        let obj = {};
+        keys.forEach(function(key, i) {
+          // comment this out later
+          if (key === 'sig_gn') {
+            obj[key] = Math.floor(e[i] / 10);
+            return;
+          }
+          obj[key] = e[i];
+        });
+        return obj;
+      });
+
+      return data_labeled;
+    },
+
+    getInteractionTypes: function(dataset:Array) {
+      let int_ty = []
+      for (let i = 0; i < dataset.length; i++) {
+        const int_arr = dataset[i].int_ty;
+        int_ty.push(int_arr)
       }
-      obj[key] = e[i];
-    });
-    return obj;
-  });
+      int_ty = signprotmat.data.flattenOnce(int_ty).filter((v, i, a) => a.indexOf(v) === i);
+      let rm_index = int_ty.indexOf("undefined");
+      if (rm_index > -1) {
+        int_ty.splice(rm_index, 1);
+      }
 
-  return data_labeled;
-}
+      return int_ty;
+    },
 
-function getInteractionTypes(dataset:Array) {
-  let int_ty = []
-  for (let i = 0; i < dataset.length; i++) {
-    const int_arr = dataset[i].int_ty;
-    int_ty.push(int_arr)
+    dataTransformationWrapper: function(dataset, keys, pdb_sel) {
+      dataset = _.pick(dataset, pdb_sel)
+      let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
+      let data_t = signprotmat.data.objectToArray(dataset);
+      data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
+      data_t = signprotmat.data.flattenOnce(data_t);
+      data_t = signprotmat.data.labelData(data_t, keys);
+
+      let data_t_rec = _.uniqBy(data_t, (t) => [t.rec_gn, t.pdb_id].join());
+      let data_t_sig = _.uniqBy(data_t, (t) => [t.sig_gn, t.pdb_id].join());
+      let int_ty = signprotmat.data.getInteractionTypes(data_t);
+
+      let return_data = {
+        transformed: data_t,
+        receptor: data_t_rec,
+        signprot: data_t_sig,
+        inttypes: int_ty
+      };
+
+      return return_data;
+    }
+
+  },
+
+  // * D3 DRAW FUNCTIONS
+  d3: {
+
+    // * SETTING UP SVG FOR OUTPUT
+    setup: function(){
+      let svg = d3
+        .select("body")
+        .select("div#content")
+        .append("div")
+        .classed("svg-container", true) //container class to make it responsive
+        .append("svg")
+        .attr("preserveAspectRatio", "xMinYMin meet")
+        .attr(
+          "viewBox",
+          "0 0 " +
+            (w + margin.left + margin.right) +
+            " " +
+            (h + 200 + margin.top + margin.bottom)
+        )
+        .classed("svg-content", true) //class to make it responsive
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      return svg;
+    },
+
+    // * SETTING THE X/Y SCALE
+    xScale: function(data){
+      let xScale = d3
+        .scaleBand()
+        .domain(
+          d3
+            .map(data.transformed, (d: any) => d.rec_gn)
+            .keys()
+            .sort(d3.ascending)
+        )
+        .range([0, w])
+        // .round(true)
+        .padding(1);
+
+      return xScale;
+    },
+
+    yScale: function(data){
+      let yScale = d3
+        .scaleBand()
+        .domain(
+          d3
+            .map(data.transformed, (d: any) => d.sig_gn)
+            .keys()
+            .sort(d3.descending)
+        )
+        .range([h, 0])
+        // .round(true)
+        .padding(1);
+
+      return yScale;
+    },
+
+
+    // * SETTING THE PDB/SIG-PROT SCALE
+    pdbScale: function(data){
+      let pdbScale = d3
+      .scaleBand()
+      .domain(
+        d3
+          .map(data.transformed, (d: any) => d.pdb_id)
+          .keys()
+          .sort(d3.descending)
+      )
+      .range([180,0])
+      .padding(1);
+
+      return pdbScale;
+    },
+
+    sigScale: function(data){
+      let sigScale = d3
+      .scaleBand()
+      .domain(
+        d3
+          .map(data.transformed, (d: any) => d.pdb_id)
+          .keys()
+          .sort(d3.descending)
+      )
+      .range([120,0])
+      .padding(1);
+
+      return sigScale;
+    },
+
+
+    // * SETTING THE COLOR SCALE
+    colScale: function(data){
+      let colScale = d3
+      .scaleOrdinal()
+      .domain(data.inttypes)
+      .range(d3.schemeSet3);
+
+      return colScale;
+    },
+
+    // * DEFINING AXIS FOR X/Y AND GRID
+    xAxis: function(xScale){
+      let xAxis = d3
+      .axisBottom(xScale)
+      .tickSize(0)
+      .tickPadding(8);
+
+      return xAxis;
+    },
+
+    yAxis: function(yScale){
+      let yAxis = d3
+      .axisRight(yScale)
+      .tickSize(0)
+      .tickPadding(8);
+
+      return yAxis;
+    },
+
+    xAxisGrid: function(xScale, yScale){
+      let xAxisGrid = d3
+      .axisTop(xScale)
+      .tickSize(h - yScale.step())
+      .tickFormat(d => "");
+
+      return xAxisGrid;
+    },
+
+    yAxisGrid: function(xScale, yScale){
+      let yAxisGrid = d3
+      .axisRight(yScale)
+      .tickSize(w - xScale.step())
+      .tickFormat(d => "");
+
+      return yAxisGrid;
+    }
   }
-  int_ty = flattenOnce(int_ty).filter((v, i, a) => a.indexOf(v) === i);
-  let rm_index = int_ty.indexOf("undefined");
-  if (rm_index > -1) {
-    int_ty.splice(rm_index, 1);
-  }
-
-  return int_ty;
-}
-
-let keys = [
-  "rec_chain",
-  "rec_aa",
-  "rec_pos",
-  "rec_gn",
-  "sig_chain",
-  "sig_aa",
-  // "sig_pos",
-  "sig_gn",
-  "int_ty",
-  "pdb_id"
-];
-
-// * DATA
-let dataset = interactions;
-
-// THIS RIGHT HERE TO SUBSET THE DATA
-let b = {name: 'test'}
-console.log(['a', 'b', 'c', 'test'].includes(b.name))
+};
 
 
-function dataTransformationWrapper(dataset, keys) {
-  let pdb_ids = extractPdbIDs(dataset);
-  let data_t = objectToArray(dataset);
-  data_t = moveKeyToArray(data_t, pdb_ids);
-  data_t = flattenOnce(data_t);
-  data_t = labelData(data_t, keys);
-
-  let data_t_rec = _.uniqBy(data_t, (t) => [t.rec_gn, t.pdb_id].join());
-  let data_t_sig = _.uniqBy(data_t, (t) => [t.sig_gn, t.pdb_id].join());
-  let int_ty = getInteractionTypes(data_t);
-
-  let data = {
-    transformed: data_t,
-    receptor: data_t_rec,
-    signprot: data_t_sig,
-    inttypes: int_ty
-  };
-
-  return data;
-}
-
-let data = dataTransformationWrapper(dataset, keys)
-
-// * SETTING UP SVG FOR OUTPUT
-let svg = d3
-  .select("body")
-  .select("div#content")
-  .append("div")
-  .classed("svg-container", true) //container class to make it responsive
-  .append("svg")
-  .attr("preserveAspectRatio", "xMinYMin meet")
-  .attr(
-    "viewBox",
-    "0 0 " +
-      (w + margin.left + margin.right) +
-      " " +
-      (h + 200 + margin.top + margin.bottom)
-  )
-  .classed("svg-content", true) //class to make it responsive
-  .append("g")
-  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-// * SETTING THE X/Y SCALE
-let xScale = d3
-  .scaleBand()
-  .domain(
-    d3
-      .map(data.transformed, (d: any) => d.rec_gn)
-      .keys()
-      .sort(d3.ascending)
-  )
-  .range([0, w])
-  // .round(true)
-  .padding(1);
-let yScale = d3
-  .scaleBand()
-  .domain(
-    d3
-      .map(data.transformed, (d: any) => d.sig_gn)
-      .keys()
-      .sort(d3.descending)
-  )
-  .range([h, 0])
-  // .round(true)
-  .padding(1);
-
-// * SETTING THE PDB/SIG-PROT SCALE
-let pdbScale = d3
-  .scaleBand()
-  .domain(
-    d3
-      .map(data.transformed, (d: any) => d.pdb_id)
-      .keys()
-      .sort(d3.descending)
-  )
-  .range([180,0])
-  .padding(1);
-
-let sigScale = d3
-  .scaleBand()
-  .domain(
-    d3
-      .map(data.transformed, (d: any) => d.pdb_id)
-      .keys()
-      .sort(d3.descending)
-  )
-  .range([120,0])
-  .padding(1);
-
-
-// * SETTING THE COLOR SCALE
-let colScale = d3
-  .scaleOrdinal()
-  .domain(data.inttypes)
-  .range(d3.schemeSet3);
-
-// * DEFINING AXIS FOR X/Y AND GRID
-let xAxis = d3
-  .axisBottom(xScale)
-  .tickSize(0)
-  .tickPadding(8);
-let yAxis = d3
-  .axisRight(yScale)
-  .tickSize(0)
-  .tickPadding(8);
-let xAxisGrid = d3
-  .axisTop(xScale)
-  .tickSize(h - yScale.step())
-  .tickFormat(d => "");
-let yAxisGrid = d3
-  .axisRight(yScale)
-  .tickSize(w - xScale.step())
-  .tickFormat(d => "");
 
 // * ADD TOOLTIP FUNCTIONALITY
 let tip = d3
@@ -560,19 +596,3 @@ svg
   .attr("x", w - 0.8 * xScale.step())
   .attr("y", 0.8 * yScale.step())
   .text("G-Protein");
-
-
-$(document).ready( function () {
-  $('#table-data').DataTable({
-    data: data.transformed,
-    columns: [
-      // { data: 'int_ty' },
-      { data: 'pdb_id' },
-      { data: 'rec_aa' },
-      { data: 'rec_gn' },
-      { data: 'rec_pos' },
-      { data: 'sig_aa' },
-      { data: 'sig_gn' }
-    ]
-  });
-});

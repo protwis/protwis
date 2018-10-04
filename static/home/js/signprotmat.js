@@ -1,163 +1,181 @@
 // * CONSTANTS
 var margin = { top: 40, right: 200, bottom: 180, left: 130 };
 var w = 1200 - margin.left - margin.right, h = 900 - margin.top - margin.bottom;
-// * DATA TRANSFORMATION FUNCTIONS
-function extractPdbIDs(dataset) {
-    return Object.keys(dataset);
-}
-;
-function objectToArray(dataset) {
-    return Object.keys(dataset).map(function (key) { return dataset[key]; });
-}
-;
-function moveKeyToArray(dataset, pdb_ids) {
-    for (var i = 0; i < pdb_ids.length; i++) {
-        var pdb = pdb_ids[i];
-        for (var j = 0; j < dataset[i].length; j++) {
-            dataset[i][j].push(pdb);
+var signprotmat = {
+    data: {
+        // * DATA TRANSFORMATION FUNCTIONS
+        extractPdbIDs: function (dataset) {
+            return Object.keys(dataset);
+        },
+        objectToArray: function (dataset) {
+            return Object.keys(dataset).map(function (key) { return dataset[key]; });
+        },
+        moveKeyToArray: function (dataset, pdb_ids) {
+            for (var i = 0; i < pdb_ids.length; i++) {
+                var pdb = pdb_ids[i];
+                for (var j = 0; j < dataset[i].length; j++) {
+                    dataset[i][j].push(pdb);
+                }
+            }
+            ;
+            return dataset;
+        },
+        // https://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript/25804569#comment50580016_10865042
+        flattenOnce: function (array) { return [].concat.apply([], array); },
+        labelData: function (data, keys) {
+            var data_labeled = data.map(function (e) {
+                var obj = {};
+                keys.forEach(function (key, i) {
+                    // comment this out later
+                    if (key === 'sig_gn') {
+                        obj[key] = Math.floor(e[i] / 10);
+                        return;
+                    }
+                    obj[key] = e[i];
+                });
+                return obj;
+            });
+            return data_labeled;
+        },
+        getInteractionTypes: function (dataset) {
+            var int_ty = [];
+            for (var i = 0; i < dataset.length; i++) {
+                var int_arr = dataset[i].int_ty;
+                int_ty.push(int_arr);
+            }
+            int_ty = signprotmat.data.flattenOnce(int_ty).filter(function (v, i, a) { return a.indexOf(v) === i; });
+            var rm_index = int_ty.indexOf("undefined");
+            if (rm_index > -1) {
+                int_ty.splice(rm_index, 1);
+            }
+            return int_ty;
+        },
+        dataTransformationWrapper: function (dataset, keys, pdb_sel) {
+            dataset = _.pick(dataset, pdb_sel);
+            var pdb_ids = signprotmat.data.extractPdbIDs(dataset);
+            var data_t = signprotmat.data.objectToArray(dataset);
+            data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
+            data_t = signprotmat.data.flattenOnce(data_t);
+            data_t = signprotmat.data.labelData(data_t, keys);
+            var data_t_rec = _.uniqBy(data_t, function (t) { return [t.rec_gn, t.pdb_id].join(); });
+            var data_t_sig = _.uniqBy(data_t, function (t) { return [t.sig_gn, t.pdb_id].join(); });
+            var int_ty = signprotmat.data.getInteractionTypes(data_t);
+            var return_data = {
+                transformed: data_t,
+                receptor: data_t_rec,
+                signprot: data_t_sig,
+                inttypes: int_ty
+            };
+            return return_data;
+        }
+    },
+    // * D3 DRAW FUNCTIONS
+    d3: {
+        // * SETTING UP SVG FOR OUTPUT
+        setup: function () {
+            var svg = d3
+                .select("body")
+                .select("div#content")
+                .append("div")
+                .classed("svg-container", true) //container class to make it responsive
+                .append("svg")
+                .attr("preserveAspectRatio", "xMinYMin meet")
+                .attr("viewBox", "0 0 " +
+                (w + margin.left + margin.right) +
+                " " +
+                (h + 200 + margin.top + margin.bottom))
+                .classed("svg-content", true) //class to make it responsive
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            return svg;
+        },
+        // * SETTING THE X/Y SCALE
+        xScale: function (data) {
+            var xScale = d3
+                .scaleBand()
+                .domain(d3
+                .map(data.transformed, function (d) { return d.rec_gn; })
+                .keys()
+                .sort(d3.ascending))
+                .range([0, w])
+                // .round(true)
+                .padding(1);
+            return xScale;
+        },
+        yScale: function (data) {
+            var yScale = d3
+                .scaleBand()
+                .domain(d3
+                .map(data.transformed, function (d) { return d.sig_gn; })
+                .keys()
+                .sort(d3.descending))
+                .range([h, 0])
+                // .round(true)
+                .padding(1);
+            return yScale;
+        },
+        // * SETTING THE PDB/SIG-PROT SCALE
+        pdbScale: function (data) {
+            var pdbScale = d3
+                .scaleBand()
+                .domain(d3
+                .map(data.transformed, function (d) { return d.pdb_id; })
+                .keys()
+                .sort(d3.descending))
+                .range([180, 0])
+                .padding(1);
+            return pdbScale;
+        },
+        sigScale: function (data) {
+            var sigScale = d3
+                .scaleBand()
+                .domain(d3
+                .map(data.transformed, function (d) { return d.pdb_id; })
+                .keys()
+                .sort(d3.descending))
+                .range([120, 0])
+                .padding(1);
+            return sigScale;
+        },
+        // * SETTING THE COLOR SCALE
+        colScale: function (data) {
+            var colScale = d3
+                .scaleOrdinal()
+                .domain(data.inttypes)
+                .range(d3.schemeSet3);
+            return colScale;
+        },
+        // * DEFINING AXIS FOR X/Y AND GRID
+        xAxis: function (xScale) {
+            var xAxis = d3
+                .axisBottom(xScale)
+                .tickSize(0)
+                .tickPadding(8);
+            return xAxis;
+        },
+        yAxis: function (yScale) {
+            var yAxis = d3
+                .axisRight(yScale)
+                .tickSize(0)
+                .tickPadding(8);
+            return yAxis;
+        },
+        xAxisGrid: function (xScale, yScale) {
+            var xAxisGrid = d3
+                .axisTop(xScale)
+                .tickSize(h - yScale.step())
+                .tickFormat(function (d) { return ""; });
+            return xAxisGrid;
+        },
+        yAxisGrid: function (xScale, yScale) {
+            var yAxisGrid = d3
+                .axisRight(yScale)
+                .tickSize(w - xScale.step())
+                .tickFormat(function (d) { return ""; });
+            return yAxisGrid;
         }
     }
-    ;
-    return dataset;
-}
-// https://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript/25804569#comment50580016_10865042
-var flattenOnce = function (array) { return [].concat.apply([], array); };
-var labelData = function (data, keys) {
-    var data_labeled = data.map(function (e) {
-        var obj = {};
-        keys.forEach(function (key, i) {
-            // comment this out later
-            if (key === 'sig_gn') {
-                obj[key] = Math.floor(e[i] / 10);
-                return;
-            }
-            obj[key] = e[i];
-        });
-        return obj;
-    });
-    return data_labeled;
 };
-function getInteractionTypes(dataset) {
-    var int_ty = [];
-    for (var i = 0; i < dataset.length; i++) {
-        var int_arr = dataset[i].int_ty;
-        int_ty.push(int_arr);
-    }
-    int_ty = flattenOnce(int_ty).filter(function (v, i, a) { return a.indexOf(v) === i; });
-    var rm_index = int_ty.indexOf("undefined");
-    if (rm_index > -1) {
-        int_ty.splice(rm_index, 1);
-    }
-    return int_ty;
-}
-var keys = [
-    "rec_chain",
-    "rec_aa",
-    "rec_pos",
-    "rec_gn",
-    "sig_chain",
-    "sig_aa",
-    // "sig_pos",
-    "sig_gn",
-    "int_ty",
-    "pdb_id"
-];
-// * DATA
-var dataset = interactions;
-// THIS RIGHT HERE TO SUBSET THE DATA
-var b = { name: 'test' };
-console.log(['a', 'b', 'c', 'test'].includes(b.name));
-function dataTransformationWrapper(dataset, keys) {
-    var pdb_ids = extractPdbIDs(dataset);
-    var data_t = objectToArray(dataset);
-    data_t = moveKeyToArray(data_t, pdb_ids);
-    data_t = flattenOnce(data_t);
-    data_t = labelData(data_t, keys);
-    var data_t_rec = _.uniqBy(data_t, function (t) { return [t.rec_gn, t.pdb_id].join(); });
-    var data_t_sig = _.uniqBy(data_t, function (t) { return [t.sig_gn, t.pdb_id].join(); });
-    var int_ty = getInteractionTypes(data_t);
-    var data = {
-        transformed: data_t,
-        receptor: data_t_rec,
-        signprot: data_t_sig,
-        inttypes: int_ty
-    };
-    return data;
-}
-var data = dataTransformationWrapper(dataset, keys);
-// * SETTING UP SVG FOR OUTPUT
-var svg = d3
-    .select("body")
-    .select("div#content")
-    .append("div")
-    .classed("svg-container", true) //container class to make it responsive
-    .append("svg")
-    .attr("preserveAspectRatio", "xMinYMin meet")
-    .attr("viewBox", "0 0 " +
-    (w + margin.left + margin.right) +
-    " " +
-    (h + 200 + margin.top + margin.bottom))
-    .classed("svg-content", true) //class to make it responsive
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-// * SETTING THE X/Y SCALE
-var xScale = d3
-    .scaleBand()
-    .domain(d3
-    .map(data.transformed, function (d) { return d.rec_gn; })
-    .keys()
-    .sort(d3.ascending))
-    .range([0, w])
-    // .round(true)
-    .padding(1);
-var yScale = d3
-    .scaleBand()
-    .domain(d3
-    .map(data.transformed, function (d) { return d.sig_gn; })
-    .keys()
-    .sort(d3.descending))
-    .range([h, 0])
-    // .round(true)
-    .padding(1);
-// * SETTING THE PDB/SIG-PROT SCALE
-var pdbScale = d3
-    .scaleBand()
-    .domain(d3
-    .map(data.transformed, function (d) { return d.pdb_id; })
-    .keys()
-    .sort(d3.descending))
-    .range([180, 0])
-    .padding(1);
-var sigScale = d3
-    .scaleBand()
-    .domain(d3
-    .map(data.transformed, function (d) { return d.pdb_id; })
-    .keys()
-    .sort(d3.descending))
-    .range([120, 0])
-    .padding(1);
-// * SETTING THE COLOR SCALE
-var colScale = d3
-    .scaleOrdinal()
-    .domain(data.inttypes)
-    .range(d3.schemeSet3);
-// * DEFINING AXIS FOR X/Y AND GRID
-var xAxis = d3
-    .axisBottom(xScale)
-    .tickSize(0)
-    .tickPadding(8);
-var yAxis = d3
-    .axisRight(yScale)
-    .tickSize(0)
-    .tickPadding(8);
-var xAxisGrid = d3
-    .axisTop(xScale)
-    .tickSize(h - yScale.step())
-    .tickFormat(function (d) { return ""; });
-var yAxisGrid = d3
-    .axisRight(yScale)
-    .tickSize(w - xScale.step())
-    .tickFormat(function (d) { return ""; });
 // * ADD TOOLTIP FUNCTIONALITY
 var tip = d3
     .tip()
@@ -483,18 +501,4 @@ svg
     .attr("x", w - 0.8 * xScale.step())
     .attr("y", 0.8 * yScale.step())
     .text("G-Protein");
-$(document).ready(function () {
-    $('#table-data').DataTable({
-        data: data.transformed,
-        columns: [
-            // { data: 'int_ty' },
-            { data: 'pdb_id' },
-            { data: 'rec_aa' },
-            { data: 'rec_gn' },
-            { data: 'rec_pos' },
-            { data: 'sig_aa' },
-            { data: 'sig_gn' }
-        ]
-    });
-});
 //# sourceMappingURL=signprotmat.js.map
