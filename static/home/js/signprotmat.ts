@@ -450,7 +450,7 @@ const signprotmat = {
         .attr("class", "x axis_label")
         .attr("x", -10)
         .attr("y", function(d: any) {
-          return pdbScale(d);
+          return pdbScale(d) - pdbScale.step()/2;
         })
         .attr("text-anchor", "end")
         .attr("dy", 75)
@@ -475,7 +475,7 @@ const signprotmat = {
           return sigScale(d);
         })
         .attr("y", function(d: any) {
-          return sigScale(d);
+          return sigScale(d) - sigScale.step()/2;
         })
         .attr("text-anchor", "begin")
         .attr("dx", 45)
@@ -515,7 +515,7 @@ const signprotmat = {
         .append("text")
         .attr("class", "res_label")
         .attr("x", (d: any) => xScale(d.rec_gn))
-        .attr("y", (d: any) => pdbScale(d.pdb_id))
+        .attr("y", (d: any) => pdbScale(d.pdb_id) - pdbScale.step()/2)
         .attr("text-anchor", "middle")
         .attr("dy", 75)
         .text((d: any) => d.rec_aa);
@@ -569,7 +569,6 @@ const signprotmat = {
         .attr("x", (d: any) => sigScale(d.pdb_id))
         .attr("y", (d: any) => yScale(d.sig_gn))
         .attr("text-anchor", "middle")
-        .attr("dy", 5)
         .text((d: any) => d.sig_aa);
 
       d3.select("g#sigAA")

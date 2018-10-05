@@ -369,7 +369,7 @@ var signprotmat = {
                 .attr("class", "x axis_label")
                 .attr("x", -10)
                 .attr("y", function (d) {
-                return pdbScale(d);
+                return pdbScale(d) - pdbScale.step() / 2;
             })
                 .attr("text-anchor", "end")
                 .attr("dy", 75)
@@ -390,7 +390,7 @@ var signprotmat = {
                 return sigScale(d);
             })
                 .attr("y", function (d) {
-                return sigScale(d);
+                return sigScale(d) - sigScale.step() / 2;
             })
                 .attr("text-anchor", "begin")
                 .attr("dx", 45)
@@ -426,7 +426,7 @@ var signprotmat = {
                 .append("text")
                 .attr("class", "res_label")
                 .attr("x", function (d) { return xScale(d.rec_gn); })
-                .attr("y", function (d) { return pdbScale(d.pdb_id); })
+                .attr("y", function (d) { return pdbScale(d.pdb_id) - pdbScale.step() / 2; })
                 .attr("text-anchor", "middle")
                 .attr("dy", 75)
                 .text(function (d) { return d.rec_aa; });
@@ -472,7 +472,6 @@ var signprotmat = {
                 .attr("x", function (d) { return sigScale(d.pdb_id); })
                 .attr("y", function (d) { return yScale(d.sig_gn); })
                 .attr("text-anchor", "middle")
-                .attr("dy", 5)
                 .text(function (d) { return d.sig_aa; });
             d3.select("g#sigAA")
                 .append("rect")

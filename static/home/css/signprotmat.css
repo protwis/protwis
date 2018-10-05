@@ -111,14 +111,14 @@ line {
     white-space: nowrap;
     vertical-align: baseline;
     border-radius: .25em;
-    dominant-baseline: ideographic;
+    dominant-baseline: central;
 }
 
 
 .res_label {
     display: inline;
     font-size: 75%;
-    dominant-baseline: ideographic;
+    dominant-baseline: central;
 }
 
 /* removing unnecessary paths via assigning no stroke */
