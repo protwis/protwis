@@ -2,8 +2,8 @@ var hivesvg, hiveTooltip;
 function createHiveplot(data, container) {
     var width = 1200,
         height = 1000,
-        innerRadius = 0.15*(height*0.9),
-        outerRadius = 0.42*(height*0.9);
+        innerRadius = 0.15*(height),
+        outerRadius = 0.36*(height);
 
     var angleLineCore = d3.scale.ordinal()
                       .domain(d3.range(71))
@@ -11,24 +11,24 @@ function createHiveplot(data, container) {
         radius = d3.scale.linear()
                   .range([innerRadius, outerRadius]),
         color = d3.scale.category10()
-                  .domain(d3.range(20));
+                  .domain(d3.range(10));
 
         var angle = function(e){
           // TODO optimize placement of TMs based on angle, but possibly also starting position
-          //matching = [1.8, 2.8, 4.2, 5, 5.7, 6.8, 0.5];
-          //return angleLineCore( matching[e] * 10);
+          if (e >= 6.5)
+            e = 6.5 + (e-7.0);
+          else if (e < 0){
+            e += 7;
+          }
 
-          return angleLineCore( ((e+0.5) % 7) * 10);
-        };
-        var angleLine = function(e){
-          return angleLineCore( (e+5) % 70 );
+          return angleLineCore( (e*10+18) % 70 );
         };
 
     // create TM residue count
     // replace later with data.segments
-    var TM_segments = ["TM1", "TM2", "TM3", "TM4", "TM5", "TM6", "TM7"];
+    var TM_segments = ["TM1", "TM2", "TM3", "TM4", "TM5", "TM6", "TM7", "H8"];
     var resCount = [];
-    for (var i = 0; i < 7; i++)
+    for (var i = 0; i < 8; i++)
         resCount[i] = 0;
     var currentCount = resCount.slice(0);
 
@@ -42,20 +42,25 @@ function createHiveplot(data, container) {
     // x is TM number - 1 and y is ordered position in TM
     var nodes = [];
     var indexList = Object.assign({}, data.generic_map);
+          var last = -1;
     for (residue in data.generic_map){
       // residue contains original number
       // data.generic_map[residue] contains GN
       var gn = data.generic_map[residue].split('x');
       var tm = gn[0];
       var position = gn[1];
-      if (tm <= 7){
+      if (tm <= 8){
           currentCount[tm-1] += 1;
           // Reverse upward helices so EC in inside
-          if ((tm % 2) == 1)
+          if (tm == 8 || (tm % 2) == 1)
               nodes.push({x: tm-1, y: currentCount[tm-1], gn: data.generic_map[residue], number: residue});
           else
               nodes.push({x: tm-1, y: resCount[tm-1]-currentCount[tm-1]+1, gn: data.generic_map[residue], number: residue});
           indexList[residue] = nodes.length - 1;
+          //console.log("{name: \"" + data.generic_map[residue] + "\", group:" + tm + "},");
+//          if (last == tm)
+//              console.log("{\"source\": " + (nodes.length - 2) + ", \"target\":" + (nodes.length - 1) + ", \"value\": 0},");
+          last =  tm;
       } else
           indexList[residue] = null;
     }
@@ -71,11 +76,12 @@ function createHiveplot(data, container) {
             // only is consecutive
             var tmDistance = Math.abs(nodes[indexList[res1]].x - nodes[indexList[res2]].x);
             if (tmDistance > 0) {
-                if (tmDistance == 1 || tmDistance == 6)
+                if (tmDistance == 1 || (tmDistance == 6 && nodes[indexList[res2]].x != 7) || tmDistance == 7)
                     links.push({source: nodes[indexList[res1]], target: nodes[indexList[res2]], consecutive: true, tmDistance: tmDistance});
                 else
                     links.push({source: nodes[indexList[res1]], target: nodes[indexList[res2]], consecutive: false, tmDistance: tmDistance});
             }
+//            console.log("{\"source\": " + (indexList[res1]) + ", \"target\":" + (indexList[res2]) + ", \"value\": 5},");
         }
     }
 
@@ -89,16 +95,17 @@ function createHiveplot(data, container) {
         .attr("width", width)
         .attr("height", height)
       .append("g")
-        .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
+        .attr("transform", "translate(" + width/2 + "," + height/2.2 + ")");
 
     // draw lines based on length TM helix
     hivesvg.selectAll(".axis")
-        .data(d3.range(7))
+        .data(d3.range(8))
       .enter().append("line")
         .attr("class", "axis")
         .attr("transform", function(d) { return "rotate(" + degreesHP(angle(d)) + ")" })
-        .attr("x1", innerRadius)
-        .attr("x2", function(d) { return (outerRadius-innerRadius)/20*(resCount[d]+1)+innerRadius; });
+        .attr("x1", function(d) { if (d == 7) { return (resCount[0] * 1.2) * (outerRadius-innerRadius)/20+innerRadius; } else { return innerRadius; }})
+        .attr("x2", function(d) { var extra = 0; if (d == 7){ extra = resCount[0] * 1.2}; return (outerRadius-innerRadius)/20*(extra+resCount[d]+1)+innerRadius; });
+        //.attr("x2", function(d) { var extra = 0; if (d.x == 7){ extra = resCount[0] * 1.2}; return (outerRadius-innerRadius)/20*(resCount[d]+extra+1)+innerRadius; });
 
     // draw links between nodes
     /*
@@ -115,8 +122,9 @@ function createHiveplot(data, container) {
     var lineCore = d3.svg.line.radial()
         .interpolate( "bundle" )
         .tension( 0.85 )
-        .radius(function(d) { return d.y*(outerRadius-innerRadius)/20+innerRadius; })
-        .angle(function(d) { if (d.x < 0) d.x = 7 + d.x; return angleLine(Math.round(d.x*10)); });
+//        .radius(function(d) { return d.y*(outerRadius-innerRadius)/20+innerRadius; })
+        .radius(function(d) { var extra = 0; if (d.x >= 6.5){ extra = resCount[0] * 1.2}; return (d.y+extra)*(outerRadius-innerRadius)/20+innerRadius; })
+        .angle(function(d) { /*if (d.x < 0) d.x = 7 + d.x;*/ return angle(d.x); });
 
     hivesvg.selectAll(".link")
         .data(links)
@@ -124,23 +132,28 @@ function createHiveplot(data, container) {
         .attr("class", "link")
         .attr("d", function(d, i) {
             var placer = 0.3;
+//            if (d.source.x == 7 || d.target.x == 7)
+//                placer = placer/3;
+
             var margin = 10;
             if (d.tmDistance > 3)
                 placer *= -1;
             var path = [d.source];
             path.push({x: d.source.x+placer, y: d.source.y});
+
             if (!d.consecutive) {
                 var middle;
                 var inside = true;
-                if (d.tmDistance == 2 || d.tmDistance == 5)
+                if (d.tmDistance == 2 || d.tmDistance >= 5)
                     inside = false;
 
                 var via = 0;
                 if (d.tmDistance > 3)
-                    via = d.target.x + (7-d.tmDistance)/2;
+                    //via = d.target.x + (7-d.tmDistance)/2;
+                    via = d.source.x - (7-d.tmDistance)/2;
                 else
                     via = d.source.x + d.tmDistance/2;
-                via = via % 7;
+//                via = via % 7;
 
                 // draw nice path outside or inside
                 if (inside){
@@ -149,6 +162,8 @@ function createHiveplot(data, container) {
                     path.push(middle);
                     path.push({x: middle.x + placer, y: middle.y + margin/3});
                 } else {
+                    if (via == 0.5)
+                      via = 0;
                     middle = {x: via, y: resCount[via] + margin };
                     path.push({x: middle.x - placer, y: middle.y - margin/2});
                     path.push(middle);
@@ -175,7 +190,7 @@ function createHiveplot(data, container) {
       .enter().append("circle")
         .attr("class", "node")
         .attr("transform", function(d) { return "rotate(" + degreesHP(angle(d.x)) + ")"; })
-        .attr("cx", function(d) {return d.y*(outerRadius-innerRadius)/20+innerRadius; })
+        .attr("cx", function(d) { var extra = 0; if (d.x == 7){ extra = resCount[0] * 1.2}; return (d.y+extra)*(outerRadius-innerRadius)/20+innerRadius; })
         .attr("r", 5)
         .style("fill", function(d) { return color(d.x); })
         .on("mouseover", nodeMouseoverHP)
