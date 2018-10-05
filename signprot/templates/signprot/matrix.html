@@ -9,7 +9,10 @@
 {% endblock %}
 
 {% block content %}
-<h3>GPCR - Signal Protein Interaction Matrix</h3>
+<h1 class="page-header">GPCR - Signal Protein Interaction Matrix</h1>
+<p>
+    Display the interaction between one or multiple GPCR/G-protein complex interfaces.
+</p>
 
 <div class="row">
     <div class="col-md-3">
@@ -22,6 +25,21 @@
             <div class="panel-body">
                 <h5><span id='interface-count' class="crystal-count">0 interfaces selected.</span></h5>
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#interface-modal-table">Select Interface</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">Add additional PDB(s)</h3>
+            </div>
+
+            <div class="panel-body">
+                <h5><span id='pdb-count' class="crystal-count">0 PDBs selected.</span></h5>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdb-modal-table">Add PDB</button>
             </div>
 
         </div>
@@ -52,6 +70,45 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="pdb-modal-table" role="dialog">
+    <div class="modal-dialog modal-wide">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Select PDBs from the table</h4>
+            </div>
+
+            <div class="modal-body">
+                <div class="col-md-12">
+                    <table id="table-pdb" class="display">
+                    </table>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<table id="table-data" class="display">
+    <thead>
+        <tr>
+            <th>int_ty</th>
+            <th>PDB</th>
+            <th>R AA</th>
+            <th>R GN</th>
+            <th>R Pos</th>
+            <th>S AA</th>
+            <th>S Pos</th>
+        </tr>
+    </thead>
+</table>
 
 {% endblock %}
 
@@ -161,10 +218,8 @@
         $('#interface-modal-table').on('hidden.bs.modal', function (e) {
             const selection = table.rows( { selected: true } ).data();
             pdb_sel = whichPdb(selection)
-            console.log(pdb_sel)
 
             $('.svg-container').remove();
-
             data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
             svg = signprotmat.d3.setup();
             xScale = signprotmat.d3.xScale(data);
@@ -191,6 +246,11 @@
                     sigScale,
                     tooltip
                 );
+
+            interface_data_table.clear();
+            interface_data_table.rows.add(data.transformed);
+            interface_data_table.draw();
+
         });
 
         let keys = [
@@ -233,10 +293,10 @@
                 tooltip
             );
 
-        $('#table-data').DataTable({
+        let interface_data_table = $('#table-data').DataTable({
             data: data.transformed,
             columns: [
-            // { data: 'int_ty' },
+            { data: 'int_ty' },
             { data: 'pdb_id' },
             { data: 'rec_aa' },
             { data: 'rec_gn' },
@@ -248,19 +308,5 @@
     });
 
 </script>
-
-<table id="table-data" class="display container">
-    <thead>
-        <tr>
-            <!-- <th>int_ty</th> -->
-            <th>PDB</th>
-            <th>R AA</th>
-            <th>R GN</th>
-            <th>R Pos</th>
-            <th>S AA</th>
-            <th>S Pos</th>
-        </tr>
-    </thead>
-</table>
 
 {% endblock %}

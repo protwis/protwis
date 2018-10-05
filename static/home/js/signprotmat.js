@@ -1,6 +1,6 @@
 // * CONSTANTS
 var margin = { top: 40, right: 200, bottom: 180, left: 130 };
-var w = 1200 - margin.left - margin.right, h = 900 - margin.top - margin.bottom;
+var w = 1200 - margin.left - margin.right, h = 1000 - margin.top - margin.bottom;
 // array for data in infobox
 var info_data = [];
 var signprotmat = {
@@ -234,7 +234,8 @@ var signprotmat = {
                     return "none";
                 }
                 else {
-                    return colScale(d.int_ty[0]);
+                    // return colScale(d.int_ty[0]);
+                    return "#0000001A";
                 }
             })
                 .on("mouseover", function (d) {
@@ -380,21 +381,20 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "sigPDB")
-                .attr("transform", "translate(" + w + "," + yScale.step() + ")rotate(-45)")
+                .attr("transform", "translate(" + w + "," + yScale.step() + ")rotate(-90)")
                 .selectAll("text")
                 .data(data.pdbids)
                 .enter()
                 .append("text")
                 .attr("class", "x axis_label")
-                .attr("x", function (d) {
-                return sigScale(d);
+                .attr("x", function (d, i) {
+                return 10;
             })
-                .attr("y", function (d) {
-                return sigScale(d) - sigScale.step() / 2;
+                .attr("y", function (d, i) {
+                return sigScale.step() * (i + 1);
             })
                 .attr("text-anchor", "begin")
-                .attr("dx", 45)
-                .attr("dy", 45)
+                .attr("dy", 65)
                 .text(function (d) {
                 return d;
             });

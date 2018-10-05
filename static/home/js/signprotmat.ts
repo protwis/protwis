@@ -1,7 +1,7 @@
 // * CONSTANTS
 const margin = { top: 40, right: 200, bottom: 180, left: 130 };
 const w = 1200 - margin.left - margin.right,
-  h = 900 - margin.top - margin.bottom;
+  h = 1000 - margin.top - margin.bottom;
 
 // array for data in infobox
 let info_data = [];
@@ -293,7 +293,8 @@ const signprotmat = {
           if (d.int_ty === undefined) {
             return "none";
           } else {
-            return colScale(d.int_ty[0]);
+            // return colScale(d.int_ty[0]);
+            return "#0000001A";
           }
         })
         .on("mouseover", function(d) {
@@ -450,7 +451,7 @@ const signprotmat = {
         .attr("class", "x axis_label")
         .attr("x", -10)
         .attr("y", function(d: any) {
-          return pdbScale(d) - pdbScale.step()/2;
+          return pdbScale(d) - pdbScale.step() / 2;
         })
         .attr("text-anchor", "end")
         .attr("dy", 75)
@@ -464,22 +465,21 @@ const signprotmat = {
         .attr("id", "sigPDB")
         .attr(
           "transform",
-          "translate(" + w + "," + yScale.step() + ")rotate(-45)"
+          "translate(" + w + "," + yScale.step() + ")rotate(-90)"
         )
         .selectAll("text")
         .data(data.pdbids)
         .enter()
         .append("text")
         .attr("class", "x axis_label")
-        .attr("x", function(d: any) {
-          return sigScale(d);
+        .attr("x", function(d: any, i) {
+          return 10;
         })
-        .attr("y", function(d: any) {
-          return sigScale(d) - sigScale.step()/2;
+        .attr("y", function(d: any, i) {
+          return sigScale.step() * (i + 1);
         })
         .attr("text-anchor", "begin")
-        .attr("dx", 45)
-        .attr("dy", 45)
+        .attr("dy", 65)
         .text(function(d: any) {
           return d;
         });
@@ -515,7 +515,7 @@ const signprotmat = {
         .append("text")
         .attr("class", "res_label")
         .attr("x", (d: any) => xScale(d.rec_gn))
-        .attr("y", (d: any) => pdbScale(d.pdb_id) - pdbScale.step()/2)
+        .attr("y", (d: any) => pdbScale(d.pdb_id) - pdbScale.step() / 2)
         .attr("text-anchor", "middle")
         .attr("dy", 75)
         .text((d: any) => d.rec_aa);
