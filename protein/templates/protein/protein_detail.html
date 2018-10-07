@@ -7,6 +7,16 @@
 {% endblock %}
 
 {% block content %}
+
+{% if protein_no_found %}
+<br><br>
+<div class="row text-success">
+    <div class="text-center">
+        <h2>{{ protein_no_found|safe }} not in GPCRdb - contact us if it should be.</h2>
+    </div>
+</div>
+{% else %}
+
 <div class="row text-success">
     <div class="text-center">
         <h2>{{ p.name|safe }} ({{ p.entry_name }})</h2>
@@ -124,6 +134,8 @@
         </div>
     {% endif %}
 </div>
+
+{% endif %}
 {% endblock %}
 
 {% block addon_js %}
