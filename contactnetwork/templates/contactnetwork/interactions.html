@@ -2568,6 +2568,7 @@
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+                pdb = ['3sn6'];
                 var segments = JSON.parse($(selector + ' .segments-input').val());
                 if (pdb.length > 0 && segments.length > 0) {
                     var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
@@ -4024,8 +4025,8 @@
 
          .hiveplot-container .link {
            fill: none;
-           stroke-width: 1.5px;
-           stroke-opacity: 0.8;
+           stroke-width: 1px;
+           stroke-opacity: 0.5;
          }
 
          .hiveplot-container .link.turnedOn {
@@ -4033,13 +4034,18 @@
          }
 
          .hiveplot-container .link.turnedOff {
-           stroke-opacity: 0.3;
-           stroke-width: 1px;
+           stroke-opacity: 0.2;
+           stroke-width: 0.7px;
          }
 
          .hiveplot-container .node.turnedOn {
            stroke: red;
            stroke-width: 3px;
+         }
+
+         div#hiveTooltip {
+           background-color: white;
+           .border-radius ( 5px );
          }
     </style>
 
