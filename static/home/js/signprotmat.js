@@ -7,7 +7,9 @@ var signprotmat = {
     // * DATA TRANSFORMATION FUNCTIONS
     data: {
         extractPdbIDs: function (dataset) {
-            return Object.keys(dataset);
+            var ret = [];
+            Object.keys(dataset).forEach(function (e) { return ret.push(e.toUpperCase()); });
+            return ret;
         },
         objectToArray: function (dataset) {
             return Object.keys(dataset).map(function (key) { return dataset[key]; });
@@ -55,6 +57,17 @@ var signprotmat = {
             }
             return int_ty;
         },
+        extractRecSigData: function (data, which_component) {
+            if (which_component === "rec") {
+                return _.uniqBy(data, function (t) { return [t.rec_gn, t.pdb_id].join(); });
+            }
+            else if (which_component === "sig") {
+                return _.uniqBy(data, function (t) { return [t.sig_gn, t.pdb_id].join(); });
+            }
+            else {
+                console.log("No component specified...");
+            }
+        },
         dataTransformationWrapper: function (dataset, keys, pdb_sel) {
             dataset = _.pick(dataset, pdb_sel);
             var pdb_ids = signprotmat.data.extractPdbIDs(dataset);
@@ -62,8 +75,8 @@ var signprotmat = {
             data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
             data_t = signprotmat.data.flattenOnce(data_t);
             data_t = signprotmat.data.labelData(data_t, keys);
-            var data_t_rec = _.uniqBy(data_t, function (t) { return [t.rec_gn, t.pdb_id].join(); });
-            var data_t_sig = _.uniqBy(data_t, function (t) { return [t.sig_gn, t.pdb_id].join(); });
+            var data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
+            var data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
             var int_ty = signprotmat.data.getInteractionTypes(data_t);
             var return_data = {
                 transformed: data_t,
@@ -100,7 +113,7 @@ var signprotmat = {
             var xScale = d3
                 .scaleBand()
                 .domain(d3
-                .map(data.transformed, function (d) { return d.rec_gn; })
+                .map(data, function (d) { return d.rec_gn; })
                 .keys()
                 .sort(d3.ascending))
                 .range([0, w])
@@ -112,7 +125,7 @@ var signprotmat = {
             var yScale = d3
                 .scaleBand()
                 .domain(d3
-                .map(data.transformed, function (d) { return d.sig_gn; })
+                .map(data, function (d) { return d.sig_gn; })
                 .keys()
                 .sort(d3.descending))
                 .range([h, 0])
@@ -125,10 +138,10 @@ var signprotmat = {
             var pdbScale = d3
                 .scaleBand()
                 .domain(d3
-                .map(data.transformed, function (d) { return d.pdb_id; })
+                .map(data, function (d) { return d.pdb_id; })
                 .keys()
                 .sort(d3.descending))
-                .range([180, 0])
+                .range([300, 0])
                 .padding(1);
             return pdbScale;
         },
@@ -136,7 +149,7 @@ var signprotmat = {
             var sigScale = d3
                 .scaleBand()
                 .domain(d3
-                .map(data.transformed, function (d) { return d.pdb_id; })
+                .map(data, function (d) { return d.pdb_id; })
                 .keys()
                 .sort(d3.descending))
                 .range([120, 0])
@@ -147,7 +160,7 @@ var signprotmat = {
         colScale: function (data) {
             var colScale = d3
                 .scaleOrdinal()
-                .domain(data.inttypes)
+                .domain(data)
                 .range(d3.schemeSet3);
             return colScale;
         },
@@ -367,7 +380,7 @@ var signprotmat = {
                 .data(data.pdbids)
                 .enter()
                 .append("text")
-                .attr("class", "x axis_label")
+                .attr("class", "y seq_label")
                 .attr("x", -10)
                 .attr("y", function (d) {
                 return pdbScale(d) - pdbScale.step() / 2;
@@ -386,7 +399,7 @@ var signprotmat = {
                 .data(data.pdbids)
                 .enter()
                 .append("text")
-                .attr("class", "x axis_label")
+                .attr("class", "x seq_label")
                 .attr("x", function (d, i) {
                 return 10;
             })
@@ -417,6 +430,7 @@ var signprotmat = {
                 .append("g");
             each_res
                 .append("rect")
+                .attr("class", "res_rect")
                 .style("fill", function (d) { return colScale(d.int_ty); })
                 .attr("x", function (d) { return xScale(d.rec_gn) - xScale.step() / 2; })
                 .attr("y", function (d) { return 75 + pdbScale(d.pdb_id) - pdbScale.step(); })
@@ -482,6 +496,50 @@ var signprotmat = {
                 .attr("width", sigScale.range()[0] - sigScale.step())
                 .attr("height", yScale.range()[0] - yScale.step());
             return svg;
+        },
+        addPDB: function (new_data, data, svg) {
+            data = _.union(data.transformed, new_data);
+            data = signprotmat.data.extractRecSigData(data, "rec");
+            var pdbScale = signprotmat.d3.pdbScale(data);
+            var xScale = signprotmat.d3.xScale(data);
+            var selection = svg
+                .select("g#recAA")
+                .selectAll("text.res_label")
+                .data(data);
+            var selection_rect = svg
+                .select("g#recAA")
+                .selectAll("rect.res_rect")
+                .data(data);
+            var selection_enter = selection.enter().append("g");
+            selection_enter
+                .append("rect")
+                .attr("class", "res_rect")
+                .style("fill", "black")
+                .attr("x", function (d) { return xScale(d.rec_gn) - xScale.step() / 2; })
+                .attr("y", function (d) { return 75 + pdbScale(d.pdb_id) - pdbScale.step(); })
+                .attr("width", xScale.step())
+                .attr("height", pdbScale.step())
+                .merge(selection_rect)
+                .transition()
+                .duration(500)
+                .attr("x", function (d) { return xScale(d.rec_gn) - xScale.step() / 2; })
+                .attr("y", function (d) { return 75 + pdbScale(d.pdb_id) - pdbScale.step(); })
+                .attr("width", xScale.step())
+                .attr("height", pdbScale.step());
+            selection_enter
+                .append("text")
+                .attr("class", "res_label")
+                .style("fill", "white")
+                .attr("x", function (d) { return xScale(d.rec_gn); })
+                .attr("y", function (d) { return pdbScale(d.pdb_id) - pdbScale.step() / 2; })
+                .attr("text-anchor", "middle")
+                .attr("dy", 75)
+                .text(function (d) { return d.rec_aa; })
+                .merge(selection)
+                .transition()
+                .duration(500)
+                .attr("x", function (d) { return xScale(d.rec_gn); })
+                .attr("y", function (d) { return pdbScale(d.pdb_id) - pdbScale.step() / 2; });
         },
         infoBoxUpdate: function () {
             // create selection and bind data

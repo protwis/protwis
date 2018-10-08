@@ -10,7 +10,10 @@ const signprotmat = {
   // * DATA TRANSFORMATION FUNCTIONS
   data: {
     extractPdbIDs: function(dataset: object) {
-      return Object.keys(dataset);
+      let ret = [];
+      Object.keys(dataset).forEach(e => ret.push(e.toUpperCase()));
+
+      return ret;
     },
 
     objectToArray: function(dataset: object) {
@@ -66,6 +69,16 @@ const signprotmat = {
       return int_ty;
     },
 
+    extractRecSigData: function(data, which_component: string) {
+      if (which_component === "rec") {
+        return _.uniqBy(data, t => [t.rec_gn, t.pdb_id].join());
+      } else if (which_component === "sig") {
+        return _.uniqBy(data, t => [t.sig_gn, t.pdb_id].join());
+      } else {
+        console.log("No component specified...");
+      }
+    },
+
     dataTransformationWrapper: function(dataset, keys, pdb_sel) {
       dataset = _.pick(dataset, pdb_sel);
       let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
@@ -74,8 +87,8 @@ const signprotmat = {
       data_t = signprotmat.data.flattenOnce(data_t);
       data_t = signprotmat.data.labelData(data_t, keys);
 
-      let data_t_rec = _.uniqBy(data_t, t => [t.rec_gn, t.pdb_id].join());
-      let data_t_sig = _.uniqBy(data_t, t => [t.sig_gn, t.pdb_id].join());
+      let data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
+      let data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
       let int_ty = signprotmat.data.getInteractionTypes(data_t);
 
       let return_data = {
@@ -121,7 +134,7 @@ const signprotmat = {
         .scaleBand()
         .domain(
           d3
-            .map(data.transformed, (d: any) => d.rec_gn)
+            .map(data, (d: any) => d.rec_gn)
             .keys()
             .sort(d3.ascending)
         )
@@ -137,7 +150,7 @@ const signprotmat = {
         .scaleBand()
         .domain(
           d3
-            .map(data.transformed, (d: any) => d.sig_gn)
+            .map(data, (d: any) => d.sig_gn)
             .keys()
             .sort(d3.descending)
         )
@@ -154,11 +167,11 @@ const signprotmat = {
         .scaleBand()
         .domain(
           d3
-            .map(data.transformed, (d: any) => d.pdb_id)
+            .map(data, (d: any) => d.pdb_id)
             .keys()
             .sort(d3.descending)
         )
-        .range([180, 0])
+        .range([300, 0])
         .padding(1);
 
       return pdbScale;
@@ -169,7 +182,7 @@ const signprotmat = {
         .scaleBand()
         .domain(
           d3
-            .map(data.transformed, (d: any) => d.pdb_id)
+            .map(data, (d: any) => d.pdb_id)
             .keys()
             .sort(d3.descending)
         )
@@ -183,7 +196,7 @@ const signprotmat = {
     colScale: function(data) {
       let colScale = d3
         .scaleOrdinal()
-        .domain(data.inttypes)
+        .domain(data)
         .range(d3.schemeSet3);
 
       return colScale;
@@ -448,7 +461,7 @@ const signprotmat = {
         .data(data.pdbids)
         .enter()
         .append("text")
-        .attr("class", "x axis_label")
+        .attr("class", "y seq_label")
         .attr("x", -10)
         .attr("y", function(d: any) {
           return pdbScale(d) - pdbScale.step() / 2;
@@ -471,7 +484,7 @@ const signprotmat = {
         .data(data.pdbids)
         .enter()
         .append("text")
-        .attr("class", "x axis_label")
+        .attr("class", "x seq_label")
         .attr("x", function(d: any, i) {
           return 10;
         })
@@ -505,6 +518,7 @@ const signprotmat = {
 
       each_res
         .append("rect")
+        .attr("class", "res_rect")
         .style("fill", (d: any) => colScale(d.int_ty))
         .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
@@ -581,6 +595,58 @@ const signprotmat = {
         .attr("height", yScale.range()[0] - yScale.step());
 
       return svg;
+    },
+
+    addPDB: function(new_data, data, svg) {
+      data = _.union(data.transformed, new_data);
+      data = signprotmat.data.extractRecSigData(data, "rec");
+
+      let pdbScale = signprotmat.d3.pdbScale(data);
+      let xScale = signprotmat.d3.xScale(data);
+
+      let selection = svg
+        .select("g#recAA")
+        .selectAll("text.res_label")
+        .data(data);
+
+      let selection_rect = svg
+        .select("g#recAA")
+        .selectAll("rect.res_rect")
+        .data(data);
+
+      let selection_enter = selection.enter().append("g");
+
+      selection_enter
+        .append("rect")
+        .attr("class", "res_rect")
+        .style("fill", "black")
+        .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
+        .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
+        .attr("width", xScale.step())
+        .attr("height", pdbScale.step())
+        .merge(selection_rect)
+        .transition()
+        .duration(500)
+        .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
+        .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
+        .attr("width", xScale.step())
+        .attr("height", pdbScale.step());
+
+      selection_enter
+        .append("text")
+        .attr("class", "res_label")
+        .style("fill", "white")
+        .attr("x", (d: any) => xScale(d.rec_gn))
+        .attr("y", (d: any) => pdbScale(d.pdb_id) - pdbScale.step() / 2)
+        .attr("text-anchor", "middle")
+        .attr("dy", 75)
+        .text((d: any) => d.rec_aa)
+        .merge(selection)
+        .transition()
+        .duration(500)
+        .attr("x", (d: any) => xScale(d.rec_gn))
+        .attr("y", (d: any) => pdbScale(d.pdb_id) - pdbScale.step() / 2);
+
     },
 
     infoBoxUpdate: function() {

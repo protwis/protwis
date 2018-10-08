@@ -1148,13 +1148,13 @@ def InteractionMatrix(request):
 
     # rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
 
-    interactions = SignprotInteractions.objects.all().values_list(
-        'gpcr_residue__sequence_number',
-        'gpcr_residue__display_generic_number__label',
-        'structure__pdb_code__index','interaction_type',
-        'signprot_residue__sequence_number',
-        'signprot_residue__display_generic_number__label'
-        )
+    # interactions = SignprotInteractions.objects.all().values_list(
+    #     'gpcr_residue__sequence_number',
+    #     'gpcr_residue__display_generic_number__label',
+    #     'structure__pdb_code__index','interaction_type',
+    #     'signprot_residue__sequence_number',
+    #     'signprot_residue__display_generic_number__label'
+    #     )
 
     interactions_metadata = complex_info
     context = {

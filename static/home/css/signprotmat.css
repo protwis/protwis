@@ -6,7 +6,7 @@
     padding-bottom: 100%;
     /* aspect ratio */
     vertical-align: top;
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 
 .svg-content {
@@ -103,7 +103,7 @@ line {
 .axis_label {
     display: inline;
     padding: .2em .6em .3em;
-    font-size: 75%;
+    font-size: 85%;
     font-weight: 700;
     line-height: 1;
     color: #fff;
@@ -112,6 +112,22 @@ line {
     vertical-align: baseline;
     border-radius: .25em;
     dominant-baseline: central;
+    font-family: monospace;
+}
+
+.seq_label {
+    display: inline;
+    padding: .2em .6em .3em;
+    font-size: 80%;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25em;
+    dominant-baseline: central;
+    font-family: monospace;
 }
 
 

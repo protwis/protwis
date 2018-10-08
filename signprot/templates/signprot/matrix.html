@@ -44,6 +44,20 @@
 
         </div>
     </div>
+
+    <div class="col-md-3">
+        <div class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">TEST</h3>
+            </div>
+
+            <div class="panel-body">
+                <button type="button" class="btn btn-primary" onclick="signprotmat.d3.addPDB(test_pdb_data, data, svg, xScale)">Add TEST PDB</button>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="interface-modal-table" role="dialog">
@@ -132,7 +146,30 @@
     let colScale;
     let tooltip;
 
-    const whichPdb = function(selection){
+    let test_pdb_data = [
+            {
+                'pdb_id': 'XYZA',
+                'rec_gn': '4.39x40',
+                'rec_aa': 'A',
+            },
+            {
+                'pdb_id': 'XYZA',
+                'rec_gn': '4.40x40',
+                'rec_aa': 'B',
+            },
+            {
+                'pdb_id': 'XYZA',
+                'rec_gn': '4.40x41',
+                'rec_aa': 'C',
+            },
+            {
+                'pdb_id': 'XYZA',
+                'rec_gn': '5.57x57',
+                'rec_aa': 'D',
+            },
+        ]
+
+    const whichPdb = function (selection) {
         let pdb_sel = []
         for (let index = 0; index < selection.length; index++) {
             pdb_sel.push(selection[index].pdb_id);
@@ -189,63 +226,63 @@
         });
 
         table
-            .on( 'select', function ( e, dt, type, indexes ) {
-                const row_count = table.rows( { selected: true } ).count()
+            .on('select', function (e, dt, type, indexes) {
+                const row_count = table.rows({ selected: true }).count()
                 if (row_count >= 2 || row_count === 0) {
                     $('#interface-count').text(row_count + ' interfaces selected.');
                 } else {
                     $('#interface-count').text(row_count + ' interface selected.');
                 }
-            } )
-            .on( 'deselect', function ( e, dt, type, indexes ) {
-                const row_count = table.rows( { selected: true } ).count()
+            })
+            .on('deselect', function (e, dt, type, indexes) {
+                const row_count = table.rows({ selected: true }).count()
                 if (row_count >= 2 || row_count === 0) {
                     $('#interface-count').text(row_count + ' interfaces selected.');
                 } else {
                     $('#interface-count').text(row_count + ' interface selected.');
                 }
-            } );
+            });
 
         // Default: Select all rows on page load
         table.rows().select();
-        pdb_sel = whichPdb(table.rows( { selected: true } ).data());
+        pdb_sel = whichPdb(table.rows({ selected: true }).data());
 
         // https://www.datatables.net/examples/api/tabs_and_scrolling.html
         $('#interface-modal-table').on('shown.bs.modal', function (e) {
-            $.fn.dataTable.tables( {visible: true, api: true} ).columns.adjust();
+            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
         });
 
         $('#interface-modal-table').on('hidden.bs.modal', function (e) {
-            const selection = table.rows( { selected: true } ).data();
+            const selection = table.rows({ selected: true }).data();
             pdb_sel = whichPdb(selection)
 
             $('.svg-container').remove();
             data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
             svg = signprotmat.d3.setup();
-            xScale = signprotmat.d3.xScale(data);
-            yScale = signprotmat.d3.yScale(data);
+            xScale = signprotmat.d3.xScale(data.transformed);
+            yScale = signprotmat.d3.yScale(data.transformed);
             xAxis = signprotmat.d3.xAxis(xScale);
             yAxis = signprotmat.d3.yAxis(yScale);
             xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
             yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
-            pdbScale = signprotmat.d3.pdbScale(data);
-            sigScale = signprotmat.d3.sigScale(data);
-            colScale = signprotmat.d3.colScale(data);
+            pdbScale = signprotmat.d3.pdbScale(data.transformed);
+            sigScale = signprotmat.d3.sigScale(data.transformed);
+            colScale = signprotmat.d3.colScale(data.inttypes);
             tooltip = signprotmat.d3.tooltip(svg);
             signprotmat.d3.renderData(
-                    svg,
-                    data,
-                    xScale,
-                    yScale,
-                    xAxis,
-                    yAxis,
-                    xAxisGrid,
-                    yAxisGrid,
-                    colScale,
-                    pdbScale,
-                    sigScale,
-                    tooltip
-                );
+                svg,
+                data,
+                xScale,
+                yScale,
+                xAxis,
+                yAxis,
+                xAxisGrid,
+                yAxisGrid,
+                colScale,
+                pdbScale,
+                sigScale,
+                tooltip
+            );
 
             interface_data_table.clear();
             interface_data_table.rows.add(data.transformed);
@@ -268,41 +305,41 @@
 
         data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
         svg = signprotmat.d3.setup();
-        xScale = signprotmat.d3.xScale(data);
-        yScale = signprotmat.d3.yScale(data);
+        xScale = signprotmat.d3.xScale(data.transformed);
+        yScale = signprotmat.d3.yScale(data.transformed);
         xAxis = signprotmat.d3.xAxis(xScale);
         yAxis = signprotmat.d3.yAxis(yScale);
         xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
         yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
-        pdbScale = signprotmat.d3.pdbScale(data);
-        sigScale = signprotmat.d3.sigScale(data);
-        colScale = signprotmat.d3.colScale(data);
+        pdbScale = signprotmat.d3.pdbScale(data.transformed);
+        sigScale = signprotmat.d3.sigScale(data.transformed);
+        colScale = signprotmat.d3.colScale(data.inttypes);
         tooltip = signprotmat.d3.tooltip(svg);
         signprotmat.d3.renderData(
-                svg,
-                data,
-                xScale,
-                yScale,
-                xAxis,
-                yAxis,
-                xAxisGrid,
-                yAxisGrid,
-                colScale,
-                pdbScale,
-                sigScale,
-                tooltip
-            );
+            svg,
+            data,
+            xScale,
+            yScale,
+            xAxis,
+            yAxis,
+            xAxisGrid,
+            yAxisGrid,
+            colScale,
+            pdbScale,
+            sigScale,
+            tooltip
+        );
 
         let interface_data_table = $('#table-data').DataTable({
             data: data.transformed,
             columns: [
-            { data: 'int_ty' },
-            { data: 'pdb_id' },
-            { data: 'rec_aa' },
-            { data: 'rec_gn' },
-            { data: 'rec_pos' },
-            { data: 'sig_aa' },
-            { data: 'sig_gn' }
+                { data: 'int_ty' },
+                { data: 'pdb_id' },
+                { data: 'rec_aa' },
+                { data: 'rec_gn' },
+                { data: 'rec_pos' },
+                { data: 'sig_aa' },
+                { data: 'sig_gn' }
             ]
         });
     });
