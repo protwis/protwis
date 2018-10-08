@@ -417,6 +417,7 @@ var signprotmat = {
                 .attr("id", "recAA")
                 .attr("transform", "translate(" + -xScale.step() / 2 + "," + h + ")")
                 .append("rect")
+                .attr("class", "border-bg")
                 .style("fill", "#eaeaea")
                 .attr("x", xScale.step() / 2)
                 .attr("y", 75)
@@ -446,6 +447,7 @@ var signprotmat = {
                 .text(function (d) { return d.rec_aa; });
             d3.select("g#recAA")
                 .append("rect")
+                .attr("class", "border")
                 .style("stroke", "black")
                 .style("fill", "none")
                 .attr("x", xScale.step() / 2)
@@ -489,6 +491,7 @@ var signprotmat = {
                 .text(function (d) { return d.sig_aa; });
             d3.select("g#sigAA")
                 .append("rect")
+                .attr("class", "border")
                 .style("stroke", "black")
                 .style("fill", "none")
                 .attr("x", 0 + sigScale.step() / 2)
@@ -497,9 +500,13 @@ var signprotmat = {
                 .attr("height", yScale.range()[0] - yScale.step());
             return svg;
         },
-        addPDB: function (new_data, data, svg) {
+        addReceptor: function (new_data, data, svg) {
             data = _.union(data.transformed, new_data);
             data = signprotmat.data.extractRecSigData(data, "rec");
+            var pdb_ids = [];
+            _.forEach(_.uniqBy(data, "pdb_id"), function (value) {
+                pdb_ids.push(value["pdb_id"]);
+            });
             var pdbScale = signprotmat.d3.pdbScale(data);
             var xScale = signprotmat.d3.xScale(data);
             var selection = svg
@@ -540,6 +547,44 @@ var signprotmat = {
                 .duration(500)
                 .attr("x", function (d) { return xScale(d.rec_gn); })
                 .attr("y", function (d) { return pdbScale(d.pdb_id) - pdbScale.step() / 2; });
+            selection = svg
+                .select("g#recPDB")
+                .selectAll("text")
+                .data(pdb_ids);
+            selection_enter = selection.enter();
+            selection_enter
+                .append("text")
+                .attr("class", "y seq_label")
+                .attr("x", -10)
+                .attr("y", function (d) {
+                return pdbScale(d) - pdbScale.step() / 2;
+            })
+                .attr("text-anchor", "end")
+                .attr("dy", 75)
+                .text(function (d) {
+                return d;
+            })
+                .merge(selection)
+                .transition()
+                .duration(500)
+                .attr("x", -10)
+                .attr("y", function (d) {
+                return pdbScale(d) - pdbScale.step() / 2;
+            })
+                .attr("dy", 75);
+            selection
+                .exit()
+                .transition()
+                .duration(500)
+                .remove();
+            d3.select("g#recAA")
+                .selectAll("rect.border, rect.border-bg")
+                .transition()
+                .duration(500)
+                .attr("x", xScale.step() / 2)
+                .attr("y", 75)
+                .attr("width", xScale.range()[1] - xScale.step())
+                .attr("height", pdbScale.range()[0] - pdbScale.step());
         },
         infoBoxUpdate: function () {
             // create selection and bind data
