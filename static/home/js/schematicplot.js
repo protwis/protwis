@@ -532,7 +532,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         if (shiftY<5 && shiftY>-5) run = 10;
 
         // Reposition each node
-        $(containerSelector + ` g.node[data-segment='${segment}'`).each((i, g) => {
+        $(containerSelector + ` g.node[data-segment='${segment}']`).each((i, g) => {
           const transformValue = g.getAttribute('transform');
 
           const regex = /\((.+),(.+)\)/;
@@ -637,7 +637,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     max_y = 0;
     min_y = 0;
     segmentList.forEach((segment) => {
-      $(containerSelector + ` g.node[data-segment='${segment}'`).each((i, g) => {
+      $(containerSelector + ` g.node[data-segment='${segment}']`).each((i, g) => {
           const transformValue = g.getAttribute('transform');
 
           const regex = /\((.+),(.+)\)/;

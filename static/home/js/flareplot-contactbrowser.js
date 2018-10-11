@@ -258,8 +258,13 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     var lastDrawn = segment.nodes[(segment.nodes.length - 1)];
 
                     // correct order of nodes
-                    // Issue: is an alphabetical sort, not numerical
-                    segment.nodes.sort(sortNumber);
+                    // Issue: normal sort is an alphabetical sort, not numerical - switch when necessary
+                    if (segment.nodes[0].indexOf("x") >= 0) {
+                      segment.nodes.sort();
+                    } else {
+                      segment.nodes.sort(sortNumber);
+                    }
+                    
                     var last = segment.nodes[(segment.nodes.length - 1)];
                     var x = (graph.trees[selectedTree].tree[segment.nodes[0]].x + graph.trees[selectedTree].tree[last].x)/2 - 90;
 
