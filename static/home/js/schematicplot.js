@@ -806,7 +806,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   function createLegendSingleCrystalGroup() {
     // Populate schematic legend
-    let legendHtml =
+    // Changed from separate min/max sliders to one range slider - to REMOVE if OK
+    /*let legendHtml =
       `${'<h4 class="center">Interaction count</h4>' +
         '<p>From: <span class="min-value">0</span></p>' +
         '<input class="min-interactions-range" type="range" min="0" max="'}${
@@ -821,7 +822,14 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       }" value="${data.pdbs.length}" step="1" />` +
       '<div class="temperature-scale">' +
       '<span class="white-to-red"></span>' +
-      '</div>';
+      '</div>';*/
+
+    let legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
+          + `<p>Range: <span id="clscg-pdbs-range">0 - ${data.pdbs.length}</span></p>`
+          + '<div class="slider-range" data-text-id="clscg-pdbs-range" id="clscg-pdbs-range-slider"></div>'
+          + '<div class="temperature-scale">'
+          + '<span class="white-to-red"></span>'
+          + '</div>';
 
     // Add SVG download button
     legendHtml +=
@@ -836,6 +844,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend`).append(legendHtml);
 
+    /*
+    // Changed from separate min/max sliders to one range slider - to REMOVE if OK
     function getRangeChangeFunction() {
       return function () {
         const tMin = $(`${containerSelector} .schematic-legend .min-interactions-range`).val();
@@ -858,7 +868,33 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend .min-interactions-range`).change(getRangeChangeFunction());
 
-    $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());
+    $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());*/
+
+    $( function() {
+      $(`${containerSelector} #clscg-pdbs-range-slider`).slider({
+        range: true,
+        min: 0,
+        max: `${data.pdbs.length}`,
+        step: 1,
+        values: [0, `${data.pdbs.length}`],
+        slide: function( event, ui ) {
+          $( `${containerSelector} #`+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+          getCLSCGRangeChangeFunction(ui.values[ 0 ], ui.values[ 1 ]);
+        }
+      });
+    } );
+
+    function getCLSCGRangeChangeFunction(tMin, tMax) {
+          // Hide all below min or above max treshold
+          $(`${containerSelector} .edge`).each(function () {
+            const n = $(this).data('num-interactions');
+            if (n < tMin || tMax < n) {
+              $(this).hide();
+            } else {
+              $(this).show();
+            }
+          });
+    }
   }
 
   function createLegendTwoCrystalGroups() {
