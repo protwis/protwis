@@ -130,6 +130,8 @@
 <script type="text/javascript">
     const interactions = {{ interactions | safe}};
     const interactions_metadata = {{ interactions_metadata | safe}};
+    const ps = {{ ps | safe}};
+    const rs = {{ rs | safe}};
     let pdb_sel = [];
 
     // Global Variable
@@ -169,12 +171,12 @@
             },
         ]
 
-    const whichPdb = function (selection) {
-        let pdb_sel = []
+    const select_by_value = function (selection, value) {
+        let ret_sel = []
         for (let index = 0; index < selection.length; index++) {
-            pdb_sel.push(selection[index].pdb_id);
+            ret_sel.push(selection[index][value]);
         };
-        return pdb_sel;
+        return ret_sel;
     };
 </script>
 <script src="{% static 'home/js/d3.v5.7.min.js' %}"></script>
@@ -245,7 +247,7 @@
 
         // Default: Select all rows on page load
         table.rows().select();
-        pdb_sel = whichPdb(table.rows({ selected: true }).data());
+        pdb_sel = select_by_value(table.rows({ selected: true }).data(), 'pdb_id');
 
         // https://www.datatables.net/examples/api/tabs_and_scrolling.html
         $('#interface-modal-table').on('shown.bs.modal', function (e) {
@@ -254,7 +256,7 @@
 
         $('#interface-modal-table').on('hidden.bs.modal', function (e) {
             const selection = table.rows({ selected: true }).data();
-            pdb_sel = whichPdb(selection)
+            pdb_sel = select_by_value(selection, 'pdb_id')
 
             $('.svg-container').remove();
             data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
@@ -329,6 +331,69 @@
             sigScale,
             tooltip
         );
+
+        // PDB TABLE MODAL
+        const pdb_table = $('#table-pdb').DataTable({
+            dom: 'Bfrtip',
+            data: ps,
+            columnDefs: [
+                {
+                    data: null,
+                    targets: 0,
+                    defaultContent: '',
+                    orderable: false,
+                    className: 'select-checkbox',
+                }, {
+                    data: 'protein__name',
+                    title: 'Name',
+                    targets: 1,
+                }],
+            select: {
+                style: 'os',
+            },
+            paging: false,
+            buttons: [
+                {
+                    text: 'Select all',
+                    action: function () {
+                        pdb_table.rows().select();
+                    }
+                },
+                {
+                    text: 'Select none',
+                    action: function () {
+                        pdb_table.rows().deselect();
+                    }
+                },
+            ]
+        });
+
+        pdb_table
+            .on('select', function (e, dt, type, indexes) {
+                const row_count = pdb_table.rows({ selected: true }).count()
+                if (row_count >= 2 || row_count === 0) {
+                    $('#pdb-count').text(row_count + ' PDBs selected.');
+                } else {
+                    $('#pdb-count').text(row_count + ' PDB selected.');
+                }
+            })
+            .on('deselect', function (e, dt, type, indexes) {
+                const row_count = pdb_table.rows({ selected: true }).count()
+                if (row_count >= 2 || row_count === 0) {
+                    $('#pdb-count').text(row_count + ' PDBs selected.');
+                } else {
+                    $('#pdb-count').text(row_count + ' PDB selected.');
+                }
+            });
+
+        $('#pdb-modal-table').on('hidden.bs.modal', function (e) {
+            const row_selection = pdb_table.rows({ selected: true }).data();
+            const xvals = xScale.domain();
+            const prids = select_by_value(row_selection, 'rec_id');
+
+            new_receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
+            signprotmat.d3.addReceptor(new_receptor_data, data, svg);
+        });
 
         let interface_data_table = $('#table-data').DataTable({
             data: data.transformed,

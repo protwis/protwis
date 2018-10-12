@@ -1156,11 +1156,41 @@ def InteractionMatrix(request):
     #     'signprot_residue__display_generic_number__label'
     #     )
 
+    ps = ProteinConformation.objects.filter(
+        protein__sequence_type__slug='wt',
+        protein__species__common_name="Human",
+        protein__family__slug__startswith='00'  # receptors, no gproteins
+        # protein__family__slug__startswith='001'
+        ).all().values(
+            'protein__id',
+            'protein__name',
+            'protein__entry_name',
+            'structure__pdb_code__index'
+            # 'protein__family__name'
+        ).prefetch_related(
+            'protein'
+        )
+    from django.db.models import F
+    names = set(pi['protein__entry_name'] for pi in ps)
+    residuelist = Residue.objects.filter(
+            protein_conformation__protein__entry_name__in=names
+            ).prefetch_related(
+                'display_generic_number',
+                'generic_number'
+            ).values(
+                pdb_id = F('protein_conformation__structure__pdb_code__index'),
+                rec_id = F('protein_conformation__protein__id'),
+                name = F('protein_conformation__protein__name'),
+                rec_aa = F('amino_acid'),
+                rec_gn = F('display_generic_number__label')
+            )
+
     interactions_metadata = complex_info
     context = {
-        # 'interactions': json.dumps(list(interactions)),
         'interactions': dataset,
-        'interactions_metadata': interactions_metadata
+        'interactions_metadata': interactions_metadata,
+        'ps': json.dumps(list(ps)),
+        'rs': json.dumps(list(residuelist))
         }
 
     return render(request, 'signprot/matrix.html', context)

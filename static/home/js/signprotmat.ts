@@ -69,6 +69,19 @@ const signprotmat = {
       return int_ty;
     },
 
+    get_additional_receptors: function(data, xvals, prids) {
+      let new_receptor_data = [];
+
+      for (let index = 0; index < data.length; index++) {
+        const e1 = data[index]["rec_gn"];
+        const e2 = data[index]["rec_id"];
+        if (xvals.includes(e1) && prids.includes(e2)) {
+          new_receptor_data.push(data[index]);
+        }
+      }
+      return new_receptor_data;
+    },
+
     extractRecSigData: function(data, which_component: string) {
       if (which_component === "rec") {
         return _.uniqBy(data, t => [t.rec_gn, t.pdb_id].join());

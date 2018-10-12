@@ -57,6 +57,17 @@ var signprotmat = {
             }
             return int_ty;
         },
+        get_additional_receptors: function (data, xvals, prids) {
+            var new_receptor_data = [];
+            for (var index = 0; index < data.length; index++) {
+                var e1 = data[index]["rec_gn"];
+                var e2 = data[index]["rec_id"];
+                if (xvals.includes(e1) && prids.includes(e2)) {
+                    new_receptor_data.push(data[index]);
+                }
+            }
+            return new_receptor_data;
+        },
         extractRecSigData: function (data, which_component) {
             if (which_component === "rec") {
                 return _.uniqBy(data, function (t) { return [t.rec_gn, t.pdb_id].join(); });
