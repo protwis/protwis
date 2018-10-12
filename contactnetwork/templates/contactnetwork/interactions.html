@@ -3249,9 +3249,6 @@
                 var stringBlob = new Blob( [ pdb_data['pdb'] ], { type: 'text/plain'} );
                 stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
                     original_o = o
-                    console.log(pdb_data['segments']['TM1'].join(", "))
-
-
 
                     gpcr_rep = o.addRepresentation( "cartoon", {
                     sele: ":"+pdb_data['chain'],
@@ -3288,10 +3285,10 @@
                           if (getInteractionStrength(iType)<3) return
                           res_int.push(resNo1);
                           res_int.push(resNo2);
-                          links.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
+                          links.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
 //                          console.log(genNo1,genNo2)
                           if ((genNo1=='-') || (genNo2=='-')) return
-                          links_gn.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
                         });
                     } else if (mode=='single-group') {
                       // TODO finalize this for single group interaction visualization
@@ -3313,10 +3310,10 @@
                           // Push interactions
                           res_int.push(resNo1);
                           res_int.push(resNo2);
-                          links.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getFrequencyColor(frequency)}})
+                          links.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
 
                           if ((genNo1=='-') || (genNo2=='-')) return
-                          links_gn.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getFrequencyColor(frequency)}})
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
                         });
                     } else {
                       // two groups
@@ -3324,8 +3321,7 @@
 
                     var linkMap = {}
                     links.forEach(function (link) {
-                      var atoms = link.atoms
-                      linkMap[atoms[0].split(".")[0] + "-" + atoms[1].split(".")[0]] = link
+                      linkMap[link.resID] = link
                     })
 
                     var initColourSchemes = function () {
@@ -3333,7 +3329,7 @@
                         this.bondColor = function (b) {
                           var origLink = linkMap[b.atom1.resno + "-" + b.atom2.resno]
                           if (origLink) {
-                            // console.log('FOUND!',origLink,origLink.data.color);
+//                             console.log('FOUND!',origLink,origLink.data.color);
                             r = origLink.data.color
                             return (r["r"] << 16) + (r["g"] << 8) + r["b"]
                           }
@@ -3356,7 +3352,6 @@
                     // }
                     // var startAtomSel = makeAtomSelection(links)
                     // console.log(startAtomSel,"startAtomSel")
-
 
                     var baseLinkScale = 20
                     reps.links = o.addRepresentation("distance", {
