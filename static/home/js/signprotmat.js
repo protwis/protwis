@@ -558,6 +558,16 @@ var signprotmat = {
                 .duration(500)
                 .attr("x", function (d) { return xScale(d.rec_gn); })
                 .attr("y", function (d) { return pdbScale(d.pdb_id) - pdbScale.step() / 2; });
+            selection
+                .exit()
+                .transition()
+                .duration(500)
+                .remove();
+            selection_rect
+                .exit()
+                .transition()
+                .duration(500)
+                .remove();
             selection = svg
                 .select("g#recPDB")
                 .selectAll("text")

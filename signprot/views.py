@@ -1156,21 +1156,21 @@ def InteractionMatrix(request):
     #     'signprot_residue__display_generic_number__label'
     #     )
 
+    from django.db.models import F
     ps = ProteinConformation.objects.filter(
         protein__sequence_type__slug='wt',
         protein__species__common_name="Human",
         protein__family__slug__startswith='00'  # receptors, no gproteins
         # protein__family__slug__startswith='001'
         ).all().values(
-            'protein__id',
             'protein__name',
             'protein__entry_name',
-            'structure__pdb_code__index'
+            'structure__pdb_code__index',
+            rec_id = F('protein__id'),
             # 'protein__family__name'
         ).prefetch_related(
             'protein'
         )
-    from django.db.models import F
     names = set(pi['protein__entry_name'] for pi in ps)
     residuelist = Residue.objects.filter(
             protein_conformation__protein__entry_name__in=names

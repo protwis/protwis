@@ -44,20 +44,6 @@
 
         </div>
     </div>
-
-    <div class="col-md-3">
-        <div class="panel panel-default">
-
-            <div class="panel-heading">
-                <h3 class="panel-title">TEST</h3>
-            </div>
-
-            <div class="panel-body">
-                <button type="button" class="btn btn-primary" onclick="signprotmat.d3.addReceptor(test_pdb_data, data, svg)">Add TEST PDB</button>
-            </div>
-
-        </div>
-    </div>
 </div>
 
 <div class="modal fade" id="interface-modal-table" role="dialog">
@@ -147,29 +133,6 @@
     let sigScale;
     let colScale;
     let tooltip;
-
-    let test_pdb_data = [
-            {
-                'pdb_id': 'XYZA',
-                'rec_gn': '4.39x40',
-                'rec_aa': 'A',
-            },
-            {
-                'pdb_id': 'XYZA',
-                'rec_gn': '4.40x40',
-                'rec_aa': 'B',
-            },
-            {
-                'pdb_id': 'XYZA',
-                'rec_gn': '4.40x41',
-                'rec_aa': 'C',
-            },
-            {
-                'pdb_id': 'XYZA',
-                'rec_gn': '5.57x57',
-                'rec_aa': 'D',
-            },
-        ]
 
     const select_by_value = function (selection, value) {
         let ret_sel = []
@@ -391,8 +354,8 @@
             const xvals = xScale.domain();
             const prids = select_by_value(row_selection, 'rec_id');
 
-            new_receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
-            signprotmat.d3.addReceptor(new_receptor_data, data, svg);
+            receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
+            signprotmat.d3.addReceptor(receptor_data, data, svg);
         });
 
         let interface_data_table = $('#table-data').DataTable({

@@ -667,6 +667,18 @@ const signprotmat = {
         .attr("x", (d: any) => xScale(d.rec_gn))
         .attr("y", (d: any) => pdbScale(d.pdb_id) - pdbScale.step() / 2);
 
+      selection
+        .exit()
+        .transition()
+        .duration(500)
+        .remove();
+
+      selection_rect
+        .exit()
+        .transition()
+        .duration(500)
+        .remove();
+
       selection = svg
         .select("g#recPDB")
         .selectAll("text")
