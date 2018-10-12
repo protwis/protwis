@@ -544,28 +544,43 @@
             <tbody>
             {% for model in structure_model %}
                 <tr model_id='{{model.pk}}'>
-                    <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                    <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
-                    <td>{{ model.version|date:"Y-m-d" }}</td>
-                    <td>{{ model.state.name }}</td>
-                    <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein.accession }}">{{ model.protein.entry_short|safe }}</a></span></td>
-                    <td><span><a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.short|safe }}</span></td>
-                    <td><span>{{ model.protein.family.parent.short|safe }}</span></td>
-                    <td>{{ model.protein.family.parent.parent.parent.short }}</td>
-                    <td>{{ model.protein.species.common_name }}</td>
-                    <!-- <td><a href="signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
-                    <td>{{ model.sign_protein.family.name|safe }}</td>
-                    {% if model.prot_signprot_pair %}
-                        <td>{{ model.prot_signprot_pair }}</td>
+                    {% if model.protein %}
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                        <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
+                        <td>{{ model.version|date:"Y-m-d" }}</td>
+                        <td>{{ model.state.name }}</td>
+                        <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein.accession }}">{{ model.protein.entry_short|safe }}</a></span></td>
+                        <td><span><a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.short|safe }}</span></td>
+                        <td><span>{{ model.protein.family.parent.short|safe }}</span></td>
+                        <td>{{ model.protein.family.parent.parent.parent.short }}</td>
+                        <td>{{ model.protein.species.common_name }}</td>
+                        <!-- <td><a href="signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
+                        <td>{{ model.sign_protein.family.name|safe }}</td>
+                        {% if model.prot_signprot_pair %}
+                            <td>{{ model.prot_signprot_pair }}</td>
+                        {% else %}
+                            <td>no evidence</td>
+                        {% endif %} -->
+                        <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
+                        <!-- <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.protein.name|safe }}</a></td> -->
+                        <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>  
+                        <td style="display:none;">{{ model.protein.entry_name }}</td>
                     {% else %}
-                        <td>no evidence</td>
-                    {% endif %} -->
-                    <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
-                    <!-- <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.protein.name|safe }}</a></td> -->
-                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>  
-                    <td style="display:none;">{{ model.protein.entry_name }}</td>           
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    {% endif %}         
                 </tr>
-                {% endfor %}
+            {% endfor %}
             </tbody>
         </table>
     </div>

@@ -258,7 +258,7 @@ class CallHomologyModeling():
 
     def run(self, import_receptor=False):
         try:
-            seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
+            seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '6D26':2000, '6D27':2000}
 
             ##### Ignore output from that can come from BioPDB! #####
             if not self.debug:
@@ -561,7 +561,6 @@ class HomologyModeling(object):
             atom_num = 1
 
             for line in pdblines:
-                print(line)
                 try:
                     if prev_num==None:
                         pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCD]+)(\d+)([A-Z\s\d.-]{49,53})',line)
@@ -581,11 +580,12 @@ class HomologyModeling(object):
                         whitespace = (whitespace+1)*' '
                     elif len(pos_list[i])-len(pdb_re.group(3))==-2:
                         whitespace = (whitespace+2)*' '
+                    elif len(pos_list[i])-len(pdb_re.group(3))==-3:
+                        whitespace = (whitespace+3)*' '
                     else:
                         whitespace = (whitespace-3)*' '
                     group1 = pdb_re.group(1)
                     if self.complex:
-                        print(i)
                         if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
                                 whitespace = whitespace[0]+'R'
@@ -602,7 +602,6 @@ class HomologyModeling(object):
                             else:
                                 whitespace = whitespace[0]+'B'+whitespace[2:]
                         elif sp_first_indeces[2]<=i:
-                            print(i, 'G')
                             if len(whitespace)==2:
                                 whitespace = whitespace[0]+'G'
                             else:

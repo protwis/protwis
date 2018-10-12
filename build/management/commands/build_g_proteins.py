@@ -877,7 +877,6 @@ class Command(BaseCommand):
         return list(accessions_all)
 
     def cgn_creat_gproteins(self, family, residue_numbering_scheme, accession, uniprot):
-
         # get/create protein source
         try:
             source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
