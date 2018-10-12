@@ -3391,6 +3391,17 @@
                     });
 
 
+                    res_int_gn = Object.assign([], res_int);
+                    res_int_gn = intersect(res_int_gn, pdb_data['only_gn']);
+                    reps.int_res_gn = o.addRepresentation( "spacefill", {
+                      sele: ":"+pdb_data['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
+                      color: "red",
+                      // colorScale: ["#44f", "#444"],
+                      radiusScale: .2,
+                      name: "res",
+                      visible: false
+                    });
+
                     reps.ball_all = o.addRepresentation("ball+stick", {
                       sele: ":"+pdb_data['chain']+" and sidechainAttached",
                       visible: false
@@ -3403,6 +3414,11 @@
 
                     reps.ball_int = o.addRepresentation("ball+stick", {
                       sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                      visible: false
+                      })
+
+                    reps.ball_int_gn = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
                       visible: false
                       })
 
@@ -3458,11 +3474,10 @@
                               +'<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option></select></p>'
                               +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
                               +'<p>Highlight interacting res: <input type=checkbox id="highlight_res"></p>'
-                              +'<p>Hide interaction lines: <input type=checkbox id="toogle_interactions"></p>'
-                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains_all"></p>'
-                              +'<p>Show GN side-chains: <input type=checkbox id="toggle_sidechains"></p>'
-                              +'<p>Show GN side-chains (only interacting): <input type=checkbox id="toggle_sidechains_int"></p>'
-                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
+                              +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
+                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
+                              +'<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
+//                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                               +'</div>';
 
             $("#ngl-"+mode).append(newDiv);
@@ -3480,58 +3495,105 @@
                 });
             });
 
+            // TODO: cleanup all NGL toggles and make generic function to handle toggle-dependent showing/hiding
             $("#ngl-"+mode+" #ngl_only_gns").change(function(e){
                 if ($(this).prop('checked')) {
                   sele = ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")";
-                  reps.links.setVisibility(false);
-                  reps.links_gn.setVisibility(true);
+                  // toggle edges
+                  if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
+                    reps.links.setVisibility(false);
+                    reps.links_gn.setVisibility(true);
+                  }
+                  // toggle CA spheres
+                  if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
+                    reps.int_res_gn.setVisibility(true);
+                    reps.int_res.setVisibility(false);
+                  }
+                  // toggle sidechains
+                  if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
+                    reps.ball.setVisibility(true);
+                    reps.ball_all.setVisibility(false);
+                  }
+                  // toggle interacting toggle_sidechains
+                  if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
+                    reps.ball_int_gn.setVisibility(true);
+                    reps.ball_int.setVisibility(false);
+                  }
                 } else {
                   sele = ":"+pdb_data['chain'];
-                  reps.links.setVisibility(true);
-                  reps.links_gn.setVisibility(false);
+                  // toggle edges
+                  if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
+                    reps.links.setVisibility(true);
+                    reps.links_gn.setVisibility(false);
+                  }
+                  // toggle CA spheres
+                  if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
+                    reps.int_res_gn.setVisibility(false);
+                    reps.int_res.setVisibility(true);
+                  }
+
+                  // toggle sidechains
+                  if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
+                    reps.ball.setVisibility(false);
+                    reps.ball_all.setVisibility(true);
+                  }
+                  // toggle interacting toggle_sidechains
+                  if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
+                    reps.ball_int_gn.setVisibility(false);
+                    reps.ball_int.setVisibility(true);
+                  }
                 }
+
                 gpcr_rep.setSelection(sele);
                 original_o.autoView();
             });
 
             $("#ngl-"+mode+" #highlight_res").change(function(e){
+              // TODO check the GN toggle
                 if ($(this).prop('checked')) {
-                  reps.int_res.setVisibility(true);
+                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
+                    reps.int_res_gn.setVisibility(true);
+                  else
+                    reps.int_res.setVisibility(true);
                 } else {
+                  reps.int_res_gn.setVisibility(false);
                   reps.int_res.setVisibility(false);
                 }
             });
 
-            $("#ngl-"+mode+" #toogle_interactions").change(function(e){
+            $("#ngl-"+mode+" #toggle_interactions").change(function(e){
                 if ($(this).prop('checked')) {
-                  reps.links.setVisibility(false);
-                  reps.links_gn.setVisibility(false);
+                    reps.links.setVisibility(false);
+                    reps.links_gn.setVisibility(false);
                 } else {
-                  reps.links.setVisibility(true);
-                }
-            });
-
-            $("#ngl-"+mode+" #toggle_sidechains_all").change(function(e){
-                if ($(this).prop('checked')) {
-                  reps.ball_all.setVisibility(true);
-                } else {
-                  reps.ball_all.setVisibility(false);
+                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
+                    reps.links_gn.setVisibility(true);
+                  else
+                    reps.links.setVisibility(true);
                 }
             });
 
             $("#ngl-"+mode+" #toggle_sidechains").change(function(e){
                 if ($(this).prop('checked')) {
-                  reps.ball.setVisibility(true);
+                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
+                    reps.ball.setVisibility(true);
+                  else
+                    reps.ball_all.setVisibility(true);
                 } else {
+                  reps.ball_all.setVisibility(false);
                   reps.ball.setVisibility(false);
                 }
             });
 
             $("#ngl-"+mode+" #toggle_sidechains_int").change(function(e){
                 if ($(this).prop('checked')) {
-                  reps.ball_int.setVisibility(true);
+                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
+                    reps.ball_int_gn.setVisibility(true);
+                  else
+                    reps.ball_int.setVisibility(true);
                 } else {
                   reps.ball_int.setVisibility(false);
+                  reps.ball_int_gn.setVisibility(false);
                 }
             });
 
@@ -3543,6 +3605,14 @@
                 }
             });
 
+        }
+
+        function intersect(a, b) {
+          var t;
+          if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+          return a.filter(function (e) {
+              return b.indexOf(e) > -1;
+          });
         }
 
         $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
