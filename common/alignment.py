@@ -50,6 +50,7 @@ class Alignment:
         self.ignore_alternative_residue_numbering_schemes = False # set to true if no numbering is to be displayed
         self.residues_to_delete = []
         self.normalized_scores = OrderedDict()
+        self.zscales = OrderedDict()
 
         # refers to which ProteinConformation attribute to order by (identity, similarity or similarity score)
         self.order_by = 'similarity'
@@ -927,6 +928,35 @@ class Alignment:
                     else:
                         color_class = str(value)[:-1]
                 self.similarity_matrix[protein_key]['values'].append([value, color_class])
+
+    def calculate_zscales(self):
+        """Calculate Z-scales distribution for current alignment set"""
+        # Check if alignment statistics need to be calculated
+        if len(self.aa_count) == 0:
+            self.calculate_statistics()
+
+        # Prepare Z-scales per segment/GN position
+        self.zscales = { zscale: OrderedDict() for zscale in ZSCALES }
+
+        # Calculates distribution per GN position
+        for segment in self.aa_count:
+            for zscale in ZSCALES:
+                self.zscales[zscale][segment] = OrderedDict()
+            for generic_number in self.aa_count[segment]:
+                zscale_position = { zscale: [] for zscale in ZSCALES }
+
+                for amino_acid in self.aa_count[segment][generic_number]:
+                    if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
+                        for key in range(len(ZSCALES)):
+                            # Frequency AA at this position * value
+                            zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
+
+                # store average + stddev + count
+                for zscale in ZSCALES:
+                    if len(zscale_position[zscale]) == 1:
+                        self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1]
+                    else:
+                        self.zscales[zscale][segment][generic_number] = [np.mean(zscale_position[zscale]), np.std(zscale_position[zscale], ddof=1), len(zscale_position[zscale])]
 
     def evaluate_sites(self, request):
         """Evaluate which user selected site definitions match each protein sequence"""

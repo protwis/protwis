@@ -1,14 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
 from django.http import HttpResponse
 
 
 from alignment.functions import get_proteins_from_selection
+from common.selection import Selection
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from seqsign.sequence_signature import SequenceSignature, SignatureMatch, signature_score_excel
 
-# from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from collections import OrderedDict
@@ -29,10 +29,30 @@ class PosTargetSelection(AbsTargetSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/seqsign/negativegroupselection',
+            'url': '/seqsign/savepos',
             'color': 'success',
         },
     }
+
+
+def preserve_targets(request):
+
+    request.session['targets_pos'] = deepcopy(request.session.get('selection', False))
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+        selection.clear('targets')
+        # export simple selection that can be serialized
+        simple_selection = selection.exporter()
+        # add simple selection to session
+        request.session['selection'] = simple_selection
+
+    return redirect('/seqsign/negativegroupselection',)
+
 
 class NegTargetSelection(AbsTargetSelection):
 
@@ -52,15 +72,6 @@ class NegTargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
-
-    def get_context_data(self, **kwargs):
-        #A bit ugly solution to having two target sets without modifying half of common.selection
-        context = super(NegTargetSelection, self).get_context_data(**kwargs)
-
-        self.request.session['targets_pos'] = deepcopy(self.request.session.get('selection', False))
-        del self.request.session['selection']
-
-        return context
 
 
 class SegmentSelectionSignature(AbsSegmentSelection):
@@ -119,6 +130,8 @@ def render_signature(request):
     # calculate the signature
     signature.calculate_signature()
 
+    # calculate the Z-scores signatures
+    signature.calculate_zscales_signature()
 
     # save for later
     # signature_map = feats_delta.argmax(axis=0)

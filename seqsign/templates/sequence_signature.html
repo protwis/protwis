@@ -20,7 +20,7 @@
 <table cellspacing='10'>
     <tr>
         <td>
-            <form style="display: inline;">
+            <form id="cutoff-set" style="display: inline;" >
                 <div class="input-group">
                     <span class="input-group-addon" id="basic-addon3">Signature frequency cutoff: </span>
                     <input id="cutoff-val" type="text" class="form-control" size=15 placeholder="40">
@@ -93,6 +93,9 @@
                     <tr>
                         <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_aln_neg_left_panel.html' %}</td>
                     </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_zscores_left_panel.html' %}</td>
+                    </tr>
                 </table>
             </div>
         </td>
@@ -116,6 +119,9 @@
                         <tr>
                             <td>{% include 'signature_aln_neg_right_panel.html' %}</td>
                         </tr>
+                        <tr>
+                            <td>{% include 'signature_zscores_right_panel.html' %}</td>
+                        </tr>
                     </table>
                 </div>
             </div>
@@ -133,7 +139,8 @@
     <!-- <script src="{% static 'home/js/scatter_plot.js' %}"></script> -->
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
     <script type="text/javascript" charset="utf-8">
-        $('cutoff-val').keydown( function (event) {
+        $('#cutoff-set').submit(function(e){e.preventDefault()});
+        $('#cutoff-val').keydown( function (event) {
             if (event.keyCode == 13) {
                 var cutoff = parseInt($('#cutoff-val').val());
                 ApplyCutoff(cutoff);

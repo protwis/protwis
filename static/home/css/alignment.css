@@ -272,11 +272,13 @@
     background-color: #00ff00;
 }
 .signature-section-header {
-    height: 40px;
+    height: 60px;
     font-size: 16px;
+    text-decoration: underline;
+    text-decoration-color:red;
 }
 .signature-section-header-row {
-    height: 40px;
+    height: 60px;
 }
 /* Greyscale frequencies */
 .feat-freq-gs-0 {
@@ -408,7 +410,8 @@
 }
 .feat-Hd {
     background-color: #7030a0;
-    color: #0070c0;
+    /* color: #0070c0; */
+    color: #02b0f0;
 }
 .feat-\+\- {
     background-color: #0070c0;
@@ -442,6 +445,7 @@
 .feat-D {
     background-color: #ff0000;
     font-style: italic;
+    text-align: center;
 }
 .feat-E {
     background-color: #ff0000;
@@ -469,4 +473,7 @@
     background-color: #bf8f00;
     font-style: italic;
     text-align: center;
+}
+table.displayTableAfterLoad {
+    display: none;
 }

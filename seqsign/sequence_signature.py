@@ -10,7 +10,7 @@ Alignment = getattr(__import__(
     fromlist=['Alignment']
     ), 'Alignment')
 
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES
+from common.definitions import AA_ZSCALES, AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES, ZSCALES
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
 
@@ -20,6 +20,7 @@ from copy import deepcopy
 import numpy as np
 from operator import itemgetter
 import re
+from scipy.stats import t
 import time
 
 class SequenceSignature:
@@ -46,6 +47,8 @@ class SequenceSignature:
         self.common_schemes = {}
 
         self.signature = OrderedDict()
+
+        self.zscales_signature = OrderedDict()
 
         self.feature_preference = prepare_aa_group_preference()
         self.group_lengths = dict([
@@ -172,7 +175,7 @@ class SequenceSignature:
             for segment in self.common_segments:
                 tmp_row.append([[
                     str(x),
-                    str(int(x/10)) if x != 0 else -1,
+                    str(int(x/10)), #if x != 0 else -1,
                 ] for x in fstats[segment][row]])
             tmp_fstats.append(tmp_row)
         aln.feature_stats = tmp_fstats
@@ -311,6 +314,84 @@ class SequenceSignature:
         self._convert_feature_stats(self.features_normalized_pos, self.aln_pos)
         self._convert_feature_stats(self.features_normalized_neg, self.aln_neg)
 
+    def calculate_zscales_signature(self):
+        """
+        Calculates the Z-scales (Z1-Z5) difference between two protein sets for each GN residue position
+        Generates the full difference matrix and calculates the relevance (P-value) for each z-scale & position combination.
+        """
+        # Prepare zscales for both sets
+        self.aln_pos.calculate_zscales()
+        self.aln_neg.calculate_zscales()
+
+        # Difference + p-value calculation for shared residues
+        ZSCALES.sort()
+        for zscale in ZSCALES:
+            self.zscales_signature[zscale] = OrderedDict()
+            for segment in self.aln_pos.zscales[ZSCALES[0]].keys():
+                self.zscales_signature[zscale][segment] = OrderedDict()
+
+                all_keys = set(self.aln_pos.zscales[zscale][segment].keys()).union(self.aln_neg.zscales[zscale][segment].keys())
+                shared_keys = set(self.aln_pos.zscales[zscale][segment].keys()).intersection(self.aln_neg.zscales[zscale][segment].keys())
+                for entry in sorted(all_keys):
+                    if entry in shared_keys:
+                        var1 = self.aln_pos.zscales[zscale][segment][entry]
+                        var2 = self.aln_neg.zscales[zscale][segment][entry]
+
+                        # Welch's t-test
+                        # One-liner alternative : sed = np.sqrt(var1[1]**2.0/var1[2] + var2[1]**2.0/var2[2])
+                        # se1 = var1[1]/np.sqrt(var1[2])
+                        # se2 = var2[1]/np.sqrt(var2[2])
+                        # sed = np.sqrt(se1**2.0 + se2**2.0)
+
+                        # Student t-test assuming similar variance different sample sizes
+                        sed = 0
+                        if var1[2] > 0 and var2[2] > 0 and (var1[2]+var2[2] - 2) > 0:
+                            sed = np.sqrt(((var1[2] - 1) * var1[1]**2.0 + (var2[2]-1)*var2[1]**2.0)/(var1[2]+var2[2]-2)) * np.sqrt(1/var1[2] + 1/var2[2])
+
+                        t_value = 1
+                        p = 100
+                        color = -1
+                        if sed != 0:
+                            mean_diff = var1[0] - var2[0]
+                            t_value = mean_diff / sed
+
+                            # Grab P-value
+                            df = var1[2] + var2[2] - 2
+                            p = (1.0 - t.cdf(abs(t_value), df)) * 2.0
+
+                            # Coloring based on statistical significance
+                            #if p <= 0.05:
+                            #    color = int(round(10 - 9 * p/0.05, 0))
+                            #else:
+                            #    color = 0
+
+                            # Coloring difference Z-scale means when statistically significant
+                            if p <= 0.05 and abs(mean_diff) > 0.6:
+                                color = round(mean_diff / 4 * 5, 0)
+                                if abs(color) > 5:
+                                    color = color/abs(color) * 5
+                                color = int(color + 5)
+
+                        tooltip = entry + " ("+ zscale + ")<br/>" + \
+                                  "Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>" + \
+                                  "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>" + \
+                                  "P-value:  {0:.3f}".format(p)
+
+                        self.zscales_signature[zscale][segment][entry] = [round(var1[0]-var2[0],1), color, tooltip] # diff, P-value, tooltip
+                    else:
+                        tooltip = entry + "<br/>Set 1: GAP<br/>"
+                        if entry in self.aln_pos.zscales[zscale][segment]:
+                            var1 = self.aln_pos.zscales[zscale][segment][entry]
+                            tooltip = entry + "<br/>Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>"
+
+                        if entry in self.aln_neg.zscales[zscale][segment]:
+                            var2 = self.aln_neg.zscales[zscale][segment][entry]
+                            tooltip += "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>"
+                        else:
+                            tooltip += "Set 2: GAP<br/>"
+
+                        self.zscales_signature[zscale][segment][entry] = ["-", -1, tooltip] # diff, P-value, tooltip
+
     def prepare_display_data(self):
 
         options = {
@@ -323,11 +404,13 @@ class SequenceSignature:
             'common_generic_numbers': self.common_gn,
             'feats_signature': self.features_frequency_diff_display,
             'signature_consensus': self.signature,
+            'zscales_signature': self.zscales_signature,
             'feats_cons_pos': self.features_consensus_pos,
             'feats_cons_neg': self.features_consensus_neg,
             'a_pos': self.aln_pos,
             'a_neg': self.aln_neg,
         }
+
         return options
 
     def prepare_session_data(self):

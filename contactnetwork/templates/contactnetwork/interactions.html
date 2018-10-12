@@ -85,6 +85,7 @@
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#single-matrix-tab" data-toggle="tab" class='matrix-tab'>Matrix</a></li>
                   <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
+                  <li><a href="#single-hiveplot-tab" data-toggle="tab" id="single-hiveplot-tab-link">Hiveplot</a></li>
                   <li><a href="#single-schematic-con-tab" data-toggle="tab" id="single-schematic-con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-schematic-non-tab" data-toggle="tab" id="single-schematic-non-tab-link">2D Schematic (Non)</a></li>
                   <li><a href="#single-table-tab" data-toggle="tab" id="single-table-tab-link">Browser</a></li>
@@ -121,6 +122,22 @@
                             </div>
                             <div class="panel-body">
                                 <div class="flareplot-container">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-12 tab-pane" id="single-hiveplot-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">Hiveplot</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="hiveplot-container">
                                 </div>
                             </div>
                          </div>
@@ -355,7 +372,7 @@
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                                <div class="ngl-container" id="ngl-single-group" style="margin: auto; width:100%; height:1000px;">
                                 </div>
                             </div>
                          </div>
@@ -593,7 +610,7 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
-                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span> 
+                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
                         <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview"></div>
                       </div>
@@ -616,7 +633,7 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span> 
+                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
                         <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview group-number-1" group-number="1"></div>
                </div>
@@ -639,7 +656,7 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span> 
+                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
                         <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview group-number-2" group-number="2"></div>
                </div>
@@ -2580,14 +2597,14 @@
 
                         if (selector == '#single-crystal-group-tab') {
                           createSchematicPlot(data, selector + " .schematic-con-container", {type: 'singleCrystalGroup'}); //.schematic-container
-                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'})
+                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
+                          createNGLview("single-group",pdb[0]);
                         } else {
+                          createHiveplotBox(data, selector + " .hiveplot-container");
                           createSchematicPlot(data, selector + " .schematic-con-container"); //.schematic-container
-                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false})
-
+                          createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false});
+                          createNGLview("single",pdb[0]);
                         }
-
-                        createNGLview("single",pdb);
                     });
                 }
             });
@@ -2743,7 +2760,7 @@
           if (mode=='Single group of structures') {
             var pdbs = [];
 
-            $('input', oTable[mode].cells().nodes()).prop('checked',false); 
+            $('input', oTable[mode].cells().nodes()).prop('checked',false);
 
             var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
             var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
@@ -2755,13 +2772,13 @@
             if (group) mode = mode + group;
             var pdbs = [];
 
-            $('input', oTable[mode].cells().nodes()).prop('checked',false); 
+            $('input', oTable[mode].cells().nodes()).prop('checked',false);
 
             var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
             var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
             $(pdbsInputSelector).val(JSON.stringify(pdbs));
             $(pdbsCountSelector).html(pdbs.length);
-          } 
+          }
 
           update_text_in_modal();
         }
@@ -3160,6 +3177,13 @@
             }
         }
 
+        function createHiveplotBox(data, container) {
+            // clean contents
+            $(container).html("");
+
+            createHiveplot(data, container);
+        }
+
         function updateTwoGroupSliders(origin, ui) {
             // grab data from all sliders
             var g1 = $( "#freq-flare-slider-range-1").slider("values");
@@ -3246,10 +3270,10 @@
                     depthWrite: true
                     });
 
+                    var links = []
+                    var links_gn = []
+                    var res_int = []
                     if (mode=='single') {
-                      var links = []
-                      var links_gn = []
-                      var res_int = []
                       $('#single-crystal-tab rect[data-interaction-type]').each(function(e) {
                           var rect = $(this);
                           var resNo1 = rect.data('res-no-1');
@@ -3269,6 +3293,33 @@
                           if ((genNo1=='-') || (genNo2=='-')) return
                           links_gn.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
                         });
+                    } else if (mode=='single-group') {
+                      // TODO finalize this for single group interaction visualization
+                      // single group
+                      $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
+                          var rect = $(this);
+                          var genNo1 = rect.data('gen-no-1');
+                          var genNo2 = rect.data('gen-no-2');
+                          var seg1 = rect.data('seg-1');
+                          var seg2 = rect.data('seg-2');
+                          var nInteractions = rect.data('num-interactions');
+                          var nTotalInteractions = rect.data('total-possible-interactions');
+                          var frequency = rect.data('frequency');
+
+                          // TODO adjust this with respect to shown structure
+                          var resNo1 = rect.data('res-no-1');
+                          var resNo2 = rect.data('res-no-2');
+
+                          // Push interactions
+                          res_int.push(resNo1);
+                          res_int.push(resNo2);
+                          links.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getFrequencyColor(frequency)}})
+
+                          if ((genNo1=='-') || (genNo2=='-')) return
+                          links_gn.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getFrequencyColor(frequency)}})
+                        });
+                    } else {
+                      // two groups
                     }
 
                     var linkMap = {}
@@ -3414,7 +3465,7 @@
                               +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                               +'</div>';
 
-            $("#ngl-single").append(newDiv);
+            $("#ngl-"+mode).append(newDiv);
 
             $("#"+mode+"-NGL-link").click(function(e){
                 $(function() {
@@ -3589,11 +3640,6 @@
             font-size: 10px;
         }
 
-        @media (min-width: 1600px){
-            #content {
-                width: 1570px;
-            }
-        }
         @media (min-width: 1800px){
             #content {
                 width: 1770px;
@@ -3912,16 +3958,17 @@
     <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare.js' %}"> </script>
 
     <!-- 2D schematics -->
-
     <script type="text/javascript" src="{% static 'home/js/schematicplot.js' %}"> </script>
 
-    <!-- TODO: Get these in repo -->
-
+    <!-- D3 -->
     <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
     <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
     <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
     <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
     <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
+
+    <!-- Hiveplot -->
+    <script type="text/javascript" src="{% static 'home/js/hiveplot.js' %}"> </script>
 
 
     <!-- TODO: Solve the conflict between flareplot-main.js and the existing PDB selector -->
@@ -3965,6 +4012,40 @@
         #regroupDiv:hover {
             background-color: #a1a5bd;
         }
+
+        .hiveplot-container .axis {
+           stroke: #000;
+           stroke-width:1.5px;
+         }
+
+         .hiveplot-container .node {
+           stroke:#000;
+         }
+
+         .hiveplot-container .link {
+           fill: none;
+           stroke-width: 1px;
+           stroke-opacity: 0.5;
+         }
+
+         .hiveplot-container .link.turnedOn {
+           stroke-width: 3px;
+         }
+
+         .hiveplot-container .link.turnedOff {
+           stroke-opacity: 0.2;
+           stroke-width: 0.7px;
+         }
+
+         .hiveplot-container .node.turnedOn {
+           stroke: red;
+           stroke-width: 3px;
+         }
+
+         div#hiveTooltip {
+           background-color: white;
+           .border-radius ( 5px );
+         }
     </style>
 
 
