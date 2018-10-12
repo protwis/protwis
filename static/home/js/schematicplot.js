@@ -125,8 +125,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   const rectWidth = 30;
   const rectHeight = 14;
 
-  const paths = svg.append('g');
-
   const g = svg
     .selectAll('g')
     .data(isGeneric ? Object.keys(segment_map_full_gn) : Object.keys(segment_map_full))
@@ -201,6 +199,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
       return `translate(${x},${y})`;
     });
+
+  const paths = svg.append('g');
 
   g
     .append('rect')
@@ -899,6 +899,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   function createLegendTwoCrystalGroups() {
     // Populate heatmap legend
+    // Changed from separate min/max sliders to one range slider - to REMOVE if OK
     let legendHtml =
       '<h4 class="center">Frequency</h4>' +
       '<p>From: <span class="min-value">-1</span></p>' +
