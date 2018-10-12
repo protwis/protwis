@@ -314,11 +314,11 @@ def InteractionData(request):
     return JsonResponse(data)
 
 def ServePDB(request, pdbname):
-    structure=Structure.objects.filter(pdb_code__index=pdbname)
+    structure=Structure.objects.filter(pdb_code__index=pdbname.upper())
     if structure.exists():
         structure=structure.get()
     else:
-         quit() #quit!
+        quit() #quit!
 
     if structure.pdb_data is None:
         quit()
