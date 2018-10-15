@@ -492,12 +492,6 @@ $( document ).ready(function() {
         'html' : true
     });
 
-    $("text").hover(function(){
-      // compensate for bootstrap 3.3.7 scroll offset
-//      var scrollY = (window.pageXOffset || document.documentElement.scrollLeft) - (document.documentElement.clientLeft || 0);
-      var scrollX = (window.pageYOffset || document.documentElement.scrollTop)  - (document.documentElement.clientTop || 0);
-        $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + scrollX + 'px')
-    });
 
     $("circle").tooltip({
         'container': 'body',
@@ -507,10 +501,7 @@ $( document ).ready(function() {
     });
 
     $("circle").hover(function(){
-      // compensate for bootstrap 3.3.7 scroll offset
-//      var scrollY = (window.pageXOffset || document.documentElement.scrollLeft) - (document.documentElement.clientLeft || 0);
-      var scrollX = (window.pageYOffset || document.documentElement.scrollTop)  - (document.documentElement.clientTop || 0);
-        $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + scrollX + 'px')
+        $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + 'px')
     });
 
 });
@@ -1248,12 +1239,6 @@ function reload_tooltips() {
         'html' : true
     });
 
-    $("text").hover(function(){
-      // compensate for bootstrap 3.3.7 scroll offset
-//      var scrollY = (window.pageXOffset || document.documentElement.scrollLeft) - (document.documentElement.clientLeft || 0);
-      var scrollX = (window.pageYOffset || document.documentElement.scrollTop)  - (document.documentElement.clientTop || 0);
-        $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + scrollX + 'px')
-    });
 
     $("circle").tooltip({
         'container': 'body',
@@ -1263,7 +1248,6 @@ function reload_tooltips() {
     });
 
     $("circle").hover(function(){
-      var scrollX = (window.pageYOffset || document.documentElement.scrollTop)  - (document.documentElement.clientTop || 0);
-        $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + scrollX + 'px')
+        $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + 'px')
     });
 }
