@@ -425,7 +425,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         if (d in data1.interactions || d in data2.interactions) {
           const f1 = n1 / data1.pdbs.length;
           const f2 = n2 / data2.pdbs.length;
-          const fDiff = n1 / data1.pdbs.length - n2 / data2.pdbs.length;
+          const fDiff = f1 - f2;
 
           return {
             'data-frequency-diff': fDiff,
@@ -438,6 +438,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           };
         }
       })
+
       .style('stroke', (d) => {
         let n1 = 0;
         let n2 = 0;
@@ -453,9 +454,9 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         if (d in data1.interactions || d in data2.interactions) {
           const f1 = n1 / data1.pdbs.length;
           const f2 = n2 / data2.pdbs.length;
-          const fDiff = n1 / data1.pdbs.length - n2 / data2.pdbs.length;
-          let rgb;
+          const fDiff = f1 - f2;
 
+          let rgb;
           if (fDiff <= 0) {
             // If fDiff is close to -1, we want a red color
             rgb = { r: 255, g: 255 - 255 * -fDiff, b: 255 - 255 * -fDiff };
@@ -939,7 +940,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         // Hide all below min treshold
         $(`${containerSelector} .edge`).each(function () {
           const f = $(this).data('frequency-diff');
-          if (f <= tMin || tMax <= f) {
+          if (f < tMin || f > tMax) {
             $(this).hide();
           } else {
             $(this).show();

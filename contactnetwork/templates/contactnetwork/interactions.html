@@ -2655,8 +2655,8 @@
                                 $(".heatmap-legend").show();
                                 $("#svgloading").remove()
                                 heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
-                                createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data2, data3); //.schematic-container
-                                createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data2, data3)
+                                createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic-container
+                                createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
 
                                 // Re-render flareplot
                                 createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
