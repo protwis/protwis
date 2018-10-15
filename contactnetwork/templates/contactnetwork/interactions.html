@@ -3270,6 +3270,7 @@
                     var links = []
                     var links_gn = []
                     var res_int = []
+
                     if (mode=='single') {
                       $('#single-crystal-tab rect[data-interaction-type]').each(function(e) {
                           var rect = $(this);
@@ -3286,7 +3287,7 @@
                           res_int.push(resNo1);
                           res_int.push(resNo2);
                           links.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
-//                          console.log(genNo1,genNo2)
+
                           if ((genNo1=='-') || (genNo2=='-')) return
                           links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
                         });
@@ -3303,18 +3304,21 @@
                           var nTotalInteractions = rect.data('total-possible-interactions');
                           var frequency = rect.data('frequency');
 
-                          // TODO adjust this with respect to shown structure
-                          var resNo1 = rect.data('res-no-1');
-                          var resNo2 = rect.data('res-no-2');
+                          if ((genNo1=='-') || (genNo2=='-')) return
+
+                          // Adjust GN numbering to the shown structure
+                          var resNo1 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo1)];
+                          var resNo2 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo2)];
+
+                          if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
 
                           // Push interactions
                           res_int.push(resNo1);
                           res_int.push(resNo2);
-                          links.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
 
-                          if ((genNo1=='-') || (genNo2=='-')) return
                           links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
                         });
+                        links = links_gn;
                     } else {
                       // two groups
                     }
