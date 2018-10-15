@@ -2598,7 +2598,7 @@
                         if (selector == '#single-crystal-group-tab') {
                           createSchematicPlot(data, selector + " .schematic-con-container", {type: 'singleCrystalGroup'}); //.schematic-container
                           createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
-                          createNGLview("single-group",pdb[0]);
+                          createNGLview("single-group",pdb[0], pdb);
                         } else {
                           createHiveplotBox(data, selector + " .hiveplot-container");
                           createSchematicPlot(data, selector + " .schematic-con-container"); //.schematic-container
@@ -3205,7 +3205,7 @@
         var stage = [];
         var color_schemes = [];
         var schemeId_grey
-        function createNGLview(mode,pdb) {
+        function createNGLview(mode,pdb, pdbs = false) {
             var gpcr_rep
             $("#ngl-"+mode).html("");
             stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
@@ -3468,9 +3468,21 @@
 
             var newDiv = document.createElement("div");
             newDiv.setAttribute("style", "position: absolute; top: 50px; left: 20px")
-            newDiv.innerHTML = '<div class="controls">'
-                              +'<h3>Controls</h3>'
-                              +'<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option></select></p>'
+            var controls = '<div class="controls">'
+                         + '<h3>Controls</h3>';
+
+            if (pdbs){
+                  controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
+                  for (var i = 0; i < pdbs.length; i++){
+                      if (pdbs[i]==pdb)
+                          controls += '<option value="'+pdbs[i]+'" SELECTED>'+pdbs[i]+'</option>';
+                      else
+                          controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
+                  }
+                  controls += '</select></p>';
+            }
+
+            controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option></select></p>'
                               +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
                               +'<p>Highlight interacting res: <input type=checkbox id="highlight_res"></p>'
                               +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
@@ -3479,7 +3491,13 @@
 //                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                               +'</div>';
 
+            newDiv.innerHTML = controls;
+
             $("#ngl-"+mode).append(newDiv);
+
+            $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                createNGLview(mode, $(this).val(), pdbs);
+            });
 
             $("#"+mode+"-NGL-link").click(function(e){
                 $(function() {
