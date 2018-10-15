@@ -560,7 +560,7 @@
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                                <div class="ngl-container" id="ngl-two-groups" style="margin: auto; width:100%; height:1000px;">
                                 </div>
                             </div>
                          </div>
@@ -2660,6 +2660,7 @@
 
                                 // Re-render flareplot
                                 createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
+                                createNGLview("two-groups",pdbs1[0], pdbs1.concat(pdbs2));
                             });
                         });
                     });
@@ -3292,7 +3293,6 @@
                           links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
                         });
                     } else if (mode=='single-group') {
-                      // TODO finalize this for single group interaction visualization
                       // single group
                       $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
                           var rect = $(this);
@@ -3321,6 +3321,32 @@
                         links = links_gn;
                     } else {
                       // two groups
+                      // single group
+                      $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+                          var rect = $(this);
+                          var genNo1 = rect.data('gen-no-1');
+                          var genNo2 = rect.data('gen-no-2');
+                          var seg1 = rect.data('seg-1');
+                          var seg2 = rect.data('seg-2');
+                          var nInteractions = rect.data('num-interactions');
+                          var nTotalInteractions = rect.data('total-possible-interactions');
+                          var frequency = rect.data('frequencyDiff');
+
+                          if ((genNo1=='-') || (genNo2=='-')) return
+
+                          // Adjust GN numbering to the shown structure
+                          var resNo1 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo1)];
+                          var resNo2 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo2)];
+
+                          if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
+
+                          // Push interactions
+                          res_int.push(resNo1);
+                          res_int.push(resNo2);
+
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(-1*frequency)}, "resID":resNo1+"-"+resNo2})
+                        });
+                        links = links_gn;
                     }
 
                     var linkMap = {}
