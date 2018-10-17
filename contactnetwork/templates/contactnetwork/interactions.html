@@ -40,7 +40,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5">
+<!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -77,7 +77,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div>-->
                     <div class="col-md-1">
                         <div class="btn btn-success btn-lg pull-right go-button"><span>Go</span></div>
                     </div>
@@ -222,7 +222,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5">
+<!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -259,7 +259,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="col-md-4">
                         <div class="panel panel-default interactions-panel">
                             <div class="panel-heading">
@@ -410,7 +410,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5">
+<!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -447,7 +447,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="col-md-4">
                         <div class="panel panel-default interactions-panel">
                             <div class="panel-heading">
@@ -2568,7 +2568,8 @@
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
-                var segments = JSON.parse($(selector + ' .segments-input').val());
+                //var segments = JSON.parse($(selector + ' .segments-input').val());
+                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
                 if (pdb.length > 0 && segments.length > 0) {
                     var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                     $(".heatmap").hide();
@@ -2614,7 +2615,8 @@
             $(selector + ' .go-button').click(function() {
                 var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
-                var segments = JSON.parse($(selector + ' .segments-input').val());
+                //var segments = JSON.parse($(selector + ' .segments-input').val());
+                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
                 if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
                     var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                     $(".heatmap").hide();
@@ -3684,21 +3686,20 @@
 
 
         function initalizeSingleCrystalView() {
-            initializeSegmentButtons('#single-crystal-tab');
+//            initializeSegmentButtons('#single-crystal-tab');
             initializeGoButton('#single-crystal-tab', renderSingleCrystalHeatmap);
             initializeFullscreenButton('#single-crystal-tab');
         }
 
         function initializeSingleGroupCrystalView() {
-            initializeSegmentButtons('#single-crystal-group-tab');
+//            initializeSegmentButtons('#single-crystal-group-tab');
             initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
             initializeFullscreenButton('#single-crystal-group-tab');
             initializeInteractionButtons('#single-crystal-group-tab');
         }
 
         function initializeTwoCrystalGroupsView() {
-
-            initializeSegmentButtons('#two-crystal-groups-tab');
+//            initializeSegmentButtons('#two-crystal-groups-tab');
             initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
             initializeFullscreenButton('#two-crystal-groups-tab');
             initializeInteractionButtons('#two-crystal-groups-tab');
