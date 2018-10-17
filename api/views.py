@@ -476,7 +476,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             a.show_padding = False
 
             # load data from API into the alignment
-            a.load_reference_protein(reference)
+            a.load_reference_protein(reference[0])
             a.load_proteins(ps)
 
             # load generic numbers and TMs seperately
