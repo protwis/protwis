@@ -459,11 +459,12 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           let rgb;
           if (fDiff <= 0) {
             // If fDiff is close to -1, we want a red color
-            rgb = { r: 255, g: 255 - 255 * -fDiff, b: 255 - 255 * -fDiff };
+            rgb = { r: 255, g: Math.round(255 - 255 * -fDiff), b: Math.round(255 - 255 * -fDiff) };
           } else {
             // If fDiff is close to 1 we want a blue color
-            rgb = { r: 255 - 255 * fDiff, g: 255 - 255 * fDiff, b: 255 };
+            rgb = { r: Math.round(255 - 255 * fDiff), g: Math.round(255 - 255 * fDiff), b: 255 };
           }
+
           return `rgb(${[rgb.r, rgb.g, rgb.b].join(',')})`;
         }
       })
