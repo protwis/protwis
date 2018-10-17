@@ -1620,13 +1620,17 @@ if (typeof jQuery === 'undefined') {
       // width and height are missing in IE8, so compute them manually; see https://github.com/twbs/bootstrap/issues/14093
       elRect = $.extend({}, elRect, { width: elRect.right - elRect.left, height: elRect.bottom - elRect.top })
     }
-// Workaround for issue with tooltips on scrolled SVGs
-    var isSvg = false
+
 //    var isSvg = window.SVGElement && el instanceof window.SVGElement
 
     // Avoid using $.offset() on SVGs since it gives incorrect results in jQuery 3.
     // See https://github.com/twbs/bootstrap/issues/20280
-    var elOffset  = isBody ? { top: 0, left: 0 } : (isSvg ? null : $element.offset())
+//    var elOffset  = isBody ? { top: 0, left: 0 } : (isSvg ? null : $element.offset())
+
+// Workaround for issue with tooltips on scrolled SVGs
+// See https://gist.github.com/sjd78/7a8d56fad969f3a7448ea10a94c0f552
+    var elOffset = isBody ? { top: 0, left: 0 } : { top: elRect.top + (window.pageYOffset || document.documentElement.scrollTop),
+      left: elRect.left + (window.pageXOffset || document.documentElement.scrollLeft) }
     var scroll    = { scroll: isBody ? document.documentElement.scrollTop || document.body.scrollTop : $element.scrollTop() }
     var outerDims = isBody ? { width: $(window).width(), height: $(window).height() } : null
 
