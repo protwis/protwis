@@ -30,7 +30,6 @@ class StatsMiddleware:
 
         return response
 
-class ProcessExceptionMiddleware(StatsMiddleware):
     def process_exception(self, request, exception):
         text_file = open(os.path.join(settings.BASE_DIR, "logs/errors.log"), "a")
         text_file.write('%s %s %s %s "%s"\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'), request.method, request.path,str(exception) ))
