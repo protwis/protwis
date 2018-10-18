@@ -3215,36 +3215,39 @@
 
             var pdb_data
             var original_o
-            blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
+            var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
             var reps = {} // store ngl representations
-
-
 
             $.getJSON( "pdb/"+pdb,
               function( data ) {
+                var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
+                var segments_sets = {}
+                highlight.forEach( function(e){
+                  segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
+                });
 
                 pdb_data = data;
                 color_schemes['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
-                        [blue_colors[1], pdb_data['segments']['TM1'].join(", ")],
-                        [blue_colors[2], pdb_data['segments']['TM2'].join(", ")],
-                        [blue_colors[3], pdb_data['segments']['TM3'].join(", ")],
-                        [blue_colors[4], pdb_data['segments']['TM4'].join(", ")],
-                        [blue_colors[5], pdb_data['segments']['TM5'].join(", ")],
-                        [blue_colors[6], pdb_data['segments']['TM6'].join(", ")],
-                        [blue_colors[7], pdb_data['segments']['TM7'].join(", ")],
-                        [blue_colors[8], pdb_data['segments']['H8'].join(", ")],
+                        [blue_colors[1], segments_sets[highlight[0]]],
+                        [blue_colors[2], segments_sets[highlight[1]]],
+                        [blue_colors[3], segments_sets[highlight[2]]],
+                        [blue_colors[4], segments_sets[highlight[3]]],
+                        [blue_colors[5], segments_sets[highlight[4]]],
+                        [blue_colors[6], segments_sets[highlight[5]]],
+                        [blue_colors[7], segments_sets[highlight[6]]],
+                        [blue_colors[8], segments_sets[highlight[7]]],
                         [ "white", "*" ]
                         ])
 
                 color_schemes['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
-                          ["#ccc", pdb_data['segments']['TM1'].join(", ")],
-                          ["#bbb", pdb_data['segments']['TM2'].join(", ")],
-                          ["#aaa", pdb_data['segments']['TM3'].join(", ")],
-                          ["#888", pdb_data['segments']['TM4'].join(", ")],
-                          ["#666", pdb_data['segments']['TM5'].join(", ")],
-                          ["#444", pdb_data['segments']['TM6'].join(", ")],
-                          ["#333", pdb_data['segments']['TM7'].join(", ")],
-                          ["#111", pdb_data['segments']['H8'].join(", ")],
+                          ["#ccc", segments_sets[highlight[0]]],
+                          ["#bbb", segments_sets[highlight[1]]],
+                          ["#aaa", segments_sets[highlight[2]]],
+                          ["#888", segments_sets[highlight[3]]],
+                          ["#666", segments_sets[highlight[4]]],
+                          ["#444", segments_sets[highlight[5]]],
+                          ["#333", segments_sets[highlight[6]]],
+                          ["#111", segments_sets[highlight[7]]],
                           [ "white", "*" ]
                           ])
 
