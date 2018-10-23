@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand#, CommandError
 #from django.conf import settings
 #from django.db import connection
 
+import freesasa
 import contactnetwork.pdb as pdb
 
 from structure.models import Structure
@@ -13,6 +14,8 @@ import numpy as np
 from sklearn.decomposition import PCA
 from copy import deepcopy
 from numpy.core.umath_tests import inner1d
+import io
+from time import time
 
 TMNUM = 7
 
@@ -40,7 +43,13 @@ class Command(BaseCommand):
                 
             parser = pdb.PDBParser()
             return parser.get_structure(pdb_code, "pdbfiles/pdb" + pdb_code.lower() + ".ent")
-      
+
+    def load_pdb_var(self,pdb_code, var):
+        parser = pdb.PDBParser()
+        with io.StringIO(var) as f:
+            return parser.get_structure(pdb_code,f)
+
+
     def save_pseudo(self, chainlist, pname):
 
         pseudopdb = pdb.Structure.Structure(pname)
@@ -63,24 +72,22 @@ class Command(BaseCommand):
             for i, p in enumerate(pos_list):
                 ps.write("cgo_arrow  " + str(list(p[0])) +", "+ str(list(p[1])) + ", name="+pdb_code + name + str(i) +"\n")
 
-    def save_pdb(strct, name):
+    def save_pdb(self,strct, name):
         io1 = pdb.PDBIO()
         io1.set_structure(strct)
         io1.save(name)
 
     def handle(self, *args, **options):
-        
         # grab PDB
         pdb_code = options.get('pdb_code', None).upper()
         
-        # read pdb structure (from RCSB) using Biopython
-        structure = self.load_pdb(pdb_code)
-        orig_structure = deepcopy(structure)
-        
-        # get preferred chain for PDB-code
-        reference = Structure.objects.get(pdb_code__index=pdb_code)
+        reference = Structure.objects.get(pdb_code__index=pdb_code) #.prefetch_related('pdb_data')
         preferred_chain = reference.preferred_chain.split(',')[0]
+        # read pdb structure (from RCSB) using Biopython
+        structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
 
+        # get preferred chain for PDB-code
+        
         # grab residues with the generic numbering for this structure
         db_reslist = list(Residue.objects.exclude(generic_number__isnull=True).filter(protein_conformation__protein=reference.protein_conformation.protein).prefetch_related('generic_number'))
         
@@ -91,19 +98,34 @@ class Command(BaseCommand):
         
         db_tmlist = [[] for i in range(7)]
         db_set    = set()
+        db_set_p  = set()
+        oldr = False
         for r in db_reslist:
             if r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"]:
                 db_tmlist[int(r.generic_number.label[0])-1].append(r.sequence_number)
                 db_set.add((' ',r.sequence_number,' '))
+                db_set_p.add((' ',r.sequence_number,' '))
+                lastin = True
+                
+                if oldr:
+                    db_set_p.add((' ',oldr.sequence_number,' '))
+                    oldr = False
+            else:
+                oldr = r
+                if lastin:
+                    db_set_p.add((' ',oldr.sequence_number,' '))
+                    lastin=False
         
         def recurse(entity,slist):
-            for subenty in entity:
+            for subenty in entity.get_list():
                 if not subenty.id in slist[0]: entity.detach_child(subenty.id)
                 elif slist[1:]: recurse(subenty, slist[1:])
 
-        recurse(structure, [[0], preferred_chain, db_set,["CB","CA"]])
-        
-        recurse(orig_structure,[[0], preferred_chain, db_set])
+
+
+        recurse(structure,[[0], preferred_chain])
+        hse_struct = deepcopy(structure)
+        recurse(structure, [[0], preferred_chain, db_set])
         
         pchain = structure[0][preferred_chain]
         
@@ -183,16 +205,75 @@ class Command(BaseCommand):
         tv = np.isfinite(np.concatenate(h_cb_list)[:,0])
         angle = np.full_like(tv,-1,dtype=float)
         angle[tv] = np.concatenate([ca_cb_calc(i,centerpca) for i in range(TMNUM)])
-        set_bfactor(orig_structure,angle)
+        set_bfactor(structure,angle)
         
-        self.save_pdb(orig_structure, pdb_code+'angle_colored_ca_cb.pdb')
+        self.save_pdb(structure, pdb_code+'angle_colored_ca_cb.pdb')
         
         ######################### Axis to Axis to CA ##########################
         
         angle2 = np.concatenate([axes_calc(i,helix_pcas,centerpca) for i in range(TMNUM)])
         
-        set_bfactor(orig_structure,angle2)
+        set_bfactor(structure,angle2)
 
-        self.save_pdb(structure, pdb_code+'filtered.pdb')
-        self.save_pdb(orig_structure, pdb_code+'angle_colored_axes.pdb')
+        self.save_pdb(structure, pdb_code+'angle_colored_axes.pdb')
+        
+        ########################### HSE and ASA ###############################
+        
+#        res, dic = freesasa.calcBioPDB(orig_structure)
+        pdbstruct = freesasa.Structure(pdb_code+'angle_colored_axes.pdb')
+        res = freesasa.calc(pdbstruct)
+        
+#        print(res.nAtoms())
+#        [print(res.atomArea(a)) for a in range(res.nAtoms())]
+#        print()
+#        print(sum([res.atomArea(a) for a in range(res.nAtoms())]))
+#        print(len(list(orig_structure[0].get_atoms())))
+#        print(res.nAtoms())
+        
+        asa_list = []
+        oldnum = -1
+        for i in range(res.nAtoms()):
+            resnum = pdbstruct.residueNumber(i)
+            if resnum == oldnum:
+                asa_list[-1] += res.atomArea(i)
+            else:
+                asa_list.append(res.atomArea(i))
+                oldnum = resnum
+        
+        set_bfactor(structure,asa_list)
+        self.save_pdb(structure, pdb_code+'asa_colored.pdb')
+        
+        # Calculate HSEalpha
+        model = hse_struct[0]
+        exp_ca = pdb.HSExposure.HSExposureCA(model)
+        print(len(exp_ca))
+        [[a.set_bfactor(x[1][1]) for a in x[0]] for x in exp_ca]
+        recurse(hse_struct, [[0], preferred_chain, db_set])
+        r = [x[0] for x in exp_ca]
+        #x = model["A"].get_list()
+        x = pchain.get_list()
+        for r in (set(x) - set(r)):
+            for a in r:
+                a.set_bfactor(-1)
+        
+        exp_ca = [a["CA"].get_bfactor() for a in hse_struct[0][preferred_chain].get_list()]
+        
+#        print(set(x) - set(r))
+#        print(len(set(x) - set(r)))
+#        print(db_set_p - db_set)
+        self.save_pdb(hse_struct, pdb_code+'hsea_colored.pdb')
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
