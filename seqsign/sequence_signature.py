@@ -54,7 +54,7 @@ class SequenceSignature:
         self.group_lengths = dict([
             (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
         ])
-        self.default_column = np.array([((y.startswith('-') or y == '_') and y != '--' and not y.startswith('-_') and 100) or 0 for y in AMINO_ACID_GROUPS.keys()])
+        self.default_column = np.array([((y == '-') and 100) or 0 for y in AMINO_ACID_GROUPS.keys()])
 
 
     def _assign_preferred_features(self, signature, segment, ref_matrix):
