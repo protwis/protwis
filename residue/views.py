@@ -270,6 +270,14 @@ class ResidueFunctionBrowser(TemplateView):
             # Add PTMs
             all_ptms = PTMs.objects.filter(protein__family__slug__startswith="001").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
             rfb_panel["ptms"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_ptms)}
+            all_phos = PTMs.objects.filter(protein__family__slug__startswith="001").filter(modification="Phosphorylation").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["phos"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_phos)}
+            all_palm = PTMs.objects.filter(protein__family__slug__startswith="001").filter(modification="Palmitoylation").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["palm"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_palm)}
+            all_glyc = PTMs.objects.filter(protein__family__slug__startswith="001").filter(modification__endswith="Glycosylation").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["glyc"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_glyc)}
+            all_ubiq = PTMs.objects.filter(protein__family__slug__startswith="001").filter(modification="Ubiquitylation").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["ubiq"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_ubiq)}
 
             # Thermostabilizing
             all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith="001", effects__slug='thermostabilising')\
@@ -430,12 +438,29 @@ class ResidueFunctionBrowser(TemplateView):
                             "8x49": {"001_009_001_001"},
                             "8x50": {"001_009_001_001"}}
 
-        # Positions in center of membrane selected using 4BVN together with OPM membrane positioning
+        # Positions in center of membrane selected using 4BVN (ADRB1) together with OPM membrane positioning
         # Reference: ['1x44', '2x52', '3x36', '4x54', '5x46', '6x48', '7x43']
-        mid_membrane = {'TM1': 44,'TM2': 52,'TM3': 36,'TM4': 54,'TM5': 46, 'TM6': 48, 'TM7': 43}
+        mid_membrane_classA = {'TM1': 44,'TM2': 52,'TM3': 36,'TM4': 54,'TM5': 46, 'TM6': 48, 'TM7': 43}
+
+        # NOTE: We might need to split this into B1 and B2 when adhesion X-rays are published
+        # Positions in center of membrane selected using 5XEZ (GCGR) together with OPM membrane positioning
+        # Reference: ['1x51', '2x58', '3x41', '4x54', '5x45', '6x49', '7x50']
+        mid_membrane_classB = {'TM1': 51,'TM2': 58,'TM3': 41,'TM4': 54,'TM5': 45, 'TM6': 49, 'TM7': 50}
+
+        # Positions in center of membrane selected using 4OR2 (mGLUR1) together with OPM membrane positioning
+        # Reference: ['1x49', '2x48', '3x40', '4x41', '5x48', '6x48', '7.39x40']
+        mid_membrane_classC = {'TM1': 49,'TM2': 48,'TM3': 40,'TM4': 41,'TM5': 48, 'TM6': 48, 'TM7': 40}
+
+        # Positions in center of membrane selected using 6BD4 (FZD4) together with OPM membrane positioning
+        # Reference: ['1x43', '2x53', '3x38', '4x53', '5x53', '6x43', '7x47']
+        mid_membrane_classF = {'TM1': 43,'TM2': 53,'TM3': 38,'TM4': 53,'TM5': 53, 'TM6': 43, 'TM7': 47}
 
         # Positions within membrane layer selected using 4BVN together with OPM membrane positioning
-        core_membrane = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        core_membrane_classA = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        # TODO: other classes
+        core_membrane_classB = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        core_membrane_classC = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        core_membrane_classF = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
 
         # Residue oriented outward of bundle (based on inactive 4BVN and active 3SN6)
         outward_orientation = {
@@ -476,22 +501,22 @@ class ResidueFunctionBrowser(TemplateView):
                     context["signatures"][index]["membane_placement"] = "-"
                     context["signatures"][index]["membane_segment"] = "Extracellular"
                     context["signatures"][index]["residue_orientation"] = "-"
-                    if segment in mid_membrane: # TM helix
+                    if segment in mid_membrane_classA: # TM helix
                         # parse position
-                        context["signatures"][index]["membane_placement"] = partial_position - mid_membrane[segment]
+                        context["signatures"][index]["membane_placement"] = partial_position - mid_membrane_classA[segment]
 
                         # negative is toward cytoplasm
                         if segment in ['TM1', 'TM3', 'TM5', 'TM7']: # downwards
                             context["signatures"][index]["membane_placement"] = -1 * context["signatures"][index]["membane_placement"]
 
                         # Segment selection
-                        if partial_position >= core_membrane[segment][0] and partial_position <= core_membrane[segment][1]:
+                        if partial_position >= core_membrane_classA[segment][0] and partial_position <= core_membrane_classA[segment][1]:
                             context["signatures"][index]["membane_segment"] = "Membrane"
                         elif segment in ['TM1', 'TM3', 'TM5', 'TM7']:
-                            if partial_position > core_membrane[segment][1]:
+                            if partial_position > core_membrane_classA[segment][1]:
                                 context["signatures"][index]["membane_segment"] = "Intracellular"
                         else:
-                            if partial_position < core_membrane[segment][0]:
+                            if partial_position < core_membrane_classA[segment][0]:
                                 context["signatures"][index]["membane_segment"] = "Intracellular"
 
                         # Orientation
@@ -505,7 +530,7 @@ class ResidueFunctionBrowser(TemplateView):
                         context["signatures"][index]["membane_segment"] = "Intracellular"
 
                     # COUNTS: all db results in a singe loop
-                    for key in ["ligand_binding", "natural_mutations", "thermo_mutations", "ligand_mutations", "basal_mutations", "intrasegment_contacts", "ptms"]: # Add in future "gprotein_interface", "arrestin_interface"
+                    for key in ["ligand_binding", "natural_mutations", "thermo_mutations", "ligand_mutations", "basal_mutations", "intrasegment_contacts", "phos", "palm", "glyc", "ubiq" ]: # Add in future "gprotein_interface", "arrestin_interface"
                         context["signatures"][index][key] = 0
                         if position in rfb_panel[key]:
                             context["signatures"][index][key] = rfb_panel[key][position]
@@ -532,19 +557,19 @@ class ResidueFunctionBrowser(TemplateView):
                     context["signatures"][index]["rotamer_switch"] = position in rotamer_labels
 
                     # contacts
-                    context["signatures"][index]["active_contacts"] = False
+                    context["signatures"][index]["active_contacts"] = 0
                     if position in rfb_panel["active_contacts"]:
                         if position in rfb_panel["inactive_contacts"]:
-                            context["signatures"][index]["active_contacts"] = len(rfb_panel["active_contacts"][position].difference(rfb_panel["inactive_contacts"][position])) > 0
+                            context["signatures"][index]["active_contacts"] = len(rfb_panel["active_contacts"][position].difference(rfb_panel["inactive_contacts"][position]))
                         else:
-                            context["signatures"][index]["active_contacts"] = True
+                            context["signatures"][index]["active_contacts"] = len(rfb_panel["active_contacts"][position])
 
-                    context["signatures"][index]["inactive_contacts"] = False
+                    context["signatures"][index]["inactive_contacts"] = 0
                     if position in rfb_panel["inactive_contacts"]:
                         if position in rfb_panel["active_contacts"]:
-                            context["signatures"][index]["inactive_contacts"] = len(rfb_panel["inactive_contacts"][position].difference(rfb_panel["active_contacts"][position])) > 0
+                            context["signatures"][index]["inactive_contacts"] = len(rfb_panel["inactive_contacts"][position].difference(rfb_panel["active_contacts"][position]))
                         else:
-                            context["signatures"][index]["inactive_contacts"] = True
+                            context["signatures"][index]["inactive_contacts"] = len(rfb_panel["inactive_contacts"][position])
 
                     # CLASS A sequence + property consensus
                     if position in rfb_panel["class_a_positions"]["gpcrdba"][segment]:

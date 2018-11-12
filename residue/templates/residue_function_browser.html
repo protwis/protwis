@@ -62,7 +62,10 @@
                 <th class="mutational-th">Natural<br/>mutations</th>
                 <th class="mutational-th">≥30% change<br/>basal act. mut.</th>
                 <th class="mutational-th">≥5-fold<br/>ligand mut.</th>
-                <th class="mutational-th">Post-transl.<br/>modifications</th>
+                <th class="mutational-th">Phosphorylation</th>
+                <th class="mutational-th">Palmitoylation</th>
+                <th class="mutational-th">Glycosylation</th>
+                <th class="mutational-th">Ubiquitylation</th>
                 <th class="mutational-th">Thermostabilizing<br/>mutants</th>
 
                 <!-- X-ray data -->
@@ -135,6 +138,9 @@
                 <th></th>
                 <th></th>
                 <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -162,7 +168,10 @@
                     <td>{{ entry.natural_mutations }}</td>
                     <td>{{ entry.basal_mutations }}</td>
                     <td>{{ entry.ligand_mutations }}</td>
-                    <td>{{ entry.ptms }}</td>
+                    <td>{{ entry.phos }}</td>
+                    <td>{{ entry.palm }}</td>
+                    <td>{{ entry.glyc }}</td>
+                    <td>{{ entry.ubiq }}</td>
                     <td>{{ entry.thermo_mutations }}</td>
 
                     <!-- X-ray data -->
