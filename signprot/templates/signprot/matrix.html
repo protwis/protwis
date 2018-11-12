@@ -88,7 +88,8 @@
 </div>
 
 <div class="modal fade" id="pdb-modal-table" role="dialog">
-    <div class="modal-dialog modal-wide" style="width: 800px">
+    <!-- <div class="modal-dialog modal-wide" style="width: 800px"> -->
+    <div class="modal-dialog modal-wide" style="width: 100%">
         <div class="modal-content">
 
             <div class="modal-header">
@@ -238,11 +239,6 @@
         // Default: Select all rows on page load
         table.rows().select();
         pdb_sel = select_by_value(table.rows({ selected: true }).data(), 'pdb_id');
-
-        // https://www.datatables.net/examples/api/tabs_and_scrolling.html
-        $('#interface-modal-table').on('shown.bs.modal', function (e) {
-            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
-        });
 
         $('#interface-modal-table').on('hidden.bs.modal', function (e) {
             const selection = table.rows({ selected: true }).data();
@@ -426,13 +422,15 @@
                 { data: 'sig_gn' }
             ]
         });
+
+        // https://www.datatables.net/examples/api/tabs_and_scrolling.html
+        $(document).on('shown.bs.modal', function (e) {
+            console.log('this');
+            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+        });
+
     });
 
-    // https://www.datatables.net/examples/api/tabs_and_scrolling.html
-    $(document).on('shown.bs.modal', function (e) {
-        console.log('this');
-        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
-    });
 
 </script>
 
