@@ -106,8 +106,9 @@ var signprotmat = {
             var svg = d3
                 .select("body")
                 .select("div#content")
-                .append("div")
-                .classed("svg-container", true) //container class to make it responsive
+                // .append("div")
+                // .classed("svg-container", true) //container class to make it responsive
+                .select("div#svg-container")
                 .append("svg")
                 .attr("preserveAspectRatio", "xMinYMin meet")
                 .attr("viewBox", "0 0 " +
@@ -443,7 +444,7 @@ var signprotmat = {
             each_res
                 .append("rect")
                 .attr("class", "res_rect")
-                .style("fill", function (d) { return colScale(d.int_ty); })
+                .style("fill", function (d) { return colScale(d.int_ty[0]); })
                 .attr("x", function (d) { return xScale(d.rec_gn) - xScale.step() / 2; })
                 .attr("y", function (d) { return 75 + pdbScale(d.pdb_id) - pdbScale.step(); })
                 .attr("width", xScale.step())
@@ -488,7 +489,7 @@ var signprotmat = {
                 .append("g");
             each_res
                 .append("rect")
-                .style("fill", function (d) { return colScale(d.int_ty); })
+                .style("fill", function (d) { return colScale(d.int_ty[0]); })
                 .attr("x", function (d) { return sigScale(d.pdb_id) - sigScale.step() / 2; })
                 .attr("y", function (d) { return yScale(d.sig_gn) - yScale.step() / 2; })
                 .attr("width", sigScale.step())

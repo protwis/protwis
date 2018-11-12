@@ -44,6 +44,22 @@
 
         </div>
     </div>
+
+
+    <div class="col-md-3">
+        <div class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">Sequence Signature</h3>
+            </div>
+
+            <div class="panel-body">
+                <p>Click the button in order to calculate the sequence signature of the set of GPCR structures and your appended PDBs.</p>
+                <button type="button" class="btn btn-primary" onClick="document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});">Calculate</button>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="interface-modal-table" role="dialog">
@@ -72,7 +88,7 @@
 </div>
 
 <div class="modal fade" id="pdb-modal-table" role="dialog">
-    <div class="modal-dialog modal-wide">
+    <div class="modal-dialog modal-wide" style="width: 800px">
         <div class="modal-content">
 
             <div class="modal-header">
@@ -82,7 +98,7 @@
 
             <div class="modal-body">
                 <div class="col-md-12">
-                    <table id="table-pdb" class="display">
+                    <table id="table-pdb" class="display" width="100%">
                     </table>
                 </div>
                 <div class="clearfix"></div>
@@ -96,19 +112,30 @@
     </div>
 </div>
 
-<table id="table-data" class="display">
-    <thead>
-        <tr>
-            <th>int_ty</th>
-            <th>PDB</th>
-            <th>R AA</th>
-            <th>R GN</th>
-            <th>R Pos</th>
-            <th>S AA</th>
-            <th>S Pos</th>
-        </tr>
-    </thead>
-</table>
+<div id="raw-data">
+    <h2>Raw Data</h2>
+    <table id="table-data" class="display">
+        <thead>
+            <tr>
+                <th>int_ty</th>
+                <th>PDB</th>
+                <th>R AA</th>
+                <th>R GN</th>
+                <th>R Pos</th>
+                <th>S AA</th>
+                <th>S Pos</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<div id="svg-container">
+    <h2>Interaction Interface</h2>
+</div>
+
+<div id="seqsig">
+    <h2>Sequence Signature</h2>
+</div>
 
 {% endblock %}
 
@@ -221,7 +248,7 @@
             const selection = table.rows({ selected: true }).data();
             pdb_sel = select_by_value(selection, 'pdb_id')
 
-            $('.svg-container').remove();
+            $('.svg-content').remove();
             data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
             svg = signprotmat.d3.setup();
             xScale = signprotmat.d3.xScale(data.transformed);
@@ -252,6 +279,13 @@
             interface_data_table.clear();
             interface_data_table.rows.add(data.transformed);
             interface_data_table.draw();
+
+            const row_selection = pdb_table.rows({ selected: true }).data();
+            const xvals = xScale.domain();
+            const prids = select_by_value(row_selection, 'rec_id');
+
+            receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
+            signprotmat.d3.addReceptor(receptor_data, data, svg);
 
         });
 
@@ -299,6 +333,7 @@
         const pdb_table = $('#table-pdb').DataTable({
             dom: 'Bfrtip',
             data: ps,
+            scrollX: true,
             columnDefs: [
                 {
                     data: null,
@@ -307,14 +342,34 @@
                     orderable: false,
                     className: 'select-checkbox',
                 }, {
-                    data: 'protein__name',
-                    title: 'Name',
+                    data: 'protein_class',
+                    title: 'Class',
                     targets: 1,
+                }, {
+                    data: 'protein_family',
+                    title: 'Family',
+                    targets: 2,
+                }, {
+                    data: 'name',
+                    title: 'Name',
+                    targets: 3,
+                }, {
+                    data: 'pdb_id',
+                    title: 'PDB',
+                    targets: 4,
+                }, {
+                    data: 'rec_id',
+                    title: 'receptor id',
+                    targets: 5,
+                }, {
+                    data: 'ligand',
+                    title: 'Ligand',
+                    targets: 6,
                 }],
             select: {
                 style: 'os',
             },
-            paging: false,
+            paging: true,
             buttons: [
                 {
                     text: 'Select all',
@@ -331,21 +386,22 @@
             ]
         });
 
+
         pdb_table
             .on('select', function (e, dt, type, indexes) {
                 const row_count = pdb_table.rows({ selected: true }).count()
                 if (row_count >= 2 || row_count === 0) {
-                    $('#pdb-count').text(row_count + ' PDBs selected.');
+                    $('#pdb-count').text(row_count + ' PDBs selected.')
                 } else {
-                    $('#pdb-count').text(row_count + ' PDB selected.');
+                    $('#pdb-count').text(row_count + ' PDB selected.')
                 }
             })
             .on('deselect', function (e, dt, type, indexes) {
                 const row_count = pdb_table.rows({ selected: true }).count()
                 if (row_count >= 2 || row_count === 0) {
-                    $('#pdb-count').text(row_count + ' PDBs selected.');
+                    $('#pdb-count').text(row_count + ' PDBs selected.')
                 } else {
-                    $('#pdb-count').text(row_count + ' PDB selected.');
+                    $('#pdb-count').text(row_count + ' PDB selected.')
                 }
             });
 
@@ -370,6 +426,12 @@
                 { data: 'sig_gn' }
             ]
         });
+    });
+
+    // https://www.datatables.net/examples/api/tabs_and_scrolling.html
+    $(document).on('shown.bs.modal', function (e) {
+        console.log('this');
+        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
     });
 
 </script>

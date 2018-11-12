@@ -123,8 +123,9 @@ const signprotmat = {
       let svg = d3
         .select("body")
         .select("div#content")
-        .append("div")
-        .classed("svg-container", true) //container class to make it responsive
+        // .append("div")
+        // .classed("svg-container", true) //container class to make it responsive
+        .select("div#svg-container")
         .append("svg")
         .attr("preserveAspectRatio", "xMinYMin meet")
         .attr(
@@ -533,7 +534,7 @@ const signprotmat = {
       each_res
         .append("rect")
         .attr("class", "res_rect")
-        .style("fill", (d: any) => colScale(d.int_ty))
+        .style("fill", (d: any) => colScale(d.int_ty[0]))
         .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
         .attr("width", xScale.step())
@@ -586,7 +587,7 @@ const signprotmat = {
 
       each_res
         .append("rect")
-        .style("fill", (d: any) => colScale(d.int_ty))
+        .style("fill", (d: any) => colScale(d.int_ty[0]))
         .attr("x", (d: any) => sigScale(d.pdb_id) - sigScale.step() / 2)
         .attr("y", (d: any) => yScale(d.sig_gn) - yScale.step() / 2)
         .attr("width", sigScale.step())
