@@ -125,8 +125,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   const rectWidth = 30;
   const rectHeight = 14;
 
-  const paths = svg.append('g');
-
   const g = svg
     .selectAll('g')
     .data(isGeneric ? Object.keys(segment_map_full_gn) : Object.keys(segment_map_full))
@@ -201,6 +199,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
       return `translate(${x},${y})`;
     });
+
+  const paths = svg.append('g');
 
   g
     .append('rect')
@@ -425,7 +425,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         if (d in data1.interactions || d in data2.interactions) {
           const f1 = n1 / data1.pdbs.length;
           const f2 = n2 / data2.pdbs.length;
-          const fDiff = n1 / data1.pdbs.length - n2 / data2.pdbs.length;
+          const fDiff = f1 - f2;
 
           return {
             'data-frequency-diff': fDiff,
@@ -438,6 +438,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           };
         }
       })
+
       .style('stroke', (d) => {
         let n1 = 0;
         let n2 = 0;
@@ -453,16 +454,17 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         if (d in data1.interactions || d in data2.interactions) {
           const f1 = n1 / data1.pdbs.length;
           const f2 = n2 / data2.pdbs.length;
-          const fDiff = n1 / data1.pdbs.length - n2 / data2.pdbs.length;
-          let rgb;
+          const fDiff = f1 - f2;
 
+          let rgb;
           if (fDiff <= 0) {
             // If fDiff is close to -1, we want a red color
-            rgb = { r: 255, g: 255 - 255 * -fDiff, b: 255 - 255 * -fDiff };
+            rgb = { r: 255, g: Math.round(255 - 255 * -fDiff), b: Math.round(255 - 255 * -fDiff) };
           } else {
             // If fDiff is close to 1 we want a blue color
-            rgb = { r: 255 - 255 * fDiff, g: 255 - 255 * fDiff, b: 255 };
+            rgb = { r: Math.round(255 - 255 * fDiff), g: Math.round(255 - 255 * fDiff), b: 255 };
           }
+
           return `rgb(${[rgb.r, rgb.g, rgb.b].join(',')})`;
         }
       })
@@ -532,7 +534,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         if (shiftY<5 && shiftY>-5) run = 10;
 
         // Reposition each node
-        $(containerSelector + ` g.node[data-segment='${segment}'`).each((i, g) => {
+        $(containerSelector + ` g.node[data-segment='${segment}']`).each((i, g) => {
           const transformValue = g.getAttribute('transform');
 
           const regex = /\((.+),(.+)\)/;
@@ -637,7 +639,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     max_y = 0;
     min_y = 0;
     segmentList.forEach((segment) => {
-      $(containerSelector + ` g.node[data-segment='${segment}'`).each((i, g) => {
+      $(containerSelector + ` g.node[data-segment='${segment}']`).each((i, g) => {
           const transformValue = g.getAttribute('transform');
 
           const regex = /\((.+),(.+)\)/;
@@ -806,7 +808,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   function createLegendSingleCrystalGroup() {
     // Populate schematic legend
-    let legendHtml =
+    // Changed from separate min/max sliders to one range slider - to REMOVE if OK
+    /*let legendHtml =
       `${'<h4 class="center">Interaction count</h4>' +
         '<p>From: <span class="min-value">0</span></p>' +
         '<input class="min-interactions-range" type="range" min="0" max="'}${
@@ -821,7 +824,14 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       }" value="${data.pdbs.length}" step="1" />` +
       '<div class="temperature-scale">' +
       '<span class="white-to-red"></span>' +
-      '</div>';
+      '</div>';*/
+
+    let legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
+          + `<p>Range: <span id="clscg-pdbs-range">0 - ${data.pdbs.length}</span></p>`
+          + '<div class="slider-range" data-text-id="clscg-pdbs-range" id="clscg-pdbs-range-slider"></div>'
+          + '<div class="temperature-scale">'
+          + '<span class="white-to-red"></span>'
+          + '</div>';
 
     // Add SVG download button
     legendHtml +=
@@ -836,6 +846,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend`).append(legendHtml);
 
+    /*
+    // Changed from separate min/max sliders to one range slider - to REMOVE if OK
     function getRangeChangeFunction() {
       return function () {
         const tMin = $(`${containerSelector} .schematic-legend .min-interactions-range`).val();
@@ -858,12 +870,39 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend .min-interactions-range`).change(getRangeChangeFunction());
 
-    $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());
+    $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());*/
+
+    $( function() {
+      $(`${containerSelector} #clscg-pdbs-range-slider`).slider({
+        range: true,
+        min: 0,
+        max: `${data.pdbs.length}`,
+        step: 1,
+        values: [0, `${data.pdbs.length}`],
+        slide: function( event, ui ) {
+          $( `${containerSelector} #`+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+          getCLSCGRangeChangeFunction(ui.values[ 0 ], ui.values[ 1 ]);
+        }
+      });
+    } );
+
+    function getCLSCGRangeChangeFunction(tMin, tMax) {
+          // Hide all below min or above max treshold
+          $(`${containerSelector} .edge`).each(function () {
+            const n = $(this).data('num-interactions');
+            if (n < tMin || tMax < n) {
+              $(this).hide();
+            } else {
+              $(this).show();
+            }
+          });
+    }
   }
 
   function createLegendTwoCrystalGroups() {
     // Populate heatmap legend
-    let legendHtml =
+    // Changed from separate min/max sliders to one range slider - to REMOVE if OK
+    /*let legendHtml =
       '<h4 class="center">Frequency</h4>' +
       '<p>From: <span class="min-value">-1</span></p>' +
       '<input class="min-interactions-range" type="range" min="-1" max="1" value="-1" step="0.01" />' +
@@ -876,7 +915,20 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       '<div class="temperature-scale">' +
       '<span class="red-to-white"></span>' +
       '<span class="white-to-blue"></span>' +
-      '</div>';
+      '</div>';*/
+
+    let legendHtml = '<h4 class="center">Frequency</h4>'
+          + `<p>Group 1 range: <span id="cltcg-group1-range">0 - 1</span></p>`
+          + '<div class="slider-range" data-text-id="cltcg-group1-range" id="cltcg-group1-range-slider"></div>'
+          + `<p>Group 2 range: <span id="cltcg-group2-range">0 - 1</span></p>`
+          + '<div class="slider-range" data-text-id="cltcg-group2-range" id="cltcg-group2-range-slider"></div>'
+          + `<p>Freq difference range:<span id="cltcg-diff-range"> -1 - 1</span></p>`
+          + '<div class="slider-range" data-text-id="cltcg-diff-range" id="cltcg-diff-range-slider"></div>'
+          + '<div class="temperature-scale">'
+          + '<span class="red-to-gray"></span>'
+          + '<span class="gray-to-blue"></span>'
+          + '</div>';
+
 
     // Add SVG download button
     legendHtml +=
@@ -891,6 +943,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend`).append(legendHtml);
 
+    // Changed from separate min/max sliders to one range slider - to REMOVE if OK
+    /*
     function getRangeChangeFunction() {
       return function () {
         const tMin = $(`${containerSelector} .schematic-legend .min-interactions-range`).val();
@@ -902,7 +956,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         // Hide all below min treshold
         $(`${containerSelector} .edge`).each(function () {
           const f = $(this).data('frequency-diff');
-          if (f <= tMin || tMax <= f) {
+          if (f < tMin || f > tMax) {
             $(this).hide();
           } else {
             $(this).show();
@@ -913,6 +967,81 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend .min-interactions-range`).change(getRangeChangeFunction());
 
-    $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());
+    $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());*/
+
+    $( function() {
+      $( containerSelector+" #cltcg-group1-range-slider" ).data({ "referenceContainer" : containerSelector });
+      $( containerSelector+" #cltcg-group2-range-slider" ).data({ "referenceContainer" : containerSelector });
+      $( containerSelector+" #cltcg-diff-range-slider" ).data({ "referenceContainer" : containerSelector });
+      $( containerSelector+" #cltcg-group1-range-slider" ).slider({
+        range: true,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        values: [0,1],
+        slide: function( event, ui ) {
+          $( $(this).data("referenceContainer")+" #"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+          getCLTCGRangeChangeFunction($(this)[0].id, ui, $(this).data("referenceContainer"));
+        }
+      });
+      $( containerSelector+" #cltcg-group2-range-slider" ).slider({
+        range: true,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        values: [0,1],
+        slide: function( event, ui ) {
+          $( $(this).data("referenceContainer")+" #"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+          getCLTCGRangeChangeFunction($(this)[0].id, ui, $(this).data("referenceContainer"));
+        }
+      });
+      $( containerSelector+" #cltcg-diff-range-slider" ).slider({
+        range: true,
+        min: -1,
+        max: 1,
+        step: 0.01,
+        values: [-1,1],
+        slide: function( event, ui ) {
+          $( $(this).data("referenceContainer")+" #"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+          getCLTCGRangeChangeFunction($(this)[0].id, ui, $(this).data("referenceContainer"));
+        }
+      });
+    });
+
+    function getCLTCGRangeChangeFunction(origin, ui, container) {
+        // grab data from all sliders
+        var g1 = $( container+" #cltcg-group1-range-slider").slider("values");
+        var g2 = $( container+" #cltcg-group2-range-slider" ).slider("values");
+        var d = $( container+" #cltcg-diff-range-slider" ).slider("values");
+
+        // update with current slide values
+        if (origin == "cltcg-group1-range-slider")
+            g1 = ui.values;
+        else if (origin == "cltcg-group2-range-slider")
+            g2 = ui.values;
+        else if (origin == "cltcg-diff-range-slider")
+            d = ui.values;
+
+        // Hide all below min or above max treshold
+        $(`${containerSelector} .edge`).each(function () {
+          const group1 = $(this).data('group-1Freq');
+          const group2 = $(this).data('group-2Freq');
+          const diff = $(this).data('frequencyDiff');
+
+          $(this).show();
+          // group 1
+          if (group1 < g1[0] || group1 > g1[1]) {
+              $(this).hide();
+          }
+          // group 2
+          else if (group2 < g2[0] || group2 > g2[1]) {
+              $(this).hide();
+          }
+          // difference
+          else if (diff < d[0] || diff > d[1]) {
+            $(this).hide();
+          }
+        });
+    }
   }
 }

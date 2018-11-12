@@ -13,16 +13,16 @@ function createHiveplot(data, container) {
         color = d3.scale.category10()
                   .domain(d3.range(10));
 
-        var angle = function(e){
-          // TODO optimize placement of TMs based on angle, but possibly also starting position
-          if (e >= 6.5)
-            e = 6.5 + (e-7.0);
-          else if (e < 0){
-            e += 7;
-          }
+      var angle = function(e){
+        // TODO optimize placement of TMs based on angle, but possibly also starting position
+        if (e >= 6.5)
+          e = 6.5 + (e-7.0);
+        else if (e < 0){
+          e += 7;
+        }
 
-          return angleLineCore( (e*10+18) % 70 );
-        };
+        return angleLineCore( (e*10+18) % 70 );
+      };
 
     // create TM residue count
     // replace later with data.segments
@@ -103,8 +103,8 @@ function createHiveplot(data, container) {
       .enter().append("line")
         .attr("class", "axis")
         .attr("transform", function(d) { return "rotate(" + degreesHP(angle(d)) + ")" })
-        .attr("x1", function(d) { if (d == 7) { return (resCount[0] * 1.2) * (outerRadius-innerRadius)/20+innerRadius; } else { return innerRadius; }})
-        .attr("x2", function(d) { var extra = 0; if (d == 7){ extra = resCount[0] * 1.2}; return (outerRadius-innerRadius)/20*(extra+resCount[d]+1)+innerRadius; });
+        .attr("x1", function(d) { if (resCount[d] == 0){ return 0; } else if (d == 7) { return (resCount[0] * 1.2) * (outerRadius-innerRadius)/20+innerRadius; } else { return innerRadius; }})
+        .attr("x2", function(d) { var extra = 0; if (resCount[d] == 0){ return 0; } else if (d == 7  && resCount[d]>0){ extra = resCount[0] * 1.2}; return (outerRadius-innerRadius)/20*(extra+resCount[d]+1)+innerRadius; });
         //.attr("x2", function(d) { var extra = 0; if (d.x == 7){ extra = resCount[0] * 1.2}; return (outerRadius-innerRadius)/20*(resCount[d]+extra+1)+innerRadius; });
 
     // draw links between nodes
