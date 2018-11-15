@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
@@ -1222,3 +1223,137 @@ def InteractionMatrix(request):
         }
 
     return render(request, 'signprot/matrix.html', context)
+
+def IMSequenceSignature(request):
+
+    import time
+    t1 = time.time()
+
+    import re
+    from itertools import chain
+
+    from protein.models import Protein
+    from protein.models import ProteinSegment
+    from residue.models import ResidueGenericNumberEquivalent
+    from seqsign.sequence_signature import SignatureMatch
+    from seqsign.sequence_signature import SequenceSignature
+
+    # example data
+    segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
+    pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
+    neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
+
+    # receive data
+
+    # get pos/neg set objects
+    pos_set = Protein.objects.filter(entry_name__in=pos_set).select_related('residue_numbering_scheme', 'species')
+    neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
+
+    # res numbers
+    # segments = []
+    # # label looks like "2x51"
+    # gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdb')
+    # segments.append(gen_object)
+    # # a.load_segments(gen_list)
+
+    # Calculate Sequence Signature
+    signature = SequenceSignature()
+    signature.setup_alignments(segments, pos_set, neg_set)
+    signature.calculate_signature()
+
+    # process data for return
+    signature_data = signature.prepare_display_data()
+
+    # FEATURES
+    feats = [feature for feature in signature_data['a_pos'].features]
+    len_feats = len(feats)
+
+    trans = {
+        'N-term': 'N',
+        'TM1': 1,
+        'ICL1': 12,
+        'TM2': 2,
+        'ECL1': 23,
+        'TM3': 3,
+        'ICL2': 34,
+        'TM4': 4,
+        'ECL2': 45,
+        'TM5': 5,
+        'ICL3': 56,
+        'TM6': 6,
+        'ECL3': 67,
+        'TM7': 7,
+        'ICL4': 78,
+        'H8': 8,
+        'C-term': 'C',
+    }
+
+    # GET GENERIC NUMBERS
+    generic_numbers = []
+    for _, segments in signature_data['common_generic_numbers'].items():
+        for elem, num in segments.items():
+            gnl = []
+            for x, dn in num.items():
+                if dn != '':
+                    rexp = r'(?<=<b>)\d{1,}|\.?\d{2,}[\-?\d{2,}]*|x\d{2,}'
+                    gn = re.findall(rexp, dn)
+                else:
+                    gn = ''.join([str(trans[elem]), '.', str(x)])
+                gnl.append(''.join(gn))
+            generic_numbers.append(gnl)
+
+
+    # FEATURE FREQUENCIES
+    signature_features = {}
+    x = 0
+    for i, feature in enumerate(signature_data['feats_signature']):
+        for j, segment in enumerate(feature):
+            for k, freq in enumerate(segment):
+                # freq0: score
+                # freq1: level of conservation
+                # freq2: a - b explanation
+                try:
+                    signature_features[x] = {
+                        'feature': str(feats[i]),
+                        'gn': str(generic_numbers[j][k]),
+                        'freq': int(freq[0]),
+                        'cons': int(freq[1]),
+                        'expl': str(freq[2]),
+                    }
+                    x += 1
+                except IndexError as e:
+                    print(e)
+
+
+    # SIGNATURE CONSENSUS
+    generic_numbers_flat = list(chain.from_iterable(generic_numbers))
+    sigcons = {}
+    x = 0
+    for segment, cons in signature_data['signature_consensus'].items():
+        for i, pos in enumerate(cons):
+            # pos0: Code
+            # pos1: Name
+            # pos2: Score
+            # pos3: level of conservation
+            sigcons[x] = {
+                'gn': str(generic_numbers_flat[x]),
+                'code': str(pos[0]),
+                'name': str(pos[1]),
+                'score': int(pos[2]),
+                'cons': int(pos[3]),
+            }
+            x += 1
+
+    # define list of features to keep
+    # subset results
+    # pass back to front
+    res = {
+        'cons': sigcons,
+        'feat': signature_features,
+    }
+
+    t2 = time.time()
+    print('Runtime: {}'.format((t2-t1)*1000.0))
+
+    return JsonResponse(res, safe=False)
+
