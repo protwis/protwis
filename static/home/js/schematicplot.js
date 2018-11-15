@@ -789,7 +789,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       `<br /><button onclick="downloadSingleCrystalCSV('${containerSelector}schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
       '</button>';
 
-    $(`${containerSelector} .schematic-legend`).append(legendHtml);
+    $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     $(`${containerSelector} .schematic-legend input[type=checkbox]`).each(function () {
       $(this).prop('checked', true);
@@ -844,7 +844,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       `<br /><button onclick="downloadSingleCrystalGroupCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
       '</button>';
 
-    $(`${containerSelector} .schematic-legend`).append(legendHtml);
+    $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     /*
     // Changed from separate min/max sliders to one range slider - to REMOVE if OK
@@ -941,7 +941,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       `<br /><button onclick="downloadTwoCrystalGroupsCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
       '</button>';
 
-    $(`${containerSelector} .schematic-legend`).append(legendHtml);
+    $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     // Changed from separate min/max sliders to one range slider - to REMOVE if OK
     /*
