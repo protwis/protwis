@@ -3289,7 +3289,9 @@
                           var aa1 = rect.data('aa-1');
                           var aa2 = rect.data('aa-2');
                           var iType = rect.data('interaction-type');
-                          if (getInteractionStrength(iType)<3) return
+
+                          // TODO: either convert this to max strength or draw all links to allow dynamic toggling
+                          // if (getInteractionStrength(iType)<3) return
                           res_int.push(resNo1);
                           res_int.push(resNo2);
                           links.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
