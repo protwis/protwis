@@ -131,12 +131,20 @@
     </table>
 </div> {% endcomment %}
 
-<div id="svg-container">
+<div id="svg-container" class="svg-container">
     <h2>Interaction Interface</h2>
 </div>
 
-<div id="seqsig" style="display: none">
-    <h2>Sequence Signature</h2>
+<div id="seqsig-container" class="svg-container" style="display: none">
+    <div id="seqsig">
+        <h2>Sequence Signature</h2>
+    </div>
+</div>
+
+<div id="conseq-container" class="svg-container" style="display: none">
+    <div id="conseq">
+        <h2>Consensus Sequence</h2>
+    </div>
 </div>
 
 {% endblock %}
@@ -166,11 +174,6 @@
     let old_sets = [];
     let pos_set = [];
     let neg_set = [];
-
-    const scroll_to_section = function(id){
-        document.querySelector(id).style.display = "block";
-        document.querySelector(id).scrollIntoView({behavior: 'smooth'});
-    };
 
     const get_gn = function(){
         const segments = [];
@@ -231,9 +234,12 @@
                 document.querySelector("#calc_spin").style.display = "inline-block";
             },
             success: function(data){
-                scroll_to_section('#seqsig');
+                document.querySelector('#seqsig-container').style.display = "inline-block";
+                document.querySelector('#conseq-container').style.display = "inline-block";
+                document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
                 console.log(data);
                 // d3 draw
+                svg = signprotmat.d3.setup("div#seqsig-container");
                 // signprotmat.d3.draw_seq_sig(data);
             },
             error: function(error){
@@ -325,7 +331,7 @@
 
             $('.svg-content').remove();
             data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
-            svg = signprotmat.d3.setup();
+            svg = signprotmat.d3.setup("div#svg-container");
             xScale = signprotmat.d3.xScale(data.transformed);
             yScale = signprotmat.d3.yScale(data.transformed);
             xAxis = signprotmat.d3.xAxis(xScale);
@@ -378,7 +384,7 @@
         ];
 
         data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
-        svg = signprotmat.d3.setup();
+        svg = signprotmat.d3.setup("div#svg-container");
         xScale = signprotmat.d3.xScale(data.transformed);
         yScale = signprotmat.d3.yScale(data.transformed);
         xAxis = signprotmat.d3.xAxis(xScale);

@@ -1,5 +1,5 @@
 /* make the svg responsive to the page width */
-#svg-container {
+.svg-container {
     display: inline-block;
     position: relative;
     width: 100%;
@@ -7,6 +7,10 @@
     /* aspect ratio */
     vertical-align: top;
     /* overflow: hidden; */
+}
+
+.svg-container#conseq-container{
+    padding-bottom: 30%;
 }
 
 .svg-content {

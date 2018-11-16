@@ -110,13 +110,11 @@ var signprotmat = {
     // * D3 DRAW FUNCTIONS
     d3: {
         // * SETTING UP SVG FOR OUTPUT
-        setup: function () {
+        setup: function (div) {
             var svg = d3
                 .select("body")
                 .select("div#content")
-                // .append("div")
-                // .classed("svg-container", true) //container class to make it responsive
-                .select("div#svg-container")
+                .select(div)
                 .append("svg")
                 .attr("preserveAspectRatio", "xMinYMin meet")
                 .attr("viewBox", "0 0 " +
