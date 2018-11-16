@@ -930,7 +930,7 @@ function ajaxNaturalMutationPos(plotid) {
     var color_code = pos['color']
 
       $.each(pos, function( key, val ) {
-         console.log("Yes", pos);
+         //console.log("Yes", pos);
 
          extra = "\nVariants: " + "-->" + String(val['AA']) +
         "\nNumber of Proteins: " + String(val['val']);
