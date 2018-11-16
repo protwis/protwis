@@ -157,7 +157,8 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
             if interactiontype not in interaction_data[sequence_number]:
                 interaction_data[sequence_number].append(interactiontype)
 
-    if target_type == 'family':
+    # Fixes fatal error - in case of receptor family selection (e.g. H1 receptors)
+    if target_type == 'family' and len(proteins[0].family.slug) < 15:
         pc = ProteinConformation.objects.get(protein__family__name=familyname, protein__sequence_type__slug='consensus')
         residuelist = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related('protein_segment', 'generic_number', 'display_generic_number')
     else:
