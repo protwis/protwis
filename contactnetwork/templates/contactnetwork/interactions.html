@@ -2017,8 +2017,8 @@
             g.transform("r225s-1,1");
 
             // Populate heatmap legend
-            var legendHtml = '<h4 class="center">Interaction count</h4>'
-                + '<p>Range: <span id="pdbs-range">0 - ' + data.pdbs.length + '</span></p>'
+            var legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
+                + '<p>Range: <span id="pdbs-range">1 - ' + data.pdbs.length + '</span></p>'
                 + '<div class="slider-range" data-text-id="pdbs-range" id="pdbs-range-slider"></div>'
                 + '<div class="temperature-scale">'
                 + '<span class="white-to-red"></span>'
@@ -2039,7 +2039,7 @@
             $( function() {
               $( heatMapSelector+" .slider-range" ).slider({
                 range: true,
-                min: 0,
+                min: 1,
                 max: data.pdbs.length,
                 step: 1,
                 values: [0,data.pdbs.length],
@@ -3007,7 +3007,7 @@
                 newDiv.setAttribute("class", "flareplot-legend");
 
                 var content = '<div class="controls">'
-                                  +'<h3>Controls</h3>';
+                                  +'<h4>Controls</h4>';
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
@@ -3049,7 +3049,7 @@
                 } else if (container.indexOf("single-crystal-group-tab") >= 0) {
                     // slider 0 to count
                     content += '<h4 class="center">Frequency (#PDBs)</h4>'
-                        + '<p>Range: <span id="pdbs-range-flare">0 - ' + data.pdbs.length + '</span></p>'
+                        + '<p>Range: <span id="pdbs-range-flare">1 - ' + data.pdbs.length + '</span></p>'
                         + '<div class="slider-range" data-text-id="pdbs-range-flare" id="pdbs-range-flare-slider"></div>'
                         + '<div class="temperature-scale">'
                         + '<span class="gray-to-red"></span>'
@@ -3059,7 +3059,7 @@
                       $( container+" .slider-range" ).data({ "referenceContainer" : container })
                       $( container+" .slider-range" ).slider({
                         range: true,
-                        min: 0,
+                        min: 1,
                         max: data.pdbs.length,
                         step: 1,
                         values: [0,data.pdbs.length],
@@ -3502,7 +3502,7 @@
             var newDiv = document.createElement("div");
             newDiv.setAttribute("style", "position: absolute; top: 50px; left: 20px")
             var controls = '<div class="controls">'
-                         + '<h3>Controls</h3>';
+                         + '<h4>Controls</h4>';
 
             if (pdbs){
                   controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
