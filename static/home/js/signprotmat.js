@@ -79,6 +79,14 @@ var signprotmat = {
                 console.log("No component specified...");
             }
         },
+        select_by_value: function (selection, value) {
+            var ret_sel = [];
+            for (var index = 0; index < selection.length; index++) {
+                ret_sel.push(selection[index][value]);
+            }
+            ;
+            return ret_sel;
+        },
         dataTransformationWrapper: function (dataset, keys, pdb_sel) {
             dataset = _.pick(dataset, pdb_sel);
             var pdb_ids = signprotmat.data.extractPdbIDs(dataset);

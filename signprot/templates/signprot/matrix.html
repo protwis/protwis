@@ -6,6 +6,7 @@
 <link href="{% static 'home/css/jquery.dataTables.min.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/select.dataTables.min.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/buttons.dataTables.min.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css"></link>
 {% endblock %}
 
 {% block content %}
@@ -55,7 +56,7 @@
 
             <div class="panel-body">
                 <p>Click the button in order to calculate the sequence signature of the set of GPCR structures and your appended PDBs.</p>
-                <button type="button" class="btn btn-primary" onClick="document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});">Calculate</button>
+                <button type="button" class="btn btn-primary" onClick="run_seq_sig();">Calculate <i id="calc_spin" class="fa fa-spinner fa-spin" style="display: none"></i></button>
             </div>
 
         </div>
@@ -113,7 +114,7 @@
     </div>
 </div>
 
-<div id="raw-data">
+{% comment %} <div id="raw-data">
     <h2>Raw Data</h2>
     <table id="table-data" class="display">
         <thead>
@@ -128,13 +129,13 @@
             </tr>
         </thead>
     </table>
-</div>
+</div> {% endcomment %}
 
 <div id="svg-container">
     <h2>Interaction Interface</h2>
 </div>
 
-<div id="seqsig">
+<div id="seqsig" style="display: none">
     <h2>Sequence Signature</h2>
 </div>
 
@@ -162,13 +163,88 @@
     let colScale;
     let tooltip;
 
-    const select_by_value = function (selection, value) {
-        let ret_sel = []
-        for (let index = 0; index < selection.length; index++) {
-            ret_sel.push(selection[index][value]);
-        };
-        return ret_sel;
+    let old_sets = [];
+    let pos_set = [];
+    let neg_set = [];
+
+    const scroll_to_section = function(id){
+        document.querySelector(id).style.display = "block";
+        document.querySelector(id).scrollIntoView({behavior: 'smooth'});
     };
+
+    const get_gn = function(){
+        const segments = [];
+        const orig = [];
+        const patt = /(^\d{1,})|(x\d{2,})/g
+
+        const selection = data.receptor
+        const value = 'rec_gn'
+
+        for (let index = 0; index < selection.length; index++) {
+            let comb_gn = '';
+            curr = selection[index][value];
+            match = patt.exec(curr);
+            while (match != null) {
+                comb_gn += match[0];
+                match = patt.exec(selection[index][value]);
+            }
+            if (comb_gn.length > 1) {
+                segments.push(comb_gn);
+                orig.push(curr);
+            }
+        };
+        return {
+            orig: _.uniq(orig),
+            label: _.uniq(segments)
+            };
+    };
+
+    const run_seq_sig = function(){
+        let segments = get_gn();
+        let pos_set = ["5ht2c_human", "acm4_human", "drd1_human"];
+        //let neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"];
+        //console.log(segments);
+
+        if (pos_set.length < 1 || neg_set.length < 1){
+            alert('No valid sets selected.');
+            return;
+        };
+
+        if (_.isEqual(old_sets.sort(), _.union(pos_set, neg_set).sort())){
+            alert('The selected sets are identical to the previously selected ones.');
+            return;
+        };
+
+        // api request
+        let req = $.ajax({
+            type: 'POST',
+            url: '/signprot/matrix/seqsig/',
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+                pos: pos_set,
+                neg: neg_set,
+                seg: segments.label,
+            },
+            beforeSend: function(){
+                old_sets = _.union(pos_set, neg_set);
+                console.log(old_sets)
+                document.querySelector("#calc_spin").style.display = "inline-block";
+            },
+            success: function(data){
+                scroll_to_section('#seqsig');
+                console.log(data);
+                // d3 draw
+                // signprotmat.d3.draw_seq_sig(data);
+            },
+            error: function(error){
+                alert(error);
+            },
+            complete: function(){
+                document.querySelector("#calc_spin").style.display = "none";
+            }
+        });
+    };
+
 </script>
 <script src="{% static 'home/js/d3.v5.7.min.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
@@ -238,11 +314,14 @@
 
         // Default: Select all rows on page load
         table.rows().select();
-        pdb_sel = select_by_value(table.rows({ selected: true }).data(), 'pdb_id');
+        let selection = table.rows({ selected: true }).data();
+        pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id');
+        pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
 
         $('#interface-modal-table').on('hidden.bs.modal', function (e) {
-            const selection = table.rows({ selected: true }).data();
-            pdb_sel = select_by_value(selection, 'pdb_id')
+            selection = table.rows({ selected: true }).data();
+            pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id')
+            pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
 
             $('.svg-content').remove();
             data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
@@ -278,7 +357,7 @@
 
             const row_selection = pdb_table.rows({ selected: true }).data();
             const xvals = xScale.domain();
-            const prids = select_by_value(row_selection, 'rec_id');
+            const prids = signprotmat.data.select_by_value(row_selection, 'rec_id');
 
             receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
             signprotmat.d3.addReceptor(receptor_data, data, svg);
@@ -404,7 +483,9 @@
         $('#pdb-modal-table').on('hidden.bs.modal', function (e) {
             const row_selection = pdb_table.rows({ selected: true }).data();
             const xvals = xScale.domain();
-            const prids = select_by_value(row_selection, 'rec_id');
+            const prids = signprotmat.data.select_by_value(row_selection, 'rec_id');
+
+            neg_set = signprotmat.data.select_by_value(row_selection, 'entry_name');
 
             receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
             signprotmat.d3.addReceptor(receptor_data, data, svg);
@@ -425,7 +506,6 @@
 
         // https://www.datatables.net/examples/api/tabs_and_scrolling.html
         $(document).on('shown.bs.modal', function (e) {
-            console.log('this');
             $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
         });
 

@@ -92,6 +92,14 @@ const signprotmat = {
       }
     },
 
+    select_by_value: function (selection, value) {
+      let ret_sel = []
+      for (let index = 0; index < selection.length; index++) {
+          ret_sel.push(selection[index][value]);
+      };
+      return ret_sel;
+    },
+
     dataTransformationWrapper: function(dataset, keys, pdb_sel) {
       dataset = _.pick(dataset, pdb_sel);
       let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
