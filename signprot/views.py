@@ -1148,62 +1148,65 @@ def InteractionMatrix(request):
             },
     ]
 
-    ps = ProteinConformation.objects.filter(
-        protein__sequence_type__slug='wt',
-        protein__species__common_name="Human",
-        protein__family__slug__startswith='00',  # receptors, no gproteins
-        # structure__refined=False
-        ).values(
-            name = F('protein__name'),
-            entry_name = F('protein__entry_name'),
-            pdb_id = F('structure__pdb_code__index'),
-            rec_id = F('protein__id'),
-            protein_family = F('protein__family__parent__name'),
-            protein_class = F('protein__family__parent__parent__parent__name'),
-            ligand = F('protein__endogenous_ligands__properities__ligand_type__name')
-        )
-
-    # data = Structure.objects.filter(
-    #         # protein_conformation__protein__sequence_type__slug='wt',
-    #         protein_conformation__protein__species__common_name="Human",
-    #         protein_conformation__protein__family__slug__startswith='00',
-    #         refined=False
-    #     ).select_related(
-    #         "state",
-    #         "pdb_code__web_resource",
-    #         "protein_conformation__protein__species",
-    #         "protein_conformation__protein__source",
-    #         "protein_conformation__protein__family__parent__parent__parent",
-    #         "publication__web_link__web_resource"
-    #     ).prefetch_related(
-    #         "stabilizing_agents",
-    #         "construct__crystallization__crystal_method",
-    #         "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
-    #         "protein_conformation__site_protein_conformation__site"
+    # ps = ProteinConformation.objects.filter(
+    #     # protein__sequence_type__slug='wt',
+    #     protein__species__common_name="Human",
+    #     protein__family__slug__startswith='00',  # receptors, no gproteins
+    #     structure__refined=False
+    #     ).values(
+    #         name = F('protein__name'),
+    #         entry_name = F('protein__entry_name'),
+    #         pdb_id = F('structure__pdb_code__index'),
+    #         rec_id = F('protein__id'),
+    #         protein_family = F('protein__family__parent__name'),
+    #         protein_class = F('protein__family__parent__parent__parent__name'),
+    #         ligand = F('protein__endogenous_ligands__properities__ligand_type__name')
     #     )
 
-    # ps = []
-    # for s in data:
-    #     r = {}
-    #     r['seq_slug'] = s.protein_conformation.protein.sequence_type.slug
-    #     r['pdb_id'] = s.pdb_code.index
-    #     r['rec_id'] = s.protein_conformation.protein_id
-    #     r['name'] = s.protein_conformation.protein.parent.name
-    #     r['entry_name'] = s.protein_conformation.protein.parent.entry_name
-    #     r['protein'] = s.protein_conformation.protein.parent.entry_short()
-    #     r['protein_long'] = s.protein_conformation.protein.parent.short()
-    #     r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
-    #     r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
-    #     r['species'] = s.protein_conformation.protein.species.common_name
-    #     r['date'] = str(s.publication_date)
-    #     r['state'] = s.state.name
-    #     r['representative'] = 'Yes' if s.representative else 'No'
-    #     ps.append(r)
+    data = Structure.objects.filter(
+            # protein_conformation__protein__sequence_type__slug='wt',
+            protein_conformation__protein__species__common_name="Human",
+            protein_conformation__protein__family__slug__startswith='00',
+            refined=False
+        ).select_related(
+            "state",
+            "pdb_code__web_resource",
+            "protein_conformation__protein__species",
+            "protein_conformation__protein__source",
+            "protein_conformation__protein__family__parent__parent__parent",
+            "publication__web_link__web_resource"
+        ).prefetch_related(
+            "stabilizing_agents",
+            "construct__crystallization__crystal_method",
+            "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+            "protein_conformation__site_protein_conformation__site"
+        )
+
+    ps = []
+    for s in data:
+        r = {}
+        r['seq_slug'] = s.protein_conformation.protein.sequence_type.slug
+        r['pdb_id'] = s.pdb_code.index
+        r['rec_id'] = s.protein_conformation.protein_id
+        r['name'] = s.protein_conformation.protein.parent.name
+        r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        r['protein'] = s.protein_conformation.protein.parent.entry_short()
+        r['protein_long'] = s.protein_conformation.protein.parent.short()
+        r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
+        r['protein_class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
+        r['species'] = s.protein_conformation.protein.species.common_name
+        r['ligand'] = s.protein_conformation.protein.endogenous_ligands.name
+        r['date'] = str(s.publication_date)
+        r['state'] = s.state.name
+        r['representative'] = 'Yes' if s.representative else 'No'
+        ps.append(r)
 
     names = set(pi['entry_name'] for pi in ps)
     residuelist = Residue.objects.filter(
-            protein_conformation__protein__entry_name__in=names,
-            # protein_conformation__structure__refined=False
+            # protein_conformation__protein__entry_name__in=names,
+            protein_conformation__protein__species__common_name="Human",
+            protein_conformation__protein__family__slug__startswith='00',
+            protein_conformation__structure__refined=False
             ).prefetch_related(
                 'protein_conformation'
             ).values(
@@ -1238,36 +1241,40 @@ def IMSequenceSignature(request):
     from seqsign.sequence_signature import SignatureMatch
     from seqsign.sequence_signature import SequenceSignature
 
+    from django.core.exceptions import ObjectDoesNotExist
+
     # example data
-    segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
-    pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
-    neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
+    # pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
+    # neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
+    # segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
 
     # receive data
+    pos_set = request.POST.getlist('pos[]')
+    neg_set = request.POST.getlist('neg[]')
+    segments = []
+    for s in request.POST.getlist('seg[]'):
+        try:
+            gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
+            segments.append(gen_object)
+        except ObjectDoesNotExist as e:
+            print('For {} a {} '.format(s, e))
+            continue
 
     # get pos/neg set objects
     pos_set = Protein.objects.filter(entry_name__in=pos_set).select_related('residue_numbering_scheme', 'species')
     neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
-
-    # res numbers
-    # segments = []
-    # # label looks like "2x51"
-    # gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdb')
-    # segments.append(gen_object)
-    # # a.load_segments(gen_list)
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
     signature.setup_alignments(segments, pos_set, neg_set)
     signature.calculate_signature()
 
-    # process data for return
+
+    # preprocess data for return
     signature_data = signature.prepare_display_data()
 
-    # FEATURES
+    # FEATURES AND REGIONS
     feats = [feature for feature in signature_data['a_pos'].features]
-    len_feats = len(feats)
-
     trans = {
         'N-term': 'N',
         'TM1': 1,
@@ -1304,30 +1311,35 @@ def IMSequenceSignature(request):
 
 
     # FEATURE FREQUENCIES
-    signature_features = {}
+    # define list of features to keep
+    filter_features = []
+    signature_features = []
     x = 0
     for i, feature in enumerate(signature_data['feats_signature']):
+        # discard unwanted features
+        # if feature in filter_features:
         for j, segment in enumerate(feature):
             for k, freq in enumerate(segment):
                 # freq0: score
                 # freq1: level of conservation
                 # freq2: a - b explanation
                 try:
-                    signature_features[x] = {
+                    signature_features.append({
+                        'key': int(x),
                         'feature': str(feats[i]),
                         'gn': str(generic_numbers[j][k]),
                         'freq': int(freq[0]),
                         'cons': int(freq[1]),
                         'expl': str(freq[2]),
-                    }
+                    })
                     x += 1
-                except IndexError as e:
+                except Exception as e:
                     print(e)
 
 
     # SIGNATURE CONSENSUS
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
-    sigcons = {}
+    sigcons = []
     x = 0
     for segment, cons in signature_data['signature_consensus'].items():
         for i, pos in enumerate(cons):
@@ -1335,17 +1347,19 @@ def IMSequenceSignature(request):
             # pos1: Name
             # pos2: Score
             # pos3: level of conservation
-            sigcons[x] = {
-                'gn': str(generic_numbers_flat[x]),
-                'code': str(pos[0]),
-                'name': str(pos[1]),
-                'score': int(pos[2]),
-                'cons': int(pos[3]),
-            }
-            x += 1
+            try:
+                sigcons.append({
+                    'key': int(x),
+                    'gn': str(generic_numbers_flat[x]),
+                    'code': str(pos[0]),
+                    'name': str(pos[1]),
+                    'score': int(pos[2]),
+                    'cons': int(pos[3]),
+                })
+                x += 1
+            except Exception as e:
+                    print(e)
 
-    # define list of features to keep
-    # subset results
     # pass back to front
     res = {
         'cons': sigcons,
