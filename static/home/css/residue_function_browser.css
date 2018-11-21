@@ -92,12 +92,28 @@ table.dataTable.compact thead th.checkbox_tr {
     padding: 4px 4px 4px 4px;
 }
 
-table.dataTable.compact thead th {
+/*table.dataTable.compact thead th {
     padding: 4px 16px 4px 2px;
+}*/
+
+table.dataTable.compact td, table.dataTable.compact th {
+    text-align: center;
 }
+
+.tooltip-inner  {
+    white-space:pre; /* you can also try white-space: normal; */
+    max-width:none;
+}
+
+
 .yadcf-filter-wrapper {
     margin-top: 0px;
 }
+
+.yadcf-filter-wrapper .yadcf-filter-range, .yadcf-filter-wrapper span.yadcf-filter-range-number-seperator {
+  display: none;
+}
+
 input.yadcf-filter  {
     width: 100px;
     font-family: sans-serif;
@@ -105,9 +121,12 @@ input.yadcf-filter  {
     font-weight: bold;
 }
 
-.tooltip-inner  {
-
-    white-space:pre; /* you can also try white-space: normal; */
-    max-width:none;
-
+input.yadcf-filter-range-number {
+  width: 25px;
 }
+
+div.yadcf-filter-wrapper button.yadcf-filter-reset-button {
+  display: none;
+}
+
+div.
