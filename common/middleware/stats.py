@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.http import HttpResponse
 
 import time,datetime,os
 
@@ -22,6 +23,7 @@ class StatsMiddleware:
         text_file.write('%s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total,2),request.META.get('REMOTE_ADDR'), request.method, request.path ))
         text_file.close()
 
+        # TODO: discuss with Munk to add a really long query log
         if total>5:
             # If slower than 5 seconds
             text_file = open(os.path.join(settings.BASE_DIR, "logs/stats_slow.log"), "a")
@@ -34,4 +36,7 @@ class StatsMiddleware:
         text_file = open(os.path.join(settings.BASE_DIR, "logs/errors.log"), "a")
         text_file.write('%s %s %s %s "%s"\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'), request.method, request.path,str(exception) ))
         text_file.close()
-        return HttpResponse('Exception caught')
+
+        # DEBUG: just let it crash
+        if not settings.DEBUG:
+            return HttpResponse('Exception caught')
