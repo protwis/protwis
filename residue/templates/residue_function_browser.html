@@ -314,9 +314,23 @@
 
     yadcf.exResetAllFilters(oTable);
 
-    // TODO: add a unit header after init YADCF
+    // Add a unit header after init YADCF
+    var units = ["", "", "", "", "#residues", "", "%", "", "%", "#X-rays", "", "#X-rays", "#X-rays", "#mutations", "#mutations", "#X-rays", "#GPCRs", "#residues", "#residues", "#X-rays", "", "", "#datapoints", "#datapoints", "#datapoints", "#datapoints", "%", "", "", "%", "", "", "%", "", "", "%", "", "", "%", "", "", "%", "", "" ];
+
+    var unit_header = document.createElement("tr");
+    unit_header.setAttribute("class", "over_header");
+    for (var i = 0; i < units.length; i++) {
+        var unit_cell = document.createElement("th");
+        unit_cell.append(units[i]);
+        unit_header.append(unit_cell);
+    }
+    $("thead")[0].append(unit_header);
 
     // TODO: enable popup filters for range filters
+    // 1. scan for range filters
+    // 2. add filter icon
+    // 3. add click action
+
   });
 
   // enable CSV download
