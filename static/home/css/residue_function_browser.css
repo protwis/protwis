@@ -133,3 +133,7 @@ div.yadcf-filter-wrapper button.yadcf-filter-reset-button {
 span.rfb_category_toggles {
   font-size: 14px;
 }
+
+span.showRangeFilter {
+  font-size: 1.2em;
+}

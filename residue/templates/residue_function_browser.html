@@ -334,10 +334,14 @@
     var unitHeader = $('tr:nth-child(2)', oTable.table().header() );
     unitHeader.insertAfter($('tr:last', oTable.table().header() ));
 
-    // TODO: enable popup filters for range filters
-    // 1. scan for range filters
-    // 2. add filter icon
-    // 3. add click action
+    // Enable toggling filters for range filters
+    $('.showRangeFilter').click(function(evt) {
+        evt.stopPropagation();
+        $('.yadcf-filter-range', $(this).parent()).toggle();
+    });
+
+    // Enable tooltips
+    $('[data-toggle="tooltip"]').tooltip();
 
   });
 
@@ -372,7 +376,7 @@
         <input class="column_toggle" type="checkbox" value="struct_pos" data-column="5,6,7,8" checked="checked"> Consensus sequence
       </label>
       <label class="btn btn-default btn-xs active">
-        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="9,10,11,12" checked="checked"> Binding pockets
+        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="9,10,11,12" checked="checked"> Pockets
       </label>
       <label class="btn btn-default btn-xs active">
         <input class="column_toggle" type="checkbox" value="struct_pos" data-column="13,14,15,16" checked="checked"> Mutation data
@@ -393,8 +397,8 @@
             <tr class='over_header' style='max-height: 20px'>
                 <th colspan=1 class="over_header">POSITION</th>
                 <th colspan=4 class="over_header">STRUCTURAL POSITION</th>
-                <th colspan=4 class="over_header">CONSENSUS SEQUENCE</th>
-                <th colspan=4 class="over_header">BINDING POCKETS</th>
+                <th colspan=4 class="over_header">CLASS CONSENSUS SEQUENCE</th>
+                <th colspan=4 class="over_header">POCKETS</th>
                 <th colspan=4 class="over_header">MUTATION DATA</th>
                 <th colspan=5 class="over_header">STRUCTURE DATA</th>
                 <th colspan=4 class="over_header">POST-TRANSLATIONAL MODIFICATIONS</th>
@@ -454,18 +458,18 @@
                 <th class="positional-th"></th>
                 <th class="positional-th"></th>
                 <th class="positional-th"></th>
-                <th class="positional-th">#AA Above<br/>membrane center</th>
+                <th class="positional-th">Distance from<br/>membrane center<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
 
                 <!-- SEQUENCE DATA -->
                 <th class="general-th"></th>
-                <th class="general-th">Amino acid<br/>Conservation</th>
+                <th class="general-th">Amino acid<br/>Conservation<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
                 <th class="general-th"></th>
-                <th class="general-th">Property<br/>conservation</th>
+                <th class="general-th">Property<br/>conservation<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
 
                 <!-- POCKETS -->
-                <th class="positional-th">Ligand<br/>contacts</th>
-                <th class="structural-th">G-protein<br/>contacts</th>
-                <th class="structural-th">Arrestin<br/>contacts</th>
+                <th class="positional-th">Ligand<br/>contacts<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
+                <th class="structural-th">G-protein<br/>contacts<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
+                <th class="structural-th">Arrestin<br/>contacts<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
                 <th class="positional-th">Sodium</th>
 
                 <!-- Mutation data -->
@@ -521,9 +525,9 @@
                     <td>{{ entry.membane_placement }}</td>
 
                     <!-- SEQUENCE DATA -->
-                    <td><span>{{ entry.class_a_aa }}</span></td>
+                    <td><span data-toggle="tooltip" data-placement="top" title="{{ entry.class_a_aa_name }}">{{ entry.class_a_aa }}</span></td>
                     <td>{{ entry.class_a_aa_cons }}</td>
-                    <td><span>{{ entry.class_a_prop }}</span></td>
+                    <td><span data-toggle="tooltip" data-placement="top" title="{{ entry.class_a_prop }}">{{ entry.class_a_symb }}</span></td>
                     <td>{{ entry.class_a_prop_cons }}</td>
 
                     <!-- POCKETS -->
