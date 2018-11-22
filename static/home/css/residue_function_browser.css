@@ -77,6 +77,7 @@ table.dataTable.compact thead th.over_header {
 
 table.dataTable.compact thead tr.over_header th {
     border-bottom: 1px solid #ccc;
+    padding: 4px 4px 4px 4px;
 }
 
 table.dataTable.compact thead th.leftborder {
@@ -129,4 +130,6 @@ div.yadcf-filter-wrapper button.yadcf-filter-reset-button {
   display: none;
 }
 
-div.
+span.rfb_category_toggles {
+  font-size: 14px;
+}
