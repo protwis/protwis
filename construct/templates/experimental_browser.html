@@ -17,7 +17,7 @@
         #filters{
 
             font-size: 10px;
-            padding:  7px 15px; 
+            padding:  7px 15px;
         }
 
         @media (min-width: 1600px){
@@ -132,7 +132,7 @@
                         select_type_options: {
                             width: '80px',
                         }
-                    }, 
+                    },
                     {
                         column_number: 4,
                         filter_type: "multi_select",
@@ -154,7 +154,7 @@
                         select_type_options: {
                             width: '100px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 6,
                         filter_type: "multi_select",
@@ -164,7 +164,7 @@
                         select_type_options: {
                             width: '100px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 7,
                         filter_type: "multi_select",
@@ -301,7 +301,7 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
-            $("#remove_sel").click(function () { 
+            $("#remove_sel").click(function () {
                 var oTable = $('#constructs').dataTable();
                 $('input:checkbox:checked').each(function () {
                     if ( $(this).is(':visible') ) {
@@ -315,7 +315,7 @@
                oTable.fnDraw();
             });
 
-            $("#remove_non_sel").click(function () { 
+            $("#remove_non_sel").click(function () {
                 var oTable = $('#constructs').dataTable();
                 $('input:checkbox:not(:checked)').each(function () {
                     if ( $(this).is(':visible') ) {
@@ -413,7 +413,7 @@
             console.log(ids);
 
             current_align_ids = ids
-            var url = '/construct/align'; 
+            var url = '/construct/align';
             var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
               posting.done(function( data ) {
                 $("#align_div").html('').append(data)
@@ -436,7 +436,7 @@
         };
 
 
-    </script> 
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -454,7 +454,7 @@
     Show/hide columns:
 <div class="btn-group" data-toggle="buttons">
   <label class="btn btn-default btn-xs">
-    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="7,8,9" checked="checked"> Expression
+    <input class="column_toggle" type="checkbox" value="Expression" data-column="7,8,9" checked="checked"> Expression
   </label>
   <label class="btn btn-default btn-xs">
     <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="10" checked="checked"> SolubilIzation
@@ -597,7 +597,7 @@
                         {% endif %}
                     </td>
                     <td class="text-center">{{ construct.crystal.resolution|floatformat:"1" }}</td>
-                    <!-- 
+                    <!--
                     <td>{{ construct.contributor.pi_name|safe }}</td>
                     <td>{{ construct.contributor.date|safe }}</td> -->
                     <td>
