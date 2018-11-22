@@ -357,7 +357,7 @@
             // evt.preventDefault();
             columns = $(this).attr('data-column').split(",");
             var checked = this.checked;
-            var checked = (this.checked ? false : true);
+            // var checked = (this.checked ? false : true);
             columns.forEach(function(column) {
                 // console.log('hiding column');
                 var column = oTable.column( column );
@@ -453,18 +453,19 @@
     </div>
     Show/hide columns:
 <div class="btn-group" data-toggle="buttons">
-  <label class="btn btn-default btn-xs">
+  <label class="btn btn-default btn-xs active">
     <input class="column_toggle" type="checkbox" value="Expression" data-column="7,8,9" checked="checked"> Expression
   </label>
-  <label class="btn btn-default btn-xs">
+
+  <label class="btn btn-default btn-xs active">
     <input class="column_toggle" type="checkbox" value="Solubilization" data-column="10" checked="checked"> Solubilization
   </label>
 
-  <label class="btn btn-default btn-xs">
+  <label class="btn btn-default btn-xs active">
     <input class="column_toggle" type="checkbox" value="Purification" data-column="11" checked="checked"> Purification
   </label>
 
-  <label class="btn btn-default btn-xs">
+  <label class="btn btn-default btn-xs active">
     <input class="column_toggle" type="checkbox" value="Crystallization" data-column="12,13,14,15,16,17,18" checked="checked"> Structure determination
   </label>
 </div>
