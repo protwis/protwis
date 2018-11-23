@@ -47,3 +47,11 @@ def senior_author ( objs ):
 @register.filter
 def cut_at_20 ( objs ):
     return objs[:20]
+
+@register.filter
+def get_refined_model_version ( objs ):
+    return objs.pdb_data.pdb.split('\n')[0][-10:]
+
+@register.filter
+def cut_refined ( objs ):
+    return objs.split('_')[0]

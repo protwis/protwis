@@ -1120,7 +1120,7 @@ class AlignedReferenceTemplate(Alignment):
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
         self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM','6G79'],
                                          'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
-        self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000, '6D26':2000, '6D27':2000}
+        self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
 
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, 

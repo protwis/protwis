@@ -73,7 +73,6 @@
             font-family: sans-serif;
             font-size: 100%;
             font-weight: bold;
-
         }
     </style>
 {% endblock %}
@@ -82,19 +81,21 @@
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
     <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
 
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
             // 'use strict';
 
-            // var oTable;
             var oTable2 = $('#structures_frozen').DataTable({
                 "scrollY":        "80vh",
                 "scrollX":        false,
                 "scrollCollapse": true,
+                "scroller": true,
                 "paging":         false,
                 "autoWidth": false,
+                "order": [[4,'desc'],[1,'asc']],
             });
 
 
@@ -102,50 +103,52 @@
                 "scrollY":        "80vh",
                 "scrollX":        true,
                 "scrollCollapse": true,
+                "scroller": true,
                 "paging":         false,
                 "autoWidth": false,
                 // fixedColumns:   {
                 //     leftColumns: 4
                 // },
-                // "order": [[26,'desc'],[1,'asc']],
-                // "columnDefs": [
-                //     { "targets": 'no-sort', "orderable": false }
-                //     ],
-                // "columns": [
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     {"width": "20%"},
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null,
-                //     null
-                // ],
-                // "dom": 'iTlfrt',
-                // "tableTools": {
-                //     "sRowSelect": "single",
-                //     "aButtons": []
-                // },
+                "order": [[26,'desc'],[1,'asc']],
+                "columnDefs": [
+                    { "targets": 'no-sort', "orderable": false }
+                    ],
+                "columns": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    {"width": "20%"},
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                ],
+                "dom": 'iTlfrt',
+                "tableTools": {
+                    "sRowSelect": "single",
+                    "aButtons": []
+                },
+                "bInfo" : false,
             });
 
             var prev_ids = Array()
@@ -197,7 +200,15 @@
                         select_type_options: {
                             width: '120px',
                         }
-                    }
+                    },
+                    {
+                        column_number : 4,
+                        filter_type: "range_date",
+                        date_format: "yyyy-mm-dd",
+                        select_type: 'select2',
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
                 ],
                 {
                     cumulative_filtering: false
@@ -216,7 +227,7 @@
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '60px',
+                            width: '70px',
                         }
                     },
                     {
@@ -229,7 +240,7 @@
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '80px',
+                            width: '70px',
                         }
                     },
                     {
@@ -254,7 +265,7 @@
                         filter_default_label: "Class",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '100px',
+                            width: '80px',
                         }
                     },
                     {
@@ -264,7 +275,7 @@
                         filter_default_label: "Species",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '100px',
+                            width: '80px',
                         }
                     }, 
                     {
@@ -283,6 +294,7 @@
                         filter_type: "multi_select",
                         select_type: 'select2',
                         // filter_default_label: "Refined",
+                        column_data_type: "html",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -389,9 +401,9 @@
                         html_data_type: "text",
                         filter_default_label: "Structure ligand",
                         filter_reset_button_text: false,
-                        // select_type_options: {
-                        //     width: '100px',
-                        // }
+                        select_type_options: {
+                            width: '100px',
+                        }
                     },
                     {
                         column_number : 19,
@@ -488,9 +500,14 @@
                 }
             );
 
+            match_rowheight();
+            var frozen_ids = get_row_ids('structures_frozen');
+            var scrollable_ids = get_row_ids('structures_scrollable');
+            oTable2 = reorder_table(scrollable_ids, frozen_ids, oTable2);
+            oTable2.draw();
+
             yadcf.exResetAllFilters(oTable);
 
-            set_scroll_divs("#structures_div");
 
             // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             // $.datepicker.setDefaults($.datepicker.regional['']);
@@ -605,31 +622,31 @@
                 oTable.draw();
             } );
 
-            $('#show_all').click(function() {
-                console.log('start toggle');
-                // evt.stopPropagation();
-                // evt.stopImmediatePropagation();
-                // evt.preventDefault();
-                // columns = $(this).attr('data-column').split(",");
-                columns = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+            // $('#show_all').click(function() {
+            //     console.log('start toggle');
+            //     // evt.stopPropagation();
+            //     // evt.stopImmediatePropagation();
+            //     // evt.preventDefault();
+            //     // columns = $(this).attr('data-column').split(",");
+            //     columns = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
 
-                columns.forEach(function(column) {
-                    // console.log('hiding column');
-                    var column = oTable.column( column );
-                    try {
-                        column.visible( true );
-                    }
-                    catch(err) {
-                        column.visible( true );
-                    }
+            //     columns.forEach(function(column) {
+            //         // console.log('hiding column');
+            //         var column = oTable.column( column );
+            //         try {
+            //             column.visible( true );
+            //         }
+            //         catch(err) {
+            //             column.visible( true );
+            //         }
                     
-                });
-                // var Table = $('#structures').dataTable();
-                // Table.fnDraw();
-                console.log('done toggle');
-                oTable.draw();
-                console.log('done draw');
-            } );
+            //     });
+            //     // var Table = $('#structures').dataTable();
+            //     // Table.fnDraw();
+            //     console.log('done toggle');
+            //     oTable.draw();
+            //     console.log('done draw');
+            // } );
 
             $('#superpose_btn').click(function () {
                 if(window.location.hash === "#keepselection") {}
@@ -717,6 +734,33 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
+            catch_filter(oTable2, oTable);
+
+            // matching scrolls
+            var tables = document.querySelectorAll(".dataTables_scrollBody");
+            var frozen_table = tables[0];
+            var scrollable_table = tables[1];
+
+            var isLeftScrollTopCalled = false;
+            $(frozen_table).scroll(function (e) {
+                if (isRightScrollTopCalled) {
+                    return isRightScrollTopCalled = false;
+                }
+
+                $(scrollable_table).scrollTop($(this).scrollTop());
+                isLeftScrollTopCalled = true;
+            });
+
+            var isRightScrollTopCalled = false;
+            $(scrollable_table).scroll(function (e) {
+                if (isLeftScrollTopCalled) {
+                    return isLeftScrollTopCalled = false;
+                }
+
+                $(frozen_table).scrollTop($(this).scrollTop());
+                isRightScrollTopCalled = true;
+            });
+
         });
 
         function ClearSelection(selection_type) {
@@ -769,42 +813,78 @@
           });
         }
 
-        function realign() {
+        function match_rowheight() {
+            $("#structures_scrollable").find('tr').each(function(i, e) {
+                $("#structures_frozen").find('tr').eq(i).height($(this).height());
+            });
+        }
 
-            ids = JSON.parse($("#c_ids").val());
-
-            // $('input:checkbox:not(:checked)').each(function () {
-            $('input:checkbox:checked').each(function () {
-                if ( $(this).is(':visible') ) {
-                   id = $(this).attr('value');
-                   if (id) { ids.push(id); }
+        function match_content(table1, table2) {
+            var scrollable_ids = [];
+            $("#structures_scrollable").find('tr').each(function(i, e) {
+                scrollable_ids.push(i);
+            });
+            var rows = $("#structures_scrollable").dataTable().$('tr', {"filter":"applied"});
+            console.log('ROWS',rows);
+            console.log('scrollable_ids',scrollable_ids);
+            $("#structures_frozen").find('tr').each(function(i, e) {
+                console.log(i,e);
+                if (scrollable_ids.includes(i)) {}
+                else {
+                    console.log(i,e);
+                    table1.row(i).remove();
+                    // row.remove();
                 }
             });
+            table1.draw();
+        }
 
-            console.log(ids);
-
-            current_align_ids = ids
-            var url = '/construct/align'; 
-            var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
-              posting.done(function( data ) {
-                $("#align_div").html('').append(data)
-
-                $(function () {$('[data-toggle="tooltip"]').tooltip()})
-
-                $(function(){
-                    $('.ali-scroll-div').scroll(function(){
-                        $('.ali-main-div')
-                            .scrollLeft($('.ali-scroll-div').scrollLeft());
-                    });
-                    $('.ali-main-div').scroll(function(){
-                        $('.ali-scroll-div')
-                            .scrollLeft($('.ali-main-div').scrollLeft());
-                    });
+        function catch_filter(table1, table2) {
+            var text_multi_filter_cols = [1,2,3,4,5,6,7,9,10,12,13,14,15,16,17,18,19,20,21,22,23,24,25,27];
+            // var filters = document.querySelectorAll("#yadcf-filter--structures_scrollable-26.yadcf-filter.select2-offscreen");
+            text_multi_filter_cols.forEach(function(column) {
+                var ref = "#yadcf-filter--structures_scrollable-".concat(column.toString(),".yadcf-filter.select2-offscreen");
+                $(ref).change(function() {
+                  match_content(table1, table2);
+                  console.log($(this),' filter');
                 });
+            });
 
-                $(function () {$('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );});
-              });
-        };
+            $(".yadcf-filter-range-number.yadcf-filter-range").keydown(function() {
+                console.log($(this),' range');
+            });
+            
+            $(".yadcf-filter-reset-button").click(function() {
+                console.log($(this),' reset button');
+            });
+
+            $(".yadcf-filter-range-data.yadcf-filter-range.hasDatepicker").change(function() {
+                console.log($(this),' date range');
+            });
+            // console.log(filters)
+        }
+
+        function get_row_ids(table_id) {
+            var rows = [];
+            var id = '#'+table_id;
+            $(id).find('tr').each(function(i, e) {
+                if (i>1) {
+                    rows.push({key:$(e).attr('model_id'),value:[i,e]});
+                }
+            });
+            return rows;
+        }
+
+        function reorder_table(ref_ids, target_ids, table) {
+            // table.clear();
+            // console.log(ref_ids);
+            // console.log(target_ids);
+            for (var k in ref_ids) {
+                // console.log(k, ref_ids[k], target_ids[k]);
+                // table.row.add(target_ids[k][1]);
+            }
+            return table;
+        }
 
     </script> 
 {% endblock %}
@@ -861,9 +941,9 @@
     <br>Loading...
     </div>
 
-
 <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden;" id="structures_div">
-    <div id='structures_frozen_div' style='float:left; width:25%; overflox-x: scroll; overflow-y: hidden;' > 
+    <!-- static column -->
+    <div id='structures_frozen_div' style='float:left; width:25%; overflox-x: scroll; overflow-y: hidden;' >
         <table class="display compact" id='structures_frozen'>
             <thead>
                 <tr class='over_header'>
@@ -874,6 +954,7 @@
                     <th style='height: 70px;'></th>
                     <th></th>
                     <th></th>
+                    <th style="display:none;"></th>
                 </tr>
             </thead>
             <tbody>
@@ -887,13 +968,16 @@
                     <td><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                     <td><span><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></span></td>
                     <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
+                    <td style="display:none;">{{ structure.publication_date|date:"Y-m-d" }}</td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <div id='structures_scrollable_div' style='display:inline-block; width:75%;'>
+    <!-- scrollable column -->
+    
+    <div id='structures_scrollable_div' style='display:inline-block; width:75   %;'>
         <table class="display compact" id='structures_scrollable'>
             <thead>
                 <tr class='over_header'>

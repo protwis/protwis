@@ -4,13 +4,14 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, HomologyModelingSupportFunctions, update_template_source, compare_and_update_template_source
+from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source, compare_and_update_template_source
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
 from common.models import WebLink
 from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
+from structure.homology_modeling_functions import GPCRDBParsingPDB
 
 import Bio.PDB as PDB
 from collections import OrderedDict
@@ -85,6 +86,15 @@ class SignprotModeling():
 
             alt_residues1 = parse.fetch_residues_from_array(alt_signprot_pdb_array['HN'], before_cgns)
             alt_residues2 = parse.fetch_residues_from_array(alt_signprot_pdb_array['H5'], after_cgns)
+
+            for i,j in orig_residues.items():
+                print(i, j, j[0].get_parent())
+            print('ALTERNATIVES')
+            for i,j in alt_residues1.items():
+                print(i, j, j[0].get_parent())
+            for i,j in alt_residues2.items():
+                print(i, j, j[0].get_parent())
+            
             alt_middle = OrderedDict()
             for s in segs_for_alt_complex_struct:
                 alt_middle = parse.add_two_ordereddict(alt_middle, alt_signprot_pdb_array[s])
@@ -127,6 +137,13 @@ class SignprotModeling():
                 
             # Let Modeller model buffer regions
             self.trimmed_residues.append('s1h1_6')
+            self.trimmed_residues.append('G.hf2s.01')
+            self.trimmed_residues.append('G.hf2s.02')
+            self.trimmed_residues.append('G.hf2s.03')
+            self.trimmed_residues.append('G.hf2s.04')
+            self.trimmed_residues.append('G.hf2s.05')
+            self.trimmed_residues.append('G.hf2s.06')
+            self.trimmed_residues.append('G.hfs2.07')
             self.trimmed_residues.append('G.S2.01')
             self.trimmed_residues.append('G.S2.02')
             self.trimmed_residues.append('s4h3_4')
@@ -433,250 +450,4 @@ class SignprotModeling():
         #     for v,b,n,m in zip(sign_a.reference_dict[i], sign_a.template_dict[j], sign_a.alignment_dict[k], signprot_pdb_array[l]):
         #         print(v, b, n, m, sign_a.reference_dict[i][v], sign_a.template_dict[j][b], sign_a.alignment_dict[k][n], signprot_pdb_array[l][m])
 
-
-class SignprotFunctions(object):
-    def __init__(self):
-        pass
-
-    def get_subfamilies_with_templates(self):
-        subfams = []
-        for i in SignprotComplex.objects.all():
-            if i.protein.family.name not in subfams:
-                subfams.append(i.protein.family.name)
-        return subfams
-
-    def get_subfam_subtype_dict(self, subfamilies):
-        d = {}
-        for s in subfamilies:
-            d[s] = [i.entry_name for i in Protein.objects.filter(family__name=s, species__common_name='Human')]
-        return d
-
-
-class GPCRDBParsingPDB(object):
-    ''' Class to manipulate cleaned pdb files of GPCRs.
-    '''
-    def __init__(self):
-        self.segment_coding = OrderedDict([(1,'TM1'),(2,'TM2'),(3,'TM3'),(4,'TM4'),(5,'TM5'),(6,'TM6'),(7,'TM7'),(8,'H8')])
-    
-    def gn_num_extract(self, gn, delimiter):
-        ''' Extract TM number and position for formatting.
-        
-            @param gn: str, Generic number \n
-            @param delimiter: str, character between TM and position (usually 'x')
-        '''
-        try:
-            split = gn.split(delimiter)
-            return int(split[0]), int(split[1])
-        except:
-            try:
-                split = gn.split(delimiter)
-                return split[0], int(split[1])
-            except:
-                return '/', '/'
-            
-    def gn_comparer(self, gn1, gn2, protein_conformation):
-        '''
-        '''
-        res1 = Residue.objects.get(protein_conformation=protein_conformation, display_generic_number__label=dgn(gn1,protein_conformation))
-        res2 = Residue.objects.get(protein_conformation=protein_conformation, display_generic_number__label=dgn(gn2,protein_conformation))
-        return res1.sequence_number-res2.sequence_number
-            
-    def gn_indecer(self, gn, delimiter, direction):
-        ''' Get an upstream or downstream generic number from reference generic number.
-        
-            @param gn: str, Generic number \n
-            @param delimiter: str, character between TM and position (usually 'x') \n 
-            @param direction: int, n'th position from gn (+ or -)
-        '''
-        split = self.gn_num_extract(gn, delimiter)
-        if len(str(split[1]))==2:
-            return str(split[0])+delimiter+str(split[1]+direction)
-        elif len(str(split[1]))==3:
-            if direction<0:
-                direction += 1
-            return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
-
-    def fetch_residues_from_pdb(self, structure, generic_numbers, modify_bulges=False, just_nums=False):
-        ''' Fetches specific lines from pdb file by generic number (if generic number is
-            not available then by residue number). Returns nested OrderedDict()
-            with generic numbers as keys in the outer dictionary, and atom names as keys
-            in the inner dictionary.
-            
-            @param structure: Structure, Structure object where residues should be fetched from \n
-            @param generic_numbers: list, list of generic numbers to be fetched \n
-            @param modify_bulges: boolean, set it to true when used for bulge switching. E.g. you want a 5x461
-            residue to be considered a 5x46 residue. 
-        '''
-        output = OrderedDict()
-        atoms_list = []
-        for gn in generic_numbers:
-            rotamer=None
-            if 'x' in str(gn):      
-                rotamer = list(Rotamer.objects.filter(structure__protein_conformation=structure.protein_conformation, 
-                        residue__display_generic_number__label=dgn(gn,structure.protein_conformation), 
-                        structure__preferred_chain=structure.preferred_chain))
-            else:
-                rotamer = list(Rotamer.objects.filter(structure__protein_conformation=structure.protein_conformation, 
-                        residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain))
-                if just_nums==False:
-                    try:
-                        gn = ggn(Residue.objects.get(protein_conformation=structure.protein_conformation,
-                                                    sequence_number=gn).display_generic_number.label)
-                    except:
-                        pass
-            if len(rotamer)>1:
-                for i in rotamer:
-                    if i.pdbdata.pdb.startswith('COMPND')==False:
-                        if i.pdbdata.pdb[21] in structure.preferred_chain:
-                            rotamer = i
-                            break
-            else:
-                rotamer = rotamer[0]
-            io = StringIO(rotamer.pdbdata.pdb)
-            rota_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
-            for chain in rota_struct:
-                for residue in chain:
-                    for atom in residue:
-                        atoms_list.append(atom)
-                    if modify_bulges==True and len(gn)==5:
-                        output[gn.replace('x','.')[:-1]] = atoms_list
-                    else:
-                        try:
-                            output[gn.replace('x','.')] = atoms_list
-                        except:
-                            output[str(gn)] = atoms_list
-                    atoms_list = []
-        return output
-        
-    def fetch_residues_from_array(self, main_pdb_array_segment, list_of_gns):
-        array = OrderedDict()
-        for i in list_of_gns:
-            array[i.replace('x','.')] = main_pdb_array_segment[i.replace('x','.')]
-        return array
-        
-    def add_two_ordereddict(self, dict1, dict2):
-        output = OrderedDict()
-        for i,j in dict1.items():
-            output[i] = j
-        for i,j in dict2.items():
-            output[i] = j
-        return output
-
-    def pdb_array_creator(self, structure=None, filename=None):
-        ''' Creates an OrderedDict() from the pdb of a Structure object where residue numbers/generic numbers are 
-            keys for the residues, and atom names are keys for the Bio.PDB.Residue objects.
-            
-            @param structure: Structure, Structure object of protein. When using structure, leave filename=None. \n
-            @param filename: str, filename of pdb to be parsed. When using filename, leave structure=None).
-        '''
-        seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000}
-        if structure!=None and filename==None:
-            io = StringIO(structure.pdb_data.pdb)
-        else:
-            io = filename
-        gn_array = []
-        residue_array = []
-        # pdb_struct = PDB.PDBParser(QUIET=True).get_structure(structure.pdb_code.index, io)[0]
-        
-        residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
-        gn_list = []
-        for i in residues:
-            try:
-                gn_list.append(ggn(i.display_generic_number.label).replace('x','.'))
-            except:
-                pass
-
-        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
-        pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
-        pref_chain = structure.preferred_chain
-        parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
-        parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)
-        last_res = list(parent_residues)[-1].sequence_number
-        if len(pref_chain)>1:
-            pref_chain = pref_chain[0]
-        for residue in pdb_struct[pref_chain]:
-            try:
-                if -9.1 < residue['CA'].get_bfactor() < 9.1:
-                    gn = str(residue['CA'].get_bfactor())
-                    if len(gn.split('.')[1])==1:
-                        gn = gn+'0'
-                    if gn[0]=='-':
-                        gn = gn[1:]+'1'
-                    # Exception for 3PBL 331, gn get's assigned wrong
-                    if structure.pdb_code.index=='3PBL' and residue.get_id()[1]==331:
-                        raise Exception()
-                    #################################################
-                    if gn in gn_list:
-                        if int(residue.get_id()[1])>1000:
-                            if structure.pdb_code.index in seq_nums_overwrite_cutoff_dict and int(residue.get_id()[1])>=seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                                gn_array.append(gn)
-                                residue_array.append(residue.get_list())
-                            else:
-                                raise Exception()
-                        else:
-                            gn_array.append(gn)
-                            residue_array.append(residue.get_list())
-                    else:
-                        raise Exception()
-                else:
-                    raise Exception()
-            except:
-                if structure!=None and structure.pdb_code.index in seq_nums_overwrite_cutoff_dict:
-                    if int(residue.get_id()[1])>seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                        gn_array.append(str(int(str(residue.get_id()[1])[1:])))
-                    else:
-                        gn_array.append(str(residue.get_id()[1]))
-                else:
-                    gn_array.append(str(residue.get_id()[1]))
-                residue_array.append(residue.get_list())
-        output = OrderedDict()
-        for num, label in self.segment_coding.items():
-            output[label] = OrderedDict()
-        if len(gn_array)!=len(residue_array):
-            raise AssertionError()
-        for gn, res in zip(gn_array,residue_array):
-            if '.' in gn:
-                seg_num = int(gn.split('.')[0])
-                seg_label = self.segment_coding[seg_num]
-                if seg_num==8 and len(output['TM7'])==0:
-                    continue
-                else:
-                    output[seg_label][gn] = res
-            else:
-                try:
-                    found_res, found_gn = None, None
-                    try:
-                        found_res = Residue.objects.get(protein_conformation=structure.protein_conformation,
-                                                        sequence_number=gn)
-                    except:
-                        # Exception for res 317 in 5VEX, 5VEW
-                        if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='317' and res[0].get_parent().get_resname()=='CYS':
-                            found_res = Residue.objects.get(protein_conformation=parent_prot_conf,
-                                                            sequence_number=gn)
-                        #####################################
-                    found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
-
-                    # Exception for res 318 in 5VEX, 5VEW
-                    if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
-                        found_gn = '5.48'
-                    #####################################
-                    if -9.1 < float(found_gn) < 9.1:
-                        if len(res)==1:
-                            continue
-                        if int(gn)>last_res:
-                            continue
-                        seg_label = self.segment_coding[int(found_gn.split('.')[0])]
-                        output[seg_label][found_gn] = res
-                except:
-                    if res[0].get_parent().get_resname()=='YCM' or res[0].get_parent().get_resname()=='CSD':
-                        found_res = Residue.objects.get(protein_conformation=parent_prot_conf, sequence_number=gn)
-                        if found_res.protein_segment.slug[0] not in ['T','H']:
-                            continue
-                        try:
-                            found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
-                        except:
-                            found_gn = str(gn)
-                        output[found_res.protein_segment.slug][found_gn] = res
-
-        return output
 

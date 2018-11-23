@@ -8,7 +8,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, HomologyModelingSupportFunctions, update_template_source, ImportHomologyModel
+from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
 from common.models import WebLink
@@ -16,7 +16,8 @@ from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
-from structure.signprot_modeling import SignprotModeling, GPCRDBParsingPDB, SignprotFunctions
+from structure.signprot_modeling import SignprotModeling 
+from structure.homology_modeling_functions import SignprotFunctions, GPCRDBParsingPDB, ImportHomologyModel, Remodeling
 
 import Bio.PDB as PDB
 from modeller import *
@@ -84,6 +85,15 @@ class Command(BaseBuild):
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         
     def handle(self, *args, **options):
+
+        rm = Remodeling()
+        rm.make_pirfile()
+        rm.run()
+        return 0
+
+
+        if options['purge']:
+            self.purge_complex_entries()
         self.debug = options['debug']
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')
@@ -91,6 +101,8 @@ class Command(BaseBuild):
             os.mkdir('./structure/PIR')
         if not os.path.exists('./static/homology_models'):
             os.mkdir('./static/homology_models')
+        if not os.path.exists('./structure/complex_models_zip/'):
+            os.mkdir('./structure/complex_models_zip/')
         open('./structure/homology_models/done_models.txt','w').close()
         if options['update']:
             self.update = True
@@ -107,42 +119,86 @@ class Command(BaseBuild):
         self.force_main_temp = options['force_main_temp']
         self.modeller_iterations = options['i']
 
-        excludees = SignprotComplex.objects.all().values_list('structure__protein_conformation__protein__parent__entry_name', flat=True)
-        classA_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', family__parent__parent__parent__name='Class A (Rhodopsin)')
+        sf = SignprotFunctions()
+
+        # excludees = SignprotComplex.objects.all().values_list('structure__protein_conformation__protein__parent__entry_name', flat=True)
+        gprots_with_structures = sf.get_subtypes_with_templates()
+        self.receptor_list = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', family__parent__parent__parent__name='Class A (Rhodopsin)')
         # gprotein_targets = {'Gs':['gnas2_human', 'gnal_human'], 'Gi/o':['gnai1_human', 'gnai2_human','gnai3_human','gnao_human','gnat1_human','gnat2_human','gnat3_human','gnaz_human'], 
         #                     'Gq/11':['gnaq_human','gna11_human','gna14_human','gna15_human'], 'G12/13':['gna12_human','gna13_human']}
-
-        sf = SignprotFunctions()
+        
         subfams = sf.get_subfamilies_with_templates()
-        gprotein_targets = sf.get_subfam_subtype_dict(subfams)
+        self.gprotein_targets = sf.get_subfam_subtype_dict(subfams)
 
-        del gprotein_targets['Gi/o']
+        # del self.gprotein_targets['Gi/o']
 
-        c=0
-        # classA_receptors = Protein.objects.filter(entry_name='drd2_human')
+        self.receptor_list = Protein.objects.filter(entry_name__in=['drd3_human','opsd_bovin'])
 
-        for receptor in classA_receptors:
-            if receptor.entry_name not in excludees:
-                c+=1
-                
-                first_in_subfam = True
-                for gprotein_subfam, targets in gprotein_targets.items():
-                    for target in targets:
-                        if first_in_subfam:
-                            print(receptor, target)
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
-                            mod.run()
-                            first_in_subfam = False
+        self.processors = options['proc']
+        self.prepare_input(self.processors, self.receptor_list)
+
+        # delete unzipped folders in complex_models_zip
+        for i in os.listdir('./structure/complex_models_zip/'):
+            if i.startswith('Class') and not i.endswith('.zip'):
+                shutil.rmtree('./structure/complex_models_zip/'+i)
+        
+
+    def main_func(self, positions, itearation, count, lock):
+        processor_id = round(self.processors*positions[0]/len(self.receptor_list))+1
+        i = 0
+        while count.value<len(self.receptor_list):
+            i += 1
+            with lock:
+                receptor = self.receptor_list[count.value]
+                logger.info('Generating complex model for  \'{}\' ... ({} out of {}) (processor:{} count:{})'.format(receptor.entry_name, count.value+1, len(self.receptor_list),processor_id,i))
+                count.value +=1 
+
+            mod_startTime = datetime.now()
+            self.build_all_complex_models_for_receptor(receptor, count, i, processor_id)
+            logger.info('Complex model finished for  \'{}\' ... (processor:{} count:{}) (Time: {})'.format(receptor.entry_name, processor_id,i,datetime.now() - mod_startTime))
+
+    def build_all_complex_models_for_receptor(self, receptor, count, i, processor_id):
+        first_in_subfam = True
+        for gprotein_subfam, targets in self.gprotein_targets.items():
+            # print(gprotein_subfam, targets)
+            for target in targets:
+                # Only build gnat models with opsins
+                if receptor.family.parent.name!='Opsins' and target in ['gnat1_human','gnat2_human','gnat3_human']:
+                    continue
+                # print(receptor, target)
+                import_receptor = False
+                if len(SignprotComplex.objects.filter(structure__protein_conformation__protein__parent__entry_name=receptor.entry_name, protein__entry_name=target))>0:
+                    continue
+                else:
+                    if first_in_subfam:
+                        # mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                        # mod.run(fast_refinement=True)
+                        first_in_subfam = False
+                    else:
+                        ihm = ImportHomologyModel(receptor.entry_name, target)
+                        if ihm.find_files()!=None:
+                            # mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                            # mod.run(import_receptor=True, fast_refinement=True)
+                            import_receptor = True
                         else:
-                            print(receptor, target, 'IMPORT')
-                            ihm = ImportHomologyModel(receptor.entry_name)
-                            if ihm.find_files()!=None:
-                                mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
-                                mod.run(import_receptor=True)
-                        break
-            break
-        print(c)
+                            pass
+                            # mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                            # mod.run(fast_refinement=True)
 
+
+    def purge_complex_entries(self):
+        try:
+            StructureComplexModelSeqSim.objects.all().delete()
+        except:
+            self.logger.warning('StructureComplexModelSeqSim data cannot be deleted')
+        try:
+            StructureComplexModelStatsRotamer.objects.all().delete()
+        except:
+            self.logger.warning('StructureComplexModelStatsRotamer data cannot be deleted')
+        try:
+            StructureComplexModel.objects.all().delete()
+        except:
+            self.logger.warning('StructureComplexModel data cannot be deleted')
         
         
 

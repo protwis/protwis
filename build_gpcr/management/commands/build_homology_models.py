@@ -7,7 +7,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, HomologyModelingSupportFunctions, update_template_source, ImportHomologyModel
+from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source 
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
 from common.models import WebLink
@@ -15,7 +15,8 @@ from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
-from structure.signprot_modeling import SignprotModeling, GPCRDBParsingPDB
+from structure.signprot_modeling import SignprotModeling 
+from structure.homology_modeling_functions import GPCRDBParsingPDB, ImportHomologyModel
 
 import Bio.PDB as PDB
 from modeller import *
@@ -222,7 +223,7 @@ class Command(BaseBuild):
             with lock:
                 receptor = self.receptor_list[count.value]
                 logger.info('Generating model for  \'{}\' ({})... ({} out of {}) (processor:{} count:{})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list),processor_id,i))
-                count.value +=1 
+                count.value +=1
 
             # TODO maybe make check make sense -- since homology_models are deleted, then it doesnt make sense now
             # check
@@ -245,7 +246,7 @@ class Command(BaseBuild):
         
 
 class CallHomologyModeling():
-    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False):
+    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, fast_refinement=False):
         self.receptor = receptor
         self.state = state
         self.modeller_iterations = iterations
@@ -254,11 +255,12 @@ class CallHomologyModeling():
         self.complex = complex_model
         self.signprot = signprot
         self.force_main_temp = force_main_temp
+        self.fast_refinement = fast_refinement
 
 
-    def run(self, import_receptor=False):
+    def run(self, import_receptor=False, fast_refinement=False):
         try:
-            seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '6D26':2000, '6D27':2000}
+            seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
 
             ##### Ignore output from that can come from BioPDB! #####
             if not self.debug:
@@ -266,14 +268,15 @@ class CallHomologyModeling():
                 sys.stdout = open(os.devnull, 'w')
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
-                                              force_main_temp=self.force_main_temp)
+                                              force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement)
             print(self.signprot)
             if import_receptor:
-                ihm = ImportHomologyModel(self.receptor)
+                ihm = ImportHomologyModel(self.receptor, self.signprot)
                 model, templates, similarities = ihm.find_files()
                 Homology_model.alignment.reference_dict, Homology_model.alignment.template_dict, Homology_model.alignment.alignment_dict, Homology_model.main_pdb_array = ihm.parse_model(model)
                 Homology_model.template_source = ihm.parse_template_source(templates)
                 Homology_model.similarity_table_all = ihm.parse_similarities(similarities)
+                Homology_model.disulfide_pairs = ihm.find_disulfides()
                 Homology_model.trimmed_residues = []
                 Homology_model.main_template_preferred_chain = 'R'
                 Homology_model.main_structure = Homology_model.template_source['TM1']['1x50'][0]
@@ -438,13 +441,14 @@ class HomologyModeling(object):
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
     
-    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False, force_main_temp=False):
+    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False, force_main_temp=False, fast_refinement=False):
         self.debug = debug
         self.complex = complex_model
         self.modelname = ''
         self.signprot = signprot
         self.target_signprot = None
         self.force_main_temp = force_main_temp
+        self.fast_refinement = fast_refinement
         self.version = build_date
         self.reference_entry_name = reference_entry_name.lower()
         self.state = state
@@ -728,6 +732,9 @@ class HomologyModeling(object):
                 elif j[0].startswith('3x2'):
                     c1 = Residue.objects.get(protein_conformation=self.prot_conf, display_generic_number__label=dgn(j[0], self.prot_conf))
                     c2 = Residue.objects.get(protein_conformation=self.prot_conf, display_generic_number__label=dgn(j[1], self.prot_conf))
+                else:
+                    c1 = Residue.objects.get(protein_conformation=self.prot_conf, sequence_number=int(j[0]))
+                    c2 = Residue.objects.get(protein_conformation=self.prot_conf, sequence_number=int(j[1]))
                 for c in pdb_struct:
                     chain = c[c1.sequence_number].get_parent().get_id()
                     break
@@ -1133,10 +1140,6 @@ class HomologyModeling(object):
         if self.debug:
             print(loop_stat)
             print('Integrate loops: ',datetime.now() - startTime)
-        # pprint.pprint(a.reference_dict['ECL2'])
-        # pprint.pprint(a.template_dict['ECL2'])
-        # pprint.pprint(main_pdb_array['ECL2'])
-        # raise AssertionError
 
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
@@ -2543,7 +2546,10 @@ sequence:{uniprot}::::::::
         
         a.starting_model = 1
         a.ending_model = number_of_models
-        a.md_level = refine.very_fast
+        if self.fast_refinement:
+            a.md_level = refine.very_fast
+        else:
+            a.md_level = refine.slow
         path = "./structure/homology_models/"
         if not os.path.exists(path):
             os.mkdir(path)

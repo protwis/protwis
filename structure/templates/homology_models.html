@@ -1,5 +1,6 @@
 ﻿{% extends "home/base.html" %}
 {% load staticfiles %}
+{% load structure_extras %}
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
@@ -93,7 +94,7 @@
                 scrollX:        true,
                 scrollCollapse: true,
                 paging:         false,
-                "order": [[7,'asc'],[1,'asc']],
+                "order": [[8,'asc'],[1,'asc']],
                   columnDefs: [
                     { targets: 'no-sort', orderable: false }
 
@@ -152,6 +153,17 @@
                         column_number : 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
+                        filter_default_label: "Refined",
+                        filter_reset_button_text: false,
+                        filter_match_mode : "exact",
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
                         filter_default_label: "UniProt",
@@ -162,7 +174,7 @@
                         }
                     }, 
                     {
-                        column_number: 5,
+                        column_number: 6,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -174,7 +186,7 @@
                         }
                     },
                     {
-                        column_number: 6,
+                        column_number: 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Rec. family",
@@ -184,7 +196,7 @@
                         }
                     }, 
                     {
-                        column_number : 7,
+                        column_number : 8,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Class",
@@ -194,7 +206,7 @@
                         }
                     }, 
                     {
-                        column_number : 8,
+                        column_number : 9,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Species",
@@ -204,7 +216,7 @@
                         }
                     },
                     {
-                        column_number : 9,
+                        column_number : 10,
                         filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Receptor",
@@ -214,7 +226,7 @@
                         }
                     },
                     {
-                        column_number : 10,
+                        column_number : 11,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -323,24 +335,44 @@
                 ClearSelection('reference');
                 if (oTable.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
-                    div.innerHTML = oTable.rows('.selected').data()[0][11];
+                    div.innerHTML = oTable.rows('.selected').data()[0][12];
                     var state1 = oTable.rows('.selected').data()[0][3];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
-                    } else {
-                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                    if (oTable.rows('.selected').data()[0][4]==='Yes') {
+                        div.innerHTML = oTable.rows('.selected').data()[0][11];
+                        if (typeof div.innerText !== "undefined") {
+                            AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '')+"_refined");
+                        } else {
+                            AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '')+"_refined");
+                        }
+                    }
+                    else {
+                        if (typeof div.innerText !== "undefined") {
+                            AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
+                        } else {
+                            AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                        }
                     }
                 }
                 var checked_data = oTable.rows('.alt_selected').data();
                 var selected_ids = [];
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][11];
+                    div.innerHTML = checked_data[i][12];
                     var state2 = checked_data[i][3];
-                    if (typeof div.innerText !== "undefined") {
-                        selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
-                    } else {
-                        selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
+                    if (checked_data[i][4]==='Yes') {
+                        div.innerHTML = checked_data[i][11];
+                        if (typeof div.innerText !== "undefined") {
+                            selected_ids.push(div.innerText.replace(/\s+/g, '')+"_refined");
+                        } else {
+                            selected_ids.push(div.textContent.replace(/\s+/g, '')+"_refined");
+                        }
+                    }
+                    else {
+                        if (typeof div.innerText !== "undefined") {
+                            selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
+                        } else {
+                            selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
+                        }
                     }
                 }
                 AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
@@ -360,12 +392,22 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][11];
+                    div.innerHTML = checked_data[i][12];
                     
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
-                    } else {
-                        AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                    if (checked_data[i][4]==='Yes') {
+                        div.innerHTML = checked_data[i][11];
+                        if (typeof div.innerText !== "undefined") {
+                            AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
+                        } else {
+                            AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        }
+                    }
+                    else {
+                        if (typeof div.innerText !== "undefined") {
+                            AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
+                        } else {
+                            AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                        }
                     }
                 }
                 window.location.href = '/structure/selection_convert_model';
@@ -427,42 +469,42 @@
           });
         }
 
-        function realign() {
+        // function realign() {
 
-            ids = JSON.parse($("#c_ids").val());
+        //     ids = JSON.parse($("#c_ids").val());
 
-            // $('input:checkbox:not(:checked)').each(function () {
-            $('input:checkbox:checked').each(function () {
-                if ( $(this).is(':visible') ) {
-                   id = $(this).attr('value');
-                   if (id) { ids.push(id); }
-                }
-            });
+        //     // $('input:checkbox:not(:checked)').each(function () {
+        //     $('input:checkbox:checked').each(function () {
+        //         if ( $(this).is(':visible') ) {
+        //            id = $(this).attr('value');
+        //            if (id) { ids.push(id); }
+        //         }
+        //     });
 
-            console.log(ids);
+        //     console.log(ids);
 
-            current_align_ids = ids
-            var url = '/construct/align'; 
-            var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
-              posting.done(function( data ) {
-                $("#align_div").html('').append(data)
+        //     current_align_ids = ids
+        //     var url = '/construct/align'; 
+        //     var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
+        //       posting.done(function( data ) {
+        //         $("#align_div").html('').append(data)
 
-                $(function () {$('[data-toggle="tooltip"]').tooltip()})
+        //         $(function () {$('[data-toggle="tooltip"]').tooltip()})
 
-                $(function(){
-                    $('.ali-scroll-div').scroll(function(){
-                        $('.ali-main-div')
-                            .scrollLeft($('.ali-scroll-div').scrollLeft());
-                    });
-                    $('.ali-main-div').scroll(function(){
-                        $('.ali-scroll-div')
-                            .scrollLeft($('.ali-main-div').scrollLeft());
-                    });
-                });
+        //         $(function(){
+        //             $('.ali-scroll-div').scroll(function(){
+        //                 $('.ali-main-div')
+        //                     .scrollLeft($('.ali-scroll-div').scrollLeft());
+        //             });
+        //             $('.ali-main-div').scroll(function(){
+        //                 $('.ali-scroll-div')
+        //                     .scrollLeft($('.ali-main-div').scrollLeft());
+        //             });
+        //         });
 
-                $(function () {$('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );});
-              });
-        };
+        //         $(function () {$('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );});
+        //       });
+        // };
 
 
     </script> 
@@ -521,7 +563,7 @@
         <table width="100%" class="display compact" id="constructs">
             <thead>
                 <tr class='over_header' style='max-height: 20px'>
-                    <th colspan=4 class="over_header">MODEL</th>
+                    <th colspan=5 class="over_header">MODEL</th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
                     <th colspan=2 class="over_header">TEMPLATE</th>
                 </tr>
@@ -529,6 +571,7 @@
                     <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th></th>
                     <th>Date</th>
+                    <th></th>
                     <th  class='rightborder'></th>
                     <th></th>
                     <th></th>
@@ -549,6 +592,7 @@
                         <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
                         <td>{{ model.version|date:"Y-m-d" }}</td>
                         <td>{{ model.state.name }}</td>
+                        <td>No</td>
                         <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein.accession }}">{{ model.protein.entry_short|safe }}</a></span></td>
                         <td><span><a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.short|safe }}</span></td>
                         <td><span>{{ model.protein.family.parent.short|safe }}</span></td>
@@ -563,21 +607,22 @@
                         {% endif %} -->
                         <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
                         <!-- <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.protein.name|safe }}</a></td> -->
-                        <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>  
+                        <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                         <td style="display:none;">{{ model.protein.entry_name }}</td>
                     {% else %}
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                        <td><a href="homology_models/{{ model.pdb_code.index }}">{{ model.protein_conformation.protein.family.name|safe }}</a></td>
+                        <td>{{ model|get_refined_model_version }}</td>
+                        <td>{{ model.state.name }}</td>
+                        <td>Yes</td>
+                        <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation.protein.accession }}">{{ model.protein_conformation.protein.entry_short|safe }}</a></span></td>
+                        <td><span><a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.short|safe }}</span></td>
+                        <td><span>{{ model.protein_conformation.protein.family.parent.short|safe }}</span></td>
+                        <td>{{ model.protein_conformation.protein.family.parent.parent.parent.short }}</td>
+                        <td>{{ model.protein_conformation.protein.species.common_name }}</td>
+                        <td><a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.family.name|safe }}</a></td>
+                        <td><a href="{{ model.pdb_code.index }}">{{ model.pdb_code.index|cut_refined}}</a></td>
+                        <td style="display:none;">{{ model.protein_conformation.protein.entry_name }}</td>
                     {% endif %}         
                 </tr>
             {% endfor %}

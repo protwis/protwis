@@ -290,6 +290,7 @@ def AddToSelection(request):
     # process selected object
     o = []
     if selection_type == 'reference' or selection_type == 'targets':
+        print(selection_type, selection_subtype, selection_id)
         if selection_subtype == 'protein':
             o.append(Protein.objects.get(pk=selection_id))
         if selection_subtype == 'protein_entry':
@@ -336,9 +337,13 @@ def AddToSelection(request):
         elif selection_subtype == 'structure_models_many':
             selection_subtype = 'structure_model'
             for model in selection_id.split(","):
-                state = model.split('_')[-1]
-                entry_name = '_'.join(model.split('_')[:-1])
-                o.append(StructureModel.objects.defer('pdb').get(protein__entry_name=entry_name, state__name=state))
+                if 'refined' in model:
+                    sel1, sel2 = model.split('_')
+                    o.append(Structure.objects.get(pdb_code__index=sel1.upper()+'_refined'))
+                else:
+                    state = model.split('_')[-1]
+                    entry_name = '_'.join(model.split('_')[:-1])
+                    o.append(StructureModel.objects.defer('pdb').get(protein__entry_name=entry_name, state__name=state))
 
 
     elif selection_type == 'segments':

@@ -220,7 +220,7 @@ class QueryPDB():
                             auxiliary_proteins, ligands = [], []
                             if pdb_data_dict['ligands']!='None':
                                 for key, values in pdb_data_dict['ligands'].items():
-                                    if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE','SIN','PGO','MES']:
+                                    if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE','SIN','PGO','MES','ZN','NO3','NI','MG']:
                                         continue
                                     else:
                                         ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
@@ -292,7 +292,7 @@ class QueryPDB():
         dic = xmltodict.parse(response_mol.read())
         if 'NMR' in str_des or 'extracellular' in str_des:
             return 0
-        if pdb_code in ['4QXE','1XWD','4QXF','4MQW','6B7H','6BSZ','6BT5','5OTW']:
+        if pdb_code in ['4QXE','1XWD','4QXF','4MQW','6B7H','6BSZ','6BT5','5OTW','3G04','3KS9','4XAQ']:
             return 0
         polymer = dic['molDescription']['structureId']['polymer']
         description = ''

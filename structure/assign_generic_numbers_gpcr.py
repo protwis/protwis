@@ -22,7 +22,7 @@ class GenericNumbering(object):
     
     
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
-    exceptions = {'6GDG':[255, 10], '6G79':[232, 10]}
+    exceptions = {'6GDG':[255, 10]}
   
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
         blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1, sequence_parser=False, signprot=False):
