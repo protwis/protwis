@@ -70,18 +70,15 @@
 
 
 /* hover effect for rects */
-rect {
+/*rect {
     opacity: 1;
     transition: opacity 400ms;
 }
 
 rect:hover {
-    /* can at least make the selected element brighter */
     opacity: 0.6;
-    /* does not work in chrome
-    filter: brightness(85%); */
     transition: opacity 200ms;
-}
+}*/
 
 
 /* legend label style */
@@ -122,8 +119,7 @@ line {
 .seq_label {
     display: inline;
     padding: .2em .6em .3em;
-    font-size: 80%;
-    font-weight: 700;
+    font-size: 68%;
     line-height: 1;
     color: #fff;
     text-align: center;

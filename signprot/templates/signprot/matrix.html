@@ -135,7 +135,7 @@
     <h2>Interaction Interface</h2>
 </div>
 
-<div id="seqsig-container" class="svg-container" style="display: none">
+<div id="seqsig-container" class="svg-container" style="display: none; padding-bottom: 130%">
     <div id="seqsig">
         <h2>Sequence Signature</h2>
     </div>
@@ -162,6 +162,7 @@
     let svg;
     let xScale;
     let yScale;
+    let fscale;
     let xAxis;
     let yAxis;
     let xAxisGrid;
@@ -234,13 +235,24 @@
                 document.querySelector("#calc_spin").style.display = "inline-block";
             },
             success: function(data){
+                console.log('success')
                 document.querySelector('#seqsig-container').style.display = "inline-block";
                 document.querySelector('#conseq-container').style.display = "inline-block";
                 document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
                 console.log(data);
                 // d3 draw
-                svg = signprotmat.d3.setup("div#seqsig-container");
-                // signprotmat.d3.draw_seq_sig(data);
+                svg = signprotmat.d3.setup("div#seqsig-container", 'seqsig');
+                signprotmat.d3.draw_seq_sig(
+                    data,
+                    svg,
+                    xScale,
+                );
+                svg = signprotmat.d3.setup("div#conseq-container", 'conseq');
+                signprotmat.d3.draw_seq_cons(
+                    data,
+                    svg,
+                    xScale,
+                );
             },
             error: function(error){
                 alert(error);

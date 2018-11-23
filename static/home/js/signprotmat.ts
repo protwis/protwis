@@ -1,7 +1,7 @@
 // * CONSTANTS
-const margin = { top: 40, right: 200, bottom: 180, left: 130 };
-const w = 1200 - margin.left - margin.right,
-  h = 1000 - margin.top - margin.bottom;
+const margin = { top: 40, right: 200, bottom: 180, left: 200 };
+let w = 1200 - margin.left - margin.right,
+  h = 1000- margin.top - margin.bottom;
 
 // array for data in infobox
 let info_data = [];
@@ -127,7 +127,12 @@ const signprotmat = {
   // * D3 DRAW FUNCTIONS
   d3: {
     // * SETTING UP SVG FOR OUTPUT
-    setup: function(div) {
+    setup: function(div, loc) {
+      if (loc === 'seqsig'){
+        h = 1500
+      } else if (loc === 'conseq') {
+        h = 300
+      };
       let svg = d3
         .select("body")
         .select("div#content")
@@ -219,7 +224,97 @@ const signprotmat = {
         .domain(data)
         .range(d3.schemeSet3);
 
-      return colScale;
+        return colScale;
+      },
+
+      // * seqsig
+      // * SETTING THE FEATURE SCALE
+      fScale: function(data) {
+
+        const feats = [
+          "Hydrophobic",
+          "Aliphatic",
+          "Aliphatic small",
+          "Aliphatic medium",
+          "Aliphatic large",
+          "Aliphatic extra large",
+          "Aromatic",
+          "Aromatic medium",
+          "Aromatic large",
+          "Charge",
+          "Charge small",
+          "Charge negative",
+          "Charge positive",
+          "Charge positive small",
+          "Charge positive large",
+          "Helix propencity extra large",
+          "Helix propencity large",
+          "Helix propencity medium",
+          "Helix propencity small",
+          "Helix propencity extra small",
+          "Polar or charged",
+          "Pro (helix kink)",
+          "Polar uncharged extra small",
+          "Polar uncharged small",
+          "Polar uncharged large",
+          "Polar or charged extralarge",
+          "Polar or negative small",
+          "Polar or negative medium",
+          "Polar or negative large",
+          "Polar or negative extra large",
+          "Polar or positive extra large",
+          "Any tiny",
+          "Any extra small",
+          "Any small",
+          "Any medium",
+          "Any large",
+          "Any extra large",
+          "Gly",
+          "Ala",
+          "Cys",
+          "Ser",
+          "Thr",
+          "Val",
+          "Asp",
+          "Ile",
+          "Leu",
+          "Asn",
+          "Met",
+          "Glu",
+          "Gln",
+          "His",
+          "Lys",
+          "Phe",
+          "Arg",
+          "Tyr",
+          "Trp",
+          "Gap"]
+
+      let fScale = d3
+        .scaleBand()
+        .domain(feats)
+        .range([0, h])
+        // .round(true)
+        .padding(1);
+
+      return fScale;
+    },
+
+    cScale: function(data){
+      // const values = d3
+      //   .map(data, (d: any) => d.cons)
+      //   .keys()
+      //   .map(Number)
+      //   .sort(d3.ascending)
+      // const min = values.pop()
+      // const max = values[0]
+
+      // conservation is calculated to be between -1 and 10 by python
+      let cScale = d3
+      .scaleSequential(d3.interpolateRdBu)
+      .domain([0,10]);
+
+    return cScale;
     },
 
     // * DEFINING AXIS FOR X/Y AND GRID
@@ -524,7 +619,7 @@ const signprotmat = {
         .attr("transform", "translate(" + -xScale.step() / 2 + "," + h + ")")
         .append("rect")
         .attr("class", "border-bg")
-        .style("fill", "#eaeaea")
+        .style("fill", "#ffffff")
         .attr("x", xScale.step() / 2)
         .attr("y", 75)
         .attr("width", xScale.range()[1] - xScale.step())
@@ -578,7 +673,7 @@ const signprotmat = {
             ")"
         )
         .append("rect")
-        .style("fill", "#eaeaea")
+        .style("fill", "#ffffff")
         .attr("x", 0 + sigScale.step() / 2)
         .attr("y", yScale.step() / 2)
         .attr("width", sigScale.range()[0] - sigScale.step())
@@ -646,7 +741,7 @@ const signprotmat = {
       selection_enter
         .append("rect")
         .attr("class", "res_rect")
-        .style("fill", "black")
+        .style("fill", "slategrey")
         .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
         .attr("width", xScale.step())
@@ -765,6 +860,178 @@ const signprotmat = {
       info_box.text(function(d) {
         return d.rec_gn + " : " + d.sig_gn;
       });
+    },
+
+    draw_seq_sig: function(data_in, svg, xScale){
+      console.log('running draw seq sig')
+      let data = data_in.feat;
+      let fScale = signprotmat.d3.fScale(data);
+      let cScale = signprotmat.d3.cScale(data);
+      let uniq_feats = _.uniq(_.map(data, 'feature'));
+
+
+
+      svg
+        .append("g")
+        .attr("id", "seqsig_feature")
+        .attr("transform", "translate(" + 0 + "," + -30 + ")")
+        .selectAll("text")
+        .data(uniq_feats)
+        .enter()
+        .append("text")
+        .attr("class", "y seq_label")
+        .attr("x", -10)
+        .attr("y", function(d: any) {
+          return fScale(d) - fScale.step() / 2;
+        })
+        .attr("text-anchor", "end")
+        .attr("dy", 75)
+        .text(function(d: any) {
+          return d;
+        });
+
+      svg
+        .append("g")
+        .attr("id", "seqsig_mat")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + -30 + ")")
+        .append("rect")
+        .attr("class", "border-bg")
+        .style("fill", "#ffffff")
+        .attr("x", xScale.step() / 2)
+        .attr("y", 75)
+        .attr("width", xScale.range()[1] - xScale.step())
+        .attr("height", fScale.range()[1] - fScale.step());
+
+      let each_res = svg
+        .select("g#seqsig_mat")
+        .selectAll("text")
+        .data(data)
+        .enter()
+        .append("g");
+
+      // the rectangles, colored by conservation
+      each_res
+        .append("rect")
+        .attr("class", "res_rect")
+        .style("fill",function(d: any) {
+          if(d.cons === -1){
+            return '#ffffff';
+          } else {return cScale(d.cons);}
+        })
+        .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+        .attr("y", (d: any) => 75 + fScale(d.feature) - fScale.step())
+        .attr("width", xScale.step())
+        .attr("height", fScale.step());
+
+      // adding the frequency text to each rectangle
+      each_res
+        .append("text")
+        .attr("class", "res_label")
+        .attr("x", (d: any) => xScale(d.gn))
+        .attr("y", (d: any) => fScale(d.feature) - fScale.step() / 2)
+        .style("fill", (d: any) => {
+          if(Math.abs(d.freq) >= 50) {
+            return '#eaeaea';
+          } else if (Math.abs(d.freq) < 50) {
+            return '#000000';
+          }
+        })
+        .attr("text-anchor", "middle")
+        .attr("dy", 75)
+        .text((d: any) => d.freq);
+        // .text((d: any) => _.round(d.freq/100, 1));
+
+      // adding the explanation tooltip to each rectangle
+
+
+
+      // putting a black border around the signature
+      d3.select("g#seqsig_mat")
+        .append("rect")
+        .attr("class", "border")
+        .style("stroke", "black")
+        .style("fill", "none")
+        .attr("x", xScale.step() / 2)
+        .attr("y", 75)
+        .attr("width", xScale.range()[1] - xScale.step())
+        .attr("height", fScale.range()[1] - fScale.step());
+
+    },
+
+
+    draw_seq_cons: function(data_in, svg, xScale){
+      console.log('running draw seq cons')
+      let data = data_in.cons;
+      let fScale = signprotmat.d3.fScale(data);
+      let cScale = signprotmat.d3.cScale(data);
+      let uniq_feats = _.uniq(_.map(data, 'feature'));
+
+
+      svg
+        .append("g")
+        .attr("id", "conseq_mat")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + -30 + ")")
+        .append("rect")
+        .attr("class", "border-bg")
+        .style("fill", "#ffffff")
+        .attr("x", xScale.step() / 2)
+        .attr("y", 75)
+        .attr("width", xScale.range()[1] - xScale.step())
+        .attr("height", 75);
+
+      let each_res = svg
+        .select("g#conseq_mat")
+        .selectAll("text")
+        .data(data)
+        .enter()
+        .append("g");
+
+      // the rectangles, colored by conservation
+      each_res
+        .append("rect")
+        .attr("class", "res_rect")
+        .style("fill",function(d: any) {
+          if(d.cons === -1){
+            return '#ffffff';
+          } else {return cScale(d.cons);}
+        })
+        .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+        .attr("y", (d: any) => 75)
+        .attr("width", xScale.step())
+        .attr("height", 75);
+
+      // adding the frequency text to each rectangle
+      each_res
+        .append("text")
+        .attr("class", "res_label")
+        // .attr("x", (d: any) => xScale(d.gn))
+        // .attr("y", (d: any) => 50)
+        .attr("transform", (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)")
+        .style("fill", (d: any) => {
+          if(Math.abs(d.score) >= 50) {
+            return '#eaeaea';
+          } else if (Math.abs(d.score) < 50) {
+            return '#000000';
+          }
+        })
+        .attr("text-anchor", "middle")
+        .text((d: any) => d.code);
+        // .text((d: any) => _.round(d.freq/100, 1));
+
+      // adding the explanation tooltip to each rectangle
+
+
+
+      // putting a black border around the signature
+      d3.select("g#conseq_mat")
+        .append("rect")
+        .attr("class", "border")
+        .style("stroke", "black")
+        .style("fill", "none")
+        .attr("x", xScale.step() / 2)
+        .attr("y", 75)
+        .attr("width", xScale.range()[1] - xScale.step())
+        .attr("height", 75);
     }
   }
 };
