@@ -360,7 +360,13 @@ const signprotmat = {
         .tip()
         .attr("class", "d3-tip")
         .html(function(d) {
-          return d.rec_gn + "<br>" + d.sig_gn + "<br>" + d.int_ty;
+          let pair_string = '';
+          d.pairs.forEach(element => {
+            pair_string += element.pdb_id + '<br>';
+          });
+          return "Receptor: " + d.rec_gn +
+          "<br>" + "Signaling Protein: " + d.sig_gn +
+          "<br>" + 'PDBs:' + '<br>' + pair_string;
         });
       svg.call(tip);
 
@@ -388,11 +394,44 @@ const signprotmat = {
       let offset: number = 1;
       let each_res;
 
+      var arr = [{ "shape": "square", "color": "red", "used": 1, "instances": 1 }, { "shape": "square", "color": "red", "used": 2, "instances": 1 }, { "shape": "circle", "color": "blue", "used": 0, "instances": 0 }, { "shape": "square", "color": "blue", "used": 4, "instances": 4 }, { "shape": "circle", "color": "red", "used": 1, "instances": 1 }, { "shape": "circle", "color": "red", "used": 1, "instances": 0 }, { "shape": "square", "color": "blue", "used": 4, "instances": 5 }, { "shape": "square", "color": "red", "used": 2, "instances": 1 }];
+
+      let helper = {};
+      let result = data.transformed.reduce(function (r, o) {
+        let key = o.rec_gn + '-' + o.sig_gn;
+
+        if (!helper[key]) {
+          let tmp = {
+            "rec_gn": o.rec_gn,
+            "sig_gn": o.sig_gn,
+            "pairs": [{
+              'pdb_id': o.pdb_id,
+              'rec_aa': o.rec_aa,
+              'sig_aa': o.sig_aa,
+              'int_ty': o.int_ty,
+            }]
+          };
+          helper[key] = tmp;
+          r.push(helper[key]);
+        } else {
+          helper[key].pairs.push({
+            'pdb_id': o.pdb_id,
+            'rec_aa': o.rec_aa,
+            'sig_aa': o.sig_aa,
+            'int_ty': o.int_ty,
+          })
+        }
+
+        return r;
+      }, []);
+
+      let bwScale = d3.scaleSequential(d3.interpolateGreys).domain([0,pdbScale.domain().length/2])
+
       svg
         .append("g")
         .attr("id", "interact")
         .selectAll("rects")
-        .data(data.transformed)
+        .data(result)
         .enter()
         .append("rect")
         .attr("x", function(d: any) {
@@ -417,14 +456,7 @@ const signprotmat = {
         })
         .attr("width", xScale.step() * scale_size)
         .attr("height", yScale.step() * scale_size)
-        .attr("fill", function(d: any) {
-          if (d.int_ty === undefined) {
-            return "none";
-          } else {
-            // return colScale(d.int_ty[0]);
-            return "#0000001A";
-          }
-        })
+        .attr("fill", (d: any) => bwScale(d.pairs.length))
         .on("mouseover", function(d) {
           tip.show(d);
         })
