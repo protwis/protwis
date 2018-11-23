@@ -905,29 +905,38 @@ class Alignment:
 
     def calculate_similarity_matrix(self):
         """Calculate a matrix of sequence identity/similarity for every selected protein"""
+
+        # Init results matrix
         self.similarity_matrix = OrderedDict()
         for i, protein in enumerate(self.proteins):
             protein_key = protein.protein.entry_name
             protein_name = "[" + protein.protein.species.common_name + "] " + protein.protein.name
-            self.similarity_matrix[protein_key] = {'name': protein_name, 'values': []}
-            for k, protein in enumerate(self.proteins):
+            self.similarity_matrix[protein_key] = {'name': protein_name, 'values': [None] * len(self.proteins)}
+
+        # similarity comparisons
+        for i, protein in enumerate(self.proteins):
+            protein_key = protein.protein.entry_name
+            self.similarity_matrix[protein_key]['values'][i] = ['-', '-']
+
+            for k in range(i+1, len(self.proteins)):
                 # calculate identity, similarity and similarity score to the reference
                 calc_values = self.pairwise_similarity(self.proteins[i], self.proteins[k])
-                if k == i:
-                    value = '-'
-                elif k < i:
-                    value = calc_values[1].strip()
-                elif k > i:
-                    value = calc_values[0].strip()
 
-                if value == '-':
-                    color_class = "-"
+                # Identity
+                value = calc_values[1].strip()
+                if int(value) < 10:
+                    color_class = 0
                 else:
-                    if int(value) < 10:
-                        color_class = 0
-                    else:
-                        color_class = str(value)[:-1]
-                self.similarity_matrix[protein_key]['values'].append([value, color_class])
+                    color_class = str(value)[:-1]
+                self.similarity_matrix[self.proteins[k].protein.entry_name]['values'][i] = [value, color_class]
+
+                # Similarity
+                value = calc_values[0].strip()
+                if int(value) < 10:
+                    color_class = 0
+                else:
+                    color_class = str(value)[:-1]
+                self.similarity_matrix[protein_key]['values'][k] = [value, color_class]
 
     def calculate_zscales(self):
         """Calculate Z-scales distribution for current alignment set"""
@@ -1018,41 +1027,43 @@ class Alignment:
 
     def pairwise_similarity(self, protein_1, protein_2):
         """Calculate the identity, similarity and similarity score between a pair of proteins"""
-        identities = []
-        similarities = []
-        similarity_scores = []
+        identityscore = 0
+        similarityscore = 0
+        totalcount = 0
+        totalsimilarity = 0
         for j, s in protein_2.alignment.items():
             for k, p in enumerate(s):
                 reference_residue = protein_1.alignment[j][k][2]
                 protein_residue = protein_2.alignment[j][k][2]
                 if not (reference_residue in self.gaps and protein_residue in self.gaps):
+                    totalcount += 1
                     # identity
                     if protein_residue == reference_residue:
-                        identities.append(1)
-                    else:
-                        identities.append(0)
+                        identityscore += 1
 
                     # similarity
-                    if reference_residue in self.gaps or protein_residue in self.gaps:
-                        similarities.append(0)
-                        similarity_scores.append(0)
-                    else:
+                    if not (reference_residue in self.gaps or protein_residue in self.gaps):
                         pair = (protein_residue, reference_residue)
+                        # Similarity lookup is slow -> disabling results in 1/3 reduction calc. time
                         similarity = self.score_match(pair, MatrixInfo.blosum62)
+#                        similarity = 1
                         if similarity > 0:
-                            similarities.append(1)
-                        else:
-                            similarities.append(0)
-                        similarity_scores.append(similarity)
+                            similarityscore += 1
+                            totalsimilarity += similarity
+
 
         # format the calculated values
-        if identities and similarities:
-            identity = "{:10.0f}".format(sum(identities) / len(identities) * 100)
-            similarity = "{:10.0f}".format(sum(similarities) / len(similarities) * 100)
-            similarity_score = sum(similarity_scores)
+        #if identityscore and similarityscore:
+        if totalcount:
+            identity = "{:10.0f}".format(identityscore / totalcount * 100)
+            similarity = "{:10.0f}".format(similarityscore / totalcount * 100)
+            similarity_score = totalsimilarity
+
             return identity, similarity, similarity_score
         else:
-            return False
+            # return False
+            # NOTE returning F results in fatal errors. No aligned residues: return -1
+            return "{:10.0f}".format(-1), "{:10.0f}".format(-1), 0
 
     def pairwise_similarity_normalized(self, protein_1, protein_2):
         """Calculate the identity, similarity and similarity score between a pair of proteins but delete gaps and normalize. Used for finding closest

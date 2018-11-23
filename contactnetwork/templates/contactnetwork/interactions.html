@@ -40,7 +40,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5">
+<!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -77,7 +77,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div>-->
                     <div class="col-md-1">
                         <div class="btn btn-success btn-lg pull-right go-button"><span>Go</span></div>
                     </div>
@@ -222,7 +222,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5">
+<!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -259,7 +259,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="col-md-4">
                         <div class="panel panel-default interactions-panel">
                             <div class="panel-heading">
@@ -410,7 +410,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5">
+<!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -447,7 +447,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="col-md-4">
                         <div class="panel panel-default interactions-panel">
                             <div class="panel-heading">
@@ -560,7 +560,7 @@
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
-                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                                <div class="ngl-container" id="ngl-two-groups" style="margin: auto; width:100%; height:1000px;">
                                 </div>
                             </div>
                          </div>
@@ -2568,7 +2568,8 @@
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
-                var segments = JSON.parse($(selector + ' .segments-input').val());
+                //var segments = JSON.parse($(selector + ' .segments-input').val());
+                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
                 if (pdb.length > 0 && segments.length > 0) {
                     var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                     $(".heatmap").hide();
@@ -2598,7 +2599,7 @@
                         if (selector == '#single-crystal-group-tab') {
                           createSchematicPlot(data, selector + " .schematic-con-container", {type: 'singleCrystalGroup'}); //.schematic-container
                           createSchematicPlot(data, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
-                          createNGLview("single-group",pdb[0]);
+                          createNGLview("single-group",pdb[0], pdb);
                         } else {
                           createHiveplotBox(data, selector + " .hiveplot-container");
                           createSchematicPlot(data, selector + " .schematic-con-container"); //.schematic-container
@@ -2614,7 +2615,8 @@
             $(selector + ' .go-button').click(function() {
                 var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
-                var segments = JSON.parse($(selector + ' .segments-input').val());
+                //var segments = JSON.parse($(selector + ' .segments-input').val());
+                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
                 if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
                     var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                     $(".heatmap").hide();
@@ -2655,11 +2657,12 @@
                                 $(".heatmap-legend").show();
                                 $("#svgloading").remove()
                                 heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
-                                createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data2, data3); //.schematic-container
-                                createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data2, data3)
+                                createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic-container
+                                createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
 
                                 // Re-render flareplot
                                 createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
+                                createNGLview("two-groups",pdbs1[0], pdbs1.concat(pdbs2));
                             });
                         });
                     });
@@ -3205,43 +3208,46 @@
         var stage = [];
         var color_schemes = [];
         var schemeId_grey
-        function createNGLview(mode,pdb) {
+        function createNGLview(mode,pdb, pdbs = false) {
             var gpcr_rep
             $("#ngl-"+mode).html("");
             stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
 
             var pdb_data
             var original_o
-            blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
+            var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
             var reps = {} // store ngl representations
-
-
 
             $.getJSON( "pdb/"+pdb,
               function( data ) {
+                var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
+                var segments_sets = {}
+                highlight.forEach( function(e){
+                  segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
+                });
 
                 pdb_data = data;
                 color_schemes['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
-                        [blue_colors[1], pdb_data['segments']['TM1'].join(", ")],
-                        [blue_colors[2], pdb_data['segments']['TM2'].join(", ")],
-                        [blue_colors[3], pdb_data['segments']['TM3'].join(", ")],
-                        [blue_colors[4], pdb_data['segments']['TM4'].join(", ")],
-                        [blue_colors[5], pdb_data['segments']['TM5'].join(", ")],
-                        [blue_colors[6], pdb_data['segments']['TM6'].join(", ")],
-                        [blue_colors[7], pdb_data['segments']['TM7'].join(", ")],
-                        [blue_colors[8], pdb_data['segments']['H8'].join(", ")],
+                        [blue_colors[1], segments_sets[highlight[0]]],
+                        [blue_colors[2], segments_sets[highlight[1]]],
+                        [blue_colors[3], segments_sets[highlight[2]]],
+                        [blue_colors[4], segments_sets[highlight[3]]],
+                        [blue_colors[5], segments_sets[highlight[4]]],
+                        [blue_colors[6], segments_sets[highlight[5]]],
+                        [blue_colors[7], segments_sets[highlight[6]]],
+                        [blue_colors[8], segments_sets[highlight[7]]],
                         [ "white", "*" ]
                         ])
 
                 color_schemes['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
-                          ["#ccc", pdb_data['segments']['TM1'].join(", ")],
-                          ["#bbb", pdb_data['segments']['TM2'].join(", ")],
-                          ["#aaa", pdb_data['segments']['TM3'].join(", ")],
-                          ["#888", pdb_data['segments']['TM4'].join(", ")],
-                          ["#666", pdb_data['segments']['TM5'].join(", ")],
-                          ["#444", pdb_data['segments']['TM6'].join(", ")],
-                          ["#333", pdb_data['segments']['TM7'].join(", ")],
-                          ["#111", pdb_data['segments']['H8'].join(", ")],
+                          ["#ccc", segments_sets[highlight[0]]],
+                          ["#bbb", segments_sets[highlight[1]]],
+                          ["#aaa", segments_sets[highlight[2]]],
+                          ["#888", segments_sets[highlight[3]]],
+                          ["#666", segments_sets[highlight[4]]],
+                          ["#444", segments_sets[highlight[5]]],
+                          ["#333", segments_sets[highlight[6]]],
+                          ["#111", segments_sets[highlight[7]]],
                           [ "white", "*" ]
                           ])
 
@@ -3249,9 +3255,6 @@
                 var stringBlob = new Blob( [ pdb_data['pdb'] ], { type: 'text/plain'} );
                 stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
                     original_o = o
-                    console.log(pdb_data['segments']['TM1'].join(", "))
-
-
 
                     gpcr_rep = o.addRepresentation( "cartoon", {
                     sele: ":"+pdb_data['chain'],
@@ -3273,6 +3276,7 @@
                     var links = []
                     var links_gn = []
                     var res_int = []
+
                     if (mode=='single') {
                       $('#single-crystal-tab rect[data-interaction-type]').each(function(e) {
                           var rect = $(this);
@@ -3288,13 +3292,12 @@
                           if (getInteractionStrength(iType)<3) return
                           res_int.push(resNo1);
                           res_int.push(resNo2);
-                          links.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
-//                          console.log(genNo1,genNo2)
+                          links.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
+
                           if ((genNo1=='-') || (genNo2=='-')) return
-                          links_gn.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getInteractionColor(iType)}})
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
                         });
                     } else if (mode=='single-group') {
-                      // TODO finalize this for single group interaction visualization
                       // single group
                       $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
                           var rect = $(this);
@@ -3306,26 +3309,54 @@
                           var nTotalInteractions = rect.data('total-possible-interactions');
                           var frequency = rect.data('frequency');
 
-                          // TODO adjust this with respect to shown structure
-                          var resNo1 = rect.data('res-no-1');
-                          var resNo2 = rect.data('res-no-2');
+                          if ((genNo1=='-') || (genNo2=='-')) return
+
+                          // Adjust GN numbering to the shown structure
+                          var resNo1 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo1)];
+                          var resNo2 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo2)];
+
+                          if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
 
                           // Push interactions
                           res_int.push(resNo1);
                           res_int.push(resNo2);
-                          links.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getFrequencyColor(frequency)}})
 
-                          if ((genNo1=='-') || (genNo2=='-')) return
-                          links_gn.push({"atoms": [resNo1+".CA",resNo2+".CA"], "data":{"color":getFrequencyColor(frequency)}})
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
                         });
+                        links = links_gn;
                     } else {
                       // two groups
+                      // single group
+                      $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+                          var rect = $(this);
+                          var genNo1 = rect.data('gen-no-1');
+                          var genNo2 = rect.data('gen-no-2');
+                          var seg1 = rect.data('seg-1');
+                          var seg2 = rect.data('seg-2');
+                          var nInteractions = rect.data('num-interactions');
+                          var nTotalInteractions = rect.data('total-possible-interactions');
+                          var frequency = rect.data('frequencyDiff');
+
+                          if ((genNo1=='-') || (genNo2=='-')) return
+
+                          // Adjust GN numbering to the shown structure
+                          var resNo1 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo1)];
+                          var resNo2 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo2)];
+
+                          if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
+
+                          // Push interactions
+                          res_int.push(resNo1);
+                          res_int.push(resNo2);
+
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(-1*frequency)}, "resID":resNo1+"-"+resNo2})
+                        });
+                        links = links_gn;
                     }
 
                     var linkMap = {}
                     links.forEach(function (link) {
-                      var atoms = link.atoms
-                      linkMap[atoms[0].split(".")[0] + "-" + atoms[1].split(".")[0]] = link
+                      linkMap[link.resID] = link
                     })
 
                     var initColourSchemes = function () {
@@ -3333,7 +3364,7 @@
                         this.bondColor = function (b) {
                           var origLink = linkMap[b.atom1.resno + "-" + b.atom2.resno]
                           if (origLink) {
-                            // console.log('FOUND!',origLink,origLink.data.color);
+//                             console.log('FOUND!',origLink,origLink.data.color);
                             r = origLink.data.color
                             return (r["r"] << 16) + (r["g"] << 8) + r["b"]
                           }
@@ -3356,7 +3387,6 @@
                     // }
                     // var startAtomSel = makeAtomSelection(links)
                     // console.log(startAtomSel,"startAtomSel")
-
 
                     var baseLinkScale = 20
                     reps.links = o.addRepresentation("distance", {
@@ -3391,6 +3421,17 @@
                     });
 
 
+                    res_int_gn = Object.assign([], res_int);
+                    res_int_gn = intersect(res_int_gn, pdb_data['only_gn']);
+                    reps.int_res_gn = o.addRepresentation( "spacefill", {
+                      sele: ":"+pdb_data['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
+                      color: "red",
+                      // colorScale: ["#44f", "#444"],
+                      radiusScale: .2,
+                      name: "res",
+                      visible: false
+                    });
+
                     reps.ball_all = o.addRepresentation("ball+stick", {
                       sele: ":"+pdb_data['chain']+" and sidechainAttached",
                       visible: false
@@ -3403,6 +3444,11 @@
 
                     reps.ball_int = o.addRepresentation("ball+stick", {
                       sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                      visible: false
+                      })
+
+                    reps.ball_int_gn = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
                       visible: false
                       })
 
@@ -3453,19 +3499,36 @@
 
             var newDiv = document.createElement("div");
             newDiv.setAttribute("style", "position: absolute; top: 50px; left: 20px")
-            newDiv.innerHTML = '<div class="controls">'
-                              +'<h3>Controls</h3>'
-                              +'<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option></select></p>'
+            var controls = '<div class="controls">'
+                         + '<h3>Controls</h3>';
+
+            if (pdbs){
+                  controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
+                  for (var i = 0; i < pdbs.length; i++){
+                      if (pdbs[i]==pdb)
+                          controls += '<option value="'+pdbs[i]+'" SELECTED>'+pdbs[i]+'</option>';
+                      else
+                          controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
+                  }
+                  controls += '</select></p>';
+            }
+
+            controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option></select></p>'
                               +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
                               +'<p>Highlight interacting res: <input type=checkbox id="highlight_res"></p>'
-                              +'<p>Hide interaction lines: <input type=checkbox id="toogle_interactions"></p>'
-                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains_all"></p>'
-                              +'<p>Show GN side-chains: <input type=checkbox id="toggle_sidechains"></p>'
-                              +'<p>Show GN side-chains (only interacting): <input type=checkbox id="toggle_sidechains_int"></p>'
-                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
+                              +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
+                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
+                              +'<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
+//                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                               +'</div>';
 
+            newDiv.innerHTML = controls;
+
             $("#ngl-"+mode).append(newDiv);
+
+            $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                createNGLview(mode, $(this).val(), pdbs);
+            });
 
             $("#"+mode+"-NGL-link").click(function(e){
                 $(function() {
@@ -3480,58 +3543,105 @@
                 });
             });
 
+            // TODO: cleanup all NGL toggles and make generic function to handle toggle-dependent showing/hiding
             $("#ngl-"+mode+" #ngl_only_gns").change(function(e){
                 if ($(this).prop('checked')) {
                   sele = ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")";
-                  reps.links.setVisibility(false);
-                  reps.links_gn.setVisibility(true);
+                  // toggle edges
+                  if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
+                    reps.links.setVisibility(false);
+                    reps.links_gn.setVisibility(true);
+                  }
+                  // toggle CA spheres
+                  if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
+                    reps.int_res_gn.setVisibility(true);
+                    reps.int_res.setVisibility(false);
+                  }
+                  // toggle sidechains
+                  if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
+                    reps.ball.setVisibility(true);
+                    reps.ball_all.setVisibility(false);
+                  }
+                  // toggle interacting toggle_sidechains
+                  if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
+                    reps.ball_int_gn.setVisibility(true);
+                    reps.ball_int.setVisibility(false);
+                  }
                 } else {
                   sele = ":"+pdb_data['chain'];
-                  reps.links.setVisibility(true);
-                  reps.links_gn.setVisibility(false);
+                  // toggle edges
+                  if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
+                    reps.links.setVisibility(true);
+                    reps.links_gn.setVisibility(false);
+                  }
+                  // toggle CA spheres
+                  if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
+                    reps.int_res_gn.setVisibility(false);
+                    reps.int_res.setVisibility(true);
+                  }
+
+                  // toggle sidechains
+                  if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
+                    reps.ball.setVisibility(false);
+                    reps.ball_all.setVisibility(true);
+                  }
+                  // toggle interacting toggle_sidechains
+                  if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
+                    reps.ball_int_gn.setVisibility(false);
+                    reps.ball_int.setVisibility(true);
+                  }
                 }
+
                 gpcr_rep.setSelection(sele);
                 original_o.autoView();
             });
 
             $("#ngl-"+mode+" #highlight_res").change(function(e){
+              // TODO check the GN toggle
                 if ($(this).prop('checked')) {
-                  reps.int_res.setVisibility(true);
+                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
+                    reps.int_res_gn.setVisibility(true);
+                  else
+                    reps.int_res.setVisibility(true);
                 } else {
+                  reps.int_res_gn.setVisibility(false);
                   reps.int_res.setVisibility(false);
                 }
             });
 
-            $("#ngl-"+mode+" #toogle_interactions").change(function(e){
+            $("#ngl-"+mode+" #toggle_interactions").change(function(e){
                 if ($(this).prop('checked')) {
-                  reps.links.setVisibility(false);
-                  reps.links_gn.setVisibility(false);
+                    reps.links.setVisibility(false);
+                    reps.links_gn.setVisibility(false);
                 } else {
-                  reps.links.setVisibility(true);
-                }
-            });
-
-            $("#ngl-"+mode+" #toggle_sidechains_all").change(function(e){
-                if ($(this).prop('checked')) {
-                  reps.ball_all.setVisibility(true);
-                } else {
-                  reps.ball_all.setVisibility(false);
+                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
+                    reps.links_gn.setVisibility(true);
+                  else
+                    reps.links.setVisibility(true);
                 }
             });
 
             $("#ngl-"+mode+" #toggle_sidechains").change(function(e){
                 if ($(this).prop('checked')) {
-                  reps.ball.setVisibility(true);
+                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
+                    reps.ball.setVisibility(true);
+                  else
+                    reps.ball_all.setVisibility(true);
                 } else {
+                  reps.ball_all.setVisibility(false);
                   reps.ball.setVisibility(false);
                 }
             });
 
             $("#ngl-"+mode+" #toggle_sidechains_int").change(function(e){
                 if ($(this).prop('checked')) {
-                  reps.ball_int.setVisibility(true);
+                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
+                    reps.ball_int_gn.setVisibility(true);
+                  else
+                    reps.ball_int.setVisibility(true);
                 } else {
                   reps.ball_int.setVisibility(false);
+                  reps.ball_int_gn.setVisibility(false);
                 }
             });
 
@@ -3543,6 +3653,14 @@
                 }
             });
 
+        }
+
+        function intersect(a, b) {
+          var t;
+          if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+          return a.filter(function (e) {
+              return b.indexOf(e) > -1;
+          });
         }
 
         $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
@@ -3571,21 +3689,20 @@
 
 
         function initalizeSingleCrystalView() {
-            initializeSegmentButtons('#single-crystal-tab');
+//            initializeSegmentButtons('#single-crystal-tab');
             initializeGoButton('#single-crystal-tab', renderSingleCrystalHeatmap);
             initializeFullscreenButton('#single-crystal-tab');
         }
 
         function initializeSingleGroupCrystalView() {
-            initializeSegmentButtons('#single-crystal-group-tab');
+//            initializeSegmentButtons('#single-crystal-group-tab');
             initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
             initializeFullscreenButton('#single-crystal-group-tab');
             initializeInteractionButtons('#single-crystal-group-tab');
         }
 
         function initializeTwoCrystalGroupsView() {
-
-            initializeSegmentButtons('#two-crystal-groups-tab');
+//            initializeSegmentButtons('#two-crystal-groups-tab');
             initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
             initializeFullscreenButton('#two-crystal-groups-tab');
             initializeInteractionButtons('#two-crystal-groups-tab');
@@ -3832,7 +3949,7 @@
             left: 3px;
         }
 
-        .flareplot-legend .temperature-scale .gray-to-red {
+        .temperature-scale .gray-to-red {
             height: 10px;
             width: 100%;
             display: inline-block;
@@ -3845,7 +3962,7 @@
             filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#FF0000',GradientType=1 );
         }
 
-        .flareplot-legend .temperature-scale .red-to-gray {
+        .temperature-scale .red-to-gray {
             height: 10px;
             width: 50%;
             display: inline-block;
@@ -3858,7 +3975,7 @@
             filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#DCDCDC',GradientType=1 );
         }
 
-        .flareplot-legend .temperature-scale .gray-to-blue {
+        .temperature-scale .gray-to-blue {
             height: 10px;
             width: 50%;
             display: inline-block;
@@ -3871,7 +3988,7 @@
             filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#0000FF',GradientType=1 );
         }
 
-        .heatmap-legend .temperature-scale .white-to-red {
+        .temperature-scale .white-to-red {
             height: 10px;
             width: 100%;
             display: inline-block;
@@ -3884,7 +4001,7 @@
             filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000',GradientType=1 );
         }
 
-        .heatmap-legend .temperature-scale .red-to-white {
+        .temperature-scale .red-to-white {
             height: 10px;
             width: 50%;
             display: inline-block;
@@ -3897,7 +4014,7 @@
             filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF',GradientType=1 );
         }
 
-        .heatmap-legend .temperature-scale .white-to-blue {
+        .temperature-scale .white-to-blue {
             height: 10px;
             width: 50%;
             display: inline-block;

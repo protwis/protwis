@@ -92,6 +92,7 @@ def GProtein(request):
         context["selectivitydata"] = selectivitydata
 
 
+    cache.set(name_of_cache, context, 60*60*24*2) #two days timeout on cache
 
     return render(request, 'signprot/gprotein.html', context)
 
