@@ -17,7 +17,7 @@ canvas {
 }
 </style>
 
-<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
+<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 <div class="row text-success">
     <div class="text-center">
         {% if model.refined %}
@@ -126,7 +126,7 @@ canvas {
             <a href="/protein/{{ model_main_template.protein_conformation.protein.parent.entry_name }}">{{ model_main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model_main_template.pdb_code.index }}">{{ model_main_template.pdb_code.index }}</a>
         {% else %}
             <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-            
+
             <div class="btn-group", style="padding: 0px 0px 5px 5px;">
                 <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
             </div>
@@ -177,7 +177,7 @@ canvas {
             <tbody>
                 <tr>
                     <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
-                    <td class="table-td">{{bb_main}}</td> 
+                    <td class="table-td">{{bb_main}}</td>
                     <td class="table-td">{{bb_alt}}</td>
                     <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
                 </tr>
@@ -192,12 +192,50 @@ canvas {
         <br>
         Number of backbone templates: {{ backbone_templates_number }}<br>
         Number of rotamer templates: {{ rotamer_templates_number }}<br>
+    </div>
+</div>
+
+<br>
+<style>
+.inline {display:inline;}
+.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+</style>
+
+<div class="inline">
+    <div>
+        <div style="float: left; width: 50%;">
+            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+            </div>
+            <div style='width: 90%; display:table; position:relative;'>
+                <div style='width: 20%; display: table-cell;'>
+                    <button id="fullscreen">Full Screen</button>
+                </div>
+                <div style='display: table-cell;'>
+                    {% for prot, bts in backbone_templates.items %}
+                        {% for bt in bts %}
+                            <div class="graphcolor" style="background-color:{{ bt.color }}; width: 12%; margin-top: 5px;">{{ bt.pdb_code.index }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                            <div class="graphcolor" style="background-color:white; width: 12%;">None</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div style="padding-top: 0px; float: right; font-size: 10px; white-space: nowrap; width: 50%;">
         <div class="btn-group">
             {% if model.refined %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_csv">Download .csv</a>
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download .pdb</a>
             {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_csv">Download .csv</a>
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download .pdb</a>
             {% endif %}
+        </div>
+
+        <div class="btn-group">
+            <a id="download_csv_btn" class="btn btn-primary btn-mini " href="#" onClick="javascript:downloadCSV();">Download .csv</a>
         </div>
         <div class="btn-group">
             <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
@@ -284,20 +322,21 @@ canvas {
             color_array.push(["darkorchid","*"])
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
-            
+
             if ("{{state}}"=="refined") {
                 stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId } 
+                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                     o.centerView();
                 } );
             }
             else {
                 stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId } 
+                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                     o.centerView();
                 } );
             }
         } );
+
         $( "#fullscreen" ).click(function() {
             stage.toggleFullscreen();
         });
@@ -307,6 +346,7 @@ canvas {
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/table2csv.js' %}"> </script>
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
@@ -326,7 +366,7 @@ canvas {
                     "sRowSelect": "single",
                     "aButtons": []
                 },
-                
+
                 initComplete: function () {
                     $('#rotamers').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
@@ -382,7 +422,7 @@ canvas {
                         AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
                     }
                 }
-                
+
                 for (i = 0; i < template_list.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = template_list[i];
@@ -396,6 +436,10 @@ canvas {
                 window.location.href = '/structure/superposition_workflow_index';
             });
         });
+
+        function downloadCSV() {
+          $('#rotamers').table2csv({filename: 'Homology_model_templates.csv', quoteFields: true});
+        }
     </script>
 
 {% endblock %}
