@@ -61,6 +61,41 @@
 
         </div>
     </div>
+
+
+    <div class="col-md-3">
+        <div class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">Filter Interactions</h3>
+            </div>
+
+            <div class="panel-body">
+                <p>Display residue pairs with <span id='currentpairs'>1</span> <br/> or more interfaces.</p>
+
+                <div style="padding: 10px 0;">
+                    <span class="">1</span>
+                    <input
+                    type="range"
+                    id="highlight_pair_num"
+                    class="btn"
+                    value="1"
+                    min="1"
+                    max="20"
+                    name="highlight_pair_num"
+                    onchange="highlight_pairs()"
+                    style="display: inline-block; width: auto">
+                    <span class="">20</span>
+                </div>
+
+                <div class="">
+                    <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value--; highlight_pairs()">-</button>
+                    <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value++; highlight_pairs()">+</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="interface-modal-table" role="dialog">
@@ -262,6 +297,15 @@
             }
         });
     };
+
+    const highlight_pairs = function() {
+        const num = $('input[name="highlight_pair_num"]').val();
+        $('#currentpairs').text(num);
+        d3.select('g#interact')
+        .selectAll("rect")
+        .style('display', function(d){return (num <= d.pairs.length ? 'block' : 'none') })
+    }
+
 
 </script>
 <script src="{% static 'home/js/d3.v5.7.min.js' %}"></script>

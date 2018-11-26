@@ -386,6 +386,7 @@ var signprotmat = {
                 .attr("width", xScale.step() * scale_size)
                 .attr("height", yScale.step() * scale_size)
                 .attr("fill", function (d) { return bwScale(d.pairs.length); })
+                .attr("class", function (d) { return "p" + d.pairs.length; })
                 .on("mouseover", function (d) {
                 tip.show(d);
             })

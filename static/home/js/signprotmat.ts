@@ -455,6 +455,7 @@ const signprotmat = {
         .attr("width", xScale.step() * scale_size)
         .attr("height", yScale.step() * scale_size)
         .attr("fill", (d: any) => bwScale(d.pairs.length))
+        .attr("class", (d: any) => "p" + d.pairs.length)
         .on("mouseover", function(d) {
           tip.show(d);
         })
