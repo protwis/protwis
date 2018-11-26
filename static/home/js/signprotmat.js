@@ -415,6 +415,8 @@ var signprotmat = {
                     info_data.splice(index, 1);
                 }
                 signprotmat.d3.infoBoxUpdate();
+                signprotmat.d3.colorRecResidues(d);
+                signprotmat.d3.colorSigResidues(d);
             });
             // * DRAWING AXES
             svg
@@ -563,7 +565,8 @@ var signprotmat = {
                 .selectAll("text")
                 .data(data.receptor)
                 .enter()
-                .append("g");
+                .append("g")
+                .attr("class", function (d) { return 'R_' + _.replace(d.rec_gn, '.', 'p') + '_P_' + d.pdb_id; });
             each_res
                 .append("rect")
                 .attr("class", "res_rect")
@@ -609,7 +612,8 @@ var signprotmat = {
                 .selectAll("text")
                 .data(data.signprot)
                 .enter()
-                .append("g");
+                .append("g")
+                .attr("class", function (d) { return 'S_' + _.replace(d.sig_gn, '.', 'p') + '_P_' + d.pdb_id; });
             each_res
                 .append("rect")
                 .style("fill", function (d) { return colScale(d.int_ty[0]); })
@@ -730,6 +734,26 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", pdbScale.range()[0] - pdbScale.step());
+        },
+        colorRecResidues: function (d) {
+            var rec_gn = _.replace(d.rec_gn, '.', 'p');
+            var pdb_list = d.pairs.map(function (x) { return x['pdb_id']; });
+            // select the rect in the g that corresponds to this rec_gn and pdb_id
+            pdb_list.forEach(function (pdb) {
+                d3.select('g.' + 'R_' + rec_gn + '_P_' + pdb)
+                    .select('rect')
+                    .classed('activeRes', d.active ? true : false);
+            });
+        },
+        colorSigResidues: function (d) {
+            var sig_gn = _.replace(d.sig_gn, '.', 'p');
+            var pdb_list = d.pairs.map(function (x) { return x['pdb_id']; });
+            // select the rect in the g that corresponds to this rec_gn and pdb_id
+            pdb_list.forEach(function (pdb) {
+                d3.select('g.' + 'S_' + sig_gn + '_P_' + pdb)
+                    .select('rect')
+                    .classed('activeRes', d.active ? true : false);
+            });
         },
         infoBoxUpdate: function () {
             // create selection and bind data

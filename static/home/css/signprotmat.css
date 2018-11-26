@@ -144,3 +144,8 @@ line {
 .y.grid path {
     stroke: none;
 }
+
+.activeRes {
+    stroke: aquamarine;
+    stroke-width: 4;
+}
