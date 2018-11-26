@@ -146,7 +146,8 @@ const signprotmat = {
             " " +
             (h + 200 + margin.top + margin.bottom)
         )
-        .classed("svg-content", true) //class to make it responsive
+        // .classed("svg-content", true) //class to make it responsive
+        .attr("class", (typeof loc !== 'undefined' ? "svg-content " + loc :"svg-content"))
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 

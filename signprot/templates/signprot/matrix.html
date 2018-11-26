@@ -270,6 +270,8 @@
                 document.querySelector("#calc_spin").style.display = "inline-block";
             },
             success: function(data){
+                $('.svg-content.seqsig').remove();
+                $('.svg-content.conseq').remove();
                 console.log('success')
                 document.querySelector('#seqsig-container').style.display = "inline-block";
                 document.querySelector('#conseq-container').style.display = "inline-block";
