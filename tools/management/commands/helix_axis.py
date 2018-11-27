@@ -12,12 +12,12 @@ from residue.models import Residue
 import logging, os
 import numpy as np
 from sklearn.decomposition import PCA
-from copy import deepcopy
 from numpy.core.umath_tests import inner1d
 import io
-from time import time
 
 TMNUM = 7
+SASA = True
+HSE = True
 
 class Command(BaseCommand):
 
@@ -96,37 +96,21 @@ class Command(BaseCommand):
         
         os.chdir("pymol_output")
         
-        db_tmlist = [[] for i in range(7)]
+        db_tmlist = [[] for i in range(TMNUM)]
+        db_genlst = [[] for i in range(TMNUM)]
         db_set    = set()
-        db_set_p  = set()
-        oldr = False
         for r in db_reslist:
-            if r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"]:
+            if r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"] and r.sequence_number in structure[0][preferred_chain]:
                 db_tmlist[int(r.generic_number.label[0])-1].append(r.sequence_number)
+                db_genlst[int(r.generic_number.label[0])-1].append(int(r.generic_number.label[2:]))
                 db_set.add((' ',r.sequence_number,' '))
-                db_set_p.add((' ',r.sequence_number,' '))
-                lastin = True
-                
-                if oldr:
-                    db_set_p.add((' ',oldr.sequence_number,' '))
-                    oldr = False
-            else:
-                oldr = r
-                if lastin:
-                    db_set_p.add((' ',oldr.sequence_number,' '))
-                    lastin=False
         
         def recurse(entity,slist):
             for subenty in entity.get_list():
                 if not subenty.id in slist[0]: entity.detach_child(subenty.id)
                 elif slist[1:]: recurse(subenty, slist[1:])
-
-
-
-        recurse(structure,[[0], preferred_chain])
-        hse_struct = deepcopy(structure)
-        recurse(structure, [[0], preferred_chain, db_set])
         
+        recurse(structure, [[0], preferred_chain, db_set])
         pchain = structure[0][preferred_chain]
         
         #######################################################################
@@ -202,11 +186,26 @@ class Command(BaseCommand):
         
         ########################### Axis to CA to CB ##########################
 
-        tv = np.isfinite(np.concatenate(h_cb_list)[:,0])
-        angle = np.full_like(tv,-1,dtype=float)
-        angle[tv] = np.concatenate([ca_cb_calc(i,centerpca) for i in range(TMNUM)])
+        i  = 0
+        pl = 0
+        for ind in np.where(np.isnan(np.concatenate(h_cb_list)[:,0]))[0]:
+            while ind - pl >= len(h_cb_list[i]):
+                pl += len(h_cb_list[i])
+                i +=1
+            t = pchain.get_list()[ind]
+            n = t['N'].get_vector()
+            c = t['C'].get_vector()
+            ca = t['CA'].get_vector()
+            n = n - ca
+            c = c - ca
+            rot = pdb.rotaxis(-np.pi*120.0/180.0, c)
+            cb_at_origin = n.left_multiply(rot)
+            cb = cb_at_origin + ca
+            h_cb_list[i][ind-pl] = cb.get_array()
+            
+            
+        angle = np.concatenate([ca_cb_calc(i,centerpca) for i in range(TMNUM)])
         set_bfactor(structure,angle)
-        
         self.save_pdb(structure, pdb_code+'angle_colored_ca_cb.pdb')
         
         ######################### Axis to Axis to CA ##########################
@@ -217,53 +216,38 @@ class Command(BaseCommand):
 
         self.save_pdb(structure, pdb_code+'angle_colored_axes.pdb')
         
-        ########################### HSE and ASA ###############################
+        #######################################################################
+        ############################ HSE and SASA #############################
+        #######################################################################
         
-#        res, dic = freesasa.calcBioPDB(orig_structure)
-        pdbstruct = freesasa.Structure(pdb_code+'angle_colored_axes.pdb')
-        res = freesasa.calc(pdbstruct)
+        ################################ SASA #################################
         
-#        print(res.nAtoms())
-#        [print(res.atomArea(a)) for a in range(res.nAtoms())]
-#        print()
-#        print(sum([res.atomArea(a) for a in range(res.nAtoms())]))
-#        print(len(list(orig_structure[0].get_atoms())))
-#        print(res.nAtoms())
+        if SASA:
+            pdbstruct = freesasa.Structure(pdb_code+'angle_colored_axes.pdb')
+            res = freesasa.calc(pdbstruct)
+            asa_list = []
+            oldnum = -1
+            for i in range(res.nAtoms()):
+                resnum = pdbstruct.residueNumber(i)
+                if resnum == oldnum:
+                    asa_list[-1] += res.atomArea(i)
+                else:
+                    asa_list.append(res.atomArea(i))
+                    oldnum = resnum
+            
+            set_bfactor(structure,asa_list)
+            self.save_pdb(structure, pdb_code+'asa_colored.pdb')
         
-        asa_list = []
-        oldnum = -1
-        for i in range(res.nAtoms()):
-            resnum = pdbstruct.residueNumber(i)
-            if resnum == oldnum:
-                asa_list[-1] += res.atomArea(i)
-            else:
-                asa_list.append(res.atomArea(i))
-                oldnum = resnum
-        
-        set_bfactor(structure,asa_list)
-        self.save_pdb(structure, pdb_code+'asa_colored.pdb')
-        
-        # Calculate HSEalpha
-        model = hse_struct[0]
-        exp_ca = pdb.HSExposure.HSExposureCA(model)
-        print(len(exp_ca))
-        [[a.set_bfactor(x[1][1]) for a in x[0]] for x in exp_ca]
-        recurse(hse_struct, [[0], preferred_chain, db_set])
-        r = [x[0] for x in exp_ca]
-        #x = model["A"].get_list()
-        x = pchain.get_list()
-        for r in (set(x) - set(r)):
-            for a in r:
-                a.set_bfactor(-1)
-        
-        exp_ca = [a["CA"].get_bfactor() for a in hse_struct[0][preferred_chain].get_list()]
-        
-#        print(set(x) - set(r))
-#        print(len(set(x) - set(r)))
-#        print(db_set_p - db_set)
-        self.save_pdb(hse_struct, pdb_code+'hsea_colored.pdb')
+        ################################# HSE #################################
+        if HSE:
+            exp_cb = pdb.HSExposure.HSExposureCB(structure[0])
+            
+            [[a.set_bfactor(x[1][1]) for a in x[0]] for x in exp_cb]
+            
+            exp_cb = [a["CA"].get_bfactor() for a in pchain.get_list()]
+            
+            self.save_pdb(structure, pdb_code+'hsea_colored.pdb')
 
-        
         
         
         

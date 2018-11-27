@@ -11,12 +11,14 @@ from residue.models import Residue
 import logging, os
 import numpy as np
 from sklearn.decomposition import PCA
-from copy import deepcopy
 from numpy.core.umath_tests import inner1d
 import io
 import freesasa
 import pickle
 TMNUM = 7
+
+SASA = False
+HSE  = True
 
 class Command(BaseCommand):
 
@@ -77,15 +79,50 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         
+        def recurse(entity,slist):
+            for subenty in entity.get_list():
+                if not subenty.id in slist[0]: entity.detach_child(subenty.id)
+                elif slist[1:]: recurse(subenty, slist[1:])
+        
+        def pca_line(pca,h, r=0):
+            if ((not r) if pca.fit_transform(h)[0][0] < 0 else r):
+                return pca.inverse_transform(np.asarray([[-20,0,0],[20,0,0]]))
+            else:return pca.inverse_transform(np.asarray([[20,0,0],[-20,0,0]])) 
+        
+        def calc_angle(b,c):
+            ba = -b
+            bc = c + ba
+            ba[:,0] = 0
+            return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
+        
+        def ca_cb_calc(i,pca):
+            fin = np.isfinite(h_cb_list[i][:,0])
+            return calc_angle(pca.transform(hres_list[i][fin]),pca.transform(h_cb_list[i][fin]))
+        
+        def axes_calc(i,pca_list,pca):
+            p = pca_list[i]
+            h = hres_list[i]
+            a = (np.roll(np.vstack((h,h[0])),1,axis=0)[:-1] + h + np.roll(np.vstack((h,h[-1])),-1,axis=0)[:-1])/3
+            b = p.transform(h)
+            b[:,1:] = p.transform(a)[:,1:]
+            b = p.inverse_transform(b)
+            return calc_angle(pca.transform(b),pca.transform(h))
+        
+        def set_bfactor(chain,angles):
+            for r,an in zip(chain.get_list(),angles):
+                for a in r: a.set_bfactor(an)
+
+        
         failed = []
         
         # get preferred chain for PDB-code
-        references = Structure.objects.all().prefetch_related('pdb_code','pdb_data')
+        references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").prefetch_related('pdb_code','pdb_data')
         
         for reference in references:
             
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
+            state_id = reference.protein_conformation.state.id
             try:
                 print(pdb_code)
                 if "refined" in pdb_code:
@@ -95,26 +132,23 @@ class Command(BaseCommand):
                 structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 # grab residues with the generic numbering for this structure
                 db_reslist = list(Residue.objects.exclude(generic_number__isnull=True).filter(protein_conformation__protein=reference.protein_conformation.protein).prefetch_related('generic_number'))
-                    
+                
                 #######################################################################
                 ############################# filter  pdb #############################
                 
                 db_tmlist = [[] for i in range(TMNUM)]
-                db_set    = set()
+                db_genlst = [[] for i in range(TMNUM)]
+                gdict  = {}
+                db_set = set()
                 for r in db_reslist:
-                    if r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"]: # and r.generic_number in pchain
-                        db_tmlist[int(r.generic_number.label[0])-1].append(r.sequence_number)
-                        db_set.add((' ',r.sequence_number,' '))
-                
-                def recurse(entity,slist):
-                    for subenty in entity.get_list():
-                        if not subenty.id in slist[0]: entity.detach_child(subenty.id)
-                        elif slist[1:]: recurse(subenty, slist[1:])
+                    if r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"] and r.sequence_number in structure[0][preferred_chain]:
+                        if not r.sequence_number > 1000:
+                            db_tmlist[int(r.generic_number.label[0])-1].append(r.sequence_number)
+                            db_genlst[int(r.generic_number.label[0])-1].append(int(r.generic_number.label[2:]))
+                            gdict[r.sequence_number] = r.generic_number.label
+                            db_set.add((' ',r.sequence_number,' '))
         
-                recurse(structure,[[0], preferred_chain])
-                hse_struct = deepcopy(structure)
                 recurse(structure, [[0], preferred_chain, db_set])
-
                 pchain = structure[0][preferred_chain]
                 
                 #######################################################################
@@ -133,11 +167,6 @@ class Command(BaseCommand):
                 #######################################################################
                 ################################# PCA #################################
                 #######################################################################
-                
-                def pca_line(pca,h, r=0):
-                    if ((not r) if pca.fit_transform(h)[0][0] < 0 else r):
-                        return pca.inverse_transform(np.asarray([[-20,0,0],[20,0,0]]))
-                    else:return pca.inverse_transform(np.asarray([[20,0,0],[-20,0,0]]))  
                 
                 helix_pcas = [PCA() for i in range(7)]
                 pos_list = np.asarray([pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)])
@@ -163,37 +192,29 @@ class Command(BaseCommand):
                 ################################ Angles ###############################
                 #######################################################################
                 
-                def  calc_angle(b,c):
-                    ba = -b
-                    bc = c + ba
-                    ba[:,0] = 0
-                    return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
-                
-                def ca_cb_calc(i,pca):
-                    fin = np.isfinite(h_cb_list[i][:,0])
-                    return calc_angle(pca.transform(hres_list[i][fin]),pca.transform(h_cb_list[i][fin]))
-                
-                def axes_calc(i,pca_list,pca):
-                    p = pca_list[i]
-                    h = hres_list[i]
-                    a = (np.roll(np.vstack((h,h[0])),1,axis=0)[:-1] + h + np.roll(np.vstack((h,h[-1])),-1,axis=0)[:-1])/3
-                    b = p.transform(h)
-                    b[:,1:] = p.transform(a)[:,1:]
-                    b = p.inverse_transform(b)
-                    return calc_angle(pca.transform(b),pca.transform(h))
-                
-                def set_bfactor(structure,angles):
-                    for r,an in zip(structure[0][preferred_chain].get_list(),angles):
-                        for a in r: a.set_bfactor(an)
-                
-                centerpca = pca
-                
                 ########################### Axis to CA to CB ##########################
+                centerpca = pca
         
-                tv = np.isfinite(np.concatenate(h_cb_list)[:,0])
-                angle = np.full_like(tv,-1,dtype=float)
-                angle[tv] = np.concatenate([ca_cb_calc(i,centerpca) for i in range(TMNUM)])
-                set_bfactor(structure,angle)
+                i = 0
+                pl = 0
+                plist = pchain.get_unpacked_list()
+                for ind in np.where(np.isnan(np.concatenate(h_cb_list)[:,0]))[0]:
+                    while ind - pl >= len(h_cb_list[i]):
+                        pl += len(h_cb_list[i])
+                        i +=1
+                    t = plist[ind]
+                    n = t['N'].get_vector()
+                    c = t['C'].get_vector()
+                    ca = t['CA'].get_vector()
+                    n = n - ca
+                    c = c - ca
+                    rot = pdb.rotaxis(-np.pi*120.0/180.0, c)
+                    cb_at_origin = n.left_multiply(rot)
+                    cb = cb_at_origin + ca
+                    h_cb_list[i][ind-pl] = cb.get_array()
+                angle = np.concatenate([ca_cb_calc(i,centerpca) for i in range(TMNUM)])
+                
+                set_bfactor(pchain,angle)
                 
                 self.save_pdb(structure, pdb_code+'angle_colored_ca_cb.pdb')
                 
@@ -201,47 +222,45 @@ class Command(BaseCommand):
                 
                 angle2 = np.concatenate([axes_calc(i,helix_pcas,centerpca) for i in range(TMNUM)])
                 
-                set_bfactor(structure,angle2)
+                set_bfactor(pchain,angle2)
                 self.save_pdb(structure, pdb_code+'angle_colored_axes.pdb')
                 
                 
-                ### ASA
+                ################################ SASA #################################
+                if SASA:
+                    pdbstruct = freesasa.Structure("pymol_output/" + pdb_code+'angle_colored_axes.pdb')
+                    res = freesasa.calc(pdbstruct)
+                    
+                    asa_list = []
+                    oldnum   = -1
+                    for i in range(res.nAtoms()):
+                        resnum = pdbstruct.residueNumber(i)
+                        if resnum == oldnum:
+                            asa_list[-1] += res.atomArea(i)
+                        else:
+                            asa_list.append(res.atomArea(i))
+                            oldnum = resnum
+                    
+                    set_bfactor(pchain,asa_list)
+                    self.save_pdb(structure, pdb_code+'asa_colored.pdb')
                 
-                pdbstruct = freesasa.Structure("pymol_output/" + pdb_code+'angle_colored_axes.pdb')
-                res = freesasa.calc(pdbstruct)
+                ################################# HSE #################################
+                if HSE:
+                    hse = pdb.HSExposure.HSExposureCB(structure[0])
+                    [[a.set_bfactor(x[1][1]) for a in x[0]] for x in hse]
+                    
+                    self.save_pdb(structure, pdb_code+'hsea_colored.pdb')
                 
-                asa_list = []
-                oldnum = -1
-                for i in range(res.nAtoms()):
-                    resnum = pdbstruct.residueNumber(i)
-                    if resnum == oldnum:
-                        asa_list[-1] += res.atomArea(i)
-                    else:
-                        asa_list.append(res.atomArea(i))
-                        oldnum = resnum
-                
-                set_bfactor(structure,asa_list)
-                self.save_pdb(structure, pdb_code+'asa_colored.pdb')
-                
-                reslist = [r.id[1] for r in pchain.get_list()]
-                
-                ### HSE
-                model = hse_struct[0]
-                exp_ca = pdb.HSExposure.HSExposureCA(model)
-                [[a.set_bfactor(x[1][1]) for a in x[0]] for x in exp_ca]
-                recurse(hse_struct, [[0], preferred_chain, db_set])
-                r = [x[0] for x in exp_ca]
-                #x = model["A"].get_list()
-                x = pchain.get_list()
-                for r in (set(x) - set(r)):
-                    for a in r:
-                        a.set_bfactor(-1)
-                
-                exp_ca = [a["CA"].get_bfactor() for a in hse_struct[0][preferred_chain].get_list()]
-                self.save_pdb(hse_struct, pdb_code+'hsea_colored.pdb')
-                
-                with open('pymol_output/'+ pdb_code + '_measures.pickle', 'wb') as handle:
-                    pickle.dump((np.array(reslist), np.array(asa_list),np.array(exp_ca),angle,angle2), handle)
+                if HSE and SASA:
+                    reslist = []
+                    grslist = []
+                    hse     = []
+                    for r in pchain:
+                        reslist.append(r.id[1])
+                        grslist.append(gdict[r.id[1]])
+                        hse.append(r["CA"].get_bfactor())
+                    with open('pymol_output/'+ pdb_code + '_measures.pickle', 'wb') as handle:
+                        pickle.dump((np.array(reslist),grslist, np.array(asa_list),np.array(hse),angle,angle2, state_id), handle)
         
             except Exception as e:
                 print("ERROR!!", pdb_code, e)
