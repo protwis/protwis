@@ -1,7 +1,8 @@
 // * CONSTANTS
 const margin = { top: 40, right: 200, bottom: 180, left: 200 };
 let w = 1200 - margin.left - margin.right,
-  h = 1000- margin.top - margin.bottom;
+  h = 1000 - margin.top - margin.bottom;
+  // change to 600 for more compact view
 
 // array for data in infobox
 let info_data = [];
@@ -74,7 +75,7 @@ const signprotmat = {
 
       for (let index = 0; index < data.length; index++) {
         const e1 = data[index]["rec_gn"];
-        const e2 = data[index]["rec_id"];
+        const e2 = data[index]["entry_name"];
         if (xvals.includes(e1) && prids.includes(e2)) {
           new_receptor_data.push(data[index]);
         }
@@ -131,7 +132,9 @@ const signprotmat = {
       if (loc === 'seqsig'){
         h = 1500
       } else if (loc === 'conseq') {
-        h = 300
+        h = 0
+      } else {
+        h = 1000 - margin.top - margin.bottom;
       };
       let svg = d3
         .select("body")
@@ -434,10 +437,12 @@ const signprotmat = {
         .enter()
         .append("rect")
         .attr("x", function(d: any) {
-          return xScale(d.rec_gn) - shift_left * xScale.step() + offset;
+          // return xScale(d.rec_gn) - shift_left * xScale.step() + offset;
+          return xScale(d.rec_gn) - xScale.step();
         })
         .attr("y", function(d: any) {
-          return yScale(d.sig_gn) + shift_top * yScale.step() + offset;
+          // return yScale(d.sig_gn) + shift_top * yScale.step() + offset;
+          return yScale(d.sig_gn)
         })
         .attr("rx", function() {
           if (data.transformed.length < 15) {
@@ -453,8 +458,10 @@ const signprotmat = {
             return 3;
           }
         })
-        .attr("width", xScale.step() * scale_size)
-        .attr("height", yScale.step() * scale_size)
+        // .attr("width", xScale.step() * scale_size)
+        // .attr("height", yScale.step() * scale_size)
+        .attr("width", xScale.step())
+        .attr("height", yScale.step())
         .attr("fill", (d: any) => bwScale(d.pairs.length))
         .attr("class", (d: any) => "p" + d.pairs.length)
         .on("mouseover", function(d) {
@@ -481,7 +488,7 @@ const signprotmat = {
 
           // set style in regards to active
           if (d.active) {
-            curr.style("stroke", "black").style("stroke-width", 2);
+            curr.style("stroke", "yellow").style("stroke-width", 2);
             info_data.push(d);
           } else {
             curr.style("stroke", "none").style("stroke-width", 2);
@@ -930,6 +937,8 @@ const signprotmat = {
       let uniq_feats = _.uniq(_.map(data, 'feature'));
 
 
+      // filter out NA generic numbers based on xScale
+      data = _.filter(data, function(d) { return xScale(d.gn); });
 
       svg
         .append("g")
@@ -1026,6 +1035,8 @@ const signprotmat = {
       let cScale = signprotmat.d3.cScale(data);
       let uniq_feats = _.uniq(_.map(data, 'feature'));
 
+      // filter out NA generic numbers based on xScale
+      data = _.filter(data, function(d) { return xScale(d.gn); });
 
       svg
         .append("g")

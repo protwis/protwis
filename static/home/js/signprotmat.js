@@ -1,6 +1,7 @@
 // * CONSTANTS
 var margin = { top: 40, right: 200, bottom: 180, left: 200 };
 var w = 1200 - margin.left - margin.right, h = 1000 - margin.top - margin.bottom;
+// change to 600 for more compact view
 // array for data in infobox
 var info_data = [];
 var signprotmat = {
@@ -61,7 +62,7 @@ var signprotmat = {
             var new_receptor_data = [];
             for (var index = 0; index < data.length; index++) {
                 var e1 = data[index]["rec_gn"];
-                var e2 = data[index]["rec_id"];
+                var e2 = data[index]["entry_name"];
                 if (xvals.includes(e1) && prids.includes(e2)) {
                     new_receptor_data.push(data[index]);
                 }
@@ -115,7 +116,10 @@ var signprotmat = {
                 h = 1500;
             }
             else if (loc === 'conseq') {
-                h = 300;
+                h = 0;
+            }
+            else {
+                h = 1000 - margin.top - margin.bottom;
             }
             ;
             var svg = d3
@@ -363,10 +367,12 @@ var signprotmat = {
                 .enter()
                 .append("rect")
                 .attr("x", function (d) {
-                return xScale(d.rec_gn) - shift_left * xScale.step() + offset;
+                // return xScale(d.rec_gn) - shift_left * xScale.step() + offset;
+                return xScale(d.rec_gn) - xScale.step();
             })
                 .attr("y", function (d) {
-                return yScale(d.sig_gn) + shift_top * yScale.step() + offset;
+                // return yScale(d.sig_gn) + shift_top * yScale.step() + offset;
+                return yScale(d.sig_gn);
             })
                 .attr("rx", function () {
                 if (data.transformed.length < 15) {
@@ -384,8 +390,10 @@ var signprotmat = {
                     return 3;
                 }
             })
-                .attr("width", xScale.step() * scale_size)
-                .attr("height", yScale.step() * scale_size)
+                // .attr("width", xScale.step() * scale_size)
+                // .attr("height", yScale.step() * scale_size)
+                .attr("width", xScale.step())
+                .attr("height", yScale.step())
                 .attr("fill", function (d) { return bwScale(d.pairs.length); })
                 .attr("class", function (d) { return "p" + d.pairs.length; })
                 .on("mouseover", function (d) {
@@ -408,7 +416,7 @@ var signprotmat = {
                 d.active = active;
                 // set style in regards to active
                 if (d.active) {
-                    curr.style("stroke", "black").style("stroke-width", 2);
+                    curr.style("stroke", "yellow").style("stroke-width", 2);
                     info_data.push(d);
                 }
                 else {
@@ -795,6 +803,8 @@ var signprotmat = {
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
             var uniq_feats = _.uniq(_.map(data, 'feature'));
+            // filter out NA generic numbers based on xScale
+            data = _.filter(data, function (d) { return xScale(d.gn); });
             svg
                 .append("g")
                 .attr("id", "seqsig_feature")
@@ -882,6 +892,8 @@ var signprotmat = {
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
             var uniq_feats = _.uniq(_.map(data, 'feature'));
+            // filter out NA generic numbers based on xScale
+            data = _.filter(data, function (d) { return xScale(d.gn); });
             svg
                 .append("g")
                 .attr("id", "conseq_mat")

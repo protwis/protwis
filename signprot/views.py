@@ -454,6 +454,7 @@ def signprotdetail(request, slug):
 
 def InteractionMatrix(request):
     from django.db.models import F
+    from django.db.models import Q
 
     dataset = {
         '3sn6' : [
@@ -1148,73 +1149,41 @@ def InteractionMatrix(request):
             },
     ]
 
-    # ps = ProteinConformation.objects.filter(
-    #     # protein__sequence_type__slug='wt',
-    #     protein__species__common_name="Human",
-    #     protein__family__slug__startswith='00',  # receptors, no gproteins
-    #     structure__refined=False
-    #     ).values(
-    #         name = F('protein__name'),
-    #         entry_name = F('protein__entry_name'),
-    #         pdb_id = F('structure__pdb_code__index'),
-    #         rec_id = F('protein__id'),
-    #         protein_family = F('protein__family__parent__name'),
-    #         protein_class = F('protein__family__parent__parent__parent__name'),
-    #         ligand = F('protein__endogenous_ligands__properities__ligand_type__name')
-    #     )
-
-    data = Structure.objects.filter(
-            # protein_conformation__protein__sequence_type__slug='wt',
-            protein_conformation__protein__species__common_name="Human",
-            protein_conformation__protein__family__slug__startswith='00',
-            refined=False
-        ).select_related(
-            "state",
-            "pdb_code__web_resource",
-            "protein_conformation__protein__species",
-            "protein_conformation__protein__source",
-            "protein_conformation__protein__family__parent__parent__parent",
-            "publication__web_link__web_resource"
+    data = Protein.objects.filter(
+        sequence_type__slug='wt',
+        species__common_name="Human",
+        family__slug__startswith='00',  # receptors, no gproteins
         ).prefetch_related(
-            "stabilizing_agents",
-            "construct__crystallization__crystal_method",
-            "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
-            "protein_conformation__site_protein_conformation__site"
+            'parent__protein_conformation',
+            'family__parent__parent__parent',
         )
 
     ps = []
     for s in data:
         r = {}
-        r['seq_slug'] = s.protein_conformation.protein.sequence_type.slug
-        r['pdb_id'] = s.pdb_code.index
-        r['rec_id'] = s.protein_conformation.protein_id
-        r['name'] = s.protein_conformation.protein.parent.name
-        r['entry_name'] = s.protein_conformation.protein.parent.entry_name
-        r['protein'] = s.protein_conformation.protein.parent.entry_short()
-        r['protein_long'] = s.protein_conformation.protein.parent.short()
-        r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
-        r['protein_class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
-        r['species'] = s.protein_conformation.protein.species.common_name
-        r['ligand'] = s.protein_conformation.protein.endogenous_ligands.name
-        r['date'] = str(s.publication_date)
-        r['state'] = s.state.name
-        r['representative'] = 'Yes' if s.representative else 'No'
+        r['name'] = s.name
+        r['entry_name'] = s.entry_name
+        r['protein_family'] = s.family.parent.short()
+        r['protein_class'] = s.family.parent.parent.parent.short()
+        r['ligand'] = s.family.parent.parent.short()
         ps.append(r)
 
     names = set(pi['entry_name'] for pi in ps)
-    residuelist = Residue.objects.filter(
-            # protein_conformation__protein__entry_name__in=names,
+    rs = Residue.objects.filter(
+            protein_conformation__protein__entry_name__in=names,
+            protein_conformation__protein__sequence_type__slug='wt',
             protein_conformation__protein__species__common_name="Human",
-            protein_conformation__protein__family__slug__startswith='00',
-            protein_conformation__structure__refined=False
-            ).prefetch_related(
-                'protein_conformation'
+            protein_conformation__protein__family__slug__startswith='00',  # receptors, no gproteins
+            # refined='False'
             ).values(
                 pdb_id = F('protein_conformation__structure__pdb_code__index'),
                 rec_id = F('protein_conformation__protein__id'),
                 name = F('protein_conformation__protein__name'),
+                entry_name = F('protein_conformation__protein__entry_name'),
                 rec_aa = F('amino_acid'),
                 rec_gn = F('display_generic_number__label')
+            ).exclude(
+                Q(pdb_id=None) | Q(rec_gn=None)
             )
 
     interactions_metadata = complex_info
@@ -1222,7 +1191,7 @@ def InteractionMatrix(request):
         'interactions': dataset,
         'interactions_metadata': interactions_metadata,
         'ps': json.dumps(list(ps)),
-        'rs': json.dumps(list(residuelist)),
+        'rs': json.dumps(list(rs)),
         }
 
     return render(request, 'signprot/matrix.html', context)

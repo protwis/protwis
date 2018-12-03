@@ -146,6 +146,11 @@ line {
 }
 
 .activeRes {
-    stroke: aquamarine;
-    stroke-width: 4;
+    -webkit-animation: pulse 1s linear infinite;
+    animation: pulse 1s linear infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
