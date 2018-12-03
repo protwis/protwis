@@ -377,6 +377,20 @@ const signprotmat = {
       return tip;
     },
 
+    // * ADD TOOLTIP FUNCTIONALITY
+    seqTooltip: function(svg) {
+      let seqTip = d3
+        .tip()
+        .attr("class", "d3-tip")
+        .html(function(d) {
+          console.log(d)
+          return d;
+        });
+      svg.call(seqTip);
+
+      return seqTip;
+    },
+
     // * RENDER DATA
     renderData: function(
       svg,
@@ -654,6 +668,13 @@ const signprotmat = {
         });
 
       // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
+      let recTip = d3
+        .tip()
+        .attr("class", "d3-tip")
+        .html(function(d) {
+          return 'Signal Prot. AA: ' + d.sig_aa + '<br>' + 'Interaction type: ' + d.int_ty;
+        });
+
       svg
         .append("g")
         .attr("id", "recAA")
@@ -672,7 +693,14 @@ const signprotmat = {
         .data(data.receptor)
         .enter()
         .append("g")
-        .attr("class", (d: any) => 'R_' + _.replace(d.rec_gn, '.', 'p') + '_P_' + d.pdb_id );
+        .attr("class", (d: any) => 'R_' + _.replace(d.rec_gn, '.', 'p') + '_P_' + d.pdb_id )
+        .call(recTip)
+        .on("mouseover", function(d) {
+          recTip.show(d);
+        })
+        .on("mouseout", function(d) {
+          recTip.hide();
+        });
 
       each_res
         .append("rect")
@@ -703,6 +731,13 @@ const signprotmat = {
         .attr("height", pdbScale.range()[0] - pdbScale.step());
 
       // * APPENDING AMINOACID SEQUENCE [SIGPROT]
+      let sigTip = d3
+        .tip()
+        .attr("class", "d3-tip")
+        .html(function(d) {
+          return 'Receptor AA: ' + d.rec_aa + '<br>' + 'Interaction type: ' + d.int_ty;
+        });
+
       svg
         .append("g")
         .attr("id", "sigAA")
@@ -727,7 +762,14 @@ const signprotmat = {
         .data(data.signprot)
         .enter()
         .append("g")
-        .attr("class", (d: any) => 'S_' + _.replace(d.sig_gn, '.', 'p') + '_P_' + d.pdb_id );
+        .attr("class", (d: any) => 'S_' + _.replace(d.sig_gn, '.', 'p') + '_P_' + d.pdb_id )
+        .call(sigTip)
+        .on("mouseover", function(d) {
+          sigTip.show(d);
+        })
+        .on("mouseout", function(d) {
+          sigTip.hide();
+        });
 
       each_res
         .append("rect")
