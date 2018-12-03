@@ -365,8 +365,8 @@ const signprotmat = {
         .attr("class", "d3-tip")
         .html(function(d) {
           let pair_string = '';
-          d.pairs.forEach(element => {
-            pair_string += element.pdb_id + '<br>';
+          d.pairs.forEach(e => {
+            pair_string += e.pdb_id + ': ' + e.rec_aa + ' vs. ' + e.sig_aa + '(' + e.int_ty + ')' + '<br>';
           });
           return "Receptor: " + d.rec_gn +
           "<br>" + "Signaling Protein: " + d.sig_gn +
