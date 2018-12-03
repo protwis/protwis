@@ -1011,6 +1011,15 @@ var signprotmat = {
             })
                 .attr("text-anchor", "middle")
                 .text(function (d) { return d.code; });
+            each_res
+                .append("text")
+                .attr("class", "res_label")
+                // .attr("x", (d: any) => xScale(d.gn))
+                // .attr("y", (d: any) => 50)
+                .attr("transform", function (d) { return "translate(" + xScale(d.gn) + ",160)rotate(300)"; })
+                .style("fill", '#000000')
+                .attr("text-anchor", "end")
+                .text(function (d) { return d.name; });
             // putting a black border around the signature
             d3.select("g#conseq_mat")
                 .append("rect")

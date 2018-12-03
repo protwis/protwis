@@ -1159,6 +1159,16 @@ const signprotmat = {
         .attr("text-anchor", "middle")
         .text((d: any) => d.code);
 
+      each_res
+        .append("text")
+        .attr("class", "res_label")
+        // .attr("x", (d: any) => xScale(d.gn))
+        // .attr("y", (d: any) => 50)
+        .attr("transform", (d: any) => "translate(" + xScale(d.gn) + ",160)rotate(300)")
+        .style("fill", '#000000')
+        .attr("text-anchor", "end")
+        .text((d: any) => d.name);
+
         // putting a black border around the signature
       d3.select("g#conseq_mat")
         .append("rect")
