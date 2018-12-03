@@ -843,6 +843,15 @@ var signprotmat = {
             var uniq_feats = _.uniq(_.map(data, 'feature'));
             // filter out NA generic numbers based on xScale
             data = _.filter(data, function (d) { return xScale(d.gn); });
+            var seqsigTip = d3
+                .tip()
+                .attr("class", "d3-tip")
+                .html(function (d) {
+                return 'Generic Residue No.: ' + d.gn + '<br>' +
+                    'Feature: ' + d.feature + '<br>' +
+                    'Score: ' + d.expl + '<br>' +
+                    'Frequency: ' + d.freq + '<br>';
+            });
             svg
                 .append("g")
                 .attr("id", "seqsig_feature")
@@ -877,7 +886,14 @@ var signprotmat = {
                 .selectAll("text")
                 .data(data)
                 .enter()
-                .append("g");
+                .append("g")
+                .call(seqsigTip)
+                .on("mouseover", function (d) {
+                seqsigTip.show(d);
+            })
+                .on("mouseout", function (d) {
+                seqsigTip.hide();
+            });
             // the rectangles, colored by conservation
             each_res
                 .append("rect")
@@ -895,24 +911,22 @@ var signprotmat = {
                 .attr("width", xScale.step())
                 .attr("height", fScale.step());
             // adding the frequency text to each rectangle
-            each_res
-                .append("text")
-                .attr("class", "res_label")
-                .attr("x", function (d) { return xScale(d.gn); })
-                .attr("y", function (d) { return fScale(d.feature) - fScale.step() / 2; })
-                .style("fill", function (d) {
-                if (Math.abs(d.freq) >= 50) {
-                    return '#eaeaea';
-                }
-                else if (Math.abs(d.freq) < 50) {
-                    return '#000000';
-                }
-            })
-                .attr("text-anchor", "middle")
-                .attr("dy", 75)
-                .text(function (d) { return d.freq; });
+            // each_res
+            //   .append("text")
+            //   .attr("class", "res_label")
+            //   .attr("x", (d: any) => xScale(d.gn))
+            //   .attr("y", (d: any) => fScale(d.feature) - fScale.step() / 2)
+            //   .style("fill", (d: any) => {
+            //     if(Math.abs(d.freq) >= 50) {
+            //       return '#eaeaea';
+            //     } else if (Math.abs(d.freq) < 50) {
+            //       return '#000000';
+            //     }
+            //   })
+            //   .attr("text-anchor", "middle")
+            //   .attr("dy", 75)
+            //   .text((d: any) => d.freq);
             // .text((d: any) => _.round(d.freq/100, 1));
-            // adding the explanation tooltip to each rectangle
             // putting a black border around the signature
             d3.select("g#seqsig_mat")
                 .append("rect")
@@ -932,6 +946,14 @@ var signprotmat = {
             var uniq_feats = _.uniq(_.map(data, 'feature'));
             // filter out NA generic numbers based on xScale
             data = _.filter(data, function (d) { return xScale(d.gn); });
+            var conseqTip = d3
+                .tip()
+                .attr("class", "d3-tip")
+                .html(function (d) {
+                return 'Generic Residue No.: ' + d.gn + '<br>' +
+                    'Feature: ' + d.name + '<br>' +
+                    'Score: ' + d.score + '<br>';
+            });
             svg
                 .append("g")
                 .attr("id", "conseq_mat")
@@ -948,7 +970,14 @@ var signprotmat = {
                 .selectAll("text")
                 .data(data)
                 .enter()
-                .append("g");
+                .append("g")
+                .call(conseqTip)
+                .on("mouseover", function (d) {
+                conseqTip.show(d);
+            })
+                .on("mouseout", function (d) {
+                conseqTip.hide();
+            });
             // the rectangles, colored by conservation
             each_res
                 .append("rect")
@@ -982,8 +1011,6 @@ var signprotmat = {
             })
                 .attr("text-anchor", "middle")
                 .text(function (d) { return d.code; });
-            // .text((d: any) => _.round(d.freq/100, 1));
-            // adding the explanation tooltip to each rectangle
             // putting a black border around the signature
             d3.select("g#conseq_mat")
                 .append("rect")
