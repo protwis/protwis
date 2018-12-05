@@ -65,12 +65,12 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
 
     simple_selection = request.session.get('selection', False)
     proteins = []
+    target_type = 'protein'
     if protein:  # if protein static page
         proteins.append(Protein.objects.get(entry_name=protein.lower()))
-
-    target_type = 'protein'
+        
     # flatten the selection into individual proteins
-    if simple_selection:
+    elif simple_selection:
         for target in simple_selection.targets:
             if target.type == 'protein':
                 proteins.append(target.item)
