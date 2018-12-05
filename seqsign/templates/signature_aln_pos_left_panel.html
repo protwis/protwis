@@ -1,0 +1,120 @@
+<table width='260px'>
+
+    <!-- SEQUENCE ALIGNMENT 1 (POSITIVE) -->
+
+    <!-- Empty row for a subheader -->
+    <tr>
+        <td class="ali-td-header-row ali-td-first-col signature-section-header" colspan="3">PROTEIN SET 1</td>
+    </tr>
+
+    <!-- FEATURE CONSENSUS -->
+
+    <tr>
+        <td class="ali-td-header-row ali-td-consensus ali-td-first-col" colspan="3">
+            PROPERTY CONSENSUS
+        </td>
+    </tr>
+    <!-- Length row -->
+    <tr>
+        <td class="ali-td-header-row ali-td-first-col" colspan="3">Length</td>
+    </tr>
+
+    <!-- Second row for consensus values -->
+    <!-- Button collapsing the Residue properties section -->
+    <tr>
+        <td class="ali-td-header-row ali-td-first-col" colspan="3">
+            <button type="button" class="btn btn-info ali-td" data-toggle="collapse" data-target="#props,#props-main">+</button>
+            Conservation (%)
+        </td>
+    </tr>
+
+    <tbody class='collapse' id='props'>
+        <!-- FEATURE FREQUENCY -->
+        <tr>
+            <td class="ali-td-header-row ali-td-first-col" colspan="3">
+                RESIDUE PROPERTIES & LENGTH
+            </td>
+        </tr>
+
+        {% for feature in a_pos.features_combo %}
+        <tr>
+            <td class="ali-td ali-td-first-col">{{ feature.0 }}</td>
+            <td class="ali-td ali-td-first-col feat-{% if feature.1 == '-' and feature.2 == ''%}_{% else %}{{ feature.1 }}{% endif %}">{{ feature.1 }}</td>
+            <td class="ali-td ali-td-first-col">{{ feature.2 }}</td>
+        </tr>
+        {% endfor %}
+
+
+        <!-- GENERIC NUMBERS -->
+        <!-- numbering scheme lines -->
+        {% for ns in a_pos.numbering_schemes %}
+        <tr>
+            <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+
+    <!-- ALIGNMENT -->
+
+    {% if a_pos.consensus %}
+
+        <!-- CONSENSUS SEQUENCE -->
+        <tr>
+            <td class="ali-td ali-td-first-col ali-td-consensus" colspan="3">
+                SEQUENCE CONSENSUS
+            </td>
+        </tr>
+
+        <!-- Button collapsing the Sequence alignment section/second line of consensus -->
+        <tr>
+            <td class="ali-td ali-td-first-col ali-td-consensus" colspan="3">
+                <button type="button" class="btn btn-info ali-td" data-toggle="collapse" data-target="#aln,#aln-main">+</button>
+                Conservation (%)
+            </td>
+        </tr>
+
+
+    <!-- Sequence alignment -->
+        <tbody class='collapse' id='aln'>
+
+            <!-- protein names -->
+            {% for p in a_pos.proteins %}
+                {% if 'Common G-alpha numbering scheme' in a_pos.numbering_schemes.0 %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col" colspan="3">
+                            <a href='/signprot/{{ p.protein.entry_name }}'>
+                                [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                            </a>
+                        </td>
+                    </tr>
+                {% elif 'Common arrestin numbering scheme' in a_pos.numbering_schemes.0 %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col" colspan="3">
+                            <a href='/signprot/{{ p.protein.entry_name }}'>
+                                [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col" colspan="3">
+                            <a href='/protein/{{ p.protein.entry_name }}'>
+                                [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+
+            <!-- GENERIC NUMBERS -->
+
+            <!-- numbering scheme lines -->
+            {% for ns in a_pos.numbering_schemes %}
+                <tr>
+                    <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endif %}
+</table>

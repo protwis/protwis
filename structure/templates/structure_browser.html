@@ -163,7 +163,6 @@
                 $('.alt').prop('checked', $(this).prop("checked"));
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
-
         });
     </script>
 {% endblock %}
@@ -265,33 +264,17 @@
                     <td class="text-center">{{ structure.preferred_chain }}</td>
                     <td class="text-center">{{ structure.state.name }}</td>
                     <td class="text-center">{{ structure.distance|floatformat:"2" }}</td>
-                    <td class="text-center">
-                        {% for sa in structure.get_gproteins %}
-                          {{ sa }}<br />
-                        {% empty %}
-                          -
-                        {% endfor %}
+                    <td class="text-center gprotein">
+                        {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }}
                     </td>
-                    <td class="text-center">
-                        {% for sa in structure.get_arrestins %}
-                          {{ sa }}<br />
-                        {% empty %}
-                          -
-                        {% endfor %}
+                    <td class="text-center arrestin">
+                        {{ structure.stabilizing_agents.all|only_arrestins|linebreaksbr }}
                     </td>
-                    <td class="text-center">
-                        {% for sa in structure.get_fusion_proteins %}
-                        {{ sa }}<br />
-                        {% empty %}
-                          -
-                        {% endfor %}
+                    <td class="text-center fusion">
+                        {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
                     </td>
-                    <td class="text-center">
-                        {% for sa in structure.get_antibodies %}
-                          {{ sa }}
-                        {% empty %}
-                          -
-                        {% endfor %}
+                    <td class="text-center antibody">
+                        {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
                     </td>
                     <td>
                         {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}

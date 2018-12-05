@@ -1,5 +1,6 @@
 from django.conf import settings
 
+from alignment.functions import prepare_aa_group_preference
 from common.selection import Selection
 from common.definitions import *
 from protein.models import Protein, ProteinConformation, ProteinState, ProteinSegment, ProteinFusionProtein, ProteinFamily
@@ -15,7 +16,9 @@ from copy import deepcopy
 from operator import itemgetter
 from Bio.SubsMat import MatrixInfo
 import logging
+import numpy as np
 
+import time
 
 class Alignment:
     """A class representing a protein sequence alignment, with or without a reference sequence"""
@@ -28,7 +31,7 @@ class Alignment:
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
         self.generic_number_objs = {}
-        self.positions = []
+        self.positions = set()
         self.consensus = OrderedDict()
         self.forced_consensus = OrderedDict() # consensus sequence where all conflicts are solved by rules
         self.full_consensus = [] # consensus sequence with full residue objects
@@ -38,13 +41,16 @@ class Alignment:
         self.aa_count = OrderedDict()
         self.aa_count_with_protein = OrderedDict()
         self.features = []
+        self.features_combo = []
         self.feature_stats = []
+        self.feat_consensus = OrderedDict()
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
         self.use_residue_groups = False
         self.ignore_alternative_residue_numbering_schemes = False # set to true if no numbering is to be displayed
         self.residues_to_delete = []
         self.normalized_scores = OrderedDict()
+        self.zscales = OrderedDict()
 
         # refers to which ProteinConformation attribute to order by (identity, similarity or similarity score)
         self.order_by = 'similarity'
@@ -59,8 +65,39 @@ class Alignment:
         # when true, gaps at the beginning or end of a segment have a different symbol than other gaps
         self.show_padding = True
 
+        # prepare the selection order of the property groups for calculation of the feature consensus
+        self.feature_preference = prepare_aa_group_preference()
+        self.group_lengths = dict([
+            (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
+        ])
+
     def __str__(self):
         return str(self.__dict__)
+
+    def _assign_preferred_features(self, signature, segment, ref_matrix):
+
+        new_signature = []
+        for pos, argmax in enumerate(signature):
+            new_signature.append(self._calculate_best_feature(pos, segment, argmax, ref_matrix))
+        return new_signature
+
+
+    def _calculate_best_feature(self, pos, segment, argmax, ref_matrix):
+
+        tmp = self.feature_preference[argmax]
+        equiv_feat = np.where(np.isin(ref_matrix[segment][:, pos], ref_matrix[segment][argmax][pos]))[0]
+        pref_feat = argmax
+        min_len = self.group_lengths[argmax]
+
+        for efeat in equiv_feat:
+            if efeat in tmp and self.group_lengths[efeat] < min_len:
+                pref_feat = efeat
+                min_len = self.group_lengths[efeat]
+            # when two features have the same aa count, take the one from positive set
+            elif efeat in tmp and self.group_lengths[efeat] == min_len:
+                if ref_matrix[segment][pref_feat][pos] < 0 and ref_matrix[segment][efeat][pos] > 0:
+                    pref_feat = efeat
+        return pref_feat
 
     def load_reference_protein(self, protein):
         """Loads a protein into the alignment as a reference"""
@@ -158,7 +195,8 @@ class Alignment:
                 continue
 
             # fetch split segments (e.g. ECL2_before and ECL2_after)
-            alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)
+            # AJK: point for optimization
+            alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)#.prefetch_related('proteinfamily__protein__residue__generic_number', 'proteinfamily__protein__residue__generic_number__generic_number__scheme')
 
             for segment in alt_segments:
                 segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
@@ -231,11 +269,17 @@ class Alignment:
         for pc in self.proteins:
             if pc.protein.residue_numbering_scheme.slug not in self.numbering_schemes:
                 rnsn = pc.protein.residue_numbering_scheme.name
-                self.numbering_schemes[pc.protein.residue_numbering_scheme.slug] = rnsn
+                try:
+                    #New way of breaking down the numbering scheme
+                    rnsn_parent = prot.protein.residue_numbering_scheme.parent.short_name
+                except:
+                    rnsn_parent = ''
+                self.numbering_schemes[pc.protein.residue_numbering_scheme.slug] = (rnsn, rnsn_parent)
 
         # order and convert numbering scheme dict to tuple
-        self.numbering_schemes = sorted(self.numbering_schemes.items(), key=itemgetter(0))
+        self.numbering_schemes = sorted([(x[0], x[1][0], x[1][1]) for x in self.numbering_schemes.items()], key=itemgetter(0))
 
+    # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
     def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
 
@@ -258,7 +302,7 @@ class Alignment:
                 'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
                 'generic_number__scheme', 'display_generic_number__scheme')
 
-        # If segment flagged to only include the alignable residues, exclude the ones with GN
+        # If segment flagged to only include the alignable residues, exclude the ones with no GN
         for s in self.segments_only_alignable:
             rs = rs.exclude(protein_segment__slug=s, generic_number=None)
 
@@ -441,7 +485,6 @@ class Alignment:
                     sorted_segment.append(gn)
                 self.segments[segment] = sorted_segment
 
-
         for pc in self.proteins:
             row = OrderedDict()
             row_list = [] # FIXME redundant, remove when dependecies are removed
@@ -465,7 +508,7 @@ class Alignment:
 
                         # add position to the list of positions that are not empty
                         if pos not in self.positions:
-                            self.positions.append(pos)
+                            self.positions.add(pos)
 
                         # add display number to list of display numbers for this position
                         if r.display_generic_number:
@@ -535,33 +578,43 @@ class Alignment:
                 row_list.append(s) # FIXME redundant, remove when dependecies are removed
             pc.alignment = row
             pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
+
         self.sort_generic_numbers()
         self.merge_generic_numbers()
         self.clear_empty_positions()
 
     def clear_empty_positions(self):
         """Remove empty columns from the segments and matrix"""
-        # segments and
-        # deepcopy is required because the dictionary changes during the loop
-        generic_numbers = deepcopy(self.generic_numbers)
-        for ns, segments in generic_numbers.items():
+        # segments
+
+        # AJK optimized cleaning alignment - deepcopy not required and faster removal
+        #generic_numbers = deepcopy(self.generic_numbers) # deepcopy is required because the dictionary changes during the loop
+        for ns, segments in self.generic_numbers.items():
             for segment, positions in segments.items():
-                for pos, dn in positions.items():
-                    if pos not in self.positions:
+                self.generic_numbers[ns][segment] = OrderedDict([(pos, self.generic_numbers[ns][segment][pos]) for pos in self.generic_numbers[ns][segment].keys() if pos in self.positions ])
+                self.segments[segment] = [ pos for pos in self.segments[segment] if pos in self.positions ]
+
+                # Deprecated
+#                for pos, dn in positions.items():
+#                    if pos not in self.positions:
                         # remove position from generic numbers dict
-                        del self.generic_numbers[ns][segment][pos]
+#                        del self.generic_numbers[ns][segment][pos]
 
                         # remove position from segment dict
-                        if pos in self.segments[segment]:
-                            self.segments[segment].remove(pos)
+#                        if pos in self.segments[segment]:
+#                            self.segments[segment].remove(pos)
 
         # proteins
-        proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
-        for i, protein in enumerate(proteins):
+        # AJK optimized cleaning alignment - deepcopy not required and faster removal
+        #proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
+        for i, protein in enumerate(self.proteins):
             for j, s in protein.alignment.items():
-                for p in s:
-                    if p[0] not in self.positions:
-                        self.proteins[i].alignment[j].remove(p)
+                self.proteins[i].alignment[j] = [ p for p in s if p[0] in self.positions ]
+
+                # Deprecated
+#                for p in s:
+#                    if p[0] not in self.positions:
+#                        self.proteins[i].alignment[j].remove(p)
 
     def merge_generic_numbers(self):
         """Check whether there are many display numbers for each position, and merge them if there are"""
@@ -600,53 +653,67 @@ class Alignment:
         most_freq_aa = OrderedDict()
         amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
         self.amino_acids = list(AMINO_ACIDS.keys())
-        features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
-        self.features = list(AMINO_ACID_GROUP_NAMES.values())
+
+        # AJK: optimized for speed - split into multiple steps
         for i, p in enumerate(self.proteins):
             entry_name = p.protein.entry_name
             for j, s in p.alignment.items():
                 if i == 0:
                     self.aa_count[j] = OrderedDict()
-                    feature_count[j] = OrderedDict()
-                    most_freq_aa[j] = OrderedDict()
                 for p in s:
                     generic_number = p[0]
                     amino_acid = p[2]
 
-                    # stop here if this is gapped position (no need to collect stats on those)
-                    # Now we want
+                    # Indicate gap and collect statistics
                     if amino_acid in self.gaps:
                         amino_acid = '-'
 
-                    # init counters
+                    # Skip when unknown amino acid type
+                    elif amino_acid == 'X':
+                        continue
+
+                    # Init counters
                     if generic_number not in self.aa_count[j]:
                         self.aa_count[j][generic_number] = amino_acids.copy()
-                        if generic_number in self.generic_number_objs:
-                            self.aa_count_with_protein[generic_number] = {}
-                    if generic_number not in feature_count[j]:
-                        feature_count[j][generic_number] = features.copy()
-                    if generic_number not in most_freq_aa[j]:
-                        most_freq_aa[j][generic_number] = [[], 0]
+#                        if generic_number in self.generic_number_objs:
+                        self.aa_count_with_protein[generic_number] = {}
 
                     # update amino acid counter for this generic number
                     self.aa_count[j][generic_number][amino_acid] += 1
-                    if generic_number in self.generic_number_objs:
-                        if amino_acid not in self.aa_count_with_protein[generic_number]:
-                            self.aa_count_with_protein[generic_number][amino_acid] = []
-                        if entry_name not in self.aa_count_with_protein[generic_number][amino_acid]:
-                            self.aa_count_with_protein[generic_number][amino_acid].append(entry_name)
 
-                    # update feature counter for this generic number
-                    for feature, members in AMINO_ACID_GROUPS.items():
-                        if amino_acid in members:
-                            feature_count[j][generic_number][feature] += 1
+                    #if generic_number in self.generic_number_objs:
+                    if amino_acid not in self.aa_count_with_protein[generic_number]:
+                        self.aa_count_with_protein[generic_number][amino_acid] = {entry_name}
+                    elif entry_name not in self.aa_count_with_protein[generic_number][amino_acid]:
+                        self.aa_count_with_protein[generic_number][amino_acid].add(entry_name)
 
-                    # update most frequent amino_acids for this generic number
+
+        # AJK: Only need for update at the end of loop
+        # 1. Update most frequent amino_acids for this generic number
+        # 2. Update feature counter for this generic number
+        features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
+        self.features_combo = [(x, y['display_name_short'], y['length']) for x,y in zip(list(AMINO_ACID_GROUP_NAMES.values()), list(AMINO_ACID_GROUP_PROPERTIES.values()))]
+        self.features = list(AMINO_ACID_GROUP_NAMES.values())
+
+        for j in self.aa_count:
+            most_freq_aa[j] = OrderedDict()
+            feature_count[j] = OrderedDict()
+            for generic_number in self.aa_count[j]:
+                feature_count[j][generic_number] = features.copy()
+                most_freq_aa[j][generic_number] = [[], 0]
+                for amino_acid in self.aa_count[j][generic_number]:
+                    # Most frequent AA
                     if self.aa_count[j][generic_number][amino_acid] > most_freq_aa[j][generic_number][1]:
                         most_freq_aa[j][generic_number] = [[amino_acid], self.aa_count[j][generic_number][amino_acid]]
                     elif self.aa_count[j][generic_number][amino_acid] == most_freq_aa[j][generic_number][1]:
                         if amino_acid not in most_freq_aa[j][generic_number][0]:
                             most_freq_aa[j][generic_number][0].append(amino_acid)
+
+                    # create property frequency
+                    if self.aa_count[j][generic_number][amino_acid] > 0:
+                        for feature in AMINO_ACID_GROUPS_AA[amino_acid]:
+                            feature_count[j][generic_number][feature] += self.aa_count[j][generic_number][amino_acid]
+
         # merge the amino acid counts into a consensus sequence
         num_proteins = len(self.proteins)
         sequence_counter = 1
@@ -676,13 +743,15 @@ class Alignment:
                     self.consensus[i][p] = [
                         r[0][0],
                         cons_interval,
-                        round(r[1]/num_proteins*100)
+                        round(r[1]/num_proteins*100),
+                        ""
                         ]
                 elif num_freq_aa > 1:
                     self.consensus[i][p] = [
                         '+',
                         cons_interval,
-                        round(r[1]/num_proteins*100)
+                        round(r[1]/num_proteins*100),
+                        ", ".join(r[0])
                         ]
 
                 # create a residue object full consensus
@@ -725,31 +794,62 @@ class Alignment:
                     k += 1
                 j += 1
 
-        # process feature frequency
+        # create index and prepare stats array
+        index_AAG = {}
         for i, feature in enumerate(AMINO_ACID_GROUPS):
+            index_AAG[feature] = i
             self.feature_stats.append([])
-            j = 0
-            for segment, segment_num in feature_count.items():
+            for segment in feature_count:
                 self.feature_stats[i].append([])
-                k = 0
-                if segment=='Custom':
-                    sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
-                else:
-                    sorted_res = sorted(segment_num)
-                for gn in sorted_res:
-                    fs = segment_num[gn]
+
+        j = 0
+        for segment, segment_num in feature_count.items():
+            k = 0
+            if segment=='Custom':
+                sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+            else:
+                sorted_res = sorted(segment_num)
+            for gn in sorted_res:
+                fs = segment_num[gn]
+
+                for f, freq in fs.items():
+                    # find feature key
+                    i = index_AAG[f]
+
+                    frequency = str(round(freq/num_proteins*100))
+                    if len(frequency) == 1:
+                        freq_interval = '0'
+                    else:
+                        # intervals defined in the same way as for the consensus sequence
+                        freq_interval = frequency[:-1]
+
                     self.feature_stats[i][j].append([])
-                    for f, freq in fs.items():
-                        if f == feature:
-                            frequency = str(round(freq/num_proteins*100))
-                            if len(frequency) == 1:
-                                freq_interval = '0'
-                            else:
-                                # intervals defined in the same way as for the consensus sequence
-                                freq_interval = frequency[:-1]
-                            self.feature_stats[i][j][k] = [frequency, freq_interval]
-                    k += 1
-                j += 1
+                    self.feature_stats[i][j][k] = [frequency, freq_interval]
+                k += 1
+            j += 1
+
+        # process feature frequency
+        feats = OrderedDict()
+        self.feat_consensus = OrderedDict([(x, []) for x in self.segments])
+        for sid, segment in enumerate(self.segments):
+            feats[segment] = np.array(
+                [[x[0] for x in feat[sid]] for feat in self.feature_stats],
+                dtype='int'
+                )
+            feat_cons_tmp = feats[segment].argmax(axis=0)
+            feat_cons_tmp = self._assign_preferred_features(feat_cons_tmp, segment, feats)
+            for col, pos in enumerate(list(feat_cons_tmp)):
+                self.feat_consensus[segment].append([
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    feats[segment][pos][col],
+                    int(feats[segment][pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                    list(AMINO_ACID_GROUPS.keys())[pos]
+                ])
+            #print(self.feat_consensus[segment])
+        del feats
+        del feat_cons_tmp
 
     def calculate_aa_count_per_generic_number(self):
         ''' Small function to return a dictionary of display_generic_number and the frequency of each AA '''
@@ -812,29 +912,67 @@ class Alignment:
 
     def calculate_similarity_matrix(self):
         """Calculate a matrix of sequence identity/similarity for every selected protein"""
+
+        # Init results matrix
         self.similarity_matrix = OrderedDict()
         for i, protein in enumerate(self.proteins):
             protein_key = protein.protein.entry_name
             protein_name = "[" + protein.protein.species.common_name + "] " + protein.protein.name
-            self.similarity_matrix[protein_key] = {'name': protein_name, 'values': []}
-            for k, protein in enumerate(self.proteins):
+            self.similarity_matrix[protein_key] = {'name': protein_name, 'values': [None] * len(self.proteins)}
+
+        # similarity comparisons
+        for i, protein in enumerate(self.proteins):
+            protein_key = protein.protein.entry_name
+            self.similarity_matrix[protein_key]['values'][i] = ['-', '-']
+
+            for k in range(i+1, len(self.proteins)):
                 # calculate identity, similarity and similarity score to the reference
                 calc_values = self.pairwise_similarity(self.proteins[i], self.proteins[k])
-                if k == i:
-                    value = '-'
-                elif k < i:
-                    value = calc_values[1].strip()
-                elif k > i:
-                    value = calc_values[0].strip()
 
-                if value == '-':
-                    color_class = "-"
+                # Identity
+                value = calc_values[1].strip()
+                if int(value) < 10:
+                    color_class = 0
                 else:
-                    if int(value) < 10:
-                        color_class = 0
+                    color_class = str(value)[:-1]
+                self.similarity_matrix[self.proteins[k].protein.entry_name]['values'][i] = [value, color_class]
+
+                # Similarity
+                value = calc_values[0].strip()
+                if int(value) < 10:
+                    color_class = 0
+                else:
+                    color_class = str(value)[:-1]
+                self.similarity_matrix[protein_key]['values'][k] = [value, color_class]
+
+    def calculate_zscales(self):
+        """Calculate Z-scales distribution for current alignment set"""
+        # Check if alignment statistics need to be calculated
+        if len(self.aa_count) == 0:
+            self.calculate_statistics()
+
+        # Prepare Z-scales per segment/GN position
+        self.zscales = { zscale: OrderedDict() for zscale in ZSCALES }
+
+        # Calculates distribution per GN position
+        for segment in self.aa_count:
+            for zscale in ZSCALES:
+                self.zscales[zscale][segment] = OrderedDict()
+            for generic_number in self.aa_count[segment]:
+                zscale_position = { zscale: [] for zscale in ZSCALES }
+
+                for amino_acid in self.aa_count[segment][generic_number]:
+                    if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
+                        for key in range(len(ZSCALES)):
+                            # Frequency AA at this position * value
+                            zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
+
+                # store average + stddev + count
+                for zscale in ZSCALES:
+                    if len(zscale_position[zscale]) == 1:
+                        self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1]
                     else:
-                        color_class = str(value)[:-1]
-                self.similarity_matrix[protein_key]['values'].append([value, color_class])
+                        self.zscales[zscale][segment][generic_number] = [np.mean(zscale_position[zscale]), np.std(zscale_position[zscale], ddof=1), len(zscale_position[zscale])]
 
     def evaluate_sites(self, request):
         """Evaluate which user selected site definitions match each protein sequence"""
@@ -896,41 +1034,42 @@ class Alignment:
 
     def pairwise_similarity(self, protein_1, protein_2):
         """Calculate the identity, similarity and similarity score between a pair of proteins"""
-        identities = []
-        similarities = []
-        similarity_scores = []
+        identityscore = 0
+        similarityscore = 0
+        totalcount = 0
+        totalsimilarity = 0
         for j, s in protein_2.alignment.items():
             for k, p in enumerate(s):
                 reference_residue = protein_1.alignment[j][k][2]
                 protein_residue = protein_2.alignment[j][k][2]
                 if not (reference_residue in self.gaps and protein_residue in self.gaps):
+                    totalcount += 1
                     # identity
                     if protein_residue == reference_residue:
-                        identities.append(1)
-                    else:
-                        identities.append(0)
+                        identityscore += 1
 
                     # similarity
-                    if reference_residue in self.gaps or protein_residue in self.gaps:
-                        similarities.append(0)
-                        similarity_scores.append(0)
-                    else:
+                    if not (reference_residue in self.gaps or protein_residue in self.gaps):
                         pair = (protein_residue, reference_residue)
+                        # Similarity lookup is slow -> disabling results in 1/3 reduction calc. time
                         similarity = self.score_match(pair, MatrixInfo.blosum62)
+#                        similarity = 1
                         if similarity > 0:
-                            similarities.append(1)
-                        else:
-                            similarities.append(0)
-                        similarity_scores.append(similarity)
+                            similarityscore += 1
+                            totalsimilarity += similarity
 
         # format the calculated values
-        if identities and similarities:
-            identity = "{:10.0f}".format(sum(identities) / len(identities) * 100)
-            similarity = "{:10.0f}".format(sum(similarities) / len(similarities) * 100)
-            similarity_score = sum(similarity_scores)
+        #if identityscore and similarityscore:
+        if totalcount:
+            identity = "{:10.0f}".format(identityscore / totalcount * 100)
+            similarity = "{:10.0f}".format(similarityscore / totalcount * 100)
+            similarity_score = totalsimilarity
+
             return identity, similarity, similarity_score
         else:
-            return False
+            # return False
+            # NOTE returning F results in fatal errors. No aligned residues: return -1
+            return "{:10.0f}".format(-1), "{:10.0f}".format(-1), 0
 
     def pairwise_similarity_normalized(self, protein_1, protein_2):
         """Calculate the identity, similarity and similarity score between a pair of proteins but delete gaps and normalize. Used for finding closest

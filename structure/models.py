@@ -4,8 +4,6 @@ from django.core.cache import cache
 from io import StringIO
 from Bio.PDB import PDBIO
 
-import re
-
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
@@ -50,6 +48,15 @@ class Structure(models.Model):
                 tmp.append(line)
 
         return '\n'.join(tmp)
+    
+    def get_ligand_pdb(self, ligand):
+
+        tmp = []
+        for line in self.pdb_data.pdb.split('\n'):
+            if line.startswith('HET') and line[21] == self.preferred_chain[0]:
+                if line[17:20] != 'HOH' and line[17:20] == ligand:
+                    tmp.append(line)
+        return '\n'.join(tmp)
 
     def get_preferred_chain_pdb(self):
 
@@ -72,48 +79,6 @@ class Structure(models.Model):
                 refined = False
             cache.set(self.pdb_code.index+'_refined',refined, 24*60*60)
         return refined
-
-    # TODO: Move these functions to stab. agents class and generalize
-    def get_arrestins(self):
-        tmp = []
-        for agent in self.stabilizing_agents.all():
-            # Legacy, should not allow multiple agents defined as one
-            for element in agent.name.split(','):
-                if re.match(".*rrestin.*", element):
-                    tmp.append(element.strip())
-
-        return tmp
-
-    def get_gproteins(self):
-        tmp = []
-        for agent in self.stabilizing_agents.all():
-            # Legacy, should not allow multiple agents defined as one
-            for element in agent.name.split(','):
-                if re.match(".*G.*", element) and not re.match(".*thase.*|PGS", element):
-                    tmp.append(element.strip())
-
-        return tmp
-
-    def get_antibodies(self):
-        tmp = []
-        for agent in self.stabilizing_agents.all():
-            # Legacy, should not allow multiple agents defined as one
-            for element in agent.name.split(','):
-                if re.match(".*bod.*|.*Ab.*", element):
-                    tmp.append(element.strip())
-
-        return tmp
-
-    def get_fusion_proteins(self):
-        tmp = []
-        for agent in self.stabilizing_agents.all():
-            # Also additional filtering for double entries (e.g. 5ZBQ) => removed later on
-            for element in list(set(agent.name.split(','))):
-                if not re.match(".*bod.*|.*Ab.*|.*Sign.*|.*G.*|.*restin.*", element) or re.match(".*thase.*|PGS", element):
-                    tmp.append(element.strip())
-
-        return tmp
-    # ENDTODO
 
     class Meta():
         db_table = 'structure'
@@ -272,8 +237,6 @@ class StructureStabilizingAgent(models.Model):
     def __str__(self):
         return self.name
 
-    # add typesetter here
-
     class Meta():
         db_table = "structure_stabilizing_agent"
 
@@ -293,7 +256,8 @@ class Rotamer(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdbdata = models.ForeignKey('PdbData', on_delete=models.CASCADE)
     missing_atoms = models.BooleanField(default=False)
-
+    # TODO
+    # Values: Angles
     def __str__(self):
         return '{} {}{}'.format(self.structure.pdb_code.index, self.residue.amino_acid, self.residue.sequence_number)
 
