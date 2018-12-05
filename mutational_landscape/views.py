@@ -60,7 +60,7 @@ class TargetSelection(AbsTargetSelection):
     }
     default_species = False
 
-
+@cache_page(60*60*24*21)
 def render_variants(request, protein=None, family=None, download=None, receptor_class=None, gn=None, aa=None, **response_kwargs):
 
     simple_selection = request.session.get('selection', False)
@@ -68,7 +68,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
     target_type = 'protein'
     if protein:  # if protein static page
         proteins.append(Protein.objects.get(entry_name=protein.lower()))
-        
+
     # flatten the selection into individual proteins
     elif simple_selection:
         for target in simple_selection.targets:
