@@ -32,11 +32,13 @@ var signprotmat = {
             var data_labeled = data.map(function (e) {
                 var obj = {};
                 keys.forEach(function (key, i) {
-                    // comment this out later
-                    if (key === "sig_gn") {
-                        obj[key] = Math.floor(e[i] / 10);
-                        return;
-                    }
+                    // // comment this out later
+                    // if (key === "sig_gn" || key === "rec_gn") {
+                    //   if (e[i] === '-') {
+                    //     return;
+                    //   }
+                    //   // obj[key] = Math.floor(e[i] / 10);
+                    // }
                     obj[key] = e[i];
                 });
                 return obj;
@@ -88,6 +90,9 @@ var signprotmat = {
             ;
             return ret_sel;
         },
+        removeUndefinedGN: function (dataset) {
+            return _.filter(dataset, function (o) { return o.rec_gn !== '-'; });
+        },
         dataTransformationWrapper: function (dataset, keys, pdb_sel) {
             dataset = _.pick(dataset, pdb_sel);
             var pdb_ids = signprotmat.data.extractPdbIDs(dataset);
@@ -95,6 +100,7 @@ var signprotmat = {
             data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
             data_t = signprotmat.data.flattenOnce(data_t);
             data_t = signprotmat.data.labelData(data_t, keys);
+            data_t = signprotmat.data.removeUndefinedGN(data_t);
             var data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
             var data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
             var int_ty = signprotmat.data.getInteractionTypes(data_t);
@@ -632,7 +638,7 @@ var signprotmat = {
                 .tip()
                 .attr("class", "d3-tip")
                 .html(function (d) {
-                return 'Receptor AA: ' + d.rec_aa + '<br>' + 'Interaction type: ' + d.int_ty;
+                return 'Receptor AA: ' + d.sig_aa + '<br>' + 'Interaction type: ' + d.int_ty;
             });
             svg
                 .append("g")
