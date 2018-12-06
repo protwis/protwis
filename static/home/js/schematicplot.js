@@ -789,7 +789,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       `<br /><button onclick="downloadSingleCrystalCSV('${containerSelector}schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
       '</button>';
 
-    $(`${containerSelector} .schematic-legend`).append(legendHtml);
+    $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     $(`${containerSelector} .schematic-legend input[type=checkbox]`).each(function () {
       $(this).prop('checked', true);
@@ -827,7 +827,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       '</div>';*/
 
     let legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
-          + `<p>Range: <span id="clscg-pdbs-range">0 - ${data.pdbs.length}</span></p>`
+          + `<p>Range: <span id="clscg-pdbs-range">1 - ${data.pdbs.length}</span></p>`
           + '<div class="slider-range" data-text-id="clscg-pdbs-range" id="clscg-pdbs-range-slider"></div>'
           + '<div class="temperature-scale">'
           + '<span class="white-to-red"></span>'
@@ -844,7 +844,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       `<br /><button onclick="downloadSingleCrystalGroupCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
       '</button>';
 
-    $(`${containerSelector} .schematic-legend`).append(legendHtml);
+    $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     /*
     // Changed from separate min/max sliders to one range slider - to REMOVE if OK
@@ -875,7 +875,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     $( function() {
       $(`${containerSelector} #clscg-pdbs-range-slider`).slider({
         range: true,
-        min: 0,
+        min: 1,
         max: `${data.pdbs.length}`,
         step: 1,
         values: [0, `${data.pdbs.length}`],
@@ -941,7 +941,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       `<br /><button onclick="downloadTwoCrystalGroupsCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
       '</button>';
 
-    $(`${containerSelector} .schematic-legend`).append(legendHtml);
+    $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     // Changed from separate min/max sliders to one range slider - to REMOVE if OK
     /*

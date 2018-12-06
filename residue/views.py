@@ -6,7 +6,7 @@ from django.views.generic import TemplateView
 
 
 from common.views import AbsTargetSelection
-from common.definitions import STRUCTURAL_RULES, STRUCTURAL_SWITCHES
+from common.definitions import FULL_AMINO_ACIDS, STRUCTURAL_RULES, STRUCTURAL_SWITCHES
 from common.selection import Selection
 Alignment = getattr(__import__(
     'common.alignment_' + settings.SITE_NAME,
@@ -229,7 +229,6 @@ class ResidueFunctionBrowser(TemplateView):
             rfb_panel["signatures"]["cal_positions"] = signature.common_gn
 
             # Grab Gi/Gs/Gq/GI12 GPCR sets (class A)
-
             human_class_a_gpcrs = Protein.objects.filter(species_id=1, sequence_type_id=1, family__slug__startswith='001').distinct().prefetch_related('proteingprotein_set', 'residue_numbering_scheme')
             gs  = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_000_001"))
             gio = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_000_002"))
@@ -577,10 +576,14 @@ class ResidueFunctionBrowser(TemplateView):
 
                         # Sequence consensus
                         context["signatures"][index]["class_a_aa"] = rfb_panel["class_a_aa"][segment][position][0]
+                        context["signatures"][index]["class_a_aa_name"] = FULL_AMINO_ACIDS[rfb_panel["class_a_aa"][segment][position][0]]
+                        if context["signatures"][index]["class_a_aa"] == '+':
+                            context["signatures"][index]["class_a_aa_name"] += ": "+rfb_panel["class_a_aa"][segment][position][3]
                         context["signatures"][index]["class_a_aa_cons"] = rfb_panel["class_a_aa"][segment][position][2]
 
                         # Property consensus
-                        context["signatures"][index]["class_a_prop"] = rfb_panel["class_a_prop"][segment][i][0]
+                        context["signatures"][index]["class_a_symb"] = rfb_panel["class_a_prop"][segment][i][0]
+                        context["signatures"][index]["class_a_prop"] = rfb_panel["class_a_prop"][segment][i][1]
                         context["signatures"][index]["class_a_prop_cons"] = rfb_panel["class_a_prop"][segment][i][2]
 
                     # SEQUENCE SIGNATURES

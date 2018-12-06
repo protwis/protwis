@@ -200,7 +200,7 @@ class Alignment:
 
             for segment in alt_segments:
                 segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
-                    scheme=self.default_numbering_scheme)
+                    scheme=self.default_numbering_scheme).order_by('label')
 
                 # segments
                 unsorted_segments[segment.pk] = []
@@ -282,6 +282,14 @@ class Alignment:
     # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
     def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
+
+        # AJK: prevent prefetching all data for large alignments before checking #residues (DB + memory killer)
+        rs = Residue.objects.filter(protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins)
+
+        self.number_of_residues_total = len(rs)
+        if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
+            return "Too large"
+
         # fetch segment residues
         if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
             rs = Residue.objects.filter(
@@ -307,10 +315,6 @@ class Alignment:
                     protein_conformation__in=self.proteins).prefetch_related('protein_conformation__protein',
                     'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
                     'display_generic_number__scheme')
-
-        self.number_of_residues_total = len(rs)
-        if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
-            return "Too large"
 
         # create a dict of proteins, segments and residues
         proteins = {}
@@ -663,6 +667,7 @@ class Alignment:
                     # Indicate gap and collect statistics
                     if amino_acid in self.gaps:
                         amino_acid = '-'
+
                     # Skip when unknown amino acid type
                     elif amino_acid == 'X':
                         continue
@@ -738,13 +743,15 @@ class Alignment:
                     self.consensus[i][p] = [
                         r[0][0],
                         cons_interval,
-                        round(r[1]/num_proteins*100)
+                        round(r[1]/num_proteins*100),
+                        ""
                         ]
                 elif num_freq_aa > 1:
                     self.consensus[i][p] = [
                         '+',
                         cons_interval,
-                        round(r[1]/num_proteins*100)
+                        round(r[1]/num_proteins*100),
+                        ", ".join(r[0])
                         ]
 
                 # create a residue object full consensus
@@ -1050,7 +1057,6 @@ class Alignment:
                         if similarity > 0:
                             similarityscore += 1
                             totalsimilarity += similarity
-
 
         # format the calculated values
         #if identityscore and similarityscore:

@@ -29,8 +29,38 @@ AMINO_ACIDS = OrderedDict([
     ('B', 'Asx'),
     ('Z', 'Glx'),
     ('J', 'Xle'),
-    ('-', 'Gap')
+    ('-', 'Gap'),
+    ('+', 'Tie')
 ])
+
+FULL_AMINO_ACIDS = OrderedDict([
+    ('A', 'Alanine'),
+    ('C', 'Cysteine'),
+    ('D', 'Aspartate'),
+    ('E', 'Glutamate'),
+    ('F', 'Phenylalanine'),
+    ('G', 'Glycine'),
+    ('H', 'Histidine'),
+    ('I', 'Isoleucine'),
+    ('K', 'Lysine'),
+    ('L', 'Leucine'),
+    ('M', 'Methionine'),
+    ('N', 'Asparagine'),
+    ('P', 'Proline'),
+    ('Q', 'Glutamine'),
+    ('R', 'Arginine'),
+    ('S', 'Serine'),
+    ('T', 'Threonine'),
+    ('V', 'Valine'),
+    ('W', 'Tryptophan'),
+    ('Y', 'Tyrosine'),
+    ('B', 'Aspartate or Asparagine'),
+    ('Z', 'Glutamate or Glutamine'),
+    ('J', 'Leucine or Isoleucine'),
+    ('-', 'Gap'),
+    ('+', 'Tie')
+])
+
 
 # Amino Acid Propensities
 AA_PROPENSITY = {
