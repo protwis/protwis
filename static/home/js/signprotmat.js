@@ -836,7 +836,6 @@ var signprotmat = {
             });
         },
         draw_seq_sig: function (data_in, svg, xScale) {
-            console.log('running draw seq sig');
             var data = data_in.feat;
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
@@ -889,7 +888,9 @@ var signprotmat = {
                 .append("g")
                 .call(seqsigTip)
                 .on("mouseover", function (d) {
-                seqsigTip.show(d);
+                if (d.freq !== 0) {
+                    seqsigTip.show(d);
+                }
             })
                 .on("mouseout", function (d) {
                 seqsigTip.hide();
@@ -962,7 +963,6 @@ var signprotmat = {
                 .attr("class", "legend");
         },
         draw_seq_cons: function (data_in, svg, xScale) {
-            console.log('running draw seq cons');
             var data = data_in.cons;
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);

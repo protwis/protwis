@@ -972,7 +972,6 @@ const signprotmat = {
     },
 
     draw_seq_sig: function(data_in, svg, xScale){
-      console.log('running draw seq sig')
       let data = data_in.feat;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
@@ -1031,7 +1030,7 @@ const signprotmat = {
         .append("g")
         .call(seqsigTip)
         .on("mouseover", function(d) {
-          seqsigTip.show(d);
+          if (d.freq !== 0){seqsigTip.show(d);}
         })
         .on("mouseout", function(d) {
           seqsigTip.hide();
@@ -1110,7 +1109,6 @@ const signprotmat = {
 
 
     draw_seq_cons: function(data_in, svg, xScale){
-      console.log('running draw seq cons')
       let data = data_in.cons;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
