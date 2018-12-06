@@ -68,7 +68,7 @@ class ProteinFamilyList(generics.ListAPIView):
     \n/proteinfamily/
     """
 
-    queryset = ProteinFamily.objects.all()
+    queryset = ProteinFamily.objects.all().prefetch_related('parent')
     serializer_class = ProteinFamilySerializer
 
 
@@ -160,7 +160,7 @@ class ResiduesList(generics.ListAPIView):
         queryset = Residue.objects.all()
         #protein_conformation__protein__sequence_type__slug='wt',
         return queryset.filter(
-            protein_conformation__protein__entry_name=self.kwargs.get('entry_name'))
+            protein_conformation__protein__entry_name=self.kwargs.get('entry_name')).prefetch_related('display_generic_number','protein_segment','alternative_generic_numbers')
 
 
 class ResiduesExtendedList(ResiduesList):
@@ -476,7 +476,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             a.show_padding = False
 
             # load data from API into the alignment
-            a.load_reference_protein(reference)
+            a.load_reference_protein(reference[0])
             a.load_proteins(ps)
 
             # load generic numbers and TMs seperately

@@ -60,7 +60,7 @@ class DrawSnakePlot(Diagram):
             if r.display_generic_number: displaylabel = r.display_generic_number.label
             displaylabel = r.amino_acid + str(r.sequence_number) + " \n " + displaylabel
             if hasattr(r, 'frequency'):
-                displaylabel = displaylabel + "\n" + r.frequency
+                displaylabel = displaylabel + "\n" + str(r.frequency)
             self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
             i += 1
 
@@ -955,8 +955,8 @@ class DrawHelixBox(Diagram):
                 generic_number = r.family_generic_number
             else:
                 continue #FIXME for TMs without generic number
-            if r.display_generic_number: displaylabel += "\n"+r.display_generic_number.label
-            if hasattr(r, 'frequency'): displaylabel += "\n" + r.frequency
+            if r.display_generic_number: displaylabel += "\n" + r.display_generic_number.label
+            if hasattr(r, 'frequency'): displaylabel += "\n" + str(r.frequency)
             sequence[int(generic_number[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':generic_number,'displaylabel':displaylabel}
 
         # box size

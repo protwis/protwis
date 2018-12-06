@@ -57,6 +57,7 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = (
+    'common.middleware.stats.StatsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

@@ -43,10 +43,10 @@ class Command(BaseCommand):
         self.logger.info('CREATING RESIDUE SETS')
 
         residue_sets = {
-
             'G-protein interface': [
                 'gpcrdba', 
-                ['3x50', '3x53', '3x54', '3x55', '3x56', '34x50', '34x51', '34x52', '34x53', '34x54', '34x55', '34x56', '34x57', '5x61', '5x64', '5x65', '5x66', '5x67', '5x68', '5x69', '5x71', '5x72', '5x74', '5x75', '6x25', '6x26', '6x28', '6x29', '6x32', '6x33', '6x36', '6x37', '6x40', '7x55', '7x56', '8x47', '8x48', '8x49', '8x51'],
+                ['3x50', '3x53', '3x54', '3x55', '3x56', '34x50', '34x51', '34x52', '34x53', '34x54', '34x55', '34x56', '34x57', '5x61', '5x64', '5x65', '5x66', 
+                 '5x67', '5x68', '5x69', '5x71', '5x72', '5x74', '5x75', '6x25', '6x26', '6x28', '6x29', '6x32', '6x33', '6x36', '6x37', '6x40', '7x55', '7x56', '8x47', '8x48', '8x49', '8x51'],
                  'Signal protein interfaces',
                  'gpcr'
             ], 
@@ -64,7 +64,7 @@ class Command(BaseCommand):
             ], 
             'Gprotein Barcode': [
                 'cgn', 
-                ['G.hns1.02','G.hns1.03','G.S1.02','G.s2s3.01','G.S3.01','G.S3.03','G.H4.26','G.H4.27','G.h4s6.03','G.h4s6.20','G.H5.08','G.H5.11','G.H5.12',
+                ['G.hns1.02','G.hns1.03','G.S1.02','G.s2s3.01','G.S3.01','G.S3.03','G.H4.16','G.H4.17','G.h4s6.03','G.h4s6.20','G.H5.08','G.H5.11','G.H5.12',
                  'G.H5.13','G.H5.15','G.H5.16','G.H5.17','G.H5.19','G.H5.20','G.H5.21','G.H5.22','G.H5.23','G.H5.24','G.H5.25','G.H5.26'],
                  'Barcode',
                  'gprotein'
@@ -77,7 +77,10 @@ class Command(BaseCommand):
             ],
             'Arrestin interface': [
                 'can',
-                ['N.S5.10', 'N.S5.12', 'N.s5s6.01', 'N.s5s6.04', 'N.s5s6.05', 'N.s5s6.06', 'N.s5s6.07', 'N.s5s6.08', 'N.s5s6.09', 'N.s5s6.10', 'N.s5s6.11', 'N.S6.03', 'N.S6.04', 'N.S6.05', 'N.S6.06', 'N.s7s8.05', 'N.S8.03', 'N.s8s9.02', 'N.s8s9.09', 'N.s8s9.10', 'N.S9.01', 'N.s9s10.07', 'N.s9s10.08', 'C.S15.14', 'C.s15s16.02', 'C.s15s16.03', 'C.S16.01', 'C.S16.03', 'C.s17s18.11', 'C.s17s18.38', 'C.s17s18.39', 'C.s17s18.41', 'N.ns1.14', 'N.ns1.15', 'N.S1.01', 'N.S1.02', 'N.S1.03', 'N.S1.04', 'N.S1.05', 'N.s1s2.02', 'N.s1s2.04', 'N.s2s3.03', 'N.s5s6.02', 'N.H1.09', 'N.s8s9.01', 'N.s8s9.03', 'N.s8s9.06', 'N.s9s10.12', 'N.S10.03', 'N.S10.04', 'C.s15s16.04', 'C.S16.05', 'C.s17s18.12', 'C.s17s18.20'],
+                ['N.s5s6.05', 'N.s5s6.09', 'C.s15s16.03', 'C.S16.01', 'C.s15s16.02', 'C.S15.14', 'C.S16.03', 'N.S5.12', 'N.s8s9.09', 'N.S9.01', 'N.s8s9.02',
+                'N.s8s9.10', 'N.S8.03', 'N.s5s6.10', 'N.S6.03', 'N.s9s10.08',
+                'N.s5s6.11', 'N.s5s6.08', 'N.s5s6.07', 'N.s5s6.04', 'C.s17s18.39',
+                'C.s17s18.41', 'N.S6.04', 'N.S6.05', 'C.s17s18.38'],
                 'Interface',
                 'arrestin'
             ]
@@ -86,10 +89,12 @@ class Command(BaseCommand):
         for set_name in residue_sets.keys():
             residues = []
             for res in residue_sets[set_name][1]:
+                print(res)
                 try:
                     residues.append(ResidueGenericNumberEquivalent.objects.get(label=res, scheme__slug=residue_sets[set_name][0]))
                 except Exception as e:
-                    print(e, res)
+                    print('ERROR: ', res)
+                    print(e)
             if residues:
                 try:
                     rs = ResiduePositionSet.objects.create(name=set_name,set_type=residue_sets[set_name][2], protein_group=residue_sets[set_name][3])

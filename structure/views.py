@@ -8,12 +8,14 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
-from protein.models import Gene, ProteinSegment, IdentifiedSites
-from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim
+from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
+from structure.models import (Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, 
+                             StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim)
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
+from signprot.models import SignprotComplex
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from protein.models import Protein, ProteinFamily
 from construct.models import Construct
@@ -95,11 +97,32 @@ class ServeHomologyModels(TemplateView):
         return context
 
 
+class ServeComplexModels(TemplateView):
+
+    template_name = "complex_models.html"
+    def get_context_data(self, **kwargs):
+        context = super(ServeComplexModels, self).get_context_data(**kwargs)
+        try:
+            context['structure_complex_model'] = StructureComplexModel.objects.all().defer('pdb').prefetch_related(
+                "receptor_protein__family",
+                "receptor_protein__family__parent__parent__parent",
+                "receptor_protein__species",
+                "sign_protein__family",
+                "sign_protein__family__parent__parent__parent",
+                "main_template__protein_conformation__protein__parent__family",
+                "main_template__pdb_code")
+        except StructureComplexModel.DoesNotExist as e:
+            pass
+
+        return context
+
+
 def HomologyModelDetails(request, modelname, state):
     """
     Show homology models details
     """
     modelname = modelname
+
     color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon",]
     
     if state=='refined':
@@ -121,6 +144,69 @@ def HomologyModelDetails(request, modelname, state):
             ).order_by('residue__sequence_number').all()
         main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
 
+    bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(rotamers, model_main_template, color_palette)
+
+    psi = PdbStateIdentifier(model)
+    psi.run()
+    delta_distance = round(float(psi.activation_value), 2)
+            
+    return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
+                                                          'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
+                                                          'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
+                                                          'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
+                                                          'state': state, 'delta_distance': delta_distance})
+
+def ComplexModelDetails(request, modelname, signprot):
+    """
+    Show complex homology models details
+    """
+    color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","mahogany",]
+    model = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
+    model_main_template = model.main_template
+    receptor_rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=model, protein__entry_name=modelname).prefetch_related(
+        "homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
+        "residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
+        "backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
+        ).order_by('residue__sequence_number').all()
+    signprot_rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=model, protein__entry_name=signprot).prefetch_related(
+        "homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
+        "residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
+        "backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
+        ).order_by('residue__sequence_number').all()
+
+    main_template_seqsim = StructureComplexModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
+    loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Gprotein')
+    
+
+    signprot_template = SignprotComplex.objects.get(structure=model_main_template).protein
+    bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, model_main_template, color_palette, chain='R')
+    print(colors)
+    signprot_color_palette = [i for i in color_palette if i not in list(colors.values())]
+
+    bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, model_main_template, signprot_color_palette, chain='A', used_colors=colors)
+    import pprint
+ 
+   
+
+    for b,n in bb_temps2.items():
+        for s in n:
+            if s.protein_conformation.protein.parent not in bb_temps:
+                bb_temps[s.protein_conformation.protein.parent] = [s]
+            else:
+                if s not in bb_temps[s.protein_conformation.protein.parent]:
+                    bb_temps[s.protein_conformation.protein.parent].append(s)
+                    break
+    print(segments_out2)
+    
+
+    return render(request,'complex_models_details.html',{'model': model, 'modelname': modelname, 'signprot': signprot, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
+                                                         'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
+                                                         'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1), 
+                                                         'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 
+                                                         'template_list': template_list, 'model_main_template': model_main_template, 'state': None, 
+                                                         'signprot_color_residues': segments_out2, 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
+
+def format_model_details(rotamers, model_main_template, color_palette, chain=None, used_colors=None):
     backbone_templates, rotamer_templates = [],[]
     segments, segments_formatted, segments_out = {},{},{}
     bb_temps, r_temps = OrderedDict(), OrderedDict()
@@ -177,19 +263,33 @@ def HomologyModelDetails(request, modelname, state):
     i = 0
     for s, nums in segments_formatted.items():
         if len(nums)>1:
-            text = ''
+            if chain:
+                text = '{} and ('.format(chain)
+            else:
+                text = ''
             for n in nums:
                 text+='{} or '.format(n)
-            segments_formatted[s] = text[:-4]
+            segments_formatted[s] = text[:-4]+')'
         else:
-            segments_formatted[s] = segments_formatted[s][0]
+            if chain:
+                segments_formatted[s] = '{} and ({})'.format(chain, segments_formatted[s][0])
+            else:
+                segments_formatted[s] = segments_formatted[s][0]
         if s==model_main_template:
             pass
         elif s==None:
             segments_out["white"] = segments_formatted[s]
         else:
-            segments_out[color_palette[i]] = segments_formatted[s]
-            colors[s] = color_palette[i]
+            if used_colors:
+                if s in used_colors:
+                    segments_out[used_colors[s]] = segments_formatted[s]
+                    colors[s] = used_colors[s]
+                else:
+                    segments_out[color_palette[i]] = segments_formatted[s]
+                    colors[s] = color_palette[i]
+            else:
+                segments_out[color_palette[i]] = segments_formatted[s]
+                colors[s] = color_palette[i]
         i+=1
     template_list = []
     for b, temps in bb_temps.items():
@@ -198,21 +298,26 @@ def HomologyModelDetails(request, modelname, state):
             bb_temps[b][i] = t
             template_list.append(t.pdb_code.index)
 
-    psi = PdbStateIdentifier(model)
-    psi.run()
-    delta_distance = round(float(psi.activation_value), 2)
-            
-    return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
-                                                          'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
-                                                          'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
-                                                          'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
-                                                          'state': state, 'delta_distance': delta_distance})
+    return bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors
 
 def ServeHomModDiagram(request, modelname, state):
     if state=='refined':
         model=Structure.objects.filter(pdb_code__index=modelname+'_refined')
     else:
         model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
+    if model.exists():
+        model=model.get()
+    else:
+         quit() #quit!
+
+    if model.pdb is None:
+        quit()
+
+    response = HttpResponse(model.pdb, content_type='text/plain')
+    return response
+
+def ServeComplexModDiagram(request, modelname, signprot):
+    model=StructureComplexModel.objects.filter(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
     if model.exists():
         model=model.get()
     else:
@@ -1791,7 +1896,41 @@ def ConvertStructureModelsToProteins(request):
                 selection.remove('targets', 'structure_model', struct_mod.item.id)
                 selection.add('targets', 'protein', SelectionItem('protein', prot))
             except:
-                prot = struct_mod.item.protein_conformation.protein.parent
+                try:
+                    prot = struct_mod.item.receptor_protein
+                    print(prot)
+                    selection.remove('targets', 'structure_complex_receptor', struct_mod.item.id)
+                    selection.add('targets', 'protein', SelectionItem('protein', prot))
+                except:
+                    prot = struct_mod.item.protein_conformation.protein.parent
+                    selection.remove('targets', 'structure', struct_mod.item.id)
+                    selection.add('targets', 'protein', SelectionItem('protein', prot))
+        if selection.reference != []:
+            selection.add('targets', 'protein', selection.reference[0])
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return HttpResponseRedirect('/alignment/segmentselection')
+
+def ConvertStructureComplexSignprotToProteins(request):
+    "For alignment from complex model browser, specifically for signprots"
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    if selection.targets != []:
+        for struct_mod in selection.targets:
+            try:
+                prot = struct_mod.item.sign_protein
+                print(prot)
+                print(selection)
+                selection.remove('targets', 'structure_complex_signprot', struct_mod.item.id)
+                selection.add('targets', 'protein', SelectionItem('protein', prot))
+            except:
+                prot = SignprotComplex.objects.get(structure=struct_mod.item).protein
                 selection.remove('targets', 'structure', struct_mod.item.id)
                 selection.add('targets', 'protein', SelectionItem('protein', prot))
         if selection.reference != []:
@@ -1802,7 +1941,7 @@ def ConvertStructureModelsToProteins(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    return HttpResponseRedirect('/alignment/segmentselection')
+    return HttpResponseRedirect('/alignment/segmentselectiongprot')
 
 
 def HommodDownload(request):
@@ -1814,7 +1953,7 @@ def HommodDownload(request):
     pks = request.GET['ids'].split(',')
     class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
     hommodels = StructureModel.objects.filter(pk__in=pks).prefetch_related('protein__family','state','main_template__pdb_code').all()
-
+    print(hommodels)
     for hommod in hommodels:
         mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
                                                                       hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
@@ -1849,10 +1988,58 @@ def HommodDownload(request):
 
         zipf.writestr(stats_name, stats_data)
         del stats_data
-        
     zipf.close()
     response = HttpResponse(content_type="application/zip")
     response['Content-Disposition'] = 'attachment; filename="GPCRDB_homology_models.zip"'
+    response.write(out_stream.getvalue())
+    return response
+
+def ComplexmodDownload(request):
+    "Download selected complex homology models in zip file"
+
+    out_stream = BytesIO()
+    io = PDBIO()
+    zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
+    pks = request.GET['ids'].split(',')
+    class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+    hommodels = StructureComplexModel.objects.filter(pk__in=pks).prefetch_related('receptor_protein__family','main_template__pdb_code').all()
+    print(hommodels)
+    for hommod in hommodels:
+        mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB_complex.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+                                                                   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+        tmp = StringIO(hommod.pdb)
+        zipf.writestr(mod_name, tmp.getvalue())
+        del tmp
+
+        stats_name = mod_name[:-3]+'templates.csv'
+        # Use cache to prevent this being performed too often
+        stats_data = cache.get(stats_name)
+        if stats_data is None:
+            rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related('homology_model','residue__generic_number','residue__protein_segment','backbone_template__pdb_code','rotamer_template__pdb_code').all().order_by('protein','residue__sequence_number')
+            stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
+            for r in rotamers:
+                h = r.homology_model.pk
+                try:
+                    gn = r.residue.generic_number.label
+                except:
+                    gn = '-'
+                if r.backbone_template:
+                    bt = r.backbone_template.pdb_code.index
+                else:
+                    bt = '-'
+                if r.rotamer_template:
+                    rt = r.rotamer_template.pdb_code.index
+                else:
+                    rt = '-'
+                stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+
+            cache.set(stats_name,stats_data,3600*24*7) # cache a week
+
+        zipf.writestr(stats_name, stats_data)
+        del stats_data
+    zipf.close()
+    response = HttpResponse(content_type="application/zip")
+    response['Content-Disposition'] = 'attachment; filename="GPCRDB_complex_homology_models.zip"'
     response.write(out_stream.getvalue())
     return response
 
@@ -1901,6 +2088,56 @@ def SingleModelDownload(request, modelname, state, csv=False):
         else:
             file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
                                                                            hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    return response
+
+def SingleComplexModelDownload(request, modelname, signprot, csv=False):
+    "Download single homology model"
+    print(modelname, signprot)
+    class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+    # if state=='refined':
+    #     hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
+    # else:
+    hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
+    if csv:
+        # if state=='refined':
+        #     rotamers = StructureRefinedStatsRotamer.objects.filter(structure=hommod).prefetch_related("structure", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        # else:
+        rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('protein','residue__sequence_number')
+        text_out = "Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n"
+        for r in rotamers:
+            if r.backbone_template:
+                bt = r.backbone_template.pdb_code.index
+            else:
+                bt = '-'
+            if r.rotamer_template:
+                rt = r.rotamer_template.pdb_code.index
+            else:
+                rt = '-'
+            if r.residue.generic_number:
+                gn = r.residue.generic_number.label
+            else:
+                gn = '-'
+            text_out+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+        response = HttpResponse(text_out, content_type="homology_models/csv")
+        # if state=='refined':
+        #     file_name = 'Class{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+        #                                                                        hommod.pdb_code.index)
+        # else:
+        file_name = 'Class{}_{}-{}_{}_{}_GPCRDB_complex.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+                                                                              hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+    else:
+        # if state=='refined':
+        #     response = HttpResponse(hommod.pdb_data.pdb, content_type="homology_models/model")
+        # else:
+        response = HttpResponse(hommod.pdb, content_type="homology_models/model")
+        # if state=='refined':
+        #     file_name = 'Class{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+        #                                                              hommod.pdb_code.index)
+        # else:
+        file_name = 'Class{}_{}-{}_{}_{}_GPCRDB_complex.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+                                                                    hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
     return response

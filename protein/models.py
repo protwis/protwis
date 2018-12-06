@@ -234,7 +234,7 @@ class ProteinFamily(models.Model):
     name = models.CharField(max_length=200)
 
     def short(self):
-        return self.name.replace("Class ","").replace(" receptors","")
+        return self.name.replace("Class ","").replace(" receptors","").replace(" receptor family","")
 
     def __str__(self):
         return self.name

@@ -1,4 +1,4 @@
-﻿{% extends "home/base.html" %}
+{% extends "home/base.html" %}
 {% load staticfiles %}
 {% load structure_extras %}
 
@@ -25,7 +25,7 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'iTlfrt',
-                'order': [[5, "asc"],[2, "asc"]], // order by class then receptor name
+                'order': [[4, "asc"],[2, "asc"]], // order by class then receptor name
 
                 'tableTools': {
                     "sRowSelect": "single",
@@ -37,13 +37,16 @@
                         sRangeFormat: "{from}:{to}",
                         aoColumns: [
                             null,
-                            { type: "text" }, // protein model name
-                            { type: "text" }, // uniprot name
-                            { type: "select" }, // protein family
-                            { type: "select"}, // state
+                            { type: "text" }, // receptor protein name
+                            { type: "text" }, // uniprot protein name
+                            { type: "select" }, // receptor protein family
                             { type: "select" }, // class
                             { type: "select" }, // species
+                            { type: "text" }, // signaling protein name
+                            { type: "select" }, // signaling protein family
+                            { type: "select" }, // transduction
                             { type: "text" }, // main template receptor
+                            { type: "text" }, // main template g protein
                             { type: "text" }, // main template structure
                             { type: "number" }, // model version
                             null,
@@ -82,7 +85,7 @@
                     selected_ids.push(hom_id);
                 });
                 
-                window.location.href = '/structure/hommod_download?ids='+selected_ids.join(",");
+                window.location.href = '/structure/complexmod_download?ids='+selected_ids.join(",");
 
             });
             $('#align_btn').click(function () {
@@ -90,7 +93,7 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][10];
+                    div.innerHTML = checked_data[i][13];
                     
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
@@ -110,12 +113,13 @@
                 ClearSelection('reference');
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
-                    div.innerHTML = table.rows('.selected').data()[0][10];
-                    var state1 = table.rows('.selected').data()[0][4];
+                    div.innerHTML = table.rows('.selected').data()[0][13];
+                    var state1 = table.rows('.selected').data()[0][5];
+
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
+                        AddToSelection('reference', 'structure_model_'.concat(state1), div.innerText.replace(/\s+/g, ''));
                     } else {
-                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('reference', 'structure_model_'.concat(state1), div.textContent.replace(/\s+/g, ''));
                     }
 
                 }
@@ -123,8 +127,8 @@
                 var selected_ids = [];
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][10];
-                    var state2 = checked_data[i][4];
+                    div.innerHTML = checked_data[i][13];
+                    var state2 = checked_data[i][5];
                     if (typeof div.innerText !== "undefined") {
                         selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
                     } else {
@@ -178,7 +182,6 @@
     
     <div style="font-size: 10px; padding: 3px 0px 0px 0px;">PDB files contain GPCRdb generic numbers in the B-factor field of CA atoms</div>
     <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
-    <div style="font-size: 10px;">For information on state identification and Δ distance (Å) please refer to the <a href="http://docs.gpcrdb.org/structures.html#structure-state">documentation</a></div>
 
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
         <table class="display" id="structure_model" style="width: 100%;">
@@ -186,12 +189,15 @@
                 <tr>
                     <th><input class="select-all" type="checkbox"> Select all</th>
                     <th class="protein-th">Receptor model</th>
-                    <th class="protein-th">Uniprot</th>
+                    <th class="protein-th">UniProt</th>
                     <th class="protein-th">Receptor family</th>
-                    <th class="protein-th">State</th>
                     <th class="protein-th">Receptor class</th>
                     <th class="protein-th">Species</th>
-                    <th class="pdb-th">Main template protein</th>
+                    <th class="pub-th">G protein</th>
+                    <th class="pub-th">G protein family</th>
+                    <th class="pub-th">Transducer</th>
+                    <th class="pdb-th">Template receptor</th>
+                    <th class="pdb-th">Template G protein</th>
                     <th class="pdb-th">PDB</th>
                     <th class="version-th">Model version</th>
                     <th style="display:none;"></th>
@@ -208,24 +214,34 @@
                     <th></th>
                     <th></th>
                     <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
                     <th style="display:none;"></th>
                    
                 </tr>
             </thead>
             <tbody>
-            {% for model in structure_model %}
+            {% for model in structure_complex_model %}
                 <tr model_id='{{model.pk}}'>
                     <td><input class="alt" type="checkbox"></td>
-                    <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
-                    <td>{{ model.protein.entry_short }}</td>
-                    <td>{{ model.protein.family.parent.name|safe }}</td>
-                    <td style="text-align: left;">{{ model.state.name }}</td>
-                    <td>{{ model.protein.family.parent.parent.parent.name }}</td>
-                    <td>{{ model.protein.species.common_name }}</td>
+                    <td><a href="complex_models/{{ model.receptor_protein.entry_name }}-{{ model.sign_protein.entry_name }}">{{ model.receptor_protein.family.name|safe }}</a></td>
+                    <td>{{ model.receptor_protein.entry_short }}</td>
+                    <td>{{ model.receptor_protein.family.parent.name|safe }}</td>
+                    <td>{{ model.receptor_protein.family.parent.parent.parent.name }}</td>
+                    <td>{{ model.receptor_protein.species.common_name }}</td>
+                    <td><a href="signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
+                    <td>{{ model.sign_protein.family.name|safe }}</td>
+                    {% if model.prot_signprot_pair.transduction %}
+                        <td>{{ model.prot_signprot_pair.transduction }}</td>
+                    {% else %}
+                        <td>no evidence</td>
+                    {% endif %}
                     <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
+                    <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
                     <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                     <td>{{ model.version|date:"Y-m-d" }}</td>
-                    <td style="display:none;">{{ model.protein.entry_name }}</td>
+                    <td style="display:none;">{{ model.receptor_protein.entry_name }}</td>
 
                 </tr>
                 {% endfor %}

@@ -7,4 +7,6 @@ urlpatterns = [
     url(r'^interactions', views.Interactions, name='interactions'),
     url(r'^interactiondata', views.InteractionData, name='interactiondata'),
     url(r'^pdbtreedata', views.PdbTreeData, name='pdbtreedata'),
+    url(r'^pdbtabledata', views.PdbTableData, name='pdbtreedata'),
+
 ]
