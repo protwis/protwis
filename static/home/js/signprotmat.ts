@@ -316,7 +316,7 @@ const signprotmat = {
       // conservation is calculated to be between -1 and 10 by python
       let cScale = d3
       .scaleSequential(d3.interpolateRdBu)
-      .domain([0,10]);
+      .domain([-100,100]);
 
     return cScale;
     },
@@ -596,7 +596,7 @@ const signprotmat = {
           "translate(-15," + (data.inttypes.length + 2) * 20 + ")"
         );
 
-      // * ADDING COLOR LEGEND
+      // * ADDING Interaction Type LEGEND
       svg
         .append("g")
         .attr("class", "legendOrdinal")
@@ -981,7 +981,7 @@ const signprotmat = {
 
       // filter out NA generic numbers based on xScale
       data = _.filter(data, function(d) { return xScale(d.gn); });
-      
+
       let seqsigTip = d3
         .tip()
         .attr("class", "d3-tip")
@@ -995,7 +995,7 @@ const signprotmat = {
       svg
         .append("g")
         .attr("id", "seqsig_feature")
-        .attr("transform", "translate(" + 0 + "," + -30 + ")")
+        .attr("transform", "translate(" + 0 + "," + 0 + ")")
         .selectAll("text")
         .data(uniq_feats)
         .enter()
@@ -1014,7 +1014,7 @@ const signprotmat = {
       svg
         .append("g")
         .attr("id", "seqsig_mat")
-        .attr("transform", "translate(" + -xScale.step() / 2 + "," + -30 + ")")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + 0 + ")")
         .append("rect")
         .attr("class", "border-bg")
         .style("fill", "#ffffff")
@@ -1044,7 +1044,7 @@ const signprotmat = {
         .style("fill",function(d: any) {
           if(d.cons === -1){
             return '#ffffff';
-          } else {return cScale(d.cons);}
+          } else {return cScale(d.freq);}
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75 + fScale(d.feature) - fScale.step())
@@ -1080,6 +1080,32 @@ const signprotmat = {
         .attr("width", xScale.range()[1] - xScale.step())
         .attr("height", fScale.range()[1] - fScale.step());
 
+        // * ADDING COLOR LEGEND
+      svg
+        .append("g")
+        .attr("class", "legendSeqSig")
+        .attr("transform", "translate(-200,10)");
+
+      let legendSeqSig = d3
+        .legendColor()
+        .cells(5)
+        .labelFormat(d3.format(""))
+        .title("Feature Conservation (Set A / Set B)")
+        .scale(cScale)
+        .orient("horizontal")
+        .shapeWidth(30);
+
+
+      svg
+        .select(".legendSeqSig")
+        .call(legendSeqSig)
+        .selectAll("rect")
+        .attr("rx", 3)
+        .attr("ry", 3);
+      svg
+        .select(".legendSeqSig")
+        .selectAll("text")
+        .attr("class", "legend");
     },
 
 
@@ -1135,7 +1161,7 @@ const signprotmat = {
         .style("fill",function(d: any) {
           if(d.cons === -1){
             return '#ffffff';
-          } else {return cScale(d.cons);}
+          } else {return cScale(d.score);}
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75)

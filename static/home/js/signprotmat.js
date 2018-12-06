@@ -275,7 +275,7 @@ var signprotmat = {
             // conservation is calculated to be between -1 and 10 by python
             var cScale = d3
                 .scaleSequential(d3.interpolateRdBu)
-                .domain([0, 10]);
+                .domain([-100, 100]);
             return cScale;
         },
         // * DEFINING AXIS FOR X/Y AND GRID
@@ -507,7 +507,7 @@ var signprotmat = {
                 .append("g")
                 .attr("id", "infobox")
                 .attr("transform", "translate(-15," + (data.inttypes.length + 2) * 20 + ")");
-            // * ADDING COLOR LEGEND
+            // * ADDING Interaction Type LEGEND
             svg
                 .append("g")
                 .attr("class", "legendOrdinal")
@@ -855,7 +855,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "seqsig_feature")
-                .attr("transform", "translate(" + 0 + "," + -30 + ")")
+                .attr("transform", "translate(" + 0 + "," + 0 + ")")
                 .selectAll("text")
                 .data(uniq_feats)
                 .enter()
@@ -873,7 +873,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "seqsig_mat")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + -30 + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 0 + ")")
                 .append("rect")
                 .attr("class", "border-bg")
                 .style("fill", "#ffffff")
@@ -903,7 +903,7 @@ var signprotmat = {
                     return '#ffffff';
                 }
                 else {
-                    return cScale(d.cons);
+                    return cScale(d.freq);
                 }
             })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
@@ -937,6 +937,29 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", fScale.range()[1] - fScale.step());
+            // * ADDING COLOR LEGEND
+            svg
+                .append("g")
+                .attr("class", "legendSeqSig")
+                .attr("transform", "translate(-200,10)");
+            var legendSeqSig = d3
+                .legendColor()
+                .cells(5)
+                .labelFormat(d3.format(""))
+                .title("Feature Conservation (Set A / Set B)")
+                .scale(cScale)
+                .orient("horizontal")
+                .shapeWidth(30);
+            svg
+                .select(".legendSeqSig")
+                .call(legendSeqSig)
+                .selectAll("rect")
+                .attr("rx", 3)
+                .attr("ry", 3);
+            svg
+                .select(".legendSeqSig")
+                .selectAll("text")
+                .attr("class", "legend");
         },
         draw_seq_cons: function (data_in, svg, xScale) {
             console.log('running draw seq cons');
@@ -987,7 +1010,7 @@ var signprotmat = {
                     return '#ffffff';
                 }
                 else {
-                    return cScale(d.cons);
+                    return cScale(d.score);
                 }
             })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
