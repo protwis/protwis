@@ -455,6 +455,7 @@ def signprotdetail(request, slug):
 def InteractionMatrix(request):
     from django.db.models import F
     from django.db.models import Q
+    import requests
 
     dataset = {
         '4x1h' : [
@@ -972,87 +973,22 @@ def InteractionMatrix(request):
         ['A','R',107,'3.55x55','D','R',370,'G.H5.12', ["polar-sidechain-sidechain", "polar-backbone-sidechain", "van-der-waals"]],
         ],
     }
-    
-    complex_info = [
-        {
-            'pdb_id': '3sn6',
-            'receptor': 'beta2',
-            'gprotein': 'GNAS2_BOVIN',
-            'alternative_gprotein': 'GNAS2_HUMAN'
-            },
-        {
-            'pdb_id': '4x1h',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '5g53',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '5g53',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '5uz7',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '5vai',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '6b3j',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '6cmo',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '6d9h',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '6dde',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '6ddf',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '6g79',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-        {
-            'pdb_id': '6gdg',
-            'receptor': '',
-            'gprotein': '',
-            'alternative_protein': ''
-            },
-    ]
+
+
+    # generate complex info dataset
+    filt = [e.upper() for e in list(dataset)]
+    struc = Structure.objects.filter(pdb_code__index__in=filt).prefetch_related('protein_conformation__protein__parent')
+
+    complex_info = []
+    for s in struc:
+        r = {}
+        r['pdb_id'] = str.lower(s.pdb_code.index)
+        r['name'] = s.protein_conformation.protein.parent.name
+        r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        # r['gprot'] =
+        complex_info.append(r)
+
+    print(complex_info)
 
     data = Protein.objects.filter(
         sequence_type__slug='wt',
@@ -1094,7 +1030,7 @@ def InteractionMatrix(request):
     interactions_metadata = complex_info
     context = {
         'interactions': dataset,
-        'interactions_metadata': interactions_metadata,
+        'interactions_metadata': json.dumps(interactions_metadata),
         'ps': json.dumps(list(ps)),
         'rs': json.dumps(list(rs)),
         }
@@ -1211,7 +1147,7 @@ def IMSequenceSignature(request):
                     print(e)
 
 
-    # SIGNATURE CONSENSUS
+    # FEATURE CONSENSUS
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
     sigcons = []
     x = 0

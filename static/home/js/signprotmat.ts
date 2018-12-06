@@ -448,7 +448,7 @@ const signprotmat = {
         return r;
       }, []);
 
-      let bwScale = d3.scaleSequential(d3.interpolateGreys).domain([0,pdbScale.domain().length/2])
+      let bwScale = d3.scaleSequential(d3.interpolateGreys).domain([0,pdbScale.domain().length])
 
       svg
         .append("g")

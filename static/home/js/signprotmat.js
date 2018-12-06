@@ -376,7 +376,7 @@ var signprotmat = {
                 }
                 return r;
             }, []);
-            var bwScale = d3.scaleSequential(d3.interpolateGreys).domain([0, pdbScale.domain().length / 2]);
+            var bwScale = d3.scaleSequential(d3.interpolateGreys).domain([0, pdbScale.domain().length]);
             svg
                 .append("g")
                 .attr("id", "interact")
