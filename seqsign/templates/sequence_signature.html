@@ -1,5 +1,7 @@
-{% extends "home/base.html" %} {% load staticfiles %} {% block addon_css %}
-<link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+    <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
 <!-- <style>
 .axis path,
 .axis line {
@@ -18,9 +20,9 @@
 <table cellspacing='10'>
     <tr>
         <td>
-            <form style="display: inline;">
+            <form id="cutoff-set" style="display: inline;" >
                 <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon3">Signature fraquency cutoff: </span>
+                    <span class="input-group-addon" id="basic-addon3">Signature frequency cutoff: </span>
                     <input id="cutoff-val" type="text" class="form-control" size=15 placeholder="40">
                     <div class="input-group-btn">
                         <button id="cutoff-apply" class="btn btn-outline-secondary" type="button"><i class="glyphicon glyphicon-filter"></i></button>
@@ -32,7 +34,7 @@
             <a id='selection-button' href="render_signature_excel" class="btn btn-success">Download excel file</a>
         </td>
         <td>
-            <a id='score-button' href="javascript:void(0)" class="btn btn-success">Find similar proteins (Class A)</a>
+            <a id='score-button' href="javascript:void(0)" class="btn btn-success">Find similar proteins</a>
         </td>
     </tr>
 </table>
@@ -83,13 +85,16 @@
             <div class="ali-first-col-div">
                 <table>
                     <tr>
-                        <td class="ali-td ali-td-first-col">{% include 'sequence_signature/signature_left_panel.html' %}</td>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_left_panel.html' %}</td>
                     </tr>
                     <tr>
-                        <td class="ali-td ali-td-first-col">{% include 'sequence_signature/signature_aln_pos_left_panel.html' %}</td>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_aln_pos_left_panel.html' %}</td>
                     </tr>
                     <tr>
-                        <td class="ali-td ali-td-first-col">{% include 'sequence_signature/signature_aln_neg_left_panel.html' %}</td>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_aln_neg_left_panel.html' %}</td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_zscores_left_panel.html' %}</td>
                     </tr>
                 </table>
             </div>
@@ -106,13 +111,16 @@
                 <div class="dynamic-div">
                     <table>
                         <tr>
-                            <td>{% include 'sequence_signature/signature_right_panel.html' %}</td>
+                            <td>{% include 'signature_right_panel.html' %}</td>
                         </tr>
                         <tr>
-                            <td>{% include 'sequence_signature/signature_aln_pos_right_panel.html' %}</td>
+                            <td>{% include 'signature_aln_pos_right_panel.html' %}</td>
                         </tr>
                         <tr>
-                            <td>{% include 'sequence_signature/signature_aln_neg_right_panel.html' %}</td>
+                            <td>{% include 'signature_aln_neg_right_panel.html' %}</td>
+                        </tr>
+                        <tr>
+                            <td>{% include 'signature_zscores_right_panel.html' %}</td>
                         </tr>
                     </table>
                 </div>
@@ -126,28 +134,28 @@
 <!-- sequence alignment ends -->
 {% endblock %}
 {% block addon_js %}
-<!-- <script src="https://d3js.org/d3.v4.min.js"></script> -->
-<script src="{% static 'home/js/alignment.js' %}"></script>
 
-<!-- <script src="{% static 'home/js/scatter_plot.js' %}"></script> -->
-<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-<script type="text/javascript" charset="utf-8">
-    $('cutoff-val').keydown( function (event) {
-        if (event.keyCode == 13) {
-            var cutoff = parseInt($('#cutoff-val').val());
-            ApplyCutoff(cutoff);
-        };
-    });
-    $('#score-button').click( function () {
-        var cutoff = $('#cutoff-val').val();
-        if (cutoff == '') {
-            cutoff = 40;
-        }
-        window.location.href = 'render_signature_match_scores/'+cutoff;
-    });
-    //$(window).load(function () {
-    //    draw_scatter_plot(data, options);
-    //});
+    <script src="{% static 'home/js/alignment.js' %}"></script>
+    <!-- <script src="{% static 'home/js/scatter_plot.js' %}"></script> -->
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script type="text/javascript" charset="utf-8">
+        $('#cutoff-set').submit(function(e){e.preventDefault()});
+        $('#cutoff-val').keydown( function (event) {
+            if (event.keyCode == 13) {
+                var cutoff = parseInt($('#cutoff-val').val());
+                ApplyCutoff(cutoff);
+            };
+        });
+        $('#score-button').click( function () {
+            var cutoff = $('#cutoff-val').val();
+            if (cutoff == '') {
+                cutoff = 40;
+            }
+            window.location.href = 'render_signature_match_scores/'+cutoff;
+        });
+        //$(window).load(function () {
+        //    draw_scatter_plot(data, options);
+        //});
 
-</script>
+    </script>
 {% endblock %}

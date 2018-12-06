@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views import generic
 from django.http import HttpResponse
-from django.db.models import Q
+from django.db.models import Q, F, Func, Value
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
@@ -30,10 +30,16 @@ class BrowseSelection(AbsBrowseSelection):
 def detail(request, slug):
     # get protein
     slug = slug.lower()
-    if Protein.objects.filter(entry_name=slug).exists():
-        p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
-    else:
-        p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
+    try:
+        if Protein.objects.filter(entry_name=slug).exists():
+            p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
+        else:
+            p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
+    except:
+        context = {'protein_no_found': slug}
+
+        return render(request, 'protein/protein_detail.html', context)
+
 
     if p.family.slug.startswith('100') or p.family.slug.startswith('200'):
         # If this protein is a gprotein, redirect to that page.
@@ -149,8 +155,13 @@ def SelectionAutocomplete(request):
                 species__in=(species_list),
                 source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
         else:
-            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
+            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
                 species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+
+        # Try matching protein name after stripping html tags
+        if ps.count() == 0:
+            ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
+
         for p in ps:
             p_json = {}
             p_json['id'] = p.id
@@ -180,6 +191,11 @@ def SelectionAutocomplete(request):
             if (type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins') and selection_only_receptors!="True":
                 # find protein families
                 pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000').exclude(slug__startswith=exclusion_slug)[:10]
+
+                # Try matching protein family name after stripping html tags
+                if pfs.count() == 0:
+                    pfs = ProteinFamily.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(filtered__icontains=q).exclude(slug='000').exclude(slug__startswith=exclusion_slug)[:10]
+
                 for pf in pfs:
                     pf_json = {}
                     pf_json['id'] = pf.id

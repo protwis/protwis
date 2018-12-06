@@ -59,7 +59,7 @@ class Command(BaseCommand):
             ['build_mutational_landscape'],
             ['build_residue_sets'],
             ['build_dynamine_annotation', {'proc': options['proc']}],
-            # ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
+            ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
             ['build_blast_database'],
             ['build_text'],
             ['build_release_notes'],
