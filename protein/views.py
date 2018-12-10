@@ -26,7 +26,7 @@ class BrowseSelection(AbsBrowseSelection):
     target_input=False
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
     # get protein
     slug = slug.lower()
