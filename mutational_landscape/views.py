@@ -34,10 +34,11 @@ from copy import deepcopy
 from io import BytesIO
 import re
 import math
+import unicodedata
 import urllib
 import xlsxwriter #sudo pip3 install XlsxWriter
 import operator
-
+import string
 
 class TargetSelection(AbsTargetSelection):
     step = 1
@@ -59,17 +60,17 @@ class TargetSelection(AbsTargetSelection):
     }
     default_species = False
 
-
+@cache_page(60*60*24*21)
 def render_variants(request, protein=None, family=None, download=None, receptor_class=None, gn=None, aa=None, **response_kwargs):
 
     simple_selection = request.session.get('selection', False)
     proteins = []
+    target_type = 'protein'
     if protein:  # if protein static page
         proteins.append(Protein.objects.get(entry_name=protein.lower()))
 
-    target_type = 'protein'
     # flatten the selection into individual proteins
-    if simple_selection:
+    elif simple_selection:
         for target in simple_selection.targets:
             if target.type == 'protein':
                 proteins.append(target.item)
@@ -103,7 +104,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
     ptms_dict = {}
 
     ## MICROSWITCHES
-    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    micro_switches_rset = ResiduePositionSet.objects.get(name="State (micro-)switches")
     ms_label = []
     for residue in micro_switches_rset.residue_position.all():
         ms_label.append(residue.label)
@@ -114,7 +115,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
         ms_sequence_numbers.append(ms.sequence_number)
 
     ## SODIUM POCKET
-    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium ion pocket")
     sp_label = []
     for residue in sodium_pocket_rset.residue_position.all():
         sp_label.append(residue.label)
@@ -129,7 +130,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
 
     ## G PROTEIN INTERACTION POSITIONS
     # THIS SHOULD BE CLASS SPECIFIC (different set)
-    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    rset = ResiduePositionSet.objects.get(name='G-protein interface')
     gprotein_generic_set = []
     for residue in rset.residue_position.all():
         gprotein_generic_set.append(residue.label)
@@ -157,7 +158,8 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
             if interactiontype not in interaction_data[sequence_number]:
                 interaction_data[sequence_number].append(interactiontype)
 
-    if target_type == 'family':
+    # Fixes fatal error - in case of receptor family selection (e.g. H1 receptors)
+    if target_type == 'family' and len(proteins[0].family.slug) < 15:
         pc = ProteinConformation.objects.get(protein__family__name=familyname, protein__sequence_type__slug='consensus')
         residuelist = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related('protein_segment', 'generic_number', 'display_generic_number')
     else:
@@ -229,8 +231,10 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
         data = []
         for r in NMs:
             values = r.__dict__
-            data.append(values)
-        headers = ['type', 'amino_acid', 'allele_count', 'allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes', 'functional_annotation']
+            complete = {'protein': r.protein.name, 'sequence_number': r.residue.sequence_number, 'orig_amino_acid': r.residue.amino_acid}
+            complete.update(values)
+            data.append(complete)
+        headers = ['protein', 'sequence_number', 'orig_amino_acid', 'type', 'amino_acid', 'allele_count', 'allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes', 'functional_annotation']
 
         # EXCEL SOLUTION
         output = BytesIO()
@@ -253,7 +257,10 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
         xlsx_data = output.read()
 
         response = HttpResponse(xlsx_data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=GPCRdb_' + proteins[0].entry_name + '_variant_data.xlsx'  # % 'mutations'
+        if target_type == 'family':
+            response['Content-Disposition'] = 'attachment; filename=' + clean_filename('GPCRdb_' + str(familyname) + '_variant_data.xlsx')  # % 'mutations'
+        else:
+            response['Content-Disposition'] = 'attachment; filename=GPCRdb_' + proteins[0].entry_name + '_variant_data.xlsx'  # % 'mutations'
         return response
 
     return render(request, 'browser.html', {'mutations': NMs, 'type': target_type, 'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'receptor': str(proteins[0].entry_name), 'mutations_pos_list': json.dumps(jsondata), 'natural_mutations_pos_list': json.dumps(jsondata_natural_mutations)})
@@ -269,7 +276,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         ptms_dict[ptm.residue.sequence_number] = ptm.modification
 
     ## MICROSWITCHES
-    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    micro_switches_rset = ResiduePositionSet.objects.get(name="State (micro-)switches")
     ms_label = []
     for residue in micro_switches_rset.residue_position.all():
         ms_label.append(residue.label)
@@ -280,7 +287,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         ms_sequence_numbers.append(ms.sequence_number)
 
     ## SODIUM POCKET
-    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium ion pocket")
     sp_label = []
     for residue in sodium_pocket_rset.residue_position.all():
         sp_label.append(residue.label)
@@ -292,7 +299,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
 
     ## G PROTEIN INTERACTION POSITIONS
     # THIS SHOULD BE CLASS SPECIFIC (different set)
-    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    rset = ResiduePositionSet.objects.get(name='G-protein interface')
     gprotein_generic_set = []
     for residue in rset.residue_position.all():
         gprotein_generic_set.append(residue.label)
@@ -604,7 +611,7 @@ def get_functional_sites(protein):
     ptms = list(PTMs.objects.filter(protein=protein).values_list('residue', flat=True).distinct())
 
     ## MICROSWITCHES
-    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    micro_switches_rset = ResiduePositionSet.objects.get(name="State (micro-)switches")
     ms_label = []
     for residue in micro_switches_rset.residue_position.all():
         ms_label.append(residue.label)
@@ -612,7 +619,7 @@ def get_functional_sites(protein):
     ms_object = list(Residue.objects.filter(protein_conformation__protein=protein, generic_number__label__in=ms_label).values_list('id', flat=True).distinct())
 
     ## SODIUM POCKET
-    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium ion pocket")
     sp_label = []
     for residue in sodium_pocket_rset.residue_position.all():
         sp_label.append(residue.label)
@@ -621,7 +628,7 @@ def get_functional_sites(protein):
 
     ## G PROTEIN INTERACTION POSITIONS
     # THIS SHOULD BE CLASS SPECIFIC (different set)
-    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    rset = ResiduePositionSet.objects.get(name='G-protein interface')
     gprotein_generic_set = []
     for residue in rset.residue_position.all():
         gprotein_generic_set.append(residue.label)
@@ -638,6 +645,23 @@ def get_functional_sites(protein):
     known_function_sites = set(x for l in [GP_object,sp_object,ms_object,ptms,interaction_residues] for x in l)
     NMs = NaturalMutations.objects.filter(residue_id__in=known_function_sites)
     return len(NMs)
+
+# Based on https://gist.github.com/wassname/1393c4a57cfcbf03641dbc31886123b8
+def clean_filename(filename, replace=' '):
+    char_limit = 255
+
+    # replace spaces
+    filename.replace(' ','_')
+
+    # keep only valid ascii chars
+    cleaned_filename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore').decode()
+
+    # keep only whitelisted chars
+    whitelist = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    cleaned_filename = ''.join(c for c in cleaned_filename if c in whitelist)
+    if len(cleaned_filename)>char_limit:
+        print("Warning, filename truncated because it was over {}. Filenames may no longer be unique".format(char_limit))
+    return cleaned_filename[:char_limit]
 
 @cache_page(60*60*24*21)
 def economicburden(request):

@@ -1,0 +1,22 @@
+<!-- Z-SCALES SIGNATURE -->
+
+    <!-- BLANK Subheader -->
+    <tr>
+        <td class="ali-td-header-row signature-section-header-row" colspan="{{ num_residue_columns_pos }}"></td>
+    </tr>
+
+
+    {% for scale, zscale_items in zscales_signature.items %}
+        <tr>
+          {% for segment, cons in zscale_items.items %}
+              {% for residue, pos in cons.items %}
+                  <td class="ali-td ali-residue res-cons-{{ pos.1 }}">
+                      <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.2|safe }}">
+                          {{ pos.0 }}
+                      </div>
+                  </td>
+              {% endfor %}
+              <td class="ali-td-anchor">&nbsp;</td>
+          {% endfor %}
+        </tr>
+    {% endfor %}

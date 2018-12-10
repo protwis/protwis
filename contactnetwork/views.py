@@ -87,7 +87,7 @@ def PdbTableData(request):
                 "stabilizing_agents", "construct__crystallization__crystal_method",
                 "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
                 "protein_conformation__site_protein_conformation__site")
-        
+
     data_dict = OrderedDict()
     data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></thead><tbody>\n"
     for s in data:
@@ -209,10 +209,11 @@ def InteractionData(request):
 
     if len(proteins)>1:
         a = Alignment()
+        a.ignore_alternative_residue_numbering_schemes = True;
         a.load_proteins(proteins)
         a.load_segments(segments) #get all segments to make correct diagrams
         # build the alignment data matrix
-        a.build_alignment(fetch_alternative_GN=False)
+        a.build_alignment()
         # calculate consensus sequence + amino acid and feature frequency
         a.calculate_statistics()
         consensus = a.full_consensus
@@ -313,26 +314,29 @@ def InteractionData(request):
     return JsonResponse(data)
 
 def ServePDB(request, pdbname):
-    structure=Structure.objects.filter(pdb_code__index=pdbname)
+    structure=Structure.objects.filter(pdb_code__index=pdbname.upper())
     if structure.exists():
         structure=structure.get()
     else:
-         quit() #quit!
+        quit() #quit!
 
     if structure.pdb_data is None:
         quit()
 
-    only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number').all())
+    only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label').all())
     only_gn = []
+    gn_map = []
     segments = {}
     for gn in only_gns:
         only_gn.append(gn[1])
+        gn_map.append(gn[2])
         if gn[0] not in segments:
             segments[gn[0]] = []
         segments[gn[0]].append(gn[1])
     data = {}
     data['pdb'] = structure.pdb_data.pdb
     data['only_gn'] = only_gn
+    data['gn_map'] = gn_map
     data['segments'] = segments
     data['chain'] = structure.preferred_chain
 
