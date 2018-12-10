@@ -986,9 +986,11 @@ def InteractionMatrix(request):
         r['pdb_id'] = str.lower(s.pdb_code.index)
         r['name'] = s.protein_conformation.protein.parent.name
         r['entry_name'] = s.protein_conformation.protein.parent.entry_name
-        # r['gprot'] =
+        try:
+            r['gprot'] = s.protein_conformation.protein.parent.proteingproteinpair_set.first().g_protein.name
+        except Exception:
+            r['gprot'] = ''
         complex_info.append(r)
-
     print(complex_info)
 
     data = Protein.objects.filter(
