@@ -1061,7 +1061,7 @@ def IMSequenceSignature(request):
 
     # receive data
     pos_set = request.POST.getlist('pos[]')
-    neg_set = request.POST.getlist('neg[]')
+    # neg_set = request.POST.getlist('neg[]')
     segments = []
     for s in request.POST.getlist('seg[]'):
         try:
@@ -1073,11 +1073,11 @@ def IMSequenceSignature(request):
 
     # get pos/neg set objects
     pos_set = Protein.objects.filter(entry_name__in=pos_set).select_related('residue_numbering_scheme', 'species')
-    neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
+    # neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-    signature.setup_alignments(segments, pos_set, neg_set)
+    signature.setup_alignments(segments, pos_set, pos_set)
     signature.calculate_signature()
 
 
