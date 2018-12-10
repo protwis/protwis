@@ -203,7 +203,6 @@ var signprotmat = {
         // * seqsig
         // * SETTING THE FEATURE SCALE
         fScale: function (data) {
-            console.log(data);
             var features = _.map(data, function (d) { return d.feature; });
             var fScale = d3
                 .scaleBand()
@@ -292,7 +291,6 @@ var signprotmat = {
                 .tip()
                 .attr("class", "d3-tip")
                 .html(function (d) {
-                console.log(d);
                 return d;
             });
             svg.call(seqTip);
