@@ -229,6 +229,14 @@ def get_neg_charged_atom_names(res):
 
     return match_atomselection_residue(res, atomnames)
 
+def get_charged_atom_names(res):
+    if is_pos_charged(res):
+        return get_pos_charged_atom_names(res)
+    elif is_neg_charged(res):
+        return get_neg_charged_atom_names(res)
+    else:
+        return []
+
 # Returns the list of atom IDs that are actually present in for the residue
 def match_atomselection_residue(res, atomnames):
     res_atoms = res.child_dict
