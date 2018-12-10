@@ -89,8 +89,8 @@
                 </div> -->
 
                 <div class="">
-                    <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value--; filter_pairs()">-</button>
-                    <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value++; filter_pairs()">+</button>
+                    <button class="btn btn-primary" onclick="replace_filter_value('dec'); filter_pairs()">-</button>
+                    <button class="btn btn-primary" onclick="replace_filter_value('inc'); filter_pairs()">+</button>
                 </div>
             </div>
 
@@ -296,9 +296,17 @@
         });
     };
 
+    const replace_filter_value = function(d) {
+        const num = parseInt($('#currentpairs').text())
+        if (d === 'dec') {
+            num > 1 ? $('#currentpairs').text(num - 1) : null
+        } else if (d === 'inc') {
+            $('#currentpairs').text(num + 1)
+        }
+    };
+
     const filter_pairs = function() {
-        const num = $('input[name="highlight_pair_num"]').val();
-        $('#currentpairs').text(num);
+        const num = parseInt($('#currentpairs').text())
         d3.select('g#interact')
         .selectAll("rect")
         .style('display', function(d){return (num <= d.pairs.length ? 'block' : 'none') })
