@@ -2,7 +2,7 @@
 const margin = { top: 40, right: 200, bottom: 180, left: 200 };
 let w = 1200 - margin.left - margin.right,
   h = 1000 - margin.top - margin.bottom;
-  // change to 600 for more compact view
+// change to 600 for more compact view
 
 // array for data in infobox
 let info_data = [];
@@ -95,16 +95,18 @@ const signprotmat = {
       }
     },
 
-    select_by_value: function (selection, value) {
-      let ret_sel = []
+    select_by_value: function(selection, value) {
+      let ret_sel = [];
       for (let index = 0; index < selection.length; index++) {
-          ret_sel.push(selection[index][value]);
-      };
+        ret_sel.push(selection[index][value]);
+      }
       return ret_sel;
     },
 
-    removeUndefinedGN: function(dataset){
-      return _.filter(dataset, function(o) { return o.rec_gn !== '-'; });
+    removeUndefinedGN: function(dataset) {
+      return _.filter(dataset, function(o) {
+        return o.rec_gn !== "-";
+      });
     },
 
     dataTransformationWrapper: function(dataset, keys, pdb_sel) {
@@ -136,13 +138,13 @@ const signprotmat = {
   d3: {
     // * SETTING UP SVG FOR OUTPUT
     setup: function(div, loc) {
-      if (loc === 'seqsig'){
-        h = 1500
-      } else if (loc === 'conseq') {
-        h = 0
+      if (loc === "seqsig") {
+        h = 1500;
+      } else if (loc === "conseq") {
+        h = 0;
       } else {
         h = 1000 - margin.top - margin.bottom;
-      };
+      }
       let svg = d3
         .select("body")
         .select("div#content")
@@ -157,7 +159,10 @@ const signprotmat = {
             (h + 200 + margin.top + margin.bottom)
         )
         // .classed("svg-content", true) //class to make it responsive
-        .attr("class", (typeof loc !== 'undefined' ? "svg-content " + loc :"svg-content"))
+        .attr(
+          "class",
+          typeof loc !== "undefined" ? "svg-content " + loc : "svg-content"
+        )
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -235,75 +240,18 @@ const signprotmat = {
         .domain(data)
         .range(d3.schemeSet3);
 
-        return colScale;
-      },
+      return colScale;
+    },
 
-      // * seqsig
-      // * SETTING THE FEATURE SCALE
-      fScale: function(data) {
-
-        const feats = [
-          "Hydrophobic",
-          "Aliphatic",
-          "Aliphatic small",
-          "Aliphatic medium",
-          "Aliphatic large",
-          "Aliphatic extra large",
-          "Aromatic",
-          "Aromatic medium",
-          "Aromatic large",
-          "Charge",
-          "Charge small",
-          "Charge negative",
-          "Charge positive",
-          "Charge positive small",
-          "Charge positive large",
-          "Helix propencity extra large",
-          "Helix propencity large",
-          "Helix propencity medium",
-          "Helix propencity small",
-          "Helix propencity extra small",
-          "Polar or charged",
-          "Pro (helix kink)",
-          "Polar uncharged extra small",
-          "Polar uncharged small",
-          "Polar uncharged large",
-          "Polar or charged extralarge",
-          "Polar or negative small",
-          "Polar or negative medium",
-          "Polar or negative large",
-          "Polar or negative extra large",
-          "Polar or positive extra large",
-          "Any tiny",
-          "Any extra small",
-          "Any small",
-          "Any medium",
-          "Any large",
-          "Any extra large",
-          "Gly",
-          "Ala",
-          "Cys",
-          "Ser",
-          "Thr",
-          "Val",
-          "Asp",
-          "Ile",
-          "Leu",
-          "Asn",
-          "Met",
-          "Glu",
-          "Gln",
-          "His",
-          "Lys",
-          "Phe",
-          "Arg",
-          "Tyr",
-          "Trp",
-          "Gap"]
+    // * seqsig
+    // * SETTING THE FEATURE SCALE
+    fScale: function(data) {
+      console.log(data)
+      const features = _.map(data, (d) => d.feature)
 
       let fScale = d3
         .scaleBand()
-        .domain(feats)
+        .domain(features)
         .range([0, h])
         // .round(true)
         .padding(1);
@@ -311,7 +259,7 @@ const signprotmat = {
       return fScale;
     },
 
-    cScale: function(data){
+    cScale: function(data) {
       // const values = d3
       //   .map(data, (d: any) => d.cons)
       //   .keys()
@@ -321,11 +269,9 @@ const signprotmat = {
       // const max = values[0]
 
       // conservation is calculated to be between -1 and 10 by python
-      let cScale = d3
-      .scaleSequential(d3.interpolateRdBu)
-      .domain([-100,100]);
+      let cScale = d3.scaleSequential(d3.interpolateRdBu).domain([-100, 100]);
 
-    return cScale;
+      return cScale;
     },
 
     // * DEFINING AXIS FOR X/Y AND GRID
@@ -371,13 +317,30 @@ const signprotmat = {
         .tip()
         .attr("class", "d3-tip")
         .html(function(d) {
-          let pair_string = '';
+          let pair_string = "";
           d.pairs.forEach(e => {
-            pair_string += e.pdb_id + ': ' + e.rec_aa + ' vs. ' + e.sig_aa + '(' + e.int_ty + ')' + '<br>';
+            pair_string +=
+              e.pdb_id +
+              ": " +
+              e.rec_aa +
+              " vs. " +
+              e.sig_aa +
+              "(" +
+              e.int_ty +
+              ")" +
+              "<br>";
           });
-          return "Receptor: " + d.rec_gn +
-          "<br>" + "Signaling Protein: " + d.sig_gn +
-          "<br>" + 'PDBs:' + '<br>' + pair_string;
+          return (
+            "Receptor: " +
+            d.rec_gn +
+            "<br>" +
+            "Signaling Protein: " +
+            d.sig_gn +
+            "<br>" +
+            "PDBs:" +
+            "<br>" +
+            pair_string
+          );
         });
       svg.call(tip);
 
@@ -390,7 +353,7 @@ const signprotmat = {
         .tip()
         .attr("class", "d3-tip")
         .html(function(d) {
-          console.log(d)
+          console.log(d);
           return d;
         });
       svg.call(seqTip);
@@ -420,35 +383,39 @@ const signprotmat = {
       let each_res;
 
       let helper = {};
-      let result = data.transformed.reduce(function (r, o) {
-        let key = o.rec_gn + '-' + o.sig_gn;
+      let result = data.transformed.reduce(function(r, o) {
+        let key = o.rec_gn + "-" + o.sig_gn;
 
         if (!helper[key]) {
           let tmp = {
-            "rec_gn": o.rec_gn,
-            "sig_gn": o.sig_gn,
-            "pairs": [{
-              'pdb_id': o.pdb_id,
-              'rec_aa': o.rec_aa,
-              'sig_aa': o.sig_aa,
-              'int_ty': o.int_ty,
-            }]
+            rec_gn: o.rec_gn,
+            sig_gn: o.sig_gn,
+            pairs: [
+              {
+                pdb_id: o.pdb_id,
+                rec_aa: o.rec_aa,
+                sig_aa: o.sig_aa,
+                int_ty: o.int_ty
+              }
+            ]
           };
           helper[key] = tmp;
           r.push(helper[key]);
         } else {
           helper[key].pairs.push({
-            'pdb_id': o.pdb_id,
-            'rec_aa': o.rec_aa,
-            'sig_aa': o.sig_aa,
-            'int_ty': o.int_ty,
-          })
+            pdb_id: o.pdb_id,
+            rec_aa: o.rec_aa,
+            sig_aa: o.sig_aa,
+            int_ty: o.int_ty
+          });
         }
 
         return r;
       }, []);
 
-      let bwScale = d3.scaleSequential(d3.interpolateGreys).domain([0,pdbScale.domain().length])
+      let bwScale = d3
+        .scaleSequential(d3.interpolateGreys)
+        .domain([0, pdbScale.domain().length]);
 
       svg
         .append("g")
@@ -463,7 +430,7 @@ const signprotmat = {
         })
         .attr("y", function(d: any) {
           // return yScale(d.sig_gn) + shift_top * yScale.step() + offset;
-          return yScale(d.sig_gn)
+          return yScale(d.sig_gn);
         })
         .attr("rx", function() {
           if (data.transformed.length < 15) {
@@ -679,7 +646,13 @@ const signprotmat = {
         .tip()
         .attr("class", "d3-tip")
         .html(function(d) {
-          return 'Signal Prot. AA: ' + d.sig_aa + '<br>' + 'Interaction type: ' + d.int_ty;
+          return (
+            "Signal Prot. AA: " +
+            d.sig_aa +
+            "<br>" +
+            "Interaction type: " +
+            d.int_ty
+          );
         });
 
       svg
@@ -700,7 +673,10 @@ const signprotmat = {
         .data(data.receptor)
         .enter()
         .append("g")
-        .attr("class", (d: any) => 'R_' + _.replace(d.rec_gn, '.', 'p') + '_P_' + d.pdb_id )
+        .attr(
+          "class",
+          (d: any) => "R_" + _.replace(d.rec_gn, ".", "p") + "_P_" + d.pdb_id
+        )
         .call(recTip)
         .on("mouseover", function(d) {
           recTip.show(d);
@@ -742,7 +718,13 @@ const signprotmat = {
         .tip()
         .attr("class", "d3-tip")
         .html(function(d) {
-          return 'Receptor AA: ' + d.sig_aa + '<br>' + 'Interaction type: ' + d.int_ty;
+          return (
+            "Receptor AA: " +
+            d.sig_aa +
+            "<br>" +
+            "Interaction type: " +
+            d.int_ty
+          );
         });
 
       svg
@@ -769,7 +751,10 @@ const signprotmat = {
         .data(data.signprot)
         .enter()
         .append("g")
-        .attr("class", (d: any) => 'S_' + _.replace(d.sig_gn, '.', 'p') + '_P_' + d.pdb_id )
+        .attr(
+          "class",
+          (d: any) => "S_" + d.sig_gn.replace(/\./gi, "p") + "_P_" + d.pdb_id
+        )
         .call(sigTip)
         .on("mouseover", function(d) {
           sigTip.show(d);
@@ -918,26 +903,26 @@ const signprotmat = {
     },
 
     colorRecResidues: function(d) {
-      const rec_gn = _.replace(d.rec_gn, '.', 'p')
-      const pdb_list = d.pairs.map((x) => x['pdb_id']);
+      const rec_gn = _.replace(d.rec_gn, ".", "p");
+      const pdb_list = d.pairs.map(x => x["pdb_id"]);
 
       // select the rect in the g that corresponds to this rec_gn and pdb_id
       pdb_list.forEach(pdb => {
-        d3.select('g.' + 'R_' + rec_gn + '_P_' + pdb)
-        .select('rect')
-        .classed('activeRes', d.active ? true : false);
+        d3.select("g." + "R_" + rec_gn + "_P_" + pdb)
+          .select("rect")
+          .classed("activeRes", d.active ? true : false);
       });
     },
 
     colorSigResidues: function(d) {
-      const sig_gn = _.replace(d.sig_gn, '.', 'p')
-      const pdb_list = d.pairs.map((x) => x['pdb_id']);
+      const sig_gn = d.sig_gn.replace(/\./gi, "p");
+      const pdb_list = d.pairs.map(x => x["pdb_id"]);
 
       // select the rect in the g that corresponds to this rec_gn and pdb_id
       pdb_list.forEach(pdb => {
-        d3.select('g.' + 'S_' + sig_gn + '_P_' + pdb)
-        .select('rect')
-        .classed('activeRes', d.active ? true : false);
+        d3.select("g." + "S_" + sig_gn + "_P_" + pdb)
+          .select("rect")
+          .classed("activeRes", d.active ? true : false);
       });
     },
 
@@ -978,24 +963,35 @@ const signprotmat = {
       });
     },
 
-    draw_seq_sig: function(data_in, svg, xScale){
+    draw_seq_sig: function(data_in, svg, xScale) {
       let data = data_in.feat;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
-      let uniq_feats = _.uniq(_.map(data, 'feature'));
-
+      let uniq_feats = _.uniq(_.map(data, "feature"));
 
       // filter out NA generic numbers based on xScale
-      data = _.filter(data, function(d) { return xScale(d.gn); });
+      data = _.filter(data, function(d) {
+        return xScale(d.gn);
+      });
 
       let seqsigTip = d3
         .tip()
         .attr("class", "d3-tip")
         .html(function(d) {
-          return 'Generic Residue No.: ' + d.gn + '<br>' +
-          'Feature: ' + d.feature + '<br>'  +
-          'Score: ' + d.expl + '<br>'  +
-          'Frequency: ' + d.freq + '<br>';
+          return (
+            "Generic Residue No.: " +
+            d.gn +
+            "<br>" +
+            "Feature: " +
+            d.feature +
+            "<br>" +
+            "Score: " +
+            d.expl +
+            "<br>" +
+            "Frequency: " +
+            d.freq +
+            "<br>"
+          );
         });
 
       svg
@@ -1037,7 +1033,9 @@ const signprotmat = {
         .append("g")
         .call(seqsigTip)
         .on("mouseover", function(d) {
-          if (d.freq !== 0){seqsigTip.show(d);}
+          if (d.freq !== 0) {
+            seqsigTip.show(d);
+          }
         })
         .on("mouseout", function(d) {
           seqsigTip.hide();
@@ -1047,10 +1045,12 @@ const signprotmat = {
       each_res
         .append("rect")
         .attr("class", "res_rect")
-        .style("fill",function(d: any) {
-          if(d.cons === -1){
-            return '#ffffff';
-          } else {return cScale(d.freq);}
+        .style("fill", function(d: any) {
+          if (d.cons === -1) {
+            return "#ffffff";
+          } else {
+            return cScale(d.freq);
+          }
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75 + fScale(d.feature) - fScale.step())
@@ -1073,7 +1073,7 @@ const signprotmat = {
       //   .attr("text-anchor", "middle")
       //   .attr("dy", 75)
       //   .text((d: any) => d.freq);
-        // .text((d: any) => _.round(d.freq/100, 1));
+      // .text((d: any) => _.round(d.freq/100, 1));
 
       // putting a black border around the signature
       d3.select("g#seqsig_mat")
@@ -1086,7 +1086,7 @@ const signprotmat = {
         .attr("width", xScale.range()[1] - xScale.step())
         .attr("height", fScale.range()[1] - fScale.step());
 
-        // * ADDING COLOR LEGEND
+      // * ADDING COLOR LEGEND
       svg
         .append("g")
         .attr("class", "legendSeqSig")
@@ -1101,7 +1101,6 @@ const signprotmat = {
         .orient("horizontal")
         .shapeWidth(30);
 
-
       svg
         .select(".legendSeqSig")
         .call(legendSeqSig)
@@ -1114,23 +1113,32 @@ const signprotmat = {
         .attr("class", "legend");
     },
 
-
-    draw_seq_cons: function(data_in, svg, xScale){
+    draw_seq_cons: function(data_in, svg, xScale) {
       let data = data_in.cons;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
-      let uniq_feats = _.uniq(_.map(data, 'feature'));
+      let uniq_feats = _.uniq(_.map(data, "feature"));
 
       // filter out NA generic numbers based on xScale
-      data = _.filter(data, function(d) { return xScale(d.gn); });
+      data = _.filter(data, function(d) {
+        return xScale(d.gn);
+      });
 
       let conseqTip = d3
         .tip()
         .attr("class", "d3-tip")
         .html(function(d) {
-          return 'Generic Residue No.: ' + d.gn + '<br>' +
-          'Feature: ' + d.name + '<br>'  +
-          'Score: ' + d.score + '<br>'
+          return (
+            "Generic Residue No.: " +
+            d.gn +
+            "<br>" +
+            "Feature: " +
+            d.name +
+            "<br>" +
+            "Score: " +
+            d.score +
+            "<br>"
+          );
         });
 
       svg
@@ -1163,10 +1171,12 @@ const signprotmat = {
       each_res
         .append("rect")
         .attr("class", "res_rect")
-        .style("fill",function(d: any) {
-          if(d.cons === -1){
-            return '#ffffff';
-          } else {return cScale(d.score);}
+        .style("fill", function(d: any) {
+          if (d.cons === -1) {
+            return "#ffffff";
+          } else {
+            return cScale(d.score);
+          }
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75)
@@ -1179,12 +1189,15 @@ const signprotmat = {
         .attr("class", "res_label")
         // .attr("x", (d: any) => xScale(d.gn))
         // .attr("y", (d: any) => 50)
-        .attr("transform", (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)")
+        .attr(
+          "transform",
+          (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)"
+        )
         .style("fill", (d: any) => {
-          if(Math.abs(d.score) >= 50) {
-            return '#eaeaea';
+          if (Math.abs(d.score) >= 50) {
+            return "#eaeaea";
           } else if (Math.abs(d.score) < 50) {
-            return '#000000';
+            return "#000000";
           }
         })
         .attr("text-anchor", "middle")
@@ -1195,12 +1208,15 @@ const signprotmat = {
         .attr("class", "res_label")
         // .attr("x", (d: any) => xScale(d.gn))
         // .attr("y", (d: any) => 50)
-        .attr("transform", (d: any) => "translate(" + xScale(d.gn) + ",160)rotate(300)")
-        .style("fill", '#000000')
+        .attr(
+          "transform",
+          (d: any) => "translate(" + xScale(d.gn) + ",160)rotate(300)"
+        )
+        .style("fill", "#000000")
         .attr("text-anchor", "end")
         .text((d: any) => d.name);
 
-        // putting a black border around the signature
+      // putting a black border around the signature
       d3.select("g#conseq_mat")
         .append("rect")
         .attr("class", "border")
