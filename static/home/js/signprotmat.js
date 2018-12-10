@@ -285,17 +285,6 @@ var signprotmat = {
             svg.call(tip);
             return tip;
         },
-        // * ADD TOOLTIP FUNCTIONALITY
-        seqTooltip: function (svg) {
-            var seqTip = d3
-                .tip()
-                .attr("class", "d3-tip")
-                .html(function (d) {
-                return d;
-            });
-            svg.call(seqTip);
-            return seqTip;
-        },
         // * RENDER DATA
         renderData: function (svg, data, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
             var shift_left = 7 / 8;

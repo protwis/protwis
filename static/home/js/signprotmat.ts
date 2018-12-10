@@ -346,19 +346,6 @@ const signprotmat = {
       return tip;
     },
 
-    // * ADD TOOLTIP FUNCTIONALITY
-    seqTooltip: function(svg) {
-      let seqTip = d3
-        .tip()
-        .attr("class", "d3-tip")
-        .html(function(d) {
-          return d;
-        });
-      svg.call(seqTip);
-
-      return seqTip;
-    },
-
     // * RENDER DATA
     renderData: function(
       svg,
