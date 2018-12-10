@@ -14,6 +14,7 @@ import math, os
 import logging
 import re
 from decimal import *
+
 getcontext().prec = 20
 
 class Command(BaseCommand):
@@ -59,7 +60,7 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.mutation_data_path) if fn.endswith('SigProts_exac.csv')]
+            filenames = [fn for fn in os.listdir(self.mutation_data_path) if fn.endswith('exac.csv')]
 
         for filename in filenames:
             filepath = os.sep.join([self.mutation_data_path, filename])
@@ -84,8 +85,12 @@ class Command(BaseCommand):
                     polyphen_score = None
                 else:
                     amino_acid = snp_data[index:index + 1]['NMaa'].values[0]
-                    sift_score = float(snp_data[index:index + 1]['sift_score'].values[0])
-                    polyphen_score = float(snp_data[index:index + 1]['polyphen_score'].values[0])
+                    if 'SigProts' in filename:
+                        sift_score = None
+                        polyphen_score = None
+                    else:
+                        sift_score = float(snp_data[index:index + 1]['sift_score'].values[0])
+                        polyphen_score = float(snp_data[index:index + 1]['polyphen_score'].values[0])
 
 
                 try:
