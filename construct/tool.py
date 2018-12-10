@@ -1354,14 +1354,111 @@ def mutations(request, slug, **response_kwargs):
                 except Exception as e:
                     print("problem with",r, e)
 
+    # GLYCO
+    seq = Protein.objects.filter(entry_name=slug).values_list('sequence', flat = True).get()
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('protein_segment')
+    residues = {}
+    for r in rs:
+        residues[r.sequence_number] = r.protein_segment.slug
+
+    #No proline!
+    p = re.compile("N[^P][TS]")
+    matches = re.finditer(r'(?=([N][^P][TS]))',seq)
+    matches_seq = re.findall(r'(?=([N][^P][TS]))',seq)
+    #{"all": [[39, "Q", "", "", "NTS", "N-term"], [203, "Q", "", "", "NNT", "ECL2"]], "mammalian": [[205, "V", 206, "V", "TTCVLNDPN", "ECL2"]]}
+    
+    definition_matches = [int(3),"n-linked glycosylation removal"]
+    for i,m in enumerate(matches):
+        #print(matches_seq[i],m.start())
+        #print(m.start(), m.group())
+        if residues[m.start()+1] in ['N-term','ECL1','ECL2','ECL3']:
+            key = '%s%s%s' % ("N",m.start()+1,"Q")
+            mut = {'wt_aa': "N", 'segment': residues[m.start()+1], 'pos': m.start()+1, 'gpcrdb':'', 'mut_aa':"Q", 'definitions' : [definition_matches], 'priority': 3}
+                
+            if key not in simple_list:
+                simple_list[key] = mut
+            else:
+                simple_list[key]['definitions'] += [definition_matches]
+                min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                simple_list[key]['priority'] = min_priority
+
+    matches = re.finditer(r'(?=([TS]{2}[A-Z]{1,10}[N]))',seq)
+    matches_seq = re.findall(r'(?=([TS]{2}[A-Z]{1,10}[N]))',seq)
+    definition_matches = [int(3),"o-linked glycosylation removal"]
+    for i,m in enumerate(matches):
+        #print(matches_seq[i],m.start())
+        if matches_seq[i][0]=="T":
+            pos0 = "V"
+        if matches_seq[i][1]=="T":
+            pos1 = "V"
+        if matches_seq[i][0]=="S":
+            pos0 = "A"
+        if matches_seq[i][1]=="S":
+            pos1 = "A"
+
+        if residues[m.start()+1] in ['N-term','ECL1','ECL2','ECL3']:
+
+            key = '%s%s%s' % (matches_seq[i][0],m.start()+1,pos0)
+            mut = {'wt_aa': matches_seq[i][0], 'segment': residues[m.start()+1], 'pos': m.start()+1, 'gpcrdb':'', 'mut_aa':pos0, 'definitions' : [definition_matches], 'priority': 3}
+
+            if key not in simple_list:
+                simple_list[key] = mut
+            else:
+                simple_list[key]['definitions'] += [definition_matches]
+                min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                simple_list[key]['priority'] = min_priority
+
+            key = '%s%s%s' % (matches_seq[i][1],m.start()+2,pos1)
+            mut = {'wt_aa': matches_seq[i][1], 'segment': residues[m.start()+1], 'pos': m.start()+2, 'gpcrdb':'', 'mut_aa':pos1, 'definitions' : [definition_matches], 'priority': 3}
+
+            if key not in simple_list:
+                simple_list[key] = mut
+            else:
+                simple_list[key]['definitions'] += [definition_matches]
+                min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                simple_list[key]['priority'] = min_priority
+
+
+    #PALMI
+    definition_matches = [int(3),"palmitoylation removal"]
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug,protein_segment__slug__in=['H8','C-term']).order_by('sequence_number').prefetch_related('protein_segment')
+    residues = {}
+    seq = ''
+    end_h8 = 0
+    start_h8 = 0
+    for r in rs:
+        if not start_h8 and r.protein_segment.slug == 'H8':
+            start_h8 = r.sequence_number
+        if not end_h8 and r.protein_segment.slug == 'C-term':
+            end_h8 = r.sequence_number-1 #end_h8 was prev residue
+        elif end_h8 and r.sequence_number-10>end_h8:
+            continue
+        seq += r.amino_acid
+        residues[r.sequence_number] = r.protein_segment.slug
+
+    #No proline!
+    p = re.compile("C")
+    #print('all')
+    mutations_all = []
+    for m in p.finditer(seq):
+        key = '%s%s%s' % ("C",m.start()+start_h8,"Q")
+        mut = {'wt_aa': "C", 'segment': residues[m.start()+start_h8], 'pos': m.start()+start_h8, 'gpcrdb':'', 'mut_aa':"A", 'definitions' : [definition_matches], 'priority': 3}
+            
+        if key not in simple_list:
+            simple_list[key] = mut
+        else:
+            simple_list[key]['definitions'] += [definition_matches]
+            min_priority = min(x[0] for x in simple_list[key]['definitions'])
 
 
     simple_list = OrderedDict(sorted(simple_list.items(), key=lambda x: (x[1]['priority'],x[1]['pos']) ))
     for key, val in simple_list.items():
         if val['gpcrdb']: 
             val['display_gn'] = wt_lookup[val['gpcrdb']][3]
+        else:
+            val['display_gn'] = ""
         val['definitions'] = list(set([x[1] for x in val['definitions']]))
-        print(val)
+        # print(val)
 
     jsondata = simple_list
     jsondata = json.dumps(jsondata)

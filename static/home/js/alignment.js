@@ -33,20 +33,33 @@ function ApplyCutoff (cutoff) {
     $('#first-row td').each(function(){
         row.push($(this).attr('id'));
     });
+
+    // show all when hidden
+    $('#signature-table tr td[style*="display: none"]').each(function(){
+        $(this).css("display", "table-cell");
+    });
+
+    // hide when not meeting the cutoff
+    var hide = [];
     for (i=0; i < row.length; i++) {
-        if (row[i] == 'anchor'){
+        if (row[i] == 'anchor')
             continue;
+
+        // Only hide when previously shown
+        var cell = Math.abs(row[i].substr(7));
+        if (cell < cutoff)
+            hide.push(i);
+    }
+
+    // now hide/show
+    $('#signature-table tr').each(function(){
+      if ($(this)[0].children.length==row.length) {
+        for (i=0; i < hide.length; i++) {
+            $(this)[0].children[hide[i]].style.display = "none";
         }
-        var cell = Math.abs(row[i].replace('cutoff-', ''));
-        j = i + 1;
-        if (cell < cutoff){
-            console.info('Got it!');
-            $('#signature-table td:not(".ali-td-segment-title, .ali-td-header-row, .ali-td-anchor"):nth-child('+j+')').hide();//.css('background-color', 'gray');
-        }
-        else {
-            $('#signature-table td:not(".ali-td-segment-title, .ali-td-header-row, .ali-td-anchor"):nth-child('+j+')').show();
-        }
-    };
+      }
+    });
+
     $('#signature-table #segments td:not("#anchor")').each(function(){
         var segment_name = $(this).attr('id').replace('segment-', '');
         var colspan = $('#gns td#gn-'+segment_name+':visible').length;

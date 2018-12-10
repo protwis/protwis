@@ -1,0 +1,125 @@
+<table id='signature-table'>
+    <tr id="first-row" style="display:none;">
+        {% for s, num in signature_consensus.items %}
+            {% for pos in num %}
+                <td id="cutoff-{{ pos.2 }}"></td>
+            {% endfor %}
+            <td id='anchor' class="ali-td">&nbsp;</td>
+        {% endfor %}
+    </tr>
+    <!-- SEQUENCE SIGNATURE -->
+    <tr>
+        <td class="ali-td-header-row signature-section-header-row" colspan="{{ num_residue_columns }}"></td>
+    </tr>
+
+    <!-- GENERIC NUMBERS -->
+
+    <!-- segment title line -->
+    <tr id='segments'>
+        {% for s, num in common_segments.items %}
+            <td id='segment-{{ s }}' class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
+            <td id='anchor' class="ali-td-anchor">&nbsp;</td>
+        {% endfor %}
+    </tr>
+
+    <!-- generic number lines -->
+
+    {% for ns, segments in common_generic_numbers.items %}
+    <tr id='gns'>
+        {% for s, num in segments.items %}
+            {% for n, dn in num.items %}
+                {% if 'Common G-alpha numbering scheme' in a_neg.numbering_schemes.0 %}
+                    <td id='gn-{{ s }}' class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
+                {% else %}
+                    <td id='gn-{{ s }}' class="ali-td-generic-num">{{ dn|safe }}</td>
+                {% endif %}
+            {% endfor %}
+            <td class="ali-td-anchor">&nbsp;</td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+    <!-- FEATURE CONSENSUS -->
+
+    <!-- Feature names -->
+    <tr>
+        {% for segment, cons in signature_consensus.items %}
+            {% for pos in cons %}
+                <td class="ali-td-stat-summary ali-residue feat-{% if pos.6 == '-' and pos.4 == ''%}_{% else %}{{ pos.6 }}{% endif %}">
+                    <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.1|safe }}">
+                        {{ pos.0 }}
+                    </div>
+                </td>
+            {% endfor %}
+            <td class="ali-td-anchor">&nbsp;</td>
+        {% endfor %}
+    </tr>
+    <!-- Length row -->
+    <tr>
+        {% for segment, cons in signature_consensus.items %}
+            {% for pos in cons %}
+                <td class="ali-td-stat-summary ali-residue">
+                    <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.1|safe }}">
+                        {{ pos.4 }}
+                    </div>
+                </td>
+            {% endfor %}
+            <td class="ali-td-anchor">&nbsp;</td>
+        {% endfor %}
+    </tr>
+    <!-- Consensus values -->
+    <tr>
+        {% for segment, cons in signature_consensus.items %}
+            {% for pos in cons %}
+                <td class="ali-td-stat-summary ali-residue res-cons-{{ pos.3 }}">{{ pos.2 }}</td>
+            {% endfor %}
+            <td class="ali-td-anchor">&nbsp;</td>
+        {% endfor %}
+    </tr>
+
+    <!-- Collapse button -->
+    <!-- <tr>
+        <td class="ali-td-anchor"></td>
+    </tr> -->
+    <tbody class='collapse' id='signature-main'>
+    <!-- FEATURE SIGNATURE -->
+
+        <!-- feature frequency -->
+        <tr>
+            <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
+        </tr>
+        {% for feature in feats_signature %}
+        <tr>
+            {% for segment in feature %}
+                {% for freq in segment %}
+                    <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
+                        <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ freq.2|safe }}">
+                            {{ freq.0 }}
+                        </div>
+                    </td>
+                {% endfor %}
+                <td class="ali-td-anchor">&nbsp;</td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+
+        <!-- GENERIC NUMBERS -->
+
+        <!-- generic number lines -->
+
+        {% for ns, segments in common_generic_numbers.items %}
+            <tr>
+                {% for s, num in segments.items %}
+                    {% for n, dn in num.items %}
+                        {% if 'Common G-alpha numbering scheme' in a_neg.numbering_schemes.0 %}
+                            <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
+                        {% else %}
+                            <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    <td class="ali-td-anchor">&nbsp;</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+
+    </tbody>
+{% comment %} </table> {% endcomment %}

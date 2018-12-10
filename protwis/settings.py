@@ -54,6 +54,7 @@ INSTALLED_APPS = (
     'signprot',
     'mutational_landscape',
     'contactnetwork',
+    'seqsign',
 )
 
 MIDDLEWARE = (

@@ -65,13 +65,14 @@ class DrawSnakePlot(Diagram):
             i += 1
 
         for helix_num in range(1,8): #FIX for missing generic numbers
-            rs = self.segments['TM'+str(helix_num)]
-            for i in range(0,len(rs)):
-                if not rs[i][2]:
-                    if i+1<len(rs): #if there is a next one
-                        if rs[i+1][2]: #if it has generic number
-                            number = str(int(rs[i+1][2].split('x')[1])-1)
-                            rs[i][2] = str(helix_num) + "x" + number
+            if 'TM'+str(helix_num) in self.segments:
+                rs = self.segments['TM'+str(helix_num)]
+                for i in range(0,len(rs)):
+                    if not rs[i][2]:
+                        if i+1<len(rs): #if there is a next one
+                            if rs[i+1][2]: #if it has generic number
+                                number = str(int(rs[i+1][2].split('x')[1])-1)
+                                rs[i][2] = str(helix_num) + "x" + number
 
         self.helixWidth = 70          # Width of helix
         self.resNumPerRow = 4          # Residue number per row in helix

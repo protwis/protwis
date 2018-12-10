@@ -5,7 +5,7 @@
 {% endblock %}
 {% block content %}
 {% block buttons %}
-<a id='selection-button' href="/alignment/render_signature_match_excel" class="btn btn-success">Download excel file</a>
+<a id='selection-button' href="seqsign/render_signature_match_excel" class="btn btn-success">Download excel file</a>
 {% endblock %}
 
 <table>
@@ -23,14 +23,14 @@
                         <!-- numbering scheme lines -->
                         {% for ns in scores.schemes %}
                         <tr>
-                            <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
+                            <td class="ali-td-generic-num ali-td-first-col"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
                         </tr>
                         {% endfor %}
 
                         <!-- consensus sequence -->
                         <tr>
                             <td class="ali-td ali-td-first-col">
-                                CONSENSUS
+                                Receptor name
                             </td>
                             <td class="ali-td ali-td-first-col">
                                 Receptor family
@@ -63,16 +63,90 @@
                                         </a>
                                     </td>
                                     <td class="ali-td ali-td-first-col">
-                                        {{ p.protein.family.parent.parent.name }}
+                                        {{ p.protein.family.parent.name }}
                                     </td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
 
+
+                        {% comment %} POSITIVE SET {% endcomment %}
+                        <tr>
+                            <td class="ali-td ali-td-first-col">
+                                Protein set 1
+                            </td>
+                        </tr>
+                        {% for p in scores.scored_proteins_pos %}
+                            {% if 'Common G-alpha numbering scheme' in scores.schemes.0 %}
+                                <tr>
+                                    <td class="ali-td ali-td-first-col">
+                                        <a href='/signprot/{{ p.protein.entry_name }}'>
+                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% elif 'Common arrestin numbering scheme' in scores.schemes.0 %}
+                                <tr>
+                                    <td class="ali-td ali-td-first-col">
+                                        <a href='/signprot/{{ p.protein.entry_name }}'>
+                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td class="ali-td ali-td-first-col">
+                                        <a href='/protein/{{ p.protein.entry_name }}'>
+                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                        </a>
+                                    </td>
+                                    <td class="ali-td ali-td-first-col">
+                                        {{ p.protein.family.parent.name }}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% comment %} NEGATIVE SET {% endcomment %}
+                        <tr>
+                            <td class="ali-td ali-td-first-col">
+                                Protein set 2
+                            </td>
+                        </tr>
+                        {% for p in scores.scored_proteins_neg %}
+                            {% if 'Common G-alpha numbering scheme' in scores.schemes.0 %}
+                                <tr>
+                                    <td class="ali-td ali-td-first-col">
+                                        <a href='/signprot/{{ p.protein.entry_name }}'>
+                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% elif 'Common arrestin numbering scheme' in scores.schemes.0 %}
+                                <tr>
+                                    <td class="ali-td ali-td-first-col">
+                                        <a href='/signprot/{{ p.protein.entry_name }}'>
+                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td class="ali-td ali-td-first-col">
+                                        <a href='/protein/{{ p.protein.entry_name }}'>
+                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                        </a>
+                                    </td>
+                                    <td class="ali-td ali-td-first-col">
+                                        {{ p.protein.family.parent.parent.name }}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
                         <!-- numbering scheme lines -->
                         {% for ns in scores.schemes %}
                         <tr>
-                            <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
+                            <td class="ali-td-generic-num ali-td-first-col"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
                         </tr>
                         {% endfor %}
                     </table>
@@ -100,16 +174,16 @@
 
                         <!-- consensus sequence -->
                         <tr>
-                            <td colspan="1" class="ali-td ali-td-first-col">
+                            <!-- <td colspan="1" class="ali-td ali-td-first-col">
                                     <div data-toggle="tooltip" data-placement="top" data-html="true"
                                     title="Signature match score">
                                         S
                                     </div>
-                            </td>
+                            </td> -->
                             <td colspan="1" class="ali-td ali-td-first-col">
                                     <div data-toggle="tooltip" data-placement="top" data-html="true"
                                     title="Normalized signature match score">
-                                        NS
+                                        Score
                                     </div>
                             </td>
                         </tr>
@@ -117,9 +191,37 @@
                         <!-- protein lines -->
                         {% for p, ps in scores.protein_report.items %}
                         <tr>
-                            <td class="ali-td ali-td-first-col">
+                            <!-- <td class="ali-td ali-td-first-col">
                                 {{ ps.0|floatformat:"-2" }}
+                            </td> -->
+                            <td class="ali-td ali-td-first-col">
+                                {{ ps.1|floatformat:"-2" }}
                             </td>
+                        </tr>
+                        {% endfor %}
+                        <!-- Empty line for header -->
+                        <tr><td class="ali-td ali-td-first-col"></td></tr>
+
+                        <!-- Scores for positive set -->
+                        {% for p, ps in scores.scores_pos.items %}
+                        <tr>
+                            <!-- <td class="ali-td ali-td-first-col">
+                                {{ ps.0|floatformat:"-2" }}
+                            </td> -->
+                            <td class="ali-td ali-td-first-col">
+                                {{ ps.1|floatformat:"-2" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        <!-- Empty line for header -->
+                        <tr><td class="ali-td ali-td-first-col"></td></tr>
+
+                        <!-- Scores for negative set -->
+                        {% for p, ps in scores.scores_neg.items %}
+                        <tr>
+                            <!-- <td class="ali-td ali-td-first-col">
+                                {{ ps.0|floatformat:"-2" }}
+                            </td> -->
                             <td class="ali-td ali-td-first-col">
                                 {{ ps.1|floatformat:"-2" }}
                             </td>
@@ -188,6 +290,41 @@
                         </thead>
                             <!-- sequence lines -->
                             {% for p, row in scores.protein_signatures.items %}
+                            <tr>
+                                {% for segment, s in row.items %}
+                                    {% for r in s %}
+                                        <td class="ali-td ali-residue " bgcolor="{{ r.3 }}">
+                                            <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ r.1|safe }} ({{ r.2 }})<br>{{ r.4 }}: {{ r.5 }}">
+                                                {{ r.4 }}
+                                            </div>
+                                        </td>
+                                    {% endfor %}
+                                    <td class="ali-td">&nbsp;</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Empty line for header -->
+                            <tr><td class="ali-td ali-td-first-col"></td></tr>
+
+                            {% for p, row in scores.signatures_pos.items %}
+                            <tr>
+                                {% for segment, s in row.items %}
+                                    {% for r in s %}
+                                        <td class="ali-td ali-residue " bgcolor="{{ r.3 }}">
+                                            <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ r.1|safe }} ({{ r.2 }})<br>{{ r.4 }}: {{ r.5 }}">
+                                                {{ r.4 }}
+                                            </div>
+                                        </td>
+                                    {% endfor %}
+                                    <td class="ali-td">&nbsp;</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Empty line for header -->
+                            <tr><td class="ali-td ali-td-first-col"></td></tr>
+                            {% for p, row in scores.signatures_neg.items %}
                             <tr>
                                 {% for segment, s in row.items %}
                                     {% for r in s %}
