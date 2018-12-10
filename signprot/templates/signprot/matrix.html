@@ -31,7 +31,7 @@
         </div>
     </div>
 
-    <div class="col-md-3">
+    {% comment %} <div class="col-md-3">
         <div class="panel panel-default">
 
             <div class="panel-heading">
@@ -44,18 +44,18 @@
             </div>
 
         </div>
-    </div>
+    </div> {% endcomment %}
 
 
     <div class="col-md-3">
         <div class="panel panel-default">
 
             <div class="panel-heading">
-                <h3 class="panel-title">Sequence Signature</h3>
+                <h3 class="panel-title">Sequence Features</h3>
             </div>
 
             <div class="panel-body">
-                <p>Click the button in order to calculate the sequence signature of the set of GPCR structures and your appended PDBs.</p>
+                <p>Click the button to determine sequence features.</p>
                 <button type="button" class="btn btn-primary" onClick="run_seq_sig();">Calculate <i id="calc_spin" class="fa fa-spinner fa-spin" style="display: none"></i></button>
             </div>
 
@@ -73,7 +73,7 @@
             <div class="panel-body">
                 <p>Display residue pairs with <span id='currentpairs'>1</span> <br/> or more interfaces.</p>
 
-                <div style="padding: 10px 0;">
+                <!-- <div style="padding: 10px 0;">
                     <span class="">1</span>
                     <input
                     type="range"
@@ -86,7 +86,7 @@
                     onchange="filter_pairs()"
                     style="display: inline-block; width: auto">
                     <span class="">20</span>
-                </div>
+                </div> -->
 
                 <div class="">
                     <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value--; filter_pairs()">-</button>
@@ -98,7 +98,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="interface-modal-table" role="dialog">
+ <div class="modal fade" id="interface-modal-table" role="dialog">
     <div class="modal-dialog modal-wide" style="width: 70%">
         <div class="modal-content">
 
@@ -123,7 +123,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="pdb-modal-table" role="dialog">
+{% comment %} <div class="modal fade" id="pdb-modal-table" role="dialog">
     <!-- <div class="modal-dialog modal-wide" style="width: 800px"> -->
     <div class="modal-dialog modal-wide" style="width: 70%">
         <div class="modal-content">
@@ -147,7 +147,7 @@
 
         </div>
     </div>
-</div>
+</div> {% endcomment %}
 
 {% comment %} <div id="raw-data">
     <h2>Raw Data</h2>
@@ -244,13 +244,13 @@
         //let neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"];
         //console.log(segments);
 
-        if (pos_set.length < 1 || neg_set.length < 1){
-            alert('No valid sets selected.');
+        if (pos_set.length < 1){
+            alert('No valid set selected.');
             return;
         };
 
-        if (_.isEqual(old_sets.sort(), _.union(pos_set, neg_set).sort())){
-            alert('The selected sets are identical to the previously selected ones.');
+        if (_.isEqual(old_sets.sort(), pos_set.sort())){
+            alert('The selected set is identical to the previously selected one.');
             return;
         };
 
@@ -261,22 +261,18 @@
             data: {
                 csrfmiddlewaretoken: "{{ csrf_token }}",
                 pos: pos_set,
-                neg: neg_set,
                 seg: segments.label,
             },
             beforeSend: function(){
-                old_sets = _.union(pos_set, neg_set);
-                console.log(old_sets)
+                old_sets = pos_set;
                 document.querySelector("#calc_spin").style.display = "inline-block";
             },
             success: function(data){
                 $('.svg-content.seqsig').remove();
                 $('.svg-content.conseq').remove();
-                console.log('success')
                 document.querySelector('#seqsig-container').style.display = "inline-block";
                 document.querySelector('#conseq-container').style.display = "inline-block";
                 document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
-                console.log(data);
                 // d3 draw
                 svg = signprotmat.d3.setup("div#seqsig-container", 'seqsig');
                 signprotmat.d3.draw_seq_sig(
@@ -424,15 +420,13 @@
                 // interface_data_table.rows.add(data.transformed);
                 // interface_data_table.draw();
 
-                const row_selection = pdb_table.rows({ selected: true }).data();
-                const xvals = xScale.domain();
-                const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
+                // const row_selection = pdb_table.rows({ selected: true }).data();
+                // const xvals = xScale.domain();
+                // const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
 
-                console.log(xvals)
-                console.log(prids)
-                receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
-                console.log(receptor_data)
-                signprotmat.d3.addReceptor(receptor_data, data, svg);
+                // receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
+                // console.log(receptor_data)
+                // signprotmat.d3.addReceptor(receptor_data, data, svg);
             };
         });
 
@@ -477,86 +471,86 @@
         );
 
         // PDB TABLE MODAL
-        const pdb_table = $('#table-pdb').DataTable({
-            dom: 'Bfrtip',
-            data: ps,
-            scrollX: true,
-            columnDefs: [
-                {
-                    data: null,
-                    targets: 0,
-                    defaultContent: '',
-                    orderable: false,
-                    className: 'select-checkbox',
-                }, {
-                    data: 'name',
-                    title: 'Name',
-                    targets: 1,
-                }, {
-                    data: 'protein_class',
-                    title: 'Class',
-                    targets: 2,
-                }, {
-                    data: 'protein_family',
-                    title: 'Family',
-                    targets: 3,
-                }, {
-                    data: 'ligand',
-                    title: 'Ligand',
-                    targets: 4,
-                }],
-            select: {
-                style: 'os',
-            },
-            paging: true,
-            buttons: [
-                {
-                    text: 'Select all',
-                    action: function () {
-                        pdb_table.rows().select();
-                    }
-                },
-                {
-                    text: 'Select none',
-                    action: function () {
-                        pdb_table.rows().deselect();
-                    }
-                },
-            ]
-        });
+        // const pdb_table = $('#table-pdb').DataTable({
+        //     dom: 'Bfrtip',
+        //     data: ps,
+        //     scrollX: true,
+        //     columnDefs: [
+        //         {
+        //             data: null,
+        //             targets: 0,
+        //             defaultContent: '',
+        //             orderable: false,
+        //             className: 'select-checkbox',
+        //         }, {
+        //             data: 'name',
+        //             title: 'Name',
+        //             targets: 1,
+        //         }, {
+        //             data: 'protein_class',
+        //             title: 'Class',
+        //             targets: 2,
+        //         }, {
+        //             data: 'protein_family',
+        //             title: 'Family',
+        //             targets: 3,
+        //         }, {
+        //             data: 'ligand',
+        //             title: 'Ligand',
+        //             targets: 4,
+        //         }],
+        //     select: {
+        //         style: 'os',
+        //     },
+        //     paging: true,
+        //     buttons: [
+        //         {
+        //             text: 'Select all',
+        //             action: function () {
+        //                 pdb_table.rows().select();
+        //             }
+        //         },
+        //         {
+        //             text: 'Select none',
+        //             action: function () {
+        //                 pdb_table.rows().deselect();
+        //             }
+        //         },
+        //     ]
+        // });
 
 
-        pdb_table
-            .on('select', function (e, dt, type, indexes) {
-                const row_count = pdb_table.rows({ selected: true }).count()
-                if (row_count >= 2 || row_count === 0) {
-                    $('#pdb-count').text(row_count + ' PDBs selected.')
-                } else {
-                    $('#pdb-count').text(row_count + ' PDB selected.')
-                }
-            })
-            .on('deselect', function (e, dt, type, indexes) {
-                const row_count = pdb_table.rows({ selected: true }).count()
-                if (row_count >= 2 || row_count === 0) {
-                    $('#pdb-count').text(row_count + ' PDBs selected.')
-                } else {
-                    $('#pdb-count').text(row_count + ' PDB selected.')
-                }
-            });
+        // pdb_table
+        //     .on('select', function (e, dt, type, indexes) {
+        //         const row_count = pdb_table.rows({ selected: true }).count()
+        //         if (row_count >= 2 || row_count === 0) {
+        //             $('#pdb-count').text(row_count + ' PDBs selected.')
+        //         } else {
+        //             $('#pdb-count').text(row_count + ' PDB selected.')
+        //         }
+        //     })
+        //     .on('deselect', function (e, dt, type, indexes) {
+        //         const row_count = pdb_table.rows({ selected: true }).count()
+        //         if (row_count >= 2 || row_count === 0) {
+        //             $('#pdb-count').text(row_count + ' PDBs selected.')
+        //         } else {
+        //             $('#pdb-count').text(row_count + ' PDB selected.')
+        //         }
+        //     });
 
-        $('#pdb-modal-table').on('hidden.bs.modal', function (e) {
-            const row_selection = pdb_table.rows({ selected: true }).data();
-            const xvals = xScale.domain();
-            const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
+        // $('#pdb-modal-table').on('hidden.bs.modal', function (e) {
+        //     const row_selection = pdb_table.rows({ selected: true }).data();
+        //     const xvals = xScale.domain();
+        //     const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
 
-            neg_set = signprotmat.data.select_by_value(row_selection, 'entry_name');
+        //     neg_set = signprotmat.data.select_by_value(row_selection, 'entry_name');
 
-            console.log(xvals)
-            console.log(prids)
-            receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
-            console.log(receptor_data)
-            signprotmat.d3.addReceptor(receptor_data, data, svg);
-        });
+        //     console.log(xvals)
+        //     console.log(prids)
+        //     receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
+        //     console.log(receptor_data)
+        //     signprotmat.d3.addReceptor(receptor_data, data, svg);
+        // });
 
         // let interface_data_table = $('#table-data').DataTable({
         //     data: data.transformed,
