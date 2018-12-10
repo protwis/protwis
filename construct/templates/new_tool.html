@@ -888,7 +888,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     function updateLoadStatus() {
 
       $('#loadstatus').html("Please wait while data is loaded. "+Math.round(load_status*100/7)+"% done");
-      if (load_status != 7) {
+      if (load_status != 5) {
         $('#method_options').hide();
       } else {
         $('#method_options').show();
@@ -944,6 +944,9 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
                 );
 
           yadcf.exResetAllFilters(db_table);
+          $("tr.glyco").hide();
+          $("tr.palmi").hide();
+
       }
     }
 
@@ -2510,6 +2513,16 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
     }
 
+    function mutations_filter(elem) {
+      checked = $(elem).prop("checked");
+      value = $(elem).attr('value')
+      if (!checked) {
+        $("tr."+value).hide();
+      } else {
+        $("tr."+value).show();
+      }
+    }
+
     function build_mutation_mode_table(mut_mode) {
       console.log(mut_mode);
       var state = $('input:radio[name=state]:checked').val();
@@ -2555,12 +2568,14 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
 
             items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='In single constructs'> <input type=button value=Add onclick='auto_mutations(\"scan\")'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations(\"scan\")'></p>");
 
+            items_table.push('<p>Show: <input type=checkbox value="all" onclick=\'mutations_filter(this)\' checked> <a href="http://docs.gpcrdb.org/constructs.html#construct-design-tool"  target="_blank">Thermostabilising</a> <input type=checkbox value="glyco" onclick=\'mutations_filter(this)\'> glycosylation removal <input type=checkbox value="palmi" onclick=\'mutations_filter(this)\'> palmitoylation removal  </p>');
+
         }
 
-            items_table.push("<p class=info_text>Below are all generated mutant suggestions based on rules and annotated thermostabilising mutants.<br></p>");
+            // items_table.push("<p class=info_text>Below are all generated mutant suggestions based on rules and annotated thermostabilising mutants.<br></p>");
             items_table.push("<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th></th><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>");
 
-        console.log(mut_mode, c);
+        // console.log(mut_mode, c);
         $.each(mutations_mode_suggestions, function(i, val) {
           state = 'any';
           if (i.split("_").length>1) {
@@ -2578,6 +2593,14 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
             return true;
           }
 
+          class_of_mut = 'all';
+          if (val['definitions'].indexOf('palmitoylation removal') >= 0) {
+            class_of_mut = 'palmi';
+          } else if (val['definitions'].indexOf('n-linked glycosylation removal') >= 0) {
+            class_of_mut = 'glyco';
+          } else if (val['definitions'].indexOf('o-linked glycosylation removal') >= 0) {
+            class_of_mut = 'glyco';
+          } 
           checked_fixed = '';
           checked_combi = '';
 
@@ -2591,7 +2614,6 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
                   wt = val["wt_aa"];
                   method = wt+pos+to+" "+gn
                   if (val2['full']==val || val2['method']==method) {
-                    console.log('already checked!',val);
                     if (val2['fixed']=='yes') checked_fixed = 'checked';
                     if (val2['fixed']=='no') checked_combi = 'checked';
                     if (edit_mode_on && val2['fixed']=='no') checked_fixed = 'checked';
@@ -2610,7 +2632,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
           }
 
           if (i.split("_").length>2) {
-            row = `<tr>
+            row = `<tr class='`+class_of_mut+`'>
                   <td>`+state+`</td>
                   <td>`+val['priority']+`</td>
                   <td>`+val['segment1']+` & `+val['segment2']+`</td>
@@ -2622,7 +2644,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
                   </tr>`;
 
           } else {
-            row = `<tr>
+            row = `<tr class='`+class_of_mut+`'>
                   <td>`+state+`</td>
                   <td>`+val['priority']+`</td>
                   <td>`+val['segment']+`</td>
@@ -5438,48 +5460,48 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     {% endif %}
 
 
-      $.getJSON( "/construct/tool/json/glyco/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( type, val ) {
-            temp = "<li id='" + type + "' class=\"dropdown-submenu\"><a>" + type + " ("+Object.keys(val).length+" hits)</a><ul class=\"dropdown-menu\">";
-            $.each( val, function( key, value ) {
-                if (type == 'mammalian') {
-                temp += "<li id='"+key+"'  class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+" ("+value[5]+")</a><ul  class=\"dropdown-menu\"><li><a onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' to2='"+value[3]+"' wt2='"+value[4][1]+"'> Mutate "+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+"</a></li></ul></li>";
-                } else {
-                temp += "<li id='"+key+"' class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" ("+value[5]+")</a><ul class=\"dropdown-menu\"><li><a onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' > Mutate "+value[4][0]+value[0]+value[1]+"</a></li></ul></li>";
-                }
-            });
+      // $.getJSON( "/construct/tool/json/glyco/{{target.entry_name}}/", function( data ) {
+      //     var items = [];
+      //     $.each( data, function( type, val ) {
+      //       temp = "<li id='" + type + "' class=\"dropdown-submenu\"><a>" + type + " ("+Object.keys(val).length+" hits)</a><ul class=\"dropdown-menu\">";
+      //       $.each( val, function( key, value ) {
+      //           if (type == 'mammalian') {
+      //           temp += "<li id='"+key+"'  class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+" ("+value[5]+")</a><ul  class=\"dropdown-menu\"><li><a onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' to2='"+value[3]+"' wt2='"+value[4][1]+"'> Mutate "+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+"</a></li></ul></li>";
+      //           } else {
+      //           temp += "<li id='"+key+"' class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" ("+value[5]+")</a><ul class=\"dropdown-menu\"><li><a onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' > Mutate "+value[4][0]+value[0]+value[1]+"</a></li></ul></li>";
+      //           }
+      //       });
 
-            temp += "</ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#glyco").html(result);
-          removals_list["glyco"] = data;
-          build_site_removals();
-          load_status += 1;
-          updateLoadStatus();
-        });
+      //       temp += "</ul></li>";
+      //       items.push( temp );
+      //     });
+      //     result = items.join( "" );
+      //     $("#glyco").html(result);
+      //     removals_list["glyco"] = data;
+      //     build_site_removals();
+      //     load_status += 1;
+      //     updateLoadStatus();
+      //   });
                     
-      // http://localhost:8000/construct/tool/json/palmi/adrb2_human/
-      $.getJSON( "/construct/tool/json/palmi/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( type, val ) {
-            temp = "";
-            $.each( val, function( key, value ) {
-                temp += "<li id='"+key+"' class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" ("+value[5]+")</a><ul class=\"dropdown-menu\"><li><a onclick='palmi(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' > Mutate "+value[4][0]+value[0]+value[1]+"</a></li></ul></li>";
-            });
+      // // http://localhost:8000/construct/tool/json/palmi/adrb2_human/
+      // $.getJSON( "/construct/tool/json/palmi/{{target.entry_name}}/", function( data ) {
+      //     var items = [];
+      //     $.each( data, function( type, val ) {
+      //       temp = "";
+      //       $.each( val, function( key, value ) {
+      //           temp += "<li id='"+key+"' class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" ("+value[5]+")</a><ul class=\"dropdown-menu\"><li><a onclick='palmi(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' > Mutate "+value[4][0]+value[0]+value[1]+"</a></li></ul></li>";
+      //       });
 
-            temp += "</ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#palmi").html(result);
-          removals_list["palmi"] = data;
-          build_site_removals();
-          load_status += 1;
-          updateLoadStatus();
-        });
+      //       temp += "</ul></li>";
+      //       items.push( temp );
+      //     });
+      //     result = items.join( "" );
+      //     $("#palmi").html(result);
+      //     removals_list["palmi"] = data;
+      //     build_site_removals();
+      //     load_status += 1;
+      //     updateLoadStatus();
+      //   });
 
        $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
           mutations_mode_suggestions = data;

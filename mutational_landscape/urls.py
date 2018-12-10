@@ -6,6 +6,7 @@ from mutational_landscape import views
 urlpatterns = [
     url(r'^$', cache_page(60*60*24*0)(views.TargetSelection.as_view()), name='targetselection'),
     url(r'^render', views.render_variants, name='render'),
+    url(r'^(?P<download>download)', views.render_variants, name='render'),
     url(r'^protein/(?P<protein>[^/]*?)/(?P<download>download)$', views.render_variants, name='render'),
     url(r'^statistics', views.statistics, name='statistics'),
     url(r'^economicburden', views.economicburden, name='statistics'),

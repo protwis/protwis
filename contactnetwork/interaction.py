@@ -1,4 +1,5 @@
 from contactnetwork.residue import *
+from Bio.PDB.Polypeptide import *
 
 import math
 
@@ -22,6 +23,7 @@ class InteractingPair:
         return self.res2
 
     def get_pymol_selection_code(self):
+        # TODO fix static chain selection
         return "select chain A and (resi {0}+{1}); zoom sele; show sticks, sele".format(str(self.res1.id[1]), str(self.res2.id[1]))
 
     def get_interaction_text(self):
@@ -36,6 +38,21 @@ class InteractingPair:
                 text += i.get_name()
 
         text += ')'
+
+        return text
+
+    def get_interaction_json(self, generic):
+        text = '[\'{0}\',\'{1}\',{2},\'{3}\',\'{4}\',\'{5}\',{6}, ["'.format(self.res1.parent.id, three_to_one(self.res1.get_resname()), self.res1.id[1], generic, self.res2.parent.id, three_to_one(self.res2.get_resname()), self.res2.id[1])
+        first = True
+
+        if self.interactions:
+            for i in self.interactions:
+                if not first:
+                    text += ', "'
+                first = False
+                text += i.get_name() + '"'
+
+        text += ']]'
 
         return text
 
@@ -145,23 +162,14 @@ def distance_between(v1, v2):
 
 # Checks if two residues have a face to face interaction
 def has_face_to_face_interaction(res1, res2):
-    rings_res1 = get_ring_descriptors(res1)
-    rings_res2 = get_ring_descriptors(res2)
+    res1_desc = get_ring_descriptors(res1)
+    res2_desc = get_ring_descriptors(res2)
 
-    '''
-    if any([(angle_between_plane_normals(r1[1], r2[1]) < 0.34906585
-            and numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) < 5.0)
-            for r1 in rings_res1 for r2 in rings_res2]):
-        print "Distance between ring centers: %f" % numpy.linalg.norm(numpy.subtract(rings_res1[0][0], rings_res2[0][0]))
-        print "Center of first ring is %f,%f,%f, second is %f,%f,%f!".format()
-    '''
-
-    # Make sure that the acute angle between the planes are less than (or eq.) 20
-    # degrees and that the distance between centers is less than  (or eq.) 5 Angstrom.
-    #return any([(angle_between_plane_normals(r1[1], r2[1]) <= 0.34906585)
-    return any([(math.degrees(angle_between_plane_normals(r1[1], r2[1])) <= 20)
-                and (numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) <= 5.0)
-                for r1 in rings_res1 for r2 in rings_res2])
+    # Make sure that the acute angle between the planes are less than (or eq.) 30
+    # degrees and that the distance between centers is less than  (or eq.) 4.4 Angstrom.
+    return any([(distance_between(r1[0], r2[0]) <= 4.4)
+                and (math.degrees(angle_between_plane_normals(r1[1], r2[1])) <= 30)
+                for r1 in res1_desc for r2 in res2_desc])
 
 
 # Checks if two residues have an edge to face interaction
@@ -169,41 +177,26 @@ def has_edge_to_face_interaction(res1, res2):
     res1_desc = get_ring_descriptors(res1)
     res2_desc = get_ring_descriptors(res2)
 
-    # Make sure the edge atom closest to the center is closer than
-    # 4.5 angstroms and that the perpendicular angles is with
-    # +/- 30 degrees, i.e. the acute angle is greater than 60
-    # degrees = 1.04719755 radians.
-    #return any([(abs(angle_between_plane_normals(r1[1], r2[1]) - 1.5707963267) < 0.523598776)
-    return any([(math.degrees(abs(angle_between_plane_normals(r1[1], r2[1]) - 1.5707963267)) <= 30)
-                and (numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) <= 5.2)
+    # Make sure the ring centers are closer than 5.5 angstroms
+    # and that the perpendicular angle is within +/- 30 degrees
+    # i.e. the acute angle is between 60-120 degrees
+    return any([(distance_between(r1[0], r2[0]) <= 5.5)
+                and (abs(math.degrees(angle_between_plane_normals(r1[1], r2[1])) - 90) <= 30)
                 for r1 in res1_desc for r2 in res2_desc])
 
 
 def has_pi_cation_interaction(res1, res2):
     # Only aromatic residues will have ring descriptors
-    res1_descs = get_ring_descriptors(res1)
+    res1_desc = get_ring_descriptors(res1)
 
     # Only positively charged atoms will have charged atoms
     res2_pos_atom_names = get_pos_charged_atom_names(res2)
 
-    # Check if any charged residue atom is closer to any ring centroid than 6 angstroms.
-    # TODO: also adjust this to add an angle check of 30 degrees
-    try:
-        close_enough = any(
-            [any(
-                [distance_between(res2.child_dict[atom_name].coord, desc[0]) <= 6 for desc in res1_descs]
-            ) for atom_name in res2_pos_atom_names])
-    except KeyError:
-        return False
-
-    # print "select chain A and (resi {0}+{1}); zoom sele; show sticks, sele".format(str(res1.id[1]), str(res2.id[1]))
-
-    # The epsilon carbon of LYS is 2.4x as likely to be closer
-    # to a center of a ring than the protonated nitrogen, see:
-    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC22230/
-    # consider using this information!
-
-    return close_enough
+    # Check if any charged atom is within 6.6 angstroms of any ring centroid
+    # and that the angle is within +/- 30 degrees
+    return any([distance_between(res2.child_dict[atom_name].coord, r1[0]) <= 6.6
+        and abs(math.degrees(angle_between_plane_normals(r1[1], res2.child_dict[atom_name].coord-r1[0]))) <= 30
+        for r1 in res1_desc for atom_name in res2_pos_atom_names])
 
 def get_polar_hbonds_interactions(res1, res2):
     if has_hbond_interaction(res1, res2):
@@ -289,11 +282,12 @@ def get_aromatic_interactions(res1, res2):
         if has_face_to_face_interaction(res1, res2):
             interactions.append(FaceToFaceInteraction())
 
-        if has_edge_to_face_interaction(res1, res2):
+        elif has_edge_to_face_interaction(res1, res2):
             interactions.append(EdgeToFaceInteraction())
 
-        if has_face_to_edge_interaction(res1, res2):
-            interactions.append(FaceToEdgeInteraction())
+        # AK 28-11-2018 - now redundant given the calculation method
+        #if has_face_to_edge_interaction(res1, res2):
+        #    interactions.append(FaceToEdgeInteraction())
 
     if is_aromatic_aa(res1) and is_pos_charged(res2):
         if has_pi_cation_interaction(res1, res2):

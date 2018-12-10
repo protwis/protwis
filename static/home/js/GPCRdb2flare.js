@@ -24,6 +24,30 @@ function parseGPCRdb2flare(data) {
   };
 
   var segmentColors = {
+    "1": "#A8DDB5",
+    "2": "#91C6AD",
+    "3": "#7AB0A6",
+    "4": "#63999E",
+    "5": "#4C8397",
+    "6": "#356C8F",
+    "7": "#1E5688",
+    "8": "#084081",
+    "0": "#D0D0D0"
+  };
+
+  var segmentGrayColors = {
+    "1": "#ccc",
+    "2": "#bbb",
+    "3": "#aaa",
+    "4": "#999",
+    "5": "#888",
+    "6": "#777",
+    "7": "#666",
+    "8": "#555",
+    "0": "#FCC0C0"
+  };
+
+  var segmentRainbowColors = {
     "1": "#1500D6",
     "2": "#006BDB",
     "3": "#00E1D1",
@@ -32,7 +56,7 @@ function parseGPCRdb2flare(data) {
     "6": "#C9F300",
     "7": "#F99100",
     "8": "#FF0000",
-    "0": "#FFFFFF"
+    "0": "#EEE"
   };
 
   function assignColor(segment) {
@@ -82,7 +106,8 @@ function parseGPCRdb2flare(data) {
     dataFlare.tracks[0].trackProperties.push({
       nodeName: residue,
       color: assignColor(data.segment_map[residue]),
-      size: 1
+      size: 1,
+      segment: data.segment_map[residue]
     });
 
     dataFlare.trees[0].treePaths.push(
@@ -91,38 +116,51 @@ function parseGPCRdb2flare(data) {
   });
 
   // Fill edges
-  if (data.generic == false) {
-    // data.generic == false in case of single crystal
+  Object.keys(data.interactions).forEach(function(pair) {
+    pairResidues = separatePair(pair);
 
-    Object.keys(data.interactions).forEach(function(pair) {
-      pairResidues = separatePair(pair);
-
-      dataFlare.edges.push({
-        name1: pairResidues[0],
-        name2: pairResidues[1],
-        frames: [0]
-      });
+    // merge all interactions in data
+    var allInteractions = [];
+    Object.keys(data.interactions[pair]).forEach( key => {
+      var tmp = [];
+      for (var i = 0; i < data.interactions[pair][key].length; i++) {
+        tmp.push(getFriendlyInteractionName(data.interactions[pair][key][i]).replace(' ', '-'));
+      }
+      allInteractions.push(Array.from(new Set(tmp)));
     });
-  } else {
-    crystals = Object.keys(data.aa_map);
+    allInteractions = [].concat.apply([],allInteractions); // flatten
 
-    Object.keys(data.interactions).forEach(function(pair) {
-      pairResidues = separatePair(pair);
+    // Essential for multiple x-rays in group - count num X-rays with interaction
+    var interactions = { any : Object.keys(data.interactions[pair]).length };
+    new Set(allInteractions).forEach( i => { interactions[i] = 0; });
+    allInteractions.forEach( i => { interactions[i] = interactions[i] + 1; });
 
-      var frames = [];
-
-      Object.keys(data.interactions[pair]).forEach(function(crystal) {
-        var frame = crystals.indexOf(crystal);
-        frames.push(frame);
-      });
-
-      dataFlare.edges.push({
-        name1: pairResidues[0],
-        name2: pairResidues[1],
-        frames: frames
-      });
-    });
-  }
+    if ("frequency" in data){
+        dataFlare.edges.push({
+          name1: pairResidues[0],
+          name2: pairResidues[1],
+          frames: [0],
+          color: "#A0A0A0", // Default gray coloring of edges
+          interactions: interactions, // For frequency and type coloring
+          // split between 1 and 2 groups
+          frequency: data.frequency[pair],
+          count: data.count[pair],
+          segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
+        });
+    } else {
+        dataFlare.edges.push({
+          name1: pairResidues[0],
+          name2: pairResidues[1],
+          frames: [0],
+          color: "#A0A0A0", // Default gray coloring of edges
+          interactions: interactions, // For frequency and type coloring
+          // split between 1 and 2 groups
+          frequency: interactions["any"]/data.pdbs.length,
+          count: interactions["any"],
+          segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
+        });
+    }
+  });
 
   return dataFlare;
 }

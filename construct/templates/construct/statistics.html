@@ -29,7 +29,12 @@
           pos = $( this ).attr('position');
           if (pos>0) {
               test = dynamine_data[entry_name];
-              d = dynamine_data[entry_name]['N-term'];
+              try {
+                d = dynamine_data[entry_name]['N-term'];
+              } catch (e) {
+                  console.log('ERROR:' +  index + ": " + entry_name + ' ' + cut);
+                  return true;
+              }
               length = Object.keys(d).length;
               seq_pos = length-pos+1;
               a = d[seq_pos];
@@ -59,7 +64,13 @@
           pos = $( this ).attr('position');
           if (pos>0) {
               test = dynamine_data[entry_name];
-              d = dynamine_data[entry_name]['C-term'];
+
+              try {
+                d = dynamine_data[entry_name]['C-term'];
+              } catch (e) {
+                  console.log('ERROR:' +  index + ": " + entry_name + ' ' + cut);
+                  return true;
+              }
               length = Object.keys(d).length;
               seq_pos = Object.keys(d)[pos-1];
               a = d[seq_pos];
