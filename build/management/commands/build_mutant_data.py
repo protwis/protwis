@@ -693,7 +693,7 @@ class Command(BaseBuild):
                     foldchange = round(r['fold_effect'],3);
                     if foldchange<1: foldchange = -round((1/foldchange),3);
 
-
+            r['foldchange'] = foldchange
             raw_experiment = self.insert_raw(r)
             # raw_experiment.save()
             bulk = MutationExperiment(
