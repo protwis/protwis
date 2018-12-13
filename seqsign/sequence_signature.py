@@ -17,6 +17,7 @@ from residue.models import Residue
 
 from collections import OrderedDict
 from copy import deepcopy
+from decimal import Decimal
 import numpy as np
 from operator import itemgetter
 import re
@@ -374,8 +375,11 @@ class SequenceSignature:
 
                         tooltip = entry + " ("+ zscale + ")<br/>" + \
                                   "Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>" + \
-                                  "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>" + \
-                                  "P-value:  {0:.3f}".format(p)
+                                  "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>"
+                        if p > 0.001:
+                            tooltip += "P-value:  {0:.3f}".format(p)
+                        else:
+                            tooltip += "P-value:  {0:.2E}".format(Decimal(p))
 
                         self.zscales_signature[zscale][segment][entry] = [round(var1[0]-var2[0],1), color, tooltip] # diff, P-value, tooltip
                     else:
