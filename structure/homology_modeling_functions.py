@@ -452,17 +452,37 @@ class ImportHomologyModel():
 
 
 class Remodeling():
-    def __init__(self):
-        self.model_file = './structure/homology_models/ClassA_5ht1b_human-gnai2_human_6D9H_2018-10-19_GPCRDB_complex.pdb'
-        self.pir_file = './structure/PIR/test2.pir'
-        self.gaps = {'A':[[57,65]]}
+    def __init__(self, model_file, gaps={}, receptor=None, signprot=None):
+        self.model_file = model_file
+        self.struct = PDB.PDBParser(QUIET=True).get_structure('structure', self.model_file)[0]
+        self.pir_file = './structure/PIR/{}'.format(self.model_file.split('/')[-1])
+        self.gaps = gaps
+        self.remark_lines = []
+        self.receptor = receptor
+        self.signprot = signprot
+
+    def find_clashes(self):
+        hse = HSExposureCB(self.struct, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
+        self.gaps = hse.remodel_resis
+        print(hse.chain_breaks)
 
     def make_pirfile(self):
-        struct = PDB.PDBParser(QUIET=True).get_structure('structure', self.model_file)[0]
+        #fetch remark lines
+        with open(self.model_file, 'r') as f:
+            lines = f.readlines()
+            for line in lines[:5]:
+                if line.startswith('REMARK'):
+                    self.remark_lines.append(line)
+        text = 'REMARK    {} Remodelled loop regions: '.format(len(self.remark_lines)+1)
+        for chain, gaps in self.gaps.items():
+            for g in gaps:
+                text+=chain+' '+str(g[0])+'-'+str(g[1])+' '
+        self.remark_lines.append(text+'\n')
+
         ref_seq, temp_seq = '', ''
         resnum = 0
         self.chains, self.first_resis = [], []
-        for chain in struct:
+        for chain in self.struct:
             self.chains.append(chain.get_id())
             first_resi = False
             for resi in chain:
@@ -474,8 +494,6 @@ class Remodeling():
                     for g in self.gaps[chain.get_id()]:
                         if g[0]<=resi.get_id()[1]<=g[1]:
                             temp_seq+='-'
-                            # temp_seq+=PDB.Polypeptide.three_to_one(resi.get_resname())
-                            # struct[chain.get_id()].detach_child(resi.get_id())
                         else:
                             temp_seq+=PDB.Polypeptide.three_to_one(resi.get_resname())
                 else:
@@ -488,7 +506,7 @@ class Remodeling():
         for chain, gaps in self.gaps.items():
             for g in gaps:
                 for i in range(g[0],g[1]+1):
-                    struct[chain].detach_child(struct[chain][i].get_id())
+                    self.struct[chain].detach_child(self.struct[chain][i].get_id())
 
         with open(self.pir_file, 'w+') as output_file:
             template="""
@@ -510,21 +528,14 @@ sequence:{uniprot}::::::::
                      "ref_sequence":ref_seq}
             output_file.write(template.format(**context))
         io = PDB.PDBIO()
-        io.set_structure(struct)
+        io.set_structure(self.struct)
         io.save(self.model_file)
 
     def run(self):
-        #from modeller import soap_loop
-
-        log.verbose()
+        log.none()
         env = environ()
 
-        # directories for input atom files
-        # env.io.atom_files_directory = ['.', '../atom_files']
-
-        # Create a new class based on 'loopmodel' so that we can redefine
-        # select_loop_atoms (necessary)
-        m = MyLoop(env,
+        m = LoopRemodel(env,
             alnfile = self.pir_file,
             # inimodel=self.model_file,   # initial model of the target
             knowns=self.model_file,
@@ -533,22 +544,38 @@ sequence:{uniprot}::::::::
             gaps=self.gaps,
             model_chains=self.chains,
             start_resnums=self.first_resis) # assess loops with DOPE
-        #          loop_assess_methods=soap_loop.Scorer()) # assess with SOAP-Loop
 
         m.starting_model= 1           # index of the first loop model
         m.ending_model  = 1           # index of the last loop model
-        m.md_level = refine.fast  # loop refinement method
+        m.md_level = refine.slow  # loop refinement method
 
         m.make()
 
+        ok_models = [x for x in m.outputs if x['failure'] is None]
+        key = 'DOPE score'
+        if sys.version_info[:2] == (2,3):
+            ok_models.sort(lambda a,b: cmp(a[key], b[key]))
+        else:
+            ok_models.sort(key=lambda a: a[key])
+        ready_model = ok_models[0]
 
-class MyLoop(automodel):
-    # def __init__(self, env, sequence, alnfile=None, knowns=[], inimodel=None, deviation=None, library_schedule=None, csrfile=None, 
-    #              inifile=None, assess_methods=None, loop_assess_methods=None, gaps=[], model_chains=[], start_resnums=[]):
-    #     super(MyLoop, self).__init__(env, sequence, alnfile=None, knowns=[], inimodel=None, deviation=None, library_schedule=None, 
-    #           csrfile=None, inifile=None, assess_methods=None, loop_assess_methods=None)
+        for mfile in os.listdir("./"):
+            if mfile==ready_model['name']:
+                with open("./"+mfile, 'r') as f:
+                    lines = f.readlines()
+                with open(self.model_file, 'w') as f:
+                    for l1 in self.remark_lines:
+                        f.write(l1)
+                    for l2 in lines:
+                        if not l2.startswith('REMARK') and not l2.startswith('EXPDTA'):
+                            f.write(l2)
+            elif mfile.startswith('uniprot'):
+                os.remove("./"+mfile)
+
+
+class LoopRemodel(automodel):
     def __init__(self, env, alnfile, knowns, sequence, assess_methods, gaps=[], model_chains=[], start_resnums=[]):
-        super(MyLoop, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
+        super(LoopRemodel, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
                                                assess_methods=assess_methods)
         self.gaps = gaps
         self.model_chains = model_chains
@@ -556,22 +583,30 @@ class MyLoop(automodel):
         
     def special_patches(self, aln):
         # Rename chains and renumber the residues in each
-        print(self.model_chains[0], type(self.model_chains[0]))
         self.rename_segments(segment_ids=self.model_chains,
                              renumber_residues=self.start_resnums)
 
     def select_atoms(self):
-        # One loop from residue 19 to 28 inclusive
-        # ranges = []
-        # for chain, gaps in self.gaps.items():
-        #     ranges.append(self.residue_range('{}:{}'.format(gaps[0], chain), '{}:{}'.format(gaps[1], chain)))
-        # if len(ranges)==1:
         selection_out = []
         for chain, gaps in self.gaps.items():
             for g in gaps:
                 for i in range(g[0],g[1]+1):
                     selection_out.append(self.residues[str(i)+':{}'.format(chain)])
-        print('HERREEEEEE: ',selection_out)
         return selection(selection_out)
+
+    def make(self):
+        with SilentModeller():
+            super(LoopRemodel, self).make()
+
+class SilentModeller(object):
+    ''' No text to console.
+    '''
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, *args):
+        sys.stdout.close()
+        sys.stdout = self._stdout
 
 

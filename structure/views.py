@@ -85,7 +85,7 @@ class ServeHomologyModels(TemplateView):
 	def get_context_data(self, **kwargs):
 		context = super(ServeHomologyModels, self).get_context_data(**kwargs)
 		try:
-			models = StructureModel.objects.all().defer('pdb').prefetch_related(
+			models = StructureModel.objects.all().prefetch_related(
 				"protein__family",
 				"state",
 				"protein__family__parent__parent__parent",
@@ -98,7 +98,6 @@ class ServeHomologyModels(TemplateView):
 				"protein_conformation__protein__family__parent__parent__parent",
 				"protein_conformation__protein__species")
 			context['structure_model'] = list(models)+list(refined_models)
-			print(type(models))
 		except StructureModel.DoesNotExist as e:
 			pass
 
@@ -111,7 +110,7 @@ class ServeComplexModels(TemplateView):
 	def get_context_data(self, **kwargs):
 		context = super(ServeComplexModels, self).get_context_data(**kwargs)
 		try:
-			context['structure_complex_model'] = StructureComplexModel.objects.all().defer('pdb').prefetch_related(
+			context['structure_complex_model'] = StructureComplexModel.objects.all().prefetch_related(
 				"receptor_protein",
 				"receptor_protein__family",
 				"receptor_protein__family__parent__parent__parent",
@@ -146,6 +145,7 @@ def HomologyModelDetails(request, modelname, state):
 			"backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
 			).order_by('residue__sequence_number').all()
 		main_template_seqsim = StructureRefinedSeqSim.objects.get(structure=model, template=model_main_template).similarity
+		version = model.pdb_data.pdb.split('\n')[0][-10:]
 	else:
 		model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
 		model_main_template = model.main_template
@@ -155,6 +155,7 @@ def HomologyModelDetails(request, modelname, state):
 			"backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
 			).order_by('residue__sequence_number').all()
 		main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
+		version = model.version
 
 	bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(rotamers, model_main_template, color_palette)
 
@@ -166,7 +167,7 @@ def HomologyModelDetails(request, modelname, state):
 														  'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
 														  'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
 														  'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
-														  'state': state, 'delta_distance': delta_distance})
+														  'state': state, 'delta_distance': delta_distance, 'version': version})
 
 def ComplexModelDetails(request, modelname, signprot):
 	"""
@@ -319,10 +320,10 @@ def ServeHomModDiagram(request, modelname, state):
 	else:
 		 quit() #quit!
 
-	if model.pdb is None:
+	if model.pdb_data is None:
 		quit()
 
-	response = HttpResponse(model.pdb, content_type='text/plain')
+	response = HttpResponse(model.pdb_data.pdb, content_type='text/plain')
 	return response
 
 def ServeComplexModDiagram(request, modelname, signprot):
@@ -332,10 +333,10 @@ def ServeComplexModDiagram(request, modelname, signprot):
 	else:
 		 quit() #quit!
 
-	if model.pdb is None:
+	if model.pdb_data is None:
 		quit()
 
-	response = HttpResponse(model.pdb, content_type='text/plain')
+	response = HttpResponse(model.pdb_data.pdb, content_type='text/plain')
 	return response
 
 def StructureDetails(request, pdbname):
@@ -1114,7 +1115,6 @@ class SuperpositionWorkflowIndex(TemplateView):
 		('segments', False)])
 
 	def get_context_data (self, **kwargs):
-
 		context = super(SuperpositionWorkflowIndex, self).get_context_data(**kwargs)
 
 		# get selection from session and add to context
@@ -1146,7 +1146,7 @@ class SuperpositionWorkflowIndex(TemplateView):
 		for a in attributes:
 			if not(a[0].startswith('__') and a[0].endswith('__')):
 				context[a[0]] = a[1]
-
+		# print(context)
 		return context
 
 
@@ -1202,7 +1202,6 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 		for a in attributes:
 			if not(a[0].startswith('__') and a[0].endswith('__')):
 				context[a[0]] = a[1]
-
 		return render(request, self.template_name, context)
 
 	def get_context_data(self, **kwargs):
@@ -1909,7 +1908,6 @@ def ConvertStructureModelsToProteins(request):
 			except:
 				try:
 					prot = struct_mod.item.receptor_protein
-					print(prot)
 					selection.remove('targets', 'structure_complex_receptor', struct_mod.item.id)
 					selection.add('targets', 'protein', SelectionItem('protein', prot))
 				except:
@@ -1957,101 +1955,46 @@ def ConvertStructureComplexSignprotToProteins(request):
 
 def HommodDownload(request):
 	"Download selected homology models in zip file"
-
-	out_stream = BytesIO()
-	io = PDBIO()
-	zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
 	pks = request.GET['ids'].split(',')
 	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
-	hommodels = StructureModel.objects.filter(pk__in=pks).prefetch_related('protein__family','state','main_template__pdb_code').all()
-	print(hommodels)
-	for hommod in hommodels:
-		mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
-																	  hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
-
-		tmp = StringIO(hommod.pdb)
-		zipf.writestr(mod_name, tmp.getvalue())
-		del tmp
-
-		stats_name = mod_name[:-3]+'templates.csv'
-		# Use cache to prevent this being performed too often
-		stats_data = cache.get(stats_name)
-		if stats_data is None:
-			rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related('homology_model','residue__generic_number','residue__protein_segment','backbone_template__pdb_code','rotamer_template__pdb_code').all().order_by('residue__sequence_number')
-			stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
-			for r in rotamers:
-				h = r.homology_model.pk
-				try:
-					gn = r.residue.generic_number.label
-				except:
-					gn = '-'
-				if r.backbone_template:
-					bt = r.backbone_template.pdb_code.index
-				else:
-					bt = '-'
-				if r.rotamer_template:
-					rt = r.rotamer_template.pdb_code.index
-				else:
-					rt = '-'
-				stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
-
-			cache.set(stats_name,stats_data,3600*24*7) # cache a week
-
-		zipf.writestr(stats_name, stats_data)
-		del stats_data
-	zipf.close()
-	response = HttpResponse(content_type="application/zip")
-	response['Content-Disposition'] = 'attachment; filename="GPCRDB_homology_models.zip"'
-	response.write(out_stream.getvalue())
+	hommodels = []
+	for pk in pks:
+		if 'r' in pk:
+			hommodels.append(Structure.objects.get(pk=int(pk[:-1])))
+		else:
+			hommodels.append(StructureModel.objects.get(pk=pk))
+	
+	zip_io = BytesIO()
+	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
+		for hommod in hommodels:
+			try: 
+				hommod.refined
+				version = hommod.pdb_data.pdb.split('\n')[0][-10:]
+				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.zip'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+																   hommod.pdb_code.index, hommod.state.name, version)
+			except:
+				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.zip'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+																		  hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+			backup_zip.write('./structure/homology_models_zip/'+mod_name, mod_name)
+	response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
+	response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_homology_models' + ".zip"
+	response['Content-Length'] = zip_io.tell()
 	return response
 
 def ComplexmodDownload(request):
 	"Download selected complex homology models in zip file"
-
-	out_stream = BytesIO()
-	io = PDBIO()
-	zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
 	pks = request.GET['ids'].split(',')
 	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
 	hommodels = StructureComplexModel.objects.filter(pk__in=pks).prefetch_related('receptor_protein__family','main_template__pdb_code').all()
-	print(hommodels)
-	for hommod in hommodels:
-		mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB_complex.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
-																   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-		tmp = StringIO(hommod.pdb)
-		zipf.writestr(mod_name, tmp.getvalue())
-		del tmp
-
-		stats_name = mod_name[:-3]+'templates.csv'
-		# Use cache to prevent this being performed too often
-		stats_data = cache.get(stats_name)
-		if stats_data is None:
-			rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related('homology_model','residue__generic_number','residue__protein_segment','backbone_template__pdb_code','rotamer_template__pdb_code').all().order_by('protein','residue__sequence_number')
-			stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
-			for r in rotamers:
-				h = r.homology_model.pk
-				try:
-					gn = r.residue.generic_number.label
-				except:
-					gn = '-'
-				if r.backbone_template:
-					bt = r.backbone_template.pdb_code.index
-				else:
-					bt = '-'
-				if r.rotamer_template:
-					rt = r.rotamer_template.pdb_code.index
-				else:
-					rt = '-'
-				stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
-
-			cache.set(stats_name,stats_data,3600*24*7) # cache a week
-
-		zipf.writestr(stats_name, stats_data)
-		del stats_data
-	zipf.close()
-	response = HttpResponse(content_type="application/zip")
-	response['Content-Disposition'] = 'attachment; filename="GPCRDB_complex_homology_models.zip"'
-	response.write(out_stream.getvalue())
+	zip_io = BytesIO()
+	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
+		for hommod in hommodels:
+			mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.zip'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+															   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+			backup_zip.write('./structure/complex_models_zip/'+mod_name, mod_name)
+	response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
+	response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_complex_homology_models' + ".zip"
+	response['Content-Length'] = zip_io.tell()
 	return response
 
 def SingleModelDownload(request, modelname, state, csv=False):
@@ -2061,100 +2004,27 @@ def SingleModelDownload(request, modelname, state, csv=False):
 		hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
 	else:
 		hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
-	if csv:
-		if state=='refined':
-			rotamers = StructureRefinedStatsRotamer.objects.filter(structure=hommod).prefetch_related("structure", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
-		else:
-			rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
-		text_out = "Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n"
-		for r in rotamers:
-			if r.backbone_template:
-				bt = r.backbone_template.pdb_code.index
-			else:
-				bt = '-'
-			if r.rotamer_template:
-				rt = r.rotamer_template.pdb_code.index
-			else:
-				rt = '-'
-			if r.residue.generic_number:
-				gn = r.residue.generic_number.label
-			else:
-				gn = '-'
-			text_out+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
-		response = HttpResponse(text_out, content_type="homology_models/csv")
-		if state=='refined':
-			file_name = 'Class{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
-																			   hommod.pdb_code.index)
-		else:
-			file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
-																					 hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+	if state=='refined':
+		version = hommod.pdb_data.pdb.split('\n')[0][-10:]
+		file_name = 'Class{}_{}_{}_{}_{}_GPCRdb.zip'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+																 hommod.pdb_code.index, hommod.state.name, version)
 	else:
-		if state=='refined':
-			response = HttpResponse(hommod.pdb_data.pdb, content_type="homology_models/model")
-		else:
-			response = HttpResponse(hommod.pdb, content_type="homology_models/model")
-		if state=='refined':
-			file_name = 'Class{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
-																	 hommod.pdb_code.index)
-		else:
-			file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
-																		   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+		file_name = 'Class{}_{}_{}_{}_{}_GPCRdb.zip'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+	zipfile = open('./structure/homology_models_zip/'+file_name, 'rb')
+	response = HttpResponse(zipfile, content_type="application/zip")
 	response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
 	return response
 
 def SingleComplexModelDownload(request, modelname, signprot, csv=False):
 	"Download single homology model"
-	print(modelname, signprot)
 	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
-	# if state=='refined':
-	#     hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
-	# else:
 	hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
-	if csv:
-		# if state=='refined':
-		#     rotamers = StructureRefinedStatsRotamer.objects.filter(structure=hommod).prefetch_related("structure", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
-		# else:
-		rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('protein','residue__sequence_number')
-		text_out = "Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n"
-		for r in rotamers:
-			if r.backbone_template:
-				bt = r.backbone_template.pdb_code.index
-			else:
-				bt = '-'
-			if r.rotamer_template:
-				rt = r.rotamer_template.pdb_code.index
-			else:
-				rt = '-'
-			if r.residue.generic_number:
-				gn = r.residue.generic_number.label
-			else:
-				gn = '-'
-			if r.residue.protein_segment:
-				prot_seg = r.residue.protein_segment.slug
-			elif r.residue.protein_conformation.protein.family.parent.name=='Beta':
-				prot_seg = 'Beta'
-			elif r.residue.protein_conformation.protein.family.parent.name=='Gamma':
-				prot_seg = 'Gamma'
-			text_out+='{},{},{},{},{},{}\n'.format(prot_seg, r.residue.sequence_number, gn, r.residue.protein_conformation.protein.entry_name, bt, rt)
-		response = HttpResponse(text_out, content_type="homology_models/csv")
-		# if state=='refined':
-		#     file_name = 'Class{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
-		#                                                                        hommod.pdb_code.index)
-		# else:
-		file_name = 'Class{}_{}-{}_{}_{}_GPCRDB_complex.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
-																			  hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-	else:
-		# if state=='refined':
-		#     response = HttpResponse(hommod.pdb_data.pdb, content_type="homology_models/model")
-		# else:
-		response = HttpResponse(hommod.pdb, content_type="homology_models/model")
-		# if state=='refined':
-		#     file_name = 'Class{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
-		#                                                              hommod.pdb_code.index)
-		# else:
-		file_name = 'Class{}_{}-{}_{}_{}_GPCRDB_complex.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
-																	hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+	file_name = 'Class{}_{}-{}_{}_{}_GPCRdb.zip'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+	zipfile = open('./structure/complex_models_zip/'+file_name, 'rb')
+	response = HttpResponse(zipfile, content_type='application/zip')
 	response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
 	return response

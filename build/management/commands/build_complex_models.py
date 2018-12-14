@@ -86,10 +86,14 @@ class Command(BaseBuild):
         
     def handle(self, *args, **options):
 
-        rm = Remodeling()
-        rm.make_pirfile()
-        rm.run()
-        return 0
+        # rm = Remodeling('./structure/homology_models/ClassA_taar1_human-gnao_human_6G79_2018-12-04_GPCRDB.pdb', receptor=Protein.objects.get(entry_name='taar1_human'), signprot=Protein.objects.get(entry_name='gnao_human'))
+        # rm.find_clashes()
+        # rm.make_pirfile()
+        # rm.run()
+        # rm2 = Remodeling('./structure/homology_models/ClassA_taar1_human-gnao_human_6G79_2018-12-04_GPCRDB.pdb', receptor=Protein.objects.get(entry_name='taar1_human'), signprot=Protein.objects.get(entry_name='gnao_human'))
+        # rm2.find_clashes()
+        # print(datetime.now() - startTime)
+        # return 0
 
 
         if options['purge']:
@@ -104,6 +108,7 @@ class Command(BaseBuild):
         if not os.path.exists('./structure/complex_models_zip/'):
             os.mkdir('./structure/complex_models_zip/')
         open('./structure/homology_models/done_models.txt','w').close()
+
         if options['update']:
             self.update = True
         else:
@@ -123,16 +128,18 @@ class Command(BaseBuild):
 
         # excludees = SignprotComplex.objects.all().values_list('structure__protein_conformation__protein__parent__entry_name', flat=True)
         gprots_with_structures = sf.get_subtypes_with_templates()
-        self.receptor_list = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', family__parent__parent__parent__name='Class A (Rhodopsin)')
-        # gprotein_targets = {'Gs':['gnas2_human', 'gnal_human'], 'Gi/o':['gnai1_human', 'gnai2_human','gnai3_human','gnao_human','gnat1_human','gnat2_human','gnat3_human','gnaz_human'], 
-        #                     'Gq/11':['gnaq_human','gna11_human','gna14_human','gna15_human'], 'G12/13':['gna12_human','gna13_human']}
+        if options['r']:
+            self.receptor_list = Protein.objects.filter(entry_name__in=options['r'])
+        else:
+            self.receptor_list = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', family__parent__parent__parent__name='Class A (Rhodopsin)')
         
+        print(self.receptor_list)
         subfams = sf.get_subfamilies_with_templates()
         self.gprotein_targets = sf.get_subfam_subtype_dict(subfams)
 
-        # del self.gprotein_targets['Gi/o']
+        del self.gprotein_targets['Gi/o']
 
-        self.receptor_list = Protein.objects.filter(entry_name__in=['drd3_human','opsd_bovin'])
+        # self.receptor_list = Protein.objects.filter(entry_name__in=['drd3_human'])
 
         self.processors = options['proc']
         self.prepare_input(self.processors, self.receptor_list)
@@ -171,19 +178,19 @@ class Command(BaseBuild):
                     continue
                 else:
                     if first_in_subfam:
-                        # mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
-                        # mod.run(fast_refinement=True)
+                        mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                        mod.run(fast_refinement=True)
                         first_in_subfam = False
                     else:
                         ihm = ImportHomologyModel(receptor.entry_name, target)
                         if ihm.find_files()!=None:
-                            # mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
-                            # mod.run(import_receptor=True, fast_refinement=True)
+                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                            mod.run(import_receptor=True, fast_refinement=True)
                             import_receptor = True
                         else:
-                            pass
-                            # mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
-                            # mod.run(fast_refinement=True)
+                            # pass
+                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                            mod.run(fast_refinement=True)
 
 
     def purge_complex_entries(self):

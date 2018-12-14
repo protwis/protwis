@@ -1153,6 +1153,7 @@ class Command(BaseBuild):
                         s.annotated = False
 
                     s.refined = False
+                    s.stats_text = None
 
                     # save structure before adding M2M relations
                     s.save()

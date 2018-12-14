@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
     <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-        <style type="text/css">
+    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+    <style type="text/css">
         .select2-result-label{
             font-size:x-small;
             font-size: 10px;
@@ -73,8 +74,21 @@
             font-family: sans-serif;
             font-size: 100%;
             font-weight: bold;
-
         }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            padding-top: 100px; /* Location of the box */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+    }
     </style>
 {% endblock %}
 
@@ -82,7 +96,13 @@
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
     <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
+    <script src="{% static 'home/js/browser_functions.js' %}"> </script>
 
+<system.webServer>
+   <httpErrors errorMode="Detailed" />
+   <asp scriptErrorSentToBrowser="true"/>
+</system.webServer>
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
@@ -112,6 +132,11 @@
             assign_to_row();
             $("#loading_div").hide();
 
+            //Uncheck every row when using back button on browser
+            $('.alt-selected').prop('checked',false)
+            $('.alt').prop('checked',false)
+            $('.select-all').prop('checked',false)
+            //
 
             yadcf.init(oTable,
                 [
@@ -330,59 +355,66 @@
                 console.log('done draw');
             } );
 
-            $('#superpose_btn').click(function () {
-                ClearSelection('targets');
-                ClearSelection('reference');
-                if (oTable.rows('.selected').data().length == 1) {
-                    var div = document.createElement("div");
-                    div.innerHTML = oTable.rows('.selected').data()[0][12];
-                    var state1 = oTable.rows('.selected').data()[0][3];
-                    if (oTable.rows('.selected').data()[0][4]==='Yes') {
-                        div.innerHTML = oTable.rows('.selected').data()[0][11];
-                        if (typeof div.innerText !== "undefined") {
-                            AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '')+"_refined");
-                        } else {
-                            AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '')+"_refined");
-                        }
-                    }
-                    else {
-                        if (typeof div.innerText !== "undefined") {
-                            AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
-                        } else {
-                            AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
-                        }
-                    }
-                }
-                var checked_data = oTable.rows('.alt_selected').data();
-                var selected_ids = [];
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][12];
-                    var state2 = checked_data[i][3];
-                    if (checked_data[i][4]==='Yes') {
-                        div.innerHTML = checked_data[i][11];
-                        if (typeof div.innerText !== "undefined") {
-                            selected_ids.push(div.innerText.replace(/\s+/g, '')+"_refined");
-                        } else {
-                            selected_ids.push(div.textContent.replace(/\s+/g, '')+"_refined");
-                        }
-                    }
-                    else {
-                        if (typeof div.innerText !== "undefined") {
-                            selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
-                        } else {
-                            selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
-                        }
-                    }
-                }
-                AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
-                window.location.href = '/structure/superposition_workflow_index';
+            $('#superpose_btn').click(function() {
+                superposition(oTable, [12,5,6,7,8,9,2,3,4,10,11], "homology_model_browser", true);
             });
+
+            // $('#superpose_btn').click(function () {
+            //     ClearSelection('targets');
+            //     ClearSelection('reference');
+            //     if (oTable.rows('.selected').data().length == 1) {
+            //         var div = document.createElement("div");
+            //         div.innerHTML = oTable.rows('.selected').data()[0][12];
+            //         var state1 = oTable.rows('.selected').data()[0][3];
+            //         if (oTable.rows('.selected').data()[0][4]==='Yes') {
+            //             div.innerHTML = oTable.rows('.selected').data()[0][11];
+            //             if (typeof div.innerText !== "undefined") {
+            //                 AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '')+"_refined");
+            //             } else {
+            //                 AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '')+"_refined");
+            //             }
+            //         }
+            //         else {
+            //             if (typeof div.innerText !== "undefined") {
+            //                 AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
+            //             } else {
+            //                 AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+            //             }
+            //         }
+            //     }
+            //     var checked_data = oTable.rows('.alt_selected').data();
+            //     var selected_ids = [];
+            //     for (i = 0; i < checked_data.length; i++) {
+            //         var div = document.createElement("div");
+            //         div.innerHTML = checked_data[i][12];
+            //         var state2 = checked_data[i][3];
+            //         if (checked_data[i][4]==='Yes') {
+            //             div.innerHTML = checked_data[i][11];
+            //             if (typeof div.innerText !== "undefined") {
+            //                 selected_ids.push(div.innerText.replace(/\s+/g, '')+"_refined");
+            //             } else {
+            //                 selected_ids.push(div.textContent.replace(/\s+/g, '')+"_refined");
+            //             }
+            //         }
+            //         else {
+            //             if (typeof div.innerText !== "undefined") {
+            //                 selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
+            //             } else {
+            //                 selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
+            //             }
+            //         }
+            //     }
+            //     AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
+            //     window.location.href = '/structure/superposition_workflow_index';
+            // });
             
             $('#download_btn').click(function () {
                 var selected_ids = [];
                  $.each($(".alt_selected"), function(){            
                     hom_id = $(this).closest('tr').attr('model_id');
+                    if ($(this).closest('tr').children().eq(4).text()==='Yes') {
+                        hom_id = hom_id.toString()+'r';
+                    }
                     selected_ids.push(hom_id);
                 });
                 window.location.href = '/structure/hommod_download?ids='+selected_ids.join(",");
@@ -393,7 +425,7 @@
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][12];
-                    
+                    var state = checked_data[i][3];
                     if (checked_data[i][4]==='Yes') {
                         div.innerHTML = checked_data[i][11];
                         if (typeof div.innerText !== "undefined") {
@@ -404,19 +436,14 @@
                     }
                     else {
                         if (typeof div.innerText !== "undefined") {
-                            AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
+                            AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '')+"_"+state);
                         } else {
-                            AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                            AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, '')+"_"+state);
                         }
                     }
                 }
                 window.location.href = '/structure/selection_convert_model';
             });
-            $('.select-all').change(function () {
-                $('.alt').prop('checked', $(this).prop("checked"));
-                $('.alt').parent().parent().toggleClass('alt_selected');
-            });
-
         });
 
         function ClearSelection(selection_type) {
@@ -516,7 +543,7 @@
 <div class="btn-group">
     <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">Align</label>
     <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
-    <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label>
+    <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label> -->
 </div>
 <!-- <br /><br />
     Show/hide columns:
@@ -558,7 +585,7 @@
     <br>Loading...
     </div>
 </div>    
-<div>
+<div id="browser">
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
         <table width="100%" class="display compact" id="constructs">
             <thead>
@@ -598,15 +625,7 @@
                         <td><span>{{ model.protein.family.parent.short|safe }}</span></td>
                         <td>{{ model.protein.family.parent.parent.parent.short }}</td>
                         <td>{{ model.protein.species.common_name }}</td>
-                        <!-- <td><a href="signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
-                        <td>{{ model.sign_protein.family.name|safe }}</td>
-                        {% if model.prot_signprot_pair %}
-                            <td>{{ model.prot_signprot_pair }}</td>
-                        {% else %}
-                            <td>no evidence</td>
-                        {% endif %} -->
                         <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
-                        <!-- <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.protein.name|safe }}</a></td> -->
                         <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                         <td style="display:none;">{{ model.protein.entry_name }}</td>
                     {% else %}
@@ -629,6 +648,36 @@
             </tbody>
         </table>
     </div>
+</div>
+<div id="myModal" class="modal">
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h3>Pick reference from selection</h3>
+    <br>
+    <table id="modal_table" class="display compact" width="100%">
+        <thead>
+            <tr>
+                <th></th>
+                <th style="display:none;"></th>
+                <th>UniProt</th>
+                <th>IUPHAR</th>
+                <th>Rec. family</th>
+                <th>Class</th>
+                <th>Species</th>
+                <th>Date</th>
+                <th>State</th>
+                <th>Refined</th>
+                <th>Main template receptor</th>
+                <th>Main template PDB</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Javascript populates the table from selected rows -->
+        </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}
 
 

@@ -16,7 +16,7 @@ import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
 from structure.signprot_modeling import SignprotModeling 
-from structure.homology_modeling_functions import GPCRDBParsingPDB, ImportHomologyModel
+from structure.homology_modeling_functions import GPCRDBParsingPDB, ImportHomologyModel, Remodeling
 
 import Bio.PDB as PDB
 from modeller import *
@@ -314,8 +314,17 @@ class CallHomologyModeling():
                 post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
             else:
                 post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
-            hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True)
-
+            if self.signprot:
+                hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
+                # Run remodeling
+                if len(hse.remodel_resis)>0:
+                    rm = Remodeling('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), gaps=hse.remodel_resis, receptor=self.receptor, signprot=self.signprot)
+                    rm.make_pirfile()
+                    rm.run()
+                    logger.info('Remodeled {} {} at {}'.format(self.receptor, self.signprot, hse.remodel_resis))
+            else:
+                hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, receptor=self.receptor)
+            
             # Check for residue shifts in model
             residue_shift = False
             db_res = ''
@@ -1785,6 +1794,19 @@ class HomologyModeling(object):
 
     def build_homology_model_second_part(self):
         # write to file
+
+        # pprint.pprint(self.alignment.reference_dict['hfs2'])
+        # pprint.pprint(self.alignment.template_dict['hfs2'])
+        # pprint.pprint(self.alignment.alignment_dict['hfs2'])
+        # pprint.pprint(self.main_pdb_array['hfs2'])
+        # pprint.pprint(self.alignment.reference_dict['S2'])
+        # pprint.pprint(self.alignment.template_dict['S2'])
+        # pprint.pprint(self.alignment.alignment_dict['S2'])
+        # pprint.pprint(self.main_pdb_array['S2'])
+        # pprint.pprint(self.trimmed_residues)
+        # pprint.pprint(self.template_source)
+        # raise AssertionError
+
         if self.complex:
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:

@@ -122,6 +122,7 @@ class Command(BaseBuild):
             try:
                 hommod = Structure.objects.get(pdb_code__index=main_structure+'_refined', refined=True)
                 hommod.pdb_data.pdb = pdb_data
+                hommod.stats_text.stats_text = ''.join(templates)
                 hommod.pdb_data.save()
 
                 original = Structure.objects.get(pdb_code__index=main_structure)
@@ -133,11 +134,12 @@ class Command(BaseBuild):
                 original = Structure.objects.get(pdb_code__index=main_structure)
                 wl = WebLink.objects.create(index=main_structure+'_refined', web_resource=original.pdb_code.web_resource)
                 pdb = PdbData.objects.create(pdb=pdb_data)
+                stats_text = StatsText.objects.create(stats_text=''.join(templates))
                 prot_conf = ProteinConformation.objects.get(protein=original.protein_conformation.protein.parent)
                 hommod = Structure.objects.create(preferred_chain=original.preferred_chain, resolution=original.resolution, publication_date=original.publication_date,
                                                   representative=original.representative, annotated=original.annotated, distance=original.distance, pdb_code=wl, pdb_data=pdb,
                                                   protein_conformation=prot_conf, publication=original.publication, state=original.state,
-                                                  structure_type=original.structure_type, refined=True)
+                                                  structure_type=original.structure_type, refined=True, stats_text=stats_text)
             # bulk add to StructureRefinedStatsRotamer
             structure_refined_stats_rotamers = []
             for r in templates[1:]:
@@ -179,20 +181,24 @@ class Command(BaseBuild):
             try:
                 hommod = StructureComplexModel.objects.get(receptor_protein=gpcr_prot, sign_prot=sign_prot)
                 hommod.main_template = m_s
-                hommod.pdb = pdb_data
+                hommod.pdb_data.pdb = pdb_data
                 hommod.version = build_date
                 hommod.prot_signprot_pair = pair
+                hommod.stats_text.stats_text = ''.join(templates)
                 hommod.save()
 
                 # Delete previous data
                 StructureComplexModelStatsRotamer.objects.filter(homology_model=hommod).delete()
                 StructureComplexModelSeqSim.objects.filter(homology_model=hommod).delete()
             except Exception as msg:
+                stats_text = StatsText.objects.create(stats_text=''.join(templates))
+                pdb_data = PdbData.objects.create(pdb=pdb_data)
                 hommod = StructureComplexModel.objects.create(receptor_protein=r_prot, sign_protein=s_prot, 
                                                                 main_template=m_s, 
-                                                                pdb=pdb_data, 
+                                                                pdb_data=pdb_data, 
                                                                 version=build_date,
-                                                                prot_signprot_pair=pair)
+                                                                prot_signprot_pair=pair,
+                                                                stats_text=stats_text)
             res_prot = r_prot
             bulk_residues = []
             for r in templates[1:]:
@@ -234,18 +240,22 @@ class Command(BaseBuild):
             try:
                 hommod = StructureModel.objects.get(protein__entry_name=gpcr_prot, state=s_state)
                 hommod.main_template = m_s
-                hommod.pdb = pdb_data
+                hommod.pdb_data.pdb = pdb_data
                 hommod.version = build_date
+                hommod.stats_text.stats_text = ''.join(templates)
                 hommod.save()
 
                 # Delete previous data
                 StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
                 StructureModelSeqSim.objects.filter(homology_model=hommod).delete()
             except Exception as msg:
+                stats_text = StatsText.objects.create(stats_text=''.join(templates))
+                pdb_data = PdbData.objects.create(pdb=pdb_data)
                 hommod = StructureModel.objects.create(protein=prot, state=s_state, 
                                                         main_template=m_s, 
-                                                        pdb=pdb_data, 
-                                                        version=build_date)
+                                                        pdb_data=pdb_data, 
+                                                        version=build_date,
+                                                        stats_text=stats_text)
             bulk_residues = []
             for r in templates[1:]:
                 r = r.split(',')

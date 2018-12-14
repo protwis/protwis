@@ -111,6 +111,11 @@
             assign_to_row();
             $("#loading_div").hide();
 
+            //Uncheck every row when using back button on browser
+            $('.alt-selected').prop('checked',false)
+            $('.alt').prop('checked',false)
+            $('.select-all').prop('checked',false)
+            //
 
             yadcf.init(oTable,
                 [
@@ -325,109 +330,103 @@
             $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
 
 
-        $('.column_toggle').change(function(evt) {
-            console.log('start toggle');
-            // evt.stopPropagation();
-            // evt.stopImmediatePropagation();
-            // evt.preventDefault();
-            columns = $(this).attr('data-column').split(",");
-            var checked = this.checked;
-            var checked = (this.checked ? false : true);
-            columns.forEach(function(column) {
-                // console.log('hiding column');
-                var column = oTable.column( column );
-                try {
-                    column.visible( checked );
+            $('.column_toggle').change(function(evt) {
+                console.log('start toggle');
+                // evt.stopPropagation();
+                // evt.stopImmediatePropagation();
+                // evt.preventDefault();
+                columns = $(this).attr('data-column').split(",");
+                var checked = this.checked;
+                var checked = (this.checked ? false : true);
+                columns.forEach(function(column) {
+                    // console.log('hiding column');
+                    var column = oTable.column( column );
+                    try {
+                        column.visible( checked );
+                    }
+                    catch(err) {
+                        column.visible( checked );
+                    }
+                });
+                // var Table = $('#constructs').dataTable();
+                // Table.fnDraw();
+                console.log('done toggle');
+                oTable.draw();
+                console.log('done draw');
+            } );
+
+            $('#superpose_btn').click(function () {
+                ClearSelection('targets');
+                ClearSelection('reference');
+                if (oTable.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = oTable.rows('.selected').data()[0][14];
+                    // var state1 = table.rows('.selected').data()[0][5];
+
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('reference', 'structure_complex_receptor', div.textContent.replace(/\s+/g, ''));
+                    }
+
                 }
-                catch(err) {
-                    column.visible( checked );
+                var checked_data = oTable.rows('.alt_selected').data();
+                var selected_ids = [];
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][14];
+                    // var state2 = checked_data[i][5];
+                    if (typeof div.innerText !== "undefined") {
+                        selected_ids.push(div.innerText.replace(/\s+/g, '')+"_active");
+                    } else {
+                        selected_ids.push(div.textContent.replace(/\s+/g, '')+"_active");
+                    }
+
                 }
+                AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
+                window.location.href = '/structure/superposition_workflow_index';
             });
-            // var Table = $('#constructs').dataTable();
-            // Table.fnDraw();
-            console.log('done toggle');
-            oTable.draw();
-            console.log('done draw');
-        } );
-
-        $('#superpose_btn').click(function () {
-            ClearSelection('targets');
-            ClearSelection('reference');
-            if (oTable.rows('.selected').data().length == 1) {
-                var div = document.createElement("div");
-                div.innerHTML = oTable.rows('.selected').data()[0][14];
-                // var state1 = table.rows('.selected').data()[0][5];
-
-                if (typeof div.innerText !== "undefined") {
-                    AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, ''));
-                } else {
-                    AddToSelection('reference', 'structure_complex_receptor', div.textContent.replace(/\s+/g, ''));
-                }
-
-            }
-            var checked_data = oTable.rows('.alt_selected').data();
-            var selected_ids = [];
-            for (i = 0; i < checked_data.length; i++) {
-                var div = document.createElement("div");
-                div.innerHTML = checked_data[i][14];
-                // var state2 = checked_data[i][5];
-                if (typeof div.innerText !== "undefined") {
-                    selected_ids.push(div.innerText.replace(/\s+/g, '')+"_active");
-                } else {
-                    selected_ids.push(div.textContent.replace(/\s+/g, '')+"_active");
-                }
-
-            }
-            AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
-            window.location.href = '/structure/superposition_workflow_index';
-        });
-        
-        $('#download_btn').click(function () {
-            var selected_ids = [];
-             $.each($(".alt_selected"), function(){            
-                hom_id = $(this).closest('tr').attr('model_id');
-                selected_ids.push(hom_id);
+            
+            $('#download_btn').click(function () {
+                var selected_ids = [];
+                 $.each($(".alt_selected"), function(){            
+                    hom_id = $(this).closest('tr').attr('model_id');
+                    selected_ids.push(hom_id);
+                });
+                window.location.href = '/structure/complexmod_download?ids='+selected_ids.join(",");
             });
-            window.location.href = '/structure/complexmod_download?ids='+selected_ids.join(",");
-        });
 
-        $('#align_btn1').click(function () {
-            var checked_data = oTable.rows('.alt_selected').data();
-            ClearSelection('targets');
-            for (i = 0; i < checked_data.length; i++) {
-                var div = document.createElement("div");
-                div.innerHTML = checked_data[i][14];
+            $('#align_btn1').click(function () {
+                var checked_data = oTable.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][14];
 
-                if (typeof div.innerText !== "undefined") {
-                    AddToSelection('targets', 'structure_complex_receptor',  div.innerText.replace(/\s+/g, '') );
-                } else {
-                    AddToSelection('targets', 'structure_complex_receptor', div.textContent.replace(/\s+/g, ''));
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure_complex_receptor',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure_complex_receptor', div.textContent.replace(/\s+/g, ''));
+                    }
                 }
-            }
-            window.location.href = '/structure/selection_convert_model';
-        });
+                window.location.href = '/structure/selection_convert_model';
+            });
 
-        $('#align_btn2').click(function () {
-            var checked_data = oTable.rows('.alt_selected').data();
-            ClearSelection('targets');
-            for (i = 0; i < checked_data.length; i++) {
-                var div = document.createElement("div");
-                div.innerHTML = checked_data[i][15];
+            $('#align_btn2').click(function () {
+                var checked_data = oTable.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][15];
 
-                if (typeof div.innerText !== "undefined") {
-                    AddToSelection('targets', 'structure_complex_signprot',  div.innerText.replace(/\s+/g, '') );
-                } else {
-                    AddToSelection('targets', 'structure_complex_signprot', div.textContent.replace(/\s+/g, ''));
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure_complex_signprot',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure_complex_signprot', div.textContent.replace(/\s+/g, ''));
+                    }
                 }
-            }
-            window.location.href = '/structure/selection_convert_signprot_model';
-        });
-
-        $('.select-all').change(function () {
-            $('.alt').prop('checked', $(this).prop("checked"));
-            $('.alt').parent().parent().toggleClass('alt_selected');
-        });
-
+                window.location.href = '/structure/selection_convert_signprot_model';
+            });
         });
 
         function ClearSelection(selection_type) {
@@ -567,7 +566,7 @@
                     <th  class='rightborder'>Date</th>
                     <th></th>
                     <th></th>
-                    <th ></th>
+                    <th></th>
                     <th></th>
                     <th  class='rightborder'></th>
                     <th></th>
