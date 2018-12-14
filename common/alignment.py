@@ -282,6 +282,14 @@ class Alignment:
     # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
     def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
+
+        # AJK: prevent prefetching all data for large alignments before checking #residues (DB + memory killer)
+        rs = Residue.objects.filter(protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins)
+
+        self.number_of_residues_total = len(rs)
+        if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
+            return "Too large"
+
         # fetch segment residues
         if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
             rs = Residue.objects.filter(
@@ -663,6 +671,7 @@ class Alignment:
                     # Indicate gap and collect statistics
                     if amino_acid in self.gaps:
                         amino_acid = '-'
+                        
                     # Skip when unknown amino acid type
                     elif amino_acid == 'X':
                         continue
@@ -1050,7 +1059,6 @@ class Alignment:
                         if similarity > 0:
                             similarityscore += 1
                             totalsimilarity += similarity
-
 
         # format the calculated values
         #if identityscore and similarityscore:
