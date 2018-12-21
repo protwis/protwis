@@ -75,19 +75,7 @@
             font-size: 100%;
             font-weight: bold;
         }
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1; /* Sit on top */
-            padding-top: 100px; /* Location of the box */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgb(0,0,0); /* Fallback color */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-        }
+        
     }
     </style>
 {% endblock %}
@@ -178,7 +166,7 @@
 
             $("#structures_div").show();
 
-            // assign_to_row();
+            assign_to_row();
             $("#loading_div").hide();
 
             // yadcf.init(oTable2,
@@ -533,15 +521,15 @@
             // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             // $.datepicker.setDefaults($.datepicker.regional['']);
 
-            $('#structures tbody').on( 'click', 'tr', function () {
-                if ( $(this).hasClass('selected') ) {
-                    $(this).removeClass('selected');
-                }
-                else {
-                    oTable.$('tr.selected').removeClass('selected');
-                    $(this).addClass('selected');
-                }
-            } );
+            // $('#structures tbody').on( 'click', 'tr', function () {
+            //     if ( $(this).hasClass('selected') ) {
+            //         $(this).removeClass('selected');
+            //     }
+            //     else {
+            //         oTable.$('tr.selected').removeClass('selected');
+            //         $(this).addClass('selected');
+            //     }
+            // } );
          
             $('.alt').change(function () {
                 $(this).parent().parent().toggleClass('alt_selected');
@@ -1185,29 +1173,29 @@
 </div>
 <div id="myModal" class="modal">
   <!-- Modal content -->
-  <div class="modal-content">
-    <span class="close">&times;</span>
-    <h3>Pick reference from selection</h3>
-    <br>
-    <table id="modal_table" class="display compact" width="100%">
-        <thead>
-            <tr>
-                <th></th>
-                <th>PDB code</th>
-                <th>UniProt</th>
-                <th>IUPHAR</th>
-                <th>Rec. family</th>
-                <th>Class</th>
-                <th>Species</th>
-                <th>State</th>
-                <th>PDB Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Javascript populates the table from selected rows -->
-        </tbody>
-    </table>
-  </div>
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Pick reference from selection</h3>
+        <br>
+        <table id="modal_table" class="display compact" width="100%">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>PDB code</th>
+                    <th>UniProt</th>
+                    <th>IUPHAR</th>
+                    <th>Rec. family</th>
+                    <th>Class</th>
+                    <th>Species</th>
+                    <th>State</th>
+                    <th>PDB Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Javascript populates the table from selected rows -->
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
 

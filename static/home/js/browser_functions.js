@@ -54,8 +54,9 @@ function superposition(oTable, columns, site, hide_first_column) {
     $('#modal_table tbody').empty();
     var modal = document.getElementById('myModal');
     var span = document.getElementsByClassName("close")[0];
-    modal.classList.toggle("modal");
-    console.log(modal);
+    modal.classList.add("modal");
+    // console.log('hasclass',$('#myModal').hasClass('modal'));
+    // console.log(modal);
     modal.style.display = "block";
     span.onclick = function() {
         modal.style.display = "none";
