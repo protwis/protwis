@@ -278,7 +278,7 @@ def render_alignment(request):
         return_html = render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
             'num_residue_columns': num_residue_columns})
 
-        cache_alignment.set(key, return_html, 60*60*24*7) #set alignment cache one week
+    cache_alignment.set(key, return_html, 60*60*24*7) #set alignment cache one week
 
     return return_html
 
