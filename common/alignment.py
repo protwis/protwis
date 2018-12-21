@@ -301,11 +301,14 @@ class Alignment:
         segment_ids = sorted(set( self.segments ))
         hash_key = "|" + "-".join(protein_ids)
         hash_key += "|" + "-".join(segment_ids)
+        if 'Custom' in self.segments:
+            hash_key += "|" + "-".join(sorted(set( self.segments['Custom'] )))
         hash_key += "|" + "-".join(sorted(set([ scheme[0] for scheme in self.numbering_schemes])))
         hash_key += "|" + "-".join(sorted(set(self.segments_only_alignable)))
         hash_key += "|" + str(self.ignore_alternative_residue_numbering_schemes)
         hash_key += "|" + str(self.custom_segment_label)
         hash_key += "|" + str(self.use_residue_groups)
+
         return hashlib.md5(hash_key.encode('utf-8')).hexdigest()
 
     # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
@@ -322,6 +325,7 @@ class Alignment:
         # AJK: performance boost -> Internal caching (not for very small alignments)
         cache_key = "ALIGNMENTS_"+self.get_hash()
 
+        #cache_alignments.set(cache_key, 0, 0)
         if self.number_of_residues_total < 2500 or not cache_alignments.has_key(cache_key):
             # fetch segment residues
             if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
@@ -622,23 +626,25 @@ class Alignment:
             self.sort_generic_numbers()
             self.merge_generic_numbers()
             self.clear_empty_positions()
-            self.calculate_statistics()
-            cache_data = {'proteins': self.proteins,
-                        'amino_acids': self.amino_acids,
-                        'amino_acid_stats': self.amino_acid_stats,
-                        'aa_count': self.aa_count,
-                        'aa_count_with_protein': self.aa_count_with_protein,
-                        'gaps': self.gaps,
-                        'features': self.features,
-                        'features_combo': self.features_combo,
-                        'feature_stats': self.feature_stats,
-                        'consensus': self.consensus,
-                        'forced_consensus': self.forced_consensus,
-                        'full_consensus': self.full_consensus,
-                        'generic_number_objs': self.generic_number_objs,
-                        'zscales': self.zscales}
 
-            cache_alignments.set(cache_key, cache_data, 60*60*24*14)
+            if self.number_of_residues_total >= 2500:
+                self.calculate_statistics()
+                cache_data = {'proteins': self.proteins,
+                            'amino_acids': self.amino_acids,
+                            'amino_acid_stats': self.amino_acid_stats,
+                            'aa_count': self.aa_count,
+                            'aa_count_with_protein': self.aa_count_with_protein,
+                            'gaps': self.gaps,
+                            'features': self.features,
+                            'features_combo': self.features_combo,
+                            'feature_stats': self.feature_stats,
+                            'consensus': self.consensus,
+                            'forced_consensus': self.forced_consensus,
+                            'full_consensus': self.full_consensus,
+                            'generic_number_objs': self.generic_number_objs,
+                            'generic_numbers': self.generic_numbers,
+                            'zscales': self.zscales}
+                cache_alignments.set(cache_key, cache_data, 60*60*24*14)
         else:
             cache_data = cache_alignments.get(cache_key)
 
@@ -655,6 +661,7 @@ class Alignment:
             self.forced_consensus = cache_data['forced_consensus']
             self.full_consensus = cache_data['full_consensus']
             self.generic_number_objs = cache_data['generic_number_objs']
+            self.generic_numbers = cache_data['generic_numbers']
             self.zscales = cache_data['zscales']
             self.stats_done = True
 
