@@ -199,15 +199,18 @@ def get_pos_charged_atom_names(res):
 
     # For now: simple assumption that they are always charged
     # in vicinity of acidic residues
+    atomnames = []
     if resname == 'ARG':
-        return ['CZ', 'NE', 'NH1', 'NH2']
+        atomnames = ['CZ', 'NE', 'NH1', 'NH2']
     elif resname == 'LYS':
-        return ['NZ']
+        atomnames = ['NZ']
     elif resname == 'HIS':
         # TODO: Implement using e.g. ProPka
-        return ['ND1', 'NE2']
+        atomnames = ['ND1', 'NE2']
     else:
         return []
+
+    return match_atomselection_residue(res, atomnames)
 
 
 # Returns a list of positively charges atoms in a residue
@@ -216,9 +219,26 @@ def get_neg_charged_atom_names(res):
 
     # For now: simple assumption that they are always charged
     # in vicinity of basic residues
+    atomnames = []
     if resname == 'ASP':
-        return ['OD1', 'OD2']
+        atomnames = ['OD1', 'OD2']
     elif resname == 'GLU':
-        return ['OE1', 'OE2']
+        atomnames = ['OE1', 'OE2']
+    else:
+        return atomnames
+
+    return match_atomselection_residue(res, atomnames)
+
+def get_charged_atom_names(res):
+    if is_pos_charged(res):
+        return get_pos_charged_atom_names(res)
+    elif is_neg_charged(res):
+        return get_neg_charged_atom_names(res)
     else:
         return []
+
+# Returns the list of atom IDs that are actually present in for the residue
+def match_atomselection_residue(res, atomnames):
+    res_atoms = res.child_dict
+    print(res_atoms)
+    return [ name for name in atomnames if name in res_atoms ]

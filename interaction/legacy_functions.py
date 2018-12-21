@@ -730,7 +730,7 @@ def check_other_aromatic(aa,ligand,info):
         #print res[0],res[2],aa
         if res[0]==aa and res[4]=='aromatic':
             #if the new aromatic interaction has a center-center distance greater than the old one, keep old.
-            if info['Distance']>res[6]['Distance']: 
+            if info['Distance']>res[6]['Distance']:
                 templist.append(res)
                 check = False #Do not add the new one.
             else: #if not, delete the old one, as the new is better.
@@ -916,7 +916,7 @@ def find_interactions():
                                     if check_other_aromatic(aaname,hetflag,{'Distance':round(distance, 2),'Angles':angle_degrees}):
                                         new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_ff','aromatic (face-to-face)','aromatic','none',{'Distance':round(distance, 2),'ResAtom to center':round(shortest_center_het_ring_to_res_atom,2),'LigAtom to center': round(shortest_center_aa_ring_to_het_atom,2),'Angles':angle_degrees}])
                                         remove_hyd(aaname,hetflag)
-                                    
+
                                 # need to be careful for edge-edge
                                 elif (shortest_center_aa_ring_to_het_atom < 4.5) and abs(angle_degrees[0]-90)<30 and abs(angle_degrees[2]-90)<30:
                                     summary_results[hetflag]['aromaticfe'].append(
@@ -986,7 +986,7 @@ def analyze_interactions():
             type = 'waals'
             for entry in interaction:
                 hbondconfirmed = []
-                if entry[2] < 3.3:
+                if entry[2] <= 3.5:
 
                     # print(entry)
                     # if debug:
@@ -1138,11 +1138,11 @@ def analyze_interactions():
                                 summary_results[ligand]['hbond_confirmed'][
                                     key][1].extend(hbondconfirmed)
                                 found = 1
-                        
-                        if hbondconfirmed[0][0]=="D": 
+
+                        if hbondconfirmed[0][0]=="D":
                             new_results[ligand]['interactions'].append([residue,fragment_file,'polar_donor_protein','polar (hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                             remove_hyd(residue,ligand)
-                        if hbondconfirmed[0][0]=="A": 
+                        if hbondconfirmed[0][0]=="A":
                             new_results[ligand]['interactions'].append([residue,fragment_file,'polar_acceptor_protein','polar (hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                             remove_hyd(residue,ligand)
 
@@ -1153,7 +1153,7 @@ def analyze_interactions():
                             type = 'hbondplus'
                             hbondplus.append(entry)
 
-                        
+
 
                     elif chargedcheck:
                         type = 'hbondplus'
@@ -1178,7 +1178,7 @@ def analyze_interactions():
                                 new_results[ligand]['interactions'].append([residue,fragment_file,'polar_neg_protein','polar (charge-assisted hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                             else:
                                 new_results[ligand]['interactions'].append([residue,fragment_file,'polar_unknown_protein','polar (charge-assisted hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
-                                
+
                     else:
                         type = 'hbond'
                         hbond.append(entry)
