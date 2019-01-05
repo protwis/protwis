@@ -246,7 +246,7 @@ const signprotmat = {
     // * seqsig
     // * SETTING THE FEATURE SCALE
     fScale: function(data) {
-      const features = _.map(data, (d) => d.feature)
+      const features = _.map(data, d => d.feature);
 
       let fScale = d3
         .scaleBand()
@@ -336,7 +336,7 @@ const signprotmat = {
             "Signaling Protein: " +
             d.sig_gn +
             "<br>" +
-            "PDBs:" +
+            "PDBs: " +
             "<br>" +
             pair_string
           );
@@ -1120,6 +1120,9 @@ const signprotmat = {
             "Feature: " +
             d.name +
             "<br>" +
+            "Length: " +
+            d.length +
+            "<br>" +
             "Score: " +
             d.score +
             "<br>"
@@ -1152,6 +1155,18 @@ const signprotmat = {
           conseqTip.hide();
         });
 
+      // the rectangles, colored by feature
+      each_res
+        .append("rect")
+        .attr("class", "res_rect")
+        .style("fill", function(d: any) {
+          return "#FF5187";
+        })
+        .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+        .attr("y", (d: any) => 75)
+        .attr("width", xScale.step())
+        .attr("height", 37.5);
+
       // the rectangles, colored by conservation
       each_res
         .append("rect")
@@ -1164,20 +1179,20 @@ const signprotmat = {
           }
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-        .attr("y", (d: any) => 75)
+        .attr("y", (d: any) => 75 + 37.5)
         .attr("width", xScale.step())
-        .attr("height", 75);
+        .attr("height", 37.5);
 
-      // adding the frequency text to each rectangle
+      // adding the feature text to each rectangle
       each_res
         .append("text")
         .attr("class", "res_label")
         // .attr("x", (d: any) => xScale(d.gn))
         // .attr("y", (d: any) => 50)
-        // .attr(
-        //   "transform",
-        //   (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)"
-        // )
+        .attr(
+          "transform",
+          (d: any) => "translate(" + xScale(d.gn) + ",93.75)" // + "rotate(270)"
+        )
         .style("fill", (d: any) => {
           if (Math.abs(d.score) >= 50) {
             return "#eaeaea";
@@ -1188,6 +1203,7 @@ const signprotmat = {
         .attr("text-anchor", "middle")
         .text((d: any) => d.code);
 
+      // adding the conservation value to each rectangle
       each_res
         .append("text")
         .attr("class", "res_label")
@@ -1195,11 +1211,17 @@ const signprotmat = {
         // .attr("y", (d: any) => 50)
         .attr(
           "transform",
-          (d: any) => "translate(" + xScale(d.gn) + ",160)rotate(300)"
+          (d: any) => "translate(" + xScale(d.gn) + "," + (75 + 37.5 + 37.5/2) + ")" // + "rotate(270)"
         )
-        .style("fill", "#000000")
-        .attr("text-anchor", "end")
-        .text((d: any) => d.name);
+        .style("fill", (d: any) => {
+          if (Math.abs(d.score) >= 50) {
+            return "#eaeaea";
+          } else if (Math.abs(d.score) < 50) {
+            return "#000000";
+          }
+        })
+        .attr("text-anchor", "middle")
+        .text((d: any) => d.score);
 
       // putting a black border around the signature
       d3.select("g#conseq_mat")

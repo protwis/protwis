@@ -278,7 +278,7 @@ var signprotmat = {
                     "Signaling Protein: " +
                     d.sig_gn +
                     "<br>" +
-                    "PDBs:" +
+                    "PDBs: " +
                     "<br>" +
                     pair_string);
             });
@@ -952,6 +952,9 @@ var signprotmat = {
                     "Feature: " +
                     d.name +
                     "<br>" +
+                    "Length: " +
+                    d.length +
+                    "<br>" +
                     "Score: " +
                     d.score +
                     "<br>");
@@ -980,6 +983,17 @@ var signprotmat = {
                 .on("mouseout", function (d) {
                 conseqTip.hide();
             });
+            // the rectangles, colored by feature
+            each_res
+                .append("rect")
+                .attr("class", "res_rect")
+                .style("fill", function (d) {
+                return "#FF5187";
+            })
+                .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                .attr("y", function (d) { return 75; })
+                .attr("width", xScale.step())
+                .attr("height", 37.5);
             // the rectangles, colored by conservation
             each_res
                 .append("rect")
@@ -993,19 +1007,17 @@ var signprotmat = {
                 }
             })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                .attr("y", function (d) { return 75; })
+                .attr("y", function (d) { return 75 + 37.5; })
                 .attr("width", xScale.step())
-                .attr("height", 75);
-            // adding the frequency text to each rectangle
+                .attr("height", 37.5);
+            // adding the feature text to each rectangle
             each_res
                 .append("text")
                 .attr("class", "res_label")
                 // .attr("x", (d: any) => xScale(d.gn))
                 // .attr("y", (d: any) => 50)
-                // .attr(
-                //   "transform",
-                //   (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)"
-                // )
+                .attr("transform", function (d) { return "translate(" + xScale(d.gn) + ",93.75)"; } // + "rotate(270)"
+            )
                 .style("fill", function (d) {
                 if (Math.abs(d.score) >= 50) {
                     return "#eaeaea";
@@ -1016,15 +1028,24 @@ var signprotmat = {
             })
                 .attr("text-anchor", "middle")
                 .text(function (d) { return d.code; });
+            // adding the conservation value to each rectangle
             each_res
                 .append("text")
                 .attr("class", "res_label")
                 // .attr("x", (d: any) => xScale(d.gn))
                 // .attr("y", (d: any) => 50)
-                .attr("transform", function (d) { return "translate(" + xScale(d.gn) + ",160)rotate(300)"; })
-                .style("fill", "#000000")
-                .attr("text-anchor", "end")
-                .text(function (d) { return d.name; });
+                .attr("transform", function (d) { return "translate(" + xScale(d.gn) + "," + (75 + 37.5 + 37.5 / 2) + ")"; } // + "rotate(270)"
+            )
+                .style("fill", function (d) {
+                if (Math.abs(d.score) >= 50) {
+                    return "#eaeaea";
+                }
+                else if (Math.abs(d.score) < 50) {
+                    return "#000000";
+                }
+            })
+                .attr("text-anchor", "middle")
+                .text(function (d) { return d.score; });
             // putting a black border around the signature
             d3.select("g#conseq_mat")
                 .append("rect")

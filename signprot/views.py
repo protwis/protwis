@@ -1154,8 +1154,8 @@ def IMSequenceSignature(request):
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
     sigcons = []
     x = 0
-    for segment, cons in signature_data['a_pos'].consensus.items():
-        for prop, res in cons.items():
+    for segment, cons in signature_data['feats_cons_pos'].items():
+        for pos in cons:
             # pos0: Code
             # pos1: Name
             # pos2: Score
@@ -1168,10 +1168,11 @@ def IMSequenceSignature(request):
                 sigcons.append({
                     'key': int(x),
                     'gn': str(generic_numbers_flat[x]),
-                    'code': str(res[0]),
-                    # 'name': str(pos[1]),
-                    'score': int(res[1]),
-                    'cons': int(res[2]),
+                    'code': str(pos[0]),
+                    'name': str(pos[1]),
+                    'score': int(pos[2]),
+                    'cons': int(pos[3]),
+                    'length': str(pos[4]),
                 })
                 x += 1
             except Exception as e:
