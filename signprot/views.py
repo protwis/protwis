@@ -42,11 +42,11 @@ class BrowseSelection(AbsTargetSelection):
         ('segments', False),
     ])
     try:
-        ppf_g = ProteinFamily.objects.get(slug="100_000")
-        # ppf_a = ProteinFamily.objects.get(slug="200_000")
-        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
-        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
-        ps = Protein.objects.filter(family__in=[ppf_g]) # ,ppf_a
+        ppf_g = ProteinFamily.objects.get(slug="100_000")  # G proteins
+        ppf_a = ProteinFamily.objects.get(slug="200_000")  # Arrestins
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id, ppf_a.id])
+        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
+        ps = Protein.objects.filter(family__in=[ppf_g, ppf_a]) #
         tree_indent_level = []
         # action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
@@ -121,8 +121,7 @@ def familyDetail(request, slug):
     structures = SignprotStructure.objects.filter(origin__family__slug__startswith=slug
         )
 
-    mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
-                                'exp_qual', 'ligand')
+    mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number', 'exp_qual', 'ligand')
 
     mutations_list = {}
     for mutation in mutations:
@@ -298,22 +297,23 @@ def Ginterface(request, protein = None):
 
     return render(request, 'signprot/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': set(primary), 'secondary_Gprotein': set(secondary)} )
 
+
 def ajaxInterface(request, slug, **response_kwargs):
 
-    name_of_cache = 'ajaxInterface_'+slug
+    name_of_cache = 'ajaxInterface_' + slug
 
     jsondata = cache.get(name_of_cache)
 
     if jsondata == None:
 
-        if slug == "arrs_human":
+        p = Protein.objects.filter(entry_name=slug).get()
+
+        if p.family.slug.startswith('200'):
             rsets = ResiduePositionSet.objects.get(name="Arrestin interface")
         else:
             rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
-        # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
 
         jsondata = {}
-        positions = []
         for x, residue in enumerate(rsets.residue_position.all()):
             try:
                 pos = str(list(Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label))[0])
