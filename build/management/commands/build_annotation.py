@@ -299,7 +299,7 @@ class Command(BaseBuild):
                             self.logger.error('Human ortholog ({}) of {} has no annotation in excel'.format(human_ortholog.entry_name,entry_name))
                             continue
                         if human_ortholog.entry_name in proteins:
-                            # print(counter,entry_name,'check sequences')
+                            print(counter,entry_name,'check sequences')
                             ref_positions, aligned_gn_mismatch_gap = self.compare_human_to_orthologue(human_ortholog, p.protein, self.non_xtal_seg_end[human_ortholog.entry_name],counter)
                             s = p.protein.sequence
                             v = self.non_xtal_seg_end[human_ortholog.entry_name]

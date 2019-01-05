@@ -139,7 +139,7 @@ class Command(BaseBuild):
         else:
             all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
                                                    family__slug__istartswith=GPCR_class_codes[options['c'].upper()])
-        self.receptor_list = []
+        self.receptor_list, self.receptor_list_entry_names = [],[]
 
         # Find proteins and states for which there is no xtal yet
         for r in all_receptors:
@@ -183,6 +183,7 @@ class Command(BaseBuild):
         if options['test_run']:
             self.receptor_list = self.receptor_list[:5]
             self.receptor_list_entry_names = self.receptor_list_entry_names[:5]
+            
         print("receptors to do",len(self.receptor_list))
         self.processors = options['proc']
         self.prepare_input(options['proc'], self.receptor_list)
