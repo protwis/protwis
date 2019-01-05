@@ -221,7 +221,7 @@ var signprotmat = {
             // const min = values.pop()
             // const max = values[0]
             // conservation is calculated to be between -1 and 10 by python
-            var cScale = d3.scaleSequential(d3.interpolateRdBu).domain([-100, 100]);
+            var cScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 100]);
             return cScale;
         },
         // * DEFINING AXIS FOR X/Y AND GRID
@@ -815,9 +815,9 @@ var signprotmat = {
                     "Feature: " +
                     d.feature +
                     "<br>" +
-                    "Score: " +
-                    d.expl +
-                    "<br>" +
+                    // "Score: " +
+                    // d.expl +
+                    // "<br>" +
                     "Frequency: " +
                     d.freq +
                     "<br>");
@@ -871,8 +871,8 @@ var signprotmat = {
                 .append("rect")
                 .attr("class", "res_rect")
                 .style("fill", function (d) {
-                if (d.cons === -1) {
-                    return "#ffffff";
+                if (d.cons <= 0) {
+                    return "none";
                 }
                 else {
                     return cScale(d.freq);
@@ -1002,7 +1002,10 @@ var signprotmat = {
                 .attr("class", "res_label")
                 // .attr("x", (d: any) => xScale(d.gn))
                 // .attr("y", (d: any) => 50)
-                .attr("transform", function (d) { return "translate(" + xScale(d.gn) + ",112.5)rotate(270)"; })
+                // .attr(
+                //   "transform",
+                //   (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)"
+                // )
                 .style("fill", function (d) {
                 if (Math.abs(d.score) >= 50) {
                     return "#eaeaea";

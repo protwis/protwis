@@ -991,7 +991,7 @@ def InteractionMatrix(request):
         except Exception:
             r['gprot'] = ''
         complex_info.append(r)
-    print(complex_info)
+    # print(complex_info)
 
     data = Protein.objects.filter(
         sequence_type__slug='wt',
@@ -1128,7 +1128,7 @@ def IMSequenceSignature(request):
     filter_features = []
     signature_features = []
     x = 0
-    for i, feature in enumerate(signature_data['feats_signature']):
+    for i, feature in enumerate(signature_data['a_pos'].feature_stats):
         # discard unwanted features
         # if feature in filter_features:
         for j, segment in enumerate(feature):
@@ -1143,7 +1143,7 @@ def IMSequenceSignature(request):
                         'gn': str(generic_numbers[j][k]),
                         'freq': int(freq[0]),
                         'cons': int(freq[1]),
-                        'expl': str(freq[2]),
+                        # 'expl': str(freq[2]),
                     })
                     x += 1
                 except Exception as e:
@@ -1154,20 +1154,24 @@ def IMSequenceSignature(request):
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
     sigcons = []
     x = 0
-    for segment, cons in signature_data['signature_consensus'].items():
-        for i, pos in enumerate(cons):
+    for segment, cons in signature_data['a_pos'].consensus.items():
+        for prop, res in cons.items():
             # pos0: Code
             # pos1: Name
             # pos2: Score
             # pos3: level of conservation
+
+            # res0: Property Abbreviation
+            # res1: Feature Score
+            # res2: Conservation Level
             try:
                 sigcons.append({
                     'key': int(x),
                     'gn': str(generic_numbers_flat[x]),
-                    'code': str(pos[0]),
-                    'name': str(pos[1]),
-                    'score': int(pos[2]),
-                    'cons': int(pos[3]),
+                    'code': str(res[0]),
+                    # 'name': str(pos[1]),
+                    'score': int(res[1]),
+                    'cons': int(res[2]),
                 })
                 x += 1
             except Exception as e:

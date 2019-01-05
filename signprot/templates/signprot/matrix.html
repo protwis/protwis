@@ -270,6 +270,7 @@
             success: function(data){
                 $('.svg-content.seqsig').remove();
                 $('.svg-content.conseq').remove();
+                console.log(data)
                 document.querySelector('#seqsig-container').style.display = "inline-block";
                 document.querySelector('#conseq-container').style.display = "inline-block";
                 document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});

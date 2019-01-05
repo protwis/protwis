@@ -268,7 +268,7 @@ const signprotmat = {
       // const max = values[0]
 
       // conservation is calculated to be between -1 and 10 by python
-      let cScale = d3.scaleSequential(d3.interpolateRdBu).domain([-100, 100]);
+      let cScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 100]);
 
       return cScale;
     },
@@ -970,9 +970,9 @@ const signprotmat = {
             "Feature: " +
             d.feature +
             "<br>" +
-            "Score: " +
-            d.expl +
-            "<br>" +
+            // "Score: " +
+            // d.expl +
+            // "<br>" +
             "Frequency: " +
             d.freq +
             "<br>"
@@ -1031,8 +1031,8 @@ const signprotmat = {
         .append("rect")
         .attr("class", "res_rect")
         .style("fill", function(d: any) {
-          if (d.cons === -1) {
-            return "#ffffff";
+          if (d.cons <= 0) {
+            return "none";
           } else {
             return cScale(d.freq);
           }
@@ -1174,10 +1174,10 @@ const signprotmat = {
         .attr("class", "res_label")
         // .attr("x", (d: any) => xScale(d.gn))
         // .attr("y", (d: any) => 50)
-        .attr(
-          "transform",
-          (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)"
-        )
+        // .attr(
+        //   "transform",
+        //   (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)"
+        // )
         .style("fill", (d: any) => {
           if (Math.abs(d.score) >= 50) {
             return "#eaeaea";
