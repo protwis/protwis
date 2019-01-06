@@ -46,7 +46,6 @@
         </div>
     </div> {% endcomment %}
 
-
     <div class="col-md-3">
         <div class="panel panel-default">
 
@@ -62,6 +61,20 @@
         </div>
     </div>
 
+    <div class="col-md-3">
+        <div class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">Find similar proteins</h3>
+            </div>
+
+            <div class="panel-body">
+                <p>Click the button to find similar proteins, based on the sequence features.</p>
+                <button type="button" class="btn btn-primary" onClick="run_sig_match();">Find <i id="sigm_spin" class="fa fa-spinner fa-spin" style="display: none"></i></button>
+            </div>
+
+        </div>
+    </div>
 
     <div class="col-md-3">
         <div class="panel panel-default">
@@ -89,8 +102,8 @@
                 </div> -->
 
                 <div class="">
-                    <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value--; filter_pairs()">-</button>
-                    <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value++; filter_pairs()">+</button>
+                    <button class="btn btn-primary" onclick="replace_filter_value('dec'); filter_pairs()">-</button>
+                    <button class="btn btn-primary" onclick="replace_filter_value('inc'); filter_pairs()">+</button>
                 </div>
             </div>
 
@@ -172,13 +185,13 @@
 
 <div id="seqsig-container" class="svg-container" style="display: none; padding-bottom: 130%">
     <div id="seqsig">
-        <h2>Sequence Signature</h2>
+        <h2>Property Conservation</h2>
     </div>
 </div>
 
 <div id="conseq-container" class="svg-container" style="display: none">
     <div id="conseq">
-        <h2>Consensus Sequence</h2>
+        <h2>Property Consensus</h2>
     </div>
 </div>
 
@@ -270,6 +283,7 @@
             success: function(data){
                 $('.svg-content.seqsig').remove();
                 $('.svg-content.conseq').remove();
+                console.log(data)
                 document.querySelector('#seqsig-container').style.display = "inline-block";
                 document.querySelector('#conseq-container').style.display = "inline-block";
                 document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
@@ -288,6 +302,7 @@
                 );
             },
             error: function(error){
+                console.log(error)
                 alert(error);
             },
             complete: function(){
@@ -296,9 +311,52 @@
         });
     };
 
+    const run_sig_match = function(){
+        let cutoff = $('#cutoff-val').val();
+        if (cutoff == '') {
+            cutoff = 40;
+        }
+
+        cutoff = 40;
+        let segments = get_gn();
+
+        let req = $.ajax({
+            type: 'POST',
+            url: '/signprot/matrix/sigmat/',
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+                pos: pos_set,
+                seg: segments.label,
+                cutoff: cutoff,
+            },
+            beforeSend: function(){
+                document.querySelector("#sigm_spin").style.display = "inline-block";
+            },
+            success: function(data){
+                console.log(data)
+                // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
+            },
+            error: function(error){
+                console.log(error);
+            },
+            complete: function(){
+                document.querySelector("#sigm_spin").style.display = "none";
+            }
+        })
+    }
+
+
+    const replace_filter_value = function(d) {
+        const num = parseInt($('#currentpairs').text())
+        if (d === 'dec') {
+            num > 1 ? $('#currentpairs').text(num - 1) : null
+        } else if (d === 'inc') {
+            $('#currentpairs').text(num + 1)
+        }
+    };
+
     const filter_pairs = function() {
-        const num = $('input[name="highlight_pair_num"]').val();
-        $('#currentpairs').text(num);
+        const num = parseInt($('#currentpairs').text())
         d3.select('g#interact')
         .selectAll("rect")
         .style('display', function(d){return (num <= d.pairs.length ? 'block' : 'none') })
@@ -333,6 +391,15 @@
                     data: 'name',
                     title: 'Name',
                     targets: 1,
+                }, {
+                    data: 'pdb_id',
+                    title: 'PDB',
+                    targets: 2,
+                },
+                {
+                    data: 'gprot',
+                    title: 'G-Protein',
+                    targets: 3,
                 }],
             select: {
                 style: 'os',

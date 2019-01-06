@@ -42,11 +42,11 @@ class BrowseSelection(AbsTargetSelection):
         ('segments', False),
     ])
     try:
-        ppf_g = ProteinFamily.objects.get(slug="100_000")
-        # ppf_a = ProteinFamily.objects.get(slug="200_000")
-        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
-        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
-        ps = Protein.objects.filter(family__in=[ppf_g]) # ,ppf_a
+        ppf_g = ProteinFamily.objects.get(slug="100_000")  # G proteins
+        ppf_a = ProteinFamily.objects.get(slug="200_000")  # Arrestins
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id, ppf_a.id])
+        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
+        ps = Protein.objects.filter(family__in=[ppf_g, ppf_a]) #
         tree_indent_level = []
         # action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
@@ -121,8 +121,7 @@ def familyDetail(request, slug):
     structures = SignprotStructure.objects.filter(origin__family__slug__startswith=slug
         )
 
-    mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
-                                'exp_qual', 'ligand')
+    mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number', 'exp_qual', 'ligand')
 
     mutations_list = {}
     for mutation in mutations:
@@ -298,22 +297,23 @@ def Ginterface(request, protein = None):
 
     return render(request, 'signprot/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': set(primary), 'secondary_Gprotein': set(secondary)} )
 
+
 def ajaxInterface(request, slug, **response_kwargs):
 
-    name_of_cache = 'ajaxInterface_'+slug
+    name_of_cache = 'ajaxInterface_' + slug
 
     jsondata = cache.get(name_of_cache)
 
     if jsondata == None:
 
-        if slug == "arrs_human":
+        p = Protein.objects.filter(entry_name=slug).get()
+
+        if p.family.slug.startswith('200'):
             rsets = ResiduePositionSet.objects.get(name="Arrestin interface")
         else:
             rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
-        # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
 
         jsondata = {}
-        positions = []
         for x, residue in enumerate(rsets.residue_position.all()):
             try:
                 pos = str(list(Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label))[0])
@@ -986,10 +986,12 @@ def InteractionMatrix(request):
         r['pdb_id'] = str.lower(s.pdb_code.index)
         r['name'] = s.protein_conformation.protein.parent.name
         r['entry_name'] = s.protein_conformation.protein.parent.entry_name
-        # r['gprot'] =
+        try:
+            r['gprot'] = s.protein_conformation.protein.parent.proteingproteinpair_set.first().g_protein.name
+        except Exception:
+            r['gprot'] = ''
         complex_info.append(r)
-
-    print(complex_info)
+    # print(complex_info)
 
     data = Protein.objects.filter(
         sequence_type__slug='wt',
@@ -1060,7 +1062,7 @@ def IMSequenceSignature(request):
     # segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
 
     # receive data
-    pos_set = request.POST.getlist('pos[]')
+    pos_set_in = request.POST.getlist('pos[]')
     # neg_set = request.POST.getlist('neg[]')
     segments = []
     for s in request.POST.getlist('seg[]'):
@@ -1072,7 +1074,7 @@ def IMSequenceSignature(request):
             continue
 
     # get pos/neg set objects
-    pos_set = Protein.objects.filter(entry_name__in=pos_set).select_related('residue_numbering_scheme', 'species')
+    pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')
     # neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
 
     # Calculate Sequence Signature
@@ -1126,7 +1128,7 @@ def IMSequenceSignature(request):
     filter_features = []
     signature_features = []
     x = 0
-    for i, feature in enumerate(signature_data['feats_signature']):
+    for i, feature in enumerate(signature_data['a_pos'].feature_stats):
         # discard unwanted features
         # if feature in filter_features:
         for j, segment in enumerate(feature):
@@ -1141,7 +1143,7 @@ def IMSequenceSignature(request):
                         'gn': str(generic_numbers[j][k]),
                         'freq': int(freq[0]),
                         'cons': int(freq[1]),
-                        'expl': str(freq[2]),
+                        # 'expl': str(freq[2]),
                     })
                     x += 1
                 except Exception as e:
@@ -1152,12 +1154,16 @@ def IMSequenceSignature(request):
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
     sigcons = []
     x = 0
-    for segment, cons in signature_data['signature_consensus'].items():
-        for i, pos in enumerate(cons):
+    for segment, cons in signature_data['feats_cons_pos'].items():
+        for pos in cons:
             # pos0: Code
             # pos1: Name
             # pos2: Score
             # pos3: level of conservation
+
+            # res0: Property Abbreviation
+            # res1: Feature Score
+            # res2: Conservation Level
             try:
                 sigcons.append({
                     'key': int(x),
@@ -1166,6 +1172,7 @@ def IMSequenceSignature(request):
                     'name': str(pos[1]),
                     'score': int(pos[2]),
                     'cons': int(pos[3]),
+                    'length': str(pos[4]),
                 })
                 x += 1
             except Exception as e:
@@ -1177,8 +1184,66 @@ def IMSequenceSignature(request):
         'feat': signature_features,
     }
 
+    request.session['signature'] = signature.prepare_session_data()
+    request.session.modified = True
+
     t2 = time.time()
     print('Runtime: {}'.format((t2-t1)*1000.0))
 
     return JsonResponse(res, safe=False)
 
+def IMSignatureMatch(request):
+    from seqsign.sequence_signature import SignatureMatch
+
+    signature_data = request.session.get('signature')
+    ss_pos = request.POST.getlist('pos[]')
+    cutoff = request.POST.get('cutoff')
+
+    pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
+    pos_set = [protein for protein in pos_set]
+
+    signature_match = SignatureMatch(
+        signature_data['common_positions'],
+        signature_data['numbering_schemes'],
+        signature_data['common_segments'],
+        signature_data['diff_matrix'],
+        pos_set,
+        pos_set,
+        cutoff = int(cutoff)
+    )
+
+    signature_match.score_protein_class(
+        pos_set[0].family.slug[:3]
+    )
+
+    request.session['signature_match'] = {
+        'scores': signature_match.protein_report,
+        'scores_pos': signature_match.scores_pos,
+        'scores_neg': signature_match.scores_neg,
+        'protein_signatures': signature_match.protein_signatures,
+        'signatures_pos': signature_match.signatures_pos,
+        'signatures_neg': signature_match.signatures_neg,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
+    }
+    request.session.modified = True
+
+    signature_match = {
+        'scores': signature_match.protein_report,
+        'scores_pos': signature_match.scores_pos,
+        'scores_neg': signature_match.scores_neg,
+        'protein_signatures': signature_match.protein_signatures,
+        'signatures_pos': signature_match.signatures_pos,
+        'signatures_neg': signature_match.signatures_neg,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
+    }
+
+    # {'scores': signature_match}
+    # return JsonResponse(signature_match, safe=False)
+    print(signature_match)
+    return JsonResponse('success', safe=False)

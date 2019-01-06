@@ -246,7 +246,7 @@ const signprotmat = {
     // * seqsig
     // * SETTING THE FEATURE SCALE
     fScale: function(data) {
-      const features = _.map(data, (d) => d.feature)
+      const features = _.map(data, d => d.feature);
 
       let fScale = d3
         .scaleBand()
@@ -256,6 +256,45 @@ const signprotmat = {
         .padding(1);
 
       return fScale;
+    },
+
+    fScaleColor: function(f) {
+      if( f === 'αH'){f = 'aH';}
+      const scale = {
+        HY: { bg_color: "#93d050" },
+        HA: { bg_color: "#ffff00" },
+        M: { bg_color: "#ffff00" },
+        A: { bg_color: "#ffff00" },
+        I: { bg_color: "#ffff00" },
+        L: { bg_color: "#ffff00" },
+        V: { bg_color: "#ffff00" },
+        HR: { bg_color: "#07b050" },
+        W: { bg_color: "#07b050" },
+        Y: { bg_color: "#07b050" },
+        F: { bg_color: "#07b050" },
+        Hb: { bg_color: "#7030a0", font_color: "#ffffff" },
+        N: { bg_color: "#7030a0", font_color: "#ffffff" },
+        Q: { bg_color: "#7030a0", font_color: "#ffffff" },
+        S: { bg_color: "#7030a0", font_color: "#ffffff" },
+        T: { bg_color: "#7030a0", font_color: "#ffffff" },
+        Hu: { bg_color: "#7030a0", font_color: "#ffffff" },
+        Ha: { bg_color: "#7030a0", font_color: "#ff0000" },
+        Hd: { bg_color: "#7030a0", font_color: "#02b0f0" },
+        "+-": { bg_color: "#0070c0", font_color: "#ff0000" },
+        "+": { bg_color: "#0070c0", font_color: "#000000" },
+        H: { bg_color: "#0070c0", font_color: "#000000" },
+        K: { bg_color: "#0070c0", font_color: "#000000" },
+        R: { bg_color: "#0070c0", font_color: "#000000" },
+        "-": { bg_color: "#ff0000" },
+        D: { bg_color: "#ff0000" },
+        E: { bg_color: "#ff0000" },
+        Sm: { bg_color: "#ffffff" },
+        aH: { bg_color: "#d9d9d9" },
+        G: { bg_color: "#ff02ff" },
+        P: { bg_color: "#d603ff", font_color: "#ffffff" },
+        C: { bg_color: "#bf8f00" }
+      };
+      return scale[f];
     },
 
     cScale: function(data) {
@@ -268,7 +307,7 @@ const signprotmat = {
       // const max = values[0]
 
       // conservation is calculated to be between -1 and 10 by python
-      let cScale = d3.scaleSequential(d3.interpolateRdBu).domain([-100, 100]);
+      let cScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 100]);
 
       return cScale;
     },
@@ -336,7 +375,7 @@ const signprotmat = {
             "Signaling Protein: " +
             d.sig_gn +
             "<br>" +
-            "PDBs:" +
+            "PDBs: " +
             "<br>" +
             pair_string
           );
@@ -970,9 +1009,9 @@ const signprotmat = {
             "Feature: " +
             d.feature +
             "<br>" +
-            "Score: " +
-            d.expl +
-            "<br>" +
+            // "Score: " +
+            // d.expl +
+            // "<br>" +
             "Frequency: " +
             d.freq +
             "<br>"
@@ -1031,8 +1070,8 @@ const signprotmat = {
         .append("rect")
         .attr("class", "res_rect")
         .style("fill", function(d: any) {
-          if (d.cons === -1) {
-            return "#ffffff";
+          if (d.cons <= 0) {
+            return "none";
           } else {
             return cScale(d.freq);
           }
@@ -1075,7 +1114,7 @@ const signprotmat = {
       svg
         .append("g")
         .attr("class", "legendSeqSig")
-        .attr("transform", "translate(-200,10)");
+        .attr("transform", "translate(-200,20)");
 
       let legendSeqSig = d3
         .legendColor()
@@ -1120,6 +1159,9 @@ const signprotmat = {
             "Feature: " +
             d.name +
             "<br>" +
+            "Length: " +
+            d.length +
+            "<br>" +
             "Score: " +
             d.score +
             "<br>"
@@ -1138,6 +1180,22 @@ const signprotmat = {
         .attr("width", xScale.range()[1] - xScale.step())
         .attr("height", 75);
 
+      svg
+      .append("text")
+      .attr("class", "y seq_label")
+      .attr("text-anchor", "end")
+      .attr("x", -10)
+      .attr("y", 65)
+      .text("Property")
+
+      svg
+      .append("text")
+      .attr("class", "y seq_label")
+      .attr("text-anchor", "end")
+      .attr("x", -10)
+      .attr("y", 102)
+      .text("Conservation")
+
       let each_res = svg
         .select("g#conseq_mat")
         .selectAll("text")
@@ -1152,6 +1210,23 @@ const signprotmat = {
           conseqTip.hide();
         });
 
+      // the rectangles, colored by feature
+      each_res
+        .append("rect")
+        .attr("class", "res_rect")
+        .style("fill", function(d: any) {
+          const gcol = signprotmat.d3.fScaleColor(d.code);
+          if (typeof gcol != "undefined") {
+            return gcol.bg_color;
+          } else {
+            return null;
+          }
+        })
+        .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+        .attr("y", (d: any) => 75)
+        .attr("width", xScale.step())
+        .attr("height", 37.5);
+
       // the rectangles, colored by conservation
       each_res
         .append("rect")
@@ -1164,11 +1239,11 @@ const signprotmat = {
           }
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-        .attr("y", (d: any) => 75)
+        .attr("y", (d: any) => 75 + 37.5)
         .attr("width", xScale.step())
-        .attr("height", 75);
+        .attr("height", 37.5);
 
-      // adding the frequency text to each rectangle
+      // adding the feature text to each rectangle
       each_res
         .append("text")
         .attr("class", "res_label")
@@ -1176,7 +1251,33 @@ const signprotmat = {
         // .attr("y", (d: any) => 50)
         .attr(
           "transform",
-          (d: any) => "translate(" + xScale(d.gn) + ",112.5)rotate(270)"
+          (d: any) => "translate(" + xScale(d.gn) + ",93.75)" // + "rotate(270)"
+        )
+        .style("fill", (d: any) => {
+          const gcol = signprotmat.d3.fScaleColor(d.code);
+          if (typeof gcol != "undefined") {
+            if (typeof gcol.font_color != "undefined") {
+              return gcol.font_color;
+            } else {
+              return "#000000";
+            }
+          } else {
+            return "#000000";
+          }
+        })
+        .attr("text-anchor", "middle")
+        .text((d: any) => d.code);
+
+      // adding the conservation value to each rectangle
+      each_res
+        .append("text")
+        .attr("class", "res_label")
+        // .attr("x", (d: any) => xScale(d.gn))
+        // .attr("y", (d: any) => 50)
+        .attr(
+          "transform",
+          (d: any) =>
+            "translate(" + xScale(d.gn) + "," + (75 + 37.5 + 37.5 / 2) + ")" // + "rotate(270)"
         )
         .style("fill", (d: any) => {
           if (Math.abs(d.score) >= 50) {
@@ -1186,20 +1287,7 @@ const signprotmat = {
           }
         })
         .attr("text-anchor", "middle")
-        .text((d: any) => d.code);
-
-      each_res
-        .append("text")
-        .attr("class", "res_label")
-        // .attr("x", (d: any) => xScale(d.gn))
-        // .attr("y", (d: any) => 50)
-        .attr(
-          "transform",
-          (d: any) => "translate(" + xScale(d.gn) + ",160)rotate(300)"
-        )
-        .style("fill", "#000000")
-        .attr("text-anchor", "end")
-        .text((d: any) => d.name);
+        .text((d: any) => d.score);
 
       // putting a black border around the signature
       d3.select("g#conseq_mat")
