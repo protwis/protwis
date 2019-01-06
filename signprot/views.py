@@ -1062,7 +1062,7 @@ def IMSequenceSignature(request):
     # segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
 
     # receive data
-    pos_set = request.POST.getlist('pos[]')
+    pos_set_in = request.POST.getlist('pos[]')
     # neg_set = request.POST.getlist('neg[]')
     segments = []
     for s in request.POST.getlist('seg[]'):
@@ -1074,7 +1074,7 @@ def IMSequenceSignature(request):
             continue
 
     # get pos/neg set objects
-    pos_set = Protein.objects.filter(entry_name__in=pos_set).select_related('residue_numbering_scheme', 'species')
+    pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')
     # neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
 
     # Calculate Sequence Signature
@@ -1179,12 +1179,13 @@ def IMSequenceSignature(request):
                     print(e)
 
     # pass back to front
-    sign = signature.prepare_session_data()
     res = {
         'cons': sigcons,
         'feat': signature_features,
-        'sign': sign
     }
+
+    request.session['signature'] = signature.prepare_session_data()
+    request.session.modified = True
 
     t2 = time.time()
     print('Runtime: {}'.format((t2-t1)*1000.0))
@@ -1192,24 +1193,42 @@ def IMSequenceSignature(request):
     return JsonResponse(res, safe=False)
 
 def IMSignatureMatch(request):
-    from alignment.functions import get_proteins_from_selection
     from seqsign.sequence_signature import SignatureMatch
 
-    signature_data = request.POST.get('signature')
-    ss_pos = request.POST.get('targets_pos', False)
+    signature_data = request.session.get('signature')
+    ss_pos = request.POST.getlist('pos[]')
     cutoff = request.POST.get('cutoff')
+
+    pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
+    pos_set = [protein for protein in pos_set]
 
     signature_match = SignatureMatch(
         signature_data['common_positions'],
         signature_data['numbering_schemes'],
         signature_data['common_segments'],
         signature_data['diff_matrix'],
-        get_proteins_from_selection(ss_pos),
-        get_proteins_from_selection(ss_pos),
+        pos_set,
+        pos_set,
         cutoff = int(cutoff)
     )
 
-    signature_match.score_protein_class(get_proteins_from_selection(ss_pos)[0].family.slug[:3])
+    signature_match.score_protein_class(
+        pos_set[0].family.slug[:3]
+    )
+
+    request.session['signature_match'] = {
+        'scores': signature_match.protein_report,
+        'scores_pos': signature_match.scores_pos,
+        'scores_neg': signature_match.scores_neg,
+        'protein_signatures': signature_match.protein_signatures,
+        'signatures_pos': signature_match.signatures_pos,
+        'signatures_neg': signature_match.signatures_neg,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
+    }
+    request.session.modified = True
 
     signature_match = {
         'scores': signature_match.protein_report,
@@ -1224,10 +1243,7 @@ def IMSignatureMatch(request):
         'numbering_schemes': signature_match.schemes,
     }
 
-    response = render(
-        request,
-        'signature_match.html',
-        {'scores': signature_match}
-        )
-    return response
-
+    # {'scores': signature_match}
+    # return JsonResponse(signature_match, safe=False)
+    print(signature_match)
+    return JsonResponse('success', safe=False)

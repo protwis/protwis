@@ -258,6 +258,45 @@ const signprotmat = {
       return fScale;
     },
 
+    fScaleColor: function(f) {
+      if( f === 'αH'){f = 'aH';}
+      const scale = {
+        HY: { bg_color: "#93d050" },
+        HA: { bg_color: "#ffff00" },
+        M: { bg_color: "#ffff00" },
+        A: { bg_color: "#ffff00" },
+        I: { bg_color: "#ffff00" },
+        L: { bg_color: "#ffff00" },
+        V: { bg_color: "#ffff00" },
+        HR: { bg_color: "#07b050" },
+        W: { bg_color: "#07b050" },
+        Y: { bg_color: "#07b050" },
+        F: { bg_color: "#07b050" },
+        Hb: { bg_color: "#7030a0", font_color: "#ffffff" },
+        N: { bg_color: "#7030a0", font_color: "#ffffff" },
+        Q: { bg_color: "#7030a0", font_color: "#ffffff" },
+        S: { bg_color: "#7030a0", font_color: "#ffffff" },
+        T: { bg_color: "#7030a0", font_color: "#ffffff" },
+        Hu: { bg_color: "#7030a0", font_color: "#ffffff" },
+        Ha: { bg_color: "#7030a0", font_color: "#ff0000" },
+        Hd: { bg_color: "#7030a0", font_color: "#02b0f0" },
+        "+-": { bg_color: "#0070c0", font_color: "#ff0000" },
+        "+": { bg_color: "#0070c0", font_color: "#000000" },
+        H: { bg_color: "#0070c0", font_color: "#000000" },
+        K: { bg_color: "#0070c0", font_color: "#000000" },
+        R: { bg_color: "#0070c0", font_color: "#000000" },
+        "-": { bg_color: "#ff0000" },
+        D: { bg_color: "#ff0000" },
+        E: { bg_color: "#ff0000" },
+        Sm: { bg_color: "#ffffff" },
+        aH: { bg_color: "#d9d9d9" },
+        G: { bg_color: "#ff02ff" },
+        P: { bg_color: "#d603ff", font_color: "#ffffff" },
+        C: { bg_color: "#bf8f00" }
+      };
+      return scale[f];
+    },
+
     cScale: function(data) {
       // const values = d3
       //   .map(data, (d: any) => d.cons)
@@ -1141,6 +1180,22 @@ const signprotmat = {
         .attr("width", xScale.range()[1] - xScale.step())
         .attr("height", 75);
 
+      svg
+      .append("text")
+      .attr("class", "y seq_label")
+      .attr("text-anchor", "end")
+      .attr("x", -10)
+      .attr("y", 65)
+      .text("Property")
+
+      svg
+      .append("text")
+      .attr("class", "y seq_label")
+      .attr("text-anchor", "end")
+      .attr("x", -10)
+      .attr("y", 102)
+      .text("Conservation")
+
       let each_res = svg
         .select("g#conseq_mat")
         .selectAll("text")
@@ -1160,7 +1215,12 @@ const signprotmat = {
         .append("rect")
         .attr("class", "res_rect")
         .style("fill", function(d: any) {
-          return "#FF5187";
+          const gcol = signprotmat.d3.fScaleColor(d.code);
+          if (typeof gcol != "undefined") {
+            return gcol.bg_color;
+          } else {
+            return null;
+          }
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75)
@@ -1194,9 +1254,14 @@ const signprotmat = {
           (d: any) => "translate(" + xScale(d.gn) + ",93.75)" // + "rotate(270)"
         )
         .style("fill", (d: any) => {
-          if (Math.abs(d.score) >= 50) {
-            return "#eaeaea";
-          } else if (Math.abs(d.score) < 50) {
+          const gcol = signprotmat.d3.fScaleColor(d.code);
+          if (typeof gcol != "undefined") {
+            if (typeof gcol.font_color != "undefined") {
+              return gcol.font_color;
+            } else {
+              return "#000000";
+            }
+          } else {
             return "#000000";
           }
         })
@@ -1211,7 +1276,8 @@ const signprotmat = {
         // .attr("y", (d: any) => 50)
         .attr(
           "transform",
-          (d: any) => "translate(" + xScale(d.gn) + "," + (75 + 37.5 + 37.5/2) + ")" // + "rotate(270)"
+          (d: any) =>
+            "translate(" + xScale(d.gn) + "," + (75 + 37.5 + 37.5 / 2) + ")" // + "rotate(270)"
         )
         .style("fill", (d: any) => {
           if (Math.abs(d.score) >= 50) {

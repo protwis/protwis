@@ -46,7 +46,6 @@
         </div>
     </div> {% endcomment %}
 
-
     <div class="col-md-3">
         <div class="panel panel-default">
 
@@ -62,6 +61,20 @@
         </div>
     </div>
 
+    <div class="col-md-3">
+        <div class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">Find similar proteins</h3>
+            </div>
+
+            <div class="panel-body">
+                <p>Click the button to find similar proteins, based on the sequence features.</p>
+                <button type="button" class="btn btn-primary" onClick="run_sig_match();">Find <i id="sigm_spin" class="fa fa-spinner fa-spin" style="display: none"></i></button>
+            </div>
+
+        </div>
+    </div>
 
     <div class="col-md-3">
         <div class="panel panel-default">
@@ -172,13 +185,13 @@
 
 <div id="seqsig-container" class="svg-container" style="display: none; padding-bottom: 130%">
     <div id="seqsig">
-        <h2>Sequence Features</h2>
+        <h2>Property Conservation</h2>
     </div>
 </div>
 
 <div id="conseq-container" class="svg-container" style="display: none">
     <div id="conseq">
-        <h2>Sequence Consensus</h2>
+        <h2>Property Consensus</h2>
     </div>
 </div>
 
@@ -289,6 +302,7 @@
                 );
             },
             error: function(error){
+                console.log(error)
                 alert(error);
             },
             complete: function(){
@@ -296,6 +310,41 @@
             }
         });
     };
+
+    const run_sig_match = function(){
+        let cutoff = $('#cutoff-val').val();
+        if (cutoff == '') {
+            cutoff = 40;
+        }
+
+        cutoff = 40;
+        let segments = get_gn();
+
+        let req = $.ajax({
+            type: 'POST',
+            url: '/signprot/matrix/sigmat/',
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+                pos: pos_set,
+                seg: segments.label,
+                cutoff: cutoff,
+            },
+            beforeSend: function(){
+                document.querySelector("#sigm_spin").style.display = "inline-block";
+            },
+            success: function(data){
+                console.log(data)
+                // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
+            },
+            error: function(error){
+                console.log(error);
+            },
+            complete: function(){
+                document.querySelector("#sigm_spin").style.display = "none";
+            }
+        })
+    }
+
 
     const replace_filter_value = function(d) {
         const num = parseInt($('#currentpairs').text())
