@@ -1114,7 +1114,7 @@ const signprotmat = {
       svg
         .append("g")
         .attr("class", "legendSeqSig")
-        .attr("transform", "translate(-200,10)");
+        .attr("transform", "translate(-200,20)");
 
       let legendSeqSig = d3
         .legendColor()
