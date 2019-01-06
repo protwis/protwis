@@ -80,6 +80,27 @@
         <div class="panel panel-default">
 
             <div class="panel-heading">
+                <h3 class="panel-title">Color by</h3>
+            </div>
+
+            <div class="panel-body">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore</p>
+
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" id="resbut" class="btn btn-primary" onClick="signprotmat.d3.colorBySwitch('res', colScale)"> Residue </button>
+                    <button type="button" id="intbut" class="btn btn-primary active" onClick="signprotmat.d3.colorBySwitch('int', colScale)"> Interaction </button>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="panel panel-default">
+
+            <div class="panel-heading">
                 <h3 class="panel-title">Filter Interactions</h3>
             </div>
 
@@ -482,6 +503,8 @@
                     sigScale,
                     tooltip
                 );
+                document.querySelector("#intbut").classList.add("active");
+                document.querySelector("#resbut").classList.remove("active");
 
                 // interface_data_table.clear();
                 // interface_data_table.rows.add(data.transformed);

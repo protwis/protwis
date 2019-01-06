@@ -212,9 +212,37 @@ var signprotmat = {
                 .padding(1);
             return fScale;
         },
+        resScaleColor: function (f) {
+            var scale = {
+                A: { bg_color: "#E6E600", font_color: "#000000" },
+                C: { bg_color: "#B2B548", font_color: "#000000" },
+                D: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+                E: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+                F: { bg_color: "#18FF0B", font_color: "#000000" },
+                G: { bg_color: "#FF00F2", font_color: "#000000" },
+                H: { bg_color: "#0093DD", font_color: "#000000" },
+                I: { bg_color: "#E6E600", font_color: "#000000" },
+                K: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+                L: { bg_color: "#E6E600", font_color: "#000000" },
+                M: { bg_color: "#E6E600", font_color: "#000000" },
+                N: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                P: { bg_color: "#CC0099", font_color: "#FDFF7B" },
+                Q: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                R: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+                S: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                T: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                V: { bg_color: "#E6E600", font_color: "#000000" },
+                W: { bg_color: "#0BCF00", font_color: "#000000" },
+                Y: { bg_color: "#18FF0B", font_color: "#000000" },
+                "-": { bg_color: "#FFFFFF", font_color: "#000000" },
+                _: { bg_color: "#EDEDED", font_color: "#000000" },
+                "+": { bg_color: "#FFFFFF", font_color: "#000000" }
+            };
+            return scale[f];
+        },
         fScaleColor: function (f) {
-            if (f === 'αH') {
-                f = 'aH';
+            if (f === "αH") {
+                f = "aH";
             }
             var scale = {
                 HY: { bg_color: "#93d050" },
@@ -251,6 +279,74 @@ var signprotmat = {
                 C: { bg_color: "#bf8f00" }
             };
             return scale[f];
+        },
+        colorBySwitch: function (which, colScale) {
+            if (which === "res") {
+                var other = "int";
+                var res = d3.select("g#recAA").selectAll("g");
+                res.selectAll("rect").style("fill", function (d) {
+                    var col = signprotmat.d3.resScaleColor(d.rec_aa);
+                    if (typeof col != "undefined") {
+                        return col.bg_color;
+                    }
+                    else {
+                        return null;
+                    }
+                });
+                res.selectAll("text").style("fill", function (d) {
+                    var col = signprotmat.d3.resScaleColor(d.rec_aa);
+                    if (typeof col != "undefined") {
+                        if (typeof col.font_color != "undefined") {
+                            return col.font_color;
+                        }
+                        else {
+                            return "#000000";
+                        }
+                    }
+                    else {
+                        return "#000000";
+                    }
+                });
+                res = d3.select("g#sigAA").selectAll("g");
+                res.selectAll("rect").style("fill", function (d) {
+                    var col = signprotmat.d3.resScaleColor(d.sig_aa);
+                    if (typeof col != "undefined") {
+                        return col.bg_color;
+                    }
+                    else {
+                        return null;
+                    }
+                });
+                res.selectAll("text").style("fill", function (d) {
+                    var col = signprotmat.d3.resScaleColor(d.sig_aa);
+                    if (typeof col != "undefined") {
+                        if (typeof col.font_color != "undefined") {
+                            return col.font_color;
+                        }
+                        else {
+                            return "#000000";
+                        }
+                    }
+                    else {
+                        return "#000000";
+                    }
+                });
+            }
+            else if (which === "int") {
+                var other = "res";
+                var res = d3.select("g#recAA").selectAll("g");
+                res.selectAll("rect").style("fill", function (d) {
+                    return colScale(d.int_ty[0]);
+                });
+                res.selectAll("text").style("fill", null);
+                res = d3.select("g#sigAA").selectAll("g");
+                res.selectAll("rect").style("fill", function (d) {
+                    return colScale(d.int_ty[0]);
+                });
+                res.selectAll("text").style("fill", null);
+            }
+            document.querySelector("#" + which + "but").classList.add("active");
+            document.querySelector("#" + other + "but").classList.remove("active");
         },
         cScale: function (data) {
             // const values = d3
