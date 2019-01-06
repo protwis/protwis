@@ -131,6 +131,14 @@ const signprotmat = {
       };
 
       return return_data;
+    },
+
+    annotateNonInteractionData: function(meta, data) {
+      data.forEach(element => {
+        const tmp = _.find(meta, d => d.entry_name === element.entry_name);
+        element["pdb_id"] = tmp.pdb_id.toUpperCase();
+      });
+      return data;
     }
   },
 
@@ -191,16 +199,19 @@ const signprotmat = {
         .map(data, (d: any) => d.sig_gn)
         .keys()
         // .sort(d3.descending);
-        .sort(function(a, b){
-          const a_patt = /\.(\S*)\./g
-          const b_patt = /\.(\S*)\./g
+        .sort(function(a, b) {
+          const a_patt = /\.(\S*)\./g;
+          const b_patt = /\.(\S*)\./g;
           const a_match = a_patt.exec(a);
           const b_match = b_patt.exec(b);
-          const a_obj = _.find(gprot, d => d.slug === a_match[1])
-          const b_obj = _.find(gprot, d => d.slug === b_match[1])
+          const a_obj = _.find(gprot, d => d.slug === a_match[1]);
+          const b_obj = _.find(gprot, d => d.slug === b_match[1]);
           // console.log(a_obj.id);
           // console.log(a_obj.id + (+a.slice(-2)/100));
-          return d3.descending(a_obj.id + (+a.slice(-2)/100), b_obj.id + (+b.slice(-2)/100));
+          return d3.descending(
+            a_obj.id + +a.slice(-2) / 100,
+            b_obj.id + +b.slice(-2) / 100
+          );
           // return d3.descending(a_obj.id, b_obj.id);
         });
 
@@ -393,12 +404,20 @@ const signprotmat = {
         let res = d3.select("g#recAA").selectAll("g");
 
         res.selectAll("rect").style("fill", function(d) {
-          return colScale(d.int_ty[0]);
+          if (typeof d.int_ty != "undefined") {
+            return colScale(d.int_ty[0]);
+          } else {
+            return '#ccc'
+          }
         });
         res.selectAll("text").style("fill", null);
         res = d3.select("g#sigAA").selectAll("g");
         res.selectAll("rect").style("fill", function(d) {
-          return colScale(d.int_ty[0]);
+          if (typeof d.int_ty != "undefined") {
+            return colScale(d.int_ty[0]);
+          } else {
+            return '#ccc'
+          }
         });
         res.selectAll("text").style("fill", null);
       }
@@ -498,6 +517,7 @@ const signprotmat = {
     renderData: function(
       svg,
       data,
+      data_non,
       xScale,
       yScale,
       xAxis,
@@ -822,6 +842,48 @@ const signprotmat = {
         .append("rect")
         .attr("class", "res_rect")
         .style("fill", (d: any) => colScale(d.int_ty[0]))
+        .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
+        .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
+        .attr("width", xScale.step())
+        .attr("height", pdbScale.step());
+
+      each_res
+        .append("text")
+        .attr("class", "res_label")
+        .attr("x", (d: any) => xScale(d.rec_gn))
+        .attr("y", (d: any) => pdbScale(d.pdb_id) - pdbScale.step() / 2)
+        .attr("text-anchor", "middle")
+        .attr("dy", 75)
+        .text((d: any) => d.rec_aa);
+
+      data_non = _.filter(data_non, function(d) {
+        return xScale(d.rec_gn);
+      });
+
+      console.log(data_non)
+
+      each_res = svg
+        .select("g#recAA")
+        .selectAll("text")
+        .data(data_non)
+        .enter()
+        .append("g")
+        .attr(
+          "class",
+          (d: any) => "R_" + _.replace(d.rec_gn, ".", "p") + "_P_" + d.pdb_id
+        )
+        .call(recTip)
+        .on("mouseover", function(d) {
+          recTip.show(d);
+        })
+        .on("mouseout", function(d) {
+          recTip.hide();
+        });
+
+      each_res
+        .append("rect")
+        .attr("class", "res_rect")
+        .style("fill", "#ccc")
         .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
         .attr("width", xScale.step())
@@ -1240,8 +1302,8 @@ const signprotmat = {
         .selectAll("rect")
         .attr("rx", 3)
         .attr("ry", 3)
-        .style('stroke', 'black')
-        .style('stroke-width', '0.1px');
+        .style("stroke", "black")
+        .style("stroke-width", "0.1px");
       svg
         .select(".legendSeqSig")
         .selectAll("text")

@@ -219,6 +219,7 @@
 {% block addon_js %}
 <script type="text/javascript">
     const interactions = {{ interactions | safe}};
+    let non_interactions = {{ non_interactions | safe}};
     const interactions_metadata = {{ interactions_metadata | safe}};
     const ps = {{ ps | safe}};
     const rs = {{ rs | safe}};
@@ -395,6 +396,7 @@
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script>
     $(document).ready(function () {
+        non_interactions = signprotmat.data.annotateNonInteractionData(interactions_metadata, non_interactions);
         $('[data-toggle="tooltip"]').tooltip();
 
         const table = $('#table-interface').DataTable({
@@ -491,6 +493,7 @@
                 signprotmat.d3.renderData(
                     svg,
                     data,
+                    non_interactions,
                     xScale,
                     yScale,
                     xAxis,
@@ -547,6 +550,7 @@
         signprotmat.d3.renderData(
             svg,
             data,
+            non_interactions,
             xScale,
             yScale,
             xAxis,

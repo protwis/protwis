@@ -1032,8 +1032,23 @@ def InteractionMatrix(request):
 
     interactions_metadata = complex_info
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Gprotein').values('id', 'slug')
+
+    entry_names = [i['entry_name'] for i in complex_info]
+    remaining_residues = Residue.objects.filter(
+            protein_conformation__protein__entry_name__in=entry_names,
+            ).values(
+                rec_id = F('protein_conformation__protein__id'),
+                name = F('protein_conformation__protein__name'),
+                entry_name = F('protein_conformation__protein__entry_name'),
+                rec_aa = F('amino_acid'),
+                rec_gn = F('display_generic_number__label'),
+            ).exclude(
+                Q(rec_gn=None)
+            )
+
     context = {
         'interactions': dataset,
+        'non_interactions': json.dumps(list(remaining_residues)),
         'interactions_metadata': json.dumps(interactions_metadata),
         'ps': json.dumps(list(ps)),
         'rs': json.dumps(list(rs)),
