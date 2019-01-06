@@ -157,15 +157,28 @@ var signprotmat = {
                 .padding(1);
             return xScale;
         },
-        yScale: function (data) {
-            var yScale = d3
-                .scaleBand()
-                .domain(d3
+        yScale: function (data, gprot) {
+            console.log(gprot);
+            var domain = d3
                 .map(data, function (d) { return d.sig_gn; })
                 .keys()
-                .sort(d3.descending))
+                // .sort(d3.descending);
+                .sort(function (a, b) {
+                var a_patt = /\.(\S*)\./g;
+                var b_patt = /\.(\S*)\./g;
+                var a_match = a_patt.exec(a);
+                var b_match = b_patt.exec(b);
+                var a_obj = _.find(gprot, function (d) { return d.slug === a_match[1]; });
+                var b_obj = _.find(gprot, function (d) { return d.slug === b_match[1]; });
+                // console.log(a_obj.id);
+                // console.log(a_obj.id + (+a.slice(-2)/100));
+                return d3.descending(a_obj.id + (+a.slice(-2) / 100), b_obj.id + (+b.slice(-2) / 100));
+                // return d3.descending(a_obj.id, b_obj.id);
+            });
+            var yScale = d3
+                .scaleBand()
+                .domain(domain)
                 .range([h, 0])
-                // .round(true)
                 .padding(1);
             return yScale;
         },

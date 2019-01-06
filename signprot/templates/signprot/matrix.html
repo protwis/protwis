@@ -222,6 +222,7 @@
     const interactions_metadata = {{ interactions_metadata | safe}};
     const ps = {{ ps | safe}};
     const rs = {{ rs | safe}};
+    const gprot = {{ gprot | safe}};
     let pdb_sel = [];
 
     // Global Variable
@@ -478,7 +479,7 @@
                 data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
                 svg = signprotmat.d3.setup("div#svg-container");
                 xScale = signprotmat.d3.xScale(data.transformed);
-                yScale = signprotmat.d3.yScale(data.transformed);
+                yScale = signprotmat.d3.yScale(data.transformed, gprot);
                 xAxis = signprotmat.d3.xAxis(xScale);
                 yAxis = signprotmat.d3.yAxis(yScale);
                 xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
@@ -534,7 +535,7 @@
         data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
         svg = signprotmat.d3.setup("div#svg-container");
         xScale = signprotmat.d3.xScale(data.transformed);
-        yScale = signprotmat.d3.yScale(data.transformed);
+        yScale = signprotmat.d3.yScale(data.transformed, gprot);
         xAxis = signprotmat.d3.xAxis(xScale);
         yAxis = signprotmat.d3.yAxis(yScale);
         xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);

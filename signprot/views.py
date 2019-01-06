@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinSegment, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResiduePositionSet
 
 from structure.models import Structure
@@ -1031,11 +1031,13 @@ def InteractionMatrix(request):
             )
 
     interactions_metadata = complex_info
+    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Gprotein').values('id', 'slug')
     context = {
         'interactions': dataset,
         'interactions_metadata': json.dumps(interactions_metadata),
         'ps': json.dumps(list(ps)),
         'rs': json.dumps(list(rs)),
+        'gprot': json.dumps(list(gprotein_order))
         }
 
     return render(request, 'signprot/matrix.html', context)

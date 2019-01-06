@@ -186,17 +186,30 @@ const signprotmat = {
       return xScale;
     },
 
-    yScale: function(data) {
+    yScale: function(data, gprot) {
+      console.log(gprot)
+      
+      const domain = d3
+        .map(data, (d: any) => d.sig_gn)
+        .keys()
+        // .sort(d3.descending);
+        .sort(function(a, b){
+          const a_patt = /\.(\S*)\./g
+          const b_patt = /\.(\S*)\./g
+          const a_match = a_patt.exec(a);
+          const b_match = b_patt.exec(b);
+          const a_obj = _.find(gprot, d => d.slug === a_match[1])
+          const b_obj = _.find(gprot, d => d.slug === b_match[1])
+          // console.log(a_obj.id);
+          // console.log(a_obj.id + (+a.slice(-2)/100));
+          return d3.descending(a_obj.id + (+a.slice(-2)/100), b_obj.id + (+b.slice(-2)/100));
+          // return d3.descending(a_obj.id, b_obj.id);
+        });
+
       let yScale = d3
         .scaleBand()
-        .domain(
-          d3
-            .map(data, (d: any) => d.sig_gn)
-            .keys()
-            .sort(d3.descending)
-        )
+        .domain(domain)
         .range([h, 0])
-        // .round(true)
         .padding(1);
 
       return yScale;
