@@ -4,13 +4,13 @@ A module for generating sequence signatures for the given two sets of proteins.
 from django.conf import settings
 #from django.core import exceptions
 
-from alignment.functions import strip_html_tags, get_format_props
+from alignment.functions import strip_html_tags, get_format_props, prepare_aa_group_preference
 Alignment = getattr(__import__(
     'common.alignment_' + settings.SITE_NAME,
     fromlist=['Alignment']
     ), 'Alignment')
 
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES
+from common.definitions import AA_ZSCALES, AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES, ZSCALES
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
 
@@ -18,7 +18,9 @@ from residue.models import Residue
 from collections import OrderedDict
 from copy import deepcopy
 import numpy as np
+from operator import itemgetter
 import re
+from scipy.stats import t
 import time
 
 class SequenceSignature:
@@ -46,11 +48,13 @@ class SequenceSignature:
 
         self.signature = OrderedDict()
 
+        self.zscales_signature = OrderedDict()
+
         self.feature_preference = prepare_aa_group_preference()
         self.group_lengths = dict([
             (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
         ])
-        self.default_column = np.array([((y.startswith('-') or y == '_') and y != '--' and not y.startswith('-_') and 100) or 0 for y in AMINO_ACID_GROUPS.keys()])
+        self.default_column = np.array([((y == '-') and 100) or 0 for y in AMINO_ACID_GROUPS.keys()])
 
 
     def _assign_preferred_features(self, signature, segment, ref_matrix):
@@ -171,7 +175,7 @@ class SequenceSignature:
             for segment in self.common_segments:
                 tmp_row.append([[
                     str(x),
-                    str(int(x/10)) if x != 0 else -1,
+                    str(int(x/10)), #if x != 0 else -1,
                 ] for x in fstats[segment][row]])
             tmp_fstats.append(tmp_row)
         aln.feature_stats = tmp_fstats
@@ -260,10 +264,13 @@ class SequenceSignature:
             self.signature[segment] = []
             for col, pos in enumerate(list(signature_map)):
                 self.signature[segment].append([
-                    list(AMINO_ACID_GROUPS.keys())[pos] if self.features_frequency_difference[segment][pos][col] > 0 else '-' + list(AMINO_ACID_GROUPS.keys())[pos], # latest implementation of NOT... properties
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'] if self.features_frequency_difference[segment][pos][col] > 0 else '-' + list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'], # latest implementation of NOT... properties
                     list(AMINO_ACID_GROUP_NAMES.values())[pos] if self.features_frequency_difference[segment][pos][col] > 0 else "Not " + list(AMINO_ACID_GROUP_NAMES.values())[pos], # latest implementation of NOT... properties
                     self.features_frequency_difference[segment][pos][col],
-                    int(self.features_frequency_difference[segment][pos][col]/20)+5
+                    int(self.features_frequency_difference[segment][pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short']
                 ])
 
         features_pos = OrderedDict()
@@ -286,20 +293,107 @@ class SequenceSignature:
 
             for col, pos in enumerate(list(features_cons_pos)):
                 self.features_consensus_pos[segment].append([
-                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    # list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
                     list(AMINO_ACID_GROUP_NAMES.values())[pos],
                     features_pos[segment][pos][col],
-                    int(features_pos[segment][pos][col]/20)+5
+                    int(features_pos[segment][pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                    list(AMINO_ACID_GROUPS.keys())[pos]
                 ])
             for col, pos in enumerate(list(features_cons_neg)):
                 self.features_consensus_neg[segment].append([
-                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    # list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
                     list(AMINO_ACID_GROUP_NAMES.values())[pos],
                     features_neg[segment][pos][col],
-                    int(features_neg[segment][pos][col]/20)+5
+                    int(features_neg[segment][pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                    list(AMINO_ACID_GROUPS.keys())[pos]
                 ])
         self._convert_feature_stats(self.features_normalized_pos, self.aln_pos)
         self._convert_feature_stats(self.features_normalized_neg, self.aln_neg)
+
+    def calculate_zscales_signature(self):
+        """
+        Calculates the Z-scales (Z1-Z5) difference between two protein sets for each GN residue position
+        Generates the full difference matrix and calculates the relevance (P-value) for each z-scale & position combination.
+        """
+        # Prepare zscales for both sets
+        self.aln_pos.calculate_zscales()
+        self.aln_neg.calculate_zscales()
+
+        # Difference + p-value calculation for shared residues
+        ZSCALES.sort()
+        for zscale in ZSCALES:
+            self.zscales_signature[zscale] = OrderedDict()
+            for segment in self.aln_pos.zscales[ZSCALES[0]].keys():
+                self.zscales_signature[zscale][segment] = OrderedDict()
+
+                all_keys = set(self.aln_pos.zscales[zscale][segment].keys()).union(self.aln_neg.zscales[zscale][segment].keys())
+                shared_keys = set(self.aln_pos.zscales[zscale][segment].keys()).intersection(self.aln_neg.zscales[zscale][segment].keys())
+                for entry in sorted(all_keys):
+                    if entry in shared_keys:
+                        var1 = self.aln_pos.zscales[zscale][segment][entry]
+                        var2 = self.aln_neg.zscales[zscale][segment][entry]
+
+                        # Welch's t-test
+                        # One-liner alternative : sed = np.sqrt(var1[1]**2.0/var1[2] + var2[1]**2.0/var2[2])
+                        # se1 = var1[1]/np.sqrt(var1[2])
+                        # se2 = var2[1]/np.sqrt(var2[2])
+                        # sed = np.sqrt(se1**2.0 + se2**2.0)
+
+                        # Student t-test assuming similar variance different sample sizes
+                        sed = 0
+                        if var1[2] > 0 and var2[2] > 0 and (var1[2]+var2[2] - 2) > 0:
+                            sed = np.sqrt(((var1[2] - 1) * var1[1]**2.0 + (var2[2]-1)*var2[1]**2.0)/(var1[2]+var2[2]-2)) * np.sqrt(1/var1[2] + 1/var2[2])
+
+                        t_value = 1
+                        p = 100
+                        color = -1
+                        if sed != 0:
+                            mean_diff = var1[0] - var2[0]
+                            t_value = mean_diff / sed
+
+                            # Grab P-value
+                            df = var1[2] + var2[2] - 2
+                            p = (1.0 - t.cdf(abs(t_value), df)) * 2.0
+
+                            # Coloring based on statistical significance
+                            #if p <= 0.05:
+                            #    color = int(round(10 - 9 * p/0.05, 0))
+                            #else:
+                            #    color = 0
+
+                            # Coloring difference Z-scale means when statistically significant
+                            if p <= 0.05 and abs(mean_diff) > 0.6:
+                                color = round(mean_diff / 4 * 5, 0)
+                                if abs(color) > 5:
+                                    color = color/abs(color) * 5
+                                color = int(color + 5)
+
+                        tooltip = entry + " ("+ zscale + ")<br/>" + \
+                                  "Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>" + \
+                                  "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>"
+                        if p > 0.001:
+                            tooltip += "P-value:  {0:.3f}".format(p)
+                        else:
+                            tooltip += "P-value:  {0:.2E}".format(p)
+
+                        self.zscales_signature[zscale][segment][entry] = [round(var1[0]-var2[0],1), color, tooltip] # diff, P-value, tooltip
+                    else:
+                        tooltip = entry + "<br/>Set 1: GAP<br/>"
+                        if entry in self.aln_pos.zscales[zscale][segment]:
+                            var1 = self.aln_pos.zscales[zscale][segment][entry]
+                            tooltip = entry + "<br/>Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>"
+
+                        if entry in self.aln_neg.zscales[zscale][segment]:
+                            var2 = self.aln_neg.zscales[zscale][segment][entry]
+                            tooltip += "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>"
+                        else:
+                            tooltip += "Set 2: GAP<br/>"
+
+                        self.zscales_signature[zscale][segment][entry] = ["-", -1, tooltip] # diff, P-value, tooltip
 
     def prepare_display_data(self):
 
@@ -313,11 +407,13 @@ class SequenceSignature:
             'common_generic_numbers': self.common_gn,
             'feats_signature': self.features_frequency_diff_display,
             'signature_consensus': self.signature,
+            'zscales_signature': self.zscales_signature,
             'feats_cons_pos': self.features_consensus_pos,
             'feats_cons_neg': self.features_consensus_neg,
             'a_pos': self.aln_pos,
             'a_neg': self.aln_neg,
         }
+
         return options
 
     def prepare_session_data(self):
@@ -342,9 +438,14 @@ class SequenceSignature:
         for prot in self.aln_pos.proteins + self.aln_neg.proteins:
             if prot.protein.residue_numbering_scheme.slug not in numbering_schemes:
                 rnsn = prot.protein.residue_numbering_scheme.name
-                numbering_schemes[prot.protein.residue_numbering_scheme.slug] = rnsn
+                try:
+                    #New way of breaking down the numbering scheme
+                    rnsn_parent = prot.protein.residue_numbering_scheme.parent.short_name
+                except Exception as msg:
+                    rnsn_parent = ''
+                numbering_schemes[prot.protein.residue_numbering_scheme.slug] = (rnsn, rnsn_parent)
         # order and convert numbering scheme dict to tuple
-        return sorted(numbering_schemes.items(), key=lambda x: x[0])
+        return sorted([(x[0], x[1][0], x[1][1]) for x in numbering_schemes.items()], key=itemgetter(0))
 
     # def apply_cutoff(self, cutoff=0):
 
@@ -429,13 +530,32 @@ class SequenceSignature:
 
         # First column, numbering schemes
         for row, scheme in enumerate(numbering_schemes):
-            worksheet.write(1 + 3*row, 0, scheme[1])
+            # worksheet.write(1 + 3*row, 0, scheme[1])
+            worksheet.write(1 + 3 * row, 0, 'Residue number')
+            worksheet.write(2 + 3 * row, 0, 'Sequence-based ({})'.format(scheme[2]))
+            worksheet.write(3 + 3*row, 0, 'Structure-based (GPCRdb)')
 
         # First column, stats
         if data == 'features':
             for offset, prop in enumerate(props):
                 worksheet.write(1 + 3 * len(numbering_schemes) + offset, 0, prop)
-
+            if aln == 'signature':
+                worksheet.write(
+                    1 + 3 * len(numbering_schemes) + len(props),
+                    0,
+                    'Signature consensus'
+                    )
+            else:
+                worksheet.write(
+                    1 + 3 * len(numbering_schemes) + len(props),
+                    0,
+                    'Prop/AA consensus'
+                    )
+            worksheet.write(
+                2 + 3 * len(numbering_schemes) + len(props),
+                0,
+                'Length'
+            )
         # First column, protein list (for alignment) and line for consensus sequence
         else:
             for offset, prot in enumerate(alignment.proteins):
@@ -447,7 +567,7 @@ class SequenceSignature:
             worksheet.write(
                 1 + 3 * len(numbering_schemes) + len(alignment.proteins),
                 0,
-                'CONSENSUS'
+                'Seq consensus'
                 )
 
         # Second column and on
@@ -499,7 +619,14 @@ class SequenceSignature:
                 col_offset = 0
                 for segment in prop:
                     for col, freq in enumerate(segment):
-                        cell_format = workbook.add_format(get_format_props(freq[1]))
+                        # if aln == 'signature':
+                        #     cell_format = workbook.add_format(get_format_props(freq[1] if freq[0] != 0 else 5))
+                        # else:
+                        if aln == 'signature':
+                            cell_format = workbook.add_format(get_format_props(freq[1]))
+                        else:
+                            cell_format = workbook.add_format(get_format_props(freq_gs=freq[1]))
+
                         worksheet.write(
                             offset + row,
                             1 + col + col_offset,
@@ -510,14 +637,30 @@ class SequenceSignature:
             col_offset = 0
             for segment, cons_feat in feat_consensus.items():
                 for col, chunk in enumerate(cons_feat):
+                    if aln == 'signature':
+                        cell_format = workbook.add_format(get_format_props(feat=chunk[-1].replace('\u03b1', 'a')))
+                    else:
+                        cell_format = workbook.add_format(get_format_props(feat=chunk[0].replace('\u03b1', 'a')))
+                    #Property group
                     worksheet.write(
                         offset + len(AMINO_ACID_GROUPS),
                         1 + col + col_offset,
-                        chunk[0]
+                        chunk[0],
+                        cell_format
                     )
-                    cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5) if chunk[2] != 0 else get_format_props(-1))
+                    #Length of prop
                     worksheet.write(
                         1 + offset + len(AMINO_ACID_GROUPS),
+                        1 + col + col_offset,
+                        chunk[4],
+                    )
+                    if aln == 'signature':
+                        cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
+                    else:
+                        cell_format = workbook.add_format(get_format_props(int(chunk[2]/10))) #if chunk[2] != 0 else get_format_props(-1))
+                    #Percentages
+                    worksheet.write(
+                        2 + offset + len(AMINO_ACID_GROUPS),
                         1 + col + col_offset,
                         chunk[2],
                         cell_format
@@ -570,14 +713,16 @@ class SequenceSignature:
                 gn = list(self.common_gn[self.common_schemes[0][0]][segment].keys())[pos]
                 if 'x' not in gn:
                     continue # skip positions without a generic number
-                prop = item[0]
+
+                prop = AMINO_ACID_GROUP_PROPERTIES[item[5]]['display_name_short']
+                length = AMINO_ACID_GROUP_PROPERTIES[item[5]]['length']
                 prop_name = item[1]
                 score = abs(item[2])
 
-                per_gn_signature.append([gn, score, prop, prop_name])
+                per_gn_signature.append([gn, score, prop, length, prop_name])
 
         worksheet = workbook.add_worksheet(worksheet_name)
-        worksheet.write_row(0, 0, ['Pos', 'Score', 'Prop_sh', 'Property'])
+        worksheet.write_row(0, 0, ['Pos', 'Score', 'Prop/AA', 'Length', 'Property'])
         for row, pos in enumerate(sorted(per_gn_signature, key=lambda x: x[1], reverse=True)):
             worksheet.write_row(
                 row + 1,
@@ -608,6 +753,7 @@ class SignatureMatch():
         self.protein_signatures = OrderedDict()
         self.feature_preference = prepare_aa_group_preference()
 
+        print(self.schemes)
         self.find_relevant_gns()
 
         self.residue_to_feat = dict(
@@ -699,13 +845,14 @@ class SignatureMatch():
             signature_map = np.absolute(self.signature_matrix_filtered[segment]).argmax(axis=0)
             signature_map = self._assign_preferred_features(signature_map, segment, self.signature_matrix_filtered)
             tmp = np.array(self.signature_matrix_filtered[segment])
-            print(signature_map)
             for col, pos in enumerate(list(signature_map)):
                 signature[segment].append([
-                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    # list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
                     list(AMINO_ACID_GROUP_NAMES.values())[pos],
                     tmp[pos][col],
-                    int(tmp[pos][col]/20)+5
+                    int(tmp[pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
                 ])
         self.signature_consensus = signature
 
@@ -813,7 +960,8 @@ class SignatureMatch():
                             feat_abr,
                             feat_name,
                             val,
-                            "green",
+                            #"green",
+                            "#808080",
                             res.amino_acid, pos
                             ]) if val > 0 else tmp.append([
                                 feat_abr,
@@ -832,14 +980,16 @@ class SignatureMatch():
                             feat_abr,
                             feat_name,
                             val,
-                            "red",
+                            # "red",
+                            "white",
                             res.amino_acid,
                             pos
                             ]) if val > 0 else tmp.append([
                                 feat_abr,
                                 feat_name,
                                 val,
-                                "green",
+                                # "green",
+                                "#808080",
                                 res.amino_acid,
                                 pos
                                 ])
@@ -849,15 +999,16 @@ class SignatureMatch():
                             feat_abr,
                             feat_name,
                             val,
-                            "green",
-                            '_',
+                            # "green",
+                            "#808080",
+                            '-',
                             pos
                             ]) if val > 0 else tmp.append([
                                 feat_abr,
                                 feat_name,
                                 val,
                                 "white",
-                                '_',
+                                '-',
                                 pos
                                 ])
                         prot_score += val
@@ -868,15 +1019,16 @@ class SignatureMatch():
                             feat_abr,
                             feat_name,
                             val,
-                            "red",
-                            '_',
+                            # "red",
+                            "white",
+                            '-',
                             pos
                             ]) if val > 0 else tmp.append([
                                 feat_abr,
                                 feat_name,
                                 val,
                                 "white",
-                                '_',
+                                '-',
                                 pos
                                 ])
             consensus_match[segment] = tmp
@@ -890,20 +1042,25 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
 
     # First column, numbering schemes
     for row, scheme in enumerate(numbering_schemes):
-        worksheet.write(1 + 3*row, 0, scheme[1])
-    worksheet.write(1,1, 'Receptor family / Ligand class')
+        worksheet.write(1 + 3 * row, 4, 'Residue number')
+        worksheet.write(2 + 3 * row, 4, 'Sequence-based ({})'.format(scheme[2]))
+        worksheet.write(3 + 3*row, 4, 'Structure-based (GPCRdb)')
+    worksheet.write(2 + 3 * len(numbering_schemes), 0, 'UniProt')
+    worksheet.write(2 + 3 * len(numbering_schemes), 1, 'Receptor name (IUPHAR)')
+    worksheet.write(2 + 3 * len(numbering_schemes) ,2, 'Receptor family')
+    worksheet.write(2 + 3 * len(numbering_schemes) ,3, 'Ligand class')
     # Score header
-    worksheet.write(1, 2, 'Score')
-    worksheet.write(1, 3, 'Normalized score')
+    worksheet.write(2 + 3 * len(numbering_schemes), 4, 'Score')
+    #worksheet.write(1, 3, 'Normalized score')
 
     offset = 0
     # Segments
     for segment, resi in relevant_segments.items():
         worksheet.merge_range(
             0,
-            4 + offset,
+            5 + offset,
             0,
-            4 + len(resi) + offset - 1,
+            5 + len(resi) + offset - 1,
             segment
         )
         offset += len(resi)
@@ -921,17 +1078,17 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                     tm, bw, gpcrdb = ('', '', '')
                 worksheet.write(
                     1 + 3 * row,
-                    3 + col + offset,
+                    4 + col + offset,
                     tm
                 )
                 worksheet.write(
                     2 + 3 * row,
-                    3 + col + offset,
+                    4 + col + offset,
                     bw
                 )
                 worksheet.write(
                     3 + 3*row,
-                    3 + col + offset,
+                    4 + col + offset,
                     gpcrdb
                 )
             offset += len(gn_list.items())
@@ -939,7 +1096,7 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
     # Line for sequence signature
     worksheet.write(
         1 + 3 * len(numbering_schemes),
-        0,
+        4,
         'CONSENSUS'
         )
     col_offset = 0
@@ -947,13 +1104,13 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
         for col, chunk in enumerate(cons_feat):
             worksheet.write(
                 1 + 3 * len(numbering_schemes),
-                4 + col + col_offset,
+                5 + col + col_offset,
                 chunk[0]
             )
             cell_format = workbook.add_format(get_format_props(int(chunk[2]/20)+5))
             worksheet.write(
                 2 + 3 * len(numbering_schemes),
-                4 + col + col_offset,
+                5 + col + col_offset,
                 chunk[2],
                 cell_format
             )
@@ -972,19 +1129,26 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
         worksheet.write(
             3 + 3 * len(numbering_schemes) + row_offset,
             1,
-            "{} / {}".format(
-                protein.protein.family.parent.parent.name,
-                protein.protein.family.parent.name
-            )
+            protein.protein.name
         )
         worksheet.write(
             3 + 3 * len(numbering_schemes) + row_offset,
             2,
-            score[0],
+            protein.protein.family.parent.name,
         )
         worksheet.write(
             3 + 3 * len(numbering_schemes) + row_offset,
             3,
+            protein.protein.family.parent.parent.name,
+        )
+        # worksheet.write(
+        #     3 + 3 * len(numbering_schemes) + row_offset,
+        #     2,
+        #     score[0],
+        # )
+        worksheet.write(
+            3 + 3 * len(numbering_schemes) + row_offset,
+            4,
             score[1],
         )
         col_offset = 0
@@ -993,7 +1157,7 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                 cell_format = workbook.add_format({'bg_color': res[3],})
                 worksheet.write(
                     3 + 3 * len(numbering_schemes) + row_offset,
-                    4 + col + col_offset,
+                    5 + col + col_offset,
                     res[4],
                     cell_format
                 )
@@ -1007,7 +1171,7 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
         worksheet.write(
             static_offset,
             0,
-            'Positive set'
+            'Protein set 1'
         )
         static_offset += 1
 
@@ -1021,19 +1185,26 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
             worksheet.write(
                 static_offset + row_offset,
                 1,
-                "{} / {}".format(
-                    protein.protein.family.parent.parent.name,
-                    protein.protein.family.parent.name
-                )
+                protein.protein.name
             )
             worksheet.write(
                 static_offset + row_offset,
                 2,
-                score[0],
+                protein.protein.family.parent.name,
             )
             worksheet.write(
                 static_offset + row_offset,
                 3,
+                protein.protein.family.parent.parent.name,
+            )
+            # worksheet.write(
+            #     3 + 3 * len(numbering_schemes) + row_offset,
+            #     2,
+            #     score[0],
+            # )
+            worksheet.write(
+                static_offset + row_offset,
+                4,
                 score[1],
             )
             col_offset = 0
@@ -1042,7 +1213,7 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                     cell_format = workbook.add_format({'bg_color': res[3],})
                     worksheet.write(
                         static_offset + row_offset,
-                        4 + col + col_offset,
+                        5 + col + col_offset,
                         res[4],
                         cell_format
                     )
@@ -1057,7 +1228,7 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
         worksheet.write(
             static_offset,
             0,
-            'Negative set'
+            'Protein set 2'
         )
         static_offset += 1
 
@@ -1071,19 +1242,26 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
             worksheet.write(
                 static_offset + row_offset,
                 1,
-                "{} / {}".format(
-                    protein.protein.family.parent.parent.name,
-                    protein.protein.family.parent.name
-                )
+                protein.protein.name
             )
             worksheet.write(
                 static_offset + row_offset,
                 2,
-                score[0],
+                protein.protein.family.parent.name,
             )
             worksheet.write(
                 static_offset + row_offset,
                 3,
+                protein.protein.family.parent.parent.name,
+            )
+            # worksheet.write(
+            #     3 + 3 * len(numbering_schemes) + row_offset,
+            #     2,
+            #     score[0],
+            # )
+            worksheet.write(
+                static_offset + row_offset,
+                4,
                 score[1],
             )
             col_offset = 0
@@ -1092,28 +1270,9 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
                     cell_format = workbook.add_format({'bg_color': res[3],})
                     worksheet.write(
                         static_offset + row_offset,
-                        4 + col + col_offset,
+                        5 + col + col_offset,
                         res[4],
                         cell_format
                     )
                 col_offset += len(data)
             row_offset += 1
-
-def prepare_aa_group_preference():
-
-    pref_dict = {}
-    lengths = {}
-    for row, group in enumerate(AMINO_ACID_GROUPS.items()):
-        tmp_len = len(group[1])
-        try:
-            lengths[tmp_len].append(row)
-        except KeyError:
-            lengths[tmp_len] = [row,]
-    l_heap = sorted(lengths.keys())
-    while l_heap:
-        tmp = l_heap.pop()
-        for feat_row in lengths[tmp]:
-            pref_dict[feat_row] = []
-            for pref_feat in l_heap:
-                pref_dict[feat_row].extend(lengths[pref_feat])
-    return pref_dict

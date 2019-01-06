@@ -25,13 +25,14 @@
 
             <div class="panel-body">
                 <h5><span id='interface-count' class="crystal-count">0 interfaces selected.</span></h5>
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#interface-modal-table">Select Interface</button>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#interface-modal-table">Select
+                    Interface</button>
             </div>
 
         </div>
     </div>
 
-    <div class="col-md-3">
+    {% comment %} <div class="col-md-3">
         <div class="panel panel-default">
 
             <div class="panel-heading">
@@ -40,63 +41,94 @@
 
             <div class="panel-body">
                 <h5><span id='pdb-count' class="crystal-count">0 PDBs selected.</span></h5>
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdb-modal-table">Add PDB</button>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdb-modal-table">Add
+                    PDB</button>
             </div>
 
         </div>
-    </div>
-
+    </div> {% endcomment %}
 
     <div class="col-md-3">
         <div class="panel panel-default">
 
             <div class="panel-heading">
-                <h3 class="panel-title">Sequence Signature</h3>
+                <h3 class="panel-title">Sequence Features</h3>
             </div>
 
             <div class="panel-body">
-                <p>Click the button in order to calculate the sequence signature of the set of GPCR structures and your appended PDBs.</p>
-                <button type="button" class="btn btn-primary" onClick="run_seq_sig();">Calculate <i id="calc_spin" class="fa fa-spinner fa-spin" style="display: none"></i></button>
+                <p>Click the button to determine sequence features.</p>
+                <button type="button" class="btn btn-primary" onClick="run_seq_sig();">Calculate <i id="calc_spin"
+                        class="fa fa-spinner fa-spin" style="display: none"></i></button>
             </div>
 
         </div>
     </div>
 
-
-    <div class="col-md-3">
+    <div class="col-md-6">
         <div class="panel panel-default">
 
             <div class="panel-heading">
-                <h3 class="panel-title">Filter Interactions</h3>
+                <h3 class="panel-title">Find Similar Proteins</h3>
             </div>
 
             <div class="panel-body">
-                <p>Display residue pairs with <span id='currentpairs'>1</span> <br/> or more interfaces.</p>
+                <p>Click the button to find similar proteins, based on the sequence features.</p>
+                <button type="button" class="btn btn-primary" onClick="run_sig_match();">Find <i id="sigm_spin" class="fa fa-spinner fa-spin"
+                        style="display: none"></i></button>
+            </div>
 
-                <div style="padding: 10px 0;">
-                    <span class="">1</span>
-                    <input
-                    type="range"
-                    id="highlight_pair_num"
-                    class="btn"
-                    value="1"
-                    min="1"
-                    max="20"
-                    name="highlight_pair_num"
-                    onchange="filter_pairs()"
-                    style="display: inline-block; width: auto">
-                    <span class="">20</span>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+
+            <div class="panel-heading">
+                <h3 class="panel-title">Visualization Options</h3>
+            </div>
+
+            <div class="panel-body">
+                <div class="col-md-6">
+                    <p><b>Color by</b> Interaction or Residue: </p>
+
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" id="resbut" class="btn btn-primary" onClick="signprotmat.d3.colorBySwitch('res', colScale)">
+                            Residue </button>
+                        <button type="button" id="intbut" class="btn btn-primary active" onClick="signprotmat.d3.colorBySwitch('int', colScale)">
+                            Interaction </button>
+                    </div>
                 </div>
+                <div class="col-md-6">
 
-                <div class="">
-                    <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value--; filter_pairs()">-</button>
-                    <button class="btn btn-primary" onclick="$('#highlight_pair_num').get(0).value++; filter_pairs()">+</button>
+                    <p><b>Filter</b> for residue pairs with <span id='currentpairs'>1</span> <br /> or more interfaces.</p>
+
+                    <!-- <div style="padding: 10px 0;">
+                                        <span class="">1</span>
+                                        <input
+                                        type="range"
+                                        id="highlight_pair_num"
+                                        class="btn"
+                                        value="1"
+                                        min="1"
+                                        max="20"
+                                        name="highlight_pair_num"
+                                        onchange="filter_pairs()"
+                                        style="display: inline-block; width: auto">
+                                        <span class="">20</span>
+                                    </div> -->
+
+                    <div class="">
+                        <button class="btn btn-primary" onclick="replace_filter_value('dec'); filter_pairs()">-</button>
+                        <button class="btn btn-primary" onclick="replace_filter_value('inc'); filter_pairs()">+</button>
+                    </div>
                 </div>
             </div>
 
         </div>
     </div>
 </div>
+
 
 <div class="modal fade" id="interface-modal-table" role="dialog">
     <div class="modal-dialog modal-wide" style="width: 70%">
@@ -123,7 +155,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="pdb-modal-table" role="dialog">
+{% comment %} <div class="modal fade" id="pdb-modal-table" role="dialog">
     <!-- <div class="modal-dialog modal-wide" style="width: 800px"> -->
     <div class="modal-dialog modal-wide" style="width: 70%">
         <div class="modal-content">
@@ -147,7 +179,7 @@
 
         </div>
     </div>
-</div>
+</div> {% endcomment %}
 
 {% comment %} <div id="raw-data">
     <h2>Raw Data</h2>
@@ -172,13 +204,13 @@
 
 <div id="seqsig-container" class="svg-container" style="display: none; padding-bottom: 130%">
     <div id="seqsig">
-        <h2>Sequence Signature</h2>
+        <h2>Property Conservation</h2>
     </div>
 </div>
 
 <div id="conseq-container" class="svg-container" style="display: none">
     <div id="conseq">
-        <h2>Consensus Sequence</h2>
+        <h2>Property Consensus</h2>
     </div>
 </div>
 
@@ -190,6 +222,7 @@
     const interactions_metadata = {{ interactions_metadata | safe}};
     const ps = {{ ps | safe}};
     const rs = {{ rs | safe}};
+    const gprot = {{ gprot | safe}};
     let pdb_sel = [];
 
     // Global Variable
@@ -244,13 +277,13 @@
         //let neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"];
         //console.log(segments);
 
-        if (pos_set.length < 1 || neg_set.length < 1){
-            alert('No valid sets selected.');
+        if (pos_set.length < 1){
+            alert('No valid set selected.');
             return;
         };
 
-        if (_.isEqual(old_sets.sort(), _.union(pos_set, neg_set).sort())){
-            alert('The selected sets are identical to the previously selected ones.');
+        if (_.isEqual(old_sets.sort(), pos_set.sort())){
+            alert('The selected set is identical to the previously selected one.');
             return;
         };
 
@@ -261,22 +294,19 @@
             data: {
                 csrfmiddlewaretoken: "{{ csrf_token }}",
                 pos: pos_set,
-                neg: neg_set,
                 seg: segments.label,
             },
             beforeSend: function(){
-                old_sets = _.union(pos_set, neg_set);
-                console.log(old_sets)
+                old_sets = pos_set;
                 document.querySelector("#calc_spin").style.display = "inline-block";
             },
             success: function(data){
                 $('.svg-content.seqsig').remove();
                 $('.svg-content.conseq').remove();
-                console.log('success')
+                console.log(data)
                 document.querySelector('#seqsig-container').style.display = "inline-block";
                 document.querySelector('#conseq-container').style.display = "inline-block";
                 document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
-                console.log(data);
                 // d3 draw
                 svg = signprotmat.d3.setup("div#seqsig-container", 'seqsig');
                 signprotmat.d3.draw_seq_sig(
@@ -292,6 +322,7 @@
                 );
             },
             error: function(error){
+                console.log(error)
                 alert(error);
             },
             complete: function(){
@@ -300,9 +331,52 @@
         });
     };
 
+    const run_sig_match = function(){
+        let cutoff = $('#cutoff-val').val();
+        if (cutoff == '') {
+            cutoff = 40;
+        }
+
+        cutoff = 40;
+        let segments = get_gn();
+
+        let req = $.ajax({
+            type: 'POST',
+            url: '/signprot/matrix/sigmat/',
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+                pos: pos_set,
+                seg: segments.label,
+                cutoff: cutoff,
+            },
+            beforeSend: function(){
+                document.querySelector("#sigm_spin").style.display = "inline-block";
+            },
+            success: function(data){
+                console.log(data)
+                // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
+            },
+            error: function(error){
+                console.log(error);
+            },
+            complete: function(){
+                document.querySelector("#sigm_spin").style.display = "none";
+            }
+        })
+    }
+
+
+    const replace_filter_value = function(d) {
+        const num = parseInt($('#currentpairs').text())
+        if (d === 'dec') {
+            num > 1 ? $('#currentpairs').text(num - 1) : null
+        } else if (d === 'inc') {
+            $('#currentpairs').text(num + 1)
+        }
+    };
+
     const filter_pairs = function() {
-        const num = $('input[name="highlight_pair_num"]').val();
-        $('#currentpairs').text(num);
+        const num = parseInt($('#currentpairs').text())
         d3.select('g#interact')
         .selectAll("rect")
         .style('display', function(d){return (num <= d.pairs.length ? 'block' : 'none') })
@@ -337,6 +411,15 @@
                     data: 'name',
                     title: 'Name',
                     targets: 1,
+                }, {
+                    data: 'pdb_id',
+                    title: 'PDB',
+                    targets: 2,
+                },
+                {
+                    data: 'gprot',
+                    title: 'G-Protein',
+                    targets: 3,
                 }],
             select: {
                 style: 'os',
@@ -396,7 +479,7 @@
                 data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
                 svg = signprotmat.d3.setup("div#svg-container");
                 xScale = signprotmat.d3.xScale(data.transformed);
-                yScale = signprotmat.d3.yScale(data.transformed);
+                yScale = signprotmat.d3.yScale(data.transformed, gprot);
                 xAxis = signprotmat.d3.xAxis(xScale);
                 yAxis = signprotmat.d3.yAxis(yScale);
                 xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
@@ -419,20 +502,20 @@
                     sigScale,
                     tooltip
                 );
+                document.querySelector("#intbut").classList.add("active");
+                document.querySelector("#resbut").classList.remove("active");
 
                 // interface_data_table.clear();
                 // interface_data_table.rows.add(data.transformed);
                 // interface_data_table.draw();
 
-                const row_selection = pdb_table.rows({ selected: true }).data();
-                const xvals = xScale.domain();
-                const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
+                // const row_selection = pdb_table.rows({ selected: true }).data();
+                // const xvals = xScale.domain();
+                // const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
 
-                console.log(xvals)
-                console.log(prids)
-                receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
-                console.log(receptor_data)
-                signprotmat.d3.addReceptor(receptor_data, data, svg);
+                // receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
+                // console.log(receptor_data)
+                // signprotmat.d3.addReceptor(receptor_data, data, svg);
             };
         });
 
@@ -452,7 +535,7 @@
         data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
         svg = signprotmat.d3.setup("div#svg-container");
         xScale = signprotmat.d3.xScale(data.transformed);
-        yScale = signprotmat.d3.yScale(data.transformed);
+        yScale = signprotmat.d3.yScale(data.transformed, gprot);
         xAxis = signprotmat.d3.xAxis(xScale);
         yAxis = signprotmat.d3.yAxis(yScale);
         xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
@@ -477,86 +560,86 @@
         );
 
         // PDB TABLE MODAL
-        const pdb_table = $('#table-pdb').DataTable({
-            dom: 'Bfrtip',
-            data: ps,
-            scrollX: true,
-            columnDefs: [
-                {
-                    data: null,
-                    targets: 0,
-                    defaultContent: '',
-                    orderable: false,
-                    className: 'select-checkbox',
-                }, {
-                    data: 'name',
-                    title: 'Name',
-                    targets: 1,
-                }, {
-                    data: 'protein_class',
-                    title: 'Class',
-                    targets: 2,
-                }, {
-                    data: 'protein_family',
-                    title: 'Family',
-                    targets: 3,
-                }, {
-                    data: 'ligand',
-                    title: 'Ligand',
-                    targets: 4,
-                }],
-            select: {
-                style: 'os',
-            },
-            paging: true,
-            buttons: [
-                {
-                    text: 'Select all',
-                    action: function () {
-                        pdb_table.rows().select();
-                    }
-                },
-                {
-                    text: 'Select none',
-                    action: function () {
-                        pdb_table.rows().deselect();
-                    }
-                },
-            ]
-        });
+        // const pdb_table = $('#table-pdb').DataTable({
+        //     dom: 'Bfrtip',
+        //     data: ps,
+        //     scrollX: true,
+        //     columnDefs: [
+        //         {
+        //             data: null,
+        //             targets: 0,
+        //             defaultContent: '',
+        //             orderable: false,
+        //             className: 'select-checkbox',
+        //         }, {
+        //             data: 'name',
+        //             title: 'Name',
+        //             targets: 1,
+        //         }, {
+        //             data: 'protein_class',
+        //             title: 'Class',
+        //             targets: 2,
+        //         }, {
+        //             data: 'protein_family',
+        //             title: 'Family',
+        //             targets: 3,
+        //         }, {
+        //             data: 'ligand',
+        //             title: 'Ligand',
+        //             targets: 4,
+        //         }],
+        //     select: {
+        //         style: 'os',
+        //     },
+        //     paging: true,
+        //     buttons: [
+        //         {
+        //             text: 'Select all',
+        //             action: function () {
+        //                 pdb_table.rows().select();
+        //             }
+        //         },
+        //         {
+        //             text: 'Select none',
+        //             action: function () {
+        //                 pdb_table.rows().deselect();
+        //             }
+        //         },
+        //     ]
+        // });
 
 
-        pdb_table
-            .on('select', function (e, dt, type, indexes) {
-                const row_count = pdb_table.rows({ selected: true }).count()
-                if (row_count >= 2 || row_count === 0) {
-                    $('#pdb-count').text(row_count + ' PDBs selected.')
-                } else {
-                    $('#pdb-count').text(row_count + ' PDB selected.')
-                }
-            })
-            .on('deselect', function (e, dt, type, indexes) {
-                const row_count = pdb_table.rows({ selected: true }).count()
-                if (row_count >= 2 || row_count === 0) {
-                    $('#pdb-count').text(row_count + ' PDBs selected.')
-                } else {
-                    $('#pdb-count').text(row_count + ' PDB selected.')
-                }
-            });
+        // pdb_table
+        //     .on('select', function (e, dt, type, indexes) {
+        //         const row_count = pdb_table.rows({ selected: true }).count()
+        //         if (row_count >= 2 || row_count === 0) {
+        //             $('#pdb-count').text(row_count + ' PDBs selected.')
+        //         } else {
+        //             $('#pdb-count').text(row_count + ' PDB selected.')
+        //         }
+        //     })
+        //     .on('deselect', function (e, dt, type, indexes) {
+        //         const row_count = pdb_table.rows({ selected: true }).count()
+        //         if (row_count >= 2 || row_count === 0) {
+        //             $('#pdb-count').text(row_count + ' PDBs selected.')
+        //         } else {
+        //             $('#pdb-count').text(row_count + ' PDB selected.')
+        //         }
+        //     });
 
-        $('#pdb-modal-table').on('hidden.bs.modal', function (e) {
-            const row_selection = pdb_table.rows({ selected: true }).data();
-            const xvals = xScale.domain();
-            const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
+        // $('#pdb-modal-table').on('hidden.bs.modal', function (e) {
+        //     const row_selection = pdb_table.rows({ selected: true }).data();
+        //     const xvals = xScale.domain();
+        //     const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
 
-            neg_set = signprotmat.data.select_by_value(row_selection, 'entry_name');
+        //     neg_set = signprotmat.data.select_by_value(row_selection, 'entry_name');
 
-            console.log(xvals)
-            console.log(prids)
-            receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
-            console.log(receptor_data)
-            signprotmat.d3.addReceptor(receptor_data, data, svg);
-        });
+        //     console.log(xvals)
+        //     console.log(prids)
+        //     receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
+        //     console.log(receptor_data)
+        //     signprotmat.d3.addReceptor(receptor_data, data, svg);
+        // });
 
         // let interface_data_table = $('#table-data').DataTable({
         //     data: data.transformed,

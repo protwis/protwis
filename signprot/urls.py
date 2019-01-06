@@ -14,4 +14,5 @@ urlpatterns = [
     url(r'^family/(?P<slug>[-\w]+)/$', views.familyDetail, name='familyDetail'),
     url(r'^matrix$', views.InteractionMatrix, name='InteractionMatrix'),
     url(r'^matrix/seqsig/', views.IMSequenceSignature, name='SequenceSignature'),
+    url(r'^matrix/sigmat/', views.IMSignatureMatch, name='SignatureMatch'),
 ]

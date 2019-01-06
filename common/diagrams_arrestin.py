@@ -11,9 +11,10 @@ from math import cos, sin, pi, floor, sqrt
 from datetime import datetime
 from collections import OrderedDict
 
+
 class DrawArrestinPlot(Diagram):
 
-    def __init__(self, residue_list, protein_class, protein_name, nobuttons = None):
+    def __init__(self, residue_list, protein_class, protein_name, nobuttons=None):
         self.nobuttons = 'arrestin'
         self.type = 'snakeplot'
 
@@ -96,6 +97,7 @@ class DrawArrestinPlot(Diagram):
 
         self.count = 1
         self.count_sheet = 0
+
         for s in ARRESTIN_SEGMENTS['Full']:
 
             if self.segments_full[s].category == 'helix':
@@ -367,7 +369,7 @@ class DrawArrestinPlot(Diagram):
 
     def drawSnakePlotLoop(self, segment):
 
-        y_offset = 20
+        y_offset = 0
         font_size = 12
         font_family = 'courier'
         bezier_pull = 90
@@ -511,8 +513,8 @@ class DrawArrestinPlot(Diagram):
                 # y_max = self.maxY['intra']+between_residues*4
                 position = 'bottom'
                 linked_helix = 20
-                y_max = self.TBCoords[linked_helix][position][1] + 200
-                x_max = self.maxX['left'] - 300
+                y_max = self.TBCoords[linked_helix][position][1] + 450
+                x_max = self.maxX['left'] - 600
 
             x1 = self.TBCoords[linked_helix][position][0]
             y1 = self.TBCoords[linked_helix][position][1]

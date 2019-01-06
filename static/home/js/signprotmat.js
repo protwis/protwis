@@ -87,11 +87,12 @@ var signprotmat = {
             for (var index = 0; index < selection.length; index++) {
                 ret_sel.push(selection[index][value]);
             }
-            ;
             return ret_sel;
         },
         removeUndefinedGN: function (dataset) {
-            return _.filter(dataset, function (o) { return o.rec_gn !== '-'; });
+            return _.filter(dataset, function (o) {
+                return o.rec_gn !== "-";
+            });
         },
         dataTransformationWrapper: function (dataset, keys, pdb_sel) {
             dataset = _.pick(dataset, pdb_sel);
@@ -118,16 +119,15 @@ var signprotmat = {
     d3: {
         // * SETTING UP SVG FOR OUTPUT
         setup: function (div, loc) {
-            if (loc === 'seqsig') {
+            if (loc === "seqsig") {
                 h = 1500;
             }
-            else if (loc === 'conseq') {
+            else if (loc === "conseq") {
                 h = 0;
             }
             else {
                 h = 1000 - margin.top - margin.bottom;
             }
-            ;
             var svg = d3
                 .select("body")
                 .select("div#content")
@@ -139,7 +139,7 @@ var signprotmat = {
                 " " +
                 (h + 200 + margin.top + margin.bottom))
                 // .classed("svg-content", true) //class to make it responsive
-                .attr("class", (typeof loc !== 'undefined' ? "svg-content " + loc : "svg-content"))
+                .attr("class", typeof loc !== "undefined" ? "svg-content " + loc : "svg-content")
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
             return svg;
@@ -157,15 +157,28 @@ var signprotmat = {
                 .padding(1);
             return xScale;
         },
-        yScale: function (data) {
-            var yScale = d3
-                .scaleBand()
-                .domain(d3
+        yScale: function (data, gprot) {
+            console.log(gprot);
+            var domain = d3
                 .map(data, function (d) { return d.sig_gn; })
                 .keys()
-                .sort(d3.descending))
+                // .sort(d3.descending);
+                .sort(function (a, b) {
+                var a_patt = /\.(\S*)\./g;
+                var b_patt = /\.(\S*)\./g;
+                var a_match = a_patt.exec(a);
+                var b_match = b_patt.exec(b);
+                var a_obj = _.find(gprot, function (d) { return d.slug === a_match[1]; });
+                var b_obj = _.find(gprot, function (d) { return d.slug === b_match[1]; });
+                // console.log(a_obj.id);
+                // console.log(a_obj.id + (+a.slice(-2)/100));
+                return d3.descending(a_obj.id + (+a.slice(-2) / 100), b_obj.id + (+b.slice(-2) / 100));
+                // return d3.descending(a_obj.id, b_obj.id);
+            });
+            var yScale = d3
+                .scaleBand()
+                .domain(domain)
                 .range([h, 0])
-                // .round(true)
                 .padding(1);
             return yScale;
         },
@@ -203,72 +216,150 @@ var signprotmat = {
         // * seqsig
         // * SETTING THE FEATURE SCALE
         fScale: function (data) {
-            var feats = [
-                "Hydrophobic",
-                "Aliphatic",
-                "Aliphatic small",
-                "Aliphatic medium",
-                "Aliphatic large",
-                "Aliphatic extra large",
-                "Aromatic",
-                "Aromatic medium",
-                "Aromatic large",
-                "Charge",
-                "Charge small",
-                "Charge negative",
-                "Charge positive",
-                "Charge positive small",
-                "Charge positive large",
-                "Helix propencity extra large",
-                "Helix propencity large",
-                "Helix propencity medium",
-                "Helix propencity small",
-                "Helix propencity extra small",
-                "Polar or charged",
-                "Pro (helix kink)",
-                "Polar uncharged extra small",
-                "Polar uncharged small",
-                "Polar uncharged large",
-                "Polar or charged extralarge",
-                "Polar or negative small",
-                "Polar or negative medium",
-                "Polar or negative large",
-                "Polar or negative extra large",
-                "Polar or positive extra large",
-                "Any tiny",
-                "Any extra small",
-                "Any small",
-                "Any medium",
-                "Any large",
-                "Any extra large",
-                "Gly",
-                "Ala",
-                "Cys",
-                "Ser",
-                "Thr",
-                "Val",
-                "Asp",
-                "Ile",
-                "Leu",
-                "Asn",
-                "Met",
-                "Glu",
-                "Gln",
-                "His",
-                "Lys",
-                "Phe",
-                "Arg",
-                "Tyr",
-                "Trp",
-                "Gap"
-            ];
+            var features = _.map(data, function (d) { return d.feature; });
             var fScale = d3
                 .scaleBand()
-                .domain(feats)
+                .domain(features)
                 .range([0, h])
                 // .round(true)
                 .padding(1);
             return fScale;
+        },
+        resScaleColor: function (f) {
+            var scale = {
+                A: { bg_color: "#E6E600", font_color: "#000000" },
+                C: { bg_color: "#B2B548", font_color: "#000000" },
+                D: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+                E: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+                F: { bg_color: "#18FF0B", font_color: "#000000" },
+                G: { bg_color: "#FF00F2", font_color: "#000000" },
+                H: { bg_color: "#0093DD", font_color: "#000000" },
+                I: { bg_color: "#E6E600", font_color: "#000000" },
+                K: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+                L: { bg_color: "#E6E600", font_color: "#000000" },
+                M: { bg_color: "#E6E600", font_color: "#000000" },
+                N: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                P: { bg_color: "#CC0099", font_color: "#FDFF7B" },
+                Q: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                R: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+                S: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                T: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                V: { bg_color: "#E6E600", font_color: "#000000" },
+                W: { bg_color: "#0BCF00", font_color: "#000000" },
+                Y: { bg_color: "#18FF0B", font_color: "#000000" },
+                "-": { bg_color: "#FFFFFF", font_color: "#000000" },
+                _: { bg_color: "#EDEDED", font_color: "#000000" },
+                "+": { bg_color: "#FFFFFF", font_color: "#000000" }
+            };
+            return scale[f];
+        },
+        fScaleColor: function (f) {
+            if (f === "αH") {
+                f = "aH";
+            }
+            var scale = {
+                HY: { bg_color: "#93d050" },
+                HA: { bg_color: "#ffff00" },
+                M: { bg_color: "#ffff00" },
+                A: { bg_color: "#ffff00" },
+                I: { bg_color: "#ffff00" },
+                L: { bg_color: "#ffff00" },
+                V: { bg_color: "#ffff00" },
+                HR: { bg_color: "#07b050" },
+                W: { bg_color: "#07b050" },
+                Y: { bg_color: "#07b050" },
+                F: { bg_color: "#07b050" },
+                Hb: { bg_color: "#7030a0", font_color: "#ffffff" },
+                N: { bg_color: "#7030a0", font_color: "#ffffff" },
+                Q: { bg_color: "#7030a0", font_color: "#ffffff" },
+                S: { bg_color: "#7030a0", font_color: "#ffffff" },
+                T: { bg_color: "#7030a0", font_color: "#ffffff" },
+                Hu: { bg_color: "#7030a0", font_color: "#ffffff" },
+                Ha: { bg_color: "#7030a0", font_color: "#ff0000" },
+                Hd: { bg_color: "#7030a0", font_color: "#02b0f0" },
+                "+-": { bg_color: "#0070c0", font_color: "#ff0000" },
+                "+": { bg_color: "#0070c0", font_color: "#000000" },
+                H: { bg_color: "#0070c0", font_color: "#000000" },
+                K: { bg_color: "#0070c0", font_color: "#000000" },
+                R: { bg_color: "#0070c0", font_color: "#000000" },
+                "-": { bg_color: "#ff0000" },
+                D: { bg_color: "#ff0000" },
+                E: { bg_color: "#ff0000" },
+                Sm: { bg_color: "#ffffff" },
+                aH: { bg_color: "#d9d9d9" },
+                G: { bg_color: "#ff02ff" },
+                P: { bg_color: "#d603ff", font_color: "#ffffff" },
+                C: { bg_color: "#bf8f00" }
+            };
+            return scale[f];
+        },
+        colorBySwitch: function (which, colScale) {
+            if (which === "res") {
+                var other = "int";
+                var res = d3.select("g#recAA").selectAll("g");
+                res.selectAll("rect").style("fill", function (d) {
+                    var col = signprotmat.d3.resScaleColor(d.rec_aa);
+                    if (typeof col != "undefined") {
+                        return col.bg_color;
+                    }
+                    else {
+                        return null;
+                    }
+                });
+                res.selectAll("text").style("fill", function (d) {
+                    var col = signprotmat.d3.resScaleColor(d.rec_aa);
+                    if (typeof col != "undefined") {
+                        if (typeof col.font_color != "undefined") {
+                            return col.font_color;
+                        }
+                        else {
+                            return "#000000";
+                        }
+                    }
+                    else {
+                        return "#000000";
+                    }
+                });
+                res = d3.select("g#sigAA").selectAll("g");
+                res.selectAll("rect").style("fill", function (d) {
+                    var col = signprotmat.d3.resScaleColor(d.sig_aa);
+                    if (typeof col != "undefined") {
+                        return col.bg_color;
+                    }
+                    else {
+                        return null;
+                    }
+                });
+                res.selectAll("text").style("fill", function (d) {
+                    var col = signprotmat.d3.resScaleColor(d.sig_aa);
+                    if (typeof col != "undefined") {
+                        if (typeof col.font_color != "undefined") {
+                            return col.font_color;
+                        }
+                        else {
+                            return "#000000";
+                        }
+                    }
+                    else {
+                        return "#000000";
+                    }
+                });
+            }
+            else if (which === "int") {
+                var other = "res";
+                var res = d3.select("g#recAA").selectAll("g");
+                res.selectAll("rect").style("fill", function (d) {
+                    return colScale(d.int_ty[0]);
+                });
+                res.selectAll("text").style("fill", null);
+                res = d3.select("g#sigAA").selectAll("g");
+                res.selectAll("rect").style("fill", function (d) {
+                    return colScale(d.int_ty[0]);
+                });
+                res.selectAll("text").style("fill", null);
+            }
+            document.querySelector("#" + which + "but").classList.add("active");
+            document.querySelector("#" + other + "but").classList.remove("active");
         },
         cScale: function (data) {
             // const values = d3
@@ -279,9 +370,7 @@ var signprotmat = {
             // const min = values.pop()
             // const max = values[0]
             // conservation is calculated to be between -1 and 10 by python
-            var cScale = d3
-                .scaleSequential(d3.interpolateRdBu)
-                .domain([-100, 100]);
+            var cScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 100]);
             return cScale;
         },
         // * DEFINING AXIS FOR X/Y AND GRID
@@ -319,28 +408,31 @@ var signprotmat = {
                 .tip()
                 .attr("class", "d3-tip")
                 .html(function (d) {
-                var pair_string = '';
+                var pair_string = "";
                 d.pairs.forEach(function (e) {
-                    pair_string += e.pdb_id + ': ' + e.rec_aa + ' vs. ' + e.sig_aa + '(' + e.int_ty + ')' + '<br>';
+                    pair_string +=
+                        e.pdb_id +
+                            ": " +
+                            e.rec_aa +
+                            " vs. " +
+                            e.sig_aa +
+                            "(" +
+                            e.int_ty +
+                            ")" +
+                            "<br>";
                 });
-                return "Receptor: " + d.rec_gn +
-                    "<br>" + "Signaling Protein: " + d.sig_gn +
-                    "<br>" + 'PDBs:' + '<br>' + pair_string;
+                return ("Receptor: " +
+                    d.rec_gn +
+                    "<br>" +
+                    "Signaling Protein: " +
+                    d.sig_gn +
+                    "<br>" +
+                    "PDBs: " +
+                    "<br>" +
+                    pair_string);
             });
             svg.call(tip);
             return tip;
-        },
-        // * ADD TOOLTIP FUNCTIONALITY
-        seqTooltip: function (svg) {
-            var seqTip = d3
-                .tip()
-                .attr("class", "d3-tip")
-                .html(function (d) {
-                console.log(d);
-                return d;
-            });
-            svg.call(seqTip);
-            return seqTip;
         },
         // * RENDER DATA
         renderData: function (svg, data, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
@@ -351,32 +443,36 @@ var signprotmat = {
             var each_res;
             var helper = {};
             var result = data.transformed.reduce(function (r, o) {
-                var key = o.rec_gn + '-' + o.sig_gn;
+                var key = o.rec_gn + "-" + o.sig_gn;
                 if (!helper[key]) {
                     var tmp = {
-                        "rec_gn": o.rec_gn,
-                        "sig_gn": o.sig_gn,
-                        "pairs": [{
-                                'pdb_id': o.pdb_id,
-                                'rec_aa': o.rec_aa,
-                                'sig_aa': o.sig_aa,
-                                'int_ty': o.int_ty,
-                            }]
+                        rec_gn: o.rec_gn,
+                        sig_gn: o.sig_gn,
+                        pairs: [
+                            {
+                                pdb_id: o.pdb_id,
+                                rec_aa: o.rec_aa,
+                                sig_aa: o.sig_aa,
+                                int_ty: o.int_ty
+                            }
+                        ]
                     };
                     helper[key] = tmp;
                     r.push(helper[key]);
                 }
                 else {
                     helper[key].pairs.push({
-                        'pdb_id': o.pdb_id,
-                        'rec_aa': o.rec_aa,
-                        'sig_aa': o.sig_aa,
-                        'int_ty': o.int_ty,
+                        pdb_id: o.pdb_id,
+                        rec_aa: o.rec_aa,
+                        sig_aa: o.sig_aa,
+                        int_ty: o.int_ty
                     });
                 }
                 return r;
             }, []);
-            var bwScale = d3.scaleSequential(d3.interpolateGreys).domain([0, pdbScale.domain().length]);
+            var bwScale = d3
+                .scaleSequential(d3.interpolateGreys)
+                .domain([0, pdbScale.domain().length]);
             svg
                 .append("g")
                 .attr("id", "interact")
@@ -581,7 +677,11 @@ var signprotmat = {
                 .tip()
                 .attr("class", "d3-tip")
                 .html(function (d) {
-                return 'Signal Prot. AA: ' + d.sig_aa + '<br>' + 'Interaction type: ' + d.int_ty;
+                return ("Signal Prot. AA: " +
+                    d.sig_aa +
+                    "<br>" +
+                    "Interaction type: " +
+                    d.int_ty);
             });
             svg
                 .append("g")
@@ -600,7 +700,7 @@ var signprotmat = {
                 .data(data.receptor)
                 .enter()
                 .append("g")
-                .attr("class", function (d) { return 'R_' + _.replace(d.rec_gn, '.', 'p') + '_P_' + d.pdb_id; })
+                .attr("class", function (d) { return "R_" + _.replace(d.rec_gn, ".", "p") + "_P_" + d.pdb_id; })
                 .call(recTip)
                 .on("mouseover", function (d) {
                 recTip.show(d);
@@ -638,7 +738,11 @@ var signprotmat = {
                 .tip()
                 .attr("class", "d3-tip")
                 .html(function (d) {
-                return 'Receptor AA: ' + d.sig_aa + '<br>' + 'Interaction type: ' + d.int_ty;
+                return ("Receptor AA: " +
+                    d.sig_aa +
+                    "<br>" +
+                    "Interaction type: " +
+                    d.int_ty);
             });
             svg
                 .append("g")
@@ -660,7 +764,7 @@ var signprotmat = {
                 .data(data.signprot)
                 .enter()
                 .append("g")
-                .attr("class", function (d) { return 'S_' + _.replace(d.sig_gn, '.', 'p') + '_P_' + d.pdb_id; })
+                .attr("class", function (d) { return "S_" + d.sig_gn.replace(/\./gi, "p") + "_P_" + d.pdb_id; })
                 .call(sigTip)
                 .on("mouseover", function (d) {
                 sigTip.show(d);
@@ -790,23 +894,23 @@ var signprotmat = {
                 .attr("height", pdbScale.range()[0] - pdbScale.step());
         },
         colorRecResidues: function (d) {
-            var rec_gn = _.replace(d.rec_gn, '.', 'p');
-            var pdb_list = d.pairs.map(function (x) { return x['pdb_id']; });
+            var rec_gn = _.replace(d.rec_gn, ".", "p");
+            var pdb_list = d.pairs.map(function (x) { return x["pdb_id"]; });
             // select the rect in the g that corresponds to this rec_gn and pdb_id
             pdb_list.forEach(function (pdb) {
-                d3.select('g.' + 'R_' + rec_gn + '_P_' + pdb)
-                    .select('rect')
-                    .classed('activeRes', d.active ? true : false);
+                d3.select("g." + "R_" + rec_gn + "_P_" + pdb)
+                    .select("rect")
+                    .classed("activeRes", d.active ? true : false);
             });
         },
         colorSigResidues: function (d) {
-            var sig_gn = _.replace(d.sig_gn, '.', 'p');
-            var pdb_list = d.pairs.map(function (x) { return x['pdb_id']; });
+            var sig_gn = d.sig_gn.replace(/\./gi, "p");
+            var pdb_list = d.pairs.map(function (x) { return x["pdb_id"]; });
             // select the rect in the g that corresponds to this rec_gn and pdb_id
             pdb_list.forEach(function (pdb) {
-                d3.select('g.' + 'S_' + sig_gn + '_P_' + pdb)
-                    .select('rect')
-                    .classed('activeRes', d.active ? true : false);
+                d3.select("g." + "S_" + sig_gn + "_P_" + pdb)
+                    .select("rect")
+                    .classed("activeRes", d.active ? true : false);
             });
         },
         infoBoxUpdate: function () {
@@ -845,17 +949,27 @@ var signprotmat = {
             var data = data_in.feat;
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
-            var uniq_feats = _.uniq(_.map(data, 'feature'));
+            var uniq_feats = _.uniq(_.map(data, "feature"));
             // filter out NA generic numbers based on xScale
-            data = _.filter(data, function (d) { return xScale(d.gn); });
+            data = _.filter(data, function (d) {
+                return xScale(d.gn);
+            });
             var seqsigTip = d3
                 .tip()
                 .attr("class", "d3-tip")
                 .html(function (d) {
-                return 'Generic Residue No.: ' + d.gn + '<br>' +
-                    'Feature: ' + d.feature + '<br>' +
-                    'Score: ' + d.expl + '<br>' +
-                    'Frequency: ' + d.freq + '<br>';
+                return ("Generic Residue No.: " +
+                    d.gn +
+                    "<br>" +
+                    "Feature: " +
+                    d.feature +
+                    "<br>" +
+                    // "Score: " +
+                    // d.expl +
+                    // "<br>" +
+                    "Frequency: " +
+                    d.freq +
+                    "<br>");
             });
             svg
                 .append("g")
@@ -906,8 +1020,8 @@ var signprotmat = {
                 .append("rect")
                 .attr("class", "res_rect")
                 .style("fill", function (d) {
-                if (d.cons === -1) {
-                    return '#ffffff';
+                if (d.cons <= 0) {
+                    return "none";
                 }
                 else {
                     return cScale(d.freq);
@@ -948,7 +1062,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("class", "legendSeqSig")
-                .attr("transform", "translate(-200,10)");
+                .attr("transform", "translate(-200,20)");
             var legendSeqSig = d3
                 .legendColor()
                 .cells(5)
@@ -972,16 +1086,27 @@ var signprotmat = {
             var data = data_in.cons;
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
-            var uniq_feats = _.uniq(_.map(data, 'feature'));
+            var uniq_feats = _.uniq(_.map(data, "feature"));
             // filter out NA generic numbers based on xScale
-            data = _.filter(data, function (d) { return xScale(d.gn); });
+            data = _.filter(data, function (d) {
+                return xScale(d.gn);
+            });
             var conseqTip = d3
                 .tip()
                 .attr("class", "d3-tip")
                 .html(function (d) {
-                return 'Generic Residue No.: ' + d.gn + '<br>' +
-                    'Feature: ' + d.name + '<br>' +
-                    'Score: ' + d.score + '<br>';
+                return ("Generic Residue No.: " +
+                    d.gn +
+                    "<br>" +
+                    "Feature: " +
+                    d.name +
+                    "<br>" +
+                    "Length: " +
+                    d.length +
+                    "<br>" +
+                    "Score: " +
+                    d.score +
+                    "<br>");
             });
             svg
                 .append("g")
@@ -994,6 +1119,20 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", 75);
+            svg
+                .append("text")
+                .attr("class", "y seq_label")
+                .attr("text-anchor", "end")
+                .attr("x", -10)
+                .attr("y", 65)
+                .text("Property");
+            svg
+                .append("text")
+                .attr("class", "y seq_label")
+                .attr("text-anchor", "end")
+                .attr("x", -10)
+                .attr("y", 102)
+                .text("Conservation");
             var each_res = svg
                 .select("g#conseq_mat")
                 .selectAll("text")
@@ -1007,48 +1146,83 @@ var signprotmat = {
                 .on("mouseout", function (d) {
                 conseqTip.hide();
             });
+            // the rectangles, colored by feature
+            each_res
+                .append("rect")
+                .attr("class", "res_rect")
+                .style("fill", function (d) {
+                var gcol = signprotmat.d3.fScaleColor(d.code);
+                if (typeof gcol != "undefined") {
+                    return gcol.bg_color;
+                }
+                else {
+                    return null;
+                }
+            })
+                .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                .attr("y", function (d) { return 75; })
+                .attr("width", xScale.step())
+                .attr("height", 37.5);
             // the rectangles, colored by conservation
             each_res
                 .append("rect")
                 .attr("class", "res_rect")
                 .style("fill", function (d) {
                 if (d.cons === -1) {
-                    return '#ffffff';
+                    return "#ffffff";
                 }
                 else {
                     return cScale(d.score);
                 }
             })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                .attr("y", function (d) { return 75; })
+                .attr("y", function (d) { return 75 + 37.5; })
                 .attr("width", xScale.step())
-                .attr("height", 75);
-            // adding the frequency text to each rectangle
+                .attr("height", 37.5);
+            // adding the feature text to each rectangle
             each_res
                 .append("text")
                 .attr("class", "res_label")
                 // .attr("x", (d: any) => xScale(d.gn))
                 // .attr("y", (d: any) => 50)
-                .attr("transform", function (d) { return "translate(" + xScale(d.gn) + ",112.5)rotate(270)"; })
+                .attr("transform", function (d) { return "translate(" + xScale(d.gn) + ",93.75)"; } // + "rotate(270)"
+            )
                 .style("fill", function (d) {
-                if (Math.abs(d.score) >= 50) {
-                    return '#eaeaea';
+                var gcol = signprotmat.d3.fScaleColor(d.code);
+                if (typeof gcol != "undefined") {
+                    if (typeof gcol.font_color != "undefined") {
+                        return gcol.font_color;
+                    }
+                    else {
+                        return "#000000";
+                    }
                 }
-                else if (Math.abs(d.score) < 50) {
-                    return '#000000';
+                else {
+                    return "#000000";
                 }
             })
                 .attr("text-anchor", "middle")
                 .text(function (d) { return d.code; });
+            // adding the conservation value to each rectangle
             each_res
                 .append("text")
                 .attr("class", "res_label")
                 // .attr("x", (d: any) => xScale(d.gn))
                 // .attr("y", (d: any) => 50)
-                .attr("transform", function (d) { return "translate(" + xScale(d.gn) + ",160)rotate(300)"; })
-                .style("fill", '#000000')
-                .attr("text-anchor", "end")
-                .text(function (d) { return d.name; });
+                .attr("transform", function (d) {
+                return "translate(" + xScale(d.gn) + "," + (75 + 37.5 + 37.5 / 2) + ")";
+            } // + "rotate(270)"
+            )
+                .style("fill", function (d) {
+                if (Math.abs(d.score) >= 50) {
+                    return "#eaeaea";
+                }
+                else if (Math.abs(d.score) < 50) {
+                    return "#000000";
+                }
+            })
+                .attr("text-anchor", "middle")
+                .text(function (d) { return d.score; });
             // putting a black border around the signature
             d3.select("g#conseq_mat")
                 .append("rect")

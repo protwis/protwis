@@ -1,14 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
 from django.http import HttpResponse
 
 
 from alignment.functions import get_proteins_from_selection
+from common.selection import Selection
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from seqsign.sequence_signature import SequenceSignature, SignatureMatch, signature_score_excel
 
-# from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from collections import OrderedDict
@@ -29,13 +29,34 @@ class PosTargetSelection(AbsTargetSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/seqsign/negativegroupselection',
+            'url': '/seqsign/savepos',
             'color': 'success',
         },
     }
 
+
+def preserve_targets(request):
+
+    request.session['targets_pos'] = deepcopy(request.session.get('selection', False))
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+        selection.clear('targets')
+        # export simple selection that can be serialized
+        simple_selection = selection.exporter()
+        # add simple selection to session
+        request.session['selection'] = simple_selection
+
+    return redirect('/seqsign/negativegroupselection',)
+
+
 class NegTargetSelection(AbsTargetSelection):
 
+    default_species = 'Human'
     step = 2
     number_of_steps = 4
     docs = 'sequences.html#structure-based-alignments'
@@ -51,15 +72,6 @@ class NegTargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
-
-    def get_context_data(self, **kwargs):
-        #A bit ugly solution to having two target sets without modifying half of common.selection
-        context = super(NegTargetSelection, self).get_context_data(**kwargs)
-
-        self.request.session['targets_pos'] = deepcopy(self.request.session.get('selection', False))
-        del self.request.session['selection']
-
-        return context
 
 
 class SegmentSelectionSignature(AbsSegmentSelection):
@@ -118,6 +130,8 @@ def render_signature(request):
     # calculate the signature
     signature.calculate_signature()
 
+    # calculate the Z-scores signatures
+    signature.calculate_zscales_signature()
 
     # save for later
     # signature_map = feats_delta.argmax(axis=0)
@@ -162,28 +176,28 @@ def render_signature_excel(request):
     # Feature stats for positive group alignment
     signature.prepare_excel_worksheet(
         wb,
-        'positive_group_properties',
+        'protein_set1_properties',
         'positive',
         'features'
     )
     # Positive group alignment
     signature.prepare_excel_worksheet(
         wb,
-        'positive_group_aln',
+        'protein_set1_aln',
         'positive',
         'alignment'
     )
     # Feature stats for negative group alignment
     signature.prepare_excel_worksheet(
         wb,
-        'negative_group_properties',
+        'protein_set2_properties',
         'negative',
         'features'
     )
     # Negative group alignment
     signature.prepare_excel_worksheet(
         wb,
-        'negative_group_aln',
+        'protein_set2_aln',
         'negative',
         'alignment'
     )
@@ -213,32 +227,23 @@ def render_signature_match_scores(request, cutoff):
         signature_data['numbering_schemes'],
         signature_data['common_segments'],
         signature_data['diff_matrix'],
-        # get_proteins_from_selection(ss_pos) + get_proteins_from_selection(ss_neg),
         get_proteins_from_selection(ss_pos),
         get_proteins_from_selection(ss_neg),
         cutoff = int(cutoff)
     )
-    signature_match.score_protein_class()
-    # scores_pos, signatures_pos, protein_set_pos = signature_match.score_protein_set(signature_match.protein_set_pos)
-    # scores_neg, signatures_neg, protein_set_neg = signature_match.score_protein_set(signature_match.protein_set_neg)
+    signature_match.score_protein_class(get_proteins_from_selection(ss_pos)[0].family.slug[:3])
     request.session['signature_match'] = {
         'scores': signature_match.protein_report,
-        # 'scores_pos': scores_pos,
-        # 'scores_neg': scores_neg,
+
         'scores_pos': signature_match.scores_pos,
         'scores_neg': signature_match.scores_neg,
         'protein_signatures': signature_match.protein_signatures,
-        # 'signatures_pos': signatures_pos,
-        # 'signatures_neg': signatures_neg,
         'signatures_pos': signature_match.signatures_pos,
         'signatures_neg': signature_match.signatures_neg,
         'signature_filtered': signature_match.signature_consensus,
         'relevant_gn': signature_match.relevant_gn,
         'relevant_segments': signature_match.relevant_segments,
         'numbering_schemes': signature_match.schemes,
-        #FIXME: Is it really necessary?
-        # 'proteins_positive': signature_match.protein_set_pos,
-        # 'proteins_negative': signature_match.protein_set_neg,
     }
 
     response = render(

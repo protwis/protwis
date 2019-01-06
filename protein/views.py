@@ -26,14 +26,20 @@ class BrowseSelection(AbsBrowseSelection):
     target_input=False
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
     # get protein
     slug = slug.lower()
-    if Protein.objects.filter(entry_name=slug).exists():
-        p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
-    else:
-        p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
+    try:
+        if Protein.objects.filter(entry_name=slug).exists():
+            p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
+        else:
+            p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
+    except:
+        context = {'protein_no_found': slug}
+
+        return render(request, 'protein/protein_detail.html', context)
+
 
     if p.family.slug.startswith('100') or p.family.slug.startswith('200'):
         # If this protein is a gprotein, redirect to that page.
@@ -185,6 +191,11 @@ def SelectionAutocomplete(request):
             if (type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins') and selection_only_receptors!="True":
                 # find protein families
                 pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000').exclude(slug__startswith=exclusion_slug)[:10]
+
+                # Try matching protein family name after stripping html tags
+                if pfs.count() == 0:
+                    pfs = ProteinFamily.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(filtered__icontains=q).exclude(slug='000').exclude(slug__startswith=exclusion_slug)[:10]
+
                 for pf in pfs:
                     pf_json = {}
                     pf_json['id'] = pf.id

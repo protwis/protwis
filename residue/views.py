@@ -6,7 +6,7 @@ from django.views.generic import TemplateView
 
 
 from common.views import AbsTargetSelection
-from common.definitions import STRUCTURAL_RULES, STRUCTURAL_SWITCHES
+from common.definitions import FULL_AMINO_ACIDS, STRUCTURAL_RULES, STRUCTURAL_SWITCHES
 from common.selection import Selection
 Alignment = getattr(__import__(
     'common.alignment_' + settings.SITE_NAME,
@@ -176,7 +176,7 @@ class ResidueTablesDisplay(TemplateView):
 
         # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
         flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
-        print(flattened_data)
+
         for s in iter(flattened_data):
             flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
 
@@ -209,7 +209,6 @@ class ResidueFunctionBrowser(TemplateView):
             segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
 
             # Grab High/Low CA GPCRs (class A)
-            print("Grabbing CA sets")
             high_ca = ["5ht2c_human", "acm4_human", "drd1_human", "fpr1_human", "ghsr_human", "cnr1_human", "aa1r_human", "gpr6_human", "gpr17_human", "gpr87_human"]
             low_ca = ["agtr1_human", "ednrb_human", "gnrhr_human", "acthr_human", "v2r_human", "gp141_human", "gp182_human"]
 
@@ -217,14 +216,12 @@ class ResidueFunctionBrowser(TemplateView):
             high_ca_gpcrs = Protein.objects.filter(entry_name__in=high_ca).select_related('residue_numbering_scheme', 'species')
             low_ca_gpcrs = Protein.objects.filter(entry_name__in=low_ca).select_related('residue_numbering_scheme', 'species')
 
-            print("Grabbing CA sets - HIGH vs LOW")
             signature = SequenceSignature()
             signature.setup_alignments(segments, high_ca_gpcrs, low_ca_gpcrs)
             signature.calculate_signature()
             rfb_panel["signatures"]["cah"] = signature.signature
             rfb_panel["signatures"]["cah_positions"] = signature.common_gn
 
-            print("Grabbing CA sets - LOW vs HIGH")
             signature = SequenceSignature()
             signature.setup_alignments(segments, low_ca_gpcrs, high_ca_gpcrs)
             signature.calculate_signature()
@@ -232,8 +229,6 @@ class ResidueFunctionBrowser(TemplateView):
             rfb_panel["signatures"]["cal_positions"] = signature.common_gn
 
             # Grab Gi/Gs/Gq/GI12 GPCR sets (class A)
-            print(str(time.time()) + " Grabbing G-protein sets")
-
             human_class_a_gpcrs = Protein.objects.filter(species_id=1, sequence_type_id=1, family__slug__startswith='001').distinct().prefetch_related('proteingprotein_set', 'residue_numbering_scheme')
             gs  = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_000_001"))
             gio = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_000_002"))
@@ -242,9 +237,8 @@ class ResidueFunctionBrowser(TemplateView):
             all = set(gs + gio + gq + g12)
 
             # Create sequence signatures for the G-protein sets
-            print(str(time.time()) + " Signature")
             for gprotein in ["gs", "gio", "gq", "g12"]:
-                print("Processing " + gprotein)
+#                print("Processing " + gprotein)
                 # Signature receptors specific for a G-protein vs all others
                 signature = SequenceSignature()
                 signature.setup_alignments(segments, locals()[gprotein], all.difference(locals()[gprotein]))
@@ -252,11 +246,7 @@ class ResidueFunctionBrowser(TemplateView):
                 rfb_panel["signatures"][gprotein] = signature.signature
                 rfb_panel["signatures"][gprotein + "_positions"] = signature.common_gn
 
-                print("Done with this set")
-
             # Add class A alignment features
-            print(str(time.time()) + " class A signatures")
-
             signature = SequenceSignature()
             signature.setup_alignments(segments, human_class_a_gpcrs, [list(human_class_a_gpcrs)[0]])
             signature.calculate_signature()
@@ -275,11 +265,18 @@ class ResidueFunctionBrowser(TemplateView):
             # Add genetic variations
             all_nat_muts = NaturalMutations.objects.filter(protein__family__slug__startswith="001").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
             rfb_panel["natural_mutations"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_nat_muts)}
-    #        print(natural_mutations)
 
             # Add PTMs
             all_ptms = PTMs.objects.filter(protein__family__slug__startswith="001").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
             rfb_panel["ptms"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_ptms)}
+            all_phos = PTMs.objects.filter(protein__family__slug__startswith="001").filter(modification="Phosphorylation").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["phos"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_phos)}
+            all_palm = PTMs.objects.filter(protein__family__slug__startswith="001").filter(modification="Palmitoylation").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["palm"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_palm)}
+            all_glyc = PTMs.objects.filter(protein__family__slug__startswith="001").filter(modification__endswith="Glycosylation").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["glyc"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_glyc)}
+            all_ubiq = PTMs.objects.filter(protein__family__slug__startswith="001").filter(modification="Ubiquitylation").values("residue__generic_number__label").annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            rfb_panel["ubiq"] = {entry["residue__generic_number__label"] : entry["unique_receptors"] for entry in list(all_ubiq)}
 
             # Thermostabilizing
             all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith="001", effects__slug='thermostabilising')\
@@ -332,15 +329,14 @@ class ResidueFunctionBrowser(TemplateView):
 
         # Other rules
 #        structural_rule_tree = create_structural_rule_trees(STRUCTURAL_RULES)
-#        print(structural_rule_tree)
 
         ######## CREATE REFERENCE sets (or use structural rules)
 
         ## MICROSWITCHES
-        ms_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Microswitches").residue_position.all()]
+        ms_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="State (micro-)switches").residue_position.all()]
 
         ## SODIUM POCKET
-        sp_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Sodium pocket").residue_position.all()]
+        sp_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Sodium ion pocket").residue_position.all()]
 
         ## ROTAMER SWITCHES
         rotamer_labels = []
@@ -354,99 +350,116 @@ class ResidueFunctionBrowser(TemplateView):
 #        gprotein_labels = [residue.label for residue in ResiduePositionSet.objects.get(name="Signalling protein pocket").residue_position.all()]
         # Class A G-protein X-ray contacts
         # TODO: replace with automatically generated sets from X-rays stored in database
-        gprotein_labels = {"1.60x60": {"001_006_001_001", " 001_006_001_002"},
-                            "12.48x48": {"001_001_003_008", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
-                            "12.49x49": {"001_001_003_008", " 001_006_001_002"},
-                            "12.51x51": {"001_006_001_002"},
-                            "2.37x37": {"001_006_001_001"},
-                            "2.39x39": {"001_002_022_003"},
-                            "2.40x40": {"001_006_001_001"},
-                            "3.49x49": {"001_001_003_008", " 001_002_022_003"},
-                            "3.50x50": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
-                            "3.53x53": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
-                            "3.54x54": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
-                            "3.55x55": {"001_001_003_008", " 001_006_001_002"},
-                            "3.56x56": {"001_006_001_002", " 001_009_001_001"},
-                            "34.50x50": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
-                            "34.51x51": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
-                            "34.52x52": {"001_001_003_008", " 001_002_022_003", " 001_006_001_002"},
-                            "34.53x53": {"001_001_003_008", " 001_006_001_002"},
-                            "34.54x54": {"001_001_003_008", " 001_002_022_003", " 001_006_001_002"},
-                            "34.55x55": {"001_001_003_008", " 001_002_022_003", " 001_006_001_002", " 001_009_001_001"},
-                            "34.57x57": {"001_001_001_002", " 001_002_022_003"},
-                            "4.40x40": {"001_002_022_003"},
-                            "5.61x61": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
-                            "5.64x64": {"001_001_003_008", " 001_002_022_003", " 001_006_001_002"},
-                            "5.65x65": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
-                            "5.67x67": {"001_001_003_008"},
-                            "5.68x68": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
-                            "5.69x69": {"001_001_001_002", " 001_001_003_008", " 001_006_001_001", " 001_006_001_002"},
-                            "5.71x71": {"001_001_003_008", " 001_006_001_001", " 001_006_001_002"},
-                            "5.72x72": {"001_001_003_008", " 001_006_001_002", " 001_009_001_001"},
-                            "5.74x74": {"001_001_003_008"},
-                            "6.23x23": {"001_002_022_003"},
-                            "6.24x24": {"001_009_001_001"},
-                            "6.25x25": {"001_002_022_003", " 001_006_001_001", " 001_009_001_001"},
-                            "6.26x26": {"001_002_022_003", " 001_009_001_001"},
-                            "6.28x28": {"001_009_001_001"},
-                            "6.29x29": {"001_001_001_002", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
-                            "6.32x32": {"001_001_001_002", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
-                            "6.33x33": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
-                            "6.36x36": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_002", " 001_009_001_001"},
-                            "6.37x37": {"001_001_001_002", " 001_001_003_008", " 001_006_001_001", " 001_006_001_002"},
-                            "7.56x56": {"001_001_001_002", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
-                            "8.47x47": {"001_001_001_002", " 001_002_022_003", " 001_006_001_001", " 001_009_001_001"},
-                            "8.48x48": {"001_002_022_003", " 001_006_001_002", " 001_009_001_001"},
-                            "8.49x49": {"001_006_001_001", " 001_006_001_002"},
-                            "8.51x51": {"001_006_001_002"},
-                            "8.56x56": {"001_006_001_001"}}
+        gprotein_labels = {"1x60": {"001_006_001_001", " 001_006_001_002"},
+                            "12x48": {"001_001_003_008", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
+                            "12x49": {"001_001_003_008", " 001_006_001_002"},
+                            "12x51": {"001_006_001_002"},
+                            "2x37": {"001_006_001_001"},
+                            "2x39": {"001_002_022_003"},
+                            "2x40": {"001_006_001_001"},
+                            "3x49": {"001_001_003_008", " 001_002_022_003"},
+                            "3x50": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
+                            "3x53": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
+                            "3x54": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
+                            "3x55": {"001_001_003_008", " 001_006_001_002"},
+                            "3x56": {"001_006_001_002", " 001_009_001_001"},
+                            "34x50": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
+                            "34x51": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
+                            "34x52": {"001_001_003_008", " 001_002_022_003", " 001_006_001_002"},
+                            "34x53": {"001_001_003_008", " 001_006_001_002"},
+                            "34x54": {"001_001_003_008", " 001_002_022_003", " 001_006_001_002"},
+                            "34x55": {"001_001_003_008", " 001_002_022_003", " 001_006_001_002", " 001_009_001_001"},
+                            "34x57": {"001_001_001_002", " 001_002_022_003"},
+                            "4x40": {"001_002_022_003"},
+                            "5x61": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
+                            "5x64": {"001_001_003_008", " 001_002_022_003", " 001_006_001_002"},
+                            "5x65": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
+                            "5x67": {"001_001_003_008"},
+                            "5x68": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002"},
+                            "5x69": {"001_001_001_002", " 001_001_003_008", " 001_006_001_001", " 001_006_001_002"},
+                            "5x71": {"001_001_003_008", " 001_006_001_001", " 001_006_001_002"},
+                            "5x72": {"001_001_003_008", " 001_006_001_002", " 001_009_001_001"},
+                            "5x74": {"001_001_003_008"},
+                            "6x23": {"001_002_022_003"},
+                            "6x24": {"001_009_001_001"},
+                            "6x25": {"001_002_022_003", " 001_006_001_001", " 001_009_001_001"},
+                            "6x26": {"001_002_022_003", " 001_009_001_001"},
+                            "6x28": {"001_009_001_001"},
+                            "6x29": {"001_001_001_002", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
+                            "6x32": {"001_001_001_002", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
+                            "6x33": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
+                            "6x36": {"001_001_001_002", " 001_001_003_008", " 001_002_022_003", " 001_006_001_002", " 001_009_001_001"},
+                            "6x37": {"001_001_001_002", " 001_001_003_008", " 001_006_001_001", " 001_006_001_002"},
+                            "7x56": {"001_001_001_002", " 001_006_001_001", " 001_006_001_002", " 001_009_001_001"},
+                            "8x47": {"001_001_001_002", " 001_002_022_003", " 001_006_001_001", " 001_009_001_001"},
+                            "8x48": {"001_002_022_003", " 001_006_001_002", " 001_009_001_001"},
+                            "8x49": {"001_006_001_001", " 001_006_001_002"},
+                            "8x51": {"001_006_001_002"},
+                            "8x56": {"001_006_001_001"}}
 
         # TODO: replace with automatically generated sets from X-rays stored in database
         # Class A Arrestin X-ray contacts
-        arrestin_labels = {"12.49x49": {"001_009_001_001"},
-                            "2.37x37": {"001_009_001_001"},
-                            "2.38x38": {"001_009_001_001"},
-                            "2.39x39": {"001_009_001_001"},
-                            "2.40x40": {"001_009_001_001"},
-                            "2.43x43": {"001_009_001_001"},
-                            "3.50x50": {"001_009_001_001"},
-                            "3.54x54": {"001_009_001_001"},
-                            "3.55x55": {"001_009_001_001"},
-                            "3.56x56": {"001_009_001_001"},
-                            "34.50x50": {"001_009_001_001"},
-                            "34.51x51": {"001_009_001_001"},
-                            "34.53x53": {"001_009_001_001"},
-                            "34.54x54": {"001_009_001_001"},
-                            "34.55x55": {"001_009_001_001"},
-                            "34.56x56": {"001_009_001_001"},
-                            "4.38x38": {"001_009_001_001"},
-                            "5.61x61": {"001_009_001_001"},
-                            "5.64x64": {"001_009_001_001"},
-                            "5.68x68": {"001_009_001_001"},
-                            "5.69x69": {"001_009_001_001"},
-                            "5.71x71": {"001_009_001_001"},
-                            "5.72x72": {"001_009_001_001"},
-                            "6.24x24": {"001_009_001_001"},
-                            "6.25x25": {"001_009_001_001"},
-                            "6.26x26": {"001_009_001_001"},
-                            "6.28x28": {"001_009_001_001"},
-                            "6.29x29": {"001_009_001_001"},
-                            "6.32x32": {"001_009_001_001"},
-                            "6.33x33": {"001_009_001_001"},
-                            "6.36x36": {"001_009_001_001"},
-                            "6.37x37": {"001_009_001_001"},
-                            "6.40x40": {"001_009_001_001"},
-                            "8.47x47": {"001_009_001_001"},
-                            "8.48x48": {"001_009_001_001"},
-                            "8.49x49": {"001_009_001_001"},
-                            "8.50x50": {"001_009_001_001"}}
+        arrestin_labels = {"12x49": {"001_009_001_001"},
+                            "2x37": {"001_009_001_001"},
+                            "2x38": {"001_009_001_001"},
+                            "2x39": {"001_009_001_001"},
+                            "2x40": {"001_009_001_001"},
+                            "2x43": {"001_009_001_001"},
+                            "3x50": {"001_009_001_001"},
+                            "3x54": {"001_009_001_001"},
+                            "3x55": {"001_009_001_001"},
+                            "3x56": {"001_009_001_001"},
+                            "34x50": {"001_009_001_001"},
+                            "34x51": {"001_009_001_001"},
+                            "34x53": {"001_009_001_001"},
+                            "34x54": {"001_009_001_001"},
+                            "34x55": {"001_009_001_001"},
+                            "34x56": {"001_009_001_001"},
+                            "4x38": {"001_009_001_001"},
+                            "5x61": {"001_009_001_001"},
+                            "5x64": {"001_009_001_001"},
+                            "5x68": {"001_009_001_001"},
+                            "5x69": {"001_009_001_001"},
+                            "5x71": {"001_009_001_001"},
+                            "5x72": {"001_009_001_001"},
+                            "6x24": {"001_009_001_001"},
+                            "6x25": {"001_009_001_001"},
+                            "6x26": {"001_009_001_001"},
+                            "6x28": {"001_009_001_001"},
+                            "6x29": {"001_009_001_001"},
+                            "6x32": {"001_009_001_001"},
+                            "6x33": {"001_009_001_001"},
+                            "6x36": {"001_009_001_001"},
+                            "6x37": {"001_009_001_001"},
+                            "6x40": {"001_009_001_001"},
+                            "8x47": {"001_009_001_001"},
+                            "8x48": {"001_009_001_001"},
+                            "8x49": {"001_009_001_001"},
+                            "8x50": {"001_009_001_001"}}
 
-        # Positions in center of membrane selected using 4BVN together with OPM membrane positioning
+        # Positions in center of membrane selected using 4BVN (ADRB1) together with OPM membrane positioning
         # Reference: ['1x44', '2x52', '3x36', '4x54', '5x46', '6x48', '7x43']
-        mid_membrane = {'TM1': 44,'TM2': 52,'TM3': 36,'TM4': 54,'TM5': 46, 'TM6': 48, 'TM7': 43}
+        mid_membrane_classA = {'TM1': 44,'TM2': 52,'TM3': 36,'TM4': 54,'TM5': 46, 'TM6': 48, 'TM7': 43}
+
+        # NOTE: We might need to split this into B1 and B2 when adhesion X-rays are published
+        # Positions in center of membrane selected using 5XEZ (GCGR) together with OPM membrane positioning
+        # Reference: ['1x51', '2x58', '3x41', '4x54', '5x45', '6x49', '7x50']
+        mid_membrane_classB = {'TM1': 51,'TM2': 58,'TM3': 41,'TM4': 54,'TM5': 45, 'TM6': 49, 'TM7': 50}
+
+        # Positions in center of membrane selected using 4OR2 (mGLUR1) together with OPM membrane positioning
+        # Reference: ['1x49', '2x48', '3x40', '4x41', '5x48', '6x48', '7.39x40']
+        mid_membrane_classC = {'TM1': 49,'TM2': 48,'TM3': 40,'TM4': 41,'TM5': 48, 'TM6': 48, 'TM7': 40}
+
+        # Positions in center of membrane selected using 6BD4 (FZD4) together with OPM membrane positioning
+        # Reference: ['1x43', '2x53', '3x38', '4x53', '5x53', '6x43', '7x47']
+        mid_membrane_classF = {'TM1': 43,'TM2': 53,'TM3': 38,'TM4': 53,'TM5': 53, 'TM6': 43, 'TM7': 47}
 
         # Positions within membrane layer selected using 4BVN together with OPM membrane positioning
-        core_membrane = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        core_membrane_classA = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        # TODO: other classes
+        core_membrane_classB = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        core_membrane_classC = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        core_membrane_classF = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
 
         # Residue oriented outward of bundle (based on inactive 4BVN and active 3SN6)
         outward_orientation = {
@@ -462,7 +475,6 @@ class ResidueFunctionBrowser(TemplateView):
         ########
 
         # prepare context for output
-        print(str(time.time()) + " preparing the context")
         context = {"signatures" : []}
         index = 0
         for h, segment in enumerate(rfb_panel["signatures"]["gs_positions"]["gpcrdba"]):
@@ -488,22 +500,22 @@ class ResidueFunctionBrowser(TemplateView):
                     context["signatures"][index]["membane_placement"] = "-"
                     context["signatures"][index]["membane_segment"] = "Extracellular"
                     context["signatures"][index]["residue_orientation"] = "-"
-                    if segment in mid_membrane: # TM helix
+                    if segment in mid_membrane_classA: # TM helix
                         # parse position
-                        context["signatures"][index]["membane_placement"] = partial_position - mid_membrane[segment]
+                        context["signatures"][index]["membane_placement"] = partial_position - mid_membrane_classA[segment]
 
                         # negative is toward cytoplasm
                         if segment in ['TM1', 'TM3', 'TM5', 'TM7']: # downwards
                             context["signatures"][index]["membane_placement"] = -1 * context["signatures"][index]["membane_placement"]
 
                         # Segment selection
-                        if partial_position >= core_membrane[segment][0] and partial_position <= core_membrane[segment][1]:
+                        if partial_position >= core_membrane_classA[segment][0] and partial_position <= core_membrane_classA[segment][1]:
                             context["signatures"][index]["membane_segment"] = "Membrane"
                         elif segment in ['TM1', 'TM3', 'TM5', 'TM7']:
-                            if partial_position > core_membrane[segment][1]:
+                            if partial_position > core_membrane_classA[segment][1]:
                                 context["signatures"][index]["membane_segment"] = "Intracellular"
                         else:
-                            if partial_position < core_membrane[segment][0]:
+                            if partial_position < core_membrane_classA[segment][0]:
                                 context["signatures"][index]["membane_segment"] = "Intracellular"
 
                         # Orientation
@@ -517,7 +529,7 @@ class ResidueFunctionBrowser(TemplateView):
                         context["signatures"][index]["membane_segment"] = "Intracellular"
 
                     # COUNTS: all db results in a singe loop
-                    for key in ["ligand_binding", "natural_mutations", "thermo_mutations", "ligand_mutations", "basal_mutations", "intrasegment_contacts", "ptms"]: # Add in future "gprotein_interface", "arrestin_interface"
+                    for key in ["ligand_binding", "natural_mutations", "thermo_mutations", "ligand_mutations", "basal_mutations", "intrasegment_contacts", "phos", "palm", "glyc", "ubiq" ]: # Add in future "gprotein_interface", "arrestin_interface"
                         context["signatures"][index][key] = 0
                         if position in rfb_panel[key]:
                             context["signatures"][index][key] = rfb_panel[key][position]
@@ -544,19 +556,19 @@ class ResidueFunctionBrowser(TemplateView):
                     context["signatures"][index]["rotamer_switch"] = position in rotamer_labels
 
                     # contacts
-                    context["signatures"][index]["active_contacts"] = False
+                    context["signatures"][index]["active_contacts"] = 0
                     if position in rfb_panel["active_contacts"]:
                         if position in rfb_panel["inactive_contacts"]:
-                            context["signatures"][index]["active_contacts"] = len(rfb_panel["active_contacts"][position].difference(rfb_panel["inactive_contacts"][position])) > 0
+                            context["signatures"][index]["active_contacts"] = len(rfb_panel["active_contacts"][position].difference(rfb_panel["inactive_contacts"][position]))
                         else:
-                            context["signatures"][index]["active_contacts"] = True
+                            context["signatures"][index]["active_contacts"] = len(rfb_panel["active_contacts"][position])
 
-                    context["signatures"][index]["inactive_contacts"] = False
+                    context["signatures"][index]["inactive_contacts"] = 0
                     if position in rfb_panel["inactive_contacts"]:
                         if position in rfb_panel["active_contacts"]:
-                            context["signatures"][index]["inactive_contacts"] = len(rfb_panel["inactive_contacts"][position].difference(rfb_panel["active_contacts"][position])) > 0
+                            context["signatures"][index]["inactive_contacts"] = len(rfb_panel["inactive_contacts"][position].difference(rfb_panel["active_contacts"][position]))
                         else:
-                            context["signatures"][index]["inactive_contacts"] = True
+                            context["signatures"][index]["inactive_contacts"] = len(rfb_panel["inactive_contacts"][position])
 
                     # CLASS A sequence + property consensus
                     if position in rfb_panel["class_a_positions"]["gpcrdba"][segment]:
@@ -564,10 +576,14 @@ class ResidueFunctionBrowser(TemplateView):
 
                         # Sequence consensus
                         context["signatures"][index]["class_a_aa"] = rfb_panel["class_a_aa"][segment][position][0]
+                        context["signatures"][index]["class_a_aa_name"] = FULL_AMINO_ACIDS[rfb_panel["class_a_aa"][segment][position][0]]
+                        if context["signatures"][index]["class_a_aa"] == '+':
+                            context["signatures"][index]["class_a_aa_name"] += ": "+rfb_panel["class_a_aa"][segment][position][3]
                         context["signatures"][index]["class_a_aa_cons"] = rfb_panel["class_a_aa"][segment][position][2]
 
                         # Property consensus
-                        context["signatures"][index]["class_a_prop"] = rfb_panel["class_a_prop"][segment][i][0]
+                        context["signatures"][index]["class_a_symb"] = rfb_panel["class_a_prop"][segment][i][0]
+                        context["signatures"][index]["class_a_prop"] = rfb_panel["class_a_prop"][segment][i][1]
                         context["signatures"][index]["class_a_prop_cons"] = rfb_panel["class_a_prop"][segment][i][2]
 
                     # SEQUENCE SIGNATURES
@@ -580,6 +596,5 @@ class ResidueFunctionBrowser(TemplateView):
 
                     index += 1
 
-        print(str(time.time()) + " Done sending to the template")
         # Human Class A alignment - consensus/conservation
         return context

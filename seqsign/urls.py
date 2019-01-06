@@ -11,5 +11,6 @@ urlpatterns = [
     url(r'^render_signature', views.render_signature, name='rendersignature'),
     url(r'render_positive', views.render_reordered, {'group' : 'positive'}, name='render-reordered'),
     url(r'render_negative', views.render_reordered, {'group' : 'negative'}, name='render-reordered'),
-    url(r'negativegroupselection', (views.NegTargetSelection.as_view()), name='ngselection'),
+    url(r'savepos', views.preserve_targets, name='ngselection'),
+    url(r'negativegroupselection', views.NegTargetSelection.as_view(), name='ngselection'),
 ]
