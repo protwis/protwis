@@ -1191,14 +1191,13 @@ def IMSequenceSignature(request):
 
     return JsonResponse(res, safe=False)
 
-def IMSignatureMatch(request, cutoff):
+def IMSignatureMatch(request):
+    from alignment.functions import get_proteins_from_selection
+    from seqsign.sequence_signature import SignatureMatch
 
-    signature_data = request.session.get('signature')
-
-    # targets set #1
-    ss_pos = request.session.get('targets_pos', False)
-    # targets set #2
-    ss_neg = request.session.get('selection', False)
+    signature_data = request.POST.get('signature')
+    ss_pos = request.POST.get('targets_pos', False)
+    cutoff = request.POST.get('cutoff')
 
     signature_match = SignatureMatch(
         signature_data['common_positions'],
@@ -1206,13 +1205,14 @@ def IMSignatureMatch(request, cutoff):
         signature_data['common_segments'],
         signature_data['diff_matrix'],
         get_proteins_from_selection(ss_pos),
-        get_proteins_from_selection(ss_neg),
+        get_proteins_from_selection(ss_pos),
         cutoff = int(cutoff)
     )
-    signature_match.score_protein_class(get_proteins_from_selection(ss_pos)[0].family.slug[:3])
-    request.session['signature_match'] = {
-        'scores': signature_match.protein_report,
 
+    signature_match.score_protein_class(get_proteins_from_selection(ss_pos)[0].family.slug[:3])
+
+    signature_match = {
+        'scores': signature_match.protein_report,
         'scores_pos': signature_match.scores_pos,
         'scores_neg': signature_match.scores_neg,
         'protein_signatures': signature_match.protein_signatures,
