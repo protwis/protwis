@@ -187,8 +187,6 @@ const signprotmat = {
     },
 
     yScale: function(data, gprot) {
-      console.log(gprot)
-      
       const domain = d3
         .map(data, (d: any) => d.sig_gn)
         .keys()
