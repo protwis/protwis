@@ -1179,13 +1179,55 @@ def IMSequenceSignature(request):
                     print(e)
 
     # pass back to front
+    sign = signature.prepare_session_data()
     res = {
         'cons': sigcons,
         'feat': signature_features,
+        'sign': sign
     }
 
     t2 = time.time()
     print('Runtime: {}'.format((t2-t1)*1000.0))
 
     return JsonResponse(res, safe=False)
+
+def IMSignatureMatch(request, cutoff):
+
+    signature_data = request.session.get('signature')
+
+    # targets set #1
+    ss_pos = request.session.get('targets_pos', False)
+    # targets set #2
+    ss_neg = request.session.get('selection', False)
+
+    signature_match = SignatureMatch(
+        signature_data['common_positions'],
+        signature_data['numbering_schemes'],
+        signature_data['common_segments'],
+        signature_data['diff_matrix'],
+        get_proteins_from_selection(ss_pos),
+        get_proteins_from_selection(ss_neg),
+        cutoff = int(cutoff)
+    )
+    signature_match.score_protein_class(get_proteins_from_selection(ss_pos)[0].family.slug[:3])
+    request.session['signature_match'] = {
+        'scores': signature_match.protein_report,
+
+        'scores_pos': signature_match.scores_pos,
+        'scores_neg': signature_match.scores_neg,
+        'protein_signatures': signature_match.protein_signatures,
+        'signatures_pos': signature_match.signatures_pos,
+        'signatures_neg': signature_match.signatures_neg,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
+    }
+
+    response = render(
+        request,
+        'signature_match.html',
+        {'scores': signature_match}
+        )
+    return response
 
