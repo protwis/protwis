@@ -1075,7 +1075,9 @@ var signprotmat = {
                 .call(legendSeqSig)
                 .selectAll("rect")
                 .attr("rx", 3)
-                .attr("ry", 3);
+                .attr("ry", 3)
+                .style('stroke', 'black')
+                .style('stroke-width', '0.1px');
             svg
                 .select(".legendSeqSig")
                 .selectAll("text")
