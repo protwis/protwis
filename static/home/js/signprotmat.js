@@ -1,7 +1,8 @@
 // * CONSTANTS
-var margin = { top: 40, right: 200, bottom: 180, left: 200 };
+var margin = { top: 60, right: 200, bottom: 180, left: 200 };
 var w = 1200 - margin.left - margin.right, h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
+var non_int_col = "#fff";
 // array for data in infobox
 var info_data = [];
 var signprotmat = {
@@ -32,13 +33,6 @@ var signprotmat = {
             var data_labeled = data.map(function (e) {
                 var obj = {};
                 keys.forEach(function (key, i) {
-                    // // comment this out later
-                    // if (key === "sig_gn" || key === "rec_gn") {
-                    //   if (e[i] === '-') {
-                    //     return;
-                    //   }
-                    //   // obj[key] = Math.floor(e[i] / 10);
-                    // }
                     obj[key] = e[i];
                 });
                 return obj;
@@ -95,16 +89,19 @@ var signprotmat = {
             });
         },
         dataTransformationWrapper: function (dataset, keys, pdb_sel) {
-            dataset = _.pick(dataset, pdb_sel);
-            var pdb_ids = signprotmat.data.extractPdbIDs(dataset);
-            var data_t = signprotmat.data.objectToArray(dataset);
-            data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
-            data_t = signprotmat.data.flattenOnce(data_t);
-            data_t = signprotmat.data.labelData(data_t, keys);
+            // dataset = _.pick(dataset, pdb_sel);
+            // let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
+            // let data_t = signprotmat.data.objectToArray(dataset);
+            // data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
+            // data_t = signprotmat.data.flattenOnce(data_t);
+            var data_t = signprotmat.data.labelData(dataset, keys);
             data_t = signprotmat.data.removeUndefinedGN(data_t);
+            data_t = _.filter(data_t, function (d) { return pdb_sel.includes(d.pdb_id); });
             var data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
             var data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
             var int_ty = signprotmat.data.getInteractionTypes(data_t);
+            var pdb_ids = _.uniqBy(data_t, "pdb_id");
+            pdb_ids = _.map(pdb_ids, function (d) { return d.pdb_id; });
             var return_data = {
                 transformed: data_t,
                 receptor: data_t_rec,
@@ -113,6 +110,13 @@ var signprotmat = {
                 pdbids: pdb_ids
             };
             return return_data;
+        },
+        annotateNonInteractionData: function (meta, data) {
+            data.forEach(function (element) {
+                var tmp = _.find(meta, function (d) { return d.entry_name === element.entry_name; });
+                element["pdb_id"] = tmp.pdb_id;
+            });
+            return data;
         }
     },
     // * D3 DRAW FUNCTIONS
@@ -171,7 +175,7 @@ var signprotmat = {
                 var b_obj = _.find(gprot, function (d) { return d.slug === b_match[1]; });
                 // console.log(a_obj.id);
                 // console.log(a_obj.id + (+a.slice(-2)/100));
-                return d3.descending(a_obj.id + (+a.slice(-2) / 100), b_obj.id + (+b.slice(-2) / 100));
+                return d3.descending(a_obj.id + +a.slice(-2) / 100, b_obj.id + +b.slice(-2) / 100);
                 // return d3.descending(a_obj.id, b_obj.id);
             });
             var yScale = d3
@@ -182,43 +186,68 @@ var signprotmat = {
             return yScale;
         },
         // * SETTING THE PDB/SIG-PROT SCALE
-        pdbScale: function (data) {
+        pdbScale: function (data, meta) {
             var pdbScale = d3
                 .scaleBand()
                 .domain(d3
                 .map(data, function (d) { return d.pdb_id; })
                 .keys()
-                .sort(d3.descending))
+                .sort(function (a, b) {
+                var a_obj = _.find(meta, function (d) { return d.pdb_id === a; });
+                var b_obj = _.find(meta, function (d) { return d.pdb_id === b; });
+                return d3.descending(a_obj.entry_name, b_obj.entry_name);
+            }))
                 .range([300, 0])
                 .padding(1);
             return pdbScale;
         },
-        sigScale: function (data) {
+        sigScale: function (data, meta) {
             var sigScale = d3
                 .scaleBand()
                 .domain(d3
                 .map(data, function (d) { return d.pdb_id; })
                 .keys()
-                .sort(d3.descending))
+                .sort(function (a, b) {
+                var a_obj = _.find(meta, function (d) { return d.pdb_id === a; });
+                var b_obj = _.find(meta, function (d) { return d.pdb_id === b; });
+                return d3.descending(a_obj.gprot, b_obj.gprot);
+            }))
                 .range([120, 0])
                 .padding(1);
             return sigScale;
         },
         // * SETTING THE COLOR SCALE
-        colScale: function (data) {
+        colScale: function (f) {
+            var scale = {
+                "van-der-waals": "#d9d9d9",
+                "edge-to-face": "#969696",
+                "water-mediated": "#7DB144",
+                hydrophobic: "#93d050",
+                "polar-sidechain-sidechain": "#EAA91F",
+                "polar-sidechain-backbone": "#C38E1A",
+                "polar-backbone-sidechain": "#C3A563",
+                "h-bond donor-acceptor": "#7030a0",
+                "h-bond acceptor-donor": "#B24DFF",
+                "cation-pi": "#0070c0",
+                "pi-cation": "#005693",
+                ionic: "#00B9BF"
+            };
             var colScale = d3
                 .scaleOrdinal()
-                .domain(data)
-                .range(d3.schemeSet3);
+                .domain(Object.keys(scale))
+                .range(Object.values(scale));
             return colScale;
         },
         // * seqsig
         // * SETTING THE FEATURE SCALE
         fScale: function (data) {
-            var features = _.map(data, function (d) { return d.feature; });
+            var f = _.map(data, function (d) {
+                var length_text = d.length != "" ? " (" + d.length + ")" : "";
+                return d.feature + length_text;
+            });
             var fScale = d3
                 .scaleBand()
-                .domain(features)
+                .domain(f)
                 .range([0, h])
                 // .round(true)
                 .padding(1);
@@ -348,12 +377,22 @@ var signprotmat = {
                 var other = "res";
                 var res = d3.select("g#recAA").selectAll("g");
                 res.selectAll("rect").style("fill", function (d) {
-                    return colScale(d.int_ty[0]);
+                    if (typeof d.int_ty != "undefined") {
+                        return colScale(d.int_ty[0]);
+                    }
+                    else {
+                        return non_int_col;
+                    }
                 });
                 res.selectAll("text").style("fill", null);
                 res = d3.select("g#sigAA").selectAll("g");
                 res.selectAll("rect").style("fill", function (d) {
-                    return colScale(d.int_ty[0]);
+                    if (typeof d.int_ty != "undefined") {
+                        return colScale(d.int_ty[0]);
+                    }
+                    else {
+                        return "#ccc";
+                    }
                 });
                 res.selectAll("text").style("fill", null);
             }
@@ -434,7 +473,7 @@ var signprotmat = {
             return tip;
         },
         // * RENDER DATA
-        renderData: function (svg, data, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
+        renderData: function (svg, data, data_non, interactions_metadata, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
             var shift_left = 7 / 8;
             var shift_top = 1 / 8;
             var scale_size = shift_left - shift_top;
@@ -648,7 +687,11 @@ var signprotmat = {
                 .attr("text-anchor", "end")
                 .attr("dy", 75)
                 .text(function (d) {
-                return d;
+                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
+                var text = i_obj.name.replace("&beta;", "\u03B2"); // beta
+                text = text.replace("&mu;", "\u03BC"); // mu
+                return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
+                // return d;
             });
             // * APPENDING ROW TICK ANNOTATION FOR SIGPROT GNs
             svg
@@ -664,12 +707,19 @@ var signprotmat = {
                 return 10;
             })
                 .attr("y", function (d, i) {
-                return sigScale.step() * (i + 1);
+                // return sigScale(d) - sigScale.step() / 2;
+                return sigScale(d);
+                // return sigScale.step() * (i + 1);
             })
                 .attr("text-anchor", "begin")
-                .attr("dy", 65)
+                .attr("dy", 68)
                 .text(function (d) {
-                return d;
+                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
+                // let text = i_obj.gprot.replace('Engineered', 'Eng.')
+                var text = i_obj.gprot.replace("Engineered", "E.");
+                // text = text.replace('protein', 'prot.')
+                text = text.replace("protein", "p.");
+                return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
             });
             // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
             var recTip = d3
@@ -693,10 +743,18 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", pdbScale.range()[0] - pdbScale.step());
+            data_non = _.filter(data_non, function (d) {
+                return xScale(d.rec_gn);
+            });
+            data_non = _.filter(data_non, function (d) {
+                return pdbScale(d.pdb_id);
+            });
+            // data.receptor.push(...data_non)
+            data_non.push.apply(data_non, data.receptor);
             each_res = svg
                 .select("g#recAA")
                 .selectAll("text")
-                .data(data.receptor)
+                .data(data_non)
                 .enter()
                 .append("g")
                 .attr("class", function (d) { return "R_" + _.replace(d.rec_gn, ".", "p") + "_P_" + d.pdb_id; })
@@ -710,7 +768,9 @@ var signprotmat = {
             each_res
                 .append("rect")
                 .attr("class", "res_rect")
-                .style("fill", function (d) { return colScale(d.int_ty[0]); })
+                .style("fill", function (d) {
+                return typeof d.int_ty !== "undefined" ? colScale(d.int_ty[0]) : non_int_col;
+            })
                 .attr("x", function (d) { return xScale(d.rec_gn) - xScale.step() / 2; })
                 .attr("y", function (d) { return 75 + pdbScale(d.pdb_id) - pdbScale.step(); })
                 .attr("width", xScale.step())
@@ -738,7 +798,7 @@ var signprotmat = {
                 .attr("class", "d3-tip")
                 .html(function (d) {
                 return ("Receptor AA: " +
-                    d.sig_aa +
+                    d.rec_aa +
                     "<br>" +
                     "Interaction type: " +
                     d.int_ty);
@@ -948,7 +1008,18 @@ var signprotmat = {
             var data = data_in.feat;
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
-            var uniq_feats = _.uniq(_.map(data, "feature"));
+            var feats = [];
+            data.forEach(function (d) {
+                var length_text = d.length != "" ? " (" + d.length + ")" : "";
+                feats.push({
+                    code: d.feature_code,
+                    feature: d.feature,
+                    length: d.length,
+                    comb: d.feature + length_text
+                });
+            });
+            var uniq_feats = _.uniqBy(feats, "comb");
+            console.log(uniq_feats);
             // filter out NA generic numbers based on xScale
             data = _.filter(data, function (d) {
                 return xScale(d.gn);
@@ -963,6 +1034,9 @@ var signprotmat = {
                     "Feature: " +
                     d.feature +
                     "<br>" +
+                    "Length: " +
+                    d.length +
+                    "<br>" +
                     // "Score: " +
                     // d.expl +
                     // "<br>" +
@@ -970,23 +1044,67 @@ var signprotmat = {
                     d.freq +
                     "<br>");
             });
-            svg
+            var row = svg
                 .append("g")
                 .attr("id", "seqsig_feature")
                 .attr("transform", "translate(" + 0 + "," + 0 + ")")
                 .selectAll("text")
                 .data(uniq_feats)
-                .enter()
+                .enter();
+            row
                 .append("text")
                 .attr("class", "y seq_label")
-                .attr("x", -10)
+                .attr("x", -10 - xScale.step())
                 .attr("y", function (d) {
-                return fScale(d) - fScale.step() / 2;
+                return fScale(d.comb) - fScale.step() / 2;
             })
                 .attr("text-anchor", "end")
                 .attr("dy", 75)
                 .text(function (d) {
-                return d;
+                return d.comb;
+            });
+            row
+                .append("rect")
+                .style("fill", function (d) {
+                var gcol = signprotmat.d3.fScaleColor(d.code);
+                if (typeof gcol != "undefined") {
+                    return gcol.bg_color;
+                }
+                else {
+                    return null;
+                }
+            })
+                .style("stroke", "black")
+                .attr("x", -xScale.step())
+                .attr("y", function (d) {
+                return 75 + fScale(d.comb) - fScale.step();
+            })
+                .attr("width", xScale.step())
+                .attr("height", fScale.step());
+            row
+                .append("text")
+                .attr("class", "y seq_label")
+                .attr("text-anchor", "middle")
+                .attr("x", -xScale.step() / 2)
+                .attr("y", function (d) {
+                return 75 + fScale(d.comb) - fScale.step() / 2;
+            })
+                .style("fill", function (d) {
+                var gcol = signprotmat.d3.fScaleColor(d.code);
+                if (typeof gcol != "undefined") {
+                    if (typeof gcol.font_color != "undefined") {
+                        return gcol.font_color;
+                    }
+                    else {
+                        return "#000000";
+                    }
+                }
+                else {
+                    return "#000000";
+                }
+            })
+                .text(function (d) {
+                return d.code;
             });
             svg
                 .append("g")
@@ -1027,7 +1145,11 @@ var signprotmat = {
                 }
             })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                .attr("y", function (d) { return 75 + fScale(d.feature) - fScale.step(); })
+                .attr("y", function (d) {
+                var length_text = d.length != "" ? " (" + d.length + ")" : "";
+                var comb = d.feature + length_text;
+                return 75 + fScale(comb) - fScale.step();
+            })
                 .attr("width", xScale.step())
                 .attr("height", fScale.step());
             // adding the frequency text to each rectangle
@@ -1075,13 +1197,15 @@ var signprotmat = {
                 .call(legendSeqSig)
                 .selectAll("rect")
                 .attr("rx", 3)
-                .attr("ry", 3);
+                .attr("ry", 3)
+                .style("stroke", "black")
+                .style("stroke-width", "0.1px");
             svg
                 .select(".legendSeqSig")
                 .selectAll("text")
                 .attr("class", "legend");
         },
-        draw_seq_cons: function (data_in, svg, xScale) {
+        draw_seq_cons: function (data_in, svg, xScale, xAxis) {
             var data = data_in.cons;
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
@@ -1098,7 +1222,7 @@ var signprotmat = {
                     d.gn +
                     "<br>" +
                     "Feature: " +
-                    d.name +
+                    d.feature +
                     "<br>" +
                     "Length: " +
                     d.length +
@@ -1118,6 +1242,21 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", 75);
+            svg
+                .append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + -15 + ")")
+                .call(xAxis)
+                .selectAll("text")
+                .attr("text-anchor", "end")
+                .attr("font-size", "12px")
+                .attr("dx", "-5px")
+                .attr("dy", "-5px")
+                .attr("transform", "rotate(-90)");
+            svg
+                .select(".x.axis")
+                .selectAll("path")
+                .remove();
             svg
                 .append("text")
                 .attr("class", "y seq_label")

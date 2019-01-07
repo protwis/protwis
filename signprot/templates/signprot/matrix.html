@@ -202,7 +202,7 @@
     <h2>Interaction Interface</h2>
 </div>
 
-<div id="seqsig-container" class="svg-container" style="display: none; padding-bottom: 130%">
+<div id="seqsig-container" class="svg-container" style="display: none; padding-bottom: 140%">
     <div id="seqsig">
         <h2>Property Conservation</h2>
     </div>
@@ -219,9 +219,9 @@
 {% block addon_js %}
 <script type="text/javascript">
     const interactions = {{ interactions | safe}};
+    let non_interactions = {{ non_interactions | safe}};
     const interactions_metadata = {{ interactions_metadata | safe}};
-    const ps = {{ ps | safe}};
-    const rs = {{ rs | safe}};
+    // const ps = {{ ps | safe}};
     const gprot = {{ gprot | safe}};
     let pdb_sel = [];
 
@@ -319,6 +319,7 @@
                     data,
                     svg,
                     xScale,
+                    xAxis
                 );
             },
             error: function(error){
@@ -395,6 +396,7 @@
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script>
     $(document).ready(function () {
+        non_interactions = signprotmat.data.annotateNonInteractionData(interactions_metadata, non_interactions);
         $('[data-toggle="tooltip"]').tooltip();
 
         const table = $('#table-interface').DataTable({
@@ -421,6 +423,7 @@
                     title: 'G-Protein',
                     targets: 3,
                 }],
+            order: [[ 3, "asc" ]],
             select: {
                 style: 'os',
             },
@@ -484,13 +487,15 @@
                 yAxis = signprotmat.d3.yAxis(yScale);
                 xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
                 yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
-                pdbScale = signprotmat.d3.pdbScale(data.transformed);
-                sigScale = signprotmat.d3.sigScale(data.transformed);
+                pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+                sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
                 colScale = signprotmat.d3.colScale(data.inttypes);
                 tooltip = signprotmat.d3.tooltip(svg);
                 signprotmat.d3.renderData(
                     svg,
                     data,
+                    non_interactions,
+                    interactions_metadata,
                     xScale,
                     yScale,
                     xAxis,
@@ -529,6 +534,8 @@
             "sig_pos",
             "sig_gn",
             "int_ty",
+            "gprot",
+            "entry_name",
             "pdb_id"
         ];
 
@@ -540,13 +547,15 @@
         yAxis = signprotmat.d3.yAxis(yScale);
         xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
         yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
-        pdbScale = signprotmat.d3.pdbScale(data.transformed);
-        sigScale = signprotmat.d3.sigScale(data.transformed);
+        pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+        sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
         colScale = signprotmat.d3.colScale(data.inttypes);
         tooltip = signprotmat.d3.tooltip(svg);
         signprotmat.d3.renderData(
             svg,
             data,
+            non_interactions,
+            interactions_metadata,
             xScale,
             yScale,
             xAxis,
