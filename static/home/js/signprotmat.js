@@ -33,13 +33,6 @@ var signprotmat = {
             var data_labeled = data.map(function (e) {
                 var obj = {};
                 keys.forEach(function (key, i) {
-                    // // comment this out later
-                    // if (key === "sig_gn" || key === "rec_gn") {
-                    //   if (e[i] === '-') {
-                    //     return;
-                    //   }
-                    //   // obj[key] = Math.floor(e[i] / 10);
-                    // }
                     obj[key] = e[i];
                 });
                 return obj;
@@ -96,16 +89,19 @@ var signprotmat = {
             });
         },
         dataTransformationWrapper: function (dataset, keys, pdb_sel) {
-            dataset = _.pick(dataset, pdb_sel);
-            var pdb_ids = signprotmat.data.extractPdbIDs(dataset);
-            var data_t = signprotmat.data.objectToArray(dataset);
-            data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
-            data_t = signprotmat.data.flattenOnce(data_t);
-            data_t = signprotmat.data.labelData(data_t, keys);
+            // dataset = _.pick(dataset, pdb_sel);
+            // let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
+            // let data_t = signprotmat.data.objectToArray(dataset);
+            // data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
+            // data_t = signprotmat.data.flattenOnce(data_t);
+            var data_t = signprotmat.data.labelData(dataset, keys);
             data_t = signprotmat.data.removeUndefinedGN(data_t);
+            data_t = _.filter(data_t, function (d) { return pdb_sel.includes(d.pdb_id); });
             var data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
             var data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
             var int_ty = signprotmat.data.getInteractionTypes(data_t);
+            var pdb_ids = _.uniqBy(data_t, 'pdb_id');
+            pdb_ids = _.map(pdb_ids, function (d) { return d.pdb_id; });
             var return_data = {
                 transformed: data_t,
                 receptor: data_t_rec,
@@ -118,7 +114,7 @@ var signprotmat = {
         annotateNonInteractionData: function (meta, data) {
             data.forEach(function (element) {
                 var tmp = _.find(meta, function (d) { return d.entry_name === element.entry_name; });
-                element["pdb_id"] = tmp.pdb_id.toUpperCase();
+                element["pdb_id"] = tmp.pdb_id;
             });
             return data;
         }
@@ -196,9 +192,11 @@ var signprotmat = {
                 .domain(d3
                 .map(data, function (d) { return d.pdb_id; })
                 .keys()
-                .sort(function (a, b) {
-                return (d3.descending(a.entry_name, b.entry_name));
-            }))
+                .sort(d3.descending)
+            // .sort(function(a, b){
+            //   return(d3.descending(a.entry_name, b.entry_name))
+            // })
+            )
                 .range([300, 0])
                 .padding(1);
             return pdbScale;
@@ -684,7 +682,7 @@ var signprotmat = {
                 .attr("text-anchor", "end")
                 .attr("dy", 75)
                 .text(function (d) {
-                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id.toUpperCase() === d; });
+                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
                 var text = i_obj.name.replace('&beta;', '\u03B2'); // beta
                 text = text.replace('&mu;', '\u03BC'); // mu
                 return text.replace(/<[^>]*>/g, '') + ' (' + d + ')';
@@ -709,7 +707,7 @@ var signprotmat = {
                 .attr("text-anchor", "begin")
                 .attr("dy", 65)
                 .text(function (d) {
-                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id.toUpperCase() === d; });
+                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
                 // let text = i_obj.gprot.replace('Engineered', 'Eng.')
                 var text = i_obj.gprot.replace('Engineered', 'E.');
                 // text = text.replace('protein', 'prot.')

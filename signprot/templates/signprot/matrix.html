@@ -221,8 +221,7 @@
     const interactions = {{ interactions | safe}};
     let non_interactions = {{ non_interactions | safe}};
     const interactions_metadata = {{ interactions_metadata | safe}};
-    const ps = {{ ps | safe}};
-    const rs = {{ rs | safe}};
+    // const ps = {{ ps | safe}};
     const gprot = {{ gprot | safe}};
     let pdb_sel = [];
 
@@ -533,6 +532,8 @@
             "sig_pos",
             "sig_gn",
             "int_ty",
+            "gprot",
+            "entry_name",
             "pdb_id"
         ];
 

@@ -38,16 +38,9 @@ const signprotmat = {
     },
 
     labelData: function(data, keys) {
-      const data_labeled = data.map(function(e) {
+      const data_labeled = data.map(e => {
         let obj = {};
         keys.forEach(function(key, i) {
-          // // comment this out later
-          // if (key === "sig_gn" || key === "rec_gn") {
-          //   if (e[i] === '-') {
-          //     return;
-          //   }
-          //   // obj[key] = Math.floor(e[i] / 10);
-          // }
           obj[key] = e[i];
         });
         return obj;
@@ -111,17 +104,20 @@ const signprotmat = {
     },
 
     dataTransformationWrapper: function(dataset, keys, pdb_sel) {
-      dataset = _.pick(dataset, pdb_sel);
-      let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
-      let data_t = signprotmat.data.objectToArray(dataset);
-      data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
-      data_t = signprotmat.data.flattenOnce(data_t);
-      data_t = signprotmat.data.labelData(data_t, keys);
+      // dataset = _.pick(dataset, pdb_sel);
+      // let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
+      // let data_t = signprotmat.data.objectToArray(dataset);
+      // data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
+      // data_t = signprotmat.data.flattenOnce(data_t);
+      let data_t = signprotmat.data.labelData(dataset, keys);
       data_t = signprotmat.data.removeUndefinedGN(data_t);
+      data_t = _.filter(data_t, d => pdb_sel.includes(d.pdb_id))
 
       let data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
       let data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
       let int_ty = signprotmat.data.getInteractionTypes(data_t);
+      let pdb_ids = _.uniqBy(data_t, 'pdb_id')
+      pdb_ids =_.map(pdb_ids, d => d.pdb_id) 
 
       let return_data = {
         transformed: data_t,
@@ -137,7 +133,7 @@ const signprotmat = {
     annotateNonInteractionData: function(meta, data) {
       data.forEach(element => {
         const tmp = _.find(meta, d => d.entry_name === element.entry_name);
-        element["pdb_id"] = tmp.pdb_id.toUpperCase();
+        element["pdb_id"] = tmp.pdb_id;
       });
       return data;
     }
@@ -233,9 +229,10 @@ const signprotmat = {
           d3
             .map(data, (d: any) => d.pdb_id)
             .keys()
-            .sort(function(a, b){
-              return(d3.descending(a.entry_name, b.entry_name))
-            })
+            .sort(d3.descending)
+            // .sort(function(a, b){
+            //   return(d3.descending(a.entry_name, b.entry_name))
+            // })
         )
         .range([300, 0])
         .padding(1);
@@ -786,7 +783,7 @@ const signprotmat = {
         .attr("text-anchor", "end")
         .attr("dy", 75)
         .text(function(d: any) {
-          const i_obj = _.find(interactions_metadata, e => e.pdb_id.toUpperCase() === d)
+          const i_obj = _.find(interactions_metadata, e => e.pdb_id === d)
           let text = i_obj.name.replace('&beta;', '\u03B2')  // beta
           text = text.replace('&mu;', '\u03BC')  // mu
           return text.replace(/<[^>]*>/g, '') + ' (' + d + ')';
@@ -815,7 +812,7 @@ const signprotmat = {
         .attr("text-anchor", "begin")
         .attr("dy", 65)
         .text(function(d: any) {
-          const i_obj = _.find(interactions_metadata, e => e.pdb_id.toUpperCase() === d)
+          const i_obj = _.find(interactions_metadata, e => e.pdb_id === d)
           // let text = i_obj.gprot.replace('Engineered', 'Eng.')
           let text = i_obj.gprot.replace('Engineered', 'E.')
           // text = text.replace('protein', 'prot.')
