@@ -1,5 +1,5 @@
 // * CONSTANTS
-const margin = { top: 40, right: 200, bottom: 180, left: 200 };
+const margin = { top: 60, right: 200, bottom: 180, left: 200 };
 let w = 1200 - margin.left - margin.right,
   h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
@@ -233,7 +233,9 @@ const signprotmat = {
           d3
             .map(data, (d: any) => d.pdb_id)
             .keys()
-            .sort(d3.descending)
+            .sort(function(a, b){
+              return(d3.descending(a.entry_name, b.entry_name))
+            })
         )
         .range([300, 0])
         .padding(1);
@@ -248,7 +250,9 @@ const signprotmat = {
           d3
             .map(data, (d: any) => d.pdb_id)
             .keys()
-            .sort(d3.descending)
+            .sort(function(a, b){
+              return(d3.descending(a.gprot, b.gprot))
+            })
         )
         .range([120, 0])
         .padding(1);
@@ -533,6 +537,7 @@ const signprotmat = {
       svg,
       data,
       data_non,
+      interactions_metadata,
       xScale,
       yScale,
       xAxis,
@@ -781,7 +786,11 @@ const signprotmat = {
         .attr("text-anchor", "end")
         .attr("dy", 75)
         .text(function(d: any) {
-          return d;
+          const i_obj = _.find(interactions_metadata, e => e.pdb_id.toUpperCase() === d)
+          let text = i_obj.name.replace('&beta;', '\u03B2')  // beta
+          text = text.replace('&mu;', '\u03BC')  // mu
+          return text.replace(/<[^>]*>/g, '') + ' (' + d + ')';
+          // return d;
         });
 
       // * APPENDING ROW TICK ANNOTATION FOR SIGPROT GNs
@@ -806,7 +815,12 @@ const signprotmat = {
         .attr("text-anchor", "begin")
         .attr("dy", 65)
         .text(function(d: any) {
-          return d;
+          const i_obj = _.find(interactions_metadata, e => e.pdb_id.toUpperCase() === d)
+          // let text = i_obj.gprot.replace('Engineered', 'Eng.')
+          let text = i_obj.gprot.replace('Engineered', 'E.')
+          // text = text.replace('protein', 'prot.')
+          text = text.replace('protein', 'p.')
+          return text.replace(/<[^>]*>/g, '') + ' (' + d + ')';
         });
 
       // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
