@@ -1167,10 +1167,18 @@ const signprotmat = {
       let data = data_in.feat;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
-      let uniq_feats = _.uniq(_.map(data, function(d){
+      let feats = [];
+      data.forEach(d => {
         const length_text = d.length != '' ? ' (' + d.length + ')' : '';
-        return (d.feature + length_text);
-      }))
+        feats.push({
+          code: d.feature_code,
+          feature: d.feature,
+          length: d.length,
+          comb: (d.feature + length_text)
+        })
+      })
+      let uniq_feats = _.uniqBy(feats, 'comb')
+      console.log(uniq_feats)
 
       // filter out NA generic numbers based on xScale
       data = _.filter(data, function(d) {
@@ -1200,23 +1208,65 @@ const signprotmat = {
           );
         });
 
-      svg
+      let row = svg
         .append("g")
         .attr("id", "seqsig_feature")
         .attr("transform", "translate(" + 0 + "," + 0 + ")")
         .selectAll("text")
         .data(uniq_feats)
         .enter()
+
+      row
         .append("text")
         .attr("class", "y seq_label")
-        .attr("x", -10)
+        .attr("x", (-10-xScale.step()))
         .attr("y", function(d: any) {
-          return fScale(d) - fScale.step() / 2;
+          return fScale(d.comb) - fScale.step() / 2;
         })
         .attr("text-anchor", "end")
         .attr("dy", 75)
         .text(function(d: any) {
-          return d;
+          return d.comb;
+        });
+      row
+        .append('rect')
+        .style("fill", function(d: any) {
+          const gcol = signprotmat.d3.fScaleColor(d.code);
+          if (typeof gcol != "undefined") {
+            return gcol.bg_color;
+          } else {
+            return null;
+          }
+        })
+        .attr("x", -xScale.step())
+        .attr("y", function(d: any) {
+          return 75 + fScale(d.comb) - fScale.step();
+        })
+        .attr("width", xScale.step())
+        .attr("height", fScale.step());
+
+        row
+        .append('text')
+        .attr("class", "y seq_label")
+        .attr("text-anchor", "middle")
+        .attr("x", -xScale.step()/2)
+        .attr("y", function(d: any) {
+          return 75 + fScale(d.comb) - fScale.step()/2;
+        })
+        .style("fill", (d: any) => {
+          const gcol = signprotmat.d3.fScaleColor(d.code);
+          if (typeof gcol != "undefined") {
+            if (typeof gcol.font_color != "undefined") {
+              return gcol.font_color;
+            } else {
+              return "#000000";
+            }
+          } else {
+            return "#000000";
+          }
+        })
+        .text(function(d: any) {
+          return d.code;
         });
 
       svg

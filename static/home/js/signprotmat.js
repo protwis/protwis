@@ -1008,10 +1008,18 @@ var signprotmat = {
             var data = data_in.feat;
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
-            var uniq_feats = _.uniq(_.map(data, function (d) {
+            var feats = [];
+            data.forEach(function (d) {
                 var length_text = d.length != '' ? ' (' + d.length + ')' : '';
-                return (d.feature + length_text);
-            }));
+                feats.push({
+                    code: d.feature_code,
+                    feature: d.feature,
+                    length: d.length,
+                    comb: (d.feature + length_text)
+                });
+            });
+            var uniq_feats = _.uniqBy(feats, 'comb');
+            console.log(uniq_feats);
             // filter out NA generic numbers based on xScale
             data = _.filter(data, function (d) {
                 return xScale(d.gn);
@@ -1036,23 +1044,66 @@ var signprotmat = {
                     d.freq +
                     "<br>");
             });
-            svg
+            var row = svg
                 .append("g")
                 .attr("id", "seqsig_feature")
                 .attr("transform", "translate(" + 0 + "," + 0 + ")")
                 .selectAll("text")
                 .data(uniq_feats)
-                .enter()
+                .enter();
+            row
                 .append("text")
                 .attr("class", "y seq_label")
-                .attr("x", -10)
+                .attr("x", (-10 - xScale.step()))
                 .attr("y", function (d) {
-                return fScale(d) - fScale.step() / 2;
+                return fScale(d.comb) - fScale.step() / 2;
             })
                 .attr("text-anchor", "end")
                 .attr("dy", 75)
                 .text(function (d) {
-                return d;
+                return d.comb;
+            });
+            row
+                .append('rect')
+                .style("fill", function (d) {
+                var gcol = signprotmat.d3.fScaleColor(d.code);
+                if (typeof gcol != "undefined") {
+                    return gcol.bg_color;
+                }
+                else {
+                    return null;
+                }
+            })
+                .attr("x", -xScale.step())
+                .attr("y", function (d) {
+                return 75 + fScale(d.comb) - fScale.step();
+            })
+                .attr("width", xScale.step())
+                .attr("height", fScale.step());
+            row
+                .append('text')
+                .attr("class", "y seq_label")
+                .attr("text-anchor", "middle")
+                .attr("x", -xScale.step() / 2)
+                .attr("y", function (d) {
+                return 75 + fScale(d.comb) - fScale.step() / 2;
+            })
+                .style("fill", function (d) {
+                var gcol = signprotmat.d3.fScaleColor(d.code);
+                if (typeof gcol != "undefined") {
+                    if (typeof gcol.font_color != "undefined") {
+                        return gcol.font_color;
+                    }
+                    else {
+                        return "#000000";
+                    }
+                }
+                else {
+                    return "#000000";
+                }
+            })
+                .text(function (d) {
+                return d.code;
             });
             svg
                 .append("g")
