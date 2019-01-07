@@ -287,7 +287,14 @@ const signprotmat = {
     // * seqsig
     // * SETTING THE FEATURE SCALE
     fScale: function(data) {
+      console.log(data)
       const features = _.map(data, d => d.feature);
+      const f = _.map(data, function(d){
+        const length_text = d.length != '' ? ' (' + d.length + ')' : '';
+        return (d.feature + length_text);
+      })
+      console.log(f)
+      // const length = _.map(data, d => d.length);
 
       let fScale = d3
         .scaleBand()

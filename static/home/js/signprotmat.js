@@ -241,7 +241,14 @@ var signprotmat = {
         // * seqsig
         // * SETTING THE FEATURE SCALE
         fScale: function (data) {
+            console.log(data);
             var features = _.map(data, function (d) { return d.feature; });
+            var f = _.map(data, function (d) {
+                var length_text = d.length != '' ? ' (' + d.length + ')' : '';
+                return (d.feature + length_text);
+            });
+            console.log(f);
+            // const length = _.map(data, d => d.length);
             var fScale = d3
                 .scaleBand()
                 .domain(features)
