@@ -65,23 +65,21 @@ class Command(BaseBuild):
     
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
-        parser.add_argument('--update', help='Upload model to GPCRdb, overwrites existing entry', default=False, 
+        parser.add_argument('--update', help='Upload models to GPCRdb, overwrites existing entry', default=False, 
                             action='store_true')
         parser.add_argument('-r', help='''Run program for specific receptor(s) by giving UniProt common name as 
                                           argument (e.g. 5ht2a_human) or build revised crystal by giving PDB code (e.g. 4K5Y)''', 
                             default=False, type=str, nargs='+')
         parser.add_argument('-z', help='Create zip file of model directory containing all built models', default=False,
                             action='store_true')
-        parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
-        parser.add_argument('-x', help='Select crystal structure refinement for all crystals in the db', default=False, action='store_true')
+        # parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
+        # parser.add_argument('-x', help='Select crystal structure refinement for all crystals in the db', default=False, action='store_true')
         parser.add_argument('--purge', help='Purge all existing records', default=False, action='store_true')
         parser.add_argument('-i', help='Number of MODELLER iterations for model building', default=1, type=int)
-        parser.add_argument('--test_run', action='store_true', help='Build only a test set of homology models ', default=False)
+        # parser.add_argument('--test_run', action='store_true', help='Build only a test set of homology models ', default=False)
         parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
-        parser.add_argument('--state', help='Specify state in debug mode', default=False, type=str, nargs='+')
-        parser.add_argument('--complex', help='Build GPCR complex', default=False, action='store_true')
         parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str)
-        parser.add_argument('--n_c_term', help='Model N- and C-termini', default=False, action='store_true')
+        # parser.add_argument('--n_c_term', help='Model N- and C-termini', default=False, action='store_true')
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         
     def handle(self, *args, **options):
@@ -113,16 +111,17 @@ class Command(BaseBuild):
             self.update = True
         else:
             self.update = False
-        if options['complex']:
-            self.complex = True
-        else:
-            self.complex = False
+        self.complex = True
         if not options['signprot']:
             self.signprot = False
         else:
             self.signprot = options['signprot']
         self.force_main_temp = options['force_main_temp']
         self.modeller_iterations = options['i']
+        if options['debug']:
+            self.debug = True
+        else:
+            self.debug = False
 
         sf = SignprotFunctions()
 
@@ -137,9 +136,9 @@ class Command(BaseBuild):
         subfams = sf.get_subfamilies_with_templates()
         self.gprotein_targets = sf.get_subfam_subtype_dict(subfams)
 
-        del self.gprotein_targets['Gi/o']
+        # del self.gprotein_targets['Gi/o']
 
-        # self.receptor_list = Protein.objects.filter(entry_name__in=['drd3_human'])
+        self.receptor_list = Protein.objects.filter(entry_name__in=['drd3_human'])
 
         self.processors = options['proc']
         self.prepare_input(self.processors, self.receptor_list)
@@ -178,18 +177,17 @@ class Command(BaseBuild):
                     continue
                 else:
                     if first_in_subfam:
-                        mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                        mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
                         mod.run(fast_refinement=True)
                         first_in_subfam = False
                     else:
                         ihm = ImportHomologyModel(receptor.entry_name, target)
                         if ihm.find_files()!=None:
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
                             mod.run(import_receptor=True, fast_refinement=True)
                             import_receptor = True
                         else:
-                            # pass
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=True, update=True, complex_model=True, signprot=target)
+                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
                             mod.run(fast_refinement=True)
 
 

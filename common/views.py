@@ -506,7 +506,7 @@ def SelectFullSequence(request):
 
         if request.GET['protein_type'] == 'gprotein':
             segmentlist = definitions.G_PROTEIN_SEGMENTS
-            pfam = 'Gprotein'
+            pfam = 'Alpha'
         else:
             segmentlist = definitions.ARRESTIN_SEGMENTS
             pfam = 'Arrestin'
@@ -562,7 +562,7 @@ def SelectAlignableSegments(request):
     if "protein_type" in request.GET:
         if request.GET['protein_type'] == 'gprotein':
             segmentlist = definitions.G_PROTEIN_SEGMENTS
-            pfam = 'Gprotein'
+            pfam = 'Alpha'
         else:
             segmentlist = definitions.ARRESTIN_SEGMENTS
             pfam = 'Arrestin'
