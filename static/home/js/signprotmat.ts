@@ -1,5 +1,5 @@
 // * CONSTANTS
-const margin = { top: 40, right: 200, bottom: 180, left: 200 };
+const margin = { top: 60, right: 200, bottom: 180, left: 200 };
 let w = 1200 - margin.left - margin.right,
   h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
@@ -38,16 +38,9 @@ const signprotmat = {
     },
 
     labelData: function(data, keys) {
-      const data_labeled = data.map(function(e) {
+      const data_labeled = data.map(e => {
         let obj = {};
         keys.forEach(function(key, i) {
-          // // comment this out later
-          // if (key === "sig_gn" || key === "rec_gn") {
-          //   if (e[i] === '-') {
-          //     return;
-          //   }
-          //   // obj[key] = Math.floor(e[i] / 10);
-          // }
           obj[key] = e[i];
         });
         return obj;
@@ -111,17 +104,20 @@ const signprotmat = {
     },
 
     dataTransformationWrapper: function(dataset, keys, pdb_sel) {
-      dataset = _.pick(dataset, pdb_sel);
-      let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
-      let data_t = signprotmat.data.objectToArray(dataset);
-      data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
-      data_t = signprotmat.data.flattenOnce(data_t);
-      data_t = signprotmat.data.labelData(data_t, keys);
+      // dataset = _.pick(dataset, pdb_sel);
+      // let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
+      // let data_t = signprotmat.data.objectToArray(dataset);
+      // data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
+      // data_t = signprotmat.data.flattenOnce(data_t);
+      let data_t = signprotmat.data.labelData(dataset, keys);
       data_t = signprotmat.data.removeUndefinedGN(data_t);
+      data_t = _.filter(data_t, d => pdb_sel.includes(d.pdb_id))
 
       let data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
       let data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
       let int_ty = signprotmat.data.getInteractionTypes(data_t);
+      let pdb_ids = _.uniqBy(data_t, 'pdb_id')
+      pdb_ids =_.map(pdb_ids, d => d.pdb_id) 
 
       let return_data = {
         transformed: data_t,
@@ -137,7 +133,7 @@ const signprotmat = {
     annotateNonInteractionData: function(meta, data) {
       data.forEach(element => {
         const tmp = _.find(meta, d => d.entry_name === element.entry_name);
-        element["pdb_id"] = tmp.pdb_id.toUpperCase();
+        element["pdb_id"] = tmp.pdb_id;
       });
       return data;
     }
@@ -226,14 +222,18 @@ const signprotmat = {
     },
 
     // * SETTING THE PDB/SIG-PROT SCALE
-    pdbScale: function(data) {
+    pdbScale: function(data, meta) {
       let pdbScale = d3
         .scaleBand()
         .domain(
           d3
             .map(data, (d: any) => d.pdb_id)
             .keys()
-            .sort(d3.descending)
+            .sort(function(a, b){
+              const a_obj = _.find(meta, d => d.pdb_id === a);
+              const b_obj = _.find(meta, d => d.pdb_id === b);
+              return(d3.descending(a_obj.entry_name, b_obj.entry_name))
+            })
         )
         .range([300, 0])
         .padding(1);
@@ -241,14 +241,18 @@ const signprotmat = {
       return pdbScale;
     },
 
-    sigScale: function(data) {
+    sigScale: function(data, meta) {
       let sigScale = d3
         .scaleBand()
         .domain(
           d3
             .map(data, (d: any) => d.pdb_id)
             .keys()
-            .sort(d3.descending)
+            .sort(function(a, b){
+              const a_obj = _.find(meta, d => d.pdb_id === a);
+              const b_obj = _.find(meta, d => d.pdb_id === b);
+              return(d3.descending(a_obj.gprot, b_obj.gprot))
+            })
         )
         .range([120, 0])
         .padding(1);
@@ -533,6 +537,7 @@ const signprotmat = {
       svg,
       data,
       data_non,
+      interactions_metadata,
       xScale,
       yScale,
       xAxis,
@@ -781,7 +786,11 @@ const signprotmat = {
         .attr("text-anchor", "end")
         .attr("dy", 75)
         .text(function(d: any) {
-          return d;
+          const i_obj = _.find(interactions_metadata, e => e.pdb_id === d)
+          let text = i_obj.name.replace('&beta;', '\u03B2')  // beta
+          text = text.replace('&mu;', '\u03BC')  // mu
+          return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
+          // return d;
         });
 
       // * APPENDING ROW TICK ANNOTATION FOR SIGPROT GNs
@@ -801,12 +810,19 @@ const signprotmat = {
           return 10;
         })
         .attr("y", function(d: any, i) {
-          return sigScale.step() * (i + 1);
+          // return sigScale(d) - sigScale.step() / 2;
+          return sigScale(d);
+          // return sigScale.step() * (i + 1);
         })
         .attr("text-anchor", "begin")
-        .attr("dy", 65)
+        .attr("dy", 68)
         .text(function(d: any) {
-          return d;
+          const i_obj = _.find(interactions_metadata, e => e.pdb_id === d)
+          // let text = i_obj.gprot.replace('Engineered', 'Eng.')
+          let text = i_obj.gprot.replace('Engineered', 'E.')
+          // text = text.replace('protein', 'prot.')
+          text = text.replace('protein', 'p.')
+          return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
         });
 
       // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
@@ -901,7 +917,7 @@ const signprotmat = {
         .html(function(d) {
           return (
             "Receptor AA: " +
-            d.sig_aa +
+            d.rec_aa +
             "<br>" +
             "Interaction type: " +
             d.int_ty

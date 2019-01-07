@@ -975,7 +975,6 @@ def InteractionMatrix(request):
         ],
     }
 
-
     # generate complex info dataset
     filt = [e.upper() for e in list(dataset)]
     struc = Structure.objects.filter(pdb_code__index__in=filt).prefetch_related('protein_conformation__protein__parent')
@@ -992,7 +991,6 @@ def InteractionMatrix(request):
         except Exception:
             r['gprot'] = ''
         complex_info.append(r)
-    # print(complex_info)
 
     data = Protein.objects.filter(
         sequence_type__slug='wt',
@@ -1003,33 +1001,15 @@ def InteractionMatrix(request):
             'family__parent__parent__parent',
         )
 
-    ps = []
-    for s in data:
-        r = {}
-        r['name'] = s.name
-        r['entry_name'] = s.entry_name
-        r['protein_family'] = s.family.parent.short()
-        r['protein_class'] = s.family.parent.parent.parent.short()
-        r['ligand'] = s.family.parent.parent.short()
-        ps.append(r)
-
-    names = set(pi['entry_name'] for pi in ps)
-    rs = Residue.objects.filter(
-            protein_conformation__protein__entry_name__in=names,
-            protein_conformation__protein__sequence_type__slug='wt',
-            protein_conformation__protein__species__common_name="Human",
-            protein_conformation__protein__family__slug__startswith='00',  # receptors, no gproteins
-            # refined='False'
-            ).values(
-                pdb_id = F('protein_conformation__structure__pdb_code__index'),
-                rec_id = F('protein_conformation__protein__id'),
-                name = F('protein_conformation__protein__name'),
-                entry_name = F('protein_conformation__protein__entry_name'),
-                rec_aa = F('amino_acid'),
-                rec_gn = F('display_generic_number__label')
-            ).exclude(
-                Q(pdb_id=None) | Q(rec_gn=None)
-            )
+    # proteins = []
+    # for s in data:
+    #     r = {}
+    #     r['name'] = s.name
+    #     r['entry_name'] = s.entry_name
+    #     r['protein_family'] = s.family.parent.short()
+    #     r['protein_class'] = s.family.parent.parent.parent.short()
+    #     r['ligand'] = s.family.parent.parent.short()
+    #     proteins.append(r)
 
     interactions_metadata = complex_info
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Gprotein').values('id', 'slug')
@@ -1047,12 +1027,26 @@ def InteractionMatrix(request):
                 Q(rec_gn=None)
             )
 
+    new_dataset = []
+    for pdb_key in dataset:
+        for residue_list in dataset[pdb_key]:
+            curr_meta = None
+            while curr_meta is None:
+                # print(curr_meta)
+                for meta in interactions_metadata:
+                    if meta['pdb_id'].upper() == pdb_key.upper():
+                        curr_meta = meta
+            gprot = curr_meta['gprot']
+            entry_name = curr_meta['entry_name']
+            pdb_id = curr_meta['pdb_id']
+            residue_list.extend([gprot, entry_name, pdb_id])
+            new_dataset.append(residue_list)
+
     context = {
-        'interactions': dataset,
+        'interactions': new_dataset,
         'non_interactions': json.dumps(list(remaining_residues)),
         'interactions_metadata': json.dumps(interactions_metadata),
-        'ps': json.dumps(list(ps)),
-        'rs': json.dumps(list(rs)),
+        # 'ps': json.dumps(list(proteins)),
         'gprot': json.dumps(list(gprotein_order))
         }
 

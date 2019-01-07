@@ -1,5 +1,5 @@
 // * CONSTANTS
-var margin = { top: 40, right: 200, bottom: 180, left: 200 };
+var margin = { top: 60, right: 200, bottom: 180, left: 200 };
 var w = 1200 - margin.left - margin.right, h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
 var non_int_col = "#fff";
@@ -33,13 +33,6 @@ var signprotmat = {
             var data_labeled = data.map(function (e) {
                 var obj = {};
                 keys.forEach(function (key, i) {
-                    // // comment this out later
-                    // if (key === "sig_gn" || key === "rec_gn") {
-                    //   if (e[i] === '-') {
-                    //     return;
-                    //   }
-                    //   // obj[key] = Math.floor(e[i] / 10);
-                    // }
                     obj[key] = e[i];
                 });
                 return obj;
@@ -96,16 +89,19 @@ var signprotmat = {
             });
         },
         dataTransformationWrapper: function (dataset, keys, pdb_sel) {
-            dataset = _.pick(dataset, pdb_sel);
-            var pdb_ids = signprotmat.data.extractPdbIDs(dataset);
-            var data_t = signprotmat.data.objectToArray(dataset);
-            data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
-            data_t = signprotmat.data.flattenOnce(data_t);
-            data_t = signprotmat.data.labelData(data_t, keys);
+            // dataset = _.pick(dataset, pdb_sel);
+            // let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
+            // let data_t = signprotmat.data.objectToArray(dataset);
+            // data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
+            // data_t = signprotmat.data.flattenOnce(data_t);
+            var data_t = signprotmat.data.labelData(dataset, keys);
             data_t = signprotmat.data.removeUndefinedGN(data_t);
+            data_t = _.filter(data_t, function (d) { return pdb_sel.includes(d.pdb_id); });
             var data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
             var data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
             var int_ty = signprotmat.data.getInteractionTypes(data_t);
+            var pdb_ids = _.uniqBy(data_t, 'pdb_id');
+            pdb_ids = _.map(pdb_ids, function (d) { return d.pdb_id; });
             var return_data = {
                 transformed: data_t,
                 receptor: data_t_rec,
@@ -118,7 +114,7 @@ var signprotmat = {
         annotateNonInteractionData: function (meta, data) {
             data.forEach(function (element) {
                 var tmp = _.find(meta, function (d) { return d.entry_name === element.entry_name; });
-                element["pdb_id"] = tmp.pdb_id.toUpperCase();
+                element["pdb_id"] = tmp.pdb_id;
             });
             return data;
         }
@@ -190,24 +186,32 @@ var signprotmat = {
             return yScale;
         },
         // * SETTING THE PDB/SIG-PROT SCALE
-        pdbScale: function (data) {
+        pdbScale: function (data, meta) {
             var pdbScale = d3
                 .scaleBand()
                 .domain(d3
                 .map(data, function (d) { return d.pdb_id; })
                 .keys()
-                .sort(d3.descending))
+                .sort(function (a, b) {
+                var a_obj = _.find(meta, function (d) { return d.pdb_id === a; });
+                var b_obj = _.find(meta, function (d) { return d.pdb_id === b; });
+                return (d3.descending(a_obj.entry_name, b_obj.entry_name));
+            }))
                 .range([300, 0])
                 .padding(1);
             return pdbScale;
         },
-        sigScale: function (data) {
+        sigScale: function (data, meta) {
             var sigScale = d3
                 .scaleBand()
                 .domain(d3
                 .map(data, function (d) { return d.pdb_id; })
                 .keys()
-                .sort(d3.descending))
+                .sort(function (a, b) {
+                var a_obj = _.find(meta, function (d) { return d.pdb_id === a; });
+                var b_obj = _.find(meta, function (d) { return d.pdb_id === b; });
+                return (d3.descending(a_obj.gprot, b_obj.gprot));
+            }))
                 .range([120, 0])
                 .padding(1);
             return sigScale;
@@ -466,7 +470,7 @@ var signprotmat = {
             return tip;
         },
         // * RENDER DATA
-        renderData: function (svg, data, data_non, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
+        renderData: function (svg, data, data_non, interactions_metadata, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
             var shift_left = 7 / 8;
             var shift_top = 1 / 8;
             var scale_size = shift_left - shift_top;
@@ -680,7 +684,11 @@ var signprotmat = {
                 .attr("text-anchor", "end")
                 .attr("dy", 75)
                 .text(function (d) {
-                return d;
+                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
+                var text = i_obj.name.replace('&beta;', '\u03B2'); // beta
+                text = text.replace('&mu;', '\u03BC'); // mu
+                return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
+                // return d;
             });
             // * APPENDING ROW TICK ANNOTATION FOR SIGPROT GNs
             svg
@@ -696,12 +704,19 @@ var signprotmat = {
                 return 10;
             })
                 .attr("y", function (d, i) {
-                return sigScale.step() * (i + 1);
+                // return sigScale(d) - sigScale.step() / 2;
+                return sigScale(d);
+                // return sigScale.step() * (i + 1);
             })
                 .attr("text-anchor", "begin")
-                .attr("dy", 65)
+                .attr("dy", 68)
                 .text(function (d) {
-                return d;
+                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
+                // let text = i_obj.gprot.replace('Engineered', 'Eng.')
+                var text = i_obj.gprot.replace('Engineered', 'E.');
+                // text = text.replace('protein', 'prot.')
+                text = text.replace('protein', 'p.');
+                return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
             });
             // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
             var recTip = d3
@@ -780,7 +795,7 @@ var signprotmat = {
                 .attr("class", "d3-tip")
                 .html(function (d) {
                 return ("Receptor AA: " +
-                    d.sig_aa +
+                    d.rec_aa +
                     "<br>" +
                     "Interaction type: " +
                     d.int_ty);
