@@ -789,7 +789,7 @@ const signprotmat = {
           const i_obj = _.find(interactions_metadata, e => e.pdb_id === d)
           let text = i_obj.name.replace('&beta;', '\u03B2')  // beta
           text = text.replace('&mu;', '\u03BC')  // mu
-          return text.replace(/<[^>]*>/g, '') + ' (' + d + ')';
+          return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
           // return d;
         });
 
@@ -822,7 +822,7 @@ const signprotmat = {
           let text = i_obj.gprot.replace('Engineered', 'E.')
           // text = text.replace('protein', 'prot.')
           text = text.replace('protein', 'p.')
-          return text.replace(/<[^>]*>/g, '') + ' (' + d + ')';
+          return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
         });
 
       // * APPENDING AMINOACID SEQUENCE [RECEPTOR]

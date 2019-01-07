@@ -687,7 +687,7 @@ var signprotmat = {
                 var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
                 var text = i_obj.name.replace('&beta;', '\u03B2'); // beta
                 text = text.replace('&mu;', '\u03BC'); // mu
-                return text.replace(/<[^>]*>/g, '') + ' (' + d + ')';
+                return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
                 // return d;
             });
             // * APPENDING ROW TICK ANNOTATION FOR SIGPROT GNs
@@ -716,7 +716,7 @@ var signprotmat = {
                 var text = i_obj.gprot.replace('Engineered', 'E.');
                 // text = text.replace('protein', 'prot.')
                 text = text.replace('protein', 'p.');
-                return text.replace(/<[^>]*>/g, '') + ' (' + d + ')';
+                return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
             });
             // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
             var recTip = d3
