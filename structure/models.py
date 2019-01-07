@@ -3,6 +3,7 @@ from django.core.cache import cache
 
 from io import StringIO
 from Bio.PDB import PDBIO
+import re
 
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
@@ -28,6 +29,14 @@ class Structure(models.Model):
 
     def __str__(self):
         return self.pdb_code.index
+
+    def get_stab_agents_gproteins(self):
+        objs = self.stabilizing_agents.all()
+        elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*G.*", element) and not re.match(".*thase.*|PGS", element)]
+        if len(elements) > 0:
+            return "\n".join(elements)
+        else:
+            return '-'
 
     def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
 
