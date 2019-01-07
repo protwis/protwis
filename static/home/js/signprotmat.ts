@@ -860,7 +860,9 @@ const signprotmat = {
         return xScale(d.rec_gn);
       });
 
-      console.log(data_non)
+      data_non = _.filter(data_non, function(d) {
+        return pdbScale(d.pdb_id);
+      });
 
       each_res = svg
         .select("g#recAA")
