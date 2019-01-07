@@ -3,6 +3,7 @@ const margin = { top: 40, right: 200, bottom: 180, left: 200 };
 let w = 1200 - margin.left - margin.right,
   h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
+const non_int_col = "#FF5187";
 
 // array for data in infobox
 let info_data = [];
@@ -407,7 +408,7 @@ const signprotmat = {
           if (typeof d.int_ty != "undefined") {
             return colScale(d.int_ty[0]);
           } else {
-            return '#ccc'
+            return non_int_col;
           }
         });
         res.selectAll("text").style("fill", null);
@@ -416,7 +417,7 @@ const signprotmat = {
           if (typeof d.int_ty != "undefined") {
             return colScale(d.int_ty[0]);
           } else {
-            return '#ccc'
+            return "#ccc";
           }
         });
         res.selectAll("text").style("fill", null);
@@ -820,42 +821,6 @@ const signprotmat = {
         .attr("width", xScale.range()[1] - xScale.step())
         .attr("height", pdbScale.range()[0] - pdbScale.step());
 
-      each_res = svg
-        .select("g#recAA")
-        .selectAll("text")
-        .data(data.receptor)
-        .enter()
-        .append("g")
-        .attr(
-          "class",
-          (d: any) => "R_" + _.replace(d.rec_gn, ".", "p") + "_P_" + d.pdb_id
-        )
-        .call(recTip)
-        .on("mouseover", function(d) {
-          recTip.show(d);
-        })
-        .on("mouseout", function(d) {
-          recTip.hide();
-        });
-
-      each_res
-        .append("rect")
-        .attr("class", "res_rect")
-        .style("fill", (d: any) => colScale(d.int_ty[0]))
-        .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
-        .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
-        .attr("width", xScale.step())
-        .attr("height", pdbScale.step());
-
-      each_res
-        .append("text")
-        .attr("class", "res_label")
-        .attr("x", (d: any) => xScale(d.rec_gn))
-        .attr("y", (d: any) => pdbScale(d.pdb_id) - pdbScale.step() / 2)
-        .attr("text-anchor", "middle")
-        .attr("dy", 75)
-        .text((d: any) => d.rec_aa);
-
       data_non = _.filter(data_non, function(d) {
         return xScale(d.rec_gn);
       });
@@ -863,6 +828,9 @@ const signprotmat = {
       data_non = _.filter(data_non, function(d) {
         return pdbScale(d.pdb_id);
       });
+
+      // data.receptor.push(...data_non)
+      data_non.push(...data.receptor);
 
       each_res = svg
         .select("g#recAA")
@@ -885,7 +853,9 @@ const signprotmat = {
       each_res
         .append("rect")
         .attr("class", "res_rect")
-        .style("fill", "#ccc")
+        .style("fill", (d: any) =>
+          typeof d.int_ty !== "undefined" ? colScale(d.int_ty[0]) : non_int_col
+        )
         .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
         .attr("width", xScale.step())
