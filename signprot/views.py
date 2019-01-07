@@ -1100,7 +1100,6 @@ def IMSequenceSignature(request):
 
     # FEATURES AND REGIONS
     feats = [feature for feature in signature_data['a_pos'].features_combo]
-    print(feats)
     trans = {
         'N-term': 'N',
         'TM1': 1,
