@@ -485,8 +485,8 @@
                 yAxis = signprotmat.d3.yAxis(yScale);
                 xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
                 yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
-                pdbScale = signprotmat.d3.pdbScale(data.transformed);
-                sigScale = signprotmat.d3.sigScale(data.transformed);
+                pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+                sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
                 colScale = signprotmat.d3.colScale(data.inttypes);
                 tooltip = signprotmat.d3.tooltip(svg);
                 signprotmat.d3.renderData(
@@ -545,8 +545,8 @@
         yAxis = signprotmat.d3.yAxis(yScale);
         xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
         yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
-        pdbScale = signprotmat.d3.pdbScale(data.transformed);
-        sigScale = signprotmat.d3.sigScale(data.transformed);
+        pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+        sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
         colScale = signprotmat.d3.colScale(data.inttypes);
         tooltip = signprotmat.d3.tooltip(svg);
         signprotmat.d3.renderData(

@@ -222,17 +222,18 @@ const signprotmat = {
     },
 
     // * SETTING THE PDB/SIG-PROT SCALE
-    pdbScale: function(data) {
+    pdbScale: function(data, meta) {
       let pdbScale = d3
         .scaleBand()
         .domain(
           d3
             .map(data, (d: any) => d.pdb_id)
             .keys()
-            .sort(d3.descending)
-            // .sort(function(a, b){
-            //   return(d3.descending(a.entry_name, b.entry_name))
-            // })
+            .sort(function(a, b){
+              const a_obj = _.find(meta, d => d.pdb_id === a);
+              const b_obj = _.find(meta, d => d.pdb_id === b);
+              return(d3.descending(a_obj.entry_name, b_obj.entry_name))
+            })
         )
         .range([300, 0])
         .padding(1);
@@ -240,7 +241,7 @@ const signprotmat = {
       return pdbScale;
     },
 
-    sigScale: function(data) {
+    sigScale: function(data, meta) {
       let sigScale = d3
         .scaleBand()
         .domain(
@@ -248,7 +249,9 @@ const signprotmat = {
             .map(data, (d: any) => d.pdb_id)
             .keys()
             .sort(function(a, b){
-              return(d3.descending(a.gprot, b.gprot))
+              const a_obj = _.find(meta, d => d.pdb_id === a);
+              const b_obj = _.find(meta, d => d.pdb_id === b);
+              return(d3.descending(a_obj.gprot, b_obj.gprot))
             })
         )
         .range([120, 0])
@@ -807,10 +810,12 @@ const signprotmat = {
           return 10;
         })
         .attr("y", function(d: any, i) {
-          return sigScale.step() * (i + 1);
+          // return sigScale(d) - sigScale.step() / 2;
+          return sigScale(d);
+          // return sigScale.step() * (i + 1);
         })
         .attr("text-anchor", "begin")
-        .attr("dy", 65)
+        .attr("dy", 68)
         .text(function(d: any) {
           const i_obj = _.find(interactions_metadata, e => e.pdb_id === d)
           // let text = i_obj.gprot.replace('Engineered', 'Eng.')
@@ -912,7 +917,7 @@ const signprotmat = {
         .html(function(d) {
           return (
             "Receptor AA: " +
-            d.sig_aa +
+            d.rec_aa +
             "<br>" +
             "Interaction type: " +
             d.int_ty

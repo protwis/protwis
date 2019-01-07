@@ -186,29 +186,31 @@ var signprotmat = {
             return yScale;
         },
         // * SETTING THE PDB/SIG-PROT SCALE
-        pdbScale: function (data) {
+        pdbScale: function (data, meta) {
             var pdbScale = d3
                 .scaleBand()
                 .domain(d3
                 .map(data, function (d) { return d.pdb_id; })
                 .keys()
-                .sort(d3.descending)
-            // .sort(function(a, b){
-            //   return(d3.descending(a.entry_name, b.entry_name))
-            // })
-            )
+                .sort(function (a, b) {
+                var a_obj = _.find(meta, function (d) { return d.pdb_id === a; });
+                var b_obj = _.find(meta, function (d) { return d.pdb_id === b; });
+                return (d3.descending(a_obj.entry_name, b_obj.entry_name));
+            }))
                 .range([300, 0])
                 .padding(1);
             return pdbScale;
         },
-        sigScale: function (data) {
+        sigScale: function (data, meta) {
             var sigScale = d3
                 .scaleBand()
                 .domain(d3
                 .map(data, function (d) { return d.pdb_id; })
                 .keys()
                 .sort(function (a, b) {
-                return (d3.descending(a.gprot, b.gprot));
+                var a_obj = _.find(meta, function (d) { return d.pdb_id === a; });
+                var b_obj = _.find(meta, function (d) { return d.pdb_id === b; });
+                return (d3.descending(a_obj.gprot, b_obj.gprot));
             }))
                 .range([120, 0])
                 .padding(1);
@@ -702,10 +704,12 @@ var signprotmat = {
                 return 10;
             })
                 .attr("y", function (d, i) {
-                return sigScale.step() * (i + 1);
+                // return sigScale(d) - sigScale.step() / 2;
+                return sigScale(d);
+                // return sigScale.step() * (i + 1);
             })
                 .attr("text-anchor", "begin")
-                .attr("dy", 65)
+                .attr("dy", 68)
                 .text(function (d) {
                 var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
                 // let text = i_obj.gprot.replace('Engineered', 'Eng.')
@@ -791,7 +795,7 @@ var signprotmat = {
                 .attr("class", "d3-tip")
                 .html(function (d) {
                 return ("Receptor AA: " +
-                    d.sig_aa +
+                    d.rec_aa +
                     "<br>" +
                     "Interaction type: " +
                     d.int_ty);
