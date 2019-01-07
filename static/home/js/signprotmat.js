@@ -241,10 +241,13 @@ var signprotmat = {
         // * seqsig
         // * SETTING THE FEATURE SCALE
         fScale: function (data) {
-            var features = _.map(data, function (d) { return d.feature; });
+            var f = _.map(data, function (d) {
+                var length_text = d.length != '' ? ' (' + d.length + ')' : '';
+                return (d.feature + length_text);
+            });
             var fScale = d3
                 .scaleBand()
-                .domain(features)
+                .domain(f)
                 .range([0, h])
                 // .round(true)
                 .padding(1);
@@ -1005,7 +1008,10 @@ var signprotmat = {
             var data = data_in.feat;
             var fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale(data);
-            var uniq_feats = _.uniq(_.map(data, "feature"));
+            var uniq_feats = _.uniq(_.map(data, function (d) {
+                var length_text = d.length != '' ? ' (' + d.length + ')' : '';
+                return (d.feature + length_text);
+            }));
             // filter out NA generic numbers based on xScale
             data = _.filter(data, function (d) {
                 return xScale(d.gn);
@@ -1019,6 +1025,9 @@ var signprotmat = {
                     "<br>" +
                     "Feature: " +
                     d.feature +
+                    "<br>" +
+                    "Length: " +
+                    d.length +
                     "<br>" +
                     // "Score: " +
                     // d.expl +
@@ -1084,7 +1093,11 @@ var signprotmat = {
                 }
             })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                .attr("y", function (d) { return 75 + fScale(d.feature) - fScale.step(); })
+                .attr("y", function (d) {
+                var length_text = d.length != '' ? ' (' + d.length + ')' : '';
+                var comb = (d.feature + length_text);
+                return 75 + fScale(comb) - fScale.step();
+            })
                 .attr("width", xScale.step())
                 .attr("height", fScale.step());
             // adding the frequency text to each rectangle
@@ -1157,7 +1170,7 @@ var signprotmat = {
                     d.gn +
                     "<br>" +
                     "Feature: " +
-                    d.name +
+                    d.feature +
                     "<br>" +
                     "Length: " +
                     d.length +

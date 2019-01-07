@@ -287,11 +287,14 @@ const signprotmat = {
     // * seqsig
     // * SETTING THE FEATURE SCALE
     fScale: function(data) {
-      const features = _.map(data, d => d.feature);
+      const f = _.map(data, function(d){
+        const length_text = d.length != '' ? ' (' + d.length + ')' : '';
+        return (d.feature + length_text);
+      })
 
       let fScale = d3
         .scaleBand()
-        .domain(features)
+        .domain(f)
         .range([0, h])
         // .round(true)
         .padding(1);
@@ -1164,7 +1167,10 @@ const signprotmat = {
       let data = data_in.feat;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
-      let uniq_feats = _.uniq(_.map(data, "feature"));
+      let uniq_feats = _.uniq(_.map(data, function(d){
+        const length_text = d.length != '' ? ' (' + d.length + ')' : '';
+        return (d.feature + length_text);
+      }))
 
       // filter out NA generic numbers based on xScale
       data = _.filter(data, function(d) {
@@ -1181,6 +1187,9 @@ const signprotmat = {
             "<br>" +
             "Feature: " +
             d.feature +
+            "<br>" +
+            "Length: " +
+            d.length +
             "<br>" +
             // "Score: " +
             // d.expl +
@@ -1250,7 +1259,11 @@ const signprotmat = {
           }
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-        .attr("y", (d: any) => 75 + fScale(d.feature) - fScale.step())
+        .attr("y", function(d){
+          const length_text = d.length != '' ? ' (' + d.length + ')' : '';
+          const comb = (d.feature + length_text);
+          return 75 + fScale(comb) - fScale.step()
+        })
         .attr("width", xScale.step())
         .attr("height", fScale.step());
 
@@ -1332,7 +1345,7 @@ const signprotmat = {
             d.gn +
             "<br>" +
             "Feature: " +
-            d.name +
+            d.feature +
             "<br>" +
             "Length: " +
             d.length +

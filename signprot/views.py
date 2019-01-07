@@ -1099,7 +1099,7 @@ def IMSequenceSignature(request):
     signature_data = signature.prepare_display_data()
 
     # FEATURES AND REGIONS
-    feats = [feature for feature in signature_data['a_pos'].features]
+    feats = [feature for feature in signature_data['a_pos'].features_combo]
     trans = {
         'N-term': 'N',
         'TM1': 1,
@@ -1151,7 +1151,9 @@ def IMSequenceSignature(request):
                 try:
                     signature_features.append({
                         'key': int(x),
-                        'feature': str(feats[i]),
+                        'feature': str(feats[i][0]),
+                        'feature_code': str(feats[i][1]),
+                        'length': str(feats[i][2]),
                         'gn': str(generic_numbers[j][k]),
                         'freq': int(freq[0]),
                         'cons': int(freq[1]),
@@ -1181,7 +1183,7 @@ def IMSequenceSignature(request):
                     'key': int(x),
                     'gn': str(generic_numbers_flat[x]),
                     'code': str(pos[0]),
-                    'name': str(pos[1]),
+                    'feature': str(pos[1]),
                     'score': int(pos[2]),
                     'cons': int(pos[3]),
                     'length': str(pos[4]),
