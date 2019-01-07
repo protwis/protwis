@@ -111,13 +111,13 @@ const signprotmat = {
       // data_t = signprotmat.data.flattenOnce(data_t);
       let data_t = signprotmat.data.labelData(dataset, keys);
       data_t = signprotmat.data.removeUndefinedGN(data_t);
-      data_t = _.filter(data_t, d => pdb_sel.includes(d.pdb_id))
+      data_t = _.filter(data_t, d => pdb_sel.includes(d.pdb_id));
 
       let data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
       let data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
       let int_ty = signprotmat.data.getInteractionTypes(data_t);
-      let pdb_ids = _.uniqBy(data_t, 'pdb_id')
-      pdb_ids =_.map(pdb_ids, d => d.pdb_id) 
+      let pdb_ids = _.uniqBy(data_t, "pdb_id");
+      pdb_ids = _.map(pdb_ids, d => d.pdb_id);
 
       let return_data = {
         transformed: data_t,
@@ -229,10 +229,10 @@ const signprotmat = {
           d3
             .map(data, (d: any) => d.pdb_id)
             .keys()
-            .sort(function(a, b){
+            .sort(function(a, b) {
               const a_obj = _.find(meta, d => d.pdb_id === a);
               const b_obj = _.find(meta, d => d.pdb_id === b);
-              return(d3.descending(a_obj.entry_name, b_obj.entry_name))
+              return d3.descending(a_obj.entry_name, b_obj.entry_name);
             })
         )
         .range([300, 0])
@@ -248,10 +248,10 @@ const signprotmat = {
           d3
             .map(data, (d: any) => d.pdb_id)
             .keys()
-            .sort(function(a, b){
+            .sort(function(a, b) {
               const a_obj = _.find(meta, d => d.pdb_id === a);
               const b_obj = _.find(meta, d => d.pdb_id === b);
-              return(d3.descending(a_obj.gprot, b_obj.gprot))
+              return d3.descending(a_obj.gprot, b_obj.gprot);
             })
         )
         .range([120, 0])
@@ -263,23 +263,23 @@ const signprotmat = {
     // * SETTING THE COLOR SCALE
     colScale: function(f) {
       const scale = {
-        "van-der-waals": '#d9d9d9',
-        "edge-to-face": '#969696',
-        "water-mediated": '#7DB144',
-        "hydrophobic": "#93d050",
-        "polar-sidechain-sidechain": '#EAA91F',
-        "polar-sidechain-backbone": '#C38E1A',
-        "polar-backbone-sidechain"​: '#C3A563',
-        "h-bond donor-acceptor": '#7030a0',
-        "h-bond acceptor-donor"​: '#B24DFF',
-        "cation-pi"​: '#0070c0',
-        "pi-cation": '#005693',
-        "ionic": '#00B9BF',
-      }
+        "van-der-waals": "#d9d9d9",
+        "edge-to-face": "#969696",
+        "water-mediated": "#7DB144",
+        hydrophobic: "#93d050",
+        "polar-sidechain-sidechain": "#EAA91F",
+        "polar-sidechain-backbone": "#C38E1A",
+        "polar-backbone-sidechain": "#C3A563",
+        "h-bond donor-acceptor": "#7030a0",
+        "h-bond acceptor-donor": "#B24DFF",
+        "cation-pi": "#0070c0",
+        "pi-cation": "#005693",
+        ionic: "#00B9BF"
+      };
       var colScale = d3
-          .scaleOrdinal()
-          .domain(Object.keys(scale))
-          .range(Object.values(scale));
+        .scaleOrdinal()
+        .domain(Object.keys(scale))
+        .range(Object.values(scale));
 
       return colScale;
     },
@@ -287,10 +287,10 @@ const signprotmat = {
     // * seqsig
     // * SETTING THE FEATURE SCALE
     fScale: function(data) {
-      const f = _.map(data, function(d){
-        const length_text = d.length != '' ? ' (' + d.length + ')' : '';
-        return (d.feature + length_text);
-      })
+      const f = _.map(data, function(d) {
+        const length_text = d.length != "" ? " (" + d.length + ")" : "";
+        return d.feature + length_text;
+      });
 
       let fScale = d3
         .scaleBand()
@@ -789,10 +789,10 @@ const signprotmat = {
         .attr("text-anchor", "end")
         .attr("dy", 75)
         .text(function(d: any) {
-          const i_obj = _.find(interactions_metadata, e => e.pdb_id === d)
-          let text = i_obj.name.replace('&beta;', '\u03B2')  // beta
-          text = text.replace('&mu;', '\u03BC')  // mu
-          return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
+          const i_obj = _.find(interactions_metadata, e => e.pdb_id === d);
+          let text = i_obj.name.replace("&beta;", "\u03B2"); // beta
+          text = text.replace("&mu;", "\u03BC"); // mu
+          return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
           // return d;
         });
 
@@ -820,12 +820,12 @@ const signprotmat = {
         .attr("text-anchor", "begin")
         .attr("dy", 68)
         .text(function(d: any) {
-          const i_obj = _.find(interactions_metadata, e => e.pdb_id === d)
+          const i_obj = _.find(interactions_metadata, e => e.pdb_id === d);
           // let text = i_obj.gprot.replace('Engineered', 'Eng.')
-          let text = i_obj.gprot.replace('Engineered', 'E.')
+          let text = i_obj.gprot.replace("Engineered", "E.");
           // text = text.replace('protein', 'prot.')
-          text = text.replace('protein', 'p.')
-          return text.replace(/<[^>]*>/g, '') + ' (' + d.toUpperCase() + ')';
+          text = text.replace("protein", "p.");
+          return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
         });
 
       // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
@@ -1169,16 +1169,16 @@ const signprotmat = {
       let cScale = signprotmat.d3.cScale(data);
       let feats = [];
       data.forEach(d => {
-        const length_text = d.length != '' ? ' (' + d.length + ')' : '';
+        const length_text = d.length != "" ? " (" + d.length + ")" : "";
         feats.push({
           code: d.feature_code,
           feature: d.feature,
           length: d.length,
-          comb: (d.feature + length_text)
-        })
-      })
-      let uniq_feats = _.uniqBy(feats, 'comb')
-      console.log(uniq_feats)
+          comb: d.feature + length_text
+        });
+      });
+      let uniq_feats = _.uniqBy(feats, "comb");
+      console.log(uniq_feats);
 
       // filter out NA generic numbers based on xScale
       data = _.filter(data, function(d) {
@@ -1214,12 +1214,12 @@ const signprotmat = {
         .attr("transform", "translate(" + 0 + "," + 0 + ")")
         .selectAll("text")
         .data(uniq_feats)
-        .enter()
+        .enter();
 
       row
         .append("text")
         .attr("class", "y seq_label")
-        .attr("x", (-10-xScale.step()))
+        .attr("x", -10 - xScale.step())
         .attr("y", function(d: any) {
           return fScale(d.comb) - fScale.step() / 2;
         })
@@ -1229,7 +1229,7 @@ const signprotmat = {
           return d.comb;
         });
       row
-        .append('rect')
+        .append("rect")
         .style("fill", function(d: any) {
           const gcol = signprotmat.d3.fScaleColor(d.code);
           if (typeof gcol != "undefined") {
@@ -1238,7 +1238,7 @@ const signprotmat = {
             return null;
           }
         })
-        .style('stroke', 'black')
+        .style("stroke", "black")
         .attr("x", -xScale.step())
         .attr("y", function(d: any) {
           return 75 + fScale(d.comb) - fScale.step();
@@ -1246,13 +1246,13 @@ const signprotmat = {
         .attr("width", xScale.step())
         .attr("height", fScale.step());
 
-        row
-        .append('text')
+      row
+        .append("text")
         .attr("class", "y seq_label")
         .attr("text-anchor", "middle")
-        .attr("x", -xScale.step()/2)
+        .attr("x", -xScale.step() / 2)
         .attr("y", function(d: any) {
-          return 75 + fScale(d.comb) - fScale.step()/2;
+          return 75 + fScale(d.comb) - fScale.step() / 2;
         })
         .style("fill", (d: any) => {
           const gcol = signprotmat.d3.fScaleColor(d.code);
@@ -1310,10 +1310,10 @@ const signprotmat = {
           }
         })
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-        .attr("y", function(d){
-          const length_text = d.length != '' ? ' (' + d.length + ')' : '';
-          const comb = (d.feature + length_text);
-          return 75 + fScale(comb) - fScale.step()
+        .attr("y", function(d) {
+          const length_text = d.length != "" ? " (" + d.length + ")" : "";
+          const comb = d.feature + length_text;
+          return 75 + fScale(comb) - fScale.step();
         })
         .attr("width", xScale.step())
         .attr("height", fScale.step());
@@ -1419,7 +1419,7 @@ const signprotmat = {
         .attr("width", xScale.range()[1] - xScale.step())
         .attr("height", 75);
 
-        svg
+      svg
         .append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(" + -xScale.step() / 2 + "," + -15 + ")")
@@ -1431,7 +1431,10 @@ const signprotmat = {
         .attr("dy", "-5px")
         .attr("transform", "rotate(-90)");
 
-        svg.select('.x.axis').selectAll('path').remove();
+      svg
+        .select(".x.axis")
+        .selectAll("path")
+        .remove();
 
       svg
         .append("text")
