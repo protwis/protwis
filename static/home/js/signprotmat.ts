@@ -3,6 +3,7 @@ const margin = { top: 40, right: 200, bottom: 180, left: 200 };
 let w = 1200 - margin.left - margin.right,
   h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
+const non_int_col = "#FF5187";
 
 // array for data in infobox
 let info_data = [];
@@ -131,6 +132,14 @@ const signprotmat = {
       };
 
       return return_data;
+    },
+
+    annotateNonInteractionData: function(meta, data) {
+      data.forEach(element => {
+        const tmp = _.find(meta, d => d.entry_name === element.entry_name);
+        element["pdb_id"] = tmp.pdb_id.toUpperCase();
+      });
+      return data;
     }
   },
 
@@ -191,16 +200,19 @@ const signprotmat = {
         .map(data, (d: any) => d.sig_gn)
         .keys()
         // .sort(d3.descending);
-        .sort(function(a, b){
-          const a_patt = /\.(\S*)\./g
-          const b_patt = /\.(\S*)\./g
+        .sort(function(a, b) {
+          const a_patt = /\.(\S*)\./g;
+          const b_patt = /\.(\S*)\./g;
           const a_match = a_patt.exec(a);
           const b_match = b_patt.exec(b);
-          const a_obj = _.find(gprot, d => d.slug === a_match[1])
-          const b_obj = _.find(gprot, d => d.slug === b_match[1])
+          const a_obj = _.find(gprot, d => d.slug === a_match[1]);
+          const b_obj = _.find(gprot, d => d.slug === b_match[1]);
           // console.log(a_obj.id);
           // console.log(a_obj.id + (+a.slice(-2)/100));
-          return d3.descending(a_obj.id + (+a.slice(-2)/100), b_obj.id + (+b.slice(-2)/100));
+          return d3.descending(
+            a_obj.id + +a.slice(-2) / 100,
+            b_obj.id + +b.slice(-2) / 100
+          );
           // return d3.descending(a_obj.id, b_obj.id);
         });
 
@@ -393,12 +405,20 @@ const signprotmat = {
         let res = d3.select("g#recAA").selectAll("g");
 
         res.selectAll("rect").style("fill", function(d) {
-          return colScale(d.int_ty[0]);
+          if (typeof d.int_ty != "undefined") {
+            return colScale(d.int_ty[0]);
+          } else {
+            return non_int_col;
+          }
         });
         res.selectAll("text").style("fill", null);
         res = d3.select("g#sigAA").selectAll("g");
         res.selectAll("rect").style("fill", function(d) {
-          return colScale(d.int_ty[0]);
+          if (typeof d.int_ty != "undefined") {
+            return colScale(d.int_ty[0]);
+          } else {
+            return "#ccc";
+          }
         });
         res.selectAll("text").style("fill", null);
       }
@@ -498,6 +518,7 @@ const signprotmat = {
     renderData: function(
       svg,
       data,
+      data_non,
       xScale,
       yScale,
       xAxis,
@@ -800,10 +821,21 @@ const signprotmat = {
         .attr("width", xScale.range()[1] - xScale.step())
         .attr("height", pdbScale.range()[0] - pdbScale.step());
 
+      data_non = _.filter(data_non, function(d) {
+        return xScale(d.rec_gn);
+      });
+
+      data_non = _.filter(data_non, function(d) {
+        return pdbScale(d.pdb_id);
+      });
+
+      // data.receptor.push(...data_non)
+      data_non.push(...data.receptor);
+
       each_res = svg
         .select("g#recAA")
         .selectAll("text")
-        .data(data.receptor)
+        .data(data_non)
         .enter()
         .append("g")
         .attr(
@@ -821,7 +853,9 @@ const signprotmat = {
       each_res
         .append("rect")
         .attr("class", "res_rect")
-        .style("fill", (d: any) => colScale(d.int_ty[0]))
+        .style("fill", (d: any) =>
+          typeof d.int_ty !== "undefined" ? colScale(d.int_ty[0]) : non_int_col
+        )
         .attr("x", (d: any) => xScale(d.rec_gn) - xScale.step() / 2)
         .attr("y", (d: any) => 75 + pdbScale(d.pdb_id) - pdbScale.step())
         .attr("width", xScale.step())
@@ -1240,8 +1274,8 @@ const signprotmat = {
         .selectAll("rect")
         .attr("rx", 3)
         .attr("ry", 3)
-        .style('stroke', 'black')
-        .style('stroke-width', '0.1px');
+        .style("stroke", "black")
+        .style("stroke-width", "0.1px");
       svg
         .select(".legendSeqSig")
         .selectAll("text")

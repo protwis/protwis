@@ -986,6 +986,7 @@ def InteractionMatrix(request):
         r['pdb_id'] = str.lower(s.pdb_code.index)
         r['name'] = s.protein_conformation.protein.parent.name
         r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        r['conf_id'] = s.protein_conformation.id
         try:
             r['gprot'] = s.protein_conformation.protein.parent.proteingproteinpair_set.first().g_protein.name
         except Exception:
@@ -1032,8 +1033,23 @@ def InteractionMatrix(request):
 
     interactions_metadata = complex_info
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Gprotein').values('id', 'slug')
+
+    prot_conf_ids = [i['conf_id'] for i in complex_info]
+    remaining_residues = Residue.objects.filter(
+            protein_conformation_id__in=prot_conf_ids,
+            ).values(
+                rec_id = F('protein_conformation__protein__id'),
+                name = F('protein_conformation__protein__parent__name'),
+                entry_name = F('protein_conformation__protein__parent__entry_name'),
+                rec_aa = F('amino_acid'),
+                rec_gn = F('display_generic_number__label'),
+            ).exclude(
+                Q(rec_gn=None)
+            )
+
     context = {
         'interactions': dataset,
+        'non_interactions': json.dumps(list(remaining_residues)),
         'interactions_metadata': json.dumps(interactions_metadata),
         'ps': json.dumps(list(ps)),
         'rs': json.dumps(list(rs)),

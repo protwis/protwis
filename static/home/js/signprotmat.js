@@ -2,6 +2,7 @@
 var margin = { top: 40, right: 200, bottom: 180, left: 200 };
 var w = 1200 - margin.left - margin.right, h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
+var non_int_col = "#FF5187";
 // array for data in infobox
 var info_data = [];
 var signprotmat = {
@@ -113,6 +114,13 @@ var signprotmat = {
                 pdbids: pdb_ids
             };
             return return_data;
+        },
+        annotateNonInteractionData: function (meta, data) {
+            data.forEach(function (element) {
+                var tmp = _.find(meta, function (d) { return d.entry_name === element.entry_name; });
+                element["pdb_id"] = tmp.pdb_id.toUpperCase();
+            });
+            return data;
         }
     },
     // * D3 DRAW FUNCTIONS
@@ -171,7 +179,7 @@ var signprotmat = {
                 var b_obj = _.find(gprot, function (d) { return d.slug === b_match[1]; });
                 // console.log(a_obj.id);
                 // console.log(a_obj.id + (+a.slice(-2)/100));
-                return d3.descending(a_obj.id + (+a.slice(-2) / 100), b_obj.id + (+b.slice(-2) / 100));
+                return d3.descending(a_obj.id + +a.slice(-2) / 100, b_obj.id + +b.slice(-2) / 100);
                 // return d3.descending(a_obj.id, b_obj.id);
             });
             var yScale = d3
@@ -348,12 +356,22 @@ var signprotmat = {
                 var other = "res";
                 var res = d3.select("g#recAA").selectAll("g");
                 res.selectAll("rect").style("fill", function (d) {
-                    return colScale(d.int_ty[0]);
+                    if (typeof d.int_ty != "undefined") {
+                        return colScale(d.int_ty[0]);
+                    }
+                    else {
+                        return non_int_col;
+                    }
                 });
                 res.selectAll("text").style("fill", null);
                 res = d3.select("g#sigAA").selectAll("g");
                 res.selectAll("rect").style("fill", function (d) {
-                    return colScale(d.int_ty[0]);
+                    if (typeof d.int_ty != "undefined") {
+                        return colScale(d.int_ty[0]);
+                    }
+                    else {
+                        return "#ccc";
+                    }
                 });
                 res.selectAll("text").style("fill", null);
             }
@@ -434,7 +452,7 @@ var signprotmat = {
             return tip;
         },
         // * RENDER DATA
-        renderData: function (svg, data, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
+        renderData: function (svg, data, data_non, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
             var shift_left = 7 / 8;
             var shift_top = 1 / 8;
             var scale_size = shift_left - shift_top;
@@ -693,10 +711,18 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", pdbScale.range()[0] - pdbScale.step());
+            data_non = _.filter(data_non, function (d) {
+                return xScale(d.rec_gn);
+            });
+            data_non = _.filter(data_non, function (d) {
+                return pdbScale(d.pdb_id);
+            });
+            // data.receptor.push(...data_non)
+            data_non.push.apply(data_non, data.receptor);
             each_res = svg
                 .select("g#recAA")
                 .selectAll("text")
-                .data(data.receptor)
+                .data(data_non)
                 .enter()
                 .append("g")
                 .attr("class", function (d) { return "R_" + _.replace(d.rec_gn, ".", "p") + "_P_" + d.pdb_id; })
@@ -710,7 +736,9 @@ var signprotmat = {
             each_res
                 .append("rect")
                 .attr("class", "res_rect")
-                .style("fill", function (d) { return colScale(d.int_ty[0]); })
+                .style("fill", function (d) {
+                return typeof d.int_ty !== "undefined" ? colScale(d.int_ty[0]) : non_int_col;
+            })
                 .attr("x", function (d) { return xScale(d.rec_gn) - xScale.step() / 2; })
                 .attr("y", function (d) { return 75 + pdbScale(d.pdb_id) - pdbScale.step(); })
                 .attr("width", xScale.step())
@@ -1076,8 +1104,8 @@ var signprotmat = {
                 .selectAll("rect")
                 .attr("rx", 3)
                 .attr("ry", 3)
-                .style('stroke', 'black')
-                .style('stroke-width', '0.1px');
+                .style("stroke", "black")
+                .style("stroke-width", "0.1px");
             svg
                 .select(".legendSeqSig")
                 .selectAll("text")
