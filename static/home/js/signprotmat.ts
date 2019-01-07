@@ -1238,6 +1238,7 @@ const signprotmat = {
             return null;
           }
         })
+        .style('stroke', 'black')
         .attr("x", -xScale.step())
         .attr("y", function(d: any) {
           return 75 + fScale(d.comb) - fScale.step();
@@ -1375,7 +1376,7 @@ const signprotmat = {
         .attr("class", "legend");
     },
 
-    draw_seq_cons: function(data_in, svg, xScale) {
+    draw_seq_cons: function(data_in, svg, xScale, xAxis) {
       let data = data_in.cons;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
@@ -1417,6 +1418,20 @@ const signprotmat = {
         .attr("y", 75)
         .attr("width", xScale.range()[1] - xScale.step())
         .attr("height", 75);
+
+        svg
+        .append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + -15 + ")")
+        .call(xAxis)
+        .selectAll("text")
+        .attr("text-anchor", "end")
+        .attr("font-size", "12px")
+        .attr("dx", "-5px")
+        .attr("dy", "-5px")
+        .attr("transform", "rotate(-90)");
+
+        svg.select('.x.axis').selectAll('path').remove();
 
       svg
         .append("text")
