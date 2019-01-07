@@ -2,7 +2,7 @@
 var margin = { top: 40, right: 200, bottom: 180, left: 200 };
 var w = 1200 - margin.left - margin.right, h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
-var non_int_col = "#FF5187";
+var non_int_col = "#fff";
 // array for data in infobox
 var info_data = [];
 var signprotmat = {
@@ -213,11 +213,25 @@ var signprotmat = {
             return sigScale;
         },
         // * SETTING THE COLOR SCALE
-        colScale: function (data) {
+        colScale: function (f) {
+            var scale = {
+                "van-der-waals": '#d9d9d9',
+                "edge-to-face": '#969696',
+                "water-mediated": '#7DB144',
+                "hydrophobic": "#93d050",
+                "polar-sidechain-sidechain": '#EAA91F',
+                "polar-sidechain-backbone": '#C38E1A',
+                "polar-backbone-sidechain": '#C3A563',
+                "h-bond donor-acceptor": '#7030a0',
+                "h-bond acceptor-donor": '#B24DFF',
+                "cation-pi": '#0070c0',
+                "pi-cation": '#005693',
+                "ionic": '#00B9BF',
+            };
             var colScale = d3
                 .scaleOrdinal()
-                .domain(data)
-                .range(d3.schemeSet3);
+                .domain(Object.keys(scale))
+                .range(Object.values(scale));
             return colScale;
         },
         // * seqsig
