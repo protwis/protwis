@@ -988,7 +988,7 @@ def InteractionMatrix(request):
         r['entry_name'] = s.protein_conformation.protein.parent.entry_name
         r['conf_id'] = s.protein_conformation.id
         try:
-            r['gprot'] = s.protein_conformation.protein.parent.proteingproteinpair_set.first().g_protein.name
+            r['gprot'] = s.get_stab_agents_gproteins()
         except Exception:
             r['gprot'] = ''
         complex_info.append(r)
