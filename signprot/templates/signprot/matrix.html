@@ -414,16 +414,24 @@
                     title: 'Name',
                     targets: 1,
                 }, {
+                    data: 'class',
+                    title: 'Class',
+                    targets: 3,
+                }, {
+                    data: 'family',
+                    title: 'Family',
+                    targets: 2,
+                }, {
                     data: 'pdb_id',
                     title: 'PDB',
-                    targets: 2,
+                    targets: 4,
                 },
                 {
                     data: 'gprot',
                     title: 'G-Protein',
-                    targets: 3,
+                    targets: 5,
                 }],
-            order: [[ 3, "asc" ]],
+            order: [[ 5, "asc" ],[ 3, "asc" ]],
             select: {
                 style: 'os',
             },

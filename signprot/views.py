@@ -985,6 +985,8 @@ def InteractionMatrix(request):
         r['pdb_id'] = str.lower(s.pdb_code.index)
         r['name'] = s.protein_conformation.protein.parent.name
         r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        r['class'] = s.protein_conformation.protein.get_protein_class()
+        r['family'] = s.protein_conformation.protein.get_protein_family()
         r['conf_id'] = s.protein_conformation.id
         try:
             r['gprot'] = s.get_stab_agents_gproteins()
