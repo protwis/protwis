@@ -1188,7 +1188,7 @@ var signprotmat = {
                 .legendColor()
                 .cells(5)
                 .labelFormat(d3.format(""))
-                .title("Feature Conservation (Set A / Set B)")
+                .title("Scale in %")
                 .scale(cScale)
                 .orient("horizontal")
                 .shapeWidth(30);
