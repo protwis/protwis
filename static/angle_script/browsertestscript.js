@@ -1030,7 +1030,7 @@ var residue_data
 
 function renderTable(pdb) {
     console.log(pdb)
-    $.get('http://0.0.0.0:8000/angles/angledat?pdbs[]='+pdb[0], function(newDataArray) {
+    $.get('angledat?pdbs[]='+pdb[0], function(newDataArray) {
     console.log()
     residue_data = newDataArray["data"]
     residuetable.clear();
@@ -1085,7 +1085,7 @@ $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
 })
 
 function initializePdbChooserTables() {
-    $.get('http://0.0.0.0:8000/contactnetwork/pdbtabledata', function ( data ) {
+    $.get('/contactnetwork/pdbtabledata', function ( data ) {
     $('#single-crystal-pdb-modal-table .tableview').html(data);
     pdbtabledata = data;
     });
