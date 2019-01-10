@@ -16,8 +16,8 @@ from numpy.core.umath_tests import inner1d
 import io
 
 TMNUM = 7
-SASA = True
-HSE = True
+SASA  = True
+HSE   = True
 
 class Command(BaseCommand):
 
@@ -32,19 +32,12 @@ class Command(BaseCommand):
     ###########################################################################
     ############################ Helper  Functions ############################
     ###########################################################################
-        
-    def load_pdb(self,pdb_code, no_save=False):
-        if no_save:
-            return pdb.pdb_get_structure(pdb_code)
-        else:
-            if not os.path.exists("pdbfiles/pdb" + pdb_code.lower() + ".ent"):
-                pdbl = pdb.PDBList()
-                pdbl.retrieve_pdb_file(pdb_code, file_format="pdb", pdir="pdbfiles")
-                
-            parser = pdb.PDBParser()
-            return parser.get_structure(pdb_code, "pdbfiles/pdb" + pdb_code.lower() + ".ent")
 
     def load_pdb_var(self,pdb_code, var):
+        """
+        load string of pdb as pdb with a file handle. Would be nicer to do this
+        directly, but no such function implemented in Bio PDB
+        """
         parser = pdb.PDBParser()
         with io.StringIO(var) as f:
             return parser.get_structure(pdb_code,f)
@@ -67,12 +60,19 @@ class Command(BaseCommand):
         io1.save(pname + '.pdb')
         
     def write_cgo_arrow_pml(self, pdb_code, name, pos_list):
+        """
+        function to write a pymol script to automatically create cgo arrows for
+        a list of positions
+        """
         with open(pdb_code + name + ".pml", "w") as ps:
             ps.write("run cgo_arrow.py\n")
             for i, p in enumerate(pos_list):
                 ps.write("cgo_arrow  " + str(list(p[0])) +", "+ str(list(p[1])) + ", name="+pdb_code + name + str(i) +"\n")
 
     def save_pdb(self,strct, name):
+        """
+        save a pdb structure as file
+        """
         io1 = pdb.PDBIO()
         io1.set_structure(strct)
         io1.save(name)
@@ -81,29 +81,30 @@ class Command(BaseCommand):
         # grab PDB
         pdb_code = options.get('pdb_code', None).upper()
         
-        reference = Structure.objects.get(pdb_code__index=pdb_code) #.prefetch_related('pdb_data')
+        reference = Structure.objects.get(pdb_code__index=pdb_code)
+        # get preferred chain for PDB structure
         preferred_chain = reference.preferred_chain.split(',')[0]
         # read pdb structure (from RCSB) using Biopython
         structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
 
-        # get preferred chain for PDB-code
-        
         # grab residues with the generic numbering for this structure
-        db_reslist = list(Residue.objects.exclude(generic_number__isnull=True).filter(protein_conformation__protein=reference.protein_conformation.protein).prefetch_related('generic_number'))
+        db_reslist = list(Residue.objects.filter(generic_number__label__regex=r'^[1-7]x[0-9]+').filter(protein_conformation__protein=reference.protein_conformation.protein).prefetch_related('generic_number').order_by('-generic_number__label'))
         
         #######################################################################
         ############################# filter  pdb #############################
         
         os.chdir("pymol_output")
+        pchain = structure[0][preferred_chain]
         
-        db_tmlist = [[] for i in range(TMNUM)]
-        db_genlst = [[] for i in range(TMNUM)]
-        db_set    = set()
-        for r in db_reslist:
-            if r.generic_number.label[:2] in ["1x","2x","3x","4x","5x","6x","7x"] and r.sequence_number in structure[0][preferred_chain]:
-                db_tmlist[int(r.generic_number.label[0])-1].append(r.sequence_number)
-                db_genlst[int(r.generic_number.label[0])-1].append(int(r.generic_number.label[2:]))
-                db_set.add((' ',r.sequence_number,' '))
+        def reslist_gen(x):
+            try:
+                while db_reslist[-1].generic_number.label[0] == x:
+                    yield db_reslist.pop()
+            except IndexError:
+                pass
+        
+        db_tmlist = [[(' ',r.sequence_number,' ') for r in reslist_gen(x) if r.sequence_number in pchain and r.sequence_number < 1000] for x in ["1","2","3","4","5","6","7"]]
+        db_set = set(db_tmlist[0]+db_tmlist[1]+db_tmlist[2]+db_tmlist[3]+db_tmlist[4]+db_tmlist[5]+db_tmlist[6])
         
         def recurse(entity,slist):
             for subenty in entity.get_list():
@@ -111,15 +112,26 @@ class Command(BaseCommand):
                 elif slist[1:]: recurse(subenty, slist[1:])
         
         recurse(structure, [[0], preferred_chain, db_set])
-        pchain = structure[0][preferred_chain]
         
         #######################################################################
         ############### Calculate the axes through the helices ################
         #######################################################################
         N = 3
         
+        def cal_pseudo_CB(r):
+            """
+            Calculate pseudo CB for Glycin
+            from Bio pdb faq
+            """
+            a =r['CA'].get_vector()
+            n = r['N'].get_vector() - a
+            c = r['C'].get_vector() - a
+            rot = pdb.rotaxis(-np.pi*120.0/180.0, c)
+            b = n.left_multiply(rot) + a
+            return b.get_array()
+        
         hres_list = [np.asarray([pchain[r]["CA"].get_coord() for r in sl], dtype=float) for sl in db_tmlist]
-        h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else np.array([None,None,None]) for r in sl], dtype=float) for sl in db_tmlist]
+        h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else cal_pseudo_CB(pchain[r]) for r in sl], dtype=float) for sl in db_tmlist]
         
         # fast and fancy way to take the average of N consecutive elements
         hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list])
@@ -159,60 +171,53 @@ class Command(BaseCommand):
         ################################ Angles ###############################
         #######################################################################
         
-        def  calc_angle(b,c):
+        def calc_angle(b,c):
+            """
+            Calculate the angle between c, b and the orthogonal projection of b
+            to the x axis.
+            """
             ba = -b
             bc = c + ba
             ba[:,0] = 0
             return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
         
-        def ca_cb_calc(i,pca):
-            fin = np.isfinite(h_cb_list[i][:,0])
-            return calc_angle(pca.transform(hres_list[i][fin]),pca.transform(h_cb_list[i][fin]))
+        def ca_cb_calc(ca,cb,pca):
+            """
+            Calcuate the angles between ca, cb and center axis
+            """
+            return calc_angle(pca.transform(ca),pca.transform(cb))
         
-        def axes_calc(i,pca_list,pca):
-            p = pca_list[i]
-            h = hres_list[i]
+        def axes_calc(h,p,pca):
+            """
+            Calculate the orthogonal projection of the CA to the helix axis
+            which is moved to the mean of three consecutive amino acids
+            """
             a = (np.roll(np.vstack((h,h[0])),1,axis=0)[:-1] + h + np.roll(np.vstack((h,h[-1])),-1,axis=0)[:-1])/3
             b = p.transform(h)
             b[:,1:] = p.transform(a)[:,1:]
             b = p.inverse_transform(b)
             return calc_angle(pca.transform(b),pca.transform(h))
         
-        def set_bfactor(structure,angles):
-            for r,an in zip(structure[0][preferred_chain].get_list(),angles):
+        def set_bfactor(chain,angles):
+            """
+            simple helper to set the bfactor of all residues by some value of a
+            list
+            """
+            for r,an in zip(chain.get_list(),angles):
                 for a in r: a.set_bfactor(an)
         
         centerpca = pca
         
         ########################### Axis to CA to CB ##########################
 
-        i  = 0
-        pl = 0
-        for ind in np.where(np.isnan(np.concatenate(h_cb_list)[:,0]))[0]:
-            while ind - pl >= len(h_cb_list[i]):
-                pl += len(h_cb_list[i])
-                i +=1
-            t = pchain.get_list()[ind]
-            n = t['N'].get_vector()
-            c = t['C'].get_vector()
-            ca = t['CA'].get_vector()
-            n = n - ca
-            c = c - ca
-            rot = pdb.rotaxis(-np.pi*120.0/180.0, c)
-            cb_at_origin = n.left_multiply(rot)
-            cb = cb_at_origin + ca
-            h_cb_list[i][ind-pl] = cb.get_array()
-            
-            
-        angle = np.concatenate([ca_cb_calc(i,centerpca) for i in range(TMNUM)])
-        set_bfactor(structure,angle)
+        angle = np.concatenate([ca_cb_calc(ca,cb,centerpca) for ca,cb in zip(hres_list,h_cb_list)])
+        set_bfactor(pchain,angle)
         self.save_pdb(structure, pdb_code+'angle_colored_ca_cb.pdb')
         
         ######################### Axis to Axis to CA ##########################
         
-        angle2 = np.concatenate([axes_calc(i,helix_pcas,centerpca) for i in range(TMNUM)])
-        
-        set_bfactor(structure,angle2)
+        angle2 = np.concatenate([axes_calc(h,p,centerpca) for h,p in zip(hres_list,helix_pcas)])
+        set_bfactor(pchain,angle2)
 
         self.save_pdb(structure, pdb_code+'angle_colored_axes.pdb')
         
@@ -235,7 +240,7 @@ class Command(BaseCommand):
                     asa_list.append(res.atomArea(i))
                     oldnum = resnum
             
-            set_bfactor(structure,asa_list)
+            set_bfactor(pchain,asa_list)
             self.save_pdb(structure, pdb_code+'asa_colored.pdb')
         
         ################################# HSE #################################
