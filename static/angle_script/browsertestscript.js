@@ -625,9 +625,6 @@ function createNGLview(mode,pdb, pdbs = false) {
                 ])
         
         var angle_color = [];
-        
-        
-        
         var colorstring
         
         // TODO: median angle, difference to median angle
@@ -798,34 +795,6 @@ function createNGLview(mode,pdb, pdbs = false) {
                 })
 
 
-            // reps.residues = o.addRepresentation("spacefill", {
-            //   sele: ".CA",
-            //   color: "#000",
-            //   // colorScale: ["#44f", "#444"],
-            //   radiusScale: .2,
-            //   name: "res"
-            // })
-
-
-            // reps.residues = o.addRepresentation("spacefill", {
-            //   sele: startAtomSel,
-            //   color: "#ccc",
-            //   // colorScale: ["#44f", "#444"],
-            //   radiusScale: .2,
-            //   name: "res"
-            // })
-
-
-            // o.addRepresentation( "distance", {
-            //   atomPair: links.map(function (l) {
-            //     return l.atoms
-            //   }),
-            //   radiusScale: 1,
-            //   labelVisible: false,
-            //   useCylinder: true,
-            // } );
-
-
             reps.ngl_contacts = o.addRepresentation("contact", {
                 sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")",
                 radiusSize: 0.07,
@@ -837,7 +806,7 @@ function createNGLview(mode,pdb, pdbs = false) {
 
             o.autoView();
             
-            
+            // mousover and click on datatable row to highlight residue in NGL viewer
             var temprepr
             $("#single-table-tab-table tbody").on("mouseover", "tr", function(event){
                 temprepr = o.addRepresentation("ball+stick", {sele: ""+residuetable.row(this).data()[1]});
@@ -845,12 +814,16 @@ function createNGLview(mode,pdb, pdbs = false) {
                 o.removeRepresentation(temprepr)
             });
             
-            var reprdict = {}
+            var repr_dict = {}
             $("#single-table-tab-table tbody").on("click", "tr", function(event){
-                if(residuetable.row(this).data()[1] in reprdict){
-                    o.removeRepresentation(reprdict[residuetable.row(this).data()[1]])
+                if(residuetable.row(this).data()[1] in repr_dict){
+                    o.removeRepresentation(repr_dict[residuetable.row(this).data()[1]])
+                    delete repr_dict[residuetable.row(this).data()[1]]
+                    console.log(this)
+                    $(this).removeClass("table-selected")
                 }else{
-                    reprdict[residuetable.row(this).data()[1]] = o.addRepresentation("ball+stick", {sele: ""+residuetable.row(this).data()[1]});
+                    repr_dict[residuetable.row(this).data()[1]] = o.addRepresentation("ball+stick", {sele: ""+residuetable.row(this).data()[1]});
+                    $(this).addClass("table-selected")
                 }
             });
 
@@ -1100,10 +1073,6 @@ function initalizeSingleCrystalView() {
 
 var selectortable
 var residuetable
-
-// $("#single-table-tab-table tbody").on("mouseover", "tr", function(event){
-//   console.log("111");
-// });
 
 
 $(document).ready(function() {
