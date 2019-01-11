@@ -26,10 +26,10 @@ import subprocess
 
 
 class Command(BaseBuild):
-        
+
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
-        parser.add_argument('--classified', help="Use PDB's 'G protein-coupled receptors' classification", default=False, 
+        parser.add_argument('--classified', help="Use PDB's 'G protein-coupled receptors' classification", default=False,
                             action='store_true')
 
     def handle(self, *args, **options):
@@ -105,6 +105,7 @@ class QueryPDB():
                         if check==1:
                             self.db_list.append(s)
                             missing_from_db = True
+
                 if s not in self.yamls and s not in self.exceptions:
                     if s not in self.db_list:
                         check = self.pdb_request_by_pdb(s)
@@ -127,7 +128,7 @@ class QueryPDB():
                             presentx50s = []
                             for x in x50s:
                                 if not d['start']<x.sequence_number<d['end']:
-                                    presentx50s.append(x)                                    
+                                    presentx50s.append(x)
                             # Filter out ones without all 7 x50 positions present in the xtal
                             if len(presentx50s)!=7:
                                 try:
@@ -152,8 +153,8 @@ class QueryPDB():
                         publication_date, pubmed, doi = '','',''
                         state = ProteinState.objects.get(slug='inactive')
                         new_prot, created = Protein.objects.get_or_create(entry_name=s.lower(), accession=None, name=s.lower(), sequence=pdb_data_dict['wt_seq'], family=protein.family,
-                                                                          parent=protein, residue_numbering_scheme=protein.residue_numbering_scheme, 
-                                                                          sequence_type=ProteinSequenceType.objects.get(slug='mod'), source=ProteinSource.objects.get(name='OTHER'), 
+                                                                          parent=protein, residue_numbering_scheme=protein.residue_numbering_scheme,
+                                                                          sequence_type=ProteinSequenceType.objects.get(slug='mod'), source=ProteinSource.objects.get(name='OTHER'),
                                                                           species=protein.species)
                         new_prot_conf, created = ProteinConformation.objects.get_or_create(protein=new_prot, state=state, template_structure=None)
                         for line in lines:
@@ -209,7 +210,7 @@ class QueryPDB():
                         with open('../../data/protwis/gpcr/structure_data/constructs/{}.yaml'.format(pdb_code.index), 'w') as construct_file:
                             yaml.dump({'name': pdb_code.index.lower(), 'protein': protein.entry_name}, construct_file, indent=4)
                         with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'w') as structure_file:
-                            struct_yaml_dict = {'construct': pdb_code.index.lower(), 'pdb': pdb_code.index, 'preferred_chain': preferred_chain, 'auxiliary_protein': '', 
+                            struct_yaml_dict = {'construct': pdb_code.index.lower(), 'pdb': pdb_code.index, 'preferred_chain': preferred_chain, 'auxiliary_protein': '',
                                                 'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
                             auxiliary_proteins, ligands = [], []
                             if pdb_data_dict['ligands']!='None':
@@ -253,7 +254,7 @@ class QueryPDB():
                                 struct_yaml['distance'] = None
                             with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'w') as struct_yaml_file:
                                 yaml.dump(struct_yaml, struct_yaml_file, indent=4, default_flow_style=False)
-                
+
                         # Check sodium pocket
                         new_prot_conf.sodium_pocket()
 
@@ -319,7 +320,7 @@ class QueryPDB():
                             pass
             return 0
         else:
-            if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description'] or 'Smoothened' in polymer['polymerDescription']['@description']:
+            if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description'] or 'Smoothened' in polymer['polymerDescription']['@description'] or 'Frizzled' in polymer['polymerDescription']['@description']:
                 if int(polymer['@length'])<100:
                     return 0
                 if type(polymer['macroMolecule'])==type([]):
@@ -335,20 +336,20 @@ class QueryPDB():
                 return 0
 
 
-class QueryPDBClassifiedGPCR(): 
-    ''' Queries PDB using GPCRdb protein and structure entries using the 'G protein-coupled receptors' classification on PDB. Tree node number (<n>248</n>) 
+class QueryPDBClassifiedGPCR():
+    ''' Queries PDB using GPCRdb protein and structure entries using the 'G protein-coupled receptors' classification on PDB. Tree node number (<n>248</n>)
         need to be updated when new xtals come in.
-    '''  
+    '''
     def __init__(self):
         self.num_struct = None
         self.new_structures = None
         self.new_uniques = None
-    
+
     def list_xtals(self, verbose=True):
         ''' Lists structures and matching receptors from PDB that are not on GPCRdb yet. '''
-    
+
         url = 'http://www.rcsb.org/pdb/rest/search'
-    
+
         queryText = """
 <orgPdbQuery>
     <version>head</version>
@@ -358,8 +359,8 @@ class QueryPDBClassifiedGPCR():
     <n>248</n>
     <nodeDesc>G Protein-Coupled Receptors (GPCRs)</nodeDesc>
 </orgPdbQuery>
-    
-        """   
+
+        """
         req = urllib.request.Request(url, data=bytes(queryText, 'utf-8'))
         f = urllib.request.urlopen(req)
         result = f.read()
@@ -397,7 +398,7 @@ class QueryPDBClassifiedGPCR():
                             raise Exception()
                     except:
                         miss_count+=1
-                        
+
                 except:
                     pass
             if miss_count==1:
