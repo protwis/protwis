@@ -625,28 +625,42 @@ function createNGLview(mode,pdb, pdbs = false) {
                 ])
         
         var angle_color = [];
-        var colorstring
+        var mediancolor = [];
+        var colorstring;
+        var ctemp;
         
         // TODO: median angle, difference to median angle
         // groups
         
         residue_data.forEach(function(e){
-            
-            if(e[2]<60){
-                colorstring = "#" + "0000" + Math.floor((180-e[2])*1.41).toString(16) 
-            } else if (e[2] < 120) {
-                colorstring = "#" + Math.floor(e[2]*1.41).toString(16) + Math.floor((180-Math.abs(e[2]-90))*1.41).toString(16) + Math.floor((180-e[2])*1.41).toString(16)
+            ctemp = e[2];
+            if(ctemp<60){
+                colorstring = "#" + "0000" + Math.floor((180-ctemp)*1.41).toString(16) 
+            } else if (ctemp < 120) {
+                colorstring = "#" + Math.floor(ctemp*1.41).toString(16) + Math.floor((180-Math.abs(ctemp-90))*1.41).toString(16) + Math.floor((180-ctemp)*1.41).toString(16)
             } else {
-                colorstring = "#" + Math.floor(e[2]*1.41).toString(16) + "0000"
+                colorstring = "#" + Math.floor(ctemp*1.41).toString(16) + "0000"
+            }
+            angle_color.push([colorstring , ""+e[1]])
+            
+            ctemp = e[3];
+            if(ctemp<60){
+                colorstring = "#" + "0000" + Math.floor((180-ctemp)*1.41).toString(16) 
+            } else if (ctemp < 120) {
+                colorstring = "#" + Math.floor(ctemp*1.41).toString(16) + Math.floor((180-Math.abs(ctemp-90))*1.41).toString(16) + Math.floor((180-ctemp)*1.41).toString(16)
+            } else {
+                colorstring = "#" + Math.floor(ctemp*1.41).toString(16) + "0000"
             }
             // +Math.floor(e[2]*1.41).toString(16)+Math.floor(e[2]*1.41).toString(16)+Math.floor(e[2]*1.41).toString(16)
-            angle_color.push([colorstring , ""+e[1]])
+            mediancolor.push([colorstring , ""+e[1]])
         });
         
         
         angle_color.push([ "white", "*" ]);
+        mediancolor.push([ "white", "*" ]);
         
         color_schemes['angles'] = NGL.ColormakerRegistry.addSelectionScheme(angle_color)
+        color_schemes['mediancolor'] = NGL.ColormakerRegistry.addSelectionScheme(mediancolor)
 
 
         var stringBlob = new Blob( [ pdb_data['pdb'] ], { type: 'text/plain'} );
@@ -848,7 +862,7 @@ function createNGLview(mode,pdb, pdbs = false) {
             controls += '</select></p>';
     }
 
-    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="angles">angles</option></select></p>'
+    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="angles">angles</option><option value="mediancolor">mediancolor</option></select></p>'
                         +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
                         +'<p>Highlight interacting res: <input type=checkbox id="highlight_res"></p>'
                         +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
@@ -1038,6 +1052,13 @@ function initializeResidueTable() {
             select_type: 'select2',
             filter_default_label: "angle",
             filter_reset_button_text: false,
+        },
+        {
+            column_number : 3,
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: "diff med",
+            filter_reset_button_text: false,
         }
     ],
     {
@@ -1045,12 +1066,6 @@ function initializeResidueTable() {
     });
 
     yadcf.exResetAllFilters(residuetable);
-    
-//     $("#single-table-tab-table tbody").on("mouseover", "tr", function(event){
-//         original_o.addRepresentation("ball+stick", ""+{sele: residuetable.row(this).data()[1]});
-//     });
-    
-//     original_o.addRepresentation("ball+stick", {sele: residuetable.row(this).data()[1]});
 }
 
 $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {

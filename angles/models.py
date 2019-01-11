@@ -1,10 +1,12 @@
 from django.db import models
 
 class Angle(models.Model):
-    # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
     residue   = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     angle    = models.FloatField()
+    b_angle  = models.FloatField()
+    diff_med = models.FloatField()
+    sign_med = models.FloatField(default=0)
     hse      = models.IntegerField(default=0)
     sasa     = models.FloatField(default=0)
 

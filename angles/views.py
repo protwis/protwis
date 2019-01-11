@@ -141,12 +141,10 @@ class testTemplate(TemplateView):
         ############################ Helper  Functions ############################
         ###########################################################################
     
-    
-    
         failed = []
         
         # get preferred chain for PDB-code
-        references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein').order_by('protein_conformation__protein')
+        references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         references = list(references)
         
         pids = [ref.protein_conformation.protein.id for ref in references]
@@ -161,10 +159,13 @@ class testTemplate(TemplateView):
         ######################### Start of main loop ##########################
         #######################################################################
         
+        median_dict = [{},{},{},{}]
+        
         for reference in references:
             
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
+            
             
             try:
                 
@@ -172,6 +173,7 @@ class testTemplate(TemplateView):
     
                 structure = load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
+                state_id = reference.protein_conformation.state.id
                 
                 #######################################################################
                 ###################### prepare and evaluate query #####################
@@ -236,25 +238,58 @@ class testTemplate(TemplateView):
                 
                 ########################### Axis to CA to CB ##########################
     
-                angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)])
+                b_angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)]).round(3)
                 
-                set_bfactor(pchain,angle)
+                #set_bfactor(pchain,angle)
                 
                 ######################### Axis to Axis to CA ##########################
                 
-                angle2 = np.concatenate([axes_calc(h,p,pca) for h,p in zip(hres_list,helix_pcas)])
+                a_angle = np.concatenate([axes_calc(h,p,pca) for h,p in zip(hres_list,helix_pcas)]).round(3)
                 
-                set_bfactor(pchain,angle2)
+                #set_bfactor(pchain,angle2)
                 
-                dblist += [Angle(residue=gdict[res.id[1]], angle=res["CA"].get_bfactor(), structure=reference) for res in pchain]
+                # uncomment for bulk create, update
+                # TODO: list comp + database search for all?
+                if len(pchain) - len(a_angle):
+                    print("\033[91mLength mismatch", pdb_code, '\033[0m')
                 
+                for res,a1,a2 in zip(pchain,a_angle,b_angle):
+                    dblist.append((gdict[res.id[1]], a1, a2, reference,state_id-1))
+                    if gdict[res.id[1]].generic_number.label not in median_dict[state_id-1]:
+                        median_dict[state_id-1][gdict[res.id[1]].generic_number.label] = [round(a1,3)]
+                    else:
+                        median_dict[state_id-1][gdict[res.id[1]].generic_number.label].append(round(a1,3))
+                
+                # comment for bulk create, update
+                #this works in any case but is (really) slow.
+                # Actually it is so slow that it is faster to delete the table
+                # and bulk create it!
+                #for res,a1,a2 in zip(pchain,a_angle,b_angle):
+                #    Angle.objects.update_or_create(residue=gdict[res.id[1]], structure=reference, defaults={'angle':round(a1,3)})
         
             except Exception as e:
                 print("ERROR!!", pdb_code, e)
                 failed.append(pdb_code)
                 continue
+            
+        print(median_dict[0]['2x35'])
+        for i in range(4):
+            for key in median_dict[i]:
+                sortlist = sorted(median_dict[i][key])
+                listlen = len(sortlist)
+                median_dict[i][key] = sortlist[listlen//2] if listlen % 2 else (sortlist[listlen//2] + sortlist[listlen//2-1])/2
+        print(median_dict)
         
-        #Angle.objects.bulk_create(dblist)
+        dblist = [Angle(residue=g, diff_med=round(abs(median_dict[i][g.generic_number.label]-a1),3), angle=a1, b_angle=a2, structure=ref) for g,a1,a2,ref,i in dblist]
+        
+        print("created list")
+        print(len(dblist))
+
+        #this works if the database is empty and is fast
+        Angle.objects.bulk_create(dblist,batch_size=5000)
+        
+        #this works if no new additions are made and is fast, only Django 2.2
+        #Angle.objects.bulk_update(dblist)
 
         return context
 
@@ -282,7 +317,7 @@ def get_angles(request):
     # Get the relevant interactions
     # Initialize response dictionary
     data = {}
-    data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.angle] for q in query]
+    data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.angle, q.diff_med] for q in query]
 
     # Create a consensus sequence.
     
@@ -295,7 +330,7 @@ def ServePDB(request, pdbname):
     if structure.exists():
         structure=structure.get()
     else:
-        quit() #quit!
+        quit()
 
     if structure.pdb_data is None:
         quit()
