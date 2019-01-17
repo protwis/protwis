@@ -1,14 +1,18 @@
 from contactnetwork.residue import *
 from Bio.PDB.Polypeptide import *
+from contactnetwork.models import *
 
 import math
 
 class InteractingPair:
     'Common base class for all interactions'
-    def __init__(self, res1, res2, interactions):
+    def __init__(self, res1, res2, interactions,dbres1,dbres2,s):
         self.res1 = res1
         self.res2 = res2
         self.interactions = interactions
+        self.dbres1 = dbres1
+        self.dbres2 = dbres2
+        self.structure = s
 
     def add_interaction(self, interaction):
         self.interactions.append(interaction)
@@ -56,32 +60,123 @@ class InteractingPair:
 
         return text
 
+    def save_into_database(self):
+        # Save the pair
+        pair = InteractingResiduePair()
+        pair.res1 = self.dbres1
+        pair.res2 = self.dbres2
+        pair.referenced_structure = self.structure
+        pair.save()
 
-class Interaction(object):
+        # Add the interactions to the pair
+        for i in self.get_interactions():
+            print(type(i))
+            if type(i) is CI.VanDerWaalsInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'VanDerWaals'
+                ni.interacting_pair = pair
+                ni.save()
+            elif type(i) is interaction.HydrophobicInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Hydrophobic'
+                ni.interacting_pair = pair
+                ni.save()
+            elif type(i) is interaction.PolarSidechainSidechainInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Polar'
+                ni.interaction_type = 'PolarSidechainSidechain'
+                ni.interacting_pair = pair
+                ni.save()
+
+                # ni.is_charged_res1 = i.is_charged_res1
+                # ni.is_charged_res2 = i.is_charged_res2
+            elif type(i) is interaction.PolarBackboneSidechainInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Polar'
+                ni.specific_type = 'PolarBackboneSidechain'
+                ni.interacting_pair = pair
+                ni.save()
+
+                # ni.is_charged_res1 = i.is_charged_res1
+                # ni.is_charged_res2 = i.is_charged_res2
+                # ni.res1_is_sidechain = False
+            elif type(i) is interaction.PolarSideChainBackboneInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Polar'
+                ni.specific_type = 'PolarSideChainBackbone'
+                ni.interacting_pair = pair
+                ni.save()
+
+                # ni.is_charged_res1 = i.is_charged_res1
+                # ni.is_charged_res2 = i.is_charged_res2
+                # ni.res1_is_sidechain = True
+            elif type(i) is interaction.FaceToFaceInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Aromatic'
+                ni.specific_type = 'FaceToFace'
+                ni.interacting_pair = pair
+                ni.save()
+            elif type(i) is interaction.FaceToEdgeInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Aromatic'
+                ni.specific_type = 'FaceToEdge'
+                ni.interacting_pair = pair
+                ni.save()
+
+                # ni.res1_has_face = True
+
+            elif type(i) is interaction.EdgeToFaceInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Aromatic'
+                ni.specific_type = 'EdgeToFace'
+                ni.interacting_pair = pair
+                ni.save()
+
+                # ni.res1_has_face = False
+            elif type(i) is interaction.PiCationInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Aromatic'
+                ni.specific_type = 'PiCation'
+                ni.interacting_pair = pair
+                ni.save()
+
+                #ni.res1_has_pi = True
+            elif type(i) is interaction.CationPiInteraction:
+                ni = Interaction()
+                ni.interaction_type = 'Aromatic'
+                ni.specific_type = 'PiCation'
+                ni.interacting_pair = pair
+                ni.save()
+            else:
+                print('no case for ',type(i))
+                #ni.res1_has_pi = False
+
+
+class CI(object):
     def __init__(self):
         pass
 
 
-class VanDerWaalsInteraction(Interaction):
+class VanDerWaalsInteraction(CI):
     def get_name(self):
         return "van-der-waals"
 
 
-class HydrophobicInteraction(Interaction):
+class HydrophobicInteraction(CI):
     def get_name(self):
         return "hydrophobic"
 
-class HydrogenBondInteraction(Interaction):
+class HydrogenBondInteraction(CI):
     def get_name(self):
         return "h-bond"
 
-class IonicInteraction(Interaction):
+class IonicInteraction(CI):
     def get_name(self):
         return "ionic"
 
-class PolarInteraction(Interaction):
+class PolarInteraction(CI):
     def __init__(self, is_charged_res1, is_charged_res2):
-        Interaction.__init__(self)
+        CI.__init__(self)
         self.is_charged_res1 = is_charged_res1
         self.is_charged_res2 = is_charged_res2
 
@@ -103,11 +198,11 @@ class PolarSideChainBackboneInteraction(PolarInteraction):
     def get_name(self):
         return "polar-sidechain-backbone"
 
-class PolarWaterInteraction(Interaction):
+class PolarWaterInteraction(CI):
     def get_name(self):
         return "polar-water"
 
-class AromaticInteraction(Interaction):
+class AromaticInteraction(CI):
     def get_name(self):
         return "aromatic"
 
@@ -136,7 +231,7 @@ class CationPiInteraction(AromaticInteraction):
     def get_name(self):
         return "cation-pi"
 
-class WaterMediated(Interaction):
+class WaterMediated(CI):
     def get_name(self):
         return "water-mediated"
 

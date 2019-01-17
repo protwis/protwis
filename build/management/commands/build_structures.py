@@ -317,12 +317,12 @@ class Command(BaseBuild):
             return None
 
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
-        pw2 = pairwise2.align.localms(parent_seq, seq, 5, -4, -5, -2)
+        pw2 = pairwise2.align.localms(parent_seq, seq, 6, -4, -5, -2)
 
         gaps = 0
         unmapped_ref = {}
         for i, r in enumerate(pw2[0][0], 1): #loop over alignment to create lookups (track pos)
-#            print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
+            # print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
@@ -1153,6 +1153,7 @@ class Command(BaseBuild):
                         s.annotated = False
 
                     s.refined = False
+                    s.stats_text = None
 
                     # save structure before adding M2M relations
                     s.save()

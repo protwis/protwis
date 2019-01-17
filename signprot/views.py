@@ -41,11 +41,11 @@ class BrowseSelection(AbsTargetSelection):
         ('segments', False),
     ])
     try:
-        ppf_g = ProteinFamily.objects.get(slug="100_000")  # G proteins
-        ppf_a = ProteinFamily.objects.get(slug="200_000")  # Arrestins
-        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id, ppf_a.id])
-        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
-        ps = Protein.objects.filter(family__in=[ppf_g, ppf_a]) #
+        ppf_g = ProteinFamily.objects.get(slug="100_001")
+        # ppf_a = ProteinFamily.objects.get(slug="200_000")
+        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
+        ps = Protein.objects.filter(family__in=[ppf_g]) # ,ppf_a
         tree_indent_level = []
         # action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)

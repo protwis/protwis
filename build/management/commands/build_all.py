@@ -24,10 +24,6 @@ class Command(BaseCommand):
                             dest='hommod',
                             default=False,
                             help='Include build of homology models')
-        parser.add_argument('--skip_cn',
-                            action='store_false',
-                            default=True,
-                            help='Skip building contact network for test build')
 
     def handle(self, *args, **options):
         if options['test']:
@@ -59,8 +55,8 @@ class Command(BaseCommand):
             ['build_mutational_landscape'],
             ['build_residue_sets'],
             ['build_dynamine_annotation', {'proc': options['proc']}],
-            ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
             ['build_blast_database'],
+            ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
             ['build_text'],
             ['build_release_notes'],
         ]

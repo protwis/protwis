@@ -1225,14 +1225,15 @@ class AlignedReferenceTemplate(Alignment):
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
         self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM','6G79'],
                                          'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
-        self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000}
+        self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
 
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None,
-                             complex_model=False, force_main_temp=False):
+                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, 
+                             complex_model=False, signprot=None, force_main_temp=False):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         self.complex = complex_model
+        self.signprot = signprot
         self.force_main_temp = force_main_temp
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
@@ -1318,13 +1319,15 @@ class AlignedReferenceTemplate(Alignment):
             self.main_template_protein = [i for i in self.ordered_proteins if i.protein==st.protein_conformation.protein.parent][0]
             return st
         i = 1
+        if self.complex:
+            complex_templates = self.get_template_from_gprotein(self.signprot)
         try:
             for st in self.similarity_table:
                 if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                     i+=1
                     continue
                 # only use complex main template in table signprot_complex
-                if self.complex and st.pdb_code.index not in [x.structure.pdb_code.index for x in SignprotComplex.objects.all()]:
+                if self.complex and st.pdb_code.index not in complex_templates:
                     i+=1
                     continue
                 if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
@@ -1334,6 +1337,16 @@ class AlignedReferenceTemplate(Alignment):
                     return st
         except:
             pass
+
+    def get_template_from_gprotein(self, signprot):
+        gprotein = Protein.objects.get(entry_name=signprot)
+        templates = SignprotComplex.objects.filter(protein=gprotein).values_list('structure__pdb_code__index', flat=True)
+        if len(templates)==0:
+            subfamily = Protein.objects.filter(family=gprotein.family).exclude(entry_name=gprotein.entry_name)
+            templates = SignprotComplex.objects.filter(protein__in=subfamily).values_list('structure__pdb_code__index', flat=True)
+        if len(templates)==0:
+            templates = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
+        return templates
 
     def overwrite_db_seq_nums(self, structure, cutoff):
         resis = Residue.objects.filter(protein_conformation=structure.protein_conformation,
@@ -1708,15 +1721,17 @@ class GProteinAlignment(Alignment):
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
 
-    def run_alignment(self, reference_protein, template_protein, segments=None):
+    def run_alignment(self, reference_protein, template_protein, segments=None, calculate_similarity=False):
         self.load_reference_protein(reference_protein)
         self.load_proteins([template_protein])
         if segments:
-            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein', name__in=segments)
+            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha', name__in=segments)
         else:
-            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
+            gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
         self.load_segments(gprotein_segments)
         self.build_alignment()
+        if calculate_similarity:
+            self.calculate_similarity()
         self.enhance_alignment(self.proteins[0], self.proteins[1])
 
     def enhance_alignment(self, reference, template):
@@ -1763,7 +1778,7 @@ class ClosestReceptorHomolog():
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
-        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv']
+        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv', 'q98sw5_xenla']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
         if p.family.slug[:3]=='007':

@@ -4,233 +4,680 @@
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+    <style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        #filters{
+
+            font-size: 10px;
+            padding:  7px 15px; 
+        }
+
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        table.dataTable.compact thead th.over_header {
+            border-right: 1px solid;
+            border-left: 0px solid;
+            text-align: center;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead tr.over_header th {
+            border-bottom: 1px solid #ccc;
+        }
+
+        table.dataTable.compact thead th.leftborder {
+            border-left: 1px solid;
+        }
+
+        table.dataTable.compact thead th.rightborder {
+            border-right: 1px solid;
+        }
+
+        table.dataTable.compact thead th.checkbox_tr {
+            text-align: left;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead th {
+            padding: 4px 16px 4px 2px;
+        }
+        .yadcf-filter-wrapper {
+            margin-top: 0px;
+        }
+        input.yadcf-filter  {
+            width: 100px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
+        .yadcf-filter-range-date, .yadcf-filter-range-number {
+            width: 30px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            padding-top: 100px; /* Location of the box */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+    }
+    </style>
 {% endblock %}
 
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
-    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
+    <script src="{% static 'home/js/browser_functions.js' %}"> </script>
+
+<system.webServer>
+   <httpErrors errorMode="Detailed" />
+   <asp scriptErrorSentToBrowser="true"/>
+</system.webServer>
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
-            ClearSelection('targets');
-            ClearSelection('reference');
-            var table = $('#structure_model').DataTable({
-                'scrollX': true,
-                'scrollY': $(window).height()-300,
-                'bScrollCollapse': true,
-                'paging': false,
-                'orderCellsTop': true,
-                'autoWidth': true,
-                'dom': 'iTlfrt',
-                'order': [[5, "asc"],[2, "asc"]], // order by class then receptor name
+            // 'use strict';
 
-                'tableTools': {
-                    "sRowSelect": "single",
-                    "aButtons": []
-                },
-                initComplete: function () {
-                    $('#structure_model').dataTable().columnFilter({
-                        sPlaceHolder: "head:after",
-                        sRangeFormat: "{from}:{to}",
-                        aoColumns: [
-                            null,
-                            { type: "text" }, // protein model name
-                            { type: "text" }, // uniprot name
-                            { type: "select" }, // protein family
-                            { type: "select"}, // state
-                            { type: "select" }, // class
-                            { type: "select" }, // species
-                            { type: "text" }, // main template receptor
-                            { type: "text" }, // main template structure
-                            { type: "number" }, // model version
-                            null,
-                        ]
-                    });
-                }
+            // var oTable;
+            var oTable = $('#constructs').DataTable({
+                scrollY:        "80vh",
+                scrollX:        true,
+                scrollCollapse: true,
+                paging:         false,
+                "order": [[8,'asc'],[1,'asc']],
+                  columnDefs: [
+                    { targets: 'no-sort', orderable: false }
+
+                  ],
+                // fixedColumns:   {
+                //     leftColumns: 4,
+                // }
             });
-       //     $.datepicker.regional[""].dateFormat = "yy-mm-dd";
-       //     $.datepicker.setDefaults($.datepicker.regional['']);
+
+            var prev_ids = Array()
+            var current_align_ids = Array()
+
+            console.log(oTable);
+            $("#constructs_div").show();
+            assign_to_row();
+            $("#loading_div").hide();
+
+            //Uncheck every row when using back button on browser
+            $('.alt-selected').prop('checked',false)
+            $('.alt').prop('checked',false)
+            $('.select-all').prop('checked',false)
+            //
+
+            yadcf.init(oTable,
+                [
+                    {
+                        column_number : 1,
+                        filter_type: "text",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Link",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '60px',
+                        }
+                    },
+                    {
+                        column_number : 2,
+                        filter_type: "range_date",
+                        date_format: "yyyy-mm-dd",
+                        select_type: 'select2',
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 3,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "State",
+                        filter_reset_button_text: false,
+                        filter_match_mode : "exact",
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Refined",
+                        filter_reset_button_text: false,
+                        filter_match_mode : "exact",
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "UniProt",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '80px',
+                        }
+                    }, 
+                    {
+                        column_number: 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "IUPHAR",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number: 7,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Rec. family",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    }, 
+                    {
+                        column_number : 8,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Class",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    }, 
+                    {
+                        column_number : 9,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Species",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 10,
+                        filter_type: "text",
+                        select_type: 'select2',
+                        filter_default_label: "Receptor",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
+                    },
+                    {
+                        column_number : 11,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        filter_default_label: "PDB",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                ],
+                {
+                    cumulative_filtering: false
+                }
+            );
+
+            yadcf.exResetAllFilters(oTable);
+
+            // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+            // $.datepicker.setDefaults($.datepicker.regional['']);
+
             $('.alt').change(function () {
                 $(this).parent().parent().toggleClass('alt_selected');
             });
 
-            $.fn.dataTable.ext.search.push(
-                function (settings, data, dataIndex) {
-                    if ($('#representative_btn').hasClass('toggled')) {
-                        if ($(table.row(dataIndex).node()).hasClass("repr-st")) {
-                            return true;
-                        }
-                        return false;
-                    }
-                    else {
-                        return true;
-                    }
-            });
-
-            $('#representative_btn').click(function () {
-                //class 'active' is conflicting with something else o.O
-                $(this).toggleClass('toggled');
-                table.draw();
-            });
-            $('#download_btn').click(function () {
-                var selected_ids = [];
-                 $.each($(".alt_selected"), function(){            
-                    hom_id = $(this).closest('tr').attr('model_id');
-                    selected_ids.push(hom_id);
-                });
-                
-                window.location.href = '/structure/hommod_download?ids='+selected_ids.join(",");
-
-            });
-            $('#align_btn').click(function () {
-                var checked_data = table.rows('.alt_selected').data();
-                ClearSelection('targets');
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][10];
-                    
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
-                    } else {
-                        AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
-                    }
-                }
-                
-                window.location.href = '/structure/selection_convert_model';
-            });
             $('.select-all').change(function () {
                 $('.alt').prop('checked', $(this).prop("checked"));
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
-            $('#superpose_btn').click(function () {
-                ClearSelection('targets');
-                ClearSelection('reference');
-                if (table.rows('.selected').data().length == 1) {
-                    var div = document.createElement("div");
-                    div.innerHTML = table.rows('.selected').data()[0][10];
-                    var state1 = table.rows('.selected').data()[0][4];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
-                    } else {
-                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
-                    }
 
-                }
-                var checked_data = table.rows('.alt_selected').data();
-                var selected_ids = [];
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][10];
-                    var state2 = checked_data[i][4];
-                    if (typeof div.innerText !== "undefined") {
-                        selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
-                    } else {
-                        selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
-                    }
+            $("#remove_sel").click(function () { 
+                var oTable = $('#constructs').dataTable();
+                $('input:checkbox:checked').each(function () {
+                    if ( $(this).is(':visible') ) {
+                       id = $(this).attr('id');
 
-                }
-                AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
-                window.location.href = '/structure/superposition_workflow_index';
+                       if (id) {
+                           oTable.fnDeleteRow("#"+id, null, false);
+                       }
+                    }
+                });
+               oTable.fnDraw();
             });
 
-            
+            $("#remove_non_sel").click(function () { 
+                var oTable = $('#constructs').dataTable();
+                $('input:checkbox:not(:checked)').each(function () {
+                    if ( $(this).is(':visible') ) {
+                       id = $(this).attr('id');
+                       if (id) {
+                           oTable.fnDeleteRow("#"+id, null, false);
+                       }
+                   }
+                });
+                oTable.fnDraw();
+            });
 
+            $('#apply_filter').click(function() {
+                // $("#filters").toggle();
+            });
+
+            $("#OpenFilters").click(function () {
+                // $("#filters").toggle();
+            });
+
+            $('.slider').slider({
+              min: 30,
+              max: 200,
+              value: 70,
+              change: function( event, ui ) {
+                console.log(ui.value);
+                $(".schematic-block").width(ui.value);
+              }
+            });
+
+            $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
+            $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
+
+
+            $('.column_toggle').change(function(evt) {
+                console.log('start toggle');
+                // evt.stopPropagation();
+                // evt.stopImmediatePropagation();
+                // evt.preventDefault();
+                columns = $(this).attr('data-column').split(",");
+                var checked = this.checked;
+                var checked = (this.checked ? false : true);
+                columns.forEach(function(column) {
+                    // console.log('hiding column');
+                    var column = oTable.column( column );
+                    try {
+                        column.visible( checked );
+                    }
+                    catch(err) {
+                        column.visible( checked );
+                    }
+                });
+                // var Table = $('#constructs').dataTable();
+                // Table.fnDraw();
+                console.log('done toggle');
+                oTable.draw();
+                console.log('done draw');
+            } );
+
+            $('#superpose_btn').click(function() {
+                superposition(oTable, [12,5,6,7,8,9,2,3,4,10,11], "homology_model_browser", true);
+            });
+
+            // $('#superpose_btn').click(function () {
+            //     ClearSelection('targets');
+            //     ClearSelection('reference');
+            //     if (oTable.rows('.selected').data().length == 1) {
+            //         var div = document.createElement("div");
+            //         div.innerHTML = oTable.rows('.selected').data()[0][12];
+            //         var state1 = oTable.rows('.selected').data()[0][3];
+            //         if (oTable.rows('.selected').data()[0][4]==='Yes') {
+            //             div.innerHTML = oTable.rows('.selected').data()[0][11];
+            //             if (typeof div.innerText !== "undefined") {
+            //                 AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '')+"_refined");
+            //             } else {
+            //                 AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '')+"_refined");
+            //             }
+            //         }
+            //         else {
+            //             if (typeof div.innerText !== "undefined") {
+            //                 AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
+            //             } else {
+            //                 AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+            //             }
+            //         }
+            //     }
+            //     var checked_data = oTable.rows('.alt_selected').data();
+            //     var selected_ids = [];
+            //     for (i = 0; i < checked_data.length; i++) {
+            //         var div = document.createElement("div");
+            //         div.innerHTML = checked_data[i][12];
+            //         var state2 = checked_data[i][3];
+            //         if (checked_data[i][4]==='Yes') {
+            //             div.innerHTML = checked_data[i][11];
+            //             if (typeof div.innerText !== "undefined") {
+            //                 selected_ids.push(div.innerText.replace(/\s+/g, '')+"_refined");
+            //             } else {
+            //                 selected_ids.push(div.textContent.replace(/\s+/g, '')+"_refined");
+            //             }
+            //         }
+            //         else {
+            //             if (typeof div.innerText !== "undefined") {
+            //                 selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
+            //             } else {
+            //                 selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
+            //             }
+            //         }
+            //     }
+            //     AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
+            //     window.location.href = '/structure/superposition_workflow_index';
+            // });
+            
+            $('#download_btn').click(function () {
+                var selected_ids = [];
+                 $.each($(".alt_selected"), function(){            
+                    hom_id = $(this).closest('tr').attr('model_id');
+                    if ($(this).closest('tr').children().eq(4).text()==='Yes') {
+                        hom_id = hom_id.toString()+'r';
+                    }
+                    selected_ids.push(hom_id);
+                });
+                window.location.href = '/structure/hommod_download?ids='+selected_ids.join(",");
+            });
+            $('#align_btn').click(function () {
+                var checked_data = oTable.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][12];
+                    var state = checked_data[i][3];
+                    if (checked_data[i][4]==='Yes') {
+                        div.innerHTML = checked_data[i][11];
+                        if (typeof div.innerText !== "undefined") {
+                            AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
+                        } else {
+                            AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        }
+                    }
+                    else {
+                        if (typeof div.innerText !== "undefined") {
+                            AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '')+"_"+state);
+                        } else {
+                            AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, '')+"_"+state);
+                        }
+                    }
+                }
+                window.location.href = '/structure/selection_convert_model';
+            });
         });
+
+        function ClearSelection(selection_type) {
+            $.ajax({
+                'url': '/common/clearselection',
+                'data': {
+                    selection_type: selection_type
+                },
+                'type': 'GET',
+                'async': false,
+                'success': function (data) {
+                    $("#selection-" + selection_type).html(data);
+                }
+            });
+        }
+
+        function AddToSelection(selection_type, selection_subtype, selection_id) {
+            $.ajax({
+                'url': '/common/addtoselection',
+                'data': {
+                    selection_type: selection_type,
+                    selection_subtype: selection_subtype,
+                    selection_id: selection_id
+                },
+                'type': 'GET',
+                'async': false,
+                'success': function(data) {
+                    $("#selection-" + selection_type).html(data);
+                },
+            });
+        }
+
+        function select_all(e) {
+            var checkedStatus = $(e).prop("checked");
+
+            $('.select-all  ').each(function () {
+                    $(this).prop('checked', checkedStatus);
+            });
+
+            $('.alt').each(function () {
+                    $(this).prop('checked', checkedStatus);
+            });
+        };
+
+        function assign_to_row(){
+          $('tbody tr').click(function(event) {
+            if (event.target.type !== 'checkbox') {
+              $(':checkbox', this).trigger('click');
+            }
+          });
+        }
+
+        // function realign() {
+
+        //     ids = JSON.parse($("#c_ids").val());
+
+        //     // $('input:checkbox:not(:checked)').each(function () {
+        //     $('input:checkbox:checked').each(function () {
+        //         if ( $(this).is(':visible') ) {
+        //            id = $(this).attr('value');
+        //            if (id) { ids.push(id); }
+        //         }
+        //     });
+
+        //     console.log(ids);
+
+        //     current_align_ids = ids
+        //     var url = '/construct/align'; 
+        //     var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
+        //       posting.done(function( data ) {
+        //         $("#align_div").html('').append(data)
+
+        //         $(function () {$('[data-toggle="tooltip"]').tooltip()})
+
+        //         $(function(){
+        //             $('.ali-scroll-div').scroll(function(){
+        //                 $('.ali-main-div')
+        //                     .scrollLeft($('.ali-scroll-div').scrollLeft());
+        //             });
+        //             $('.ali-main-div').scroll(function(){
+        //                 $('.ali-scroll-div')
+        //                     .scrollLeft($('.ali-main-div').scrollLeft());
+        //             });
+        //         });
+
+        //         $(function () {$('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );});
+        //       });
+        // };
+
+
     </script> 
 {% endblock %}
 
 {% block content %}
+<h2>GPCR Homology Model Browser</h2>
 
-    <div class="btn-group">
-        <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Align</a>
-    </div>
-    <div class="btn-group">
-        <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
-    </div>
-    <div class="btn-group">
-        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
-    </div>
-    <div class="btn-group" style="float: right">
+<div class="btn-group">
+    <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">Align</label>
+    <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
+    <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label> -->
+</div>
+<!-- <br /><br />
+    Show/hide columns:
+<div class="btn-group" data-toggle="buttons">
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="4,5,6,7,8" checked="checked"> Receptor
+  </label>
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Purification" data-column="9,10" checked="checked"> Template
+  </label>
+</div> -->
+
+<div class="btn-group" style="float: right">
         <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="glyphicon glyphicon-download"></span> Archive <span class="caret"></span>
         </button>
-        <ul class="dropdown-menu">
-                <li>
-                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2016-06-12.zip"> 2016-06-12 models </a>
-                </li>
-                <li>
-                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-04-10.zip"> 2017-04-10 models </a>
-                </li>
-                <li>
-                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-09-27.zip"> 2017-09-27 models </a>
-                </li>
-                <li>
-                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-01-18.zip"> 2018-01-18 models </a>
-                </li>
-                <li>
-                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-04-06.zip"> 2018-04-06 models </a>
-                </li>
-            </ul>
+        <ul class="dropdown-menu" style="left:auto;right:0;margin-right:-10px;">
+            <li>
+                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2016-06-12.zip"> 2016-06-12 models </a>
+            </li>
+            <li>
+                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-04-10.zip"> 2017-04-10 models </a>
+            </li>
+            <li>
+                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-09-27.zip"> 2017-09-27 models </a>
+            </li>
+            <li>
+                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-01-18.zip"> 2018-01-18 models </a>
+            </li>
+            <li>
+                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-04-06.zip"> 2018-04-06 models </a>
+            </li>
+        </ul>
+</div>
+
+<br><br>
+
+    <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
+    <br>Loading...
     </div>
-    
-    <div style="font-size: 10px; padding: 3px 0px 0px 0px;">PDB files contain GPCRdb generic numbers in the B-factor field of CA atoms</div>
-    <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
-    <div style="font-size: 10px;">For information on state identification and Δ distance (Å) please refer to the <a href="http://docs.gpcrdb.org/structures.html#structure-state">documentation</a></div>
-
-    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
-        <table class="display" id="structure_model" style="width: 100%;">
+</div>    
+<div id="browser">
+    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
+        <table width="100%" class="display compact" id="constructs">
             <thead>
+                <tr class='over_header' style='max-height: 20px'>
+                    <th colspan=5 class="over_header">MODEL</th>
+                    <th colspan=5 class="over_header">RECEPTOR</th>
+                    <th colspan=2 class="over_header">TEMPLATE</th>
+                </tr>
                 <tr>
-                    <th><input class="select-all" type="checkbox"> Select all</th>
-                    <th class="protein-th">Receptor model</th>
-                    <th class="protein-th">Uniprot</th>
-                    <th class="protein-th">Receptor family</th>
-                    <th class="protein-th">State</th>
-                    <th class="protein-th">Receptor class</th>
-                    <th class="protein-th">Species</th>
-                    <th class="pdb-th">Main template protein</th>
-                    <th class="pdb-th">PDB</th>
-                    <th class="version-th">Model version</th>
+                    <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th></th>
+                    <th>Date</th>
+                    <th></th>
+                    <th  class='rightborder'></th>
+                    <th></th>
+                    <th></th>
+                    <th ></th>
+                    <th></th>
+                    <th  class='rightborder'></th>
+                    <th></th>
+                    <th  class='rightborder'></th>
                     <th style="display:none;"></th>
+                </tr>
 
-                </tr>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th style="display:none;"></th>
-                   
-                </tr>
             </thead>
             <tbody>
             {% for model in structure_model %}
                 <tr model_id='{{model.pk}}'>
-                    <td><input class="alt" type="checkbox"></td>
-                    <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
-                    <td>{{ model.protein.entry_short }}</td>
-                    <td>{{ model.protein.family.parent.name|safe }}</td>
-                    <td style="text-align: left;">{{ model.state.name }}</td>
-                    <td>{{ model.protein.family.parent.parent.parent.name }}</td>
-                    <td>{{ model.protein.species.common_name }}</td>
-                    <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
-                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
-                    <td>{{ model.version|date:"Y-m-d" }}</td>
-                    <td style="display:none;">{{ model.protein.entry_name }}</td>
-
+                    {% if model.protein %}
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                        <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
+                        <td>{{ model.version|date:"Y-m-d" }}</td>
+                        <td>{{ model.state.name }}</td>
+                        <td>No</td>
+                        <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein.accession }}">{{ model.protein.entry_short|safe }}</a></span></td>
+                        <td><span><a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.short|safe }}</span></td>
+                        <td><span>{{ model.protein.family.parent.short|safe }}</span></td>
+                        <td>{{ model.protein.family.parent.parent.parent.short }}</td>
+                        <td>{{ model.protein.species.common_name }}</td>
+                        <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
+                        <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
+                        <td style="display:none;">{{ model.protein.entry_name }}</td>
+                    {% else %}
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                        <td><a href="homology_models/{{ model.pdb_code.index }}">{{ model.protein_conformation.protein.family.name|safe }}</a></td>
+                        <td>{{ model|get_refined_model_version }}</td>
+                        <td>{{ model.state.name }}</td>
+                        <td>Yes</td>
+                        <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation.protein.accession }}">{{ model.protein_conformation.protein.entry_short|safe }}</a></span></td>
+                        <td><span><a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.short|safe }}</span></td>
+                        <td><span>{{ model.protein_conformation.protein.family.parent.short|safe }}</span></td>
+                        <td>{{ model.protein_conformation.protein.family.parent.parent.parent.short }}</td>
+                        <td>{{ model.protein_conformation.protein.species.common_name }}</td>
+                        <td><a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.family.name|safe }}</a></td>
+                        <td><a href="{{ model.pdb_code.index }}">{{ model.pdb_code.index|cut_refined}}</a></td>
+                        <td style="display:none;">{{ model.protein_conformation.protein.entry_name }}</td>
+                    {% endif %}         
                 </tr>
-                {% endfor %}
+            {% endfor %}
             </tbody>
         </table>
     </div>
-
+</div>
+<div id="myModal" class="modal">
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h3>Pick reference from selection</h3>
+    <br>
+    <table id="modal_table" class="display compact" width="100%">
+        <thead>
+            <tr>
+                <th></th>
+                <th style="display:none;"></th>
+                <th>UniProt</th>
+                <th>IUPHAR</th>
+                <th>Rec. family</th>
+                <th>Class</th>
+                <th>Species</th>
+                <th>Date</th>
+                <th>State</th>
+                <th>Refined</th>
+                <th>Main template receptor</th>
+                <th>Main template PDB</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Javascript populates the table from selected rows -->
+        </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}
+
+

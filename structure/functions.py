@@ -13,7 +13,7 @@ from django.conf import settings
 from common.selection import SimpleSelection
 from common.alignment import Alignment
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
-from residue.functions import dgn
+from residue.functions import dgn, ggn
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer
 
@@ -30,6 +30,8 @@ import Bio.PDB as PDB
 import csv
 # from openpyxl import Workbook
 import numpy
+import zipfile
+import pprint
 
 
 logger = logging.getLogger("protwis")
@@ -551,7 +553,8 @@ class HSExposureCB(AbstractPropertyMap):
     vector based on three consecutive CA atoms. This is done by two separate
     subclasses.
     """
-    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False):
+    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False, 
+                 check_knots=False, receptor=None, signprot=None):
         """
         @param model: model
         @type model: L{Model}
@@ -582,15 +585,29 @@ class HSExposureCB(AbstractPropertyMap):
         hse_list=[]
         hse_keys=[]
         ### GP
+        if model.get_id()!=0:
+            model = model[0]
         residues_in_pdb,residues_with_proper_CA=[],[]
         if check_chain_breaks==True:
-            for m in model:
-                for chain in m:
+            # for m in model:
+                for chain in model:
                     for res in chain:
-                        if is_aa(res):
-                            residues_in_pdb.append(res.get_id()[1])
+                        # try:
+                            if is_aa(res):
+                                residues_in_pdb.append(res.get_id()[1])
+                        # except:
+                        #     if is_aa(chain):
+                        #         residues_in_pdb.append(chain.get_id()[1])
+                        #         print('chain', chain, res)
+                        #         break
         self.clash_pairs = []
         self.chain_breaks = []
+        
+        if check_knots:
+            possible_knots = PossibleKnots(receptor, signprot)
+            knot_resis = possible_knots.get_resnums()
+            self.remodel_resis = {}
+
         for pp1 in ppl:
             for i in range(0, len(pp1)):
                 residues_with_proper_CA.append(pp1[i].get_id()[1])
@@ -656,6 +673,21 @@ class HSExposureCB(AbstractPropertyMap):
                 r2.xtra[hse_down_key]=hse_d
                 if angle_key:
                     r2.xtra[angle_key]=angle
+
+                ### GP checking for knots
+                if check_knots:
+                    for knot in knot_resis:
+                        if knot[0][1]==pp1[i].get_id()[1] and knot[0][0]==pp1[i].get_parent().get_id():
+                            print(pp1[i].get_parent().get_id(),pp1[i])
+                            for r in residue_up:
+                                if r.get_parent().get_id()==knot[1][0] and r.get_id()[1] in knot[1][1]:
+                                    print('close: ', r.get_parent().get_id(),r)
+                                    resi_range = [knot[1][1][0], knot[1][1][-1]]
+                                    if knot[1][0] not in self.remodel_resis:
+                                        self.remodel_resis[knot[1][0]] = [resi_range]
+                                    else:
+                                        if resi_range not in self.remodel_resis[knot[1][0]]:
+                                            self.remodel_resis[knot[1][0]].append(resi_range)
 
                 ### GP checking for atom clashes
                 include_prev, include_next = False, False
@@ -740,6 +772,33 @@ class HSExposureCB(AbstractPropertyMap):
         # This is for PyMol visualization
         self.ca_cb_list.append((ca_v, cb_v))
         return cb_at_origin_v
+
+
+class PossibleKnots():
+    def __init__(self, receptor, signprot):
+        self.receptor = Protein.objects.get(entry_name=receptor)
+        self.signprot = Protein.objects.get(entry_name=signprot)
+        self.possible_knots = {'ICL3-H4':[['R','A'],['G.H4.11','G.H4.14','G.H4.15','G.h4s6.01']],
+                               'h1ha-hehf':[['A','A'],['H.HF.03']]}
+        self.output = []
+
+    def get_resnums(self):
+        if self.receptor and self.signprot:
+            for knot_label, values in self.possible_knots.items():
+                chain1, chain2 = values[0]
+                region1 = list(Residue.objects.filter(protein_conformation__protein=self.receptor, protein_segment__slug=knot_label.split('-')[0]).values_list('sequence_number', flat=True))
+                if len(region1)==0:
+                    region1 = list(Residue.objects.filter(protein_conformation__protein=self.signprot, protein_segment__slug=knot_label.split('-')[0]).values_list('sequence_number', flat=True))
+                if len(region1)==0:
+                    raise AssertionError('Protein segment slug error for loop knot: No residues found for {} in {}'.format(knot_label.split('-')[0], self.receptor, self.signprot))
+                if knot_label=='h1ha-hehf':
+                    for i in range(0,3):
+                        region1.append(region1[-1]+1)
+                for r in values[1]:
+                    region2 = Residue.objects.get(protein_conformation__protein=self.signprot, display_generic_number__label=r)
+                    self.output.append([[chain2,region2.sequence_number],[chain1,region1]])
+        print(self.output)
+        return self.output
 
 
 class PdbChainSelector():
@@ -871,6 +930,7 @@ class PdbStateIdentifier():
         if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
             tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
             tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
+            print(tm6, tm7, tm6-tm7)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
@@ -937,6 +997,7 @@ class PdbStateIdentifier():
         try:
             res1 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue1, self.parent_prot_conf))
             res2 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue2, self.parent_prot_conf))
+            print(res1, res1.id, res2, res2.id)
             try:
                 rota1 = Rotamer.objects.filter(structure=self.structure, residue__sequence_number=res1.sequence_number)
                 if len(rota1)==0:
@@ -970,7 +1031,7 @@ class PdbStateIdentifier():
                 if self.structure_type=='refined':
                     pdb_data = self.structure.pdb_data.pdb
                 elif self.structure_type=='hommod':
-                    pdb_data = self.structure.pdb
+                    pdb_data = self.structure.pdb_data.pdb
                 io = StringIO(pdb_data)
                 struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
                 for chain in struct:
@@ -983,13 +1044,41 @@ class PdbStateIdentifier():
 
             except:
                 print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
-                return False
-
-
+                return False   
 
     def calculate_CA_distance(self, residue1, residue2):
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
         return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
+
+
+def update_template_source(template_source, keys, struct, segment, just_rot=False):
+    ''' Update the template_source dictionary with structure info for backbone and rotamers.
+    '''
+    for k in keys:
+        if just_rot==True:
+            try:
+                template_source[segment][k][1] = struct
+            except:
+                pass
+        else:
+            try:
+                template_source[segment][k][0] = struct
+                template_source[segment][k][1] = struct
+            except:
+                pass
+    return template_source
+
+def compare_and_update_template_source(template_source, segment, signprot_pdb_array, i, cgn, template_source_key, segs_for_alt_complex_struct, alt_complex_struct, main_structure):
+    if cgn in signprot_pdb_array[segment]:
+        if segment in segs_for_alt_complex_struct and signprot_pdb_array[segment][cgn]!='x':
+            update_template_source(template_source, [str(template_source_key)], alt_complex_struct, segment)
+        elif signprot_pdb_array[segment][cgn]!='x':
+            update_template_source(template_source, [str(template_source_key)], main_structure, segment)
+        else:
+            update_template_source(template_source, [str(template_source_key)], None, segment)
+    else:
+        update_template_source(template_source, [str(template_source_key)], None, segment)
+    return template_source
 
 
 def right_rotamer_select(rotamer, chain=None):
@@ -1004,3 +1093,6 @@ def right_rotamer_select(rotamer, chain=None):
     else:
         rotamer=rotamer[0]
     return rotamer
+
+
+

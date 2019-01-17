@@ -153,16 +153,18 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             d3.select(containerSelector).style("position","relative");
 
             div = d3.select(containerSelector).insert("div")
-                .attr("class", "flareplot")
-                .style("width", w + "px")
-                .style("height", h + "px")
+                .attr("class", "flareplot2")
+                .style("width", "100%")
+                .style("margin-top","100px")
+                // .style("height", h + "px")
                 .style("-webkit-backface-visibility", "hidden");
 
             var cx = w * 0.5;
             var cy = cx;
             svg = div.append("svg:svg")
-                .attr("width", w)
-                .attr("height", h)
+                .attr("viewBox", "0 0 " + w + " " + h )
+                // .attr("width", w)
+                // .attr("height", h)
                 .append("svg:g")
                 .attr("transform", "translate(" + cx + "," + cy + ")");
 

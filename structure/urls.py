@@ -17,7 +17,7 @@ urlpatterns = [
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
     url(r'^statistics$', cache_page(60*60*24)(StructureStatistics.as_view()), name='structure_statistics'),
     url(r'^homology_models$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
-    url(r'^complex_models$', (ServeComplexModels.as_view()), name='complex_models'),
+    url(r'^complex_models$', cache_page(60*60*24)(ServeComplexModels.as_view()), name='complex_models'),
     url(r'^pdb_download_index$', PDBClean.as_view(), name='pdb_download'),
     url(r'pdb_segment_selection', PDBSegmentSelection.as_view(), name='pdb_download'),
     url(r'^pdb_download$', PDBClean.as_view(), name='pdb_download'),
@@ -49,7 +49,7 @@ urlpatterns = [
     url(r'^complex_models/(?P<modelname>\w+)-(?P<signprot>\w+)/download_pdb$', SingleComplexModelDownload, name='single_complex_model_download'),
 #    url(r'^complex_models/(?P<modelname>\w+)-(?P<signprot>\w+)/download_csv$', SingleComplexModelDownload, {'csv':True}, name='single_complex_model_download'),
     url(r'^homology_models/view/(?P<modelname>\w+)_(?P<state>\w+)$', ServeHomModDiagram, name='hommod_serve_view'),
-    url(r'^complex_models/(?P<modelname>\w+)-(?P<signprot>\w+)$', ComplexModelDetails, name='complex_model_details'),
+    url(r'^complex_models/(?P<modelname>\w+)-(?P<signprot>\w+)$', cache_page(60*60*24)(ComplexModelDetails), name='complex_model_details'),
     url(r'^complex_models/view/(?P<modelname>\w+)-(?P<signprot>\w+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
     url(r'^pdb/(?P<pdbname>\w+)/ligand/(?P<ligand>.+)$', ServePdbLigandDiagram, name='structure_serve_pdb_ligand'),
 
