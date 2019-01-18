@@ -3,6 +3,7 @@ from Bio.PDB.NeighborSearch import NeighborSearch
 
 from contactnetwork.interaction import *
 from contactnetwork.pdb import *
+from contactnetwork.models import *
 
 from structure.models import Structure
 
@@ -10,7 +11,7 @@ from structure.models import Structure
 NUM_SKIP_RESIDUES = 4
 
 
-def compute_interactions(pdb_name):
+def compute_interactions(pdb_name,save_to_db = False):
     # Ensure that the PDB name is lowercase
     pdb_name = pdb_name.lower()
 
@@ -22,20 +23,20 @@ def compute_interactions(pdb_name):
     # Get the Biopython structure for the PDB
     s = pdb_get_structure(pdb_name)[0]
     chain = s[preferred_chain]
-    ppb=PPBuilder()
 
 
+     # remove residues without GN and only those matching receptor.
     residues = struc.protein_conformation.residue_set.exclude(generic_number=None).all()
     dbres = {}
     for r in residues:
         dbres[r.sequence_number] = r
+    ids_to_remove = []
+    for res in chain:
+        if not res.id[1] in dbres.keys():
+            ids_to_remove.append(res.id)
+    for i in ids_to_remove:
+        chain.detach_child(i)
 
-    # remove residues without GN and only those matching receptor.
-    residues = list(struc.protein_conformation.residue_set.exclude(generic_number=None).values_list('sequence_number',flat=True))
-    for pp in ppb.build_peptides(chain): #remove >1000 pos (fusion protein / gprotein)
-        for i,res in enumerate(pp,1 ):
-            if not res.id[1] in residues:
-                chain.detach_child(res.id)
 
     distances = []
     for i1,res1 in enumerate(chain,1):
@@ -43,7 +44,8 @@ def compute_interactions(pdb_name):
             if i2>i1:
                 # Do not calculate twice.
                 distance = res1['CA']-res2['CA']
-                distances.append((res1.id[1],res2.id[1],distance))
+                distances.append((dbres[res1.id[1]],dbres[res2.id[1]],distance))
+
 
     atom_list = Selection.unfold_entities(s[preferred_chain], 'A')
     # Search for all neighbouring residues
@@ -62,4 +64,27 @@ def compute_interactions(pdb_name):
     # Split unto classified and unclassified.
     classified = [interaction for interaction in interactions if len(interaction.get_interactions()) > 0]
 
-    return classified
+    if save_to_db: 
+
+        # Delete previous for faster load in
+        InteractingResiduePair.objects.filter(referenced_structure=struc).all().delete()
+
+        bulk_pair = []
+        for d in distances:
+            pair = InteractingResiduePair(res1=d[0], res2=d[1], referenced_structure=struc)
+            bulk_pair.append(pair)
+
+        pairs = InteractingResiduePair.objects.bulk_create(bulk_pair)
+
+        bulk_distances = []
+        for i,d in enumerate(distances):
+            distance = Distance(distance=d[2],interacting_pair=pairs[i])
+            bulk_distances.append(distance)
+
+        pairs = Distance.objects.bulk_create(bulk_distances)
+
+        for p in classified:
+            p.save_into_database()
+
+
+    return classified, distances

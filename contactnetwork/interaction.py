@@ -62,94 +62,119 @@ class InteractingPair:
 
     def save_into_database(self):
         # Save the pair
-        pair = InteractingResiduePair()
-        pair.res1 = self.dbres1
-        pair.res2 = self.dbres2
-        pair.referenced_structure = self.structure
-        pair.save()
+        pair,created = InteractingResiduePair.objects.get_or_create(res1=self.dbres1, res2=self.dbres2, referenced_structure=self.structure)
+        # pair.res1 = self.dbres1
+        # pair.res2 = self.dbres2
+        # pair.referenced_structure = self.structure
+        # pair.save()
 
-        # Add the interactions to the pair
+        # Add the interactions to the pair'
+        bulk = []
         for i in self.get_interactions():
-            print(type(i))
-            if type(i) is CI.VanDerWaalsInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'VanDerWaals'
-                ni.interacting_pair = pair
-                ni.save()
-            elif type(i) is interaction.HydrophobicInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Hydrophobic'
-                ni.interacting_pair = pair
-                ni.save()
-            elif type(i) is interaction.PolarSidechainSidechainInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Polar'
-                ni.interaction_type = 'PolarSidechainSidechain'
-                ni.interacting_pair = pair
-                ni.save()
+            if type(i) is VanDerWaalsInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'VanDerWaals'
+                # ni.interacting_pair = pair
+                # ni.save()
+                ni = Interaction(interaction_type='VanDerWaals', interacting_pair=pair)
+            elif type(i) is HydrophobicInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Hydrophobic'
+                # ni.interacting_pair = pair
+                # ni.save()
+                ni = Interaction(interaction_type='Hydrophobic', interacting_pair=pair)
+            elif type(i) is PolarSidechainSidechainInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Polar'
+                # ni.interaction_type = 'PolarSidechainSidechain'
+                # ni.interacting_pair = pair
+                # ni.save()
+
+                ni = Interaction(interaction_type='Polar',specific_type='PolarSidechainSidechain', interacting_pair=pair)
 
                 # ni.is_charged_res1 = i.is_charged_res1
                 # ni.is_charged_res2 = i.is_charged_res2
-            elif type(i) is interaction.PolarBackboneSidechainInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Polar'
-                ni.specific_type = 'PolarBackboneSidechain'
-                ni.interacting_pair = pair
-                ni.save()
+            elif type(i) is PolarBackboneSidechainInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Polar'
+                # ni.specific_type = 'PolarBackboneSidechain'
+                # ni.interacting_pair = pair
+                # ni.save()
+
+                ni = Interaction(interaction_type='Polar',specific_type='PolarBackboneSidechain', interacting_pair=pair)
 
                 # ni.is_charged_res1 = i.is_charged_res1
                 # ni.is_charged_res2 = i.is_charged_res2
                 # ni.res1_is_sidechain = False
-            elif type(i) is interaction.PolarSideChainBackboneInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Polar'
-                ni.specific_type = 'PolarSideChainBackbone'
-                ni.interacting_pair = pair
-                ni.save()
+            elif type(i) is PolarSideChainBackboneInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Polar'
+                # ni.specific_type = 'PolarSideChainBackbone'
+                # ni.interacting_pair = pair
+                # ni.save()
+                
+                ni = Interaction(interaction_type='Polar',specific_type='PolarSideChainBackbone', interacting_pair=pair)
 
                 # ni.is_charged_res1 = i.is_charged_res1
                 # ni.is_charged_res2 = i.is_charged_res2
                 # ni.res1_is_sidechain = True
-            elif type(i) is interaction.FaceToFaceInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Aromatic'
-                ni.specific_type = 'FaceToFace'
-                ni.interacting_pair = pair
-                ni.save()
-            elif type(i) is interaction.FaceToEdgeInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Aromatic'
-                ni.specific_type = 'FaceToEdge'
-                ni.interacting_pair = pair
-                ni.save()
+            elif type(i) is FaceToFaceInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Aromatic'
+                # ni.specific_type = 'FaceToFace'
+                # ni.interacting_pair = pair
+                # ni.save()
+
+                ni = Interaction(interaction_type='Aromatic',specific_type='FaceToFace', interacting_pair=pair)
+            elif type(i) is FaceToEdgeInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Aromatic'
+                # ni.specific_type = 'FaceToEdge'
+                # ni.interacting_pair = pair
+                # ni.save()
+
+                ni = Interaction(interaction_type='Aromatic',specific_type='FaceToEdge', interacting_pair=pair)
 
                 # ni.res1_has_face = True
 
-            elif type(i) is interaction.EdgeToFaceInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Aromatic'
-                ni.specific_type = 'EdgeToFace'
-                ni.interacting_pair = pair
-                ni.save()
+            elif type(i) is EdgeToFaceInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Aromatic'
+                # ni.specific_type = 'EdgeToFace'
+                # ni.interacting_pair = pair
+                # ni.save()
+
+                ni = Interaction(interaction_type='Aromatic',specific_type='EdgeToFace', interacting_pair=pair)
 
                 # ni.res1_has_face = False
-            elif type(i) is interaction.PiCationInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Aromatic'
-                ni.specific_type = 'PiCation'
-                ni.interacting_pair = pair
-                ni.save()
+            elif type(i) is PiCationInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Aromatic'
+                # ni.specific_type = 'PiCation'
+                # ni.interacting_pair = pair
+                # ni.save()
+                
+                ni = Interaction(interaction_type='Aromatic',specific_type='PiCation', interacting_pair=pair)
 
                 #ni.res1_has_pi = True
-            elif type(i) is interaction.CationPiInteraction:
-                ni = Interaction()
-                ni.interaction_type = 'Aromatic'
-                ni.specific_type = 'PiCation'
-                ni.interacting_pair = pair
-                ni.save()
+            elif type(i) is CationPiInteraction:
+                # ni = Interaction()
+                # ni.interaction_type = 'Aromatic'
+                # ni.specific_type = 'CationPi'
+                # ni.interacting_pair = pair
+                # ni.save()
+
+                ni = Interaction(interaction_type='Aromatic',specific_type='CationPi', interacting_pair=pair)
             else:
-                print('no case for ',type(i))
+                # print('no case for ',type(i),i.get_name())
+                # ni = Interaction()
+                # ni.interaction_type = i.get_name()  
+                # ni.interacting_pair = pair
+                # ni.save()
+                ni = Interaction(interaction_type=i.get_name() , interacting_pair=pair)
                 #ni.res1_has_pi = False
+            bulk.append(ni)
+        Interaction.objects.bulk_create(bulk)
 
 
 class CI(object):
