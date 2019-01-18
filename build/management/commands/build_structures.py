@@ -164,6 +164,7 @@ class Command(BaseBuild):
         mapped_seq = {} # index in contruct, tuple of AA and WT [position,AA]
         debug = False
         preferred_chain = structure.preferred_chain
+        wt_pdb_lookup = []
 
         if len(preferred_chain.split(','))>1: #if A,B
             preferred_chain = preferred_chain.split(',')[0]
@@ -429,6 +430,7 @@ class Command(BaseBuild):
                                             aa_mismatch += 1
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                        wt_pdb_lookup.append({'WT_POS':wt_r.sequence_number, 'PDB_POS': residue.sequence_number, 'AA': wt_r.amino_acid})
                                         if residue.sequence_number in unmapped_ref:
                                             #print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                             if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
@@ -804,6 +806,12 @@ class Command(BaseBuild):
             print("Present helices:",segments_present)
             print("MISSING HELICES?!")
         if debug: print("===============**================")
+
+        if not os.path.exists(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])):
+            os.makedirs(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup']))
+        wt_pdb_lookup_folder = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', str(structure) + '.json'])
+        with open(wt_pdb_lookup_folder, 'w') as f2:
+            json.dump(wt_pdb_lookup, f2)
         return None
 
 
