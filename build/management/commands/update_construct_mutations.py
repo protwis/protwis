@@ -355,8 +355,8 @@ class Command(BaseCommand):
             for construct in Construct.objects.filter(structure__pdb_code__index=i[1].upper()):
                 try:
                     insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
-                except:
-                    print('Error with insert! FIXIT',i)
+                except Exception as e:
+                    print('Error with insert! FIXIT',i,str(e))
                 if i[4]:
                     i[4] = str(i[4])
                     #if position information add that
