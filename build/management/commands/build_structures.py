@@ -164,6 +164,7 @@ class Command(BaseBuild):
         mapped_seq = {} # index in contruct, tuple of AA and WT [position,AA]
         debug = False
         preferred_chain = structure.preferred_chain
+        wt_pdb_lookup = []
 
         if len(preferred_chain.split(','))>1: #if A,B
             preferred_chain = preferred_chain.split(',')[0]
@@ -210,8 +211,10 @@ class Command(BaseBuild):
                             for i in seg[6]:
                                 removed.append(i)
         # Reset removed, since it causes more problems than not
-        removed = []
-        if len(deletions)>len(d['wt_seq'])*0.9:
+
+        # print('removed',removed)
+        # removed = []
+        if len(deletions)>len(d['wt_seq'])*0.9 or len(removed)>len(d['wt_seq'])*0.9:
             #if too many deltions
             removed = []
             deletions = []
@@ -252,10 +255,8 @@ class Command(BaseBuild):
             for i,res in enumerate(pp,1 ):
                 id = res.id
                 residue_id = res.get_full_id()
-                # print(i,id[1],AA[res.resname])
                 if id[1] in removed:
                     chain.detach_child(id)
-                    # print("removed")
                     continue
                 # if id[1]<600:
                 #     check_1000 += 1
@@ -291,7 +292,6 @@ class Command(BaseBuild):
                 pos = residue_id[3][1]
                 pdbseq[chain][pos] = [i,AA[residue.resname]]
                 i += 1
-
         parent_seq_protein = str(structure.protein_conformation.protein.parent.sequence)
         # print(structure.protein_conformation.protein.parent.entry_name)
         rs = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent).prefetch_related('display_generic_number','generic_number','protein_segment')
@@ -308,7 +308,6 @@ class Command(BaseBuild):
             # wt_lookup[r.sequence_number] = r
             wt_lookup[i] = r
             parent_seq += r.amino_acid
-
         # if parent_seq != parent_seq_protein:
         #     print('Residues sequence differ from sequence in protein',structure.protein_conformation.protein.parent.entry_name,structure.pdb_code.index)
 
@@ -316,13 +315,14 @@ class Command(BaseBuild):
             print("No residues for",structure.protein_conformation.protein.parent.entry_name)
             return None
 
+        # print('parent_seq',parent_seq,'pdb_seq',seq)
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
-        pw2 = pairwise2.align.localms(parent_seq, seq, 5, -4, -5, -2)
+        pw2 = pairwise2.align.localms(parent_seq, seq, 6, -4, -5, -2)
 
         gaps = 0
         unmapped_ref = {}
         for i, r in enumerate(pw2[0][0], 1): #loop over alignment to create lookups (track pos)
-#            print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
+            # print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
@@ -335,7 +335,7 @@ class Command(BaseBuild):
 
         gaps = 0
         for i, r in enumerate(pw2[0][1], 1): #make second lookup
-            #print(i,r,pw2[0][0][i-1]) #print alignment for sanity check
+            # print(i,r,pw2[0][0][i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
@@ -429,7 +429,8 @@ class Command(BaseBuild):
                                             mismatch_seq += 1
                                             aa_mismatch += 1
                                     elif residue.sequence_number!=wt_r.sequence_number:
-                                        #print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                        # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                        wt_pdb_lookup.append({'WT_POS':wt_r.sequence_number, 'PDB_POS': residue.sequence_number, 'AA': wt_r.amino_acid})
                                         if residue.sequence_number in unmapped_ref:
                                             #print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                             if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
@@ -438,7 +439,8 @@ class Command(BaseBuild):
                                                 mismatch_seq -= 1
                                         mismatch_seq += 1
                                         ### REPLACE seq number with WT to fix odd PDB annotation. FIXME kinda dangerous, but best way to ensure consistent GN numbering
-                                        residue.sequence_number = wt_r.sequence_number
+                                        ### 2019.01.18 DISABLED underneat, to be sure that sequence number can be found in DB correctly.
+                                        # residue.sequence_number = wt_r.sequence_number
 
                                     if residue.amino_acid!=wt_r.amino_acid:
                                         if debug: print('aa mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
@@ -635,7 +637,6 @@ class Command(BaseBuild):
                                                 if residue.sequence_number<=seg_ends['8e']:
                                                     residue.protein_segment = self.segments['H8']
 
-
                                         residue.sequence_number = int(check.strip())
                                         #HAVE TO RESET SO IT FITS FOR INTERACTION SCRIPT
 
@@ -805,101 +806,21 @@ class Command(BaseBuild):
             print("Present helices:",segments_present)
             print("MISSING HELICES?!")
         if debug: print("===============**================")
+
+        if not os.path.exists(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])):
+            os.makedirs(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup']))
+        wt_pdb_lookup_folder = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', str(structure) + '.json'])
+        with open(wt_pdb_lookup_folder, 'w') as f2:
+            json.dump(wt_pdb_lookup, f2)
         return None
-
-    def purge_contact_network(self,s):
-
-        ii = Interaction.objects.filter(
-            interacting_pair__referenced_structure=s
-        ).all()
-
-        for i in ii:
-            i.delete()
 
 
     def build_contact_network(self,s,pdb_code):
         try:
-            interacting_pairs = compute_interactions(pdb_code)
+            interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return
-
-        for p in interacting_pairs:
-            # Create the pair
-            res1_seq_num = p.get_residue_1().id[1]
-            res2_seq_num = p.get_residue_2().id[1]
-            conformation = s.protein_conformation
-
-            # Get the residues
-            try:
-                res1 = Residue.objects.get(sequence_number=res1_seq_num, protein_conformation=conformation)
-                res2 = Residue.objects.get(sequence_number=res2_seq_num, protein_conformation=conformation)
-            except Residue.DoesNotExist:
-                self.logger.warning('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
-                # print('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
-                continue
-
-            # Save the pair
-            pair = InteractingResiduePair()
-            pair.res1 = res1
-            pair.res2 = res2
-            pair.referenced_structure = s
-            pair.save()
-
-            # Add the interactions to the pair
-            for i in p.get_interactions():
-                if type(i) is ci.VanDerWaalsInteraction:
-                    ni = VanDerWaalsInteraction()
-                    ni.interacting_pair = pair
-                    ni.save()
-                elif type(i) is ci.HydrophobicInteraction:
-                    ni = HydrophobicInteraction()
-                    ni.interacting_pair = pair
-                    ni.save()
-                elif type(i) is ci.PolarSidechainSidechainInteraction:
-                    ni = PolarSidechainSidechainInteraction()
-                    ni.interacting_pair = pair
-                    ni.is_charged_res1 = i.is_charged_res1
-                    ni.is_charged_res2 = i.is_charged_res2
-                    ni.save()
-                elif type(i) is ci.PolarBackboneSidechainInteraction:
-                    ni = PolarBackboneSidechainInteraction()
-                    ni.interacting_pair = pair
-                    ni.is_charged_res1 = i.is_charged_res1
-                    ni.is_charged_res2 = i.is_charged_res2
-                    ni.res1_is_sidechain = False
-                    ni.save()
-                elif type(i) is ci.PolarSideChainBackboneInteraction:
-                    ni = PolarBackboneSidechainInteraction()
-                    ni.interacting_pair = pair
-                    ni.is_charged_res1 = i.is_charged_res1
-                    ni.is_charged_res2 = i.is_charged_res2
-                    ni.res1_is_sidechain = True
-                    ni.save()
-                elif type(i) is ci.FaceToFaceInteraction:
-                    ni = FaceToFaceInteraction()
-                    ni.interacting_pair = pair
-                    ni.save()
-                elif type(i) is ci.FaceToEdgeInteraction:
-                    ni = FaceToEdgeInteraction()
-                    ni.interacting_pair = pair
-                    ni.res1_has_face = True
-                    ni.save()
-                elif type(i) is ci.EdgeToFaceInteraction:
-                    ni = FaceToEdgeInteraction()
-                    ni.interacting_pair = pair
-                    ni.res1_has_face = False
-                    ni.save()
-                elif type(i) is ci.PiCationInteraction:
-                    ni = PiCationInteraction()
-                    ni.interacting_pair = pair
-                    ni.res1_has_pi = True
-                    ni.save()
-                elif type(i) is ci.CationPiInteraction:
-                    ni = PiCationInteraction()
-                    ni.interacting_pair = pair
-                    ni.res1_has_pi = False
-                    ni.save()
 
 
     def main_func(self, positions, iteration,count,lock):
@@ -956,7 +877,7 @@ class Command(BaseBuild):
                         # If update_flag is true then update existing structures
                         # Otherwise only make new structures
                         if not self.incremental_mode:
-                            self.purge_contact_network(s)
+                            rs = s.protein_conformation.residue_set.all().delete()
                             s = s.delete()
                             s = Structure()
                         else:
@@ -1153,6 +1074,7 @@ class Command(BaseBuild):
                         s.annotated = False
 
                     s.refined = False
+                    s.stats_text = None
 
                     # save structure before adding M2M relations
                     s.save()

@@ -240,5 +240,5 @@ def get_charged_atom_names(res):
 # Returns the list of atom IDs that are actually present in for the residue
 def match_atomselection_residue(res, atomnames):
     res_atoms = res.child_dict
-    print(res_atoms)
+    # print(res_atoms)
     return [ name for name in atomnames if name in res_atoms ]

@@ -11,7 +11,7 @@ from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, Protei
 
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 
-from signprot.models import SignprotStructure, SignprotBarcode
+from signprot.models import SignprotStructure, SignprotBarcode, SignprotComplex
 import pandas as pd
 
 from optparse import make_option
@@ -51,6 +51,8 @@ class Command(BaseCommand):
     ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
+    local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
+    local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
 
     logger = logging.getLogger(__name__)
@@ -118,7 +120,7 @@ class Command(BaseCommand):
         #     # dic[subtype][name.lower()]['ensemble'] = 
         #     try:
         #         p = Protein.objects.get(entry_name=name.lower())
-        #         helices = ProteinSegment.objects.filter(proteinfamily='Gprotein', category__in=['helix','sheet'])
+        #         helices = ProteinSegment.objects.filter(proteinfamily='Alpha', category__in=['helix','sheet'])
         #         for h in helices:
         #             helix_resis = Residue.objects.filter(protein_conformation__protein=p, protein_segment=h)
         #             start, end = helix_resis[0], helix_resis.reverse()[0]
@@ -250,6 +252,7 @@ class Command(BaseCommand):
 
         # return 0
 
+
         if options['filename']:
             filenames = options['filename']
         else:
@@ -262,9 +265,12 @@ class Command(BaseCommand):
         else:
             #add gproteins from cgn db
             try:
+                self.purge_signprot_complex_data()
                 self.purge_coupling_data()
                 self.purge_cgn_residues()
+                self.purge_other_subunit_residues()
                 self.purge_cgn_proteins()
+                self.purge_other_subunit_proteins()
 
                 self.ortholog_mapping = OrderedDict()
                 with open(self.ortholog_file, 'r') as ortholog_file:
@@ -289,10 +295,57 @@ class Command(BaseCommand):
                 human_and_orths = self.cgn_add_proteins()
                 self.update_protein_conformation(human_and_orths)
                 self.create_barcode()
+                self.add_other_subunits()
 
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
+
+    def add_other_subunits(self):
+        beta_fam, created = ProteinFamily.objects.get_or_create(slug='100_002', name='Beta', parent=ProteinFamily.objects.get(name='G-Protein'))
+        gigsgt, created = ProteinFamily.objects.get_or_create(slug='100_002_001', name='G(I)/G(S)/G(T)', parent=beta_fam)
+        gamma_fam, created = ProteinFamily.objects.get_or_create(slug='100_003', name='Gamma', parent=ProteinFamily.objects.get(name='G-Protein'))
+        gigsgo, created = ProteinFamily.objects.get_or_create(slug='100_003_001', name='G(I)/G(S)/G(O)', parent=gamma_fam)
+
+        # create proteins
+        self.create_beta_gamma_proteins(self.local_uniprot_beta_dir, gigsgt)
+        self.create_beta_gamma_proteins(self.local_uniprot_gamma_dir, gigsgo)
+        # create residues
+        self.create_beta_gamma_residues(gigsgt)
+        self.create_beta_gamma_residues(gigsgo)
+
+    def create_beta_gamma_residues(self, proteinfamily):
+        bulk = []
+        fam = Protein.objects.filter(family=proteinfamily)
+        for prot in fam:
+            for i,j in enumerate(prot.sequence):
+                prot_conf = ProteinConformation.objects.get(protein=prot)
+                r = Residue(sequence_number=i+1, amino_acid=j, display_generic_number=None, generic_number=None, protein_conformation=prot_conf, protein_segment=None)
+                bulk.append(r)
+                if len(bulk) % 10000 == 0:
+                    self.logger.info('Inserted bulk {} (Index:{})'.format(len(bulk),i))
+                    # print(len(bulk),"inserts!",index)
+                    Residue.objects.bulk_create(bulk)
+                    # print('inserted!')
+                    bulk = []
+        Residue.objects.bulk_create(bulk)
+
+    def create_beta_gamma_proteins(self, uniprot_dir, proteinfamily):
+        files = os.listdir(uniprot_dir)
+        for f in files:
+            acc = f.split('.')[0]
+            up = self.parse_uniprot_file(acc)
+            pst = ProteinSequenceType.objects.get(slug='wt')
+            species = Species.objects.get(common_name=up['species_common_name'])
+            source = ProteinSource.objects.get(name=up['source'])
+            try:
+                name = up['names'][0].split('Guanine nucleotide-binding protein ')[1]
+            except:
+                name = up['names'][0]
+            prot, created = Protein.objects.get_or_create(entry_name=up['entry_name'], accession=acc, name=name, sequence=up['sequence'], family=proteinfamily, parent=None, 
+                                                          residue_numbering_scheme=None, sequence_type=pst, source=source, species=species)
+            state = ProteinState.objects.get(slug='active')
+            prot_conf, created = ProteinConformation.objects.get_or_create(protein=prot, state=state, template_structure=None)
 
     def fetch_missing_uniprot_files(self):
         BASE = 'http://www.uniprot.org'
@@ -448,6 +501,22 @@ class Command(BaseCommand):
         except:
             self.logger.warning('Existing Residue data cannot be deleted')
 
+    def purge_other_subunit_residues(self):
+        try:
+            Residue.objects.filter(protein_conformation__protein__family__parent__name="Beta").delete()
+        except:
+            self.logger.warning('Existing Residue data cannot be deleted')
+        try:
+            Residue.objects.filter(protein_conformation__protein__family__parent__name="Gamma").delete()
+        except:
+            self.logger.warning('Existing Residue data cannot be deleted')
+
+    def purge_signprot_complex_data(self):
+        try:
+            SignprotComplex.objects.all().delete()
+        except:
+            self.logger.warning('SignprotComplex data cannot be deleted')
+
     def create_barcode(self):
 
         barcode_data =  pd.read_csv(self.barcode_data_file, low_memory=False)
@@ -483,7 +552,7 @@ class Command(BaseCommand):
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
 
-        translation = {'Gs family':'100_000_001', 'Gi/Go family':'100_000_002', 'Gq/G11 family':'100_000_003','G12/G13 family':'100_000_004',}
+        translation = {'Gs family':'100_001_001', 'Gi/Go family':'100_001_002', 'Gq/G11 family':'100_001_003','G12/G13 family':'100_001_004',}
 
         # read source files
         if not filenames:
@@ -552,6 +621,12 @@ class Command(BaseCommand):
         except:
             self.logger.info('Protein to delete not found')
 
+    def purge_other_subunit_proteins(self):
+        try:
+            Protein.objects.filter(residue_numbering_scheme=None).delete()
+        except:
+            self.logger.info('Protein to delete not found')    
+
     def add_cgn_residues(self, gprotein_list):
         #Parsing pdb uniprot file for residues
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
@@ -610,7 +685,7 @@ class Command(BaseCommand):
             if row['CGN'].split(".")[1] in temp['segment']:
                 ps = temp['segment'][row['CGN'].split(".")[1]]
             else:
-                ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Gprotein')
+                ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Alpha')
                 temp['segment'][row['CGN'].split(".")[1]] = ps
 
             try:
@@ -679,7 +754,7 @@ class Command(BaseCommand):
         #ResidueGenericNumber.objects.filter(scheme_id=12).delete()
 
         for rgn in residue_generic_numbers.unique():
-            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Gprotein')
+            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Alpha')
 
             rgnsp=[]
 
@@ -712,10 +787,10 @@ class Command(BaseCommand):
         #Human proteins from CGN with families as keys: http://www.mrc-lmb.cam.ac.uk/CGN/about.html
         cgn_dict = {}
         cgn_dict['G-Protein']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
-        cgn_dict['100_000_001']=['GNAS2_HUMAN', 'GNAL_HUMAN']
-        cgn_dict['100_000_002']=['GNAI2_HUMAN', 'GNAI1_HUMAN', 'GNAI3_HUMAN', 'GNAT2_HUMAN', 'GNAT1_HUMAN', 'GNAT3_HUMAN', 'GNAZ_HUMAN', 'GNAO_HUMAN' ]
-        cgn_dict['100_000_003']=['GNAQ_HUMAN', 'GNA11_HUMAN', 'GNA14_HUMAN', 'GNA15_HUMAN']
-        cgn_dict['100_000_004']=['GNA12_HUMAN', 'GNA13_HUMAN']
+        cgn_dict['100_001_001']=['GNAS2_HUMAN', 'GNAL_HUMAN']
+        cgn_dict['100_001_002']=['GNAI2_HUMAN', 'GNAI1_HUMAN', 'GNAI3_HUMAN', 'GNAT2_HUMAN', 'GNAT1_HUMAN', 'GNAT3_HUMAN', 'GNAZ_HUMAN', 'GNAO_HUMAN' ]
+        cgn_dict['100_001_003']=['GNAQ_HUMAN', 'GNA11_HUMAN', 'GNA14_HUMAN', 'GNA15_HUMAN']
+        cgn_dict['100_001_004']=['GNA12_HUMAN', 'GNA13_HUMAN']
 
         #list of all 16 proteins
         cgn_proteins_list=[]
@@ -802,7 +877,6 @@ class Command(BaseCommand):
         return list(accessions_all)
 
     def cgn_creat_gproteins(self, family, residue_numbering_scheme, accession, uniprot):
-
         # get/create protein source
         try:
             source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
@@ -908,12 +982,12 @@ class Command(BaseCommand):
     def cgn_parent_protein_family(self):
 
         pf_cgn, created_pf = ProteinFamily.objects.get_or_create(slug='100', defaults={
-            'name': 'G-Protein'})
+            'name': 'G-Protein'}, parent=ProteinFamily.objects.get(slug='000'))
 
         pff_cgn = ProteinFamily.objects.get(slug='100', name='G-Protein')
 
         #Changed name "No Ligands" to "Gprotein"
-        pf1_cgn = ProteinFamily.objects.get_or_create(slug='100_000', name='Gprotein', parent=pff_cgn)
+        pf1_cgn = ProteinFamily.objects.get_or_create(slug='100_001', name='Alpha', parent=pff_cgn)
 
     def create_cgn_rns(self):
         rns_cgn, created= ResidueNumberingScheme.objects.get_or_create(slug='cgn', short_name='CGN', defaults={
@@ -929,28 +1003,28 @@ class Command(BaseCommand):
         cgn_dict = {}
 
         levels = ['2', '3']
-        keys = ['Gprotein', 'Gs', 'Gi/o', 'Gq/11', 'G12/13', '000']
+        keys = ['Alpha', 'Gs', 'Gi/o', 'Gq/11', 'G12/13', '001']
         slug1='100'
         slug3= ''
         i=1
 
-        cgn_dict['Gprotein']=['000']
-        cgn_dict['000']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
+        cgn_dict['Alpha']=['001']
+        cgn_dict['001']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
 
         #Protein families to be added
         #Key of dictionary is level in hierarchy
-        cgn_dict['1']=['Gprotein']
-        cgn_dict['2']=['000']
+        cgn_dict['1']=['Alpha']
+        cgn_dict['2']=['001']
         cgn_dict['3']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
 
         #Protein lines not to be added to Protein families
         cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI2', 'GNAI3', 'GNAT2', 'GNAT1', 'GNAT3', 'GNAO', 'GNAZ', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
 
-        for entry in cgn_dict['000']:
+        for entry in cgn_dict['001']:
 
             name = entry
 
-            slug2= '_000'
+            slug2= '_001'
             slug3= '_00' + str(i)
 
             slug = slug1 + slug2 + slug3
@@ -958,7 +1032,7 @@ class Command(BaseCommand):
             slug3 = ''
             i = i+1
 
-            pff_cgn = ProteinFamily.objects.get(slug='100_000')
+            pff_cgn = ProteinFamily.objects.get(slug='100_001')
 
             new_pf, created = ProteinFamily.objects.get_or_create(slug=slug, name=entry, parent=pff_cgn)
 

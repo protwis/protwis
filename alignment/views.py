@@ -75,8 +75,8 @@ class TargetSelectionGprotein(AbsTargetSelection):
         },
     }
     try:
-        if ProteinFamily.objects.filter(slug="100_000").exists():
-            ppf = ProteinFamily.objects.get(slug="100_000")
+        if ProteinFamily.objects.filter(slug="100_001").exists():
+            ppf = ProteinFamily.objects.get(slug="100_001")
             pfs = ProteinFamily.objects.filter(parent=ppf.id)
             ps = Protein.objects.filter(family=ppf)
 
@@ -165,7 +165,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     position_type = 'gprotein'
     rsets = ResiduePositionSet.objects.filter(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
 
-    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Gprotein').prefetch_related('generic_numbers')
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Alpha').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 class SegmentSelectionArrestin(AbsSegmentSelection):

@@ -21,11 +21,7 @@ canvas {
 
 <div class="row text-success">
     <div class="text-center">
-        {% if model.refined %}
-        <h2>{{ model.pdb_code.index }}</h2>
-        {% else %}
         <h2>{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.name|safe }} complex homology model</h2>
-        {% endif %}
     </div>
 </div>
 
@@ -34,11 +30,7 @@ canvas {
         <h4>RECEPTOR CLASS</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-        {{ model.protein_conformation.protein.get_protein_class }}
-        {% else %}
         {{ model.receptor_protein.get_protein_class }}
-        {% endif %}
     </div>
 </div>
 
@@ -47,11 +39,7 @@ canvas {
         <h4>RECEPTOR</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-        <a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.name|safe }}</a>
-        {% else %}
-        <a href="/protein/{{ model.protein.entry_name }}">{{ model.receptor_protein.name|safe }}</a>
-        {% endif %}
+        <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.name|safe }}</a>
     </div>
 </div>
 
@@ -60,73 +48,34 @@ canvas {
         <h4>SPECIES</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-        {{ model.protein_conformation.protein.species.latin_name }}
-        {% else %}
         {{ model.receptor_protein.species.latin_name }}
-        {% endif %}
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>SIGNALING PROTEIN CLASS</h4>
+        <h4>G-PROTEIN CLASS</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-        {{ model.protein_conformation.protein.get_protein_class }}
-        {% else %}
         {{ model.sign_protein.family|safe }}
-        {% endif %}
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>SIGNALING PROTEIN</h4>
+        <h4>G-PROTEIN</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-        <a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.name|safe }}</a>
-        {% else %}
         <a href="/protein/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a>
-        {% endif %}
     </div>
 </div>
 
-{% if model.refined %}
-{% else %}
-    <div class="row">
-        <div class="col-md-3 text-right text-info">
-            <h4>VERSION</h4>
-        </div>
-        <div class="col-md-9">
-        {{ model.version|date:"Y-m-d" }}
-        </div>
-    </div>
-{% endif %}
-
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>MAIN TEMPLATE</h4>
+        <h4>VERSION</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-            <a href="/protein/{{ model_main_template.protein_conformation.protein.parent.entry_name }}">{{ model_main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model_main_template.pdb_code.index }}">{{ model_main_template.pdb_code.index }}</a>
-        {% else %}
-            <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-
-            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
-                <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
-            </div>
-        {% endif %}
-        <br>
-        <a href="/signprot/{{ signprot_template.entry_name }}">{{ signprot_template.name|safe }}</a> PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-        {% if signprot_template.entry_name != model.sign_protein.entry_name %}
-            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
-                <a id="align_btn2" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
-            </div>
-        {% endif %}
+    {{ model.version|date:"Y-m-d" }}
     </div>
 </div>
 
@@ -135,28 +84,21 @@ canvas {
         <h4>MODEL</h4>
     </div>
     <div class="col-md-9">
+        <div class="btn-group">
+            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download</a>
+        </div>
+        <div>
+            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+        </div>
         <div style="float: left; width: 60%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
             <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
-            </div>
-            <div style='width: 90%; display:table; position:relative;'>
-                <div style='width: 20%; display: table-cell;'>
-                    <button id="fullscreen">Full Screen</button>
-                </div>
-                <div style='display: table-cell;'>
-                    {% for prot, bts in backbone_templates.items %}
-                        {% for bt in bts %}
-                            <div class="graphcolor" style="background-color:{{ bt.color }}; width: 15%; margin-top: 5px;">{{ bt.pdb_code.index }}</div>
-                        {% endfor %}
-                    {% endfor %}
-                            <div class="graphcolor" style="background-color:white; width: 15%;">None</div>
-                </div>
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
             </div>
 
             <br>
 
-            <div class="btn-group">
+            <!-- <div class="btn-group">
                 {% if model.refined %}
                     <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download .pdb</a>
                 {% else %}
@@ -165,14 +107,33 @@ canvas {
             </div>
             <div class="btn-group">
                   <a id="download_csv_btn" class="btn btn-primary btn-mini " href="#" onClick="javascript:downloadCSV();">Download .csv</a>
-            </div>
+            </div> -->
+
             <!-- <div class="btn-group">
                 <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
             </div> -->
-            <div>
-                <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
-            </div>
+            
         </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>MAIN TEMPLATE</h4>
+    </div>
+    <div class="col-md-9">
+        <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
+        
+        <div class="btn-group", style="padding: 0px 0px 5px 5px;">
+            <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
+        </div>
+        <br>
+        <a href="/signprot/{{ signprot_template.entry_name }}">{{ signprot_template.name|safe }}</a> (sequence similarity: {{ signprot_sim }}%)
+        {% if signprot_template.entry_name != model.sign_protein.entry_name %}
+            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
+                <a id="align_btn2" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
+            </div>
+        {% endif %}
     </div>
 </div>
 
@@ -196,6 +157,20 @@ canvas {
         }
     </style>
     <div class="col-md-9">
+        <div style='width: 70%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+                {% for prot, bts in backbone_templates.items %}
+                    {% for bt in bts %}
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
+                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
+                        
+                        
+                    {% endfor %}
+                {% endfor %}
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
+                        None
+            </div>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -221,21 +196,24 @@ canvas {
         </table>
         <br>
         Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+        <!-- <div class="btn-group">
+            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_csv">Download .csv</a>
+        </div> -->
         <style>
             table.dataTable thead th {padding: 3px 1px 3px 3px;}
         </style>
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 70%;">
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
             <table class="display" id="rotamers">
                 <thead>
                     <tr>
-                        <th class="protein-th">Segment</th>
-                        <th class="protein-th">Seq.num.</th>
-                        <th class="protein-th">GPCRdb#</th>
-                        <th class="pdb-th">Backbone</th>
-                        <th class="pdb-th">PDB</th>
-                        <th class="pub-th">Rotamer</th>
-                        <th class="pub-th">PDB</th>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>GPCRdb#</th>
+                        <th>Backbone</th>
+                        <th>PDB</th>
+                        <th>Rotamer</th>
+                        <th>PDB</th>
                     </tr>
                     <tr>
                         <th></th>
@@ -252,7 +230,11 @@ canvas {
                     <tr>
                         <td>{{ rota.residue.protein_segment.slug }}</td>
                         <td>{{ rota.residue.sequence_number }}</td>
-                        <td>{{ rota.residue.display_generic_number.label }}</td>
+                        {% if rota.residue.display_generic_number %}
+                            <td>{{ rota.residue.display_generic_number.label }}</td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
                         {% if rota.backbone_template %}
                             <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
                             <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
@@ -277,23 +259,23 @@ canvas {
 <br>
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>SIGNALING PROTEIN TEMPLATES</h4>
+        <h4>G-PROTEIN TEMPLATES</h4>
     </div>
     <div class="col-md-9">
         <style>
             table.dataTable thead th {padding: 3px 1px 3px 3px;}
         </style>
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 70%;">
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
             <table class="display" id="signprot_rotamers">
                 <thead>
                     <tr>
-                        <th class="protein-th">Segment</th>
-                        <th class="protein-th">Seq.num.</th>
-                        <th class="protein-th">CGN#</th>
-                        <th class="pdb-th">Backbone</th>
-                        <th class="pdb-th">PDB</th>
-                        <th class="pub-th">Rotamer</th>
-                        <th class="pub-th">PDB</th>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>CGN#</th>
+                        <th>Backbone</th>
+                        <th>PDB</th>
+                        <th>Rotamer</th>
+                        <th>PDB</th>
                     </tr>
                     <tr>
                         <th></th>
@@ -538,22 +520,16 @@ canvas {
                 ClearSelection('targets');
                 ClearSelection('reference');
                 var div = document.createElement("div");
-                // if ("{{state}}"=="refined") {
-                //     div.innerHTML = "{{model.pdb_code.index}}";
-                //     if (typeof div.innerText !== "undefined") {
-                //         AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
-                //     } else {
-                //         AddToSelection('reference', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
-                //     }
-                // }
-                // else {
+                
                 div.innerHTML = "{{model.receptor_protein.entry_name}}";
                 if (typeof div.innerText !== "undefined") {
                     AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
                 } else {
                     AddToSelection('reference', 'structure_complex_receptor', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
                 }
+
                 // }
+
 
                 for (i = 0; i < template_list.length; i++) {
                     var div = document.createElement("div");

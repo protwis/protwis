@@ -5,6 +5,7 @@ Created on Mon Apr 25 15:50:57 2016
 @author: Gaspar Pandy
 """
 from build.management.commands.base_build import Command as BaseBuild
+from django.db.models import Q
 
 from protein.models import Protein, ProteinConformation, ProteinSequenceType, ProteinSource, ProteinState
 from residue.models import Residue
@@ -61,7 +62,12 @@ class Command(BaseBuild):
 
     def get_all_GPCR_uniprots(self):
         try:
-            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False)]
+            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False).filter(Q(family__slug__istartswith='001') |
+                                                                                                    Q(family__slug__istartswith='002') |
+                                                                                                    Q(family__slug__istartswith='003') |
+                                                                                                    Q(family__slug__istartswith='004') |
+                                                                                                    Q(family__slug__istartswith='005') |
+                                                                                                    Q(family__slug__istartswith='006'))]
             if len(uniprots)<100:
                 raise Exception()
         except:
@@ -215,7 +221,7 @@ class QueryPDB():
                             auxiliary_proteins, ligands = [], []
                             if pdb_data_dict['ligands']!='None':
                                 for key, values in pdb_data_dict['ligands'].items():
-                                    if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE']:
+                                    if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE','SIN','PGO','MES','ZN','NO3','NI','MG']:
                                         continue
                                     else:
                                         ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
@@ -287,7 +293,7 @@ class QueryPDB():
         dic = xmltodict.parse(response_mol.read())
         if 'NMR' in str_des or 'extracellular' in str_des:
             return 0
-        if pdb_code in ['4QXE','1XWD','4QXF','4MQW','6B7H','6BSZ','6BT5']:
+        if pdb_code in ['4QXE','1XWD','4QXF','4MQW','6B7H','6BSZ','6BT5','5OTW','3G04','3KS9','4XAQ']:
             return 0
         polymer = dic['molDescription']['structureId']['polymer']
         description = ''
