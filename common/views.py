@@ -397,9 +397,9 @@ def AddToSelection(request):
         template = 'common/selection_lists.html'
 
     # amino acid groups
-    print('+++++++++++++++++++++++++')
-    print(context['selection_type'])
-    print(context)
+    # print('+++++++++++++++++++++++++')
+    # print(context['selection_type'])
+    # print(context)
     # for c in context['selection']['targets']:
     #     print(c, c.type, c.item)
     return render(request, template, context)

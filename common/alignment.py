@@ -1,4 +1,10 @@
 from django.conf import settings
+from django.core.cache import cache
+from django.core.cache import caches
+try:
+  cache_alignments = caches['alignment_core']
+except:
+  cache_alignments = cache
 
 from alignment.functions import prepare_aa_group_preference
 from common.selection import Selection
@@ -15,9 +21,10 @@ from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
 from Bio.SubsMat import MatrixInfo
+
+import hashlib
 import logging
 import numpy as np
-
 import time
 
 class Alignment:
@@ -50,6 +57,7 @@ class Alignment:
         self.ignore_alternative_residue_numbering_schemes = False # set to true if no numbering is to be displayed
         self.residues_to_delete = []
         self.normalized_scores = OrderedDict()
+        self.stats_done = False
         self.zscales = OrderedDict()
 
         # refers to which ProteinConformation attribute to order by (identity, similarity or similarity score)
@@ -113,11 +121,13 @@ class Alignment:
 
         self.proteins.insert(0, pconf)
         self.update_numbering_schemes()
+        self.stats_done = False
 
     def load_reference_protein_from_selection(self, simple_selection):
         """Read user selection and add selected reference protein"""
         if simple_selection and simple_selection.reference:
             self.load_reference_protein(simple_selection.reference[0].item)
+        self.stats_done = False
 
     def load_proteins(self, proteins):
         """Load a list of protein objects into the alignment"""
@@ -136,6 +146,7 @@ class Alignment:
         for pconf_label, pconf in pconfs.items():
             self.proteins.append(pconf)
         self.update_numbering_schemes()
+        self.stats_done = False
 
     def load_proteins_from_selection(self, simple_selection):
         """Read user selection and add selected proteins"""
@@ -170,6 +181,7 @@ class Alignment:
 
         # load protein list
         self.load_proteins(proteins)
+        self.stats_done = False
 
     def load_segments(self, selected_segments):
         selected_residue_positions = []
@@ -200,7 +212,7 @@ class Alignment:
 
             for segment in alt_segments:
                 segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
-                    scheme=self.default_numbering_scheme)
+                    scheme=self.default_numbering_scheme).order_by('label')
 
                 # segments
                 unsorted_segments[segment.pk] = []
@@ -237,6 +249,7 @@ class Alignment:
                 for residue_position in selected_residue_positions:
                     self.segments[segment_slug].append(residue_position[0].default_generic_number.label)
                 self.load_generic_numbers(segment_slug, selected_residue_positions)
+        self.stats_done = False
 
     def load_segments_from_selection(self, simple_selection):
         """Read user selection and add selected protein segments/residue positions"""
@@ -249,6 +262,7 @@ class Alignment:
 
         # load segment positions
         self.load_segments(segments)
+        self.stats_done = False
 
     def load_generic_numbers(self, segment_slug, residues):
         """Loads generic numbers in the schemes of all selected proteins"""
@@ -262,6 +276,7 @@ class Alignment:
                 else:
                     residue_position = segment_residue.label
                 self.generic_numbers[ns[0]][segment_slug][residue_position] = []
+        self.stats_done = False
 
     def update_numbering_schemes(self):
         """Update numbering scheme list"""
@@ -278,6 +293,23 @@ class Alignment:
 
         # order and convert numbering scheme dict to tuple
         self.numbering_schemes = sorted([(x[0], x[1][0], x[1][1]) for x in self.numbering_schemes.items()], key=itemgetter(0))
+        self.stats_done = False
+
+    def get_hash(self):
+        # create unique hash key for alignment combo
+        protein_ids = sorted(set([ str(protein.id) for protein in self.proteins ]))
+        segment_ids = sorted(set( self.segments ))
+        hash_key = "|" + "-".join(protein_ids)
+        hash_key += "|" + "-".join(segment_ids)
+        if 'Custom' in self.segments:
+            hash_key += "|" + "-".join(sorted(set( self.segments['Custom'] )))
+        hash_key += "|" + "-".join(sorted(set([ scheme[0] for scheme in self.numbering_schemes])))
+        hash_key += "|" + "-".join(sorted(set(self.segments_only_alignable)))
+        hash_key += "|" + str(self.ignore_alternative_residue_numbering_schemes)
+        hash_key += "|" + str(self.custom_segment_label)
+        hash_key += "|" + str(self.use_residue_groups)
+
+        return hashlib.md5(hash_key.encode('utf-8')).hexdigest()
 
     # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
     def build_alignment(self):
@@ -290,302 +322,348 @@ class Alignment:
         if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
             return "Too large"
 
-        # fetch segment residues
-        if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
-            rs = Residue.objects.filter(
-                protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
-                'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
-                'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
-        else:
-            rs = Residue.objects.filter(
-                protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
-                'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
-                'generic_number__scheme', 'display_generic_number__scheme')
+        # AJK: performance boost -> Internal caching (not for very small alignments)
+        cache_key = "ALIGNMENTS_"+self.get_hash()
 
-        # If segment flagged to only include the alignable residues, exclude the ones with no GN
-        for s in self.segments_only_alignable:
-            rs = rs.exclude(protein_segment__slug=s, generic_number=None)
-
-        # fetch individually selected residues (Custom segment)
-        crs = {}
-        for segment in self.segments:
-            if segment == self.custom_segment_label or self.use_residue_groups:
-                crs[segment] = Residue.objects.filter(
-                    generic_number__label__in=self.segments[segment],
-                    protein_conformation__in=self.proteins).prefetch_related('protein_conformation__protein',
-                    'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
-                    'display_generic_number__scheme')
-
-        self.number_of_residues_total = len(rs)
-        if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
-            return "Too large"
-
-        # create a dict of proteins, segments and residues
-        proteins = {}
-        segment_counters = {}
-        aligned_residue_encountered = {}
-        fusion_protein_inserted = {}
-        for r in rs:
-            ps = r.protein_segment.slug
-
-            # identifiers for protein/state
-            pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
-
-            # update protein dict
-            if pcid not in proteins:
-                proteins[pcid] = {}
-            if ps not in proteins[pcid]:
-                proteins[pcid][ps] = {}
-
-            # update aligned residue tracker
-            if pcid not in aligned_residue_encountered:
-                aligned_residue_encountered[pcid] = {}
-            if ps not in aligned_residue_encountered[pcid]:
-                aligned_residue_encountered[pcid][ps] = False
-
-            # what part of the segment is this? There are 4 possibilities:
-            # 1. The aligned part (for both fully and partially aligned segments)
-            # 2. The part before the aligned part in a partially aligned segment
-            # 3. The part after the aligned part in a partially aligned segment
-            # 4. An unaligned segment (then there is only one part)
-            if r.generic_number:
-                segment_part = 1
-            elif ps in settings.REFERENCE_POSITIONS and not aligned_residue_encountered[pcid][ps]:
-                segment_part = 2
-            elif ps in settings.REFERENCE_POSITIONS and aligned_residue_encountered[pcid][ps]:
-                segment_part = 3
+        #cache_alignments.set(cache_key, 0, 0)
+        if self.number_of_residues_total < 2500 or not cache_alignments.has_key(cache_key):
+            # fetch segment residues
+            if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
+                rs = Residue.objects.filter(
+                    protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
+                    'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+                    'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
             else:
-                segment_part = 4
+                rs = Residue.objects.filter(
+                    protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
+                    'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+                    'generic_number__scheme', 'display_generic_number__scheme')
 
-            # update segment counters
-            if pcid not in segment_counters:
-                segment_counters[pcid] = {}
-            if segment_part == 3:
-                part_ps = ps + '_after'
-            else:
-                part_ps = ps
-            if part_ps not in segment_counters[pcid]:
-                segment_counters[pcid][part_ps] = 1
-            else:
-                segment_counters[pcid][part_ps] += 1
+            # If segment flagged to only include the alignable residues, exclude the ones with no GN
+            for s in self.segments_only_alignable:
+                rs = rs.exclude(protein_segment__slug=s, generic_number=None)
 
+            # fetch individually selected residues (Custom segment)
+            crs = {}
+            for segment in self.segments:
+                if segment == self.custom_segment_label or self.use_residue_groups:
+                    if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
+                        crs[segment] = Residue.objects.filter(
+                            generic_number__label__in=self.segments[segment],
+                            protein_conformation__in=self.proteins).prefetch_related(
+                            'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+                            'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
+                    else:
+                        crs[segment] = Residue.objects.filter(
+                            generic_number__label__in=self.segments[segment],
+                            protein_conformation__in=self.proteins).prefetch_related(
+                            'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+                            'generic_number__scheme', 'display_generic_number__scheme')
 
-            # update fusion protein tracker
-            if pcid not in fusion_protein_inserted:
-                fusion_protein_inserted[pcid] = {}
-            if ps not in fusion_protein_inserted[pcid]:
-                fusion_protein_inserted[pcid][ps] = False
+            # create a dict of proteins, segments and residues
+            proteins = {}
+            segment_counters = {}
+            aligned_residue_encountered = {}
+            fusion_protein_inserted = {}
+            for r in rs:
+                ps = r.protein_segment.slug
 
-            # user generic numbers as keys for aligned segments
-            if r.generic_number:
-                proteins[pcid][ps][r.generic_number.label] = r
+                # identifiers for protein/state
+                pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
 
-                # register the presence of an aligned residue
-                aligned_residue_encountered[pcid][ps] = True
-            # use custom keys for non-aligned segments
-            else:
-                # label prefix + index
-                # Unaligned segments should be split in the middle, with the first part "left aligned", and the second
-                # "right aligned". If there is an aligned part of the segment, it goes in the middle.
-                if segment_part == 2:
-                    prefix = '00-'
-                elif segment_part == 3:
-                    prefix = 'zz-'
+                # update protein dict
+                if pcid not in proteins:
+                    proteins[pcid] = {}
+                if ps not in proteins[pcid]:
+                    proteins[pcid][ps] = {}
+
+                # update aligned residue tracker
+                if pcid not in aligned_residue_encountered:
+                    aligned_residue_encountered[pcid] = {}
+                if ps not in aligned_residue_encountered[pcid]:
+                    aligned_residue_encountered[pcid][ps] = False
+
+                # what part of the segment is this? There are 4 possibilities:
+                # 1. The aligned part (for both fully and partially aligned segments)
+                # 2. The part before the aligned part in a partially aligned segment
+                # 3. The part after the aligned part in a partially aligned segment
+                # 4. An unaligned segment (then there is only one part)
+                if r.generic_number:
+                    segment_part = 1
+                elif ps in settings.REFERENCE_POSITIONS and not aligned_residue_encountered[pcid][ps]:
+                    segment_part = 2
+                elif ps in settings.REFERENCE_POSITIONS and aligned_residue_encountered[pcid][ps]:
+                    segment_part = 3
                 else:
-                    prefix = '01-'
+                    segment_part = 4
 
-                # Note that there is not enough information to assign correct indicies to "right aligned" residues, but
-                # those are corrected below
-                index = str("%04d" % (segment_counters[pcid][part_ps],))
+                # update segment counters
+                if pcid not in segment_counters:
+                    segment_counters[pcid] = {}
+                if segment_part == 3:
+                    part_ps = ps + '_after'
+                else:
+                    part_ps = ps
+                if part_ps not in segment_counters[pcid]:
+                    segment_counters[pcid][part_ps] = 1
+                else:
+                    segment_counters[pcid][part_ps] += 1
 
-                # position label
-                pos_label =  prefix + ps + "-" + index
 
-                # insert fusion protein FIXME add this
-                # if not fusion_protein_inserted[pcid][ps] and aligned_residue_encountered[pcid][ps]:
-                #     fp = ProteinFusionProtein.objects.get(protein=r.protein_conformation.protein,
-                #         segment_after=r.protein_segment)
-                #     fusion_pos_label = ps + "-" + str("%04d" % (segment_counters[pcid][ps]-1,)) + "-fusion"
-                #     proteins[pcid][ps][fusion_pos_label] = Residue(amino_acid=fp.protein_fusion.name)
-                #     if fusion_pos_label not in self.segments[ps]:
-                #         self.segments[ps].append(fusion_pos_label)
-                #     fusion_protein_inserted[pcid][ps] = True
+                # update fusion protein tracker
+                if pcid not in fusion_protein_inserted:
+                    fusion_protein_inserted[pcid] = {}
+                if ps not in fusion_protein_inserted[pcid]:
+                    fusion_protein_inserted[pcid][ps] = False
 
-                # residue
-                proteins[pcid][ps][pos_label] = r
-
-        # correct alignment of split segments
-        for pcid, segments in proteins.items():
-            for ps, positions in segments.items():
-                pos_num = 1
-                pos_num_after = 1
-                for pos_label in sorted(positions):
-                    res_obj = proteins[pcid][ps][pos_label]
-                    right_align = False
-                    # In a "normal", non split, unaligned segment, is this past the middle?
-                    if (pos_label.startswith('01-')
-                        and res_obj.protein_segment.category != 'terminus'
-                        and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)):
-                        right_align = True
-                    # In an partially aligned segment (prefixed with 00), where conserved residues are lacking, treat
-                    # as an unaligned segment
-                    elif (pos_label.startswith('00-')
-                        and not aligned_residue_encountered[pcid][ps]
-                        and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)
-                        or res_obj.protein_segment.slug == 'N-term'):
-                        right_align = True
-                    # In an N-terminus, always right align everything
-                    elif pos_label.startswith('01-') and res_obj.protein_segment.slug == 'N-term':
-                        right_align = True
-
-                    if right_align:
-                        # if so, "right align" from here using a zz prefixed label
-                        updated_index = 'zz' + pos_label[2:]
-                        proteins[pcid][ps][updated_index] = proteins[pcid][ps].pop(pos_label)
-                        pos_label = updated_index
-
-                    if pos_label.startswith('zz-'):
-                        segment_label_after = ps + '_after' # parts after a partly aligned segment start with zz
-                        if segment_label_after in segment_counters[pcid]:
-                            segment_length = segment_counters[pcid][segment_label_after]
-                            counter = pos_num_after
-
-                        # this might be the "second part" of an unaligned segment, e.g.
-                        # AAAA----AAAAA
-                        # AAAAAAAAAAAAA
-                        else:
-                            segment_length = segment_counters[pcid][ps]
-                            counter = pos_num
-
-                        updated_index = pos_label[:-4] + str(9999 - (segment_length - counter))
-                        proteins[pcid][ps][updated_index] = proteins[pcid][ps].pop(pos_label)
-                        pos_label = updated_index
-                        pos_num_after += 1
-                    if pos_label not in self.segments[ps]:
-                        self.segments[ps].append(pos_label)
-                    pos_num += 1
-
-        # individually selected residues (Custom segment)
-        for segment in self.segments:
-            if segment == self.custom_segment_label or self.use_residue_groups:
-                for r in crs[segment]:
-                    ps = segment
-                    pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
-                    if pcid not in proteins:
-                        proteins[pcid] = {}
-                    if ps not in proteins[pcid]:
-                        proteins[pcid][ps] = {}
+                # user generic numbers as keys for aligned segments
+                if r.generic_number:
                     proteins[pcid][ps][r.generic_number.label] = r
 
-        # remove split segments from segment list and order segment positions
-        for segment, positions in self.segments.items():
-            s = segment.split("_")
-            if len(s) > 1:
-                del self.segments[segment]
-            else:
-                # self.segments[segment].sort()
-                sorted_segment = []
-                for gn in sorted(self.segments[segment], key=lambda x: x.split('x')):
-                    sorted_segment.append(gn)
-                self.segments[segment] = sorted_segment
+                    # register the presence of an aligned residue
+                    aligned_residue_encountered[pcid][ps] = True
+                # use custom keys for non-aligned segments
+                else:
+                    # label prefix + index
+                    # Unaligned segments should be split in the middle, with the first part "left aligned", and the second
+                    # "right aligned". If there is an aligned part of the segment, it goes in the middle.
+                    if segment_part == 2:
+                        prefix = '00-'
+                    elif segment_part == 3:
+                        prefix = 'zz-'
+                    else:
+                        prefix = '01-'
 
-        for pc in self.proteins:
-            row = OrderedDict()
-            row_list = [] # FIXME redundant, remove when dependecies are removed
-            for segment, positions in self.segments.items():
-                s = []
-                first_residue_found = False
+                    # Note that there is not enough information to assign correct indicies to "right aligned" residues, but
+                    # those are corrected below
+                    index = str("%04d" % (segment_counters[pcid][part_ps],))
 
-                # counters to keep track of gaps at the end of a segment
-                gap_counter = 0
-                position_counter = 1
+                    # position label
+                    pos_label =  prefix + ps + "-" + index
 
-                # numbering scheme
-                ns_slug = pc.protein.residue_numbering_scheme.slug
+                    # insert fusion protein FIXME add this
+                    # if not fusion_protein_inserted[pcid][ps] and aligned_residue_encountered[pcid][ps]:
+                    #     fp = ProteinFusionProtein.objects.get(protein=r.protein_conformation.protein,
+                    #         segment_after=r.protein_segment)
+                    #     fusion_pos_label = ps + "-" + str("%04d" % (segment_counters[pcid][ps]-1,)) + "-fusion"
+                    #     proteins[pcid][ps][fusion_pos_label] = Residue(amino_acid=fp.protein_fusion.name)
+                    #     if fusion_pos_label not in self.segments[ps]:
+                    #         self.segments[ps].append(fusion_pos_label)
+                    #     fusion_protein_inserted[pcid][ps] = True
 
-                # loop all positions in this segment
-                for pos in positions:
-                    try:
-                        # find the residue record from the dict defined above
-                        pcid = pc.protein.entry_name + "-" + pc.state.slug
-                        r = proteins[pcid][segment][pos]
+                    # residue
+                    proteins[pcid][ps][pos_label] = r
 
-                        # add position to the list of positions that are not empty
-                        if pos not in self.positions:
-                            self.positions.add(pos)
+            # correct alignment of split segments
+            for pcid, segments in proteins.items():
+                for ps, positions in segments.items():
+                    pos_num = 1
+                    pos_num_after = 1
+                    for pos_label in sorted(positions):
+                        res_obj = proteins[pcid][ps][pos_label]
+                        right_align = False
+                        # In a "normal", non split, unaligned segment, is this past the middle?
+                        if (pos_label.startswith('01-')
+                            and res_obj.protein_segment.category != 'terminus'
+                            and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)):
+                            right_align = True
+                        # In an partially aligned segment (prefixed with 00), where conserved residues are lacking, treat
+                        # as an unaligned segment
+                        elif (pos_label.startswith('00-')
+                            and not aligned_residue_encountered[pcid][ps]
+                            and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)
+                            or res_obj.protein_segment.slug == 'N-term'):
+                            right_align = True
+                        # In an N-terminus, always right align everything
+                        elif pos_label.startswith('01-') and res_obj.protein_segment.slug == 'N-term':
+                            right_align = True
 
-                        # add display number to list of display numbers for this position
-                        if r.display_generic_number:
-                            if pos not in self.generic_numbers[ns_slug][segment]:
-                                self.generic_numbers[ns_slug][segment][pos] = []
-                            if r.display_generic_number.label not in self.generic_numbers[ns_slug][segment][pos]:
-                                self.generic_numbers[ns_slug][segment][pos].append(r.display_generic_number.label)
-                        else:
-                            if pos not in self.generic_numbers[ns_slug][segment]:
-                                self.generic_numbers[ns_slug][segment][pos] = []
+                        if right_align:
+                            # if so, "right align" from here using a zz prefixed label
+                            updated_index = 'zz' + pos_label[2:]
+                            proteins[pcid][ps][updated_index] = proteins[pcid][ps].pop(pos_label)
+                            pos_label = updated_index
 
-                        # add display numbers for other numbering schemes of selected proteins
-                        if (not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1):
-                            if r.generic_number:
-                                for arn in r.alternative_generic_numbers.all():
-                                    for ns in self.numbering_schemes:
-                                        if (arn.scheme.slug == ns[0] and arn.scheme.slug != ns_slug):
-                                            self.generic_numbers[arn.scheme.slug][segment][pos].append(arn.label)
-                                            break
+                        if pos_label.startswith('zz-'):
+                            segment_label_after = ps + '_after' # parts after a partly aligned segment start with zz
+                            if segment_label_after in segment_counters[pcid]:
+                                segment_length = segment_counters[pcid][segment_label_after]
+                                counter = pos_num_after
+
+                            # this might be the "second part" of an unaligned segment, e.g.
+                            # AAAA----AAAAA
+                            # AAAAAAAAAAAAA
                             else:
-                                for ns in self.numbering_schemes:
-                                    if pos not in self.generic_numbers[ns[0]][segment] and ns[0] != ns_slug:
-                                        self.generic_numbers[ns[0]][segment][pos] = []
+                                segment_length = segment_counters[pcid][ps]
+                                counter = pos_num
 
-                        # append the residue to the matrix
-                        if r.generic_number:
-                            # s.append([pos, r.display_generic_number.label, r.amino_acid,
-                            #   r.display_generic_number.scheme.short_name, r.sequence_number])
+                            updated_index = pos_label[:-4] + str(9999 - (segment_length - counter))
+                            proteins[pcid][ps][updated_index] = proteins[pcid][ps].pop(pos_label)
+                            pos_label = updated_index
+                            pos_num_after += 1
+                        if pos_label not in self.segments[ps]:
+                            self.segments[ps].append(pos_label)
+                        pos_num += 1
 
-                            s.append([pos, r.display_generic_number.label, r.amino_acid,
-                                r.display_generic_number.scheme.short_name, r.sequence_number, r.generic_number.label])
+            # individually selected residues (Custom segment)
+            for segment in self.segments:
+                if segment == self.custom_segment_label or self.use_residue_groups:
+                    for r in crs[segment]:
+                        ps = segment
+                        pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
+                        if pcid not in proteins:
+                            proteins[pcid] = {}
+                        if ps not in proteins[pcid]:
+                            proteins[pcid][ps] = {}
+                        proteins[pcid][ps][r.generic_number.label] = r
+
+            # remove split segments from segment list and order segment positions
+            for segment, positions in self.segments.items():
+                s = segment.split("_")
+                if len(s) > 1:
+                    del self.segments[segment]
+                else:
+                    # self.segments[segment].sort()
+                    sorted_segment = []
+                    for gn in sorted(self.segments[segment], key=lambda x: x.split('x')):
+                        sorted_segment.append(gn)
+                    self.segments[segment] = sorted_segment
+
+            for pc in self.proteins:
+                row = OrderedDict()
+                row_list = [] # FIXME redundant, remove when dependecies are removed
+                for segment, positions in self.segments.items():
+                    s = []
+                    first_residue_found = False
+
+                    # counters to keep track of gaps at the end of a segment
+                    gap_counter = 0
+                    position_counter = 1
+
+                    # numbering scheme
+                    ns_slug = pc.protein.residue_numbering_scheme.slug
+
+                    # loop all positions in this segment
+                    for pos in positions:
+                        try:
+                            # find the residue record from the dict defined above
+                            pcid = pc.protein.entry_name + "-" + pc.state.slug
+                            r = proteins[pcid][segment][pos]
+
+                            # add position to the list of positions that are not empty
+                            if pos not in self.positions:
+                                self.positions.add(pos)
+
+                            # add display number to list of display numbers for this position
+                            if r.display_generic_number:
+                                if pos not in self.generic_numbers[ns_slug][segment]:
+                                    self.generic_numbers[ns_slug][segment][pos] = []
+                                if r.display_generic_number.label not in self.generic_numbers[ns_slug][segment][pos]:
+                                    self.generic_numbers[ns_slug][segment][pos].append(r.display_generic_number.label)
+                            else:
+                                if pos not in self.generic_numbers[ns_slug][segment]:
+                                    self.generic_numbers[ns_slug][segment][pos] = []
+
+                            # add display numbers for other numbering schemes of selected proteins
+                            if (not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1):
+                                if r.generic_number:
+                                    for arn in r.alternative_generic_numbers.all():
+                                        for ns in self.numbering_schemes:
+                                            if (arn.scheme.slug == ns[0] and arn.scheme.slug != ns_slug):
+                                                self.generic_numbers[arn.scheme.slug][segment][pos].append(arn.label)
+                                                break
+                                else:
+                                    for ns in self.numbering_schemes:
+                                        if pos not in self.generic_numbers[ns[0]][segment] and ns[0] != ns_slug:
+                                            self.generic_numbers[ns[0]][segment][pos] = []
+
+                            # append the residue to the matrix
+                            if r.generic_number:
+                                # s.append([pos, r.display_generic_number.label, r.amino_acid,
+                                #   r.display_generic_number.scheme.short_name, r.sequence_number])
+
+                                s.append([pos, r.display_generic_number.label, r.amino_acid,
+                                    r.display_generic_number.scheme.short_name, r.sequence_number, r.generic_number.label])
 
 
-                            # update generic residue object dict
-                            if pos not in self.generic_number_objs:
-                                self.generic_number_objs[pos] = r.display_generic_number
-                        else:
-                            s.append([pos, "", r.amino_acid, "", r.sequence_number])
+                                # update generic residue object dict
+                                if pos not in self.generic_number_objs:
+                                    self.generic_number_objs[pos] = r.display_generic_number
+                            else:
+                                s.append([pos, "", r.amino_acid, "", r.sequence_number])
 
-                        first_residue_found = True
+                            first_residue_found = True
 
-                        # reset gap counter
-                        gap_counter = 0
-                    except:
-                        if self.show_padding:
-                            padding_symbol = '_'
-                        else:
-                            padding_symbol = '-'
-                        if first_residue_found:
-                            s.append([pos, False, '-', 0])
-
-                            # update gap counter
-                            gap_counter += 1
-
-                            # if this is the last residue and there are gaps and the end of the segment, update them to
-                            # end gaps
+                            # reset gap counter
+                            gap_counter = 0
+                        except:
                             if self.show_padding:
-                                if (position_counter) == len(positions):
-                                    for i in range(gap_counter):
-                                        s[len(positions)-(i+1)][2] = padding_symbol
-                        else:
-                            s.append([pos, False, padding_symbol, 0])
+                                padding_symbol = '_'
+                            else:
+                                padding_symbol = '-'
+                            if first_residue_found:
+                                s.append([pos, False, '-', 0])
 
-                    # update position counter
-                    position_counter += 1
-                row[segment] = s
-                row_list.append(s) # FIXME redundant, remove when dependecies are removed
-            pc.alignment = row
-            pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
+                                # update gap counter
+                                gap_counter += 1
 
-        self.sort_generic_numbers()
-        self.merge_generic_numbers()
-        self.clear_empty_positions()
+                                # if this is the last residue and there are gaps and the end of the segment, update them to
+                                # end gaps
+                                if self.show_padding:
+                                    if (position_counter) == len(positions):
+                                        for i in range(gap_counter):
+                                            s[len(positions)-(i+1)][2] = padding_symbol
+                            else:
+                                s.append([pos, False, padding_symbol, 0])
+
+                        # update position counter
+                        position_counter += 1
+                    row[segment] = s
+                    row_list.append(s) # FIXME redundant, remove when dependecies are removed
+                pc.alignment = row
+                pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
+
+            self.sort_generic_numbers()
+            self.merge_generic_numbers()
+            self.clear_empty_positions()
+
+            if self.number_of_residues_total >= 2500:
+                self.calculate_statistics()
+                cache_data = {'proteins': self.proteins,
+                            'amino_acids': self.amino_acids,
+                            'amino_acid_stats': self.amino_acid_stats,
+                            'aa_count': self.aa_count,
+                            'aa_count_with_protein': self.aa_count_with_protein,
+                            'gaps': self.gaps,
+                            'features': self.features,
+                            'features_combo': self.features_combo,
+                            'feature_stats': self.feature_stats,
+                            'consensus': self.consensus,
+                            'forced_consensus': self.forced_consensus,
+                            'full_consensus': self.full_consensus,
+                            'generic_number_objs': self.generic_number_objs,
+                            'generic_numbers': self.generic_numbers,
+                            'zscales': self.zscales}
+                cache_alignments.set(cache_key, cache_data, 60*60*24*14)
+        else:
+            cache_data = cache_alignments.get(cache_key)
+
+            self.proteins = cache_data['proteins']
+            self.amino_acids = cache_data['amino_acids']
+            self.amino_acid_stats = cache_data['amino_acid_stats']
+            self.aa_count = cache_data['aa_count']
+            self.aa_count_with_protein = cache_data['aa_count_with_protein']
+            self.gaps = cache_data['gaps']
+            self.features = cache_data['features']
+            self.features_combo = cache_data['features_combo']
+            self.feature_stats = cache_data['feature_stats']
+            self.consensus = cache_data['consensus']
+            self.forced_consensus = cache_data['forced_consensus']
+            self.full_consensus = cache_data['full_consensus']
+            self.generic_number_objs = cache_data['generic_number_objs']
+            self.generic_numbers = cache_data['generic_numbers']
+            self.zscales = cache_data['zscales']
+            self.stats_done = True
 
     def clear_empty_positions(self):
         """Remove empty columns from the segments and matrix"""
@@ -653,207 +731,211 @@ class Alignment:
 
     def calculate_statistics(self):
         """Calculate consesus sequence and amino acid and feature frequency"""
-        feature_count = OrderedDict()
-        most_freq_aa = OrderedDict()
-        amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
-        self.amino_acids = list(AMINO_ACIDS.keys())
 
-        # AJK: optimized for speed - split into multiple steps
-        for i, p in enumerate(self.proteins):
-            entry_name = p.protein.entry_name
-            for j, s in p.alignment.items():
-                if i == 0:
-                    self.aa_count[j] = OrderedDict()
-                for p in s:
-                    generic_number = p[0]
-                    amino_acid = p[2]
+        if not self.stats_done:
+            feature_count = OrderedDict()
+            most_freq_aa = OrderedDict()
+            amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
+            self.amino_acids = list(AMINO_ACIDS.keys())
 
-                    # Indicate gap and collect statistics
-                    if amino_acid in self.gaps:
-                        amino_acid = '-'
+            # AJK: optimized for speed - split into multiple steps
+            for i, p in enumerate(self.proteins):
+                entry_name = p.protein.entry_name
+                for j, s in p.alignment.items():
+                    if i == 0:
+                        self.aa_count[j] = OrderedDict()
+                    for p in s:
+                        generic_number = p[0]
+                        amino_acid = p[2]
 
-                    # Skip when unknown amino acid type
-                    elif amino_acid == 'X':
-                        continue
+                        # Indicate gap and collect statistics
+                        if amino_acid in self.gaps:
+                            amino_acid = '-'
 
-                    # Init counters
-                    if generic_number not in self.aa_count[j]:
-                        self.aa_count[j][generic_number] = amino_acids.copy()
-#                        if generic_number in self.generic_number_objs:
-                        self.aa_count_with_protein[generic_number] = {}
+                        # Skip when unknown amino acid type
+                        elif amino_acid == 'X':
+                            continue
 
-                    # update amino acid counter for this generic number
-                    self.aa_count[j][generic_number][amino_acid] += 1
+                        # Init counters
+                        if generic_number not in self.aa_count[j]:
+                            self.aa_count[j][generic_number] = amino_acids.copy()
+    #                        if generic_number in self.generic_number_objs:
+                            self.aa_count_with_protein[generic_number] = {}
 
-                    #if generic_number in self.generic_number_objs:
-                    if amino_acid not in self.aa_count_with_protein[generic_number]:
-                        self.aa_count_with_protein[generic_number][amino_acid] = {entry_name}
-                    elif entry_name not in self.aa_count_with_protein[generic_number][amino_acid]:
-                        self.aa_count_with_protein[generic_number][amino_acid].add(entry_name)
+                        # update amino acid counter for this generic number
+                        self.aa_count[j][generic_number][amino_acid] += 1
+
+                        #if generic_number in self.generic_number_objs:
+                        if amino_acid not in self.aa_count_with_protein[generic_number]:
+                            self.aa_count_with_protein[generic_number][amino_acid] = {entry_name}
+                        elif entry_name not in self.aa_count_with_protein[generic_number][amino_acid]:
+                            self.aa_count_with_protein[generic_number][amino_acid].add(entry_name)
 
 
-        # AJK: Only need for update at the end of loop
-        # 1. Update most frequent amino_acids for this generic number
-        # 2. Update feature counter for this generic number
-        features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
-        self.features_combo = [(x, y['display_name_short'], y['length']) for x,y in zip(list(AMINO_ACID_GROUP_NAMES.values()), list(AMINO_ACID_GROUP_PROPERTIES.values()))]
-        self.features = list(AMINO_ACID_GROUP_NAMES.values())
+            # AJK: Only need for update at the end of loop
+            # 1. Update most frequent amino_acids for this generic number
+            # 2. Update feature counter for this generic number
+            features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
+            self.features_combo = [(x, y['display_name_short'], y['length']) for x,y in zip(list(AMINO_ACID_GROUP_NAMES.values()), list(AMINO_ACID_GROUP_PROPERTIES.values()))]
+            self.features = list(AMINO_ACID_GROUP_NAMES.values())
 
-        for j in self.aa_count:
-            most_freq_aa[j] = OrderedDict()
-            feature_count[j] = OrderedDict()
-            for generic_number in self.aa_count[j]:
-                feature_count[j][generic_number] = features.copy()
-                most_freq_aa[j][generic_number] = [[], 0]
-                for amino_acid in self.aa_count[j][generic_number]:
-                    # Most frequent AA
-                    if self.aa_count[j][generic_number][amino_acid] > most_freq_aa[j][generic_number][1]:
-                        most_freq_aa[j][generic_number] = [[amino_acid], self.aa_count[j][generic_number][amino_acid]]
-                    elif self.aa_count[j][generic_number][amino_acid] == most_freq_aa[j][generic_number][1]:
-                        if amino_acid not in most_freq_aa[j][generic_number][0]:
-                            most_freq_aa[j][generic_number][0].append(amino_acid)
+            for j in self.aa_count:
+                most_freq_aa[j] = OrderedDict()
+                feature_count[j] = OrderedDict()
+                for generic_number in self.aa_count[j]:
+                    feature_count[j][generic_number] = features.copy()
+                    most_freq_aa[j][generic_number] = [[], 0]
+                    for amino_acid in self.aa_count[j][generic_number]:
+                        # Most frequent AA
+                        if self.aa_count[j][generic_number][amino_acid] > most_freq_aa[j][generic_number][1]:
+                            most_freq_aa[j][generic_number] = [[amino_acid], self.aa_count[j][generic_number][amino_acid]]
+                        elif self.aa_count[j][generic_number][amino_acid] == most_freq_aa[j][generic_number][1]:
+                            if amino_acid not in most_freq_aa[j][generic_number][0]:
+                                most_freq_aa[j][generic_number][0].append(amino_acid)
 
-                    # create property frequency
-                    if self.aa_count[j][generic_number][amino_acid] > 0:
-                        for feature in AMINO_ACID_GROUPS_AA[amino_acid]:
-                            feature_count[j][generic_number][feature] += self.aa_count[j][generic_number][amino_acid]
+                        # create property frequency
+                        if self.aa_count[j][generic_number][amino_acid] > 0:
+                            for feature in AMINO_ACID_GROUPS_AA[amino_acid]:
+                                feature_count[j][generic_number][feature] += self.aa_count[j][generic_number][amino_acid]
 
-        # merge the amino acid counts into a consensus sequence
-        num_proteins = len(self.proteins)
-        sequence_counter = 1
-        for i, s in most_freq_aa.items():
-            self.consensus[i] = OrderedDict()
-            self.forced_consensus[i] = OrderedDict()
-            if i=='Custom':
-                sorted_res = sorted(s, key=lambda x: (x.split("x")[0], x.split("x")[1]))
-            else:
-                sorted_res = sorted(s)
-            for p in sorted_res:
-                r = s[p]
-                conservation = str(round(r[1]/num_proteins*100))
-                if len(conservation) == 1:
-                    cons_interval = '0'
+            # merge the amino acid counts into a consensus sequence
+            num_proteins = len(self.proteins)
+            sequence_counter = 1
+            for i, s in most_freq_aa.items():
+                self.consensus[i] = OrderedDict()
+                self.forced_consensus[i] = OrderedDict()
+                if i=='Custom':
+                    sorted_res = sorted(s, key=lambda x: (x.split("x")[0], x.split("x")[1]))
                 else:
-                    # the intervals are defined as 0-10, where 0 is 0-9, 1 is 10-19 etc. Used for colors.
-                    cons_interval = conservation[:-1]
+                    sorted_res = sorted(s)
+                for p in sorted_res:
+                    r = s[p]
+                    conservation = str(round(r[1]/num_proteins*100))
+                    if len(conservation) == 1:
+                        cons_interval = '0'
+                    else:
+                        # the intervals are defined as 0-10, where 0 is 0-9, 1 is 10-19 etc. Used for colors.
+                        cons_interval = conservation[:-1]
 
-                # forced consensus sequence uses the first residue to break ties
-                self.forced_consensus[i][p] = r[0][0]
+                    # forced consensus sequence uses the first residue to break ties
+                    self.forced_consensus[i][p] = r[0][0]
 
-                # consensus sequence displays + in tie situations
-                num_freq_aa = len(r[0])
-                if num_freq_aa == 1:
-                    # Use raw data
-                    self.consensus[i][p] = [
-                        r[0][0],
-                        cons_interval,
-                        round(r[1]/num_proteins*100),
-                        ""
-                        ]
-                elif num_freq_aa > 1:
-                    self.consensus[i][p] = [
-                        '+',
-                        cons_interval,
-                        round(r[1]/num_proteins*100),
-                        ", ".join(r[0])
-                        ]
+                    # consensus sequence displays + in tie situations
+                    num_freq_aa = len(r[0])
+                    if num_freq_aa == 1:
+                        # Use raw data
+                        self.consensus[i][p] = [
+                            r[0][0],
+                            cons_interval,
+                            round(r[1]/num_proteins*100),
+                            ""
+                            ]
+                    elif num_freq_aa > 1:
+                        self.consensus[i][p] = [
+                            '+',
+                            cons_interval,
+                            round(r[1]/num_proteins*100),
+                            ", ".join(r[0])
+                            ]
 
-                # create a residue object full consensus
-                res = Residue()
-                res.sequence_number = sequence_counter
-                if p in self.generic_number_objs:
-                    res.display_generic_number = self.generic_number_objs[p]
-                res.family_generic_number = p
-                res.segment_slug = i
-                res.amino_acid = r[0][0]
-                res.frequency = self.consensus[i][p][2]
-                self.full_consensus.append(res)
+                    # create a residue object full consensus
+                    res = Residue()
+                    res.sequence_number = sequence_counter
+                    if p in self.generic_number_objs:
+                        res.display_generic_number = self.generic_number_objs[p]
+                    res.family_generic_number = p
+                    res.segment_slug = i
+                    res.amino_acid = r[0][0]
+                    res.frequency = self.consensus[i][p][2]
+                    self.full_consensus.append(res)
 
-                # update sequence counter
-                sequence_counter += 1
+                    # update sequence counter
+                    sequence_counter += 1
 
-        # process amino acid frequency
-        for i, amino_acid in enumerate(AMINO_ACIDS):
-            self.amino_acid_stats.append([])
+            # process amino acid frequency
+            for i, amino_acid in enumerate(AMINO_ACIDS):
+                self.amino_acid_stats.append([])
+                j = 0
+                for segment, segment_num in self.aa_count.items():
+                    self.amino_acid_stats[i].append([])
+                    k = 0
+                    if segment=='Custom':
+                        sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                    else:
+                        sorted_res = sorted(segment_num)
+                    for gn in sorted_res:
+                        aas = segment_num[gn]
+                        self.amino_acid_stats[i][j].append([])
+                        for aa, freq in aas.items():
+                            if aa == amino_acid:
+                                frequency = str(round(freq/num_proteins*100))
+                                if len(frequency) == 1:
+                                    freq_interval = '0'
+                                else:
+                                    # intervals defined in the same way as for the consensus sequence
+                                    freq_interval = frequency[:-1]
+                                self.amino_acid_stats[i][j][k] = [frequency, freq_interval]
+                        k += 1
+                    j += 1
+
+            # create index and prepare stats array
+            index_AAG = {}
+            for i, feature in enumerate(AMINO_ACID_GROUPS):
+                index_AAG[feature] = i
+                self.feature_stats.append([])
+                for segment in feature_count:
+                    self.feature_stats[i].append([])
+
             j = 0
-            for segment, segment_num in self.aa_count.items():
-                self.amino_acid_stats[i].append([])
+            for segment, segment_num in feature_count.items():
                 k = 0
                 if segment=='Custom':
                     sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
                 else:
                     sorted_res = sorted(segment_num)
                 for gn in sorted_res:
-                    aas = segment_num[gn]
-                    self.amino_acid_stats[i][j].append([])
-                    for aa, freq in aas.items():
-                        if aa == amino_acid:
-                            frequency = str(round(freq/num_proteins*100))
-                            if len(frequency) == 1:
-                                freq_interval = '0'
-                            else:
-                                # intervals defined in the same way as for the consensus sequence
-                                freq_interval = frequency[:-1]
-                            self.amino_acid_stats[i][j][k] = [frequency, freq_interval]
+                    fs = segment_num[gn]
+
+                    for f, freq in fs.items():
+                        # find feature key
+                        i = index_AAG[f]
+
+                        frequency = str(round(freq/num_proteins*100))
+                        if len(frequency) == 1:
+                            freq_interval = '0'
+                        else:
+                            # intervals defined in the same way as for the consensus sequence
+                            freq_interval = frequency[:-1]
+
+                        self.feature_stats[i][j].append([])
+                        self.feature_stats[i][j][k] = [frequency, freq_interval]
                     k += 1
                 j += 1
 
-        # create index and prepare stats array
-        index_AAG = {}
-        for i, feature in enumerate(AMINO_ACID_GROUPS):
-            index_AAG[feature] = i
-            self.feature_stats.append([])
-            for segment in feature_count:
-                self.feature_stats[i].append([])
-
-        j = 0
-        for segment, segment_num in feature_count.items():
-            k = 0
-            if segment=='Custom':
-                sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
-            else:
-                sorted_res = sorted(segment_num)
-            for gn in sorted_res:
-                fs = segment_num[gn]
-
-                for f, freq in fs.items():
-                    # find feature key
-                    i = index_AAG[f]
-
-                    frequency = str(round(freq/num_proteins*100))
-                    if len(frequency) == 1:
-                        freq_interval = '0'
-                    else:
-                        # intervals defined in the same way as for the consensus sequence
-                        freq_interval = frequency[:-1]
-
-                    self.feature_stats[i][j].append([])
-                    self.feature_stats[i][j][k] = [frequency, freq_interval]
-                k += 1
-            j += 1
-
-        # process feature frequency
-        feats = OrderedDict()
-        self.feat_consensus = OrderedDict([(x, []) for x in self.segments])
-        for sid, segment in enumerate(self.segments):
-            feats[segment] = np.array(
-                [[x[0] for x in feat[sid]] for feat in self.feature_stats],
-                dtype='int'
-                )
-            feat_cons_tmp = feats[segment].argmax(axis=0)
-            feat_cons_tmp = self._assign_preferred_features(feat_cons_tmp, segment, feats)
-            for col, pos in enumerate(list(feat_cons_tmp)):
-                self.feat_consensus[segment].append([
-                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
-                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
-                    feats[segment][pos][col],
-                    int(feats[segment][pos][col]/20)+5,
-                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
-                    list(AMINO_ACID_GROUPS.keys())[pos]
-                ])
-            #print(self.feat_consensus[segment])
-        del feats
-        del feat_cons_tmp
+            # process feature frequency
+            feats = OrderedDict()
+            self.feat_consensus = OrderedDict([(x, []) for x in self.segments])
+            for sid, segment in enumerate(self.segments):
+                feats[segment] = np.array(
+                    [[x[0] for x in feat[sid]] for feat in self.feature_stats],
+                    dtype='int'
+                    )
+                feat_cons_tmp = feats[segment].argmax(axis=0)
+                feat_cons_tmp = self._assign_preferred_features(feat_cons_tmp, segment, feats)
+                for col, pos in enumerate(list(feat_cons_tmp)):
+                    self.feat_consensus[segment].append([
+                        list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
+                        list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                        feats[segment][pos][col],
+                        int(feats[segment][pos][col]/20)+5,
+                        list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                        list(AMINO_ACID_GROUPS.keys())[pos]
+                    ])
+                #print(self.feat_consensus[segment])
+            del feats
+            del feat_cons_tmp
+            self.calculate_zscales()
+            self.stats_done = True
 
     def calculate_aa_count_per_generic_number(self):
         ''' Small function to return a dictionary of display_generic_number and the frequency of each AA '''
@@ -951,32 +1033,34 @@ class Alignment:
 
     def calculate_zscales(self):
         """Calculate Z-scales distribution for current alignment set"""
-        # Check if alignment statistics need to be calculated
-        if len(self.aa_count) == 0:
-            self.calculate_statistics()
 
-        # Prepare Z-scales per segment/GN position
-        self.zscales = { zscale: OrderedDict() for zscale in ZSCALES }
+        if not self.stats_done:
+            # Check if alignment statistics need to be calculated
+            if len(self.aa_count) == 0:
+                self.calculate_statistics()
 
-        # Calculates distribution per GN position
-        for segment in self.aa_count:
-            for zscale in ZSCALES:
-                self.zscales[zscale][segment] = OrderedDict()
-            for generic_number in self.aa_count[segment]:
-                zscale_position = { zscale: [] for zscale in ZSCALES }
+            # Prepare Z-scales per segment/GN position
+            self.zscales = { zscale: OrderedDict() for zscale in ZSCALES }
 
-                for amino_acid in self.aa_count[segment][generic_number]:
-                    if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
-                        for key in range(len(ZSCALES)):
-                            # Frequency AA at this position * value
-                            zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
-
-                # store average + stddev + count
+            # Calculates distribution per GN position
+            for segment in self.aa_count:
                 for zscale in ZSCALES:
-                    if len(zscale_position[zscale]) == 1:
-                        self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1]
-                    else:
-                        self.zscales[zscale][segment][generic_number] = [np.mean(zscale_position[zscale]), np.std(zscale_position[zscale], ddof=1), len(zscale_position[zscale])]
+                    self.zscales[zscale][segment] = OrderedDict()
+                for generic_number in self.aa_count[segment]:
+                    zscale_position = { zscale: [] for zscale in ZSCALES }
+
+                    for amino_acid in self.aa_count[segment][generic_number]:
+                        if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
+                            for key in range(len(ZSCALES)):
+                                # Frequency AA at this position * value
+                                zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
+
+                    # store average + stddev + count
+                    for zscale in ZSCALES:
+                        if len(zscale_position[zscale]) == 1:
+                            self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1]
+                        else:
+                            self.zscales[zscale][segment][generic_number] = [np.mean(zscale_position[zscale]), np.std(zscale_position[zscale], ddof=1), len(zscale_position[zscale])]
 
     def evaluate_sites(self, request):
         """Evaluate which user selected site definitions match each protein sequence"""

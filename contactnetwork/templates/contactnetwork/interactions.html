@@ -19,12 +19,12 @@
         <div class="tab-content clearfix">
             <!-- BEGIN SINGLE CRYSTAL TAB -->
 		    <div class="tab-pane active" id="single-crystal-tab">
-                <div class="row">
+                <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single structure interactions</h1>
                         <p>Display interaction heatmap for a single structure. Choose a PDB and options below.</p>
                     </div>
-                </div>
+                </div> -->
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
@@ -34,9 +34,9 @@
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
                                 <input class="crystal-pdb" type="hidden" value="[]" />
-                                <h5><span class="crystal-count">No structure selected.</span></h5>
                                 {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br> #}
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB</button>
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB</button> <span class="crystal-count">No structure selected.</span>
+                                <div class="btn btn-success pull-right go-button"><span>Go</span></div>
                             </div>
                         </div>
                     </div>
@@ -79,7 +79,6 @@
                         </div>
                     </div>-->
                     <div class="col-md-1">
-                        <div class="btn btn-success btn-lg pull-right go-button"><span>Go</span></div>
                     </div>
                 </div>
                 <ul class="nav nav-tabs">
@@ -92,8 +91,8 @@
                   <li><a href="#single-NGL-tab" data-toggle="tab" id="single-NGL-link">NGL</a></li>
                 </ul>
                 <div class="row">
-                  <div class="tab-content">
-                      <div class="col-md-12 tab-pane active" id="single-matrix-tab">
+                  <div class="col-md-7 tab-content">
+                      <div class="tab-pane active" id="single-matrix-tab">
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Interactions</h3>
@@ -109,10 +108,10 @@
                            </div>
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-table-tab">
+                      <div class="tab-pane" id="single-table-tab">
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-flareplot-tab">
+                      <div class="tab-pane" id="single-flareplot-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -178,7 +177,10 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-NGL-tab">
+
+                    </div>
+
+                  <div class="col-md-5 tab-pane" id="single-NGL-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -192,9 +194,7 @@
                             </div>
                          </div>
 
-                      </div>
-
-                    </div>
+                  </div>
                 </div>
 
 
@@ -202,12 +202,12 @@
             <!-- END SINGLE CRYSTAL TAB -->
             <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
             <div class="tab-pane" id="single-crystal-group-tab">
-                <div class="row">
+                <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single group of structures interactions</h1>
                         <p>Display similarity heatmap for a group of structures. Choose PDBs and options below.</p>
                     </div>
-                </div>
+                </div> -->
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
@@ -386,12 +386,12 @@
             <!-- END SINGLE CRYSTAL GROUP TAB -->
             <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
             <div class="tab-pane" id="two-crystal-groups-tab">
-                <div class="row">
+                <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Two groups of structures interactions</h1>
                         <p>Display similarity/dissimilarity heatmap for two groups of structures. Choose PDBs and options below.</p>
                     </div>
-                </div>
+                </div> -->
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
@@ -2671,9 +2671,13 @@
         }
 
         function initializeFullscreenButton(selector) {
-            var fullScreenElement = $(selector + ' .heatmap-container').get(0);
+            // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
             $(selector + ' .btn-fullscreen').click(function() {
-                toggleFullScreen(fullScreenElement);
+                console.log($(this).parent().next().attr('id'));
+                console.log($(this).attr('id'));
+                fullScreenElement = $(this).parent().next().children().first();
+                fullScreenElement.css('background-color','white');
+                toggleFullScreen(fullScreenElement.get(0));
             });
         }
 
@@ -3018,17 +3022,17 @@
                         +'<option value="segment">GPCR segment</option>';
 
                 // if single structure - use interaction coloring
-                if (container.indexOf("single-crystal-tab") >= 0)
-                    content += '<option value="interactions" selected>Interaction Type</option>'
+                if (container.indexOf("single-crystal-tab") >= 0) {
+                    content += '<option value="interactions" selected>Interaction Type</option>';
                 // if group(s) of structures - use frequency coloring (gradient)
-                else
-                    content += '<option value="frequency" selected>Interaction Frequency/Count</option>'
-
+                } else {
+                    content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
+                }
                 content += '</select></p>';
 
 
                 // Populate heatmap legend
-                if (container.indexOf("single-crystal-tab") >= 0) {
+                if (container.indexOf("single-crystal-tab") >= 0 ) {
                     // TODO Optimize/generalize interaction set selection - code duplication
                     var interactionTypes = new Set(["Polar", "Aromatic", "Hydrophobic", "Van der Waals"]);
 
@@ -3655,7 +3659,19 @@
             });
 
         }
-
+        console.log(stage);
+        function redraw_ngl() {
+          console.log(stage);
+          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+          var mode = $('.ngl-container:visible').attr('id').replace('ngl-','');
+          console.log(mode,'resize!');
+          if (mode in stage){
+            console.log(stage[mode]);
+            $(function() {
+              stage[mode].handleResize();
+            });
+          }
+        }
         function intersect(a, b) {
           var t;
           if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
@@ -3720,6 +3736,8 @@
 
             // Two groups of PDB files
             initializeTwoCrystalGroupsView();
+
+            window.addEventListener("resize", redraw_ngl);
         });
     </script>
 {% endblock %}
@@ -3761,6 +3779,14 @@
         @media (min-width: 1800px){
             #content {
                 width: 1770px;
+            }
+        }
+
+        @media (min-width: 2200px){
+            #content {
+                width: 100%;
+                padding-left: 100px;
+                padding-right: 100px;
             }
         }
     </style>
@@ -3912,9 +3938,10 @@
         }
 
         .heatmap-legend, .flareplot-legend  {
-            position: absolute;
-            right: 15px;
-            top: 15px;
+            /*position: absolute;*/
+            /*right: 15px;*/
+            width:90%;
+            top: 50px;
             padding: 5px;
             border: 1px dashed;
             background-color: white;
@@ -4029,7 +4056,7 @@
         }
 
         .flareplot-container {
-            position: relative;
+            /*position: relative;*/
         }
 
         :-webkit-full-screen.flareplot-container {

@@ -261,11 +261,10 @@ def render_alignment(request):
         segments_ids.append(s)
     segments_list = ','.join(str(x) for x in sorted(segments_ids))
 
-    s = str(protein_list+"_"+segments_list)
-    key = "ALIGNMENT_"+hashlib.md5(s.encode('utf-8')).hexdigest()
+    key = "ALIGNMENT_" + a.get_hash()
     return_html = cache_alignment.get(key)
 
-    if return_html==None or 'Custom' in segments_ids:
+    if return_html==None:
         # build the alignment data matrix
         check = a.build_alignment()
         if check == 'Too large':
@@ -278,9 +277,8 @@ def render_alignment(request):
 
         return_html = render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
             'num_residue_columns': num_residue_columns})
-    if 'Custom' not in segments_ids:
-        #update it if used
-        cache_alignment.set(key,return_html, 60*60*24*7) #set alignment cache one week
+
+    cache_alignment.set(key, return_html, 60*60*24*7) #set alignment cache one week
 
     return return_html
 
