@@ -52,10 +52,6 @@ structure_path = './structure/'
 pir_path = os.sep.join([structure_path, 'PIR'])
 
 build_date = date.today()
-atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
-                         'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
-gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
-gprotein_segment_slugs = [i.slug for i in gprotein_segments]
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -68,32 +64,17 @@ class Command(BaseBuild):
         parser.add_argument('--update', help='Upload models to GPCRdb, overwrites existing entry', default=False, 
                             action='store_true')
         parser.add_argument('-r', help='''Run program for specific receptor(s) by giving UniProt common name as 
-                                          argument (e.g. 5ht2a_human) or build revised crystal by giving PDB code (e.g. 4K5Y)''', 
+                                          argument (e.g. 5ht2a_human)''', 
                             default=False, type=str, nargs='+')
-        parser.add_argument('-z', help='Create zip file of model directory containing all built models', default=False,
-                            action='store_true')
-        # parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
-        # parser.add_argument('-x', help='Select crystal structure refinement for all crystals in the db', default=False, action='store_true')
         parser.add_argument('--purge', help='Purge all existing records', default=False, action='store_true')
-        parser.add_argument('-i', help='Number of MODELLER iterations for model building', default=1, type=int)
-        # parser.add_argument('--test_run', action='store_true', help='Build only a test set of homology models ', default=False)
+        parser.add_argument('--test_run', action='store_true', help='Build only one complex model', default=False)
         parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
-        parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str)
-        # parser.add_argument('--n_c_term', help='Model N- and C-termini', default=False, action='store_true')
+        parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str, nargs='+')
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
+        parser.add_argument('--skip_existing', help='Skip rebuilding models already in protwis/structure/complex_models_zip/', 
+                            default=False, action='store_true')
         
     def handle(self, *args, **options):
-
-        # rm = Remodeling('./structure/homology_models/ClassA_taar1_human-gnao_human_6G79_2018-12-04_GPCRDB.pdb', receptor=Protein.objects.get(entry_name='taar1_human'), signprot=Protein.objects.get(entry_name='gnao_human'))
-        # rm.find_clashes()
-        # rm.make_pirfile()
-        # rm.run()
-        # rm2 = Remodeling('./structure/homology_models/ClassA_taar1_human-gnao_human_6G79_2018-12-04_GPCRDB.pdb', receptor=Protein.objects.get(entry_name='taar1_human'), signprot=Protein.objects.get(entry_name='gnao_human'))
-        # rm2.find_clashes()
-        # print(datetime.now() - startTime)
-        # return 0
-
-
         if options['purge']:
             self.purge_complex_entries()
         self.debug = options['debug']
@@ -107,38 +88,57 @@ class Command(BaseBuild):
             os.mkdir('./structure/complex_models_zip/')
         open('./structure/homology_models/done_models.txt','w').close()
 
-        if options['update']:
-            self.update = True
-        else:
-            self.update = False
+        self.update = options['update']
         self.complex = True
         if not options['signprot']:
             self.signprot = False
         else:
             self.signprot = options['signprot']
         self.force_main_temp = options['force_main_temp']
-        self.modeller_iterations = options['i']
-        if options['debug']:
-            self.debug = True
-        else:
-            self.debug = False
+        self.debug = options['debug']
+        self.skip_existing = options['skip_existing']
+        self.existing_list = []
+        if self.skip_existing:
+            existing = os.listdir('./structure/complex_models_zip/')
+            for f in existing:
+                if f.endswith('zip'):
+                    split = f.split('_')
+                    self.existing_list.append(split[1]+'_'+split[2]+'_'+split[3])
 
         sf = SignprotFunctions()
 
-        # excludees = SignprotComplex.objects.all().values_list('structure__protein_conformation__protein__parent__entry_name', flat=True)
         gprots_with_structures = sf.get_subtypes_with_templates()
         if options['r']:
             self.receptor_list = Protein.objects.filter(entry_name__in=options['r'])
         else:
-            self.receptor_list = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', family__parent__parent__parent__name='Class A (Rhodopsin)')
+            self.receptor_list = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
+                                                        family__parent__parent__parent__name='Class A (Rhodopsin)')
         
-        print(self.receptor_list)
-        subfams = sf.get_subfamilies_with_templates()
-        self.gprotein_targets = sf.get_subfam_subtype_dict(subfams)
+        if options['signprot']:
+            self.gprotein_targets = {'custom':options['signprot']}
+        else:
+            subfams = sf.get_subfamilies_with_templates()
+            self.gprotein_targets = sf.get_subfam_subtype_dict(subfams)
 
-        # del self.gprotein_targets['Gi/o']
+        if options['test_run']:
+            break_loop = False
+            for receptor in self.receptor_list:
+                for i,j in self.gprotein_targets.items():
+                    for target in j:
+                        if len(SignprotComplex.objects.filter(structure__protein_conformation__protein__parent__entry_name=receptor.entry_name, protein__entry_name=target))==0:
+                            self.receptor_list = [receptor]
+                            self.gprotein_targets = {i:[target]}
+                            break_loop = True
+                            break
+                    if break_loop: break
+                if break_loop: break
 
-        self.receptor_list = Protein.objects.filter(entry_name__in=['drd3_human'])
+        s_c = 0
+        for i,j in self.gprotein_targets.items():
+            for s in j:
+                s_c+=1
+        print('receptors to model: {}'.format(len(self.receptor_list)))
+        print('signaling proteins per receptor: {}'.format(s_c))
 
         self.processors = options['proc']
         self.prepare_input(self.processors, self.receptor_list)
@@ -156,12 +156,14 @@ class Command(BaseBuild):
             i += 1
             with lock:
                 receptor = self.receptor_list[count.value]
-                logger.info('Generating complex model for  \'{}\' ... ({} out of {}) (processor:{} count:{})'.format(receptor.entry_name, count.value+1, len(self.receptor_list),processor_id,i))
+                logger.info('Generating complex model for  \'{}\' ... ({} out of {}) (processor:{} count:{})'.format(receptor.entry_name, 
+                            count.value+1, len(self.receptor_list),processor_id,i))
                 count.value +=1 
 
             mod_startTime = datetime.now()
             self.build_all_complex_models_for_receptor(receptor, count, i, processor_id)
-            logger.info('Complex model finished for  \'{}\' ... (processor:{} count:{}) (Time: {})'.format(receptor.entry_name, processor_id,i,datetime.now() - mod_startTime))
+            logger.info('Complex model finished for  \'{}\' ... (processor:{} count:{}) (Time: {})'.format(receptor.entry_name, 
+                                                                                                    processor_id,i,datetime.now() - mod_startTime))
 
     def build_all_complex_models_for_receptor(self, receptor, count, i, processor_id):
         first_in_subfam = True
@@ -174,6 +176,9 @@ class Command(BaseBuild):
                 # print(receptor, target)
                 import_receptor = False
                 if len(SignprotComplex.objects.filter(structure__protein_conformation__protein__parent__entry_name=receptor.entry_name, protein__entry_name=target))>0:
+                    continue
+                # Skip models already in './structure/complex_models_zip/'
+                if receptor.entry_name+'-'+target in self.existing_list:
                     continue
                 else:
                     if first_in_subfam:
@@ -205,10 +210,3 @@ class Command(BaseBuild):
         except:
             self.logger.warning('StructureComplexModel data cannot be deleted')
         
-        
-
-
-
-
-
-

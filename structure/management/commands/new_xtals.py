@@ -292,7 +292,7 @@ class QueryPDB():
         dic = xmltodict.parse(response_mol.read())
         if 'NMR' in str_des or 'extracellular' in str_des:
             return 0
-        if pdb_code in ['4QXE','1XWD','4QXF','4MQW','6B7H','6BSZ','6BT5','5OTW','3G04','3KS9','4XAQ']:
+        if pdb_code in ['4QXE','1XWD','4QXF','4MQW','6B7H','6BSZ','6BT5','5OTW','3G04','3KS9','4XAQ','5II0']:
             return 0
         polymer = dic['molDescription']['structureId']['polymer']
         description = ''

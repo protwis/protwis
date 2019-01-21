@@ -323,6 +323,8 @@ class CallHomologyModeling():
                     rm.make_pirfile()
                     rm.run()
                     logger.info('Remodeled {} {} at {}'.format(self.receptor, self.signprot, hse.remodel_resis))
+                    with open('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), 'r') as remodeled_pdb:
+                        formatted_model = remodeled_pdb.read()
             else:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, receptor=self.receptor)
             
