@@ -32,6 +32,7 @@ class Alignment:
     def __init__(self):
         self.reference = False
         self.proteins = []
+        self.unique_proteins = []
         self.non_matching_proteins = [] # proteins that do not match user specified site definitions
         self.segments = OrderedDict()
         self.segments_only_alignable = []
@@ -318,6 +319,7 @@ class Alignment:
         # AJK: prevent prefetching all data for large alignments before checking #residues (DB + memory killer)
         rs = Residue.objects.filter(protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins)
 
+
         self.number_of_residues_total = len(rs)
         if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
             return "Too large"
@@ -529,9 +531,10 @@ class Alignment:
                         sorted_segment.append(gn)
                     self.segments[segment] = sorted_segment
 
-            for pc in self.proteins:
+            self.unique_proteins = list(set(self.proteins))
+            for pc in self.unique_proteins:
                 row = OrderedDict()
-                row_list = [] # FIXME redundant, remove when dependecies are removed
+                pc.alignment_list = []
                 for segment, positions in self.segments.items():
                     s = []
                     first_residue_found = False
@@ -619,9 +622,9 @@ class Alignment:
                         # update position counter
                         position_counter += 1
                     row[segment] = s
-                    row_list.append(s) # FIXME redundant, remove when dependecies are removed
+                    pc.alignment_list.append(s)
                 pc.alignment = row
-                pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
+#                pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
 
             self.sort_generic_numbers()
             self.merge_generic_numbers()
@@ -629,7 +632,7 @@ class Alignment:
 
             if self.number_of_residues_total >= 2500:
                 self.calculate_statistics()
-                cache_data = {'proteins': self.proteins,
+                cache_data = {'unique_proteins': self.unique_proteins,
                             'amino_acids': self.amino_acids,
                             'amino_acid_stats': self.amino_acid_stats,
                             'aa_count': self.aa_count,
@@ -647,8 +650,7 @@ class Alignment:
                 cache_alignments.set(cache_key, cache_data, 60*60*24*14)
         else:
             cache_data = cache_alignments.get(cache_key)
-
-            self.proteins = cache_data['proteins']
+            self.unique_proteins = cache_data['unique_proteins']
             self.amino_acids = cache_data['amino_acids']
             self.amino_acid_stats = cache_data['amino_acid_stats']
             self.aa_count = cache_data['aa_count']
@@ -664,6 +666,9 @@ class Alignment:
             self.generic_numbers = cache_data['generic_numbers']
             self.zscales = cache_data['zscales']
             self.stats_done = True
+
+        # Adapt alignment to order in current self.proteins
+        self.proteins = [prot2 for prot1 in self.proteins for prot2 in self.unique_proteins if prot1.id==prot2.id]
 
     def clear_empty_positions(self):
         """Remove empty columns from the segments and matrix"""
@@ -689,9 +694,9 @@ class Alignment:
         # proteins
         # AJK optimized cleaning alignment - deepcopy not required and faster removal
         #proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
-        for i, protein in enumerate(self.proteins):
+        for i, protein in enumerate(self.unique_proteins):
             for j, s in protein.alignment.items():
-                self.proteins[i].alignment[j] = [ p for p in s if p[0] in self.positions ]
+                self.unique_proteins[i].alignment[j] = [ p for p in s if p[0] in self.positions ]
 
                 # Deprecated
 #                for p in s:
@@ -739,7 +744,7 @@ class Alignment:
             self.amino_acids = list(AMINO_ACIDS.keys())
 
             # AJK: optimized for speed - split into multiple steps
-            for i, p in enumerate(self.proteins):
+            for i, p in enumerate(self.unique_proteins):
                 entry_name = p.protein.entry_name
                 for j, s in p.alignment.items():
                     if i == 0:
@@ -799,7 +804,7 @@ class Alignment:
                                 feature_count[j][generic_number][feature] += self.aa_count[j][generic_number][amino_acid]
 
             # merge the amino acid counts into a consensus sequence
-            num_proteins = len(self.proteins)
+            num_proteins = len(self.unique_proteins)
             sequence_counter = 1
             for i, s in most_freq_aa.items():
                 self.consensus[i] = OrderedDict()
@@ -940,7 +945,7 @@ class Alignment:
     def calculate_aa_count_per_generic_number(self):
         ''' Small function to return a dictionary of display_generic_number and the frequency of each AA '''
         generic_lookup_aa_freq = {}
-        num_proteins = len(self.proteins)
+        num_proteins = len(self.unique_proteins)
         for j, a in self.aa_count.items():
             for g, p in a.items():
                 for aa, c in p.items():
@@ -1228,7 +1233,7 @@ class AlignedReferenceTemplate(Alignment):
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
 
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, 
+                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None,
                              complex_model=False, signprot=None, force_main_temp=False):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
