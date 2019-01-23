@@ -17,7 +17,7 @@ from structure.models import (Structure, StructureType, StructureSegment, Struct
     StructureEngineeringDescription, Fragment)
 
 
-import os
+import os, time
 import yaml
 from interaction.views import runcalculation,parsecalculation
 from multiprocessing import Queue, Process, Value, Lock
@@ -25,6 +25,10 @@ from multiprocessing import Queue, Process, Value, Lock
 class Command(BaseCommand):
 
     help = "Output all uniprot mappings"
+
+    update = True
+    purge = False
+    processes = 4
 
     def prepare_input(self, proc, items, iteration=1):
         q = Queue()
@@ -56,105 +60,28 @@ class Command(BaseCommand):
         for p in procs:
             p.join()
 
-    def purge_contact_network(self,s):
+    def purge_contact_network(self):
 
-        ii = Interaction.objects.filter(
-            interacting_pair__referenced_structure=s
-        ).all()
-
-        for i in ii:
-            i.delete()
+        InteractingResiduePair.truncate()
+        Distance.truncate()
+        Interaction.truncate()
 
     def build_contact_network(self,s,pdb_code):
-        interacting_pairs = compute_interactions(pdb_code)
+        interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
 
-        for p in interacting_pairs:
-            # Create the pair
-            res1_seq_num = p.get_residue_1().id[1]
-            res2_seq_num = p.get_residue_2().id[1]
-            conformation = s.protein_conformation
-
-            # Get the residues
-            try:
-                res1 = Residue.objects.get(sequence_number=res1_seq_num, protein_conformation=conformation)
-                res2 = Residue.objects.get(sequence_number=res2_seq_num, protein_conformation=conformation)
-            except:
-                # print('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
-                # print('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
-                continue
-
-            # Save the pair
-            pair = InteractingResiduePair()
-            pair.res1 = res1
-            pair.res2 = res2
-            pair.referenced_structure = s
-            pair.save()
-
-            # Add the interactions to the pair
-            for i in p.get_interactions():
-                if type(i) is ci.VanDerWaalsInteraction:
-                    ni = VanDerWaalsInteraction()
-                    ni.interacting_pair = pair
-                    ni.save()
-                elif type(i) is ci.HydrophobicInteraction:
-                    ni = HydrophobicInteraction()
-                    ni.interacting_pair = pair
-                    ni.save()
-                elif type(i) is ci.PolarSidechainSidechainInteraction:
-                    ni = PolarSidechainSidechainInteraction()
-                    ni.interacting_pair = pair
-                    ni.is_charged_res1 = i.is_charged_res1
-                    ni.is_charged_res2 = i.is_charged_res2
-                    ni.save()
-                elif type(i) is ci.PolarBackboneSidechainInteraction:
-                    ni = PolarBackboneSidechainInteraction()
-                    ni.interacting_pair = pair
-                    ni.is_charged_res1 = i.is_charged_res1
-                    ni.is_charged_res2 = i.is_charged_res2
-                    ni.res1_is_sidechain = False
-                    ni.save()
-                elif type(i) is ci.PolarSideChainBackboneInteraction:
-                    ni = PolarBackboneSidechainInteraction()
-                    ni.interacting_pair = pair
-                    ni.is_charged_res1 = i.is_charged_res1
-                    ni.is_charged_res2 = i.is_charged_res2
-                    ni.res1_is_sidechain = True
-                    ni.save()
-                elif type(i) is ci.FaceToFaceInteraction:
-                    ni = FaceToFaceInteraction()
-                    ni.interacting_pair = pair
-                    ni.save()
-                elif type(i) is ci.FaceToEdgeInteraction:
-                    ni = FaceToEdgeInteraction()
-                    ni.interacting_pair = pair
-                    ni.res1_has_face = True
-                    ni.save()
-                elif type(i) is ci.EdgeToFaceInteraction:
-                    ni = FaceToEdgeInteraction()
-                    ni.interacting_pair = pair
-                    ni.res1_has_face = False
-                    ni.save()
-                elif type(i) is ci.PiCationInteraction:
-                    ni = PiCationInteraction()
-                    ni.interacting_pair = pair
-                    ni.res1_has_pi = True
-                    ni.save()
-                elif type(i) is ci.CationPiInteraction:
-                    ni = PiCationInteraction()
-                    ni.interacting_pair = pair
-                    ni.res1_has_pi = False
-                    ni.save()
 
     def handle(self, *args, **options):
 
         self.ss = Structure.objects.filter(refined=False).all()
         self.structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
-        self.prepare_input(16, self.ss)
+        if self.purge:
+            self.purge_contact_network()
+        print(len(self.ss),'structures')
+        self.prepare_input(self.processes, self.ss)
 
         # for s in Structure.objects.filter(refined=False).all():
-        #     print(s,s.pdb_code.index)
-        #     self.purge_contact_network(s)
-        #     self.build_contact_network(s,s.pdb_code.index)
+        #   self.purge_contact_network(s)
+        #   self.build_contact_network(s,s.pdb_code.index)
 
     def main_func(self, positions, iteration,count,lock):
         # filenames
@@ -168,6 +95,7 @@ class Command(BaseCommand):
                 if count.value<len(ss):
                     s = ss[count.value]
                     count.value +=1
+                    # print(s, count.value)
                 else:
                     break 
 
@@ -186,9 +114,19 @@ class Command(BaseCommand):
                     peptide_chain = ""
                     if 'chain' in ligand:
                         peptide_chain = ligand['chain']
-            print(s,"Contact Network")
-            self.purge_contact_network(s)
-            self.build_contact_network(s,s.pdb_code.index)
-            print(s,"Ligand Interactions")
-            runcalculation(s.pdb_code.index,peptide_chain)
-            parsecalculation(s.pdb_code.index,False)
+            
+            # self.purge_contact_network(s)
+            current = time.time()
+            if self.update:
+                if Distance.objects.filter(structure=s).count():
+                    print(s,'already done - skipping')
+                    continue
+            try:
+                self.build_contact_network(s,s.pdb_code.index)
+                print(s,"Contact Network",time.time()-current)
+            except:
+                print(s,'Failed contact network')
+            # current = time.time()
+            #runcalculation(s.pdb_code.index,peptide_chain)
+            #parsecalculation(s.pdb_code.index,False)
+            #print(s,"Ligand Interactions",time.time()-current)

@@ -60,8 +60,6 @@ class Protein(models.Model):
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1)
 
     def get_gprotein_plot(self):
-        print(str(self))
-        print(self.get_protein_class())
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawGproteinPlot(residuelist,self.get_protein_class(),str(self))
 

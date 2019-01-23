@@ -1,14 +1,21 @@
 from contactnetwork.residue import *
 from Bio.PDB.Polypeptide import *
+from contactnetwork.models import *
+
+from residue.models import Residue
 
 import math
 
 class InteractingPair:
+
     'Common base class for all interactions'
-    def __init__(self, res1, res2, interactions):
+    def __init__(self, res1, res2, interactions,dbres1,dbres2,s):
         self.res1 = res1
         self.res2 = res2
         self.interactions = interactions
+        self.dbres1 = dbres1
+        self.dbres2 = dbres2
+        self.structure = s
 
     def add_interaction(self, interaction):
         self.interactions.append(interaction)
@@ -41,8 +48,13 @@ class InteractingPair:
 
         return text
 
-    def get_interaction_json(self, generic):
-        text = '[\'{0}\',\'{1}\',{2},\'{3}\',\'{4}\',\'{5}\',{6}, ["'.format(self.res1.parent.id, three_to_one(self.res1.get_resname()), self.res1.id[1], generic, self.res2.parent.id, three_to_one(self.res2.get_resname()), self.res2.id[1])
+    def get_interaction_json(self, generic, pdb):
+        # Temporary mapping G-proteins using static variable mapping
+        # G-prot numbering_schemes
+        gprot = self.mapping[pdb][self.res2.id[1]];
+        selected = Residue.objects.filter(sequence_number=gprot, protein_conformation__protein__entry_name="gnas2_human")
+        gprot_gn = selected[0].display_generic_number
+        text = '[\'{0}\',\'{1}\',{2},\'{3}\',\'{4}\',\'{5}\',{6},\'{7}\', ["'.format(self.res1.parent.id, three_to_one(self.res1.get_resname()), self.res1.id[1], generic, self.res2.parent.id, three_to_one(self.res2.get_resname()), self.res2.id[1], gprot_gn)
         first = True
 
         if self.interactions:
@@ -56,89 +68,171 @@ class InteractingPair:
 
         return text
 
+    def save_into_database(self):
+        # Save the pair
+        pair,created = InteractingResiduePair.objects.get_or_create(res1=self.dbres1, res2=self.dbres2, referenced_structure=self.structure)
 
-class Interaction(object):
+        # Add the interactions to the pair'
+        bulk = []
+        for i in self.get_interactions():
+            # if type(i) is VanDerWaalsInteraction:
+            #     ni = Interaction(interaction_type='VanDerWaals', interacting_pair=pair)
+            # elif type(i) is HydrophobicInteraction:
+            #     ni = Interaction(interaction_type='Hydrophobic', interacting_pair=pair)
+            # elif type(i) is PolarSidechainSidechainInteraction:
+            #     ni = Interaction(interaction_type='Polar',specific_type='PolarSidechainSidechain', interacting_pair=pair)
+            # elif type(i) is PolarBackboneSidechainInteraction:
+            #     ni = Interaction(interaction_type='Polar',specific_type='PolarBackboneSidechain', interacting_pair=pair)
+            # elif type(i) is PolarSideChainBackboneInteraction:
+            #     ni = Interaction(interaction_type='Polar',specific_type='PolarSideChainBackbone', interacting_pair=pair)
+            # elif type(i) is PosNegIonicInteraction:
+            #     ni = Interaction(interaction_type='Polar',specific_type='IonicPositiveNegative', interacting_pair=pair)
+            # elif type(i) is NegPosIonicInteraction:
+            #     ni = Interaction(interaction_type='Polar',specific_type='IonicNegativePositive', interacting_pair=pair)
+            # elif type(i) is HydrogenBondDAInteraction:
+            #     ni = Interaction(interaction_type='Polar',specific_type='HBondDonorAcceptor', interacting_pair=pair)
+            # elif type(i) is HydrogenBondADInteraction:
+            #     ni = Interaction(interaction_type='Polar',specific_type='HBondAcceptorDonor', interacting_pair=pair)
+            # elif type(i) is WaterMediated:
+            #     ni = Interaction(interaction_type='Polar',specific_type='HBondWaterMediated', interacting_pair=pair)
+            # elif type(i) is FaceToFaceInteraction:
+            #     ni = Interaction(interaction_type='Aromatic',specific_type='FaceToFace', interacting_pair=pair)
+            # elif type(i) is FaceToEdgeInteraction:
+            #     ni = Interaction(interaction_type='Aromatic',specific_type='FaceToEdge', interacting_pair=pair)
+            # elif type(i) is EdgeToFaceInteraction:
+            #     ni = Interaction(interaction_type='Aromatic',specific_type='EdgeToFace', interacting_pair=pair)
+            # elif type(i) is PiCationInteraction:
+            #     ni = Interaction(interaction_type='Aromatic',specific_type='PiCation', interacting_pair=pair)
+            # elif type(i) is CationPiInteraction:
+            #     ni = Interaction(interaction_type='Aromatic',specific_type='CationPi', interacting_pair=pair)
+            #
+            # else:
+            #     ni = Interaction(interaction_type=i.get_name() , interacting_pair=pair)
+                #ni.res1_has_pi = False
+
+            ni = Interaction(interaction_type=i.get_type(),specific_type=i.get_details(), interacting_pair=pair)
+            bulk.append(ni)
+        Interaction.objects.bulk_create(bulk)
+
+
+# Make type and detail variables and default functions
+class CI(object):
     def __init__(self):
+        self.type = "interaction"
+        self.detail = ""
         pass
 
+    def get_type(self):
+        return self.type
 
-class VanDerWaalsInteraction(Interaction):
-    def get_name(self):
-        return "van-der-waals"
+    def get_details(self):
+        return self.detail
 
+class VanDerWaalsInteraction(CI):
+    def __init__(self):
+        self.type = "van-der-waals"
+        self.detail = ""
+        pass
 
-class HydrophobicInteraction(Interaction):
-    def get_name(self):
-        return "hydrophobic"
+class HydrophobicInteraction(CI):
+    def __init__(self):
+        self.type = "hydrophobic"
+        self.detail = ""
+        pass
 
-class HydrogenBondInteraction(Interaction):
-    def get_name(self):
-        return "h-bond"
+class IonicInteraction(CI):
+    def __init__(self):
+        super().__init__()
+        self.type = "ionic"
+        self.detail = ""
 
-class IonicInteraction(Interaction):
-    def get_name(self):
-        return "ionic"
+class PolarInteraction(CI):
+    def __init__(self):
+        self.type = "polar"
+        self.detail = ""
+        pass
 
-class PolarInteraction(Interaction):
-    def __init__(self, is_charged_res1, is_charged_res2):
-        Interaction.__init__(self)
-        self.is_charged_res1 = is_charged_res1
-        self.is_charged_res2 = is_charged_res2
+class AromaticInteraction(CI):
+    def __init__(self):
+        self.type = "aromatic"
+        self.detail = ""
+        pass
 
-    def get_name(self):
-        return "polar"
+class NegPosIonicInteraction(IonicInteraction):
+    def __init__(self):
+        super().__init__()
+        self.detail = "negative-positive"
 
+class PosNegIonicInteraction(IonicInteraction):
+    def __init__(self):
+        super().__init__()
+        self.detail = "positive-negative"
+
+class HydrogenBondInteraction(PolarInteraction):
+    def __init__(self):
+        super().__init__()
+        self.detail = "H-bond"
+
+class HydrogenBondDAInteraction(PolarInteraction):
+    def __init__(self):
+        super().__init__()
+        self.detail = "donor-acceptor"
+
+class HydrogenBondADInteraction(PolarInteraction):
+    def __init__(self):
+        super().__init__()
+        self.detail = "acceptor-donor"
+
+class WaterMediated(PolarInteraction):
+    def __init__(self):
+        super().__init__()
+        self.detail = "water-mediated"
 
 class PolarSidechainSidechainInteraction(PolarInteraction):
-    def get_name(self):
-        return "polar-sidechain-sidechain"
-
+    def __init__(self):
+        super().__init__()
+        self.detail = "sidechain-sidechain"
 
 class PolarBackboneSidechainInteraction(PolarInteraction):
-    def get_name(self):
-        return "polar-backbone-sidechain"
-
+    def __init__(self):
+        super().__init__()
+        self.detail = "backbone-sidechain"
 
 class PolarSideChainBackboneInteraction(PolarInteraction):
-    def get_name(self):
-        return "polar-sidechain-backbone"
+    def __init__(self):
+        super().__init__()
+        self.detail = "sidechain-backbone"
 
-class PolarWaterInteraction(Interaction):
-    def get_name(self):
-        return "polar-water"
-
-class AromaticInteraction(Interaction):
-    def get_name(self):
-        return "aromatic"
-
+# AK: I vote to REMOVE
+class PolarWaterInteraction(PolarInteraction):
+    def __init__(self):
+        super().__init__()
+        self.detail = "water"
 
 class FaceToFaceInteraction(AromaticInteraction):
-    def get_name(self):
-        return "face-to-face"
-
+    def __init__(self):
+        super().__init__()
+        self.detail = "face-to-face"
 
 class EdgeToFaceInteraction(AromaticInteraction):
-    def get_name(self):
-        return "edge-to-face"
-
+    def __init__(self):
+        super().__init__()
+        self.detail = "edge-to-face"
 
 class FaceToEdgeInteraction(AromaticInteraction):
-    def get_name(self):
-        return "face-to-edge"
-
+    def __init__(self):
+        super().__init__()
+        self.detail = "edge-to-edge"
 
 class PiCationInteraction(AromaticInteraction):
-    def get_name(self):
-        return "pi-cation"
-
+    def __init__(self):
+        super().__init__()
+        self.detail = "pi-cation"
 
 class CationPiInteraction(AromaticInteraction):
-    def get_name(self):
-        return "cation-pi"
-
-class WaterMediated(Interaction):
-    def get_name(self):
-        return "water-mediated"
+    def __init__(self):
+        super().__init__()
+        self.detail = "cation-pi"
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
@@ -199,13 +293,16 @@ def has_pi_cation_interaction(res1, res2):
         for r1 in res1_desc for atom_name in res2_pos_atom_names])
 
 def get_polar_hbonds_interactions(res1, res2):
+    # TODO: extend with loose H-bond definitions as new polar contacts
     if has_hbond_interaction(res1, res2):
-        return [HydrogenBondInteraction()]
+        return [HydrogenBondDAInteraction()]
+    elif has_hbond_interaction(res2, res1):
+        return [HydrogenBondADInteraction()]
     else:
         return []
 
 # TODO: cleanup + optimize this function
-def has_hbond_interaction(res1, res2, switch = 1):
+def has_hbond_interaction(res1, res2):
     # Initially focus on side-chain and water H-bonds
     if is_hbd(res1) and is_hba(res2):
         hbd = res1
@@ -232,39 +329,33 @@ def has_hbond_interaction(res1, res2, switch = 1):
                         acceptor = pair[1]
 
                         for set in donors[donor]:
-                            p1 = hbd.child_dict[set[0]].coord
-                            p2 = hbd.child_dict[donor].coord
+                            if set[0] in hbd.child_dict and (len(set) < 4 or set[3] in hbd.child_dict):
+                                p1 = hbd.child_dict[set[0]].coord
+                                p2 = hbd.child_dict[donor].coord
 
-                            p3 = hba.child_dict[acceptor].coord
-                            if len(set) == 4: # secondary
-                                p3 = hbd.child_dict[set[3]].coord
+                                p3 = hba.child_dict[acceptor].coord
+                                if len(set) == 4: # secondary
+                                    p3 = hbd.child_dict[set[3]].coord
 
-                            # calculate optimal H-bonding vector to acceptor
-                            d=get_unit_vector(p2-p1)
-                            v=p3-p1
-                            t=numpy.dot(v, d)
-                            p4=p1+t*d
-                            best_vector=get_unit_vector(p3-p4)
-                            if len(set) == 4: # secondary
-                                best_vector=-1 * best_vector
+                                # calculate optimal H-bonding vector to acceptor
+                                d=get_unit_vector(p2-p1)
+                                v=p3-p1
+                                t=numpy.dot(v, d)
+                                p4=p1+t*d
+                                best_vector=get_unit_vector(p3-p4)
+                                if len(set) == 4: # secondary
+                                    best_vector=-1 * best_vector
 
-                            angle=math.radians(set[1]-90)
-                            x=abs(math.cos(angle)*set[2])
-                            y=abs(math.sin(angle)*set[2])
-                            hydrogen=p2+y*d+x*best_vector
+                                angle=math.radians(set[1]-90)
+                                x=abs(math.cos(angle)*set[2])
+                                y=abs(math.sin(angle)*set[2])
+                                hydrogen=p2+y*d+x*best_vector
 
-                            # check angle
-                            if 180 - math.degrees(angle_between(hydrogen - p2, hba.child_dict[acceptor].coord - hydrogen)) >= 120:
-                                return True
+                                # check angle
+                                if 180 - math.degrees(angle_between(hydrogen - p2, hba.child_dict[acceptor].coord - hydrogen)) >= 120:
+                                    return True
 
-#                            print("POTENTIAL pair " + res1.get_resname() + str(res1.id[1]) + " - " + res2.get_resname() + str(res2.id[1]))
-#                            print("ANGLE3 is " + str(180-math.degrees(angle_between(hydrogen-p2,hba.child_dict[acceptor].coord-hydrogen))))
-#                            print("HETATM{:5d} C    HYD A{:4d}    {:8.3f}{:8.3f}{:8.3f}   1.00  1.00           C  ".format(1, 1, hydrogen[0], hydrogen[1], hydrogen[2]))
-
-    if switch == 1:
-        return has_hbond_interaction(res2, res1, 0)
-    else:
-        return False
+    return False
 
 def has_cation_pi_interaction(res1, res2):
     return has_pi_cation_interaction(res2, res1)
@@ -278,6 +369,14 @@ def has_face_to_edge_interaction(res1, res2):
 def get_aromatic_interactions(res1, res2):
     interactions = []
 
+    if is_aromatic_aa(res1) and is_pos_charged(res2):
+        if has_pi_cation_interaction(res1, res2):
+            interactions.append(PiCationInteraction())
+
+    if is_pos_charged(res1) and is_aromatic_aa(res2):
+        if has_cation_pi_interaction(res1, res2):
+            interactions.append(CationPiInteraction())
+
     if is_aromatic_aa(res1) and is_aromatic_aa(res2):
         if has_face_to_face_interaction(res1, res2):
             interactions.append(FaceToFaceInteraction())
@@ -288,14 +387,6 @@ def get_aromatic_interactions(res1, res2):
         # AK 28-11-2018 - now redundant given the calculation method
         #if has_face_to_edge_interaction(res1, res2):
         #    interactions.append(FaceToEdgeInteraction())
-
-    if is_aromatic_aa(res1) and is_pos_charged(res2):
-        if has_pi_cation_interaction(res1, res2):
-            interactions.append(PiCationInteraction())
-
-    if is_pos_charged(res1) and is_aromatic_aa(res2):
-        if has_cation_pi_interaction(res1, res2):
-            interactions.append(CationPiInteraction())
 
     return interactions
 
@@ -332,7 +423,7 @@ def get_polar_sidechain_backbone_interactions(res1, res2):
     polarInteraction = any([distance_between(sca.coord, bba.coord) <= 4.5 for sca in sidechain_atoms for bba in backbone_atoms])
 
     if polarInteraction:
-        return [PolarSideChainBackboneInteraction(is_charged(res1), is_charged(res2))]
+        return [PolarSideChainBackboneInteraction()]
     else:
         return []
 
@@ -342,7 +433,7 @@ def get_polar_backbone_sidechain_interactions(res1, res2):
     interaction = get_polar_sidechain_backbone_interactions(res2, res1)
 
     if (interaction):
-        return [PolarBackboneSidechainInteraction(is_charged(res1), is_charged(res2))]
+        return [PolarBackboneSidechainInteraction()]
     else:
         return []
 
@@ -369,7 +460,7 @@ def get_polar_sidechain_sidechain_interactions(res1, res2):
     ])
 
     if polarInteraction:
-        return [PolarSidechainSidechainInteraction(is_charged(res1), is_charged(res2))]
+        return [PolarSidechainSidechainInteraction()]
     else:
         return []
 
@@ -406,13 +497,33 @@ def get_polar_water_interactions(res1, res2):
 # Get polar contacts and interactions between 2 residues
 def get_polar_interactions(res1, res2):
     polar_interactions = []
-    polar_interactions += get_polar_backbone_sidechain_interactions(res1, res2)
-    polar_interactions += get_polar_sidechain_backbone_interactions(res1, res2)
-    polar_interactions += get_polar_sidechain_sidechain_interactions(res1, res2)
-    polar_interactions += get_polar_water_interactions(res1, res2)
     polar_interactions += get_polar_hbonds_interactions(res1, res2)
+    # AK: as discussed disabled for now
+    #polar_interactions += get_polar_water_interactions(res1, res2)
+    #polar_interactions += get_polar_sidechain_sidechain_interactions(res1, res2)
+    #polar_interactions += get_polar_sidechain_backbone_interactions(res1, res2)
+    #polar_interactions += get_polar_backbone_sidechain_interactions(res1, res2)
+
     return polar_interactions
 
+
+def get_ionic_interactions(res1, res2):
+    # Only oppositely charged residues
+    if (is_pos_charged(res1) and is_pos_charged(res2)) or (is_neg_charged(res1) and is_neg_charged(res2)):
+        return []
+
+    res1_atom_names = get_charged_atom_names(res1)
+
+    res2_atom_names = get_charged_atom_names(res2)
+
+    # Check if any charged atoms are within 4.5 angstroms
+    if any([distance_between(res1.child_dict[name1].coord, res2.child_dict[name2].coord) <= 4.5 for name1 in res1_atom_names for name2 in res2_atom_names]):
+        if is_pos_charged(res1):
+            return [NegPosIonicInteraction()]
+        else:
+            return [PosNegIonicInteraction()]
+    else:
+        return []
 
 # Get Van der Waals inteactions between 2 residues
 def get_van_der_waals_interactions(res1, res2):
@@ -430,20 +541,24 @@ def get_interactions(res1, res2):
     # Found interactions
     interactions = []
 
-    # Aromatic interactions
-    interactions += get_aromatic_interactions(res1, res2)
+    # TODO: extend with C or N-terms and backbones
+    #if (is_hba(res1) and is_hbd(res2)) or (is_hbd(res1) and is_hba(res2)):
+    #    has_hbond_interaction(res1, res2)
 
-    # Hydrophobic interactions
-    interactions += get_hydrophobic_interactions(res1, res2)
+    # Ionic interactions
+    if (is_charged(res1) and is_charged(res2)):
+        interactions += get_ionic_interactions(res1, res2)
 
     # Polar interactions
     interactions += get_polar_interactions(res1, res2)
 
-    # TODO: extend with C or N-terms and backbones?
-    if (is_hba(res1) and is_hbd(res2)) or (is_hbd(res1) and is_hba(res2)):
-        has_hbond_interaction(res1, res2)
+    # Aromatic interactions
+    interactions += get_aromatic_interactions(res1, res2)
 
     # Van der Waals interactions
     interactions += get_van_der_waals_interactions(res1, res2)
+
+    # Hydrophobic interactions
+    interactions += get_hydrophobic_interactions(res1, res2)
 
     return interactions
