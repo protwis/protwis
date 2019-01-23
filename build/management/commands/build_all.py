@@ -19,11 +19,11 @@ class Command(BaseCommand):
                             dest='test',
                             default=False,
                             help='Include only a subset of data for testing')
-        parser.add_argument('--hommod',
-                            action='store_true',
-                            dest='hommod',
-                            default=False,
-                            help='Include build of homology models')
+        # parser.add_argument('--hommod',
+        #                     action='store_true',
+        #                     dest='hommod',
+        #                     default=False,
+        #                     help='Include build of homology models')
 
     def handle(self, *args, **options):
         if options['test']:
@@ -44,7 +44,7 @@ class Command(BaseCommand):
             ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_ligand_assays', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_mutant_data', {'proc': options['proc'], 'test_run': options['test']}],
-            # ['build_crystal_interactions', {'proc': options['proc']}],
+            ['build_crystal_interactions', {'proc': options['proc']}],
             ['build_protein_sets'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
