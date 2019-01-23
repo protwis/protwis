@@ -271,7 +271,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
             uniprot_seq = re.sub('[\s+]', '', uniprot_seq)
             # print(uniprot_seq)
     # print(variants_mapping)
-    if len(uniprot_seq)!=len(d['wt_seq']): print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
+    # if len(uniprot_seq)!=len(d['wt_seq']): print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
 
     # Parsing
 
@@ -337,6 +337,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
             raw_u_id = ""
             prev_pos = 0
             prev_receptor = False
+            seg_had_receptor = False
 
             if (chain=="A" or chain=="B") and pdbname.lower()=="4k5y":
                 continue
@@ -359,6 +360,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
                             if u_id in uniprot_mapping:
                                 u_id = uniprot_mapping[u_id][0] 
                                 receptor = True ## this is receptor element
+                                seg_had_receptor = True
                                 if receptor_chain=='' or receptor_chain==chain:
                                     receptor_chain = chain
                                 elif msg_1==0:
@@ -669,11 +671,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
                     for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
                         seg_uniprot_ids[0] = elm.find('{http://uniprot.org/uniprot}fullName').text
 
-            d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list])
+            d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
 
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
-            if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations] not in d['xml_segments']:
-                d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations])
+            if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor] not in d['xml_segments']:
+                d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
 
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):

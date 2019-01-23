@@ -201,9 +201,9 @@ class Command(BaseBuild):
         ## Remove segments that arent receptor (tags, fusion etc)
         if 'xml_segments' in d:
             for seg in d['xml_segments']:
-                #print(seg)
                 if seg[1]:
-                    if seg[1][0]!=entry_name:
+                    # Odd rules to fit everything..
+                    if seg[1][0]!=entry_name and seg[-1]!=True and seg[1][0]!='Uncharacterized protein' and 'receptor' not in seg[1][0]:
                         if seg[0].split("_")[1]==preferred_chain:
                             #print(seg[2],seg[3]+1)
                             #for i in range(seg[2],seg[3]+1):
@@ -214,7 +214,7 @@ class Command(BaseBuild):
 
         # print('removed',removed)
         # removed = []
-        if len(deletions)>len(d['wt_seq'])*0.9 or len(removed)>len(d['wt_seq'])*0.9:
+        if len(deletions)>len(d['wt_seq'])*0.9:
             #if too many deltions
             removed = []
             deletions = []
@@ -251,6 +251,17 @@ class Command(BaseBuild):
         check_1000 = 0
         prev_id = 0
         bigjump = False
+        all_pdb_residues_in_chain = 0
+        for pp in ppb.build_peptides(chain): #remove >1000 pos (fusion protein / gprotein)
+            for i,res in enumerate(pp,1 ):
+                all_pdb_residues_in_chain += 1
+                residue_id = res.get_full_id()
+
+        if len(removed)+100>all_pdb_residues_in_chain:
+            print(structure,'More (or almost) sequence set to be removed from sequence',len(removed),' than exists',all_pdb_residues_in_chain,' removing removed[]')
+            #print(removed)
+            removed = []
+
         for pp in ppb.build_peptides(chain): #remove >1000 pos (fusion protein / gprotein)
             for i,res in enumerate(pp,1 ):
                 id = res.id
@@ -315,7 +326,7 @@ class Command(BaseBuild):
             print("No residues for",structure.protein_conformation.protein.parent.entry_name)
             return None
 
-        # print('parent_seq',parent_seq,'pdb_seq',seq)
+        # print('parent_seq',len(parent_seq),'pdb_seq',len(seq))
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
         pw2 = pairwise2.align.localms(parent_seq, seq, 6, -4, -5, -2)
 
@@ -877,6 +888,7 @@ class Command(BaseBuild):
                         # If update_flag is true then update existing structures
                         # Otherwise only make new structures
                         if not self.incremental_mode:
+                            dis = s.distances.all().delete()
                             rs = s.protein_conformation.residue_set.all().delete()
                             s = s.delete()
                             s = Structure()

@@ -25,6 +25,7 @@ class Alignment:
     def __init__(self):
         self.reference = False
         self.proteins = []
+        self.unique_proteins = []
         self.non_matching_proteins = [] # proteins that do not match user specified site definitions
         self.segments = OrderedDict()
         self.segments_only_alignable = []
@@ -285,6 +286,7 @@ class Alignment:
 
         # AJK: prevent prefetching all data for large alignments before checking #residues (DB + memory killer)
         rs = Residue.objects.filter(protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins)
+
 
         self.number_of_residues_total = len(rs)
         if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
@@ -587,6 +589,10 @@ class Alignment:
         self.merge_generic_numbers()
         self.clear_empty_positions()
 
+
+        # Adapt alignment to order in current self.proteins
+        self.proteins = [prot2 for prot1 in self.proteins for prot2 in self.unique_proteins if prot1.id==prot2.id]
+
     def clear_empty_positions(self):
         """Remove empty columns from the segments and matrix"""
         # segments
@@ -611,9 +617,9 @@ class Alignment:
         # proteins
         # AJK optimized cleaning alignment - deepcopy not required and faster removal
         #proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
-        for i, protein in enumerate(self.proteins):
+        for i, protein in enumerate(self.unique_proteins):
             for j, s in protein.alignment.items():
-                self.proteins[i].alignment[j] = [ p for p in s if p[0] in self.positions ]
+                self.unique_proteins[i].alignment[j] = [ p for p in s if p[0] in self.positions ]
 
                 # Deprecated
 #                for p in s:
@@ -858,7 +864,7 @@ class Alignment:
     def calculate_aa_count_per_generic_number(self):
         ''' Small function to return a dictionary of display_generic_number and the frequency of each AA '''
         generic_lookup_aa_freq = {}
-        num_proteins = len(self.proteins)
+        num_proteins = len(self.unique_proteins)
         for j, a in self.aa_count.items():
             for g, p in a.items():
                 for aa, c in p.items():
@@ -1144,7 +1150,7 @@ class AlignedReferenceTemplate(Alignment):
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
 
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, 
+                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None,
                              complex_model=False, signprot=None, force_main_temp=False):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
