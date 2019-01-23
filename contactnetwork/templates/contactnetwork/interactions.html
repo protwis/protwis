@@ -682,6 +682,7 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script>
         window.zoomHeatmap = {};
+        window.zoomHiveplot = {};
 
         // create NGL tooltip
         var ngl_tooltip = document.createElement("div")
@@ -762,7 +763,7 @@
         }
 
         function getInteractionStrength(i) {
-            switch (i) {
+            switch (i.toLowerCase()) {
                 case "ionic":
                     return 5;
                 case "polar":
@@ -824,26 +825,16 @@
         }
 
         function getStrongestInteractionType(interactions) {
-            if ($.inArray('polarsidechainsidechaininteraction', interactions) > -1)
-                return 'polarsidechainsidechaininteraction';
-
-            if ($.inArray('polarbackbonesidechaininteraction', interactions) > -1)
-                return 'polarbackbonesidechaininteraction';
-
-            if ($.inArray('facetofaceinteraction', interactions) > -1)
-                return 'facetofaceinteraction';
-
-            if ($.inArray('facetoedgeinteraction', interactions) > -1)
-                return 'facetoedgeinteraction';
-
-            if ($.inArray('picationinteraction', interactions) > -1)
-                return 'picationinteraction';
-
-            if ($.inArray('hydrophobicinteraction', interactions) > -1)
-                return 'hydrophobicinteraction';
-
-            if ($.inArray('vanderwaalsinteraction', interactions) > -1)
-                return 'vanderwaalsinteraction';
+            if ($.inArray('ionic', interactions) > -1)
+                return 'ionic';
+            else if ($.inArray('polar', interactions) > -1)
+                return 'polar';
+            else if ($.inArray('aromatic', interactions) > -1)
+                return 'aromatic';
+            else if ($.inArray('hydrophobic', interactions) > -1)
+                return 'hydrophobic';
+            else if ($.inArray('van-der-waals', interactions) > -1)
+                return 'van-der-waals';
 
             return 'undefined';
         }
@@ -888,7 +879,11 @@
         function getInteractionColor(interaction, rgb = true) {
             var r, g, b;
 
-            switch (interaction) {
+            value = interaction
+            if (isNaN(value))
+              value = value.toLowerCase()
+
+            switch (value) {
                 case 'ionic':
                 case 5:
                     r = 197; g = 66; b = 244;
@@ -1747,12 +1742,12 @@
             legendHtml += '</ul>';
 
             // Add SVG download button
-            legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary svg-download-button" aria-label="Left Align">' +
                             '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
                           '</button>';
 
             // Add CSV download button
-            legendHtml += '<br /><button onclick="downloadSingleCrystalCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
+            legendHtml += '<br /><button onclick="downloadSingleCrystalCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
               '</button>';
 
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
@@ -2571,8 +2566,9 @@
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
-                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
+                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
                 if (pdb.length > 0 && segments.length > 0) {
                     var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                     $(".heatmap").hide();
@@ -2618,10 +2614,9 @@
             $(selector + ' .go-button').click(function() {
                 var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
-                pdbs1 = ['3SN6'];
-                pdbs2 = ['5JQH'];
+
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
-                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
+                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
                 if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
                     var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                     $(".heatmap").hide();
@@ -3016,11 +3011,11 @@
                 newDiv.setAttribute("class", "flareplot-legend");
 
                 var content = '<div class="controls">'
-                                  +'<h4>Controls</h4>';
+//                                  +'<h4>Controls</h4>';
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
-                    content += '<p>Contacts contiguous segments outwards: <input type=checkbox id="flareplot_contiguous"></p>';
+                    content += '<p>Contiguous segments:<br/>lines outwards: <input type=checkbox id="flareplot_contiguous"></p>';
 
                 content += '<p>Line colors: <select id="flareplot_color">'
                         +'<option value="none">None (gray)</option>'
@@ -3039,10 +3034,11 @@
                 // Populate heatmap legend
                 if (container.indexOf("single-crystal-tab") >= 0 ) {
                     // TODO Optimize/generalize interaction set selection - code duplication
-                    var interactionTypes = new Set(["Polar", "Aromatic", "Hydrophobic", "Van der Waals"]);
+                    var interactionTypes = new Set(["Ionic", "Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"]);
 
                     // Add interactions color legend
-                    content += '<h3>Toggle interactions</h3><ul>';
+                    //content += '<h4>Toggle interactions</h4><ul>';
+                    content += '<ul>';
 
                     interactionTypes = Array.from(interactionTypes).sort(function (i1, i2) {
                         return getInteractionStrength(i2) - getInteractionStrength(i1);
@@ -3051,7 +3047,7 @@
                     interactionTypes.forEach(function(i) {
                         var rgb = getInteractionColor(i, false);
                         content += '<li>'
-                                + '<div class="color-box" style="background-color: ' + rgb + '">' + '<input type="checkbox" data-interaction-type="' + i.replace(/ /g,"-") +'"></input>' + '</div><p>' + i + '</p>'
+                                + '<div class="color-box" style="background-color: ' + rgb + '">' + '<input type="checkbox" data-interaction-type="' + i.toLowerCase() +'"></input>' + '</div><p>' + i + '</p>'
                                 + '</li>';
                     });
                     content += '</ul></div>';
@@ -3194,6 +3190,24 @@
             $(container).html("");
 
             createHiveplot(data, container);
+
+            // display in the back to enable SVGPan
+            $("#single-hiveplot-tab").show();
+
+            // Make zoomable
+            window.zoomHiveplot[container] = svgPanZoom(container + ' .hiveplot', {
+                zoomEnabled: true,
+                // controlIconsEnabled: true,
+                fit: true,
+                center: true,
+                minZoom: 0.75,
+                maxZoom: 50,
+                zoomScaleSensitivity: 0.25,
+                dblClickZoomEnabled: true
+            });
+
+            // remove display value on element
+            $("#single-hiveplot-tab").css("display","")
         }
 
         function updateTwoGroupSliders(origin, ui) {
@@ -4036,10 +4050,19 @@
             overflow: scroll;
         }
 
-        .heatmap {
-            border: 1px lightslategrey solid;
+        .flareplot {
             width: 100%;
-            height: 800px;
+        }
+
+        .flareplot-legend {
+          top: -110px;
+
+        }
+
+        .heatmap {
+          height: 800px;
+        /*  border: 1px lightslategrey solid;*/
+          width: 100%;
         }
 
         @media screen and (max-width: 992px) {
@@ -4168,10 +4191,10 @@
         }
 
         .heatmap-legend, .flareplot-legend  {
-            /*position: absolute;*/
+            position: absolute;
             /*right: 15px;*/
-            width:90%;
-            top: 50px;
+            /*width:90%;*/
+            /*top: 50px;*/
             padding: 5px;
             border: 1px dashed;
             background-color: white;
@@ -4286,7 +4309,7 @@
         }
 
         .flareplot-container {
-            /*position: relative;*/
+            position: absolute;
         }
 
         :-webkit-full-screen.flareplot-container {
@@ -4356,11 +4379,11 @@
     <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
 
     <style>
-        .flareplot-container div.flareplot{
+        /*.flareplot-container div.flareplot{
             position: relative;
             left: 35%;
             margin-left: -400px;
-        }
+        }*/
         #sliderDiv {
             height: 30px;
             width: 600px;
