@@ -17,7 +17,7 @@ from structure.models import (Structure, StructureType, StructureSegment, Struct
     StructureEngineeringDescription, Fragment)
 
 
-import os
+import os, time
 import yaml
 from interaction.views import runcalculation,parsecalculation
 from multiprocessing import Queue, Process, Value, Lock
@@ -25,6 +25,10 @@ from multiprocessing import Queue, Process, Value, Lock
 class Command(BaseCommand):
 
     help = "Output all uniprot mappings"
+
+    update = True
+    purge = False
+    processes = 4
 
     def prepare_input(self, proc, items, iteration=1):
         q = Queue()
@@ -56,11 +60,11 @@ class Command(BaseCommand):
         for p in procs:
             p.join()
 
-    def purge_contact_network(self,s):
+    def purge_contact_network(self):
 
-        ii = InteractingResiduePair.objects.filter(
-            referenced_structure=s
-        ).all().delete()
+        InteractingResiduePair.truncate()
+        Distance.truncate()
+        Interaction.truncate()
 
     def build_contact_network(self,s,pdb_code):
         interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
@@ -70,7 +74,10 @@ class Command(BaseCommand):
 
         self.ss = Structure.objects.filter(refined=False).all()
         self.structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
-        self.prepare_input(4, self.ss)
+        if self.purge:
+            self.purge_contact_network()
+        print(len(self.ss),'structures')
+        self.prepare_input(self.processes, self.ss)
 
         # for s in Structure.objects.filter(refined=False).all():
         #   self.purge_contact_network(s)
@@ -88,6 +95,7 @@ class Command(BaseCommand):
                 if count.value<len(ss):
                     s = ss[count.value]
                     count.value +=1
+                    # print(s, count.value)
                 else:
                     break 
 
@@ -108,9 +116,17 @@ class Command(BaseCommand):
                         peptide_chain = ligand['chain']
             
             # self.purge_contact_network(s)
-            self.build_contact_network(s,s.pdb_code.index)
-            print(s,"Contact Network",time.time()-current)
             current = time.time()
-            runcalculation(s.pdb_code.index,peptide_chain)
-            parsecalculation(s.pdb_code.index,False)
-            print(s,"Ligand Interactions",time.time()-current)
+            if self.update:
+                if Distance.objects.filter(structure=s).count():
+                    print(s,'already done - skipping')
+                    continue
+            try:
+                self.build_contact_network(s,s.pdb_code.index)
+                print(s,"Contact Network",time.time()-current)
+            except:
+                print(s,'Failed contact network')
+            # current = time.time()
+            #runcalculation(s.pdb_code.index,peptide_chain)
+            #parsecalculation(s.pdb_code.index,False)
+            #print(s,"Ligand Interactions",time.time()-current)
