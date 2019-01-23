@@ -270,7 +270,6 @@ class CallHomologyModeling():
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
                                               force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement)
-            print(self.signprot)
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor, self.signprot)
                 model, templates, similarities = ihm.find_files()
@@ -555,7 +554,6 @@ class HomologyModeling(object):
                 if int(p)<prev_p:
                     sp_first_indeces.append(i)
                 prev_p = int(p)
-            print(sp_first_indeces)
         i = 0
         path = './structure/homology_models/'
         # if self.revise_xtal==False:
@@ -1797,19 +1795,6 @@ class HomologyModeling(object):
 
     def build_homology_model_second_part(self):
         # write to file
-
-        # pprint.pprint(self.alignment.reference_dict['hfs2'])
-        # pprint.pprint(self.alignment.template_dict['hfs2'])
-        # pprint.pprint(self.alignment.alignment_dict['hfs2'])
-        # pprint.pprint(self.main_pdb_array['hfs2'])
-        # pprint.pprint(self.alignment.reference_dict['S2'])
-        # pprint.pprint(self.alignment.template_dict['S2'])
-        # pprint.pprint(self.alignment.alignment_dict['S2'])
-        # pprint.pprint(self.main_pdb_array['S2'])
-        # pprint.pprint(self.trimmed_residues)
-        # pprint.pprint(self.template_source)
-        # raise AssertionError
-
         if self.complex:
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:
@@ -2788,7 +2773,7 @@ class HelixEndsModeling(HomologyModeling):
         '''
         raw = self.find_ends(structure, structure.protein_conformation)
         anno_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
-        annotated = self.find_ends(structure, anno_conf)      
+        annotated = self.find_ends(structure, anno_conf)
 
         if H8_alt!=None and H8_alt!=structure:
             H8_raw_conf = ProteinConformation.objects.get(protein=H8_alt.protein_conformation.protein.parent)
