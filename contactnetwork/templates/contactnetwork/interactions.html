@@ -270,10 +270,11 @@
                                 <h5>Types</h5>
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="polarinteraction polarsidechainsidechaininteraction polarbackbonesidechaininteraction">Polar</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="aromaticinteraction facetoedgeinteraction facetofaceinteraction picationinteraction">Arom.</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="hydrophobicinteraction">Hydro.</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="vanderwaalsinteraction">VDW</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="polar">Polar</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="aromatic">Arom.</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="hydrophobic">Hydro.</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="van-der-waals">VDW</button>
                                 </div>
                             </div>
                         </div>
@@ -458,10 +459,11 @@
                                 <h5>Types</h5>
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="polarinteraction polarsidechainsidechaininteraction polarbackbonesidechaininteraction">Polar</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="aromaticinteraction facetoedgeinteraction facetofaceinteraction picationinteraction">Arom.</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="hydrophobicinteraction">Hydro.</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="vanderwaalsinteraction">VDW</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="polar">Polar</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="aromatic">Arom.</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="hydrophobic">Hydro.</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="van-der-waals">VDW</button>
                                 </div>
                             </div>
                         </div>
@@ -681,6 +683,20 @@
     <script>
         window.zoomHeatmap = {};
 
+        // create NGL tooltip
+        var ngl_tooltip = document.createElement("div")
+        Object.assign(ngl_tooltip.style, {
+          display: "none",
+          position: "fixed",
+          zIndex: 10,
+          pointerEvents: "none",
+          backgroundColor: "rgba( 0, 0, 0, 0.6 )",
+          color: "lightgrey",
+          padding: "8px",
+          fontFamily: "sans-serif"
+        })
+        document.body.appendChild(ngl_tooltip)
+
         function toggleFullScreen(fullScreenElement) {
             if (!document.mozFullScreen && !document.webkitFullScreen) {
                 if (fullScreenElement.mozRequestFullScreen) {
@@ -747,23 +763,15 @@
 
         function getInteractionStrength(i) {
             switch (i) {
-                case getFriendlyInteractionName('polarsidechainsidechaininteraction'):
-                case getFriendlyInteractionName('polarbackbonesidechaininteraction'):
-                case'polarsidechainsidechaininteraction':
-                case'polarbackbonesidechaininteraction':
+                case "ionic":
+                    return 5;
+                case "polar":
                     return 4;
-                case getFriendlyInteractionName('facetofaceinteraction'):
-                case getFriendlyInteractionName('facetoedgeinteraction'):
-                case getFriendlyInteractionName('picationinteraction'):
-                case'facetofaceinteraction':
-                case'facetoedgeinteraction':
-                case'picationinteraction':
+                case "aromatic":
                     return 3;
-                case getFriendlyInteractionName('hydrophobicinteraction'):
-                case'hydrophobicinteraction':
+                case "hydrophobic":
                     return 2;
-                case getFriendlyInteractionName('vanderwaalsinteraction'):
-                case'vanderwaalsinteraction':
+                case "van-der-waals":
                     return 1;
                 default:
                     return 0;
@@ -782,7 +790,7 @@
             return getGradientColor(-1*frequency, rgb);
         }
 
-        function getFlareGradientColor(fDiff, rgb){
+        function getFlareGradientColor(fDiff, rgb = true) {
             var color;
             var shift = 80;
             var basal = 255 - shift;
@@ -800,7 +808,7 @@
                 return rgb2hex(color.r, color.g, color.b);
         }
 
-        function getGradientColor(fDiff, rgb){
+        function getGradientColor(fDiff, rgb = true){
           var color;
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
@@ -881,32 +889,26 @@
             var r, g, b;
 
             switch (interaction) {
-                case 'polarsidechainsidechaininteraction':
-                case 'polarbackbonesidechaininteraction':
-                case getFriendlyInteractionName('polarsidechainsidechaininteraction'):
-                case getFriendlyInteractionName('polarbackbonesidechaininteraction'):
+                case 'ionic':
+                case 5:
+                    r = 197; g = 66; b = 244;
+                    break;
+                case 'polar':
                 case 4:
                     //r = 254; g = 0; b = 16;
                     r = 255; g = 98; b = 108;
                     break;
-                case 'facetofaceinteraction':
-                case 'facetoedgeinteraction':
-                case 'picationinteraction':
-                case getFriendlyInteractionName('facetofaceinteraction'):
-                case getFriendlyInteractionName('facetoedgeinteraction'):
-                case getFriendlyInteractionName('picationinteraction'):
+                case 'aromatic':
                 case 3:
                     //r = 94; g = 241; b = 242;
                     r = 255; g = 166; b = 98;
                     break;
-                case 'hydrophobicinteraction':
-                case getFriendlyInteractionName('hydrophobicinteraction'):
+                case 'hydrophobic':
                 case 2:
                     //r = 0; g = 117; b = 220;
                     r = 5; g = 200; b = 90;
                     break;
-                case 'vanderwaalsinteraction':
-                case getFriendlyInteractionName('vanderwaalsinteraction'):
+                case 'van-der-waals':
                 case 1:
                     //r = 89; g = 252; b = 197;
                     r = 100; g = 100; b = 100;
@@ -922,7 +924,7 @@
         }
 
         function getFriendlyInteractionName(interaction) {
-            switch (interaction) {
+            /*switch (interaction) {
                 case 'polarsidechainsidechaininteraction':
                 case 'polarbackbonesidechaininteraction':
                     return 'Polar';
@@ -936,7 +938,8 @@
                     return 'Van der Waals';
                 default:
                     return 'Unknown';
-            }
+            }*/
+            return interaction;
         }
 
         /*function getFriendlyInteractionName(interaction) {
@@ -2615,6 +2618,8 @@
             $(selector + ' .go-button').click(function() {
                 var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
+                pdbs1 = ['3SN6'];
+                pdbs2 = ['5JQH'];
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
                 var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
                 if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
@@ -2662,7 +2667,7 @@
 
                                 // Re-render flareplot
                                 createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
-                                createNGLview("two-groups",pdbs1[0], pdbs1.concat(pdbs2));
+                                createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2);
                             });
                         });
                     });
@@ -3209,29 +3214,42 @@
             flareplot[$( "#freq-flare-slider-range-1").data("referenceContainer")].updateRangeTwoGroups(g1[0], g1[1], g2[0], g2[1], diff[0], diff[1]);
         }
 
-        var stage = [];
-        var color_schemes = [];
-        var schemeId_grey
-        function createNGLview(mode,pdb, pdbs = false) {
-            var gpcr_rep
+        var stage = {};
+        var pdb_data = {};
+        var color_schemes = {};
+        var reps = {} // store ngl representations
+        var gpcr_rep = {}
+        var int_labels = []
+        function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false) {
             $("#ngl-"+mode).html("");
             stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
+            color_schemes[mode] = [[],[]];
+            reps[mode] = [{},{}]
+            gpcr_rep[mode] = [];
+            pdb_data[mode] = [];
+            int_labels[mode] = []
 
-            var pdb_data
-            var original_o
-            var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
-            var reps = {} // store ngl representations
+            var first_structure;
+            var num_set1;
+            var gn_num_set1;
+            var two_structures = false;
+
+            //var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
+            var blue_colors = ['#f0fcfa','#D3E4EA','#B6CDDB', '#99B5CC',    '#7C9EBD',    '#5F86AE', '#426F9F',    '#255790',    '#084081']
+            var red_colors = ['#fbf0fc','#f3dbec','#ebc5df', '#dda8bc',    '#cc7b7f',    '#d3574e', '#be372b',    '#ac1808',    '#811808']
 
             $.getJSON( "pdb/"+pdb,
               function( data ) {
                 var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
                 var segments_sets = {}
+                int_labels[mode][0] = {}
+
                 highlight.forEach( function(e){
                   segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
                 });
 
-                pdb_data = data;
-                color_schemes['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
+                pdb_data[mode][0] = data;
+                color_schemes[mode][0]['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
                         [blue_colors[1], segments_sets[highlight[0]]],
                         [blue_colors[2], segments_sets[highlight[1]]],
                         [blue_colors[3], segments_sets[highlight[2]]],
@@ -3243,7 +3261,7 @@
                         [ "white", "*" ]
                         ])
 
-                color_schemes['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
+                color_schemes[mode][0]['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
                           ["#ccc", segments_sets[highlight[0]]],
                           ["#bbb", segments_sets[highlight[1]]],
                           ["#aaa", segments_sets[highlight[2]]],
@@ -3256,25 +3274,33 @@
                           ])
 
 
-                var stringBlob = new Blob( [ pdb_data['pdb'] ], { type: 'text/plain'} );
-                stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
-                    original_o = o
+                chain_set1 = pdb_data[mode][0]['chain'];
+                num_set1 = pdb_data[mode][0]['only_gn'];
+                gn_num_set1 = pdb_data[mode][0]['gn_map'];
 
-                    gpcr_rep = o.addRepresentation( "cartoon", {
-                    sele: ":"+pdb_data['chain'],
-                    // radiusType: '',
-                    radiusSize: 1,
-                    radiusScale: 0.7,
-                    // color: "atomindex",
-                    // colorScale: "Accent",
-                    // color: "residueindex",
-                    // colorScale: "greys",
-                    color: color_schemes['grey'],
-                    metalness: 0,
-                    colorMode: "hcl",
-                    roughness: 1,
-                    opacity: 1,
-                    depthWrite: true
+                var stringBlob = new Blob( [ pdb_data[mode][0]['pdb'] ], { type: 'text/plain'} );
+                stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
+                    first_structure = o
+
+                    // Cleanup
+                    pdb_data[mode][0]['pdb'] = null;
+
+                    // TODO: cartoon for ECL2 is currently not shown (only 3 res, but 4 needed for cartoon)
+                    gpcr_rep[mode][0] = o.addRepresentation( "cartoon", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+")",
+                      // radiusType: '',
+                      radiusSize: 1,
+                      radiusScale: 0.6,
+                      // color: "atomindex",
+                      // colorScale: "Accent",
+                      // color: "residueindex",
+                      // colorScale: "greys",
+                      color: color_schemes[mode][0]['blue'],
+                      metalness: 0,
+                      colorMode: "hcl",
+                      roughness: 1,
+                      opacity: 1,
+                      depthWrite: true
                     });
 
                     var links = []
@@ -3298,10 +3324,10 @@
                           // if (getInteractionStrength(iType)<3) return
                           res_int.push(resNo1);
                           res_int.push(resNo2);
-                          links.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
+                          links.push({"atoms": [resNo1+":"+pdb_data[mode][0]['chain']+".CA",resNo2+":"+pdb_data[mode][0]['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
 
                           if ((genNo1=='-') || (genNo2=='-')) return
-                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data[mode][0]['chain']+".CA",resNo2+":"+pdb_data[mode][0]['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
                         });
                     } else if (mode=='single-group') {
                       // single group
@@ -3318,8 +3344,8 @@
                           if ((genNo1=='-') || (genNo2=='-')) return
 
                           // Adjust GN numbering to the shown structure
-                          var resNo1 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo1)];
-                          var resNo2 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo2)];
+                          var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(genNo1)];
+                          var resNo2 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(genNo2)];
 
                           if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
 
@@ -3327,7 +3353,7 @@
                           res_int.push(resNo1);
                           res_int.push(resNo2);
 
-                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data[mode][0]['chain']+".CA",resNo2+":"+pdb_data[mode][0]['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
                         });
                         links = links_gn;
                     } else {
@@ -3346,19 +3372,64 @@
                           if ((genNo1=='-') || (genNo2=='-')) return
 
                           // Adjust GN numbering to the shown structure
-                          var resNo1 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo1)];
-                          var resNo2 = pdb_data['only_gn'][pdb_data['gn_map'].indexOf(genNo2)];
+                          var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(genNo1)];
+                          var resNo2 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(genNo2)];
 
                           if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
 
-                          // Push interactions
+                          // Push interacting residues
                           res_int.push(resNo1);
                           res_int.push(resNo2);
 
-                          links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getFrequencyColor(-1*frequency)}, "resID":resNo1+"-"+resNo2})
+                          // Fix atom IDs for GN loop interactions
+                          if (resNo1 > resNo2){
+                            tmp = resNo1;
+                            resNo1 = resNo2;
+                            resNo2 = tmp;
+                            tmp = genNo1;
+                            genNo1 = genNo2;
+                            genNo2 = tmp;
+                          }
+
+                          links_gn.push({"atoms": [resNo1+":"+pdb_data[mode][0]['chain']+".CA",resNo2+":"+pdb_data[mode][0]['chain']+".CA"], "data":{"color":getFrequencyColor(-1*frequency)}, "resID":resNo1+"-"+resNo2})
+                          int_labels[mode][0][resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                         });
                         links = links_gn;
                     }
+
+                    // REMOVE default hoverPick mouse action
+                    stage[mode].mouseControls.remove("hoverPick")
+
+                    // Add residue labels for GN residues
+                    pdb_data[mode][0]['only_gn'].forEach( function(resNo, index){
+                      var genNo = pdb_data[mode][0]['gn_map'][index]
+                      int_labels[mode][0][resNo] = genNo
+                    })
+
+                    // listen to `hovered` signal to move tooltip around and change its text
+                    stage[mode].signals.hovered.add(function (pickingProxy) {
+                      var label_index = false
+
+                      if (pickingProxy && (pickingProxy.distance || pickingProxy.atom)) {
+                        var mp = pickingProxy.mouse.position
+                        if (pickingProxy.distance){
+                          label_index = pickingProxy.distance.atom1.resno + "-" + pickingProxy.distance.atom2.resno;
+                          ngl_tooltip.innerText = "INTERACTION:"
+                        } else {
+                          label_index = pickingProxy.atom.resno;
+                          ngl_tooltip.innerText = "RESIDUE:"
+                        }
+                      }
+
+                      if (label_index && (label_index in int_labels[mode][0])) {
+                        ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
+                        ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
+                        ngl_tooltip.style.left = mp.x + 3 + "px"
+                        ngl_tooltip.style.display = "block"
+                      } else {
+                        ngl_tooltip.style.display = "none"
+                      }
+                    })
 
                     var linkMap = {}
                     links.forEach(function (link) {
@@ -3370,158 +3441,333 @@
                         this.bondColor = function (b) {
                           var origLink = linkMap[b.atom1.resno + "-" + b.atom2.resno]
                           if (origLink) {
-//                             console.log('FOUND!',origLink,origLink.data.color);
                             r = origLink.data.color
                             return (r["r"] << 16) + (r["g"] << 8) + r["b"]
                           }
                           return (8 << 16) + (8 << 8) + 8 // (128 << 16) + (128 << 8) + 128 // grey default
                         }
                       }
-                      reps.linkColourScheme = NGL.ColormakerRegistry.addScheme(linkColourScheme, "xlink")
+                      reps[mode][0].linkColourScheme = NGL.ColormakerRegistry.addScheme(linkColourScheme, "xlink")
                     }
                     initColourSchemes()
 
-                    // return unique atom indices as a selection from a set of pairs of atom indices
-                    // var makeAtomSelection = function (someLinks) {
-                    //   var atomSet = new Set()
-                    //   someLinks.forEach(function (link) {
-                    //     atomSet.add(link.atoms[0].split(".")[0])
-                    //     atomSet.add(link.atoms[1].split(".")[0])
-                    //   })
-                    //   var atomSelection = "(" + Array.from(atomSet).join(", ") + ") and .CA"
-                    //   return atomSelection
-                    // }
-                    // var startAtomSel = makeAtomSelection(links)
-                    // console.log(startAtomSel,"startAtomSel")
-
                     var baseLinkScale = 20
-                    reps.links = o.addRepresentation("distance", {
+                    reps[mode][0].links = o.addRepresentation("distance", {
                       atomPair: links.map(function (l) {
                         return l.atoms
                       }),
-                      // colorValue: "yellow",
-                      colorScheme: reps.linkColourScheme,
-                      useCylinder: false,
-                      labelVisible: false,
-                      linewidth: 2
-                    })
-                    reps.links_gn = o.addRepresentation("distance", {
-                      atomPair: links_gn.map(function (l) {
-                        return l.atoms
-                      }),
-                      // colorValue: "yellow",
-                      colorScheme: reps.linkColourScheme,
-                      useCylinder: false,
+                      colorScheme: reps[mode][0].linkColourScheme,
+                      useCylinder: true,
+                      radiusSize: 0.04,
                       labelVisible: false,
                       linewidth: 2,
                       visible: false
                     })
 
-                    reps.int_res = o.addRepresentation( "spacefill", {
-                      sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and (.CA)",
-                      color: "red",
-                      // colorScale: ["#44f", "#444"],
-                      radiusScale: .2,
-                      name: "res",
-                      visible: false
-                    });
+                    // TODO: Fastest way to make this dynamic is probably storing the atomPairs and adding the types/frequency/difference for quick filtering
+                    // Change the representation when updating the ranges - update with delay otherwise to slow
 
+                    // Addiotionally/Alternatively dynamically update the selections for the different representations (won't work for distances)
 
-                    res_int_gn = Object.assign([], res_int);
-                    res_int_gn = intersect(res_int_gn, pdb_data['only_gn']);
-                    reps.int_res_gn = o.addRepresentation( "spacefill", {
-                      sele: ":"+pdb_data['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
-                      color: "red",
-                      // colorScale: ["#44f", "#444"],
-                      radiusScale: .2,
-                      name: "res",
-                      visible: false
-                    });
-
-                    reps.ball_all = o.addRepresentation("ball+stick", {
-                      sele: ":"+pdb_data['chain']+" and sidechainAttached",
-                      visible: false
-                      })
-
-                    reps.ball = o.addRepresentation("ball+stick", {
-                      sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and sidechainAttached",
-                      visible: false
-                      })
-
-                    reps.ball_int = o.addRepresentation("ball+stick", {
-                      sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
-                      visible: false
-                      })
-
-                    reps.ball_int_gn = o.addRepresentation("ball+stick", {
-                      sele: ":"+pdb_data['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
-                      visible: false
-                      })
-
-
-                    // reps.residues = o.addRepresentation("spacefill", {
-                    //   sele: ".CA",
-                    //   color: "#000",
-                    //   // colorScale: ["#44f", "#444"],
-                    //   radiusScale: .2,
-                    //   name: "res"
-                    // })
-
-
-                    // reps.residues = o.addRepresentation("spacefill", {
-                    //   sele: startAtomSel,
-                    //   color: "#ccc",
-                    //   // colorScale: ["#44f", "#444"],
-                    //   radiusScale: .2,
-                    //   name: "res"
-                    // })
-
-
-                    // o.addRepresentation( "distance", {
-                    //   atomPair: links.map(function (l) {
-                    //     return l.atoms
-                    //   }),
-                    //   radiusScale: 1,
-                    //   labelVisible: false,
-                    //   useCylinder: true,
-                    // } );
-
-
-                    reps.ngl_contacts = o.addRepresentation("contact", {
-                      sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")",
-                      radiusSize: 0.07,
-                      weakHydrogenBond: false,
-                      waterHydrogenBond: false,
-                      backboneHydrogenBond: false,
-                      visible:false
+                    reps[mode][0].links_gn = o.addRepresentation("distance", {
+                      atomPair: links_gn.map(function (l) {
+                        return l.atoms
+                      }),
+                      colorScheme: reps[mode][0].linkColourScheme,
+                      useCylinder: true,
+                      radiusSize: 0.04,
+                      labelVisible: false,
+                      linewidth: 2,
+                      visible: true,
+                      labelText: "BLAATs"
                     })
 
-                    o.autoView();
+                    reps[mode][0].int_res = o.addRepresentation( "spacefill", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
+                      color: "#084081",
+                      // colorScale: ["#44f", "#444"],
+                      radiusScale: .2,
+                      name: "res",
+                      visible: false
+                    });
 
+                    res_int_gn = Object.assign([], res_int);
+                    res_int_gn = intersect(res_int_gn, pdb_data[mode][0]['only_gn']);
+                    reps[mode][0].int_res_gn = o.addRepresentation( "spacefill", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
+                      color: "#084081",
+                      // colorScale: ["#44f", "#444"],
+                      radiusScale: .2,
+                      name: "res",
+                      visible: true
+                    });
 
+                    reps[mode][0].ball_all = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and sidechainAttached",
+                      color: "element",
+                      colorValue: "#99B5CC",
+                      visible: false
+                      })
+
+                    reps[mode][0].ball = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and sidechainAttached",
+                      color: "element",
+                      colorValue: "#99B5CC",
+                      visible: false
+                      })
+
+                    reps[mode][0].ball_int = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                      color: "element",
+                      colorValue: "#99B5CC",
+                      visible: false
+                      })
+
+                    reps[mode][0].ball_int_gn = o.addRepresentation("ball+stick", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
+                      color: "element",
+                      colorValue: "#99B5CC",
+                      visible: false
+                      })
+
+                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)");
                 } );
 
             });
 
+            // TODO: init after load previous --> load both
+            if (pdbs_set2){
+              setTimeout( function() {
+                $.getJSON( "pdb/"+pdbs_set2[0],
+                  function( data ) {
+                    var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
+                    var segments_sets = {}
+                    int_labels[mode][1] = {}
+
+                    highlight.forEach( function(e){
+                      segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
+                    });
+
+                    pdb_data[mode][1] = data;
+                    num_set2 = pdb_data[mode][1]['only_gn'];
+                    gn_num_set2 = pdb_data[mode][1]['gn_map'];
+
+                    // intersect GN-numbering
+                    var matching_TM_residues = [];
+                    gn_num_set1.forEach(function(gn, gn_index) {
+                      // Filter GN residues, only within 7TM + present in other protein
+                      if (gn.charAt(1)=='x' && gn.charAt(0)<=7){
+                        var match = gn_num_set2.indexOf(gn);
+                        if (match > -1){
+                          return matching_TM_residues.push([num_set1[gn_index], num_set2[match]]);
+                        }
+                      }
+                    });
+
+                    color_schemes[mode][1]['red'] = NGL.ColormakerRegistry.addSelectionScheme([
+                            [red_colors[1], segments_sets[highlight[0]]],
+                            [red_colors[2], segments_sets[highlight[1]]],
+                            [red_colors[3], segments_sets[highlight[2]]],
+                            [red_colors[4], segments_sets[highlight[3]]],
+                            [red_colors[5], segments_sets[highlight[4]]],
+                            [red_colors[6], segments_sets[highlight[5]]],
+                            [red_colors[7], segments_sets[highlight[6]]],
+                            [red_colors[8], segments_sets[highlight[7]]],
+                            [ "white", "*" ]
+                            ])
+
+                    color_schemes[mode][1]['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
+                              ["#ccc", segments_sets[highlight[0]]],
+                              ["#bbb", segments_sets[highlight[1]]],
+                              ["#aaa", segments_sets[highlight[2]]],
+                              ["#888", segments_sets[highlight[3]]],
+                              ["#666", segments_sets[highlight[4]]],
+                              ["#444", segments_sets[highlight[5]]],
+                              ["#333", segments_sets[highlight[6]]],
+                              ["#111", segments_sets[highlight[7]]],
+                              [ "white", "*" ]
+                              ])
+
+
+                    var stringBlob = new Blob( [ pdb_data[mode][1]['pdb'] ], { type: 'text/plain'} );
+                    stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
+                        // Cleanup
+                        pdb_data[mode][1]['pdb'] = null;
+
+                        //// SUPERPOSE structures using 7TM bundle ////
+
+                        // Intersect GN-numbering of proteins and create Selection
+                        var selectionOne = "(";
+                        var selectionTwo = "(";
+                        gn_num_set1.forEach(function(gn, gn_index) {
+                          // Filter GN residues, only within 7TM + present in other protein
+                          if (gn.charAt(1)=='x' && gn.charAt(0)<=7){
+                            var match = gn_num_set2.indexOf(gn);
+                            if (match > -1){
+                              //matching_TM_residues.push([num_set1[gn_index], num_set2[match]]);
+                              if (gn_index > 0){
+                                selectionOne += " or ";
+                                selectionTwo += " or ";
+                              }
+                              selectionOne += num_set1[gn_index];
+                              selectionTwo += num_set2[match];
+                            }
+                          }
+                        });
+
+                        selectionOne += ") and .CA and :" + pdb_data[mode][0]['chain'];
+                        selectionTwo += ") and .CA and :" + pdb_data[mode][1]['chain'];
+
+                        var atoms1 = first_structure.structure.getView(new NGL.Selection(selectionOne))
+                        var atoms2 = o.structure.getView(new NGL.Selection(selectionTwo))
+
+                        // calculate and apply transformation to the first structure
+                        var superpose = new NGL.Superposition(atoms1, atoms2)
+                        superpose.transform(first_structure.structure)
+                        first_structure.structure.refreshPosition()
+                        first_structure.updateRepresentations({ 'position': true })
+
+                        //// END SUPERPOSE ////
+
+                        gpcr_rep[mode][1] = o.addRepresentation( "cartoon", {
+                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+")",
+                          radiusSize: 1,
+                          radiusScale: 0.6,
+                          color: color_schemes[mode][1]['red'],
+                          metalness: 0,
+                          colorMode: "hcl",
+                          roughness: 1,
+                          opacity: 1,
+                          depthWrite: true
+                        });
+
+                        // interactions for two groups tab
+                        var res_int = []
+                        $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+                            var rect = $(this);
+                            var genNo1 = rect.data('gen-no-1');
+                            var genNo2 = rect.data('gen-no-2');
+                            if ((genNo1=='-') || (genNo2=='-')) return
+
+                            // Adjust GN numbering to the shown structure
+                            var resNo1 = pdb_data[mode][1]['only_gn'][pdb_data[mode][1]['gn_map'].indexOf(genNo1)];
+                            var resNo2 = pdb_data[mode][1]['only_gn'][pdb_data[mode][1]['gn_map'].indexOf(genNo2)];
+
+                            if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
+
+                            // Push interactions
+                            res_int.push(resNo1);
+                            res_int.push(resNo2);
+                          });
+
+                        // NULL representation - for clarity purposes only showing links for first structure
+                        reps[mode][1].links = o.addRepresentation( "spacefill", {
+                          sele: ":F and :O and :O and :B and :A and :R",
+                          visible: false
+                        });
+                        reps[mode][1].links_gn = reps[mode][1].links
+
+                        reps[mode][1].int_res = o.addRepresentation( "spacefill", {
+                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
+                          color: "#811808",
+                          // colorScale: ["#44f", "#444"],
+                          radiusScale: .2,
+                          name: "res",
+                          visible: false
+                        });
+
+
+                        res_int_gn = Object.assign([], res_int);
+                        res_int_gn = intersect(res_int_gn, pdb_data[mode][1]['only_gn']);
+                        reps[mode][1].int_res_gn = o.addRepresentation( "spacefill", {
+                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
+                          color: "#811808",
+                          // colorScale: ["#44f", "#444"],
+                          radiusScale: .2,
+                          name: "res",
+                          visible: true
+                        });
+
+                        reps[mode][1].ball_all = o.addRepresentation("ball+stick", {
+                          sele: ":"+pdb_data[mode][1]['chain']+" and sidechainAttached",
+                          color: "element",
+                          colorValue: "#dda8bc",
+                          visible: false
+                          })
+
+                        reps[mode][1].ball = o.addRepresentation("ball+stick", {
+                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+") and sidechainAttached",
+                          color: "element",
+                          colorValue: "#dda8bc",
+                          visible: false
+                          })
+
+                        // CHECK: can res_int and res_int_gn actually be different?
+                        reps[mode][1].ball_int = o.addRepresentation("ball+stick", {
+                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                          color: "element",
+                          colorValue: "#dda8bc",
+                          visible: false
+                          })
+
+                        reps[mode][1].ball_int_gn = o.addRepresentation("ball+stick", {
+                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
+                          color: "element",
+                          colorValue: "#dda8bc",
+                          visible: false
+                          })
+
+                        o.autoView(":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)");
+                    } );
+
+                });
+              }, 1000);
+            }
+
             var newDiv = document.createElement("div");
-            newDiv.setAttribute("style", "position: absolute; top: 50px; left: 20px")
+            newDiv.setAttribute("style", "position: absolute; top: 45px; left: 20px; background-color: #DDD; opacity: .8; padding: 10px;")
             var controls = '<div class="controls">'
                          + '<h4>Controls</h4>';
 
+            // Toggle for showing two structures simultaneously
+            if (mode == "two-groups" && pdbs_set2)
+              two_structures = true;
+            else
+              two_structures = false;
+
             if (pdbs){
+                if (two_structures)
+                  controls += '<p>Structure set 1: <select id="ngl_pdb_'+mode+'_ref">';
+                else
                   controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
-                  for (var i = 0; i < pdbs.length; i++){
-                      if (pdbs[i]==pdb)
-                          controls += '<option value="'+pdbs[i]+'" SELECTED>'+pdbs[i]+'</option>';
-                      else
-                          controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
-                  }
-                  controls += '</select></p>';
+                for (var i = 0; i < pdbs.length; i++){
+                    if (pdbs[i]==pdb)
+                        controls += '<option value="'+pdbs[i]+'" SELECTED>'+pdbs[i]+'</option>';
+                    else
+                        controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
+                }
+                controls += '</select></p>';
+            }
+            controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="grey">greys</option></select></p><br/>';
+
+
+            if (two_structures){
+              if (!pdb2)
+                pdb2 = pdbs_set2[0]
+
+              controls += '<p>Structure set 2: <select id="ngl_pdb_'+mode+'_ref2">';
+              for (var i = 0; i < pdbs_set2.length; i++){
+                  if (pdbs_set2[i]==pdb2)
+                      controls += '<option value="'+pdbs_set2[i]+'" SELECTED>'+pdbs_set2[i]+'</option>';
+                  else
+                      controls += '<option value="'+pdbs_set2[i]+'">'+pdbs_set2[i]+'</option>';
+              }
+              controls += '</select></p>';
+              controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="grey">greys</option></select></p><br/>';
             }
 
-            controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option></select></p>'
-                              +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
-                              +'<p>Highlight interacting res: <input type=checkbox id="highlight_res"></p>'
+            controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
+                              +'<p>Highlight interacting res: <input type=checkbox id="highlight_res" checked></p>'
                               +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
                               +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
                               +'<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
@@ -3532,9 +3778,34 @@
 
             $("#ngl-"+mode).append(newDiv);
 
-            $("#ngl_pdb_"+mode+"_ref").change(function(e){
-                createNGLview(mode, $(this).val(), pdbs);
+            if (two_structures) {
+              // structure selection
+              $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                    createNGLview(mode, $(this).val(), pdbs, pdbs_set2, $("#ngl_pdb_"+mode+"_ref2").val());
+              });
+              $("#ngl_pdb_"+mode+"_ref2").change(function(e){
+                    createNGLview(mode, $("#ngl_pdb_"+mode+"_ref2").val(), pdbs, pdbs_set2, $(this).val(),);
+              });
+
+              // coloring structure 2
+              $("#ngl-"+mode+" #ngl_color2").change(function(e){
+                  gpcr_rep[mode][1].setParameters({
+                    color: color_schemes[mode][1][$(this).val()]
+                  });
+              });
+            } else {
+              // structure selection
+              $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                    createNGLview(mode, $(this).val(), pdbs, pdbs_set2);
+              });
+            }
+
+            $("#ngl-"+mode+" #ngl_color").change(function(e){
+                gpcr_rep[mode][0].setParameters({
+                  color: color_schemes[mode][0][$(this).val()]
+                });
             });
+
 
             $("#"+mode+"-NGL-link").click(function(e){
                 $(function() {
@@ -3542,136 +3813,95 @@
                 });
             });
 
-
-            $("#ngl-"+mode+" #ngl_color").change(function(e){
-                gpcr_rep.setParameters({
-                  color: color_schemes[$(this).val()]
-                });
-            });
-
-            // TODO: cleanup all NGL toggles and make generic function to handle toggle-dependent showing/hiding
             $("#ngl-"+mode+" #ngl_only_gns").change(function(e){
-                if ($(this).prop('checked')) {
-                  sele = ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")";
-                  // toggle edges
-                  if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
-                    reps.links.setVisibility(false);
-                    reps.links_gn.setVisibility(true);
-                  }
-                  // toggle CA spheres
-                  if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
-                    reps.int_res_gn.setVisibility(true);
-                    reps.int_res.setVisibility(false);
-                  }
-                  // toggle sidechains
-                  if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
-                    reps.ball.setVisibility(true);
-                    reps.ball_all.setVisibility(false);
-                  }
-                  // toggle interacting toggle_sidechains
-                  if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
-                    reps.ball_int_gn.setVisibility(true);
-                    reps.ball_int.setVisibility(false);
-                  }
-                } else {
-                  sele = ":"+pdb_data['chain'];
-                  // toggle edges
-                  if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
-                    reps.links.setVisibility(true);
-                    reps.links_gn.setVisibility(false);
-                  }
-                  // toggle CA spheres
-                  if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
-                    reps.int_res_gn.setVisibility(false);
-                    reps.int_res.setVisibility(true);
-                  }
-
-                  // toggle sidechains
-                  if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
-                    reps.ball.setVisibility(false);
-                    reps.ball_all.setVisibility(true);
-                  }
-                  // toggle interacting toggle_sidechains
-                  if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
-                    reps.ball_int_gn.setVisibility(false);
-                    reps.ball_int.setVisibility(true);
-                  }
-                }
-
-                gpcr_rep.setSelection(sele);
+                updateStructureRepresentations(mode);
             });
 
             $("#ngl-"+mode+" #highlight_res").change(function(e){
-              // TODO check the GN toggle
-                if ($(this).prop('checked')) {
-                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
-                    reps.int_res_gn.setVisibility(true);
-                  else
-                    reps.int_res.setVisibility(true);
-                } else {
-                  reps.int_res_gn.setVisibility(false);
-                  reps.int_res.setVisibility(false);
-                }
+                updateStructureRepresentations(mode);
             });
 
             $("#ngl-"+mode+" #toggle_interactions").change(function(e){
-                if ($(this).prop('checked')) {
-                    reps.links.setVisibility(false);
-                    reps.links_gn.setVisibility(false);
-                } else {
-                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
-                    reps.links_gn.setVisibility(true);
-                  else
-                    reps.links.setVisibility(true);
-                }
+                updateStructureRepresentations(mode);
             });
 
             $("#ngl-"+mode+" #toggle_sidechains").change(function(e){
-                if ($(this).prop('checked')) {
-                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
-                    reps.ball.setVisibility(true);
-                  else
-                    reps.ball_all.setVisibility(true);
-                } else {
-                  reps.ball_all.setVisibility(false);
-                  reps.ball.setVisibility(false);
-                }
+                updateStructureRepresentations(mode);
             });
 
             $("#ngl-"+mode+" #toggle_sidechains_int").change(function(e){
-                if ($(this).prop('checked')) {
-                  if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
-                    reps.ball_int_gn.setVisibility(true);
-                  else
-                    reps.ball_int.setVisibility(true);
-                } else {
-                  reps.ball_int.setVisibility(false);
-                  reps.ball_int_gn.setVisibility(false);
-                }
+                updateStructureRepresentations(mode);
             });
 
             $("#ngl-"+mode+" #ngl_contacts").change(function(e){
-                if ($(this).prop('checked')) {
-                  reps.ngl_contacts.setVisibility(true);
-                } else {
-                  reps.ngl_contacts.setVisibility(false);
-                }
+                updateStructureRepresentations(mode);
             });
 
         }
-        console.log(stage);
+
         function redraw_ngl() {
-          console.log(stage);
           var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
           var mode = $('.ngl-container:visible').attr('id').replace('ngl-','');
-          console.log(mode,'resize!');
           if (mode in stage){
-            console.log(stage[mode]);
             $(function() {
               stage[mode].handleResize();
             });
           }
         }
+
+        function updateStructureRepresentations(mode) {
+          var structures = 1;
+          if (mode=="two-groups")
+            structures = 2;
+
+          for (var key = 0; key < structures; key++) {
+            checked = $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
+
+            // toggle edges
+            if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
+              reps[mode][key].links.setVisibility(!checked);
+              reps[mode][key].links_gn.setVisibility(checked);
+            } else {
+              reps[mode][key].links.setVisibility(false);
+              reps[mode][key].links_gn.setVisibility(false);
+            }
+
+            // toggle CA spheres
+            if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
+              reps[mode][key].int_res_gn.setVisibility(checked);
+              reps[mode][key].int_res.setVisibility(!checked);
+            } else {
+              reps[mode][key].int_res_gn.setVisibility(false);
+              reps[mode][key].int_res.setVisibility(false);
+            }
+
+            // toggle sidechains
+            if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
+              reps[mode][key].ball.setVisibility(checked);
+              reps[mode][key].ball_all.setVisibility(!checked);
+            } else {
+              reps[mode][key].ball.setVisibility(false);
+              reps[mode][key].ball_all.setVisibility(false);
+            }
+
+            // toggle interacting toggle_sidechains
+            if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
+              reps[mode][key].ball_int_gn.setVisibility(checked);
+              reps[mode][key].ball_int.setVisibility(!checked);
+            } else {
+              reps[mode][key].ball_int_gn.setVisibility(false);
+              reps[mode][key].ball_int.setVisibility(false);
+            }
+
+            // selection
+            sele = ":"+pdb_data[mode][key]['chain'];
+            if (checked)
+              sele = ":"+pdb_data[mode][key]['chain']+" and ("+pdb_data[mode][key]['only_gn'].join(", ")+")";
+
+            gpcr_rep[mode][key].setSelection(sele);
+          }
+        }
+
         function intersect(a, b) {
           var t;
           if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter

@@ -7,9 +7,10 @@ from contactnetwork.models import *
 
 from structure.models import Structure
 
+import copy
+
 # Distance between residues in peptide
 NUM_SKIP_RESIDUES = 4
-
 
 def compute_interactions(pdb_name,save_to_db = False):
     # Ensure that the PDB name is lowercase
@@ -20,10 +21,11 @@ def compute_interactions(pdb_name,save_to_db = False):
 
     # Get the preferred chain
     preferred_chain = struc.preferred_chain.split(',')[0]
+
     # Get the Biopython structure for the PDB
     s = pdb_get_structure(pdb_name)[0]
-    chain = s[preferred_chain]
 
+    chain = s[preferred_chain]
 
      # remove residues without GN and only those matching receptor.
     residues = struc.protein_conformation.residue_set.exclude(generic_number=None).all()
@@ -32,22 +34,22 @@ def compute_interactions(pdb_name,save_to_db = False):
         dbres[r.sequence_number] = r
     ids_to_remove = []
     for res in chain:
-        if not res.id[1] in dbres.keys():
+        if not res.id[1] in dbres.keys() and res.get_resname() != "HOH":
             ids_to_remove.append(res.id)
     for i in ids_to_remove:
         chain.detach_child(i)
 
-
     distances = []
     for i1,res1 in enumerate(chain,1):
-        for i2,res2 in enumerate(chain,1):
-            if i2>i1:
-                # Do not calculate twice.
-                distance = res1['CA']-res2['CA']
-                distances.append((dbres[res1.id[1]],dbres[res2.id[1]],distance))
-
+        if not is_water(res1):
+            for i2,res2 in enumerate(chain,1):
+                if i2>i1 and not is_water(res2):
+                    # Do not calculate twice.
+                    distance = res1['CA']-res2['CA']
+                    distances.append((dbres[res1.id[1]],dbres[res2.id[1]],distance))
 
     atom_list = Selection.unfold_entities(s[preferred_chain], 'A')
+
     # Search for all neighbouring residues
     ns = NeighborSearch(atom_list)
     all_neighbors = ns.search_all(4.5, "R")
@@ -59,13 +61,46 @@ def compute_interactions(pdb_name,save_to_db = False):
     all_aa_neighbors = [pair for pair in all_aa_neighbors if abs(pair[0].id[1] - pair[1].id[1]) > NUM_SKIP_RESIDUES]
 
     # For each pair of interacting residues, determine the type of interaction
-    interactions = [InteractingPair(res_pair[0], res_pair[1], get_interactions(res_pair[0], res_pair[1]),dbres[res_pair[0].id[1]], dbres[res_pair[1].id[1]],struc) for res_pair in all_aa_neighbors]
+    interactions = [InteractingPair(res_pair[0], res_pair[1], get_interactions(res_pair[0], res_pair[1]), dbres[res_pair[0].id[1]], dbres[res_pair[1].id[1]], struc) for res_pair in all_aa_neighbors]
 
     # Split unto classified and unclassified.
     classified = [interaction for interaction in interactions if len(interaction.get_interactions()) > 0]
 
-    if save_to_db: 
+    # Create interaction dictionary
+    interaction_pairs = {}
+    for pair in classified:
+        res_1 = pair.get_residue_1()
+        res_2 = pair.get_residue_2()
+        key =  res_1.get_parent().get_id()+str(res_1.get_id()[1]) + "_" + res_2.get_parent().get_id()+str(res_2.get_id()[1])
+        interaction_pairs[key] = pair
 
+    # POSSIBLE ADDON: support for multiple water-mediated bonds
+    ## Obtain list of water molecules
+    water_list = { water for residue in s[preferred_chain] if residue.get_resname() == "HOH" for water in residue.get_atoms() }
+    if len(water_list) > 0:
+        ## Iterate water molecules over residue atom list
+        water_neighbors = [(water, match_res) for water in water_list
+                        for match_res in ns.search(water.coord, 3.5, "R") if not is_water(match_res)]
+
+        # intersect between residues sharing the same interacting water
+        for index_one in range(len(water_neighbors)):
+            water_pair_one = water_neighbors[index_one]
+
+            for index_two in [ index for index in range(index_one+1, len(water_neighbors)) if water_pair_one[0]==water_neighbors[index][0] ]:
+                water_pair_two = water_neighbors[index_two]
+                res_1 = water_pair_one[1]
+                res_2 = water_pair_two[1]
+                key =  res_1.get_parent().get_id()+str(res_1.get_id()[1]) + "_" + res_2.get_parent().get_id()+str(res_2.get_id()[1])
+
+                # Check if interaction is polar - NOTE: this is not capturing every angle
+                if any(get_polar_interactions(water_pair_one[0].get_parent(), water_pair_one[1])) and any(get_polar_interactions(water_pair_two[0].get_parent(), water_pair_two[1])):
+                    # NOTE: Is splitting of sidechain and backbone-mediated interactions desired?
+                    if key in interaction_pairs:
+                        interaction_pairs[key].interactions.append(WaterMediated())
+                    else:
+                        interaction_pairs[key] = InteractingPair(res_1, res_2, [WaterMediated()], dbres[res_1.id[1]], dbres[res_2.id[1]], struc)
+
+    if save_to_db:
         # Delete previous for faster load in
         InteractingResiduePair.objects.filter(referenced_structure=struc).all().delete()
 
