@@ -153,7 +153,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             d3.select(containerSelector).style("position","relative");
 
             div = d3.select(containerSelector).insert("div")
-                .attr("class", "flareplot2")
+                .attr("class", "flareplot")
                 .style("width", "100%")
                 .style("margin-top","100px")
                 // .style("height", h + "px")
@@ -266,7 +266,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     } else {
                       segment.nodes.sort(sortNumber);
                     }
-                    
+
                     var last = segment.nodes[(segment.nodes.length - 1)];
                     var x = (graph.trees[selectedTree].tree[segment.nodes[0]].x + graph.trees[selectedTree].tree[last].x)/2 - 90;
 

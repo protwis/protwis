@@ -325,6 +325,7 @@ class Alignment:
             return "Too large"
 
         # AJK: performance boost -> Internal caching (not for very small alignments)
+        # AJK: note -> ideally we would have fully cached alignments and only select the relevant segments afterwards.
         cache_key = "ALIGNMENTS_"+self.get_hash()
 
         #cache_alignments.set(cache_key, 0, 0)
@@ -638,6 +639,7 @@ class Alignment:
                             'aa_count': self.aa_count,
                             'aa_count_with_protein': self.aa_count_with_protein,
                             'gaps': self.gaps,
+                            'feat_consensus': self.feat_consensus,
                             'features': self.features,
                             'features_combo': self.features_combo,
                             'feature_stats': self.feature_stats,
@@ -656,6 +658,7 @@ class Alignment:
             self.aa_count = cache_data['aa_count']
             self.aa_count_with_protein = cache_data['aa_count_with_protein']
             self.gaps = cache_data['gaps']
+            self.feat_consensus = cache_data['feat_consensus']
             self.features = cache_data['features']
             self.features_combo = cache_data['features_combo']
             self.feature_stats = cache_data['feature_stats']
@@ -1045,7 +1048,7 @@ class Alignment:
                 self.calculate_statistics()
 
             # Prepare Z-scales per segment/GN position
-            self.zscales = { zscale: OrderedDict() for zscale in ZSCALES }
+            self.zscales = OrderedDict([ (zscale, OrderedDict()) for zscale in ZSCALES ])
 
             # Calculates distribution per GN position
             for segment in self.aa_count:
@@ -1060,12 +1063,17 @@ class Alignment:
                                 # Frequency AA at this position * value
                                 zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
 
-                    # store average + stddev + count
+                    # store average + stddev + count + display
                     for zscale in ZSCALES:
                         if len(zscale_position[zscale]) == 1:
-                            self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1]
+                            display = tooltip = str(round(zscale_position[zscale][0], 2)) + " ± " + str(0) + " (1)"
+                            self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1, display]
                         else:
-                            self.zscales[zscale][segment][generic_number] = [np.mean(zscale_position[zscale]), np.std(zscale_position[zscale], ddof=1), len(zscale_position[zscale])]
+                            z_mean = np.mean(zscale_position[zscale])
+                            z_std = np.std(zscale_position[zscale], ddof=1)
+                            z_count = len(zscale_position[zscale])
+                            display = tooltip = str(round(z_mean,2)) + " ± " + str(round(z_std, 2)) + " (" + str(z_count) + ")"
+                            self.zscales[zscale][segment][generic_number] = [z_mean, z_std, z_count, display]
 
     def evaluate_sites(self, request):
         """Evaluate which user selected site definitions match each protein sequence"""

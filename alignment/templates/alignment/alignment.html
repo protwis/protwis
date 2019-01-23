@@ -1,4 +1,5 @@
 {% extends "home/base.html" %}
+{% load alignment_extras %}
 {% load staticfiles %}
 
 {% block addon_css %}
@@ -109,6 +110,28 @@
                         <td class="ali-td ali-td-first-col">{{ feature.2 }}</td>
                     </tr>
                     {% endfor %}
+
+                    <!-- Z-scales -->
+                    <tr>
+                        <td class="ali-td-header-row ali-td-first-col" colspan="3">
+                            RESIDUE Z-SCALES
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" colspan="3">Z1 (Lipophilicity)</td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" colspan="3">Z2 (Steric properties)</td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" colspan="3">Z3 (Electronic properties)</td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" colspan="3" data-toggle="tooltip" data-placement="top" data-html="true" title="PC1 of several properties:<br/> - electronegativity<br/> - heat of formation<br/> - electrophilicity<br/> - hardness<br/> - NMR (pD=1 and pD=7)">Z4 (PC1 several properties)</td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" colspan="3" data-toggle="tooltip" data-placement="top" data-html="true" title="PC2 of several properties:<br/> - electronegativity<br/> - heat of formation<br/> - electrophilicity<br/> - hardness<br/> - NMR (pD=1 and pD=7)">Z5 (PC2 several properties)</td>
+                    </tr>
 
                     {% endif %}
                     <!-- numbering scheme lines -->
@@ -264,8 +287,27 @@
                             </td>
                             {% endfor %}
                             <td class="ali-td">&nbsp;</td>
-                        {% endfor %}
+                            {% endfor %}
                         </tr>
+                        {% endfor %}
+
+                        <!-- Z-scales -->
+                        <tr>
+                            <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
+                        </tr>
+                        {% for scale, zscale_items in a.zscales.items %}
+                          <tr>
+                            {% for segment, cons in zscale_items.items %}
+                                {% for residue, pos in cons.items %}
+                                    <td class="ali-td-stat-summary ali-residue feat-freq-gs-{{ pos | zscales_color_scale }}">
+                                        <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ pos.3|safe }}">
+                                            {{ pos.0 | floatformat:1 }}
+                                        </div>
+                                    </td>
+                                {% endfor %}
+                              <td class="ali-td">&nbsp;</td>
+                              {% endfor %}
+                          </tr>
                         {% endfor %}
 
                         {% endif %}

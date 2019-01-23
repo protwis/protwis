@@ -1,6 +1,6 @@
 var hivesvg, hiveTooltip;
 function createHiveplot(data, container) {
-    var width = 1200,
+    var width = 800,
         height = 1000,
         innerRadius = 0.15*(height),
         outerRadius = 0.36*(height);

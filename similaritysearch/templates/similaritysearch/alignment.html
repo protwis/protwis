@@ -25,7 +25,7 @@
                     <tr>
                         <td colspan="3" class="ali-td ali-td-first-col"></td>
                     </tr>
-                    
+
                     <!-- numbering scheme lines -->
                     {% for ns in a.numbering_schemes %}
                     <tr>
@@ -92,6 +92,18 @@
                         </td>
                     </tr>
                     {% for feature in a.features_combo %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- Z-scales -->
+                    <tr>
+                        <td colspan="3" class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% for scale in a.zscales %}
                     <tr>
                         <td class="ali-td ali-td-first-col">
                         </td>

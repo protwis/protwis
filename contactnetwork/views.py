@@ -162,9 +162,8 @@ def InteractionData(request):
         segment_filter_res2 |= Q(interacting_pair__res2__protein_segment__slug__in=segments)
 
     i_types_filter = Q()
-
     if i_types:
-        i_types_filter |= Q(polymorphic_ctype__model__in=i_types)
+        i_types_filter |= Q(interaction_type__in=i_types)
 
     # Get the relevant interactions
     interactions = Interaction.objects.filter(
@@ -179,7 +178,7 @@ def InteractionData(request):
         'interacting_pair__res2__sequence_number',
         'interacting_pair__res2__generic_number__label',
         'interacting_pair__res2__protein_segment__slug',
-        'polymorphic_ctype__model',
+        'interaction_type',
     ).filter(
         segment_filter_res1 & segment_filter_res2 & i_types_filter
     )
@@ -254,7 +253,7 @@ def InteractionData(request):
         res2_seg = i['interacting_pair__res2__protein_segment__slug']
         res1_aa = i['interacting_pair__res1__amino_acid']
         res2_aa = i['interacting_pair__res2__amino_acid']
-        model = i['polymorphic_ctype__model']
+        model = i['interaction_type']
 
         if generic and (not res1_gen or not res2_gen):
             continue
