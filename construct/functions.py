@@ -820,11 +820,15 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
 
     #http://www.rcsb.org/pdb/explore/jmol.do?structureId=4LDO&json=true
     ## modifications for their jmol -- "hacky" way to get it
-    cache_dir = ['rcsb', 'jmol_modifications']
-    url = 'http://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
-    rcsb_mod = fetch_from_web_api(url, pdbname, cache_dir)
-    d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
-    # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
+    try:
+        cache_dir = ['rcsb', 'jmol_modifications']
+        url = 'http://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
+        rcsb_mod = fetch_from_web_api(url, pdbname, cache_dir)
+        d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
+        # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
+    except:
+        print('rscb failed for ',pdbname)
+        rcsb_mod = None
     if rcsb_mod: #success
         d['modifications'] = []
         d['modifications2'] = rcsb_mod
