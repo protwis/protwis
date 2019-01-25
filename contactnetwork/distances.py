@@ -59,27 +59,32 @@ class Distances():
         # work_mem = 100MB  
         # temp_buffers = 500MB
         # sudo /etc/init.d/postgresql restart 
+        ds_with_key = {}
         if with_arr:
             ds = list(Distance.objects.filter(structure__in=self.structures) \
                             .values('gns_pair') \
                             .annotate(mean = Avg('distance'), var = Variance('distance'), c = Count('distance'),arr=ArrayAgg('distance'),arr2=ArrayAgg('structure')).values_list('gns_pair','mean','var','c','arr','arr2'))
             for i,d in enumerate(ds):
                 ds[i] += (d[2]/d[1],)
+                ds_with_key[d[0]] = ds[i]
         else:
-            ds = list(Distance.objects.filter(structure__in=self.structures) \
+            ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                             .values('gns_pair') \
                             .annotate(mean = Avg('distance'), var = Variance('distance'), c = Count('distance')).values_list('gns_pair','mean','var','c'))
             for i,d in enumerate(ds):
                 ds[i] += (d[2]/d[1],)
+                ds_with_key[d[0]] = ds[i]
         # # print(ds.query)
         # print(ds[1])
-        stats_sorted = sorted(ds, key=lambda k: -k[-1]) 
-        print(stats_sorted[1])
+        stats_sorted = sorted(ds, key=lambda k: -k[-1])
+
+
+
 
         #print(ds[1])
 
-
-        self.stats = ds
+        self.stats_key = ds_with_key
+        self.stats = stats_sorted
 
 
     def fetch_distances(self):
@@ -90,50 +95,6 @@ class Distances():
             if label not in self.data:
                 self.data[label] = []
             self.data[label].append(d[0]/100)
-
-    def fetch_distances_set(self):
-        dss = DistanceSet.objects.filter(structure__in=self.structures).only("distances").all()
-        self.data = {}
-        for ds in dss:
-            distances = ds.get_distances()
-            for d in distances:
-                label = '_'.join([d[1], d[2]])
-                if label not in self.data:
-                    self.data[label] = []
-                self.data[label].append(d[0]/100)
-
-    def fetch_distances_set_pickled(self):
-        dss = DistanceSet.objects.filter(structure__in=self.structures).only("distances_pickle").all()
-        self.data = {}
-        for ds in dss:
-            distances = ds.get_distances_pickle()
-            for d in distances:
-                label = '_'.join([d[1], d[2]])
-                if label not in self.data:
-                    self.data[label] = []
-                self.data[label].append(d[0]/100)
-
-    def fetch_distances_set_json(self):
-        dss = DistanceSet.objects.filter(structure__in=self.structures).only("distances_json").all()
-        self.data = {}
-        for ds in dss:
-            distances = ds.get_distances_json()
-            for d in distances:
-                label = '_'.join([d[1], d[2]])
-                if label not in self.data:
-                    self.data[label] = []
-                self.data[label].append(d[0]/100)
-
-    def fetch_distances_set_ujson(self):
-        dss = DistanceSet.objects.filter(structure__in=self.structures).only("distances_ujson").all()
-        self.data = {}
-        for ds in dss:
-            distances = ds.get_distances_ujson()
-            for d in distances:
-                label = '_'.join([d[1], d[2]])
-                if label not in self.data:
-                    self.data[label] = []
-                self.data[label].append(d[0]/100)
 
     def calculate(self):
         self.stats = {}
