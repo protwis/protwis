@@ -3547,196 +3547,193 @@
                     o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)");
                 } );
 
-            });
+            }).then( function(){
+                if (pdbs_set2){
+                    $.getJSON( "pdb/"+pdbs_set2[0],
+                      function( data ) {
+                        var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
+                        var segments_sets = {}
+                        int_labels[mode][1] = {}
 
-            // TODO: init after load previous --> load both
-            if (pdbs_set2){
-              setTimeout( function() {
-                $.getJSON( "pdb/"+pdbs_set2[0],
-                  function( data ) {
-                    var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
-                    var segments_sets = {}
-                    int_labels[mode][1] = {}
+                        highlight.forEach( function(e){
+                          segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
+                        });
 
-                    highlight.forEach( function(e){
-                      segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
-                    });
+                        pdb_data[mode][1] = data;
+                        num_set2 = pdb_data[mode][1]['only_gn'];
+                        gn_num_set2 = pdb_data[mode][1]['gn_map'];
 
-                    pdb_data[mode][1] = data;
-                    num_set2 = pdb_data[mode][1]['only_gn'];
-                    gn_num_set2 = pdb_data[mode][1]['gn_map'];
-
-                    // intersect GN-numbering
-                    var matching_TM_residues = [];
-                    gn_num_set1.forEach(function(gn, gn_index) {
-                      // Filter GN residues, only within 7TM + present in other protein
-                      if (gn.charAt(1)=='x' && gn.charAt(0)<=7){
-                        var match = gn_num_set2.indexOf(gn);
-                        if (match > -1){
-                          return matching_TM_residues.push([num_set1[gn_index], num_set2[match]]);
-                        }
-                      }
-                    });
-
-                    color_schemes[mode][1]['red'] = NGL.ColormakerRegistry.addSelectionScheme([
-                            [red_colors[1], segments_sets[highlight[0]]],
-                            [red_colors[2], segments_sets[highlight[1]]],
-                            [red_colors[3], segments_sets[highlight[2]]],
-                            [red_colors[4], segments_sets[highlight[3]]],
-                            [red_colors[5], segments_sets[highlight[4]]],
-                            [red_colors[6], segments_sets[highlight[5]]],
-                            [red_colors[7], segments_sets[highlight[6]]],
-                            [red_colors[8], segments_sets[highlight[7]]],
-                            [ "white", "*" ]
-                            ])
-
-                    color_schemes[mode][1]['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
-                              ["#ccc", segments_sets[highlight[0]]],
-                              ["#bbb", segments_sets[highlight[1]]],
-                              ["#aaa", segments_sets[highlight[2]]],
-                              ["#888", segments_sets[highlight[3]]],
-                              ["#666", segments_sets[highlight[4]]],
-                              ["#444", segments_sets[highlight[5]]],
-                              ["#333", segments_sets[highlight[6]]],
-                              ["#111", segments_sets[highlight[7]]],
-                              [ "white", "*" ]
-                              ])
-
-
-                    var stringBlob = new Blob( [ pdb_data[mode][1]['pdb'] ], { type: 'text/plain'} );
-                    stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
-                        // Cleanup
-                        pdb_data[mode][1]['pdb'] = null;
-
-                        //// SUPERPOSE structures using 7TM bundle ////
-
-                        // Intersect GN-numbering of proteins and create Selection
-                        var selectionOne = "(";
-                        var selectionTwo = "(";
+                        // intersect GN-numbering
+                        var matching_TM_residues = [];
                         gn_num_set1.forEach(function(gn, gn_index) {
                           // Filter GN residues, only within 7TM + present in other protein
                           if (gn.charAt(1)=='x' && gn.charAt(0)<=7){
                             var match = gn_num_set2.indexOf(gn);
                             if (match > -1){
-                              //matching_TM_residues.push([num_set1[gn_index], num_set2[match]]);
-                              if (gn_index > 0){
-                                selectionOne += " or ";
-                                selectionTwo += " or ";
-                              }
-                              selectionOne += num_set1[gn_index];
-                              selectionTwo += num_set2[match];
+                              return matching_TM_residues.push([num_set1[gn_index], num_set2[match]]);
                             }
                           }
                         });
 
-                        selectionOne += ") and .CA and :" + pdb_data[mode][0]['chain'];
-                        selectionTwo += ") and .CA and :" + pdb_data[mode][1]['chain'];
+                        color_schemes[mode][1]['red'] = NGL.ColormakerRegistry.addSelectionScheme([
+                                [red_colors[1], segments_sets[highlight[0]]],
+                                [red_colors[2], segments_sets[highlight[1]]],
+                                [red_colors[3], segments_sets[highlight[2]]],
+                                [red_colors[4], segments_sets[highlight[3]]],
+                                [red_colors[5], segments_sets[highlight[4]]],
+                                [red_colors[6], segments_sets[highlight[5]]],
+                                [red_colors[7], segments_sets[highlight[6]]],
+                                [red_colors[8], segments_sets[highlight[7]]],
+                                [ "white", "*" ]
+                                ])
 
-                        var atoms1 = first_structure.structure.getView(new NGL.Selection(selectionOne))
-                        var atoms2 = o.structure.getView(new NGL.Selection(selectionTwo))
-
-                        // calculate and apply transformation to the first structure
-                        var superpose = new NGL.Superposition(atoms1, atoms2)
-                        superpose.transform(first_structure.structure)
-                        first_structure.structure.refreshPosition()
-                        first_structure.updateRepresentations({ 'position': true })
-
-                        //// END SUPERPOSE ////
-
-                        gpcr_rep[mode][1] = o.addRepresentation( "cartoon", {
-                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+")",
-                          radiusSize: 1,
-                          radiusScale: 0.6,
-                          color: color_schemes[mode][1]['red'],
-                          metalness: 0,
-                          colorMode: "hcl",
-                          roughness: 1,
-                          opacity: 1,
-                          depthWrite: true
-                        });
-
-                        // interactions for two groups tab
-                        var res_int = []
-                        $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
-                            var rect = $(this);
-                            var genNo1 = rect.data('gen-no-1');
-                            var genNo2 = rect.data('gen-no-2');
-                            if ((genNo1=='-') || (genNo2=='-')) return
-
-                            // Adjust GN numbering to the shown structure
-                            var resNo1 = pdb_data[mode][1]['only_gn'][pdb_data[mode][1]['gn_map'].indexOf(genNo1)];
-                            var resNo2 = pdb_data[mode][1]['only_gn'][pdb_data[mode][1]['gn_map'].indexOf(genNo2)];
-
-                            if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
-
-                            // Push interactions
-                            res_int.push(resNo1);
-                            res_int.push(resNo2);
-                          });
-
-                        // NULL representation - for clarity purposes only showing links for first structure
-                        reps[mode][1].links = o.addRepresentation( "spacefill", {
-                          sele: ":F and :O and :O and :B and :A and :R",
-                          visible: false
-                        });
-                        reps[mode][1].links_gn = reps[mode][1].links
-
-                        reps[mode][1].int_res = o.addRepresentation( "spacefill", {
-                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
-                          color: "#811808",
-                          // colorScale: ["#44f", "#444"],
-                          radiusScale: .2,
-                          name: "res",
-                          visible: false
-                        });
+                        color_schemes[mode][1]['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
+                                  ["#ccc", segments_sets[highlight[0]]],
+                                  ["#bbb", segments_sets[highlight[1]]],
+                                  ["#aaa", segments_sets[highlight[2]]],
+                                  ["#888", segments_sets[highlight[3]]],
+                                  ["#666", segments_sets[highlight[4]]],
+                                  ["#444", segments_sets[highlight[5]]],
+                                  ["#333", segments_sets[highlight[6]]],
+                                  ["#111", segments_sets[highlight[7]]],
+                                  [ "white", "*" ]
+                                  ])
 
 
-                        res_int_gn = Object.assign([], res_int);
-                        res_int_gn = intersect(res_int_gn, pdb_data[mode][1]['only_gn']);
-                        reps[mode][1].int_res_gn = o.addRepresentation( "spacefill", {
-                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
-                          color: "#811808",
-                          // colorScale: ["#44f", "#444"],
-                          radiusScale: .2,
-                          name: "res",
-                          visible: true
-                        });
+                        var stringBlob = new Blob( [ pdb_data[mode][1]['pdb'] ], { type: 'text/plain'} );
+                        stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
+                            // Cleanup
+                            pdb_data[mode][1]['pdb'] = null;
 
-                        reps[mode][1].ball_all = o.addRepresentation("ball+stick", {
-                          sele: ":"+pdb_data[mode][1]['chain']+" and sidechainAttached",
-                          color: "element",
-                          colorValue: "#dda8bc",
-                          visible: false
-                          })
+                            //// SUPERPOSE structures using 7TM bundle ////
 
-                        reps[mode][1].ball = o.addRepresentation("ball+stick", {
-                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+") and sidechainAttached",
-                          color: "element",
-                          colorValue: "#dda8bc",
-                          visible: false
-                          })
+                            // Intersect GN-numbering of proteins and create Selection
+                            var selectionOne = "(";
+                            var selectionTwo = "(";
+                            gn_num_set1.forEach(function(gn, gn_index) {
+                              // Filter GN residues, only within 7TM + present in other protein
+                              if (gn.charAt(1)=='x' && gn.charAt(0)<=7){
+                                var match = gn_num_set2.indexOf(gn);
+                                if (match > -1){
+                                  //matching_TM_residues.push([num_set1[gn_index], num_set2[match]]);
+                                  if (gn_index > 0){
+                                    selectionOne += " or ";
+                                    selectionTwo += " or ";
+                                  }
+                                  selectionOne += num_set1[gn_index];
+                                  selectionTwo += num_set2[match];
+                                }
+                              }
+                            });
 
-                        // CHECK: can res_int and res_int_gn actually be different?
-                        reps[mode][1].ball_int = o.addRepresentation("ball+stick", {
-                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
-                          color: "element",
-                          colorValue: "#dda8bc",
-                          visible: false
-                          })
+                            selectionOne += ") and .CA and :" + pdb_data[mode][0]['chain'];
+                            selectionTwo += ") and .CA and :" + pdb_data[mode][1]['chain'];
 
-                        reps[mode][1].ball_int_gn = o.addRepresentation("ball+stick", {
-                          sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
-                          color: "element",
-                          colorValue: "#dda8bc",
-                          visible: false
-                          })
+                            var atoms1 = first_structure.structure.getView(new NGL.Selection(selectionOne))
+                            var atoms2 = o.structure.getView(new NGL.Selection(selectionTwo))
 
-                        o.autoView(":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)");
-                    } );
+                            // calculate and apply transformation to the first structure
+                            var superpose = new NGL.Superposition(atoms1, atoms2)
+                            superpose.transform(first_structure.structure)
+                            first_structure.structure.refreshPosition()
+                            first_structure.updateRepresentations({ 'position': true })
 
-                });
-              }, 1000);
-            }
+                            //// END SUPERPOSE ////
+
+                            gpcr_rep[mode][1] = o.addRepresentation( "cartoon", {
+                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+")",
+                              radiusSize: 1,
+                              radiusScale: 0.6,
+                              color: color_schemes[mode][1]['red'],
+                              metalness: 0,
+                              colorMode: "hcl",
+                              roughness: 1,
+                              opacity: 1,
+                              depthWrite: true
+                            });
+
+                            // interactions for two groups tab
+                            var res_int = []
+                            $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+                                var rect = $(this);
+                                var genNo1 = rect.data('gen-no-1');
+                                var genNo2 = rect.data('gen-no-2');
+                                if ((genNo1=='-') || (genNo2=='-')) return
+
+                                // Adjust GN numbering to the shown structure
+                                var resNo1 = pdb_data[mode][1]['only_gn'][pdb_data[mode][1]['gn_map'].indexOf(genNo1)];
+                                var resNo2 = pdb_data[mode][1]['only_gn'][pdb_data[mode][1]['gn_map'].indexOf(genNo2)];
+
+                                if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
+
+                                // Push interactions
+                                res_int.push(resNo1);
+                                res_int.push(resNo2);
+                              });
+
+                            // NULL representation - for clarity purposes only showing links for first structure
+                            reps[mode][1].links = o.addRepresentation( "spacefill", {
+                              sele: ":F and :O and :O and :B and :A and :R",
+                              visible: false
+                            });
+                            reps[mode][1].links_gn = reps[mode][1].links
+
+                            reps[mode][1].int_res = o.addRepresentation( "spacefill", {
+                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
+                              color: "#811808",
+                              // colorScale: ["#44f", "#444"],
+                              radiusScale: .2,
+                              name: "res",
+                              visible: false
+                            });
+
+
+                            res_int_gn = Object.assign([], res_int);
+                            res_int_gn = intersect(res_int_gn, pdb_data[mode][1]['only_gn']);
+                            reps[mode][1].int_res_gn = o.addRepresentation( "spacefill", {
+                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
+                              color: "#811808",
+                              // colorScale: ["#44f", "#444"],
+                              radiusScale: .2,
+                              name: "res",
+                              visible: true
+                            });
+
+                            reps[mode][1].ball_all = o.addRepresentation("ball+stick", {
+                              sele: ":"+pdb_data[mode][1]['chain']+" and sidechainAttached",
+                              color: "element",
+                              colorValue: "#dda8bc",
+                              visible: false
+                              })
+
+                            reps[mode][1].ball = o.addRepresentation("ball+stick", {
+                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+") and sidechainAttached",
+                              color: "element",
+                              colorValue: "#dda8bc",
+                              visible: false
+                              })
+
+                            // CHECK: can res_int and res_int_gn actually be different?
+                            reps[mode][1].ball_int = o.addRepresentation("ball+stick", {
+                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                              color: "element",
+                              colorValue: "#dda8bc",
+                              visible: false
+                              })
+
+                            reps[mode][1].ball_int_gn = o.addRepresentation("ball+stick", {
+                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
+                              color: "element",
+                              colorValue: "#dda8bc",
+                              visible: false
+                              })
+
+                            o.autoView(":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)");
+                        } );
+
+                    });
+                }
+            });
 
             var newDiv = document.createElement("div");
             newDiv.setAttribute("style", "position: absolute; top: 45px; left: 20px; background-color: #DDD; opacity: .8; padding: 10px;")
