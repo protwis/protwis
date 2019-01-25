@@ -273,9 +273,8 @@ def has_edge_to_face_interaction(res1, res2):
 
     # Make sure the ring centers are closer than 5.5 angstroms
     # and that the perpendicular angle is within +/- 30 degrees
-    # i.e. the acute angle is between 60-120 degrees
     return any([(distance_between(r1[0], r2[0]) <= 5.5)
-                and (abs(math.degrees(angle_between_plane_normals(r1[1], r2[1])) - 90) <= 30)
+                and (math.degrees(angle_between_plane_normals(r1[1], r2[1])) > 30)
                 for r1 in res1_desc for r2 in res2_desc])
 
 
@@ -290,6 +289,7 @@ def has_pi_cation_interaction(res1, res2):
     # and that the angle is within +/- 30 degrees
     return any([distance_between(res2.child_dict[atom_name].coord, r1[0]) <= 6.6
         and abs(math.degrees(angle_between_plane_normals(r1[1], res2.child_dict[atom_name].coord-r1[0]))) <= 30
+        #and abs(math.degrees(angle_between_plane_normals(r1[1], res2.child_dict[atom_name].coord-r1[0]))) <= 60
         for r1 in res1_desc for atom_name in res2_pos_atom_names])
 
 def get_polar_hbonds_interactions(res1, res2):
@@ -314,7 +314,6 @@ def has_hbond_interaction(res1, res2):
         # Get H-bond donor information
         donors = get_hbond_donor_references(hbd)
         for donor in donors:
-
             # Pairs within 3.5A?
             pairs = [ [donor, acceptor] for acceptor in acceptors if donor in hbd.child_dict and acceptor in hba.child_dict and distance_between(hbd.child_dict[donor].coord, hba.child_dict[acceptor].coord) <= 3.5 ]
 
@@ -333,9 +332,22 @@ def has_hbond_interaction(res1, res2):
                                 p1 = hbd.child_dict[set[0]].coord
                                 p2 = hbd.child_dict[donor].coord
 
+                                # Option 1: freely rotating donor, take acceptor as reference
                                 p3 = hba.child_dict[acceptor].coord
+
+                                # Option 2: fixed donor orientation (dihedral), internal reference
                                 if len(set) == 4: # secondary
-                                    p3 = hbd.child_dict[set[3]].coord
+                                    # backbone nitrogen - second reference atom comes from the previous residue
+                                    if donor == 'N':
+                                        # 1. grab previous connected residue (if numbering switches, this might give an error)
+                                        # 2. grab coordinate atom previous residue
+                                        hbd_chain = hbd.get_parent()
+                                        if hbd_chain.has_id(hbd.id[1]-1):
+                                            p3 = hbd_chain[hbd.id[1]-1].child_dict[set[3]].coord
+                                        else:
+                                            continue
+                                    else:
+                                        p3 = hbd.child_dict[set[3]].coord
 
                                 # calculate optimal H-bonding vector to acceptor
                                 d=get_unit_vector(p2-p1)
@@ -553,7 +565,8 @@ def get_interactions(res1, res2):
     interactions += get_polar_interactions(res1, res2)
 
     # Aromatic interactions
-    interactions += get_aromatic_interactions(res1, res2)
+    if is_aromatic_aa(res1) or is_aromatic_aa(res2):
+        interactions += get_aromatic_interactions(res1, res2)
 
     # Van der Waals interactions
     interactions += get_van_der_waals_interactions(res1, res2)
