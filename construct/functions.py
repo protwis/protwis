@@ -33,6 +33,26 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 
 
 def fetch_pdb_info(pdbname,protein,new_xtal=False):
+
+    if not protein:
+        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+        pdbdata_raw = urlopen(url).read().decode('utf-8')
+        # figure out what protein this is
+        for line in pdbdata_raw.split('\n'):
+            if line.startswith('DBREF'):
+                line = line.split()
+                if len(line)>7:
+                    uniprot = line[7]
+                    try:
+                        p = Protein.objects.get(entry_name=uniprot.lower())
+                        slug = p.family.slug
+                        print(slug,slug.startswith("00"))
+                        if slug.startswith("00"):
+                            print('PROTEIN GPCR')
+                            protein = p
+                    except:
+                        pass
+
     SIFT_exceptions = {'5GLI':[395,403], '5GLH':[395,401]}
     logger = logging.getLogger('build')
     #d = {}
@@ -75,12 +95,15 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     with open(pdb_path, 'w') as f:
         f.write(pdbdata_raw)
     if new_xtal==False:
-        structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
+        try:
+            structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
 
-        if 1==1: #update pdbs
-            structure.pdb_data.pdb = pdbdata_raw
+            if 1==1: #update pdbs
+                structure.pdb_data.pdb = pdbdata_raw
 
-        pdb_file = structure.pdb_data.pdb
+            pdb_file = structure.pdb_data.pdb
+        except:
+            pdb_file = pdbdata_raw
         # print(pdb_file)
     else:
         pdb_file = pdbdata_raw
@@ -197,6 +220,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     # http://science.sciencemag.org/content/sci/suppl/2015/03/04/347.6226.1113.DC1/Burg.SM.pdf
     if pdbname.upper()=='4XT1' or pdbname.upper()=='4XT3':
         pdb_range = list(range(11,311))
+
+    # Issue with isoform
+    if pdbname.upper()=='6NIY':
+        pdb_range = list(range(1,475))
+
 
     # Uncertain about exact cut -- pdb/article do not compliment eachother.
     if pdbname.upper()=='4XEE' or pdbname.upper()=='4XES':
@@ -424,6 +452,32 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
                                         if uniprot_pos not in d['xml_not_observed']:
                                             d['xml_not_observed'].append(uniprot_pos)
                                     else:
+                                        uniprot_pos = int(pos)
+                                else:
+                                    receptor = False
+                            if pdbname == '6NIY':
+                                #Special fix for 5UZ7 due to faulty annotation, there is an offset of 34 at the end of the isoforms
+                                if pos and receptor:
+                                    # print(uniprot_pos,d['wt_seq'][uniprot_pos-1-34],uniprot_aa,pos,d['wt_seq'][uniprot_pos-1-18], receptor)
+                                    if uniprot_aa==d['wt_seq'][uniprot_pos-1-18]:
+                                        uniprot_pos = uniprot_pos-18
+                                        pos = uniprot_pos
+                                        # print('match 1')
+                                        # print('found',pos, uniprot_aa)
+                                        # # Assume we are talking about the non-observed residues
+                                        # if uniprot_pos not in d['xml_not_observed']:
+                                        #     d['xml_not_observed'].append(uniprot_pos)
+                                    elif uniprot_pos>192 and uniprot_aa==d['wt_seq'][uniprot_pos-1-34]:
+                                        #these are unmapped at this point, make sure the AA are the same, in case it gets fixed later
+                                        # print('match 2')
+                                        uniprot_pos = uniprot_pos-34
+                                        pos = uniprot_pos
+                                        # print('found',pos, uniprot_aa)
+                                        # Assume we are talking about the non-observed residues
+                                        # if uniprot_pos not in d['xml_not_observed']:
+                                        #     d['xml_not_observed'].append(uniprot_pos)
+                                    else:
+                                        print('no match')
                                         uniprot_pos = int(pos)
                                 else:
                                     receptor = False
@@ -766,11 +820,15 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
 
     #http://www.rcsb.org/pdb/explore/jmol.do?structureId=4LDO&json=true
     ## modifications for their jmol -- "hacky" way to get it
-    cache_dir = ['rcsb', 'jmol_modifications']
-    url = 'http://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
-    rcsb_mod = fetch_from_web_api(url, pdbname, cache_dir)
-    d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
-    # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
+    try:
+        cache_dir = ['rcsb', 'jmol_modifications']
+        url = 'http://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
+        rcsb_mod = fetch_from_web_api(url, pdbname, cache_dir)
+        d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
+        # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
+    except:
+        print('rscb failed for ',pdbname)
+        rcsb_mod = None
     if rcsb_mod: #success
         d['modifications'] = []
         d['modifications2'] = rcsb_mod

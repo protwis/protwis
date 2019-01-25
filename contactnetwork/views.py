@@ -9,6 +9,7 @@ import json
 import functools
 
 from contactnetwork.models import *
+from contactnetwork.distances import *
 from structure.models import Structure
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue
@@ -24,6 +25,13 @@ def Interactions(request):
     Show interaction heatmap
     """
     return render(request, 'contactnetwork/interactions.html')
+
+
+def ShowDistances(request):
+    """
+    Show distances heatmap
+    """
+    return render(request, 'contactnetwork/distances.html')
 
 def PdbTreeData(request):
     data = Structure.objects.values(
@@ -105,6 +113,326 @@ def PdbTableData(request):
         data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['representative'],r['date'],r['protein_long'],pdb_id)
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
+
+def DistanceDataGroups(request):
+    def gpcrdb_number_comparator(e1, e2):
+            t1 = e1.split('x')
+            t2 = e2.split('x')
+
+            if e1 == e2:
+                return 0
+
+            if t1[0] == t2[0]:
+                if t1[1] < t2[1]:
+                    return -1
+                else:
+                    return 1
+
+            if t1[0] < t2[0]:
+                return -1
+            else:
+                return 1
+
+    # PDB files
+    try:
+        pdbs1 = request.GET.getlist('pdbs1[]')
+        pdbs2 = request.GET.getlist('pdbs2[]')
+    except IndexError:
+        pdbs1 = []
+
+
+    pdbs1 = [pdb.upper() for pdb in pdbs1]
+    pdbs2 = [pdb.upper() for pdb in pdbs2]
+    pdbs1_lower = [pdb.lower() for pdb in pdbs1]
+    pdbs2_lower = [pdb.lower() for pdb in pdbs2]
+
+    # Segment filters
+    try:
+        segments = request.GET.getlist('segments[]')
+    except IndexError:
+        segments = []
+
+    # Use generic numbers? Defaults to True.
+    generic = True
+
+    # Initialize response dictionary
+    data = {}
+    data['interactions'] = OrderedDict()
+    data['pdbs'] = set()
+    data['generic'] = generic
+    data['segments'] = set()
+    data['segment_map'] = {}
+    # For Max schematics TODO -- make smarter.
+    data['segment_map'] = {}
+    data['aa_map'] = {}
+
+
+    data['gn_map'] = OrderedDict()
+    data['pos_map'] = OrderedDict()
+    data['segment_map_full'] = OrderedDict()
+    data['segment_map_full_gn'] = OrderedDict()
+    data['generic_map_full'] = OrderedDict()
+
+    print(pdbs1)
+    dis1 = Distances()
+    dis1.load_pdbs(pdbs1)
+    dis1.fetch_and_calculate()
+    print(pdbs2)
+    dis2 = Distances()
+    dis2.load_pdbs(pdbs2)
+    dis2.fetch_and_calculate()
+
+
+    diff = OrderedDict()
+
+    for d1 in dis1.stats:
+        label = d1[0]
+        mean1 = d1[1]
+        try:
+            #see if label is there
+            mean2 = dis2.stats_key[label][1]
+            mean_diff = mean2-mean1
+            diff[label] = mean_diff
+        except:
+            pass
+    diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1])))
+
+    compared_stats = {}
+
+    excluded_segment = ['C-term','N-term']
+    segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
+    print(pdbs1_lower+pdbs2_lower)
+    proteins =  Protein.objects.filter(protein__entry_name__in=pdbs1_lower+pdbs2_lower).distinct().all()
+
+    if len(proteins)>1:
+        a = Alignment()
+        a.ignore_alternative_residue_numbering_schemes = True;
+        a.load_proteins(proteins)
+        a.load_segments(segments) #get all segments to make correct diagrams
+        # build the alignment data matrix
+        a.build_alignment()
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+        consensus = a.full_consensus
+
+        for aa in consensus:
+            if 'x' in aa.family_generic_number:
+                data['gn_map'][aa.family_generic_number] = aa.amino_acid
+                data['pos_map'][aa.sequence_number] = aa.amino_acid
+                data['segment_map_full_gn'][aa.family_generic_number] = aa.segment_slug
+    else:
+        rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
+        for r in rs:
+            if (not generic):
+                data['pos_map'][r.sequence_number] = r.amino_acid
+                data['segment_map_full'][r.sequence_number] = r.protein_segment.slug
+                if r.display_generic_number:
+                    data['generic_map_full'][r.sequence_number] = r.short_display_generic_number()
+            else:
+                if r.generic_number:
+                    data['gn_map'][r.generic_number.label] = r.amino_acid
+                    data['pos_map'][r.sequence_number] = r.amino_acid
+                    data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
+
+    # Dict to keep track of which residue numbers are in use
+    number_dict = set()
+    max_diff = 0
+    #for d in dis.stats:
+    for key,d in diff.items():
+        res1 = key.split("_")[0]
+        res2 = key.split("_")[1]
+        res1_seg = res1.split("x")[0]
+        res2_seg = res2.split("x")[0]
+        data['segment_map'][res1] = res1_seg
+        data['segment_map'][res2] = res2_seg
+        data['segments'] |= {res1_seg} | {res2_seg}
+
+        # Populate the AA map
+        if 1==2:
+            #When showing pdbs
+            if pdb_name not in data['aa_map']:
+                data['aa_map'][pdb_name] = {}
+
+        number_dict |= {res1, res2}
+
+        if res1 < res2:
+            coord = str(res1) + ',' + str(res2)
+        else:
+            coord = str(res2) + ',' + str(res1)
+
+
+        # if pdb_name not in data['interactions'][coord]:
+        #     data['interactions'][coord][pdb_name] = []
+
+        if d:
+            if len(data['interactions'])<3000:
+
+                data['interactions'][coord] = [round(d)]
+            else:
+                break
+
+        if abs(d)>max_diff:
+            max_diff = round(abs(d))
+        # data['sequence_numbers'] = sorted(number_dict)
+    if (generic):
+        data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
+    # else:
+    #     data['sequence_numbers'] = sorted(number_dict)
+        # break
+
+    data['segments'] = list(data['segments'])
+    data['pdbs'] = list(pdbs1+pdbs2)
+    data['max_diff'] = max_diff
+
+    return JsonResponse(data)
+
+
+def DistanceData(request):
+    def gpcrdb_number_comparator(e1, e2):
+            t1 = e1.split('x')
+            t2 = e2.split('x')
+
+            if e1 == e2:
+                return 0
+
+            if t1[0] == t2[0]:
+                if t1[1] < t2[1]:
+                    return -1
+                else:
+                    return 1
+
+            if t1[0] < t2[0]:
+                return -1
+            else:
+                return 1
+
+    # PDB files
+    try:
+        pdbs = request.GET.getlist('pdbs[]')
+    except IndexError:
+        pdbs = []
+
+    pdbs = [pdb.upper() for pdb in pdbs]
+    pdbs_lower = [pdb.lower() for pdb in pdbs]
+
+    # Segment filters
+    try:
+        segments = request.GET.getlist('segments[]')
+    except IndexError:
+        segments = []
+
+    # Use generic numbers? Defaults to True.
+    generic = True
+
+    # Initialize response dictionary
+    data = {}
+    data['interactions'] = OrderedDict()
+    data['pdbs'] = set()
+    data['generic'] = generic
+    data['segments'] = set()
+    data['segment_map'] = {}
+    # For Max schematics TODO -- make smarter.
+    data['segment_map'] = {}
+    data['aa_map'] = {}
+
+
+    data['gn_map'] = OrderedDict()
+    data['pos_map'] = OrderedDict()
+    data['segment_map_full'] = OrderedDict()
+    data['segment_map_full_gn'] = OrderedDict()
+    data['generic_map_full'] = OrderedDict()
+
+    print(pdbs)
+    dis = Distances()
+    dis.load_pdbs(pdbs)
+    dis.fetch_and_calculate()
+
+
+    excluded_segment = ['C-term','N-term']
+    segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
+    proteins =  Protein.objects.filter(protein__entry_name__in=pdbs_lower).distinct().all()
+
+    if len(proteins)>1:
+        a = Alignment()
+        a.ignore_alternative_residue_numbering_schemes = True;
+        a.load_proteins(proteins)
+        a.load_segments(segments) #get all segments to make correct diagrams
+        # build the alignment data matrix
+        a.build_alignment()
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+        consensus = a.full_consensus
+
+        for aa in consensus:
+            if 'x' in aa.family_generic_number:
+                data['gn_map'][aa.family_generic_number] = aa.amino_acid
+                data['pos_map'][aa.sequence_number] = aa.amino_acid
+                data['segment_map_full_gn'][aa.family_generic_number] = aa.segment_slug
+    else:
+        rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
+        for r in rs:
+            if (not generic):
+                data['pos_map'][r.sequence_number] = r.amino_acid
+                data['segment_map_full'][r.sequence_number] = r.protein_segment.slug
+                if r.display_generic_number:
+                    data['generic_map_full'][r.sequence_number] = r.short_display_generic_number()
+            else:
+                if r.generic_number:
+                    data['gn_map'][r.generic_number.label] = r.amino_acid
+                    data['pos_map'][r.sequence_number] = r.amino_acid
+                    data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
+
+    # Dict to keep track of which residue numbers are in use
+    number_dict = set()
+    max_dispersion = 0
+    for d in dis.stats:
+        # print(d)
+        res1 = d[0].split("_")[0]
+        res2 = d[0].split("_")[1]
+        res1_seg = res1.split("x")[0]
+        res2_seg = res2.split("x")[0]
+        data['segment_map'][res1] = res1_seg
+        data['segment_map'][res2] = res2_seg
+        data['segments'] |= {res1_seg} | {res2_seg}
+
+        # Populate the AA map
+        if 1==2:
+            #When showing pdbs
+            if pdb_name not in data['aa_map']:
+                data['aa_map'][pdb_name] = {}
+
+        number_dict |= {res1, res2}
+
+        if res1 < res2:
+            coord = str(res1) + ',' + str(res2)
+        else:
+            coord = str(res2) + ',' + str(res1)
+
+
+        # if pdb_name not in data['interactions'][coord]:
+        #     data['interactions'][coord][pdb_name] = []
+
+        if d[4]:
+            if len(data['interactions'])<3000:
+
+                data['interactions'][coord] = [round(d[1]),round(d[4],3)]
+            else:
+                break
+
+        if d[4]>max_dispersion:
+            max_dispersion = round(d[4],3)
+        # data['sequence_numbers'] = sorted(number_dict)
+    if (generic):
+        data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
+    # else:
+    #     data['sequence_numbers'] = sorted(number_dict)
+        # break
+
+    data['segments'] = list(data['segments'])
+    data['pdbs'] = list(pdbs)
+    data['max_dispersion'] = max_dispersion
+
+    return JsonResponse(data)
 
 def InteractionData(request):
     def gpcrdb_number_comparator(e1, e2):
