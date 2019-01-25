@@ -18,10 +18,15 @@ class InteractingResiduePair(models.Model):
         db_table = 'interacting_residue_pair'
 
 
-class Interaction(models.Model): 
+class Interaction(models.Model):
     interacting_pair = models.ForeignKey('contactnetwork.InteractingResiduePair', on_delete=models.CASCADE)
     interaction_type = models.CharField(max_length=100)
     specific_type = models.CharField(max_length=100, null=True)
+
+    # interaction_level -> 0 - normal definition, 1 - loosened definition
+    interaction_level = models.IntegerField(null=False, default=0)
+    atomname_residue1 = models.CharField(max_length=3, null=True)
+    atomname_residue2 = models.CharField(max_length=3, null=True)
 
     @classmethod
     def truncate(cls):

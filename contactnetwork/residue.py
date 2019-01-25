@@ -169,7 +169,7 @@ def get_ring_descriptors(res):
         # Get normals by taking the cross product of two vectors in the ring plane. All atom coordinates are co-planar.
         ring_normals = [numpy.cross(numpy.subtract(a_c_l[0], a_c_l[1]), numpy.subtract(a_c_l[0], a_c_l[2])) for a_c_l in ring_atom_coords]
 
-        return zip(ring_centers, ring_normals)
+        return list(zip(ring_centers, ring_normals))
     except:
         return []
 

@@ -16,7 +16,7 @@ NUM_SKIP_RESIDUES = 4
 def compute_interactions(pdb_name,save_to_db = False):
 
     do_distances = True
-    do_interactions = False
+    do_interactions = True
     distances = []
     classified = []
 
@@ -60,9 +60,10 @@ def compute_interactions(pdb_name,save_to_db = False):
 
     if do_interactions:
         atom_list = Selection.unfold_entities(s[preferred_chain], 'A')
+
         # Search for all neighbouring residues
         ns = NeighborSearch(atom_list)
-        all_neighbors = ns.search_all(4.5, "R")
+        all_neighbors = ns.search_all(6.6, "R")
 
         # Filter all pairs containing non AA residues
         all_aa_neighbors = [pair for pair in all_neighbors if is_aa(pair[0]) and is_aa(pair[1])]
@@ -71,12 +72,12 @@ def compute_interactions(pdb_name,save_to_db = False):
         all_aa_neighbors = [pair for pair in all_aa_neighbors if abs(pair[0].id[1] - pair[1].id[1]) > NUM_SKIP_RESIDUES]
 
         # For each pair of interacting residues, determine the type of interaction
-        interactions = [InteractingPair(res_pair[0], res_pair[1], get_interactions(res_pair[0], res_pair[1]),dbres[res_pair[0].id[1]], dbres[res_pair[1].id[1]],struc) for res_pair in all_aa_neighbors]
+        interactions = [InteractingPair(res_pair[0], res_pair[1], dbres[res_pair[0].id[1]], dbres[res_pair[1].id[1]],struc) for res_pair in all_aa_neighbors]
 
         # Split unto classified and unclassified.
         classified = [interaction for interaction in interactions if len(interaction.get_interactions()) > 0]
 
-    if save_to_db: 
+    if save_to_db:
 
         if do_interactions:
             # Delete previous for faster load in
@@ -114,12 +115,13 @@ def compute_interactions(pdb_name,save_to_db = False):
                         key =  res_1.get_parent().get_id()+str(res_1.get_id()[1]) + "_" + res_2.get_parent().get_id()+str(res_2.get_id()[1])
 
                         # Check if interaction is polar - NOTE: this is not capturing every angle
-                        if any(get_polar_interactions(water_pair_one[0].get_parent(), water_pair_one[1])) and any(get_polar_interactions(water_pair_two[0].get_parent(), water_pair_two[1])):
-                            # NOTE: Is splitting of sidechain and backbone-mediated interactions desired?
-                            if key in interaction_pairs:
-                                interaction_pairs[key].interactions.append(WaterMediated())
-                            else:
-                                interaction_pairs[key] = InteractingPair(res_1, res_2, [WaterMediated()], dbres[res_1.id[1]], dbres[res_2.id[1]], struc)
+                        # TODO FIX waters in combination with new definition
+                        # if any(get_polar_interactions(water_pair_one[0].get_parent(), water_pair_one[1])) and any(get_polar_interactions(water_pair_two[0].get_parent(), water_pair_two[1])):
+                        #     # NOTE: Is splitting of sidechain and backbone-mediated interactions desired?
+                        #     if key in interaction_pairs:
+                        #         interaction_pairs[key].interactions.append(WaterMediated())
+                        #     else:
+                        #         interaction_pairs[key] = InteractingPair(res_1, res_2, [WaterMediated()], dbres[res_1.id[1]], dbres[res_2.id[1]], struc)
 
             for p in classified:
                 p.save_into_database()
