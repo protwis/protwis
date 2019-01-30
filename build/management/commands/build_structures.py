@@ -821,8 +821,9 @@ class Command(BaseBuild):
         if not os.path.exists(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])):
             os.makedirs(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup']))
         wt_pdb_lookup_folder = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', str(structure) + '.json'])
-        with open(wt_pdb_lookup_folder, 'w') as f2:
-            json.dump(wt_pdb_lookup, f2)
+        if len(wt_pdb_lookup)>0:
+            with open(wt_pdb_lookup_folder, 'w') as f2:
+                json.dump(wt_pdb_lookup, f2)
         return None
 
 
