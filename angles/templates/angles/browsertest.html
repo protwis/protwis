@@ -9,8 +9,8 @@
 		    <div class="tab-pane active" id="single-crystal-tab">
                 <div class="row">
                     <div class="col-md-12">
-                        <h1 class="page-header">Single structure interactions</h1>
-                        <p>Display interaction heatmap for a single structure. Choose a PDB and options below.</p>
+                        <h1 class="page-header">GPCR residue properties</h1>
+                        <p>Display residue properties of a GPCR, optionally add a second to compare</p>
                     </div>
                 </div>
                 <div class="row">
@@ -21,7 +21,7 @@
                             </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
-                                <input class="crystal-pdb" type="hidden" value="[]" />
+                                <input id="pdb-input" class="crystal-pdb" type="hidden" value="[]" />
                                 <h5><span class="crystal-count">No structure selected.</span></h5>
                                 {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br> #}
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB</button>
@@ -31,11 +31,22 @@
                     <div class="col-md-1">
                         <div class="btn btn-success btn-lg pull-right go-button"><span>Go</span></div>
                     </div>
+                    <div class="col-md-offset-2 col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Optional second structure</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input type="hidden" class="interactions-input" value="[]" />
+                                <input id="second-input" class="second-pdb" type="hidden" value="[]" />
+                                <h5><span id="second-count" class="second-count">No structure selected.</span></h5>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#second-structure-pdb-modal">Select PDB</button><br><br> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#second-structure-pdb-modal-table">Select PDB</button>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>
-                {% comment %}<ul class="nav nav-tabs">
-                  <li class="active"><a href="#single-table-tab" data-toggle="tab" id="single-table-tab-link">Browser</a></li>
-                  <li><a href="#single-NGL-tab" data-toggle="tab" id="single-NGL-link">NGL</a></li>
-                </ul>{% endcomment %}
                 <div class="row">
 {% comment %}                   <div class="tab-content"> {% endcomment %}
                       <div class="col-md-6" id="single-table-tab">
@@ -47,6 +58,9 @@
                                 <th>Seq num</th>
                                 <th>angle</th>
                                 <th>diff med</th>
+                                <th>sign med</th>
+                                <th>hse</th>
+                                <th>sasa</th>
                             </tr>
                         </thead>
                         <tfoot>
@@ -55,6 +69,9 @@
                                 <th>Seq num</th>
                                 <th>angle</th>
                                 <th>diff med</th>
+                                <th>sign med</th>
+                                <th>hse</th>
+                                <th>sasa</th>
                             </tr>
                         </tfoot>
                       </table>
@@ -109,6 +126,30 @@
         </div>
     </div>
     <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
+    
+    <!-- BEGIN SECOND STRUCTURE SELECTOR TABLE -->
+    <div class="modal fade" id="second-structure-pdb-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures from table</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <div class="tableview"></div>
+                        </div>
+                      <div class="clearfix"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SECOND STRUCTURE SELECTOR TABLE --> 
+    
 
 {% endblock %}
 {% block addon_js %}

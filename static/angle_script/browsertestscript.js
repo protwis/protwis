@@ -17,307 +17,21 @@ function toggleFullScreen(fullScreenElement) {
     }
 }
 
-function hidePopovers() {
-    $('.popover').each(function(){
-        $(this).remove();
-    });
-}
-
-function HSVtoRGB(h, s, v) {
-    var r, g, b, i, f, p, q, t;
-    if (arguments.length === 1) {
-        s = h.s, v = h.v, h = h.h;
-    }
-    i = Math.floor(h * 6);
-    f = h * 6 - i;
-    p = v * (1 - s);
-    q = v * (1 - f * s);
-    t = v * (1 - (1 - f) * s);
-    switch (i % 6) {
-        case 0: r = v, g = t, b = p; break;
-        case 1: r = q, g = v, b = p; break;
-        case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break;
-        case 4: r = t, g = p, b = v; break;
-        case 5: r = v, g = p, b = q; break;
-    }
-    return {
-        r: Math.round(r * 255),
-        g: Math.round(g * 255),
-        b: Math.round(b * 255)
-    };
-}
-
-function rgb2hex(r,g,b) {
-    r = Math.round(r).toString(16);
-    g = Math.round(g).toString(16);
-    b = Math.round(b).toString(16);
-
-    if (r.length == 1)
-        r = '0' + r;
-
-    if (g.length == 1)
-        g = '0' + g;
-
-    if (b.length == 1)
-        b = '0' + b;
-
-    return '#' + r + g + b;
-}
-
-function getInteractionStrength(i) {
-    switch (i) {
-        case getFriendlyInteractionName('polarsidechainsidechaininteraction'):
-        case getFriendlyInteractionName('polarbackbonesidechaininteraction'):
-        case'polarsidechainsidechaininteraction':
-        case'polarbackbonesidechaininteraction':
-            return 4;
-        case getFriendlyInteractionName('facetofaceinteraction'):
-        case getFriendlyInteractionName('facetoedgeinteraction'):
-        case getFriendlyInteractionName('picationinteraction'):
-        case'facetofaceinteraction':
-        case'facetoedgeinteraction':
-        case'picationinteraction':
-            return 3;
-        case getFriendlyInteractionName('hydrophobicinteraction'):
-        case'hydrophobicinteraction':
-            return 2;
-        case getFriendlyInteractionName('vanderwaalsinteraction'):
-        case'vanderwaalsinteraction':
-            return 1;
-        default:
-            return 0;
-    }
-}
-
-function getColorStrongestInteraction(interactions, rgb = true) {
-    var maxStrength = 0;
-    for (var i = 0; i < interactions.length; i++)
-        maxStrength = Math.max(maxStrength, getInteractionStrength(interactions[i].replace(/-/g, ' ')));
-
-    return getInteractionColor(maxStrength, rgb);
-}
-
-function getFrequencyColor(frequency, rgb = true) {
-    return getGradientColor(-1*frequency, rgb);
-}
-
-function getFlareGradientColor(fDiff, rgb){
-    var color;
-    var shift = 80;
-    var basal = 255 - shift;
-
-    if (fDiff <= 0)
-        // If fDiff is close to -1, we want a red color
-        color = { r: basal + (fDiff * -1*shift), g: basal-basal*(-fDiff), b: basal-basal*(-fDiff) };
-    else
-        // If fDiff is close to 1 we want a blue color
-        color = { r: basal-basal*fDiff, g: basal-basal*fDiff, b: basal + (fDiff * shift)};
-
-    if (rgb)
-        return color;
-    else
-        return rgb2hex(color.r, color.g, color.b);
-}
-
-function getGradientColor(fDiff, rgb){
-    var color;
-    if (fDiff <= 0)
-        // If fDiff is close to -1, we want a red color
-        color = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
-    else
-        // If fDiff is close to 1 we want a blue color
-        color = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
-
-    if (rgb)
-        return color;
-    else
-        return rgb2hex(color.r, color.g, color.b);
-}
-
-function getStrongestInteractionType(interactions) {
-    if ($.inArray('polarsidechainsidechaininteraction', interactions) > -1)
-        return 'polarsidechainsidechaininteraction';
-
-    if ($.inArray('polarbackbonesidechaininteraction', interactions) > -1)
-        return 'polarbackbonesidechaininteraction';
-
-    if ($.inArray('facetofaceinteraction', interactions) > -1)
-        return 'facetofaceinteraction';
-
-    if ($.inArray('facetoedgeinteraction', interactions) > -1)
-        return 'facetoedgeinteraction';
-
-    if ($.inArray('picationinteraction', interactions) > -1)
-        return 'picationinteraction';
-
-    if ($.inArray('hydrophobicinteraction', interactions) > -1)
-        return 'hydrophobicinteraction';
-
-    if ($.inArray('vanderwaalsinteraction', interactions) > -1)
-        return 'vanderwaalsinteraction';
-
-    return 'undefined';
-}
-
-function getStrongestInteractionTypeFromPdbObject(obj) {
-
-    var interactions = [];
-
-    for (var key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            var strongestInteraction = getStrongestInteractionType(obj[key]);
-            interactions.push(strongestInteraction);
-        }
-    }
-
-    return getStrongestInteractionType(interactions);
-}
-
-function getInteractionTypesFromPdbObject(obj) {
-
-    var interactions = new Set();
-    for (var key in obj) {
-        Object.keys(obj[key]).forEach(function(k,index) {
-                interactions.add(obj[key][k]);
-        });
-        // if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        //     for (var k in obj[key])
-        //         interactions.add(obj[key][k]);
-        // }
-    }
-
-    // Sort according to strength
-    interactions = Array.from(interactions);
-    interactions.sort(function (i1, i2) {
-        return  getInteractionStrength(i1) - getInteractionStrength(i2);
-    });
-
-    return interactions;
-}
-
-
-function getInteractionColor(interaction, rgb = true) {
-    var r, g, b;
-
-    switch (interaction) {
-        case 'polarsidechainsidechaininteraction':
-        case 'polarbackbonesidechaininteraction':
-        case getFriendlyInteractionName('polarsidechainsidechaininteraction'):
-        case getFriendlyInteractionName('polarbackbonesidechaininteraction'):
-        case 4:
-            //r = 254; g = 0; b = 16;
-            r = 255; g = 98; b = 108;
-            break;
-        case 'facetofaceinteraction':
-        case 'facetoedgeinteraction':
-        case 'picationinteraction':
-        case getFriendlyInteractionName('facetofaceinteraction'):
-        case getFriendlyInteractionName('facetoedgeinteraction'):
-        case getFriendlyInteractionName('picationinteraction'):
-        case 3:
-            //r = 94; g = 241; b = 242;
-            r = 255; g = 166; b = 98;
-            break;
-        case 'hydrophobicinteraction':
-        case getFriendlyInteractionName('hydrophobicinteraction'):
-        case 2:
-            //r = 0; g = 117; b = 220;
-            r = 5; g = 200; b = 90;
-            break;
-        case 'vanderwaalsinteraction':
-        case getFriendlyInteractionName('vanderwaalsinteraction'):
-        case 1:
-            //r = 89; g = 252; b = 197;
-            r = 100; g = 100; b = 100;
-            break;
-        default:
-            r = 0; g = 0; b = 0;
-    }
-
-    if (rgb)
-        return { r: r, g: g, b: b };
-    else
-        return rgb2hex(r, g, b);
-}
-
-function getFriendlyInteractionName(interaction) {
-    switch (interaction) {
-        case 'polarsidechainsidechaininteraction':
-        case 'polarbackbonesidechaininteraction':
-            return 'Polar';
-        case 'facetofaceinteraction':
-        case 'facetoedgeinteraction':
-        case 'picationinteraction':
-            return 'Aromatic';
-        case 'hydrophobicinteraction':
-            return 'Hydrophobic';
-        case 'vanderwaalsinteraction':
-            return 'Van der Waals';
-        default:
-            return 'Unknown';
-    }
-}
-
-function populateTable(selector, data) {
-    console.log(data)
-    var table = [];
-        rows = []
-    if (selector=='single-table') {
-        var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
-        $('#single-crystal-tab .heatmap-container rect[data-interaction-type]').each(function(e) {
-            var rect = $(this);
-            var resNo1 = rect.data('res-no-1');
-            var resNo2 = rect.data('res-no-2');
-            var seg1 = rect.data('seg-1');
-            var seg2 = rect.data('seg-2');
-            var genNo1 = rect.data('gen-no-1');
-            var genNo2 = rect.data('gen-no-2');
-            var aa1 = rect.data('aa-1');
-            var aa2 = rect.data('aa-2');
-            var iType = rect.data('interaction-type');
-            rows.push('<tr><td>'+resNo1+'</td><td>'+resNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+aa1+'</td><td>'+aa2+'</td><td>'+iType+'</td>')
-        });
-    }
-    table.push('<table id="'+selector+'" class="table display" width="100%"><thead><tr>');
-    header.forEach(function(h) {
-    table.push('<th></th>'); //'+h+'
-    });
-    table.push('</tr</thead>');
-    table.push('<tbody>');
-    table = table.concat(rows);
-    table.push('</tbody></table>');
-    $("#"+selector+"-tab").html(table.join( "" ));
-
-    $("#"+selector+"-tab-link").click(function(e){
-        setTimeout(renderTable,100,"#"+selector,data);
-    });
-
-}
-
 function initializeGoButton(selector, generic=false) {
     $(selector + ' .go-button').click(function() {
-        var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+        var pdb = JSON.parse($('#pdb-input').val());
         //var segments = JSON.parse($(selector + ' .segments-input').val());
         var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
         if (pdb.length > 0 && segments.length > 0) {
-            var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-
-            if (!$(selector + ' .interactions-input').val() == null)
-                interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 
             renderTable(pdb);
-
-            if (selector == '#single-crystal-group-tab') {
-                createNGLview("single-group",pdb[0], pdb);
-            } else {
-                createNGLview("single",pdb[0]);
-            }
+            
+            var second = JSON.parse($('#second-input').val());
+            
+            createNGLview("single",pdb[0], second);
         }
     });
 }
-
-
 
 function initializeFullscreenButton(selector) {
     var fullScreenElement = $(selector + ' .heatmap-container').get(0);
@@ -326,38 +40,9 @@ function initializeFullscreenButton(selector) {
     });
 }
 
-
-function update_text_in_modal() {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-
-    if (mode=='Single group of structures') {
-    var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-    var selected_visible = $('.pdb_selected:checked').length
-    var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
-
-    if (total_selected==selected_visible) {
-        $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
-    } else {
-        $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
-    }
-    } else if (mode=='Two groups of structures') {
-    group = $('.tableview:visible').attr('group-number');
-    if (group) mode = mode + group;
-    //#FIXME
-    var ModalpdbsCountSelector = '#two-crystal-group-pdbs-modal-'+group+'-text';
-    var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-    var selected_visible = $('.pdb_selected:checked:visible').length
-    if (total_selected==selected_visible) {
-        $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
-    } else {
-        $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
-    }
-    }
-
-
-}
-
 function thisPDB(elem) {
+    
+    console.log(elem)
     var ReceptorName = $(elem).attr('long');
     var pdbName = $(elem).attr('id');
     $('.pdb_selected').not(elem).prop("checked",false);
@@ -370,92 +55,27 @@ function thisPDB(elem) {
         // Update view
         $(".crystal-count:visible").html('No structure selected.');
     }
-    $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
-    update_text_in_modal();
+    $('#pdb-input').val(JSON.stringify(pdbs));
 }
 
-function resetselection(elem) {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-
-    $('.check_all:visible').prop('checked',false);
-
-    if (mode=='Single group of structures') {
+function thisPDB2(elem) {
+    
+    console.log(elem)
+    var ReceptorName = $(elem).attr('long');
+    var pdbName = $(elem).attr('id');
+    $('.pdb_selected').not(elem).prop("checked",false);
     var pdbs = [];
-
-    $('input', oTable[mode].cells().nodes()).prop('checked',false);
-
-    var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-    var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    $(pdbsCountSelector).html(pdbs.length);
-    }  else if (mode=='Two groups of structures') {
-
-    group = $('.tableview:visible').attr('group-number');
-    if (group) mode = mode + group;
-    var pdbs = [];
-
-    $('input', oTable[mode].cells().nodes()).prop('checked',false);
-
-    var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
-    var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    $(pdbsCountSelector).html(pdbs.length);
-    }
-
-    update_text_in_modal();
-}
-
-function check_all(elem) {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-    show_all = $(elem).prop("checked");
-
-
-    if (mode=='Single group of structures') {
-    var pdbs = [];
-
-    // REMOVE EXISITING? Probably not, more logically that filtering adds more
-    // $('input', oTable.cells().nodes()).prop('checked',false);
-
-    if (show_all) {
-        $('.pdb_selected:visible').prop("checked",true);
+    if ($(elem).prop("checked")) {
+        pdbs.push(pdbName);
+        // Update view
+        $("#second-count").html(ReceptorName + ' - ' + pdbName + ' selected.');
     } else {
-        $('.pdb_selected:visible').prop("checked",false);
+        // Update view
+        $("#second-count").html('No structure selected.');
     }
-
-    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-        pdbs.push($(this).attr('id'));
-    });
-
-    var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-    var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    // Update view
-    $(pdbsCountSelector).html(pdbs.length);
-    }  else if (mode=='Two groups of structures') {
-
-    group = $(elem).closest('.tableview').attr('group-number');
-    if (group) mode = mode + group;
-    var pdbs = [];
-
-    if (show_all) {
-        $('.pdb_selected:visible').prop("checked",true);
-    } else {
-        $('.pdb_selected:visible').prop("checked",false);
-    }
-
-    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-        pdbs.push($(this).attr('id'));
-    });
-
-    var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
-    var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    // Update view
-    $(pdbsCountSelector).html(pdbs.length);
-    }
-
-    update_text_in_modal();
+    $('#second-input').val(JSON.stringify(pdbs));
 }
+
 
 $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
     {
@@ -465,12 +85,9 @@ $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
     };
 
 var oTable = [];
-function showPDBtable(element) {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-    group = $(element+' .tableview').attr('group-number');
-    if (group) mode = mode + group;
+function showPDBtable(element, table) {
     if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
-        oTable[mode] = $(element+' .tableview table').DataTable({
+        oTable[table] = $(element+' .tableview table').DataTable({
         'scrollX': true,
         // 'autoWidth': true,
         scrollY:        '80vh',
@@ -493,7 +110,7 @@ function showPDBtable(element) {
                     ]
         });
 
-        yadcf.init(oTable[mode],
+        yadcf.init(oTable[table],
         [
             {
                 column_number : 0,
@@ -569,19 +186,49 @@ function showPDBtable(element) {
         }
     );
 
-    yadcf.exResetAllFilters(oTable[mode]);
-
-    oTable[mode].on('draw.dt', function (e, oSettings) {
-        update_text_in_modal();
-    });
+    yadcf.exResetAllFilters(oTable[table]);
 
     };
 }
 
+
+function rgb2hex(r,g,b) {
+    
+    if (r.length == 1)
+        r = '0' + r;
+
+    if (g.length == 1)
+        g = '0' + g;
+
+    if (b.length == 1)
+        b = '0' + b;
+
+    return '#' + r + g + b;
+}
+
+function numberToColor(max,value) {
+    
+    var hexc = 255/max;
+    
+    if(value<(max/3)){
+        return rgb2hex("00","00",Math.floor((max-value)*hexc).toString(16));
+    } else if (value < ((2*max)/3)) {
+        return rgb2hex(Math.floor(value*hexc).toString(16),Math.floor((max-Math.abs(value-max/2))*hexc).toString(16),Math.floor((max-value)*hexc).toString(16));
+    } else {
+        return rgb2hex(Math.floor(value*hexc).toString(16),"00","00");
+    }
+}
+
+
+
 var stage = [];
 var color_schemes = [];
 var schemeId_grey
-function createNGLview(mode,pdb, pdbs = false) {
+
+function createNGLview(mode,pdb, pdb2, pdbs = false) {
+    console.log(pdb)
+    console.log(pdb2)
+    
     var gpcr_rep
     $("#ngl-"+mode).html("");
     stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
@@ -590,7 +237,7 @@ function createNGLview(mode,pdb, pdbs = false) {
     var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
     var reps = {} // store ngl representations
     var original_o
-
+    
     $.getJSON( "pdb/"+pdb,
         function( data ) {
         var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
@@ -626,41 +273,120 @@ function createNGLview(mode,pdb, pdbs = false) {
         
         var angle_color = [];
         var mediancolor = [];
+        var signifcolor = [];
+        var medianwindowcolor = [];  
+        var hsecolor = [];
+        var sasacolor = [];
         var colorstring;
         var ctemp;
+        var medmax;
+        var score = [0,0,0,0,0];
+        var axis = 100; //something larger than possible
+        var j = 0;
         
-        // TODO: median angle, difference to median angle
+        
         // groups
         
         residue_data.forEach(function(e){
-            ctemp = e[2];
-            if(ctemp<60){
-                colorstring = "#" + "0000" + Math.floor((180-ctemp)*1.41).toString(16) 
-            } else if (ctemp < 120) {
-                colorstring = "#" + Math.floor(ctemp*1.41).toString(16) + Math.floor((180-Math.abs(ctemp-90))*1.41).toString(16) + Math.floor((180-ctemp)*1.41).toString(16)
-            } else {
-                colorstring = "#" + Math.floor(ctemp*1.41).toString(16) + "0000"
-            }
-            angle_color.push([colorstring , ""+e[1]])
+            angle_color.push([numberToColor(180,e[2]) , ""+e[1]])
             
-            ctemp = e[3];
-            if(ctemp<60){
-                colorstring = "#" + "0000" + Math.floor((180-ctemp)*1.41).toString(16) 
-            } else if (ctemp < 120) {
-                colorstring = "#" + Math.floor(ctemp*1.41).toString(16) + Math.floor((180-Math.abs(ctemp-90))*1.41).toString(16) + Math.floor((180-ctemp)*1.41).toString(16)
-            } else {
-                colorstring = "#" + Math.floor(ctemp*1.41).toString(16) + "0000"
+            mediancolor.push([numberToColor(90,e[3]) , ""+e[1]])
+            
+            signifcolor.push([numberToColor(0.5,e[4]-0.5) , ""+e[1]])
+            
+            hsecolor.push([numberToColor(40,e[5]) , ""+e[1]])
+            
+            sasacolor.push([numberToColor(100,e[6]) , ""+e[1]])
+            
+            if(axis != Number(e[0][0])){
+                axis = Number(e[0][0])
+                j = 0
+                score = [0,0,0,0,0]
             }
-            // +Math.floor(e[2]*1.41).toString(16)+Math.floor(e[2]*1.41).toString(16)+Math.floor(e[2]*1.41).toString(16)
-            mediancolor.push([colorstring , ""+e[1]])
+            
+            score[j%5] = e[3]
+            ctemp = score.reduce((a,b)=>a+b);
+            if(ctemp >100){
+                medianwindowcolor.push([numberToColor(255,ctemp) , ""+e[1]])
+            } else {
+                medianwindowcolor.push(["#00F" , ""+e[1]])
+            }
+            j +=1;
         });
+        
         
         
         angle_color.push([ "white", "*" ]);
         mediancolor.push([ "white", "*" ]);
+        signifcolor.push([ "white", "*" ]);
+        medianwindowcolor.push([ "white", "*" ]);
+        hsecolor.push([ "white", "*" ]);
+        sasacolor.push([ "white", "*" ]);
         
         color_schemes['angles'] = NGL.ColormakerRegistry.addSelectionScheme(angle_color)
         color_schemes['mediancolor'] = NGL.ColormakerRegistry.addSelectionScheme(mediancolor)
+        color_schemes['medianwindowcolor'] = NGL.ColormakerRegistry.addSelectionScheme(medianwindowcolor)
+        color_schemes['significance'] = NGL.ColormakerRegistry.addSelectionScheme(signifcolor)
+        color_schemes['hse'] = NGL.ColormakerRegistry.addSelectionScheme(hsecolor)
+        color_schemes['sasa'] = NGL.ColormakerRegistry.addSelectionScheme(sasacolor)
+        
+        
+        console.log(pdb2.length)
+        
+        score = [0,0,0,0,0];
+        axis = 100; //something larger than possible
+        j = 0;
+        
+        
+        if (pdb2.length > 0) {
+            
+            $.get('angledat?pdbs[]='+pdb2[0], function(secondArray) {
+                var second_residues = secondArray["data"];
+                
+                scnd_angle = []
+                scnd_hse   = []
+                scnd_sasa  = []
+                
+                second_residues.forEach(function(scnd){
+                    residue_data.forEach(function(e){
+                        if (e[0] == scnd[0]){
+                            scnd_angle.push([numberToColor(100, Math.abs(e[2] - scnd[2])) , ""+e[1]]);
+                            scnd_hse.push([numberToColor(40, Math.abs(e[5] - scnd[5])) , ""+e[1]]);
+                            scnd_sasa.push([numberToColor(100, Math.abs(e[6] - scnd[6])) , ""+e[1]]);
+                            
+                            if(axis != Number(e[0][0])){
+                                axis = Number(e[0][0])
+                                j = 0
+                                score = [0,0,0,0,0]
+                            }
+                            
+                            score[j%5] = e[3]
+                            ctemp = score.reduce((a,b)=>a+b);
+                            if(ctemp >100){
+                                medianwindowcolor.push([numberToColor(255,ctemp) , ""+e[1]])
+                            } else {
+                                medianwindowcolor.push(["#00F" , ""+e[1]])
+                            }
+                            j +=1;
+                            
+                        }
+                    });
+                });
+                
+                scnd_angle.push([ "white", "*" ]);
+                scnd_hse.push([ "white", "*" ]);
+                scnd_sasa.push([ "white", "*" ]);
+                
+                color_schemes['scnd_angle'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_angle)
+                color_schemes['scnd_hse'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_hse)
+                color_schemes['scnd_sasa'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_sasa)
+                
+            });
+        
+        }
+        
+        
+        console.log(optional)
 
 
         var stringBlob = new Blob( [ pdb_data['pdb'] ], { type: 'text/plain'} );
@@ -684,110 +410,6 @@ function createNGLview(mode,pdb, pdbs = false) {
             depthWrite: true
             });
 
-            var links = []
-            var links_gn = []
-            var res_int = []
-
-            if (mode=='single') {
-                $('#single-crystal-tab rect[data-interaction-type]').each(function(e) {
-                    var rect = $(this);
-                    var resNo1 = rect.data('res-no-1');
-                    var resNo2 = rect.data('res-no-2');
-                    var seg1 = rect.data('seg-1');
-                    var seg2 = rect.data('seg-2');
-                    var genNo1 = rect.data('gen-no-1');
-                    var genNo2 = rect.data('gen-no-2');
-                    var aa1 = rect.data('aa-1');
-                    var aa2 = rect.data('aa-2');
-                    var iType = rect.data('interaction-type');
-                    if (getInteractionStrength(iType)<3) return
-                    res_int.push(resNo1);
-                    res_int.push(resNo2);
-                    links.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
-
-                    if ((genNo1=='-') || (genNo2=='-')) return
-                    links_gn.push({"atoms": [resNo1+":"+pdb_data['chain']+".CA",resNo2+":"+pdb_data['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
-                });
-            }
-
-            var linkMap = {}
-            links.forEach(function (link) {
-                linkMap[link.resID] = link
-            })
-
-            var initColourSchemes = function () {
-                var linkColourScheme = function () {
-                this.bondColor = function (b) {
-                    var origLink = linkMap[b.atom1.resno + "-" + b.atom2.resno]
-                    if (origLink) {
-//                             console.log('FOUND!',origLink,origLink.data.color);
-                    r = origLink.data.color
-                    return (r["r"] << 16) + (r["g"] << 8) + r["b"]
-                    }
-                    return (8 << 16) + (8 << 8) + 8 // (128 << 16) + (128 << 8) + 128 // grey default
-                }
-                }
-                reps.linkColourScheme = NGL.ColormakerRegistry.addScheme(linkColourScheme, "xlink")
-            }
-            initColourSchemes()
-
-            // return unique atom indices as a selection from a set of pairs of atom indices
-            // var makeAtomSelection = function (someLinks) {
-            //   var atomSet = new Set()
-            //   someLinks.forEach(function (link) {
-            //     atomSet.add(link.atoms[0].split(".")[0])
-            //     atomSet.add(link.atoms[1].split(".")[0])
-            //   })
-            //   var atomSelection = "(" + Array.from(atomSet).join(", ") + ") and .CA"
-            //   return atomSelection
-            // }
-            // var startAtomSel = makeAtomSelection(links)
-            // console.log(startAtomSel,"startAtomSel")
-
-            var baseLinkScale = 20
-            reps.links = o.addRepresentation("distance", {
-                atomPair: links.map(function (l) {
-                return l.atoms
-                }),
-                // colorValue: "yellow",
-                colorScheme: reps.linkColourScheme,
-                useCylinder: false,
-                labelVisible: false,
-                linewidth: 2
-            })
-            reps.links_gn = o.addRepresentation("distance", {
-                atomPair: links_gn.map(function (l) {
-                return l.atoms
-                }),
-                // colorValue: "yellow",
-                colorScheme: reps.linkColourScheme,
-                useCylinder: false,
-                labelVisible: false,
-                linewidth: 2,
-                visible: false
-            })
-
-            reps.int_res = o.addRepresentation( "spacefill", {
-                sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and (.CA)",
-                color: "red",
-                // colorScale: ["#44f", "#444"],
-                radiusScale: .2,
-                name: "res",
-                visible: false
-            });
-
-
-            res_int_gn = Object.assign([], res_int);
-            res_int_gn = intersect(res_int_gn, pdb_data['only_gn']);
-            reps.int_res_gn = o.addRepresentation( "spacefill", {
-                sele: ":"+pdb_data['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
-                color: "red",
-                // colorScale: ["#44f", "#444"],
-                radiusScale: .2,
-                name: "res",
-                visible: false
-            });
-
             reps.ball_all = o.addRepresentation("ball+stick", {
                 sele: ":"+pdb_data['chain']+" and sidechainAttached",
                 visible: false
@@ -797,26 +419,6 @@ function createNGLview(mode,pdb, pdbs = false) {
                 sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and sidechainAttached",
                 visible: false
                 })
-
-            reps.ball_int = o.addRepresentation("ball+stick", {
-                sele: ":"+pdb_data['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
-                visible: false
-                })
-
-            reps.ball_int_gn = o.addRepresentation("ball+stick", {
-                sele: ":"+pdb_data['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
-                visible: false
-                })
-
-
-            reps.ngl_contacts = o.addRepresentation("contact", {
-                sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")",
-                radiusSize: 0.07,
-                weakHydrogenBond: false,
-                waterHydrogenBond: false,
-                backboneHydrogenBond: false,
-                visible:false
-            })
 
             o.autoView();
             
@@ -833,7 +435,6 @@ function createNGLview(mode,pdb, pdbs = false) {
                 if(residuetable.row(this).data()[1] in repr_dict){
                     o.removeRepresentation(repr_dict[residuetable.row(this).data()[1]])
                     delete repr_dict[residuetable.row(this).data()[1]]
-                    console.log(this)
                     $(this).removeClass("table-selected")
                 }else{
                     repr_dict[residuetable.row(this).data()[1]] = o.addRepresentation("ball+stick", {sele: ""+residuetable.row(this).data()[1]});
@@ -850,7 +451,12 @@ function createNGLview(mode,pdb, pdbs = false) {
     newDiv.setAttribute("style", "position: absolute; top: 50px; left: 20px")
     var controls = '<div class="controls">'
                     + '<h3>Controls</h3>';
-
+    
+    var optional = ''
+    if (pdb2.length >0){
+        optional = '<option value="scnd_angle">Difference angle from'+ pdb2[0] +'</option><option value="scnd_hse">Difference hse from'+ pdb2[0] +'</option><option value="scnd_sasa">Difference sasa from'+ pdb2[0] +'</option>'
+    }
+    
     if (pdbs){
             controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
             for (var i = 0; i < pdbs.length; i++){
@@ -862,13 +468,9 @@ function createNGLview(mode,pdb, pdbs = false) {
             controls += '</select></p>';
     }
 
-    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="angles">angles</option><option value="mediancolor">mediancolor</option></select></p>'
+    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="angles">angles</option><option value="mediancolor">mediancolor</option><option value="medianwindowcolor">medianwindowcolor</option><option value="significance">significance</option><option value="hse">hse</option><option value="sasa">sasa</option>'+ optional +'</select></p>'
                         +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
-                        +'<p>Highlight interacting res: <input type=checkbox id="highlight_res"></p>'
-                        +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
                         +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
-                        +'<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
-//                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                         +'</div>';
 
     newDiv.innerHTML = controls;
@@ -896,11 +498,6 @@ function createNGLview(mode,pdb, pdbs = false) {
     $("#ngl-"+mode+" #ngl_only_gns").change(function(e){
         if ($(this).prop('checked')) {
             sele = ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")";
-            // toggle edges
-            if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
-            reps.links.setVisibility(false);
-            reps.links_gn.setVisibility(true);
-            }
             // toggle CA spheres
             if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
             reps.int_res_gn.setVisibility(true);
@@ -911,18 +508,8 @@ function createNGLview(mode,pdb, pdbs = false) {
             reps.ball.setVisibility(true);
             reps.ball_all.setVisibility(false);
             }
-            // toggle interacting toggle_sidechains
-            if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
-            reps.ball_int_gn.setVisibility(true);
-            reps.ball_int.setVisibility(false);
-            }
         } else {
             sele = ":"+pdb_data['chain'];
-            // toggle edges
-            if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
-            reps.links.setVisibility(true);
-            reps.links_gn.setVisibility(false);
-            }
             // toggle CA spheres
             if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
             reps.int_res_gn.setVisibility(false);
@@ -933,11 +520,6 @@ function createNGLview(mode,pdb, pdbs = false) {
             if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
             reps.ball.setVisibility(false);
             reps.ball_all.setVisibility(true);
-            }
-            // toggle interacting toggle_sidechains
-            if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
-            reps.ball_int_gn.setVisibility(false);
-            reps.ball_int.setVisibility(true);
             }
         }
 
@@ -955,18 +537,6 @@ function createNGLview(mode,pdb, pdbs = false) {
         } else {!$("#ngl-"+mode+" #toggle_interactions").prop('checked')
             reps.int_res_gn.setVisibility(false);
             reps.int_res.setVisibility(false);
-        }
-    });
-
-    $("#ngl-"+mode+" #toggle_interactions").change(function(e){
-        if ($(this).prop('checked')) {
-            reps.links.setVisibility(false);
-            reps.links_gn.setVisibility(false);
-        } else {
-            if ($("#ngl-"+mode+" #ngl_only_gns").prop('checked'))
-            reps.links_gn.setVisibility(true);
-            else
-            reps.links.setVisibility(true);
         }
     });
 
@@ -994,31 +564,12 @@ function createNGLview(mode,pdb, pdbs = false) {
         }
     });
 
-    $("#ngl-"+mode+" #ngl_contacts").change(function(e){
-        if ($(this).prop('checked')) {
-            reps.ngl_contacts.setVisibility(true);
-        } else {
-            reps.ngl_contacts.setVisibility(false);
-        }
-    });
-
 }
-
-function intersect(a, b) {
-    var t;
-    if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
-    return a.filter(function (e) {
-        return b.indexOf(e) > -1;
-    });
-}
-
 
 var residue_data
 
 function renderTable(pdb) {
-    console.log(pdb)
     $.get('angledat?pdbs[]='+pdb[0], function(newDataArray) {
-    console.log()
     residue_data = newDataArray["data"]
     residuetable.clear();
     residuetable.rows.add(residue_data);
@@ -1059,6 +610,27 @@ function initializeResidueTable() {
             select_type: 'select2',
             filter_default_label: "diff med",
             filter_reset_button_text: false,
+        },
+        {
+            column_number : 4,
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: "sig med",
+            filter_reset_button_text: false,
+        },
+        {
+            column_number : 5,
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: "hse",
+            filter_reset_button_text: false,
+        },
+        {
+            column_number : 6,
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: "sasa",
+            filter_reset_button_text: false,
         }
     ],
     {
@@ -1069,19 +641,30 @@ function initializeResidueTable() {
 }
 
 $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
-    showPDBtable('#single-crystal-pdb-modal-table');
+    showPDBtable('#single-crystal-pdb-modal-table', "firsttable");
 })
 
+$('#second-structure-pdb-modal-table').on('shown.bs.modal', function (e) {
+    showPDBtable('#second-structure-pdb-modal-table',"secondtable");
+})
+
+
 function initializePdbChooserTables() {
-    $.get('/contactnetwork/pdbtabledata', function ( data ) {
+    $.get('pdbtabledata', function ( data ) {
     $('#single-crystal-pdb-modal-table .tableview').html(data);
     pdbtabledata = data;
     });
 }
 
+function initializeSecondTable() {
+    $.get('pdbtabledata2', function ( data ) {
+    $('#second-structure-pdb-modal-table .tableview').html(data);
+    secondtable = data;
+    });
+}
 
 function initalizeSingleCrystalView() {
-    initializeResidueTable()
+    
     initializeGoButton('#single-crystal-tab');
     initializeFullscreenButton('#single-crystal-tab');
 }
@@ -1091,9 +674,13 @@ var residuetable
 
 
 $(document).ready(function() {
+    // residue Table
+    initializeResidueTable();
     // Get PDBs for table build
     initializePdbChooserTables();
+    initializeSecondTable();
 
     // Single PDB files
     initalizeSingleCrystalView();
+    
 }); 

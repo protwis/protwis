@@ -7,7 +7,7 @@ import contactnetwork.pdb as pdb
 
 from structure.models import Structure
 from residue.models import Residue
-from angles.model import Angle
+#from angles.model import Angle
 
 import logging
 import numpy as np

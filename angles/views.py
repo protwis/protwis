@@ -2,18 +2,14 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch
-from django import forms
-from django.core.cache import cache
+import copy
+
 from django.views.decorators.cache import cache_page
 
-
-from django.core.management.base import BaseCommand#, CommandError
-#from django.core.management import call_command
-#from django.conf import settings
-#from django.db import connection
-
 import contactnetwork.pdb as pdb
+
+from collections import OrderedDict
+
 
 from structure.models import Structure
 from residue.models import Residue
@@ -24,8 +20,7 @@ from sklearn.decomposition import PCA
 from numpy.core.umath_tests import inner1d
 import io
 import freesasa
-import pickle
-
+import scipy.stats as stats
 
 def load_pdb_var(pdb_code, var):
     """
@@ -159,6 +154,7 @@ class testTemplate(TemplateView):
         ######################### Start of main loop ##########################
         #######################################################################
         
+        angle_dict = [{},{},{},{}]
         median_dict = [{},{},{},{}]
         
         for reference in references:
@@ -250,15 +246,52 @@ class testTemplate(TemplateView):
                 
                 # uncomment for bulk create, update
                 # TODO: list comp + database search for all?
-                if len(pchain) - len(a_angle):
-                    print("\033[91mLength mismatch", pdb_code, '\033[0m')
                 
-                for res,a1,a2 in zip(pchain,a_angle,b_angle):
-                    dblist.append((gdict[res.id[1]], a1, a2, reference,state_id-1))
-                    if gdict[res.id[1]].generic_number.label not in median_dict[state_id-1]:
-                        median_dict[state_id-1][gdict[res.id[1]].generic_number.label] = [round(a1,3)]
+                ############## SASA 
+                pdbstruct = freesasa.Structure("pymol_output/" + pdb_code +'angle_colored_axes.pdb')
+                res = freesasa.calc(pdbstruct)
+                
+                asa_list = []
+                oldnum   = -1
+                for i in range(res.nAtoms()):
+                    resnum = pdbstruct.residueNumber(i)
+                    if resnum == oldnum:
+                        asa_list[-1] += res.atomArea(i)
                     else:
-                        median_dict[state_id-1][gdict[res.id[1]].generic_number.label].append(round(a1,3))
+                        asa_list.append(res.atomArea(i))
+                        oldnum = resnum
+                
+                ################ HSE
+                
+                
+                hse = pdb.HSExposure.HSExposureCB(structure[0])
+                hselist = [x[1][1] if x[1][1] > 0 else 0 for x in hse ]
+                
+                
+                ################ dblist gen
+                if len(pchain) - len(hselist):
+                    print("\033[91mLength mismatch hse", pdb_code, '\033[0m')
+                    
+                if len(pchain) - len(asa_list):
+                    print("\033[91mLength mismatch sasa", pdb_code, '\033[0m')
+                
+                if np.isnan(np.sum(asa_list)):
+                    print("\033[91mNAN sasa", pdb_code, '\033[0m')
+                    
+                if np.isnan(np.sum(hselist)):
+                    print("\033[91mNAN hse", pdb_code, '\033[0m')
+                    continue
+                
+                
+                
+                for res,a1,a2,asa,hse in zip(pchain,a_angle,b_angle,asa_list,hselist):
+                    dblist.append([gdict[res.id[1]], a1, a2, reference,state_id-1,asa,hse])
+                    if gdict[res.id[1]].generic_number.label not in angle_dict[state_id-1]:
+                        angle_dict[state_id-1][gdict[res.id[1]].generic_number.label] = [round(a1,3)]
+                    else:
+                        angle_dict[state_id-1][gdict[res.id[1]].generic_number.label].append(round(a1,3))
+                
+                
                 
                 # comment for bulk create, update
                 #this works in any case but is (really) slow.
@@ -271,16 +304,29 @@ class testTemplate(TemplateView):
                 print("ERROR!!", pdb_code, e)
                 failed.append(pdb_code)
                 continue
-            
-        print(median_dict[0]['2x35'])
+        
         for i in range(4):
-            for key in median_dict[i]:
-                sortlist = sorted(median_dict[i][key])
+            for key in angle_dict[i]:
+                sortlist = sorted(angle_dict[i][key])
                 listlen = len(sortlist)
                 median_dict[i][key] = sortlist[listlen//2] if listlen % 2 else (sortlist[listlen//2] + sortlist[listlen//2-1])/2
-        print(median_dict)
         
-        dblist = [Angle(residue=g, diff_med=round(abs(median_dict[i][g.generic_number.label]-a1),3), angle=a1, b_angle=a2, structure=ref) for g,a1,a2,ref,i in dblist]
+        for i, res in enumerate(dblist):
+            
+            g = res[0]
+            a = res[1]
+            
+            templist = copy.copy(angle_dict[res[4]][g.generic_number.label])
+            del templist[templist.index(a)]
+            
+            std_test = abs(np.average(templist) - int(a))/np.std(templist)
+            std_len  = len(templist)
+            std = stats.t.cdf(std_test, df=std_len-1)
+            dblist[i].append(0.501 if np.isnan(std) else std)
+
+        
+        
+        dblist = [Angle(residue=g, diff_med=round(abs(median_dict[i][g.generic_number.label]-a1),3), angle=a1, b_angle=a2, structure=ref, sasa=round(asa,3), hse=hse, sign_med=round(sig,3)) for g,a1,a2,ref,i,asa,hse,sig in dblist]
         
         print("created list")
         print(len(dblist))
@@ -311,17 +357,13 @@ def get_angles(request):
 
     # Use generic numbers? Defaults to True.
     #generic = True
-    print(pdbs[0])
     query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number")
-    print("2.5")
     # Get the relevant interactions
     # Initialize response dictionary
     data = {}
-    data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.angle, q.diff_med] for q in query]
+    data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.angle, q.diff_med, q.sign_med, q.hse, q.sasa] for q in query]
 
     # Create a consensus sequence.
-    
-    print(data)
     
     return JsonResponse(data)
 
@@ -353,3 +395,69 @@ def ServePDB(request, pdbname):
     data['chain'] = structure.preferred_chain
 
     return JsonResponse(data)
+
+#@cache_page(60*60*24)
+def PdbTableData(request):
+
+    data = Structure.objects.filter(refined=False).select_related(
+                "state",
+                "pdb_code__web_resource",
+                "protein_conformation__protein__species",
+                "protein_conformation__protein__source",
+                "protein_conformation__protein__family__parent__parent__parent",
+                "publication__web_link__web_resource").prefetch_related(
+                "stabilizing_agents", "construct__crystallization__crystal_method",
+                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+                "protein_conformation__site_protein_conformation__site")
+
+    data_dict = OrderedDict()
+    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></thead><tbody>\n"
+    for s in data:
+        pdb_id = s.pdb_code.index
+        r = {}
+        r['protein'] = s.protein_conformation.protein.parent.entry_short()
+        r['protein_long'] = s.protein_conformation.protein.parent.short()
+        r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
+        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
+        r['species'] = s.protein_conformation.protein.species.common_name
+        r['date'] = s.publication_date
+        r['state'] = s.state.name
+        r['representative'] = 'Yes' if s.representative else 'No'
+        data_dict[pdb_id] = r
+        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['representative'],r['date'],r['protein_long'],pdb_id)
+    data_table += "</tbody></table>"
+    return HttpResponse(data_table)
+
+#@cache_page(60*60*24)
+def PdbTableData2(request):
+
+    data = Structure.objects.filter(refined=False).select_related(
+                "state",
+                "pdb_code__web_resource",
+                "protein_conformation__protein__species",
+                "protein_conformation__protein__source",
+                "protein_conformation__protein__family__parent__parent__parent",
+                "publication__web_link__web_resource").prefetch_related(
+                "stabilizing_agents", "construct__crystallization__crystal_method",
+                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+                "protein_conformation__site_protein_conformation__site")
+
+    data_dict = OrderedDict()
+    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></thead><tbody>\n"
+    for s in data:
+        pdb_id = s.pdb_code.index
+        r = {}
+        r['protein'] = s.protein_conformation.protein.parent.entry_short()
+        r['protein_long'] = s.protein_conformation.protein.parent.short()
+        r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
+        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
+        r['species'] = s.protein_conformation.protein.species.common_name
+        r['date'] = s.publication_date
+        r['state'] = s.state.name
+        r['representative'] = 'Yes' if s.representative else 'No'
+        data_dict[pdb_id] = r
+        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB2(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['representative'],r['date'],r['protein_long'],pdb_id)
+    data_table += "</tbody></table>"
+    return HttpResponse(data_table)
+
+
