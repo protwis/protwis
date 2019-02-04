@@ -888,8 +888,6 @@ class Command(BaseBuild):
                         # If update_flag is true then update existing structures
                         # Otherwise only make new structures
                         if not self.incremental_mode:
-                            dis = s.distances.all().delete()
-                            rs = s.protein_conformation.residue_set.all().delete()
                             s = s.delete()
                             s = Structure()
                         else:

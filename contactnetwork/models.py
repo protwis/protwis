@@ -44,6 +44,7 @@ class Distance(models.Model):
     res2 = models.ForeignKey('residue.Residue', related_name='distance_residue2', on_delete=models.CASCADE, null=True)
     gn1 = models.CharField(max_length=100, null=True)
     gn2 = models.CharField(max_length=100, null=True)
+    gns_pair = models.CharField(db_index=True, max_length=100, null=True)
     distance = models.IntegerField()
 
     @classmethod
