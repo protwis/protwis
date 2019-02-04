@@ -93,7 +93,7 @@ class InteractingPair:
         # Add the interactions to the pair'
         bulk = []
         for i in self.get_interactions():
-            ni = Interaction(interaction_type=i.get_type(),specific_type=i.get_details(), interacting_pair=pair, atomname_residue1=i.atomname_residue1, atomname_residue2=i.atomname_residue2)
+            ni = Interaction(interaction_type=i.get_type(),specific_type=i.get_details(), interacting_pair=pair, atomname_residue1=i.atomname_residue1, atomname_residue2=i.atomname_residue2, interaction_level = i.get_level())
             bulk.append(ni)
         Interaction.objects.bulk_create(bulk)
 
@@ -111,13 +111,14 @@ class InteractingPair:
                 else:
                     self.add_interactions(NegPosIonicInteraction(match1, match2))
 
-    def hbond_interactions(self, switch = False):
-        # Initially focus on side-chain and water H-bonds
+    def strict_hbond_interactions(self, switch = False):
         hbd = self.res1
         hba = self.res2
         if switch:
             hbd = self.res2
             hba = self.res1
+
+        found = False
 
         if is_hbd(hbd) and is_hba(hba):
             # Get acceptors
@@ -131,58 +132,118 @@ class InteractingPair:
 
                 # Check angles
                 if len(pairs) > 0:
-                    if is_water(hbd):
-                        for pair in pairs:
-                            return True
-                    else:
-                        for pair in pairs:
-                            donor = pair[0]
-                            acceptor = pair[1]
+                    #if is_water(hbd):
+                    #    for pair in pairs:
+                    #        return True
+                    #else:
+                    for pair in pairs:
+                        donor = pair[0]
+                        acceptor = pair[1]
 
-                            for set in donors[donor]:
-                                if set[0] in hbd.child_dict and (len(set) < 4 or set[3] in hbd.child_dict):
-                                    p1 = hbd.child_dict[set[0]].coord
-                                    p2 = hbd.child_dict[donor].coord
+                        for set in donors[donor]:
+                            if set[0] in hbd.child_dict and (len(set) < 4 or set[3] in hbd.child_dict):
+                                p1 = hbd.child_dict[set[0]].coord
+                                p2 = hbd.child_dict[donor].coord
 
-                                    # Option 1: freely rotating donor, take acceptor as reference
-                                    p3 = hba.child_dict[acceptor].coord
+                                # Option 1: freely rotating donor, take acceptor as reference
+                                p3 = hba.child_dict[acceptor].coord
 
-                                    # Option 2: fixed donor orientation (dihedral), internal reference
-                                    if len(set) == 4: # secondary
-                                        # backbone nitrogen - second reference atom comes from the previous residue
-                                        if donor == 'N':
-                                            # 1. grab previous connected residue (if numbering switches, this might give an error)
-                                            # 2. grab coordinate atom previous residue
-                                            hbd_chain = hbd.get_parent()
-                                            if hbd_chain.has_id(hbd.id[1]-1):
-                                                p3 = hbd_chain[hbd.id[1]-1].child_dict[set[3]].coord
-                                            else:
-                                                continue
+                                # Option 2: fixed donor orientation (dihedral), internal reference
+                                if len(set) == 4: # secondary
+                                    # backbone nitrogen - second reference atom comes from the previous residue
+                                    if donor == 'N':
+                                        # 1. grab previous connected residue (if numbering switches, this might give an error)
+                                        # 2. grab coordinate atom previous residue
+                                        hbd_chain = hbd.get_parent()
+                                        if hbd_chain.has_id(hbd.id[1]-1):
+                                            p3 = hbd_chain[hbd.id[1]-1].child_dict[set[3]].coord
                                         else:
-                                            p3 = hbd.child_dict[set[3]].coord
+                                            continue
+                                    else:
+                                        p3 = hbd.child_dict[set[3]].coord
 
-                                    # calculate optimal H-bonding vector to acceptor
-                                    d=get_unit_vector(p2-p1)
-                                    v=p3-p1
-                                    t=numpy.dot(v, d)
-                                    p4=p1+t*d
-                                    best_vector=get_unit_vector(p3-p4)
-                                    if len(set) == 4: # secondary
-                                        best_vector=-1 * best_vector
+                                # calculate optimal H-bonding vector to acceptor
+                                d=get_unit_vector(p2-p1)
+                                v=p3-p1
+                                t=numpy.dot(v, d)
+                                p4=p1+t*d
+                                best_vector=get_unit_vector(p3-p4)
+                                if len(set) == 4: # secondary
+                                    best_vector=-1 * best_vector
 
-                                    angle=math.radians(set[1]-90)
-                                    x=abs(math.cos(angle)*set[2])
-                                    y=abs(math.sin(angle)*set[2])
-                                    hydrogen=p2+y*d+x*best_vector
+                                angle=math.radians(set[1]-90)
+                                x=abs(math.cos(angle)*set[2])
+                                y=abs(math.sin(angle)*set[2])
+                                hydrogen=p2+y*d+x*best_vector
 
-                                    # check angle
-                                    if 180 - math.degrees(angle_between(hydrogen - p2, hba.child_dict[acceptor].coord - hydrogen)) >= 120:
-                                        if switch:
-                                            self.add_interactions(HydrogenBondADInteraction(acceptor, donor))
-                                        else:
-                                            self.add_interactions(HydrogenBondDAInteraction(donor, acceptor))
+                                # check angle
+                                if 180 - math.degrees(angle_between(hydrogen - p2, hba.child_dict[acceptor].coord - hydrogen)) >= 120:
+                                    if switch:
+                                        self.add_interactions(HydrogenBondADInteraction(acceptor, donor))
+                                        found = True
+                                    else:
+                                        self.add_interactions(HydrogenBondDAInteraction(donor, acceptor))
+                                        found = True
         if not switch:
-            self.hbond_interactions(switch = True)
+            found = self.strict_hbond_interactions(switch = True) or found
+        return found
+
+    @staticmethod
+    def verify_water_hbond(residue, water):
+        atom_names = []
+
+        # Water as donor
+        if is_hba(residue):
+            acceptors = get_hbond_acceptors(residue)
+            matches = [ acceptor for acceptor in acceptors if acceptor in residue.child_dict and distance_between(water.coord, residue.child_dict[acceptor].coord) <= 3.5 ]
+            if len(matches) > 0:
+                atom_names = matches
+
+        # Water as acceptor
+        if is_hbd(residue):
+            donors = get_hbond_donor_references(residue)
+            matches = [ donor for donor in donors if donor in residue.child_dict and distance_between(water.coord, residue.child_dict[donor].coord) <= 3.5 ]
+            # TODO: add additional HB checks (angle)
+            if len(matches) > 0:
+                atom_names += matches
+
+        # return unique atom names (e.g. when atom is both acceptor + donor)
+        return list(set(atom_names))
+
+    def loose_hbond_interactions(self, switch = False):
+        hbd = self.res1
+        hba = self.res2
+        if switch:
+            hbd = self.res2
+            hba = self.res1
+
+        if is_hbd(hbd) and is_hba(hba):
+            # Get acceptors
+            acceptors = get_hbond_acceptors(hba)
+
+            # Get H-bond donor information
+            donors = get_hbond_donor_references(hbd)
+            for donor in donors:
+                # Matching donor-acceptor pairs within 4A - no angle requirements
+                pairs = [ [donor, acceptor] for acceptor in acceptors if donor in hbd.child_dict and acceptor in hba.child_dict and distance_between(hbd.child_dict[donor].coord, hba.child_dict[acceptor].coord) <= 4 ]
+                for pair in pairs:
+                    donor = pair[0]
+                    acceptor = pair[1]
+                    if switch:
+                        self.add_interactions(LooseHydrogenBondADInteraction(acceptor, donor))
+                    else:
+                        self.add_interactions(LooseHydrogenBondDAInteraction(donor, acceptor))
+
+        if not switch:
+            self.strict_hbond_interactions(switch = True)
+
+    def hbond_interactions(self):
+        # calculate interactions for pair
+        if (is_hbd(self.res1) and is_hba(self.res2)) or (is_hbd(self.res2) and is_hba(self.res1)):
+            found = self.strict_hbond_interactions()
+            if not found:
+                self.loose_hbond_interactions()
+
 
     def aromatic_interactions(self):
         aromatic_count = is_aromatic_aa(self.res1) + is_aromatic_aa(self.res2)
@@ -190,8 +251,10 @@ class InteractingPair:
         if aromatic_count == 1:
             self.pi_cation_interactions()
         elif aromatic_count == 2:
-            self.face_to_face_interactions()
-            self.edge_to_face_interactions()
+            found = self.face_to_face_interactions()
+            found = self.edge_to_face_interactions() or found
+            if not found:
+                self.loose_aromatic_interactions()
 
     def pi_cation_interactions(self, switch = False):
         aromatic = self.res1
@@ -258,6 +321,16 @@ class InteractingPair:
         if not switch:
             self.edge_to_face_interactions(switch = True)
 
+    def loose_aromatic_interactions(self):
+        res1_desc = get_ring_descriptors(self.res1)
+        res2_desc = get_ring_descriptors(self.res2)
+
+        # Make sure the ring centers are closer than 5.5 angstroms, not additional requirements
+        for match1, match2 in [[index1, index2] for index1, r1 in enumerate(res1_desc)
+                for index2, r2 in enumerate(res2_desc)
+                    if (distance_between(r1[0], r2[0]) <= 5.5)]:
+                        self.add_interactions(LooseAromaticInteraction("RN"+str(match1 + 1), "RN"+str(match2 + 1)))
+
     # Check if residues have any hydrophobic, i.e. C-C interactions
     def hydrophobic_interactions(self):
         res1_carbons = [atom for atom in self.res1.child_list if atom.element == 'C']
@@ -281,12 +354,16 @@ class CI(object):
         self.detail = ""
         self.atomname_residue1 = name1
         self.atomname_residue2 = name2
+        self.interaction_level = 0
 
     def get_type(self):
         return self.type
 
     def get_details(self):
         return self.detail
+
+    def get_level(self):
+        return self.interaction_level
 
     def set_atomname_residue1(self, name):
         self.atomname_residue1 = name
@@ -301,6 +378,7 @@ class VanDerWaalsInteraction(CI):
         self.detail = ""
         self.atomname_residue1 = name1
         self.atomname_residue2 = name2
+        self.interaction_level = 0
 
 class HydrophobicInteraction(CI):
     def __init__(self, name1, name2):
@@ -308,6 +386,7 @@ class HydrophobicInteraction(CI):
         self.detail = ""
         self.atomname_residue1 = name1
         self.atomname_residue2 = name2
+        self.interaction_level = 0
 
 class IonicInteraction(CI):
     def __init__(self, name1, name2):
@@ -315,6 +394,7 @@ class IonicInteraction(CI):
         self.detail = ""
         self.atomname_residue1 = name1
         self.atomname_residue2 = name2
+        self.interaction_level = 0
 
 class PolarInteraction(CI):
     def __init__(self, name1, name2):
@@ -322,6 +402,7 @@ class PolarInteraction(CI):
         self.detail = ""
         self.atomname_residue1 = name1
         self.atomname_residue2 = name2
+        self.interaction_level = 0
 
 class AromaticInteraction(CI):
     def __init__(self, name1, name2):
@@ -329,6 +410,7 @@ class AromaticInteraction(CI):
         self.detail = ""
         self.atomname_residue1 = name1
         self.atomname_residue2 = name2
+        self.interaction_level = 0
 
 # SECONDARY TYPES
 class NegPosIonicInteraction(IonicInteraction):
@@ -356,6 +438,18 @@ class WaterMediated(PolarInteraction):
         super().__init__(name1, name2)
         self.detail = "water-mediated"
 
+class LooseHydrogenBondDAInteraction(PolarInteraction):
+    def __init__(self, name1, name2):
+        super().__init__(name1, name2)
+        self.detail = "donor-acceptor"
+        self.interaction_level = 1
+
+class LooseHydrogenBondADInteraction(PolarInteraction):
+    def __init__(self, name1, name2):
+        super().__init__(name1, name2)
+        self.detail = "acceptor-donor"
+        self.interaction_level = 1
+
 class FaceToFaceInteraction(AromaticInteraction):
     def __init__(self, name1, name2):
         super().__init__(name1, name2)
@@ -370,6 +464,12 @@ class FaceToEdgeInteraction(AromaticInteraction):
     def __init__(self, name1, name2):
         super().__init__(name1, name2)
         self.detail = "face-to-edge"
+
+class LooseAromaticInteraction(AromaticInteraction):
+    def __init__(self, name1, name2):
+        super().__init__(name1, name2)
+        self.detail = "loose-aromatic"
+        self.interaction_level = 1
 
 class PiCationInteraction(AromaticInteraction):
     def __init__(self, name1, name2):
