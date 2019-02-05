@@ -239,13 +239,14 @@ class InteractingPair:
                 for pair in pairs:
                     donor = pair[0]
                     acceptor = pair[1]
+
                     if switch:
                         self.add_interactions(LooseHydrogenBondADInteraction(acceptor, donor))
                     else:
                         self.add_interactions(LooseHydrogenBondDAInteraction(donor, acceptor))
 
         if not switch:
-            self.strict_hbond_interactions(switch = True)
+            self.loose_hbond_interactions(switch = True)
 
     def hbond_interactions(self):
         # calculate interactions for pair
@@ -341,10 +342,9 @@ class InteractingPair:
                     if (distance_between(r1[0], r2[0]) <= 5.5)]:
                         self.add_interactions(LooseAromaticInteraction("RN"+str(match1 + 1), "RN"+str(match2 + 1)))
 
-    # Check if residues have any hydrophobic, i.e. C-C interactions
     def hydrophobic_interactions(self):
-        res1_carbons = [atom for atom in self.res1.child_list if atom.element == 'C']
-        res2_carbons = [atom for atom in self.res2.child_list if atom.element == 'C']
+        res1_carbons = [atom for atom in self.res1.child_list if atom.element == 'C' or atom.element == 'S']
+        res2_carbons = [atom for atom in self.res2.child_list if atom.element == 'C' or atom.element == 'S']
 
         for match1, match2 in [[a1, a2] for a1 in res1_carbons for a2 in res2_carbons if distance_between(a1.coord, a2.coord) <= 4.5]:
             self.add_interactions(HydrophobicInteraction(match1.name, match2.name))
