@@ -125,9 +125,8 @@ def compute_interactions(pdb_name,save_to_db = False):
                                 interaction_pairs[key] = InteractingPair(res_1, res_2, dbres[res_1.id[1]], dbres[res_2.id[1]], struc)
 
                             for a,b in zip(matches_one, matches_two):
-                                # print(key,a,b,water_pair_one[0].get_parent().get_id()[1])
-                                # THINK: how to store the water ID?
-                                interaction_pairs[key].interactions.append(WaterMediated(a, b))
+                                # HACK: store water ID as part of first atom name
+                                interaction_pairs[key].interactions.append(WaterMediated(a + "|" + str(water_pair_one[0].get_parent().get_id()[1]), b))
 
             for p in classified:
                 p.save_into_database()

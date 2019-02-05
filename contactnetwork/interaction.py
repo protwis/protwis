@@ -140,50 +140,13 @@ class InteractingPair:
                         donor = pair[0]
                         acceptor = pair[1]
 
-                        for set in donors[donor]:
-                            if set[0] in hbd.child_dict and (len(set) < 4 or set[3] in hbd.child_dict):
-                                p1 = hbd.child_dict[set[0]].coord
-                                p2 = hbd.child_dict[donor].coord
-
-                                # Option 1: freely rotating donor, take acceptor as reference
-                                p3 = hba.child_dict[acceptor].coord
-
-                                # Option 2: fixed donor orientation (dihedral), internal reference
-                                if len(set) == 4: # secondary
-                                    # backbone nitrogen - second reference atom comes from the previous residue
-                                    if donor == 'N':
-                                        # 1. grab previous connected residue (if numbering switches, this might give an error)
-                                        # 2. grab coordinate atom previous residue
-                                        hbd_chain = hbd.get_parent()
-                                        if hbd_chain.has_id(hbd.id[1]-1):
-                                            p3 = hbd_chain[hbd.id[1]-1].child_dict[set[3]].coord
-                                        else:
-                                            continue
-                                    else:
-                                        p3 = hbd.child_dict[set[3]].coord
-
-                                # calculate optimal H-bonding vector to acceptor
-                                d=get_unit_vector(p2-p1)
-                                v=p3-p1
-                                t=numpy.dot(v, d)
-                                p4=p1+t*d
-                                best_vector=get_unit_vector(p3-p4)
-                                if len(set) == 4: # secondary
-                                    best_vector=-1 * best_vector
-
-                                angle=math.radians(set[1]-90)
-                                x=abs(math.cos(angle)*set[2])
-                                y=abs(math.sin(angle)*set[2])
-                                hydrogen=p2+y*d+x*best_vector
-
-                                # check angle
-                                if 180 - math.degrees(angle_between(hydrogen - p2, hba.child_dict[acceptor].coord - hydrogen)) >= 120:
-                                    if switch:
-                                        self.add_interactions(HydrogenBondADInteraction(acceptor, donor))
-                                        found = True
-                                    else:
-                                        self.add_interactions(HydrogenBondDAInteraction(donor, acceptor))
-                                        found = True
+                        if InteractingPair.verify_hbond_angle(hbd, donor, hba, acceptor):
+                            if switch:
+                                self.add_interactions(HydrogenBondADInteraction(acceptor, donor))
+                                found = True
+                            else:
+                                self.add_interactions(HydrogenBondDAInteraction(donor, acceptor))
+                                found = True
         if not switch:
             found = self.strict_hbond_interactions(switch = True) or found
         return found
@@ -203,12 +166,59 @@ class InteractingPair:
         if is_hbd(residue):
             donors = get_hbond_donor_references(residue)
             matches = [ donor for donor in donors if donor in residue.child_dict and distance_between(water.coord, residue.child_dict[donor].coord) <= 3.5 ]
-            # TODO: add additional HB checks (angle)
-            if len(matches) > 0:
-                atom_names += matches
+
+            for donor in matches:
+                if InteractingPair.verify_hbond_angle(residue, donor, water.get_parent(), water.get_name()):
+                    atom_names.append(donor)
 
         # return unique atom names (e.g. when atom is both acceptor + donor)
         return list(set(atom_names))
+
+    @staticmethod
+    def verify_hbond_angle(hbd_residue, hbd_atomname, hba_residue, hba_atomname):
+        donors = get_hbond_donor_references(hbd_residue)
+        for donor_set in donors[hbd_atomname]:
+            if donor_set[0] in hbd_residue.child_dict and (len(donor_set) < 4 or donor_set[3] in hbd_residue.child_dict):
+                p1 = hbd_residue.child_dict[donor_set[0]].coord
+                p2 = hbd_residue.child_dict[hbd_atomname].coord
+
+                # Option 1: freely rotating donor, take acceptor as reference
+                p3 = hba_residue[hba_atomname].coord
+
+                # Option 2: fixed donor orientation (dihedral), internal reference
+                if len(donor_set) == 4: # secondary
+                    # backbone nitrogen - second reference atom comes from the previous residue
+                    if hbd_atomname == 'N':
+                        # 1. grab previous connected residue (if numbering switches, this might give an error)
+                        # 2. grab coordinate atom previous residue
+                        hbd_chain = hbd_residue.get_parent()
+                        if hbd_residue.has_id(hbd_residue.id[1]-1):
+                            p3 = hbd_chain[hbd_residue.id[1]-1].child_dict[donor_set[3]].coord
+                        else:
+                            continue
+                    else:
+                        p3 = hbd_residue.child_dict[donor_set[3]].coord
+
+                # calculate optimal H-bonding vector to acceptor
+                d=get_unit_vector(p2-p1)
+                v=p3-p1
+                t=numpy.dot(v, d)
+                p4=p1+t*d
+                best_vector=get_unit_vector(p3-p4)
+                if len(donor_set) == 4: # secondary
+                    best_vector=-1 * best_vector
+
+                angle=math.radians(donor_set[1]-90)
+                x=abs(math.cos(angle)*donor_set[2])
+                y=abs(math.sin(angle)*donor_set[2])
+                hydrogen=p2+y*d+x*best_vector
+
+                # check angle
+                if 180 - math.degrees(angle_between(hydrogen - p2, hba_residue[hba_atomname].coord - hydrogen)) >= 120:
+                    return True
+
+        return False
+
 
     def loose_hbond_interactions(self, switch = False):
         hbd = self.res1
