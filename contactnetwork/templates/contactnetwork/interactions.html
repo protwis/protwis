@@ -1762,6 +1762,11 @@
                     } else {
                         rects.hide();
                     }
+                    if (heatMapSelector.startsWith("#single-crystal-tab")) {
+                        createNGLRepresentations("single" , 0, heatMapSelector)
+                    } else {
+                        createNGLRepresentations("single-group" , 0, heatMapSelector)
+                    }
                 });
             });
 
@@ -2563,9 +2568,11 @@
             });
         }
 
+
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+                //pdb = ["4BVN"]
 
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
                 var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
@@ -3299,7 +3306,7 @@
                     // Cleanup
                     pdb_data[mode][0]['pdb'] = null;
 
-                    // TODO: cartoon for ECL2 is currently not shown (only 3 res, but 4 needed for cartoon)
+                    // TODO: cartoon for ECL2 is currently not shown (only 3 res, but 4 needed for cartoon) - show ribbon for ICL/ECLs?
                     gpcr_rep[mode][0] = o.addRepresentation( "cartoon", {
                       sele: ":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+")",
                       // radiusType: '',
@@ -3316,100 +3323,6 @@
                       opacity: 1,
                       depthWrite: true
                     });
-
-                    var links = []
-                    var links_gn = []
-                    var res_int = []
-
-                    if (mode=='single') {
-                      $('#single-crystal-tab rect[data-interaction-type]').each(function(e) {
-                          var rect = $(this);
-                          var resNo1 = rect.data('res-no-1');
-                          var resNo2 = rect.data('res-no-2');
-                          var seg1 = rect.data('seg-1');
-                          var seg2 = rect.data('seg-2');
-                          var genNo1 = rect.data('gen-no-1');
-                          var genNo2 = rect.data('gen-no-2');
-                          var aa1 = rect.data('aa-1');
-                          var aa2 = rect.data('aa-2');
-                          var iType = rect.data('interaction-type');
-
-                          // TODO: either convert this to max strength or draw all links to allow dynamic toggling
-                          // if (getInteractionStrength(iType)<3) return
-                          res_int.push(resNo1);
-                          res_int.push(resNo2);
-                          links.push({"atoms": [resNo1+":"+pdb_data[mode][0]['chain']+".CA",resNo2+":"+pdb_data[mode][0]['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
-
-                          if ((genNo1=='-') || (genNo2=='-')) return
-                          links_gn.push({"atoms": [resNo1+":"+pdb_data[mode][0]['chain']+".CA",resNo2+":"+pdb_data[mode][0]['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
-                        });
-                    } else if (mode=='single-group') {
-                      // single group
-                      $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
-                          var rect = $(this);
-                          var genNo1 = rect.data('gen-no-1');
-                          var genNo2 = rect.data('gen-no-2');
-                          var seg1 = rect.data('seg-1');
-                          var seg2 = rect.data('seg-2');
-                          var nInteractions = rect.data('num-interactions');
-                          var nTotalInteractions = rect.data('total-possible-interactions');
-                          var frequency = rect.data('frequency');
-
-                          if ((genNo1=='-') || (genNo2=='-')) return
-
-                          // Adjust GN numbering to the shown structure
-                          var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(genNo1)];
-                          var resNo2 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(genNo2)];
-
-                          if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
-
-                          // Push interactions
-                          res_int.push(resNo1);
-                          res_int.push(resNo2);
-
-                          links_gn.push({"atoms": [resNo1+":"+pdb_data[mode][0]['chain']+".CA",resNo2+":"+pdb_data[mode][0]['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
-                        });
-                        links = links_gn;
-                    } else {
-                      // two groups
-                      // single group
-                      $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
-                          var rect = $(this);
-                          var genNo1 = rect.data('gen-no-1');
-                          var genNo2 = rect.data('gen-no-2');
-                          var seg1 = rect.data('seg-1');
-                          var seg2 = rect.data('seg-2');
-                          var nInteractions = rect.data('num-interactions');
-                          var nTotalInteractions = rect.data('total-possible-interactions');
-                          var frequency = rect.data('frequencyDiff');
-
-                          if ((genNo1=='-') || (genNo2=='-')) return
-
-                          // Adjust GN numbering to the shown structure
-                          var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(genNo1)];
-                          var resNo2 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(genNo2)];
-
-                          if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
-
-                          // Push interacting residues
-                          res_int.push(resNo1);
-                          res_int.push(resNo2);
-
-                          // Fix atom IDs for GN loop interactions
-                          if (resNo1 > resNo2){
-                            tmp = resNo1;
-                            resNo1 = resNo2;
-                            resNo2 = tmp;
-                            tmp = genNo1;
-                            genNo1 = genNo2;
-                            genNo2 = tmp;
-                          }
-
-                          links_gn.push({"atoms": [resNo1+":"+pdb_data[mode][0]['chain']+".CA",resNo2+":"+pdb_data[mode][0]['chain']+".CA"], "data":{"color":getFrequencyColor(-1*frequency)}, "resID":resNo1+"-"+resNo2})
-                          int_labels[mode][0][resNo1+"-"+resNo2] = genNo1+" - "+genNo2
-                        });
-                        links = links_gn;
-                    }
 
                     // REMOVE default hoverPick mouse action
                     stage[mode].mouseControls.remove("hoverPick")
@@ -3445,106 +3358,23 @@
                       }
                     })
 
-                    var linkMap = {}
-                    links.forEach(function (link) {
-                      linkMap[link.resID] = link
-                    })
-
-                    var initColourSchemes = function () {
-                      var linkColourScheme = function () {
-                        this.bondColor = function (b) {
-                          var origLink = linkMap[b.atom1.resno + "-" + b.atom2.resno]
-                          if (origLink) {
-                            r = origLink.data.color
-                            return (r["r"] << 16) + (r["g"] << 8) + r["b"]
-                          }
-                          return (8 << 16) + (8 << 8) + 8 // (128 << 16) + (128 << 8) + 128 // grey default
+                    // create coloring scale for
+                    var linkColourScheme = function () {
+                      this.bondColor = function (b) {
+                        var origLink = linkMap[b.atom1.resno + "-" + b.atom2.resno]
+                        if (origLink) {
+                          r = origLink.data.color
+                          return (r["r"] << 16) + (r["g"] << 8) + r["b"]
                         }
+                        return (8 << 16) + (8 << 8) + 8 // (128 << 16) + (128 << 8) + 128 // grey default
                       }
-                      reps[mode][0].linkColourScheme = NGL.ColormakerRegistry.addScheme(linkColourScheme, "xlink")
                     }
-                    initColourSchemes()
+                    reps[mode][0].linkColourScheme = NGL.ColormakerRegistry.addScheme(linkColourScheme, "xlink")
+                    reps[mode][0].structureComponent = o
 
-                    var baseLinkScale = 20
-                    reps[mode][0].links = o.addRepresentation("distance", {
-                      atomPair: links.map(function (l) {
-                        return l.atoms
-                      }),
-                      colorScheme: reps[mode][0].linkColourScheme,
-                      useCylinder: true,
-                      radiusSize: 0.04,
-                      labelVisible: false,
-                      linewidth: 2,
-                      visible: false
-                    })
+                    createNGLRepresentations(mode, 0, false)
 
-                    // TODO: Fastest way to make this dynamic is probably storing the atomPairs and adding the types/frequency/difference for quick filtering
-                    // Change the representation when updating the ranges - update with delay otherwise to slow
-
-                    // Addiotionally/Alternatively dynamically update the selections for the different representations (won't work for distances)
-
-                    reps[mode][0].links_gn = o.addRepresentation("distance", {
-                      atomPair: links_gn.map(function (l) {
-                        return l.atoms
-                      }),
-                      colorScheme: reps[mode][0].linkColourScheme,
-                      useCylinder: true,
-                      radiusSize: 0.04,
-                      labelVisible: false,
-                      linewidth: 2,
-                      visible: true,
-                      labelText: "BLAATs"
-                    })
-
-                    reps[mode][0].int_res = o.addRepresentation( "spacefill", {
-                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
-                      color: "#084081",
-                      // colorScale: ["#44f", "#444"],
-                      radiusScale: .2,
-                      name: "res",
-                      visible: false
-                    });
-
-                    res_int_gn = Object.assign([], res_int);
-                    res_int_gn = intersect(res_int_gn, pdb_data[mode][0]['only_gn']);
-                    reps[mode][0].int_res_gn = o.addRepresentation( "spacefill", {
-                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
-                      color: "#084081",
-                      // colorScale: ["#44f", "#444"],
-                      radiusScale: .2,
-                      name: "res",
-                      visible: true
-                    });
-
-                    reps[mode][0].ball_all = o.addRepresentation("ball+stick", {
-                      sele: ":"+pdb_data[mode][0]['chain']+" and sidechainAttached",
-                      color: "element",
-                      colorValue: "#99B5CC",
-                      visible: false
-                      })
-
-                    reps[mode][0].ball = o.addRepresentation("ball+stick", {
-                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and sidechainAttached",
-                      color: "element",
-                      colorValue: "#99B5CC",
-                      visible: false
-                      })
-
-                    reps[mode][0].ball_int = o.addRepresentation("ball+stick", {
-                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
-                      color: "element",
-                      colorValue: "#99B5CC",
-                      visible: false
-                      })
-
-                    reps[mode][0].ball_int_gn = o.addRepresentation("ball+stick", {
-                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
-                      color: "element",
-                      colorValue: "#99B5CC",
-                      visible: false
-                      })
-
-                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)");
+                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)")
                 } );
 
             }).then( function(){
@@ -3780,7 +3610,7 @@
             controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
                               +'<p>Highlight interacting res: <input type=checkbox id="highlight_res" checked></p>'
                               +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
-                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
+//                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
                               +'<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
 //                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                               +'</div>';
@@ -3850,6 +3680,202 @@
 
         }
 
+        var linkMap = {}
+        function createNGLRepresentations(mode, structureNumber, update = false) {
+            var links = []
+            var res_int = []
+            var o = reps[mode][structureNumber].structureComponent;
+
+            // remove existing representations
+            var enabledInteractions = []
+            if (update){
+              // create new links overview
+              reps[mode][structureNumber].structureComponent.removeRepresentation(reps[mode][structureNumber].links)
+
+              // populate enabled interactions
+              $(update + " .heatmap-legend input:checked").each( function (toggle) {
+                enabledInteractions.push($(this).data('interaction-type'))
+              });
+            }
+
+            var gnOnly = !update || $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
+
+            if (mode=='single') {
+              var addedLinks = []
+              $('#single-crystal-tab rect[data-interaction-type]').each(function(e) {
+                  var rect = $(this);
+                  var resNo1 = rect.data('res-no-1');
+                  var resNo2 = rect.data('res-no-2');
+                  var seg1 = rect.data('seg-1');
+                  var seg2 = rect.data('seg-2');
+                  var genNo1 = rect.data('gen-no-1');
+                  var genNo2 = rect.data('gen-no-2');
+                  var aa1 = rect.data('aa-1');
+                  var aa2 = rect.data('aa-2');
+                  var iType = rect.data('interaction-type');
+
+                  // Interaction type filtering
+                  if (update && !enabledInteractions.includes(iType)) return
+
+                  // GN interacting residue filtering
+                  if (gnOnly && ((genNo1=='-') || (genNo2=='-'))) return
+
+                  // TODO: Sort by decreasing strength - color by max strength
+                  if (!addedLinks.includes(resNo1+"-"+resNo2)) {
+                    addedLinks.push(resNo1+"-"+resNo2)
+
+                    // add residues to the list when not already there
+                    if (!res_int.includes(resNo1)) res_int.push(resNo1)
+                    if (!res_int.includes(resNo2)) res_int.push(resNo2)
+
+                    // create link for "distance" representation
+                    links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
+                  }
+                });
+            } else if (mode=='single-group') {
+              // single group
+              $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
+                  var rect = $(this);
+                  var genNo1 = rect.data('gen-no-1');
+                  var genNo2 = rect.data('gen-no-2');
+                  var seg1 = rect.data('seg-1');
+                  var seg2 = rect.data('seg-2');
+                  var nInteractions = rect.data('num-interactions');
+                  var nTotalInteractions = rect.data('total-possible-interactions');
+                  var frequency = rect.data('frequency');
+
+                  // TODO Add frequency filtering here
+
+                  if ((genNo1=='-') || (genNo2=='-')) return
+
+                  // Adjust GN numbering to the shown structure
+                  var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo1)];
+                  var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo2)];
+
+                  if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
+
+                  // Push interactions
+                  res_int.push(resNo1);
+                  res_int.push(resNo2);
+
+                  links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
+                });
+            } else {
+              // two groups
+              $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+                  var rect = $(this);
+                  var genNo1 = rect.data('gen-no-1');
+                  var genNo2 = rect.data('gen-no-2');
+                  var seg1 = rect.data('seg-1');
+                  var seg2 = rect.data('seg-2');
+                  var nInteractions = rect.data('num-interactions');
+                  var nTotalInteractions = rect.data('total-possible-interactions');
+                  var frequency = rect.data('frequencyDiff');
+
+                  if ((genNo1=='-') || (genNo2=='-')) return
+
+                  // Adjust GN numbering to the shown structure
+                  var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo1)];
+                  var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo2)];
+
+                  if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
+
+                  // TODO Add frequency filtering here
+
+                  // Push interacting residues
+                  res_int.push(resNo1);
+                  res_int.push(resNo2);
+
+                  // Fix atom IDs for GN loop interactions
+                  if (resNo1 > resNo2){
+                    tmp = resNo1;
+                    resNo1 = resNo2;
+                    resNo2 = tmp;
+                    tmp = genNo1;
+                    genNo1 = genNo2;
+                    genNo2 = tmp;
+                  }
+
+                  links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getFrequencyColor(-1*frequency)}, "resID":resNo1+"-"+resNo2})
+                  int_labels[mode][structureNumber][resNo1+"-"+resNo2] = genNo1+" - "+genNo2
+                });
+            }
+
+            links.forEach(function (link) {
+              // TODO: make linkMap work for all modes+model (nested arrays) + cleanup when recalculting
+              // CHECK is this really necessary or can we solve this in a simpler manner
+              linkMap[link.resID] = link
+            })
+
+            reps[mode][structureNumber].links = o.addRepresentation("distance", {
+              atomPair: links.map(function (l) {
+                return l.atoms
+              }),
+              colorScheme: reps[mode][structureNumber].linkColourScheme,
+              useCylinder: true,
+              radiusSize: 0.04,
+              labelVisible: false,
+              linewidth: 2,
+              visible: true
+            })
+
+            // Empty? Update selection with a fake residue -> hide everything
+            if (res_int.length == 0) res_int.push("9999999")
+
+            if (update){
+                reps[mode][structureNumber].int_res.setSelection(":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and (.CA)")
+                reps[mode][structureNumber].ball_int.setSelection(":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached")
+            } else {
+                reps[mode][structureNumber].int_res = o.addRepresentation( "spacefill", {
+                  sele: ":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
+                  color: "#084081",
+                  // colorScale: ["#44f", "#444"],
+                  radiusScale: .2,
+                  name: "res",
+                  visible: true
+                });
+
+                reps[mode][structureNumber].ball_int = o.addRepresentation("ball+stick", {
+                  sele: ":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                  color: "element",
+                  colorValue: "#99B5CC",
+                  visible: false
+                  })
+            }
+
+            // update show/hide when updating representations
+            if (update) updateStructureRepresentations(mode)
+        }
+
+        // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
+        function updateStructureRepresentations(mode) {
+          var structures = 1;
+          if (mode=="two-groups")
+            structures = 2;
+
+          for (var key = 0; key < structures; key++) {
+            // toggle edges
+            reps[mode][key].links.setVisibility(!$("#ngl-"+mode+" #toggle_interactions").prop('checked'));
+
+            // toggle CA spheres
+            reps[mode][key].int_res.setVisibility($("#ngl-"+mode+" #highlight_res").prop('checked'));
+
+            // toggle interacting toggle_sidechains
+            reps[mode][key].ball_int.setVisibility($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked'));
+
+            // Update cartoon using selection
+            checked = $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
+            sele = ":"+pdb_data[mode][key]['chain'];
+            int_sele = sele
+            if (checked)
+              sele = ":"+pdb_data[mode][key]['chain']+" and ("+pdb_data[mode][key]['only_gn'].join(", ")+")";
+              int_sele =
+
+            gpcr_rep[mode][key].setSelection(sele);
+          }
+        }
+
+
         function redraw_ngl() {
           var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
           var mode = $('.ngl-container:visible').attr('id').replace('ngl-','');
@@ -3857,59 +3883,6 @@
             $(function() {
               stage[mode].handleResize();
             });
-          }
-        }
-
-        function updateStructureRepresentations(mode) {
-          var structures = 1;
-          if (mode=="two-groups")
-            structures = 2;
-
-          for (var key = 0; key < structures; key++) {
-            checked = $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
-
-            // toggle edges
-            if (!$("#ngl-"+mode+" #toggle_interactions").prop('checked')){
-              reps[mode][key].links.setVisibility(!checked);
-              reps[mode][key].links_gn.setVisibility(checked);
-            } else {
-              reps[mode][key].links.setVisibility(false);
-              reps[mode][key].links_gn.setVisibility(false);
-            }
-
-            // toggle CA spheres
-            if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
-              reps[mode][key].int_res_gn.setVisibility(checked);
-              reps[mode][key].int_res.setVisibility(!checked);
-            } else {
-              reps[mode][key].int_res_gn.setVisibility(false);
-              reps[mode][key].int_res.setVisibility(false);
-            }
-
-            // toggle sidechains
-            if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
-              reps[mode][key].ball.setVisibility(checked);
-              reps[mode][key].ball_all.setVisibility(!checked);
-            } else {
-              reps[mode][key].ball.setVisibility(false);
-              reps[mode][key].ball_all.setVisibility(false);
-            }
-
-            // toggle interacting toggle_sidechains
-            if ($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked')){
-              reps[mode][key].ball_int_gn.setVisibility(checked);
-              reps[mode][key].ball_int.setVisibility(!checked);
-            } else {
-              reps[mode][key].ball_int_gn.setVisibility(false);
-              reps[mode][key].ball_int.setVisibility(false);
-            }
-
-            // selection
-            sele = ":"+pdb_data[mode][key]['chain'];
-            if (checked)
-              sele = ":"+pdb_data[mode][key]['chain']+" and ("+pdb_data[mode][key]['only_gn'].join(", ")+")";
-
-            gpcr_rep[mode][key].setSelection(sele);
           }
         }
 
