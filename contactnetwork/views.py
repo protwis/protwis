@@ -347,7 +347,6 @@ def DistanceData(request):
     dis.load_pdbs(pdbs)
     dis.fetch_and_calculate()
 
-
     excluded_segment = ['C-term','N-term']
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs_lower).distinct().all()
@@ -414,7 +413,6 @@ def DistanceData(request):
 
         if d[4]:
             if len(data['interactions'])<3000:
-
                 data['interactions'][coord] = [round(d[1]),round(d[4],3)]
             else:
                 break
@@ -510,6 +508,10 @@ def InteractionData(request):
     ).filter(
         segment_filter_res1 & segment_filter_res2 & i_types_filter
     )
+
+    # Interaction type sort - optimize by statically defining interaction type order
+    order = ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']
+    interactions = sorted(interactions, key=lambda x: order.index(x['interaction_type']))
 
     # Initialize response dictionary
     data = {}
