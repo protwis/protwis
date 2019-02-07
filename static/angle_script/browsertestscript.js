@@ -42,7 +42,6 @@ function initializeFullscreenButton(selector) {
 
 function thisPDB(elem) {
     
-    console.log(elem)
     var ReceptorName = $(elem).attr('long');
     var pdbName = $(elem).attr('id');
     $('.pdb_selected').not(elem).prop("checked",false);
@@ -60,7 +59,6 @@ function thisPDB(elem) {
 
 function thisPDB2(elem) {
     
-    console.log(elem)
     var ReceptorName = $(elem).attr('long');
     var pdbName = $(elem).attr('id');
     $('.pdb_selected').not(elem).prop("checked",false);
@@ -285,8 +283,23 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         var j = 0;
         
         
-        // groups
+//         make variable
+        var wlength = 5;
+        var cutoff = 100;
         
+        wlength = $('#window-input').val();
+        cutoff  = $('#score-input').val();
+        
+        console.log(wlength)
+        console.log(cutoff)
+//         var max = 0;
+//         residue_data.forEach(function(e){
+//             if (max > e[3]){
+//                 max = e[3]
+//             }
+//         }
+        
+        // groups
         residue_data.forEach(function(e){
             angle_color.push([numberToColor(180,e[2]) , ""+e[1]])
             
@@ -298,16 +311,17 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             
             sasacolor.push([numberToColor(100,e[6]) , ""+e[1]])
             
+//             if loop data added e[0][0] gives wrong coloring
             if(axis != Number(e[0][0])){
                 axis = Number(e[0][0])
                 j = 0
                 score = [0,0,0,0,0]
             }
             
-            score[j%5] = e[3]
+            score[j%wlength] = e[3]
             ctemp = score.reduce((a,b)=>a+b);
-            if(ctemp >100){
-                medianwindowcolor.push([numberToColor(255,ctemp) , ""+e[1]])
+            if(ctemp > cutoff){
+                medianwindowcolor.push([numberToColor(260,ctemp) , ""+e[1]])
             } else {
                 medianwindowcolor.push(["#00F" , ""+e[1]])
             }
@@ -331,12 +345,6 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         color_schemes['sasa'] = NGL.ColormakerRegistry.addSelectionScheme(sasacolor)
         
         
-        console.log(pdb2.length)
-        
-        score = [0,0,0,0,0];
-        axis = 100; //something larger than possible
-        j = 0;
-        
         
         if (pdb2.length > 0) {
             
@@ -353,22 +361,6 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                             scnd_angle.push([numberToColor(100, Math.abs(e[2] - scnd[2])) , ""+e[1]]);
                             scnd_hse.push([numberToColor(40, Math.abs(e[5] - scnd[5])) , ""+e[1]]);
                             scnd_sasa.push([numberToColor(100, Math.abs(e[6] - scnd[6])) , ""+e[1]]);
-                            
-                            if(axis != Number(e[0][0])){
-                                axis = Number(e[0][0])
-                                j = 0
-                                score = [0,0,0,0,0]
-                            }
-                            
-                            score[j%5] = e[3]
-                            ctemp = score.reduce((a,b)=>a+b);
-                            if(ctemp >100){
-                                medianwindowcolor.push([numberToColor(255,ctemp) , ""+e[1]])
-                            } else {
-                                medianwindowcolor.push(["#00F" , ""+e[1]])
-                            }
-                            j +=1;
-                            
                         }
                     });
                 });
@@ -384,9 +376,6 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             });
         
         }
-        
-        
-        console.log(optional)
 
 
         var stringBlob = new Blob( [ pdb_data['pdb'] ], { type: 'text/plain'} );
@@ -423,7 +412,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             o.autoView();
             
             // mousover and click on datatable row to highlight residue in NGL viewer
-            var temprepr
+            var temprepr;
             $("#single-table-tab-table tbody").on("mouseover", "tr", function(event){
                 temprepr = o.addRepresentation("ball+stick", {sele: ""+residuetable.row(this).data()[1]});
             }).mouseout(function(event){

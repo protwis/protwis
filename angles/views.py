@@ -61,8 +61,8 @@ def pca_line(pca,h, r=0):
     the original coordinate system
     """
     if ((not r) if pca.fit_transform(h)[0][0] < 0 else r):
-        return pca.inverse_transform(np.asarray([[-20,0,0],[20,0,0]]))
-    else:return pca.inverse_transform(np.asarray([[20,0,0],[-20,0,0]])) 
+        return pca.inverse_transform(np.asarray([[0,0,0],[1,0,0]]))
+    else:return pca.inverse_transform(np.asarray([[0,0,0],[-1,0,0]])) 
 
 def calc_angle(b,c):
     """
@@ -214,7 +214,7 @@ class testTemplate(TemplateView):
                 #######################################################################
                 
                 helix_pcas = [PCA() for i in range(7)]
-                [pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)]
+                helix_pca_vectors = [pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)]
                 
                 # extracellular part
                 if extra_pca:
@@ -223,10 +223,10 @@ class testTemplate(TemplateView):
                     pos_list = pos_list - (np.mean(pos_list,axis=1)-helices_mn).reshape(-1,1,3)
                     
                     pca = PCA()
-                    pca_line(pca, np.vstack(pos_list))
+                    center_vector = pca_line(pca, np.vstack(pos_list))
                 else:
                     pca = PCA()
-                    pca_line(pca, np.vstack(hres_three))
+                    center_vector = pca_line(pca, np.vstack(hres_three))
                 
                 #######################################################################
                 ################################ Angles ###############################
@@ -247,14 +247,17 @@ class testTemplate(TemplateView):
                 # uncomment for bulk create, update
                 # TODO: list comp + database search for all?
                 
+                # TODO: see if load from python pdb works
+                
                 ############## SASA 
-                pdbstruct = freesasa.Structure("pymol_output/" + pdb_code +'angle_colored_axes.pdb')
-                res = freesasa.calc(pdbstruct)
+
+                res, trash = freesasa.calcBioPDB(structure)
                 
                 asa_list = []
                 oldnum   = -1
+                atomlist = list(pchain.get_atoms())
                 for i in range(res.nAtoms()):
-                    resnum = pdbstruct.residueNumber(i)
+                    resnum = atomlist[i].get_parent().id[1]
                     if resnum == oldnum:
                         asa_list[-1] += res.atomArea(i)
                     else:
@@ -269,19 +272,17 @@ class testTemplate(TemplateView):
                 
                 
                 ################ dblist gen
-                if len(pchain) - len(hselist):
-                    print("\033[91mLength mismatch hse", pdb_code, '\033[0m')
+                if len(pchain) != len(hselist):
+                    raise Exception("\033[91mLength mismatch hse " + pdb_code + "\033[0m")
                     
-                if len(pchain) - len(asa_list):
-                    print("\033[91mLength mismatch sasa", pdb_code, '\033[0m')
+                if len(pchain) != len(asa_list):
+                    raise Exception("\033[91mLength mismatch sasa " + pdb_code + "\033[0m")
                 
                 if np.isnan(np.sum(asa_list)):
-                    print("\033[91mNAN sasa", pdb_code, '\033[0m')
+                    raise Exception("\033[91mNAN sasa " + pdb_code + "\033[0m")
                     
                 if np.isnan(np.sum(hselist)):
-                    print("\033[91mNAN hse", pdb_code, '\033[0m')
-                    continue
-                
+                    raise Exception("\033[91mNAN hse " + pdb_code + "\033[0m")
                 
                 
                 for res,a1,a2,asa,hse in zip(pchain,a_angle,b_angle,asa_list,hselist):
@@ -291,14 +292,6 @@ class testTemplate(TemplateView):
                     else:
                         angle_dict[state_id-1][gdict[res.id[1]].generic_number.label].append(round(a1,3))
                 
-                
-                
-                # comment for bulk create, update
-                #this works in any case but is (really) slow.
-                # Actually it is so slow that it is faster to delete the table
-                # and bulk create it!
-                #for res,a1,a2 in zip(pchain,a_angle,b_angle):
-                #    Angle.objects.update_or_create(residue=gdict[res.id[1]], structure=reference, defaults={'angle':round(a1,3)})
         
             except Exception as e:
                 print("ERROR!!", pdb_code, e)
@@ -307,9 +300,8 @@ class testTemplate(TemplateView):
         
         for i in range(4):
             for key in angle_dict[i]:
-                sortlist = sorted(angle_dict[i][key])
-                listlen = len(sortlist)
-                median_dict[i][key] = sortlist[listlen//2] if listlen % 2 else (sortlist[listlen//2] + sortlist[listlen//2-1])/2
+                sortlist = np.array(angle_dict[i][key])
+                median_dict[i][key] = np.median(sortlist)
         
         for i, res in enumerate(dblist):
             
@@ -320,8 +312,8 @@ class testTemplate(TemplateView):
             del templist[templist.index(a)]
             
             std_test = abs(np.average(templist) - int(a))/np.std(templist)
-            std_len  = len(templist)
-            std = stats.t.cdf(std_test, df=std_len-1)
+            std_len  = len(templist) - 1
+            std = stats.t.cdf(std_test, df=std_len)
             dblist[i].append(0.501 if np.isnan(std) else std)
 
         
@@ -330,12 +322,10 @@ class testTemplate(TemplateView):
         
         print("created list")
         print(len(dblist))
-
-        #this works if the database is empty and is fast
-        Angle.objects.bulk_create(dblist,batch_size=5000)
         
-        #this works if no new additions are made and is fast, only Django 2.2
-        #Angle.objects.bulk_update(dblist)
+        # faster than updating: deleting and recreating
+        Angle.objects.all().delete()
+        Angle.objects.bulk_create(dblist,batch_size=5000)
 
         return context
 
