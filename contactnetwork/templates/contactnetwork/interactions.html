@@ -2680,8 +2680,8 @@
         function initializeFullscreenButton(selector) {
             // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
             $(selector + ' .btn-fullscreen').click(function() {
-                console.log($(this).parent().next().attr('id'));
-                console.log($(this).attr('id'));
+//                console.log($(this).parent().next().attr('id'));
+//                console.log($(this).attr('id'));
                 fullScreenElement = $(this).parent().next().children().first();
                 fullScreenElement.css('background-color','white');
                 toggleFullScreen(fullScreenElement.get(0));
@@ -3702,7 +3702,8 @@
 
             if (mode=='single') {
               var addedLinks = []
-              $('#single-crystal-tab rect[data-interaction-type]').each(function(e) {
+              // Go through interaction table in inverse order (only show strongest color)
+              $($('#single-crystal-tab rect[data-interaction-type]').get().reverse()).each(function(e) {
                   var rect = $(this);
                   var resNo1 = rect.data('res-no-1');
                   var resNo2 = rect.data('res-no-2');
