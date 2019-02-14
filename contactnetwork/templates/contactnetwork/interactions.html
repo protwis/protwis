@@ -4108,36 +4108,37 @@
                           paths.hide();
                       }
                   });
-                  case "single-group":
-                      var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+                  break;
+              case "single-group":
+                  var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
 
-                      // Hide all below min treshold
-                      var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path').each(function() {
-                          var n = $(this).data("num-interactions");
-                          if (n < tMin || tMax < n) {
-                              $(this).hide();
-                          } else {
-                              $(this).show();
-                          }
-                      });
-                      break;
-                  case "two-groups":
-                      var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                      var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                      var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+                  // Hide all below min treshold
+                  var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path').each(function() {
+                      var n = $(this).data("num-interactions");
+                      if (n < tMin || tMax < n) {
+                          $(this).hide();
+                      } else {
+                          $(this).show();
+                      }
+                  });
+                  break;
+              case "two-groups":
+                  var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
+                  var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
+                  var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
 
-                      // Hide all below min or above treshold
-                      var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path').each(function() {
-                          var f1 = $(this).data("group-1-freq");
-                          var f2 = $(this).data("group-2-freq");
-                          var f3 = $(this).data("frequency-diff");
-                          if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
-                              $(this).hide();
-                          } else {
-                              $(this).show();
-                          }
-                      });
-                      break;
+                  // Hide all below min or above treshold
+                  var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path').each(function() {
+                      var f1 = $(this).data("group-1-freq");
+                      var f2 = $(this).data("group-2-freq");
+                      var f3 = $(this).data("frequency-diff");
+                      if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+                          $(this).hide();
+                      } else {
+                          $(this).show();
+                      }
+                  });
+                  break;
               }
         }
 
