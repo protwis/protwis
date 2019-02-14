@@ -3838,9 +3838,6 @@
                   // Apply frequency cutoffs
                   var frequency = rect.data('frequencyDiff');
 
-                  // Only show
-                  if ((structureNumber == 0 && frequency < 0) || (structureNumber == 1 && frequency >= 0)) return
-
                   var f1 = rect.data('group-1Freq');
                   var f2 = rect.data('group-2Freq');
                   if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (frequency < r3[0] || r3[1] < frequency) ) return
@@ -3848,6 +3845,9 @@
                   // Push interacting residues
                   if (!res_int.includes(resNo1)) res_int.push(resNo1)
                   if (!res_int.includes(resNo2)) res_int.push(resNo2)
+
+                  // Only show the links for the most prevalent structure group
+                  if ((structureNumber == 0 && frequency < 0) || (structureNumber == 1 && frequency >= 0)) return
 
                   // Fix atom IDs for GN loop interactions
                   if (resNo1 > resNo2){
