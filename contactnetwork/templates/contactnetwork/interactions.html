@@ -3392,6 +3392,7 @@
                     })
 
                     // listen to `hovered` signal to move tooltip around and change its text
+                    // TODO: implement this to handle two structures
                     stage[mode].signals.hovered.add(function (pickingProxy) {
                       var label_index = false
 
@@ -3476,11 +3477,10 @@
                             var selectionTwo = "(";
                             gn_num_set1.forEach(function(gn, gn_index) {
                               // Filter GN residues, only within 7TM + present in other protein
-                              if (gn.charAt(1)=='x' && gn.charAt(0)<=7){
+                              if (gn.charAt(1)=='x' && gn.charAt(0)<=7) {
                                 var match = gn_num_set2.indexOf(gn);
-                                if (match > -1){
-                                  //matching_TM_residues.push([num_set1[gn_index], num_set2[match]]);
-                                  if (gn_index > 0){
+                                if (match > -1) {
+                                  if (selectionOne.length > 1){
                                     selectionOne += " or ";
                                     selectionTwo += " or ";
                                   }
