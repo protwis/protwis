@@ -270,7 +270,6 @@ class CallHomologyModeling():
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
                                               force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement)
-            print(self.signprot)
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor, self.signprot)
                 model, templates, similarities = ihm.find_files()
@@ -323,6 +322,8 @@ class CallHomologyModeling():
                     rm.make_pirfile()
                     rm.run()
                     logger.info('Remodeled {} {} at {}'.format(self.receptor, self.signprot, hse.remodel_resis))
+                    with open('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), 'r') as remodeled_pdb:
+                        formatted_model = remodeled_pdb.read()
             else:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, receptor=self.receptor)
             
@@ -553,18 +554,14 @@ class HomologyModeling(object):
                 if int(p)<prev_p:
                     sp_first_indeces.append(i)
                 prev_p = int(p)
-            print(sp_first_indeces)
         i = 0
         path = './structure/homology_models/'
-        # if self.revise_xtal==False:
-        #     if self.complex:
-        #         self.modelname = '{}_{}-{}_{}_{}_GPCRDB'.format(self.class_name, self.reference_entry_name, self.target_signprot.entry_name, 
-        #                                          self.main_structure, build_date)
-        #     else:
-        #         self.modelname = '{}_{}_{}_{}_{}_GPCRDB'.format(self.class_name, self.reference_entry_name, self.state, 
-        #                                          self.main_structure, build_date)
-        # else:
-        #     self.modelname = "{}_{}_{}_refined_{}_{}_GPCRDB".format(self.class_name, self.reference_protein.parent.entry_name, self.main_structure, self.main_structure.state.name, build_date)
+        # if self.revise_xtal==True:
+        #     pprint.pprint(self.alignment.reference_dict)
+        #     for k,l in self.alignment.reference_dict.items():
+        #         if k.startswith('ICL3'):
+
+
         with open (path+self.modelname+'.pdb', 'r+') as f:
             pdblines = f.readlines()
             out_list = []
@@ -573,6 +570,7 @@ class HomologyModeling(object):
             water_count = 0
             first_signprot_res_found = False
             atom_num = 1
+            atom_num_offset = []
 
             for line in pdblines:
                 try:
@@ -599,6 +597,8 @@ class HomologyModeling(object):
                     else:
                         whitespace = (whitespace-3)*' '
                     group1 = pdb_re.group(1)
+                    if 'OXT' in group1:
+                        atom_num_offset.append(int(pos_list[i]))
                     if self.complex:
                         if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
@@ -751,8 +751,22 @@ class HomologyModeling(object):
                 ws1 = ' '*(5-len(str(c1.sequence_number)))
                 ws2 = ' '*(5-len(str(c2.sequence_number)))
                 ssbond+='SSBOND   {} CYS {}{}{}    CYS {}{}{}\n'.format(count, chain, ws1, str(c1.sequence_number), chain, ws2, str(c2.sequence_number))
+                # for res in pdb_struct[chain]:
+                    # print(res)
+                for atom in pdb_struct[chain][c1.sequence_number]:
+                    print('c1',atom, atom.get_serial_number())
+                for atom in pdb_struct[chain][c2.sequence_number]:
+                    print('c2',atom, atom.get_serial_number())
                 sg1 = pdb_struct[chain][c1.sequence_number]['SG'].get_serial_number()
                 sg2 = pdb_struct[chain][c2.sequence_number]['SG'].get_serial_number()
+                offset = 0
+                for a in atom_num_offset:
+                    if a<c2.sequence_number:
+                        offset+=1
+                print(sg1,sg2,atom_num_offset, offset)
+                sg1-=offset
+                sg2-=offset
+                print(sg1,sg2)
                 ws3 = ' '*(5-len(str(sg1)))
                 ws4 = ' '*(5-len(str(sg2)))
                 conect+='CONECT{}{}{}{}\n'.format(ws3, str(sg1), ws4, str(sg2))
@@ -1795,19 +1809,6 @@ class HomologyModeling(object):
 
     def build_homology_model_second_part(self):
         # write to file
-
-        # pprint.pprint(self.alignment.reference_dict['hfs2'])
-        # pprint.pprint(self.alignment.template_dict['hfs2'])
-        # pprint.pprint(self.alignment.alignment_dict['hfs2'])
-        # pprint.pprint(self.main_pdb_array['hfs2'])
-        # pprint.pprint(self.alignment.reference_dict['S2'])
-        # pprint.pprint(self.alignment.template_dict['S2'])
-        # pprint.pprint(self.alignment.alignment_dict['S2'])
-        # pprint.pprint(self.main_pdb_array['S2'])
-        # pprint.pprint(self.trimmed_residues)
-        # pprint.pprint(self.template_source)
-        # raise AssertionError
-
         if self.complex:
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:
@@ -2786,7 +2787,7 @@ class HelixEndsModeling(HomologyModeling):
         '''
         raw = self.find_ends(structure, structure.protein_conformation)
         anno_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
-        annotated = self.find_ends(structure, anno_conf)      
+        annotated = self.find_ends(structure, anno_conf)
 
         if H8_alt!=None and H8_alt!=structure:
             H8_raw_conf = ProteinConformation.objects.get(protein=H8_alt.protein_conformation.protein.parent)

@@ -92,6 +92,7 @@ function createHiveplot(data, container) {
                   .attr("id", "hiveTooltip");
 
     hivesvg = d3.select(container).append("svg")
+        .attr("class", "hiveplot")
         .attr("width", width)
         .attr("height", height)
       .append("g")

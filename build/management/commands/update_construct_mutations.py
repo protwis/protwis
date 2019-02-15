@@ -773,8 +773,11 @@ class Command(BaseCommand):
             if not d and 'deletions' in d:
                 d = fetch_pdb_info(pdbname,protein)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
-            for d in d['deletions']:
-                dele, created = ConstructDeletion.objects.get_or_create(construct=c, start=d['start'],end=d['end'])
+            if 'deletions' in d:
+                for d in d['deletions']:
+                    dele, created = ConstructDeletion.objects.get_or_create(construct=c, start=d['start'],end=d['end'])
+            else:
+                print('No deletions in d[]',pdbname)
 
     def json_check_for_mutations_deletions(self):
         for c in Construct.objects.all():
