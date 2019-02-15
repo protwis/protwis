@@ -556,15 +556,12 @@ class HomologyModeling(object):
                 prev_p = int(p)
         i = 0
         path = './structure/homology_models/'
-        # if self.revise_xtal==False:
-        #     if self.complex:
-        #         self.modelname = '{}_{}-{}_{}_{}_GPCRDB'.format(self.class_name, self.reference_entry_name, self.target_signprot.entry_name, 
-        #                                          self.main_structure, build_date)
-        #     else:
-        #         self.modelname = '{}_{}_{}_{}_{}_GPCRDB'.format(self.class_name, self.reference_entry_name, self.state, 
-        #                                          self.main_structure, build_date)
-        # else:
-        #     self.modelname = "{}_{}_{}_refined_{}_{}_GPCRDB".format(self.class_name, self.reference_protein.parent.entry_name, self.main_structure, self.main_structure.state.name, build_date)
+        # if self.revise_xtal==True:
+        #     pprint.pprint(self.alignment.reference_dict)
+        #     for k,l in self.alignment.reference_dict.items():
+        #         if k.startswith('ICL3'):
+
+
         with open (path+self.modelname+'.pdb', 'r+') as f:
             pdblines = f.readlines()
             out_list = []
@@ -573,6 +570,7 @@ class HomologyModeling(object):
             water_count = 0
             first_signprot_res_found = False
             atom_num = 1
+            atom_num_offset = []
 
             for line in pdblines:
                 try:
@@ -599,6 +597,8 @@ class HomologyModeling(object):
                     else:
                         whitespace = (whitespace-3)*' '
                     group1 = pdb_re.group(1)
+                    if 'OXT' in group1:
+                        atom_num_offset.append(int(pos_list[i]))
                     if self.complex:
                         if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
@@ -751,8 +751,22 @@ class HomologyModeling(object):
                 ws1 = ' '*(5-len(str(c1.sequence_number)))
                 ws2 = ' '*(5-len(str(c2.sequence_number)))
                 ssbond+='SSBOND   {} CYS {}{}{}    CYS {}{}{}\n'.format(count, chain, ws1, str(c1.sequence_number), chain, ws2, str(c2.sequence_number))
+                # for res in pdb_struct[chain]:
+                    # print(res)
+                for atom in pdb_struct[chain][c1.sequence_number]:
+                    print('c1',atom, atom.get_serial_number())
+                for atom in pdb_struct[chain][c2.sequence_number]:
+                    print('c2',atom, atom.get_serial_number())
                 sg1 = pdb_struct[chain][c1.sequence_number]['SG'].get_serial_number()
                 sg2 = pdb_struct[chain][c2.sequence_number]['SG'].get_serial_number()
+                offset = 0
+                for a in atom_num_offset:
+                    if a<c2.sequence_number:
+                        offset+=1
+                print(sg1,sg2,atom_num_offset, offset)
+                sg1-=offset
+                sg2-=offset
+                print(sg1,sg2)
                 ws3 = ' '*(5-len(str(sg1)))
                 ws4 = ' '*(5-len(str(sg2)))
                 conect+='CONECT{}{}{}{}\n'.format(ws3, str(sg1), ws4, str(sg2))

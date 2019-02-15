@@ -133,7 +133,8 @@ class Command(BaseBuild):
                     if break_loop: break
                 if break_loop: break
 
-        s_c = 0
+        # Offset target counter to -1 to correct for skipping Golf
+        s_c = -1
         for i,j in self.gprotein_targets.items():
             for s in j:
                 s_c+=1
@@ -172,6 +173,9 @@ class Command(BaseBuild):
             for target in targets:
                 # Only build gnat models with opsins
                 if receptor.family.parent.name!='Opsins' and target in ['gnat1_human','gnat2_human','gnat3_human']:
+                    continue
+                # Skip Golf
+                if target=='gnal_human':
                     continue
                 # print(receptor, target)
                 import_receptor = False
