@@ -195,14 +195,13 @@ class Command(BaseBuild):
                 for i in range(del_range['start'],del_range['end']+1):
                     deletions.append(i)
             #print("Annotation missing WT residues",d['deletions'])
-
-
         removed = []
         ## Remove segments that arent receptor (tags, fusion etc)
         if 'xml_segments' in d:
             for seg in d['xml_segments']:
                 if seg[1]:
                     # Odd rules to fit everything..
+                    # print(seg[1][0], entry_name)
                     if seg[1][0]!=entry_name and seg[-1]!=True and seg[1][0]!='Uncharacterized protein' and 'receptor' not in seg[1][0]:
                         if seg[0].split("_")[1]==preferred_chain:
                             #print(seg[2],seg[3]+1)
@@ -212,6 +211,11 @@ class Command(BaseBuild):
                                 removed.append(i)
         # Reset removed, since it causes more problems than not
 
+        # Overwrite reset to fix annotation
+        if structure.pdb_code.index in ['6H7N','6H7J','6H7L','6H7M','6H7O']:
+            removed = list(range(3,40))
+        if structure.pdb_code.index=='6MEO':
+            removed = []
         # print('removed',removed)
         # removed = []
         if len(deletions)>len(d['wt_seq'])*0.9:
@@ -221,6 +225,7 @@ class Command(BaseBuild):
 
         s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
         chain = s[preferred_chain] #select only one chain (avoid n-mer receptors)
+
         ppb=PPBuilder()
         seq = ''
         i = 1
@@ -325,15 +330,23 @@ class Command(BaseBuild):
         if len(wt_lookup)==0:
             print("No residues for",structure.protein_conformation.protein.parent.entry_name)
             return None
-
+        # print(parent_seq)
+        # print(seq)
         # print('parent_seq',len(parent_seq),'pdb_seq',len(seq))
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
-        pw2 = pairwise2.align.localms(parent_seq, seq, 6, -4, -5, -2)
+        pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
 
         gaps = 0
         unmapped_ref = {}
-        for i, r in enumerate(pw2[0][0], 1): #loop over alignment to create lookups (track pos)
-            # print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
+        ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+        if structure.pdb_code.index in ['5WIU','5WIV']:
+            temp_seq = temp_seq[:144]+'D'+temp_seq[145:]
+            temp_seq = temp_seq[:149]+'-'+temp_seq[150:]
+        elif structure.pdb_code.index=='5ZKP':
+            ref_seq = ref_seq[:197]+'-'+ref_seq[198:]
+            ref_seq = ref_seq[:198]+'A'+ref_seq[199:]
+        for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
+            # print(i,r,temp_seq[i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
@@ -341,20 +354,22 @@ class Command(BaseBuild):
             elif r == "-":
                 ref_positions[i] = [None,'-']
 
-            if pw2[0][1][i-1]=='-':
+            if temp_seq[i-1]=='-':
                 unmapped_ref[i-gaps] = '-'
 
         gaps = 0
-        for i, r in enumerate(pw2[0][1], 1): #make second lookup
-            # print(i,r,pw2[0][0][i-1]) #print alignment for sanity check
+        for i, r in enumerate(temp_seq, 1): #make second lookup
+            # print(i,r,ref_seq[i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
                 mapped_seq[i-gaps] = [r,ref_positions[i]]
-                # if r!=pw2[0][0][i-1]:
+                # if r!=ref_seq[i-1]:
                 #     print('aa mismatch')
         # print("seg res not mapped",gaps)
-
+        # import pprint
+        # print(deletions)
+        # pprint.pprint(mapped_seq)
         pdb = structure.pdb_data.pdb
         protein_conformation=structure.protein_conformation
         temp = ''
@@ -397,7 +412,7 @@ class Command(BaseBuild):
                         temp += line + "\n"
                         #(int(check.strip())<2000 or structure.pdb_code.index=="4PHU") and
                         if int(check.strip()) not in removed:
-                            #print(line)
+                            # print(line)
                             residue = Residue()
                             residue.sequence_number = int(check.strip())
                             residue.amino_acid = AA[residue_name.upper()]
@@ -422,6 +437,7 @@ class Command(BaseBuild):
                                     not_matched +=1
                                 else:
                                     wt_r = wt_lookup[mapped_seq[seq_num_pos][1][0]]
+                                    print(seq_num_pos, mapped_seq[seq_num_pos], wt_r, residue.sequence_number, residue.amino_acid)
                                     if residue.sequence_number!=wt_r.sequence_number and residue.amino_acid!=wt_r.amino_acid and residue.sequence_number in wt_lookup: #if pos numbers not work -- see if the pos number might be in WT and unmapped
                                         if wt_lookup[residue.sequence_number].amino_acid==residue.amino_acid:
                                             if residue.sequence_number in unmapped_ref: #WT was not mapped, so could be it

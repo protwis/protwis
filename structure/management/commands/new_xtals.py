@@ -221,7 +221,7 @@ class QueryPDB():
                         auxiliary_proteins, ligands = [], []
                         if pdb_data_dict['ligands']!='None':
                             for key, values in pdb_data_dict['ligands'].items():
-                                if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE','SIN','PGO','MES','ZN','NO3','NI','MG']:
+                                if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE','SIN','PGO','MES','ZN','NO3','NI','MG','PG4']:
                                     continue
                                 else:
                                     ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
