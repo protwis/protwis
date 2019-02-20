@@ -62,6 +62,7 @@ class Distances():
         ds_with_key = {}
         if with_arr:
             ds = list(Distance.objects.filter(structure__in=self.structures) \
+                            .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                             .values('gns_pair') \
                             .annotate(mean = Avg('distance'), var = Variance('distance'), c = Count('distance'),arr=ArrayAgg('distance'),arr2=ArrayAgg('structure')).values_list('gns_pair','mean','var','c','arr','arr2').filter(c__gte=int(0.5*len(self.structures))))
             for i,d in enumerate(ds):
@@ -86,7 +87,7 @@ class Distances():
 
         lookup = {}
         bins = []
-        n = 3 # Size of windows.
+        n = 4 # Size of windows.
 
         # Get all possible residues
         res = set()
@@ -166,10 +167,13 @@ class Distances():
                 continue
 
             # Add dispersion value
-            bin_pairs[label][0].append(pair[1][1])
-            bin_pairs[label][1].append(pair[1][2])
-            bin_pairs[label][2].append(pair[1][3])
-            bin_pairs[label][3].append(pair[1][4])
+            for i,v in enumerate(pair[1][1:]):
+                if i>=len(bin_pairs[label]):
+                    bin_pairs[label].append([])
+                if type(v) is list:
+                    bin_pairs[label][i] += v
+                else:
+                    bin_pairs[label][i].append(v)
 
         pairs_to_remove = set()
         for label, ls in bin_pairs.items():
@@ -217,7 +221,6 @@ class Distances():
         self.stats_window = stats_window
         self.stats_window_reduced = stats_window_reduced
         self.stats_window_key = stats_window_key
-        # print(stats_window_key)
 
     def fetch_distances(self):
         ds = Distance.objects.filter(structure__in=self.structures).all().values_list('distance','gns_pair')
