@@ -223,7 +223,7 @@ def DistanceDataGroups(request):
                     data['gn_map'][r.generic_number.label] = r.amino_acid
                     data['pos_map'][r.sequence_number] = r.amino_acid
                     data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
- 
+
     print('Start 1')
     dis1 = Distances()
     dis1.load_pdbs(pdbs1)
@@ -440,9 +440,6 @@ def DistanceData(request):
     dis.load_pdbs(pdbs)
     dis.fetch_and_calculate()
 
-    dis.calculate_window()
-
-
     excluded_segment = ['C-term','N-term']
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs_lower).distinct().all()
@@ -635,6 +632,10 @@ def InteractionData(request):
     ).filter(
         segment_filter_res1 & segment_filter_res2 & i_types_filter
     )
+
+    # Interaction type sort - optimize by statically defining interaction type order
+    order = ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']
+    interactions = sorted(interactions, key=lambda x: order.index(x['interaction_type']))
 
     # Initialize response dictionary
     data = {}

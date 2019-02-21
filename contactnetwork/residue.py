@@ -38,32 +38,32 @@ ANGLE_REFERENCES = {'ARG':
                                 ['CZ', 116.29, 1.0023, 'NH2']],     # HH12
                         'NH2': [['CZ', 119.91, 0.9899, 'NH1'],      # HH21
                                 ['CZ', 116.88, 0.9914, 'NE']],      # HH22
-                        'NE': [['CD', 113.14, 1.0065, 'NH1']]}      # HE
-                    , 'ASN':
+                        'NE': [['CD', 113.14, 1.0065, 'NH1']]},      # HE
+                    'ASN':
                         {'ND2': [['CG', 117.35, 0.9963, 'CB'],      # HD21
-                                ['CG', 120.05, 0.9951, 'OD1']]}     # HD22
-                    , 'CYS':
-                        {'SG': [['CB', 97.15, 1.3341]]}             # HG1
-                    , 'GLN':
+                                ['CG', 120.05, 0.9951, 'OD1']]},     # HD22
+                    'CYS':
+                        {'SG': [['CB', 97.15, 1.3341]]},             # HG1
+                    'GLN':
                         {'NE2': [['CD', 116.86, 0.9959, 'CG'],      # HE21
-                                ['CD', 119.83, 0.9943, 'OE1']]}     # HE22
-                    , 'HIS':
+                                ['CD', 119.83, 0.9943, 'OE1']]},     # HE22
+                    'HIS':
                         {'ND1': [['CG', 126.09, 1.0020, 'CD2']],    # HD1
-                        'NE2': [['CD2', 125.52, 1.0020, 'CG']]}     # HE2
-                    , 'LYS':
-                        {'NZ': [['CE', 110.020, 1.0404]]}           # HZ1-3
-                    , 'SER':
-                        {'OG': [['CB', 107.08, 0.9655]]}            # HG1
-                    , 'THR':
-                        {'OG1': [['CB', 105.45, 0.9633]]}           # HG1
-                    , 'TRP':
-                        {'NE1': [['CD1', 124.68, 0.9767, 'CG']]}    # HE1
-                    , 'TYR':
-                        {'OH': [['CZ', 107.47, 0.9594]]}			# HH
-                    , 'HOH':
-                        {'O': []}                                   # H1/H2
-                    , 'BB':
-                        {'N': [['CA', 116.67, 0.9973, 'C']]}		# NH - C-atom from previous connected residue
+                        'NE2': [['CD2', 125.52, 1.0020, 'CG']]},     # HE2
+                    'LYS':
+                        {'NZ': [['CE', 110.020, 1.0404]]},           # HZ1-3
+                    'SER':
+                        {'OG': [['CB', 107.08, 0.9655]]},            # HG1
+                    'THR':
+                        {'OG1': [['CB', 105.45, 0.9633]]},           # HG1
+                    'TRP':
+                        {'NE1': [['CD1', 124.68, 0.9767, 'CG']]},    # HE1
+                    'TYR':
+                        {'OH': [['CZ', 107.47, 0.9594]]},			# HH
+                    'HOH':
+                        {'O': []},                                   # H1/H2
+                    'BB':
+                        {'N': [['CA', 116.67, 0.9973, 'C']]},		# NH - C-atom from previous connected residue
                 }
 
 ACCEPTING_REFERENCES = {'ASN':
@@ -87,6 +87,8 @@ ACCEPTING_REFERENCES = {'ASN':
                         {'OG1': 'CB' },
                     'TYR':
                         {'OH': 'CZ' },
+                    'HOH':
+                        {'O': []},
                     'BB':
                         {'O': 'C' }}
 
@@ -167,27 +169,48 @@ def get_ring_descriptors(res):
         # Get normals by taking the cross product of two vectors in the ring plane. All atom coordinates are co-planar.
         ring_normals = [numpy.cross(numpy.subtract(a_c_l[0], a_c_l[1]), numpy.subtract(a_c_l[0], a_c_l[2])) for a_c_l in ring_atom_coords]
 
-        return zip(ring_centers, ring_normals)
+        return list(zip(ring_centers, ring_normals))
     except:
         return []
+
+# FROM: https://stackoverflow.com/questions/38987
+# Given two dicts, merge them into a new dict as a shallow copy.
+def merge_two_dicts(x, y):
+    z = x.copy()
+    z.update(y)
+    return z
 
  # Returns hydrogen placement angles/distances (CHARMM36) + reference atoms
  # for the calculation of hydrogen bonds
 def get_hbond_donor_references(res):
     resname = res.get_resname()
-    if resname in ANGLE_REFERENCES:
+    if resname == "HOH":
         return ANGLE_REFERENCES[resname]
+    elif resname in ANGLE_REFERENCES:
+        # return backbone + residue specific
+        # Python >= 3.5
+        #return {**ANGLE_REFERENCES[resname], **ANGLE_REFERENCES['BB']}
+        # Python < 3.5
+        return merge_two_dicts(ANGLE_REFERENCES[resname], ANGLE_REFERENCES['BB'])
     else:
-        return []
+        # Only return backbone
+        return ANGLE_REFERENCES['BB']
 
 # Returns reference atoms for hydrogen bond acceptors
 # for the calculation of hydrogen bonds
 def get_hbond_acceptors(res):
     resname = res.get_resname()
-    if resname in ACCEPTING_REFERENCES:
+    if resname == "HOH":
         return ACCEPTING_REFERENCES[resname]
+    elif resname in ACCEPTING_REFERENCES:
+        # return backbone + residue specific
+        # Python >= 3.5
+        #return {**ACCEPTING_REFERENCES[resname], **ACCEPTING_REFERENCES['BB']}
+        # Python < 3.5
+        return merge_two_dicts(ACCEPTING_REFERENCES[resname], ACCEPTING_REFERENCES['BB'])
     else:
-        return []
+        # Only return backbone
+        return ACCEPTING_REFERENCES['BB']
 
 # redefine the unit_vector function to replace the internal function
 def get_unit_vector(vector):
