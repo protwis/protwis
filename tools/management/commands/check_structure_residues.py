@@ -40,8 +40,11 @@ class Command(BaseBuild):
             for x in ['1.50x50', '2.50x50', '3.50x50', '4.50x50', '5.50x50', '6.50x50', '7.50x50']:
                 if x not in x50s:
                     print(s,x)
+                    TMb = annotations[s.protein_conformation.protein.parent.entry_name+'_'+s.pdb_code.index][x[0]+'b']
                     TMe = annotations[s.protein_conformation.protein.parent.entry_name+'_'+s.pdb_code.index][x[0]+'e']
                     if TMe=='-':
+                        continue
+                    if s.pdb_code.index=='4L6R' and x=='4.50x50' and TMb==274:
                         continue
                     if TMe>parent_x50_resis.get(display_generic_number__label=x).sequence_number:
                         missing_helices[s].append(x)

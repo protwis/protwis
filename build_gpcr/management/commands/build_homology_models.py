@@ -870,7 +870,7 @@ class HomologyModeling(object):
                 for gn, res in seg.items():
                     self.template_source = update_template_source(self.template_source, [gn.replace('.','x')],self.main_structure,seg_l)
 
-            helixends = HelixEndsModeling(self.similarity_table_all, self.template_source, self.main_structure)
+            helixends = HelixEndsModeling(self.similarity_table_all, self.template_source, self.main_structure, self.debug)
            
 
             try:
@@ -2754,7 +2754,7 @@ class SegmentEnds(object):
 class HelixEndsModeling(HomologyModeling):
     ''' Class for modeling the helix ends of GPCRs. 
     '''
-    def __init__(self, similarity_table, template_source, main_structure):
+    def __init__(self, similarity_table, template_source, main_structure, debug=False):
         self.helix_ends = OrderedDict()
         self.helix_end_mods = OrderedDict()
         self.main_pdb_array = OrderedDict()
@@ -2764,6 +2764,7 @@ class HelixEndsModeling(HomologyModeling):
         self.main_structure = main_structure
         self.templates_to_skip = OrderedDict([('TM1',[['6BQG','6BQH'],[]]),('TM2',[[],[]]),('TM3',[[],[]]),('TM4',[[],[]]),
                                               ('TM5',[[],[]]),('TM6',[[],[]]),('TM7',[[],['5UNF','5UNG','5UNH']]),('H8',[[],[]])])
+        self.debug = debug
     
     def find_ends(self, structure, protein_conformation):
         raw_res = Residue.objects.filter(protein_conformation=protein_conformation).exclude(
@@ -2929,6 +2930,17 @@ class HelixEndsModeling(HomologyModeling):
 
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure, H8_alt)
+        print(raw_helix_ends)
+        print(anno_helix_ends)
+        print(a.template_dict['TM6'])
+
+        #### Exception for TM4 start of 5ZKP
+        if main_structure.pdb_code.index in ['5ZKP']:
+            for i in ['4x38','4x39','4x40','4x41','4x42','4x43','4x44','4x45','4x46','4x47','4x48']:
+                a.template_dict['TM4'][i] = 'x'
+        elif main_structure.pdb_code.index in ['5UZ7']:
+            for i in list(range(35,50)):
+                a.template_dict['TM6']['6x'+str(i)] = 'x'
 
         # Force active state with main template 5UNF, 5UNG or 5UNH to get new TM7 end
         skip_template = False
@@ -3059,6 +3071,8 @@ class HelixEndsModeling(HomologyModeling):
                 temp_seg_seq_len = len(list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, 
                                                                    sequence_number__in=range(first_res,last_res+1))))
                 mid = temp_seg_seq_len/2
+            if ref_seg=='TM6':
+                print(first_res, last_res, mid, temp_seg_seq_len)
             if ref_seg[0] not in ['T','H']:
                 continue
             if separate_H8==True:
@@ -3099,6 +3113,8 @@ class HelixEndsModeling(HomologyModeling):
                     delete_ar.add((ref_seg, ref_res.replace('x','.')))
                 elif a.template_dict[temp_seg][temp_res]=='x' or (temp_seg[0]=='T' and temp_res.replace('x','.') not in 
                                                                                         list(main_pdb_array[temp_seg])):
+                    if ref_seg=='TM6':
+                        print(temp_res,list(full_template_dict_seg.keys()).index(temp_res), mid, offset)
                     if list(full_template_dict_seg.keys()).index(temp_res)<mid+offset:
                         modifications['added'][temp_seg][0].append(temp_res)
                     else:
@@ -3115,7 +3131,7 @@ class HelixEndsModeling(HomologyModeling):
                     del main_pdb_array[i][ii]
                 except:
                     pass
-
+            
             if ref_seg[0]=='T' or ref_seg=='H8':
                 if len(modifications['added'][ref_seg][0])>0:
                     self.helix_ends[ref_seg][0] = modifications['added'][ref_seg][0][0]
@@ -3127,7 +3143,7 @@ class HelixEndsModeling(HomologyModeling):
                     self.helix_ends[ref_seg][1] = parser.gn_indecer(modifications['removed'][ref_seg][1][0], 'x', -1)
                 if len(modifications['added'][ref_seg][0])>0:
                     found_alt_start = False
-                    for struct in self.similarity_table:
+                    for struct in list(self.similarity_table)[:5]:
                         if struct!=main_structure:
                             try:
                                 if skip_template and struct.pdb_code.index in self.templates_to_skip[ref_seg][0]:
@@ -3177,7 +3193,7 @@ class HelixEndsModeling(HomologyModeling):
                         main_pdb_array[ref_seg] = new_residues
                 if len(modifications['added'][ref_seg][1])>0:
                     found_alt_end = False
-                    for struct in self.similarity_table:
+                    for struct in list(self.similarity_table)[:5]:
                         if struct!=main_structure:
                             try:
                                 if skip_template and struct.pdb_code.index in self.templates_to_skip[ref_seg][1]:
@@ -3220,6 +3236,8 @@ class HelixEndsModeling(HomologyModeling):
         self.helix_end_mods = modifications
         self.main_pdb_array = main_pdb_array
         self.alignment = a
+        if self.debug:
+            print(self.helix_end_mods)
         return main_pdb_array, a
     
 
@@ -3246,7 +3264,7 @@ class Loops(object):
         self.model_loop = False
         self.partialECL2_1 = False
         self.partialECL2_2 = False
-        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH']}
+        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':['5ZKP'],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH']}
         self.evade_chain_break = False
     
     def fetch_loop_residues(self, main_pdb_array, superpose_modded_loop=False):

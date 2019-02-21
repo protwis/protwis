@@ -251,10 +251,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     if pdbname.upper() in ['6H7J','6H7O']:
         pdb_range = list(range(40,358))
 
-    # Bad sequence numbering in PDB file
-    # if pdbname.upper()=='4LDE':
-    #     pdb_range = list(range(1029,1232))+list(range(1266,1343))
-
     # Uncertain about exact cut -- pdb/article do not compliment eachother.
     if pdbname.upper()=='4XEE' or pdbname.upper()=='4XES':
         pdb_range = list(range(43,269))+list(range(297,385))
