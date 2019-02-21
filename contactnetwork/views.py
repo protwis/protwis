@@ -1,12 +1,14 @@
 from django.shortcuts import render
 from django.db.models import Q
 from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 
 from collections import defaultdict
 from django.conf import settings
 
 import json
 import functools
+import hashlib
 
 from contactnetwork.models import *
 from contactnetwork.distances import *
@@ -141,10 +143,21 @@ def DistanceDataGroups(request):
         pdbs1 = []
 
 
+
     pdbs1 = [pdb.upper() for pdb in pdbs1]
     pdbs2 = [pdb.upper() for pdb in pdbs2]
     pdbs1_lower = [pdb.lower() for pdb in pdbs1]
     pdbs2_lower = [pdb.lower() for pdb in pdbs2]
+
+
+    cache_key = ",".join(sorted(pdbs1)) + "_" + ",".join(sorted(pdbs2))
+    cache_key = hashlib.md5(cache_key.encode('utf-8')).hexdigest()
+
+    data = cache.get(cache_key)
+    # data = None
+    if data!=None:
+        print('Result cached')
+        return JsonResponse(data)
 
     # Segment filters
     try:
@@ -173,37 +186,12 @@ def DistanceDataGroups(request):
     data['segment_map_full_gn'] = OrderedDict()
     data['generic_map_full'] = OrderedDict()
 
-    print(pdbs1)
-    dis1 = Distances()
-    dis1.load_pdbs(pdbs1)
-    dis1.fetch_and_calculate()
-    print(pdbs2)
-    dis2 = Distances()
-    dis2.load_pdbs(pdbs2)
-    dis2.fetch_and_calculate()
 
+    list_of_gns = []
 
-    diff = OrderedDict()
-
-    for d1 in dis1.stats:
-        label = d1[0]
-        mean1 = d1[1]
-        try:
-            #see if label is there
-            mean2 = dis2.stats_key[label][1]
-            mean_diff = mean2-mean1
-            diff[label] = mean_diff
-        except:
-            pass
-    diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1])))
-
-    compared_stats = {}
-
-    excluded_segment = ['C-term','N-term']
+    excluded_segment = ['C-term','N-term','ICL1','ECL1','ECL2','ICL2','H8']
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
-    print(pdbs1_lower+pdbs2_lower)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs1_lower+pdbs2_lower).distinct().all()
-
     if len(proteins)>1:
         a = Alignment()
         a.ignore_alternative_residue_numbering_schemes = True;
@@ -217,6 +205,7 @@ def DistanceDataGroups(request):
 
         for aa in consensus:
             if 'x' in aa.family_generic_number:
+                list_of_gns.append(aa.family_generic_number)
                 data['gn_map'][aa.family_generic_number] = aa.amino_acid
                 data['pos_map'][aa.sequence_number] = aa.amino_acid
                 data['segment_map_full_gn'][aa.family_generic_number] = aa.segment_slug
@@ -230,9 +219,78 @@ def DistanceDataGroups(request):
                     data['generic_map_full'][r.sequence_number] = r.short_display_generic_number()
             else:
                 if r.generic_number:
+                    list_of_gns.append(r.generic_number.label)
                     data['gn_map'][r.generic_number.label] = r.amino_acid
                     data['pos_map'][r.sequence_number] = r.amino_acid
                     data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
+ 
+    print('Start 1')
+    dis1 = Distances()
+    dis1.load_pdbs(pdbs1)
+    dis1.fetch_and_calculate()
+
+    print('Calc 1')
+    dis1.calculate_window(list_of_gns)
+
+    print('Start 2')
+    dis2 = Distances()
+    dis2.load_pdbs(pdbs2)
+    dis2.fetch_and_calculate()
+
+    print('Calc 2')
+    dis2.calculate_window(list_of_gns)
+
+    print('Calc stats')
+    diff = OrderedDict()
+    from math import sqrt
+    from scipy import stats
+
+    for d1 in dis1.stats_window_reduced:
+    # for d1 in dis1.stats_window:
+    # for d1 in dis1.stats:
+        label = d1[0]
+        mean1 = d1[1]
+        dispersion1 = d1[4]
+        try:
+            #see if label is there
+            d2 = dis2.stats_window_key[label]
+            mean2 = d2[1]
+            dispersion2 = d2[4]
+            # mean2 = dis2.stats_key[label][1]
+            mean_diff = mean2-mean1
+
+            var1,var2 = d1[2],d2[2]
+            std1,std2 = sqrt(d1[2]),sqrt(d2[2])
+
+            n1, n2 = d1[3],d2[3]
+            se1, se2 = std1/sqrt(n1), std2/sqrt(n2)
+            sed = sqrt(se1**2.0 + se2**2.0)
+            t_stat = (mean1 - mean2) / sed
+
+
+            t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+
+            df = n1+n2 - 2
+
+            p = 1 - stats.t.cdf(t_stat_welch,df=df)
+
+            # print(label,mean1,mean2,std1,std2,n1,n2,t_stat,t_stat_welch,p)
+
+            diff[label] = [round(mean_diff),[std1,std2],[mean1,mean2],[n1,n2],p]
+
+
+        except:
+            pass
+    diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1][0])))
+
+    compared_stats = {}
+
+    # Remove differences that seem statistically irrelevant
+    for label,d in diff.items():
+        if d[-1]>0.05:
+            d[0] = 0
+            #print(label,d)
+    print('done')
 
     # Dict to keep track of which residue numbers are in use
     number_dict = set()
@@ -265,14 +323,14 @@ def DistanceDataGroups(request):
         #     data['interactions'][coord][pdb_name] = []
 
         if d:
-            if len(data['interactions'])<3000:
+            if len(data['interactions'])<50000:
 
-                data['interactions'][coord] = [round(d)]
+                data['interactions'][coord] = d
             else:
                 break
 
-        if abs(d)>max_diff:
-            max_diff = round(abs(d))
+        if abs(d[0])>max_diff:
+            max_diff = round(abs(d[0]))
         # data['sequence_numbers'] = sorted(number_dict)
     if (generic):
         data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
@@ -284,6 +342,33 @@ def DistanceDataGroups(request):
     data['pdbs'] = list(pdbs1+pdbs2)
     data['max_diff'] = max_diff
 
+    total = {}
+    ngl_max_diff = 0
+    for i,gn1 in enumerate(list_of_gns):
+        if gn1 not in total:
+            total[gn1] = {}
+        for gn2 in list_of_gns[i:]:
+            if gn2 not in total:
+                total[gn2] = {}
+            label = "{}_{}".format(gn1,gn2)
+            if label in dis1.stats_window_key:
+                if label in dis2.stats_window_key:
+                    value = round(dis2.stats_window_key[label][1]-dis1.stats_window_key[label][1])
+                    total[gn1][gn2] =  value
+                    total[gn2][gn1] =  value
+        vals = []
+        for gn,val in total[gn1].items():
+            if gn[0]!=gn1[0]:
+                #if not same segment
+                vals.append(val)
+        total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),1)
+        if abs(total[gn1]['avg'])>ngl_max_diff:
+            ngl_max_diff = round(abs(total[gn1]['avg']))
+
+    data['ngl_data'] = total
+    data['ngl_max_diff'] = ngl_max_diff
+    print('send json')
+    cache.set(cache_key,data,3600*24*7)
     return JsonResponse(data)
 
 
@@ -315,6 +400,15 @@ def DistanceData(request):
     pdbs = [pdb.upper() for pdb in pdbs]
     pdbs_lower = [pdb.lower() for pdb in pdbs]
 
+    cache_key = ",".join(sorted(pdbs))
+    cache_key = hashlib.md5(cache_key.encode('utf-8')).hexdigest()
+
+    data = cache.get(cache_key)
+    # data = None
+    if data!=None:
+        print('Result cached')
+        return JsonResponse(data)
+
     # Segment filters
     try:
         segments = request.GET.getlist('segments[]')
@@ -342,16 +436,18 @@ def DistanceData(request):
     data['segment_map_full_gn'] = OrderedDict()
     data['generic_map_full'] = OrderedDict()
 
-    print(pdbs)
     dis = Distances()
     dis.load_pdbs(pdbs)
     dis.fetch_and_calculate()
+
+    dis.calculate_window()
 
 
     excluded_segment = ['C-term','N-term']
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs_lower).distinct().all()
 
+    list_of_gns = []
     if len(proteins)>1:
         a = Alignment()
         a.ignore_alternative_residue_numbering_schemes = True;
@@ -365,6 +461,7 @@ def DistanceData(request):
 
         for aa in consensus:
             if 'x' in aa.family_generic_number:
+                list_of_gns.append(aa.family_generic_number)
                 data['gn_map'][aa.family_generic_number] = aa.amino_acid
                 data['pos_map'][aa.sequence_number] = aa.amino_acid
                 data['segment_map_full_gn'][aa.family_generic_number] = aa.segment_slug
@@ -378,6 +475,7 @@ def DistanceData(request):
                     data['generic_map_full'][r.sequence_number] = r.short_display_generic_number()
             else:
                 if r.generic_number:
+                    list_of_gns.append(r.generic_number.label)
                     data['gn_map'][r.generic_number.label] = r.amino_acid
                     data['pos_map'][r.sequence_number] = r.amino_acid
                     data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
@@ -385,7 +483,7 @@ def DistanceData(request):
     # Dict to keep track of which residue numbers are in use
     number_dict = set()
     max_dispersion = 0
-    for d in dis.stats:
+    for d in dis.stats_window_reduced:
         # print(d)
         res1 = d[0].split("_")[0]
         res2 = d[0].split("_")[1]
@@ -413,14 +511,14 @@ def DistanceData(request):
         #     data['interactions'][coord][pdb_name] = []
 
         if d[4]:
-            if len(data['interactions'])<3000:
+            if len(data['interactions'])<50000:
 
                 data['interactions'][coord] = [round(d[1]),round(d[4],3)]
             else:
                 break
 
-        if d[4]>max_dispersion:
-            max_dispersion = round(d[4],3)
+            if d[4]>max_dispersion:
+                max_dispersion = round(d[4],3)
         # data['sequence_numbers'] = sorted(number_dict)
     if (generic):
         data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
@@ -432,6 +530,33 @@ def DistanceData(request):
     data['pdbs'] = list(pdbs)
     data['max_dispersion'] = max_dispersion
 
+    total = {}
+    ngl_max_diff = 0
+    for i,gn1 in enumerate(list_of_gns):
+        if gn1 not in total:
+            total[gn1] = {}
+        for gn2 in list_of_gns[i:]:
+            if gn2 not in total:
+                total[gn2] = {}
+            label = "{}_{}".format(gn1,gn2)
+            if label in dis.stats_window_key:
+                value = dis.stats_window_key[label][4]
+                total[gn1][gn2] =  value
+                total[gn2][gn1] =  value
+        vals = []
+        for gn,val in total[gn1].items():
+            if gn[0]!=gn1[0]:
+                #if not same segment
+                vals.append(val)
+        total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),1)
+        if abs(total[gn1]['avg'])>ngl_max_diff:
+            ngl_max_diff = round(abs(total[gn1]['avg']))
+
+    data['ngl_data'] = total
+    data['ngl_max_diff'] = ngl_max_diff
+
+    # Cache result 7 days
+    cache.set(cache_key,data,3600*24*7)
     return JsonResponse(data)
 
 def InteractionData(request):
