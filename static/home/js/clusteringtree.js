@@ -1,4 +1,4 @@
-function drawThisThing(x) {
+function renderTree(x) {
     var r = 1200 / 2;
     var innerRadius = r - 170 // change inner radius of tree with this argument
     var names = 0; // indexing for all nodes
@@ -229,11 +229,15 @@ function drawThisThing(x) {
     var click_count = 0;
 
     //On click event to get subtree of clicked node
+    var firstTreeClick = true;
     node.on("click", function(d) {
-            doubleclade(d);
+        if (firstTreeClick){
+          firstTreeClick = false;
+          $("#CN-button").removeClass("disabled");
+          $("#DN-button").removeClass("disabled");
         }
-
-    );
+        doubleclade(d);
+    });
 
     //Highlight clade when mouse is over node
     node.on("mouseover", function(h) {

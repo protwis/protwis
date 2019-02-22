@@ -36,14 +36,49 @@ def Interactions(request):
     """
     Show interaction heatmap
     """
-    return render(request, 'contactnetwork/interactions.html')
+
+
+    template_data = {}
+    # check for preselections in POST data
+    if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
+        # handle post
+        pdbs1 = request.POST.get("pdbs1")
+        pdbs2 = request.POST.get("pdbs2")
+
+        # create switch
+        if pdbs1 != None and pdbs2 != None:
+            template_data["pdbs1"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
+            template_data["pdbs2"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
+        else:
+            template_data["pdbs"] = pdbs1
+            if selected == None:
+                template_data["pdbs"] = pdbs2
+
+    return render(request, 'contactnetwork/interactions.html', template_data)
 
 
 def ShowDistances(request):
     """
     Show distances heatmap
     """
-    return render(request, 'contactnetwork/distances.html')
+
+    template_data = {}
+    # check for preselections in POST data
+    if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
+        # handle post
+        pdbs1 = request.POST.get("pdbs1")
+        pdbs2 = request.POST.get("pdbs2")
+
+        # create switch
+        if pdbs1 != None and pdbs2 != None:
+            template_data["pdbs1"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
+            template_data["pdbs2"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
+        else:
+            template_data["pdbs"] = pdbs1
+            if selected == None:
+                template_data["pdbs"] = pdbs2
+
+    return render(request, 'contactnetwork/distances.html', template_data)
 
 def PdbTreeData(request):
     data = Structure.objects.values(

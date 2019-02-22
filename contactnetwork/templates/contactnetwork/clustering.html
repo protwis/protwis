@@ -23,7 +23,7 @@
                     <div class="col-md-1">
                         <div class="btn btn-success btn-lg pull-left go-button">Go</div>
                     </div>
-                    <div class="col-md-2 hidden" id="output-group0">
+                    <div class="col-md-1 hidden" id="output-group0">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Group 1</h3>
@@ -33,7 +33,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-2 hidden" id="output-group1">
+                    <div class="col-md-1 hidden" id="output-group1">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Group 2</h3>
@@ -42,6 +42,10 @@
                                 <textarea name="input-targets-1" id="input-targets-1" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-md-2 hidden" id="submit-group">
+                        <div class="btn btn-success btn-lg pull-left CN-button disabled" id="CN-button">Contact Network</div>
+                        <div class="btn btn-success btn-lg pull-left DN-button disabled" id="DN-button">Distance Network</div>
                     </div>
                 </div>
 
@@ -92,6 +96,9 @@
         </div>
     </div>
     <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+    <div class="alert alert_pdb alert-warning fade out" id="bsalert">
+      Please select at least two structures to compare
+    </div>
 {% endblock %}
 {% block addon_js %}
     <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
@@ -116,13 +123,13 @@
           downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
         }
 
-        function initializeGoButton(selector, treeFunction) {
+        function initializeButtons(selector, treeFunction) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
 
                 // DEBUG input:
                 // pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
-                if (pdb.length > 0) {
+                if (pdb.length > 1) {
                     $("#clustering-tree").html("")
                     $("#svgloading").remove();
                     $(selector + ' .tree-container').append('<span id="svgloading">Loading...</span>');
@@ -133,12 +140,50 @@
                     function( data ) {
                         // create Tee
                         treeFunction(data["tree"]);
+
+                        // reset all elements
                         $("#svgloading").remove();
                         $("#output-group0").removeClass("hidden");
+                        $("#input-targets-0").val("");
                         $("#output-group1").removeClass("hidden");
+                        $("#input-targets-1").val("");
+                        $("#submit-group").removeClass("hidden");
+                        $("#CN-button").addClass("disabled");
+                        $("#DN-button").addClass("disabled");
+                        firstTreeClick = true;
                     });
+                } else {
+                    toggleAlert()
                 }
             });
+
+            $(selector + ' #CN-button').click(function(){submitToPage("CN")});
+            $(selector + ' #DN-button').click(function(){submitToPage("DN")});
+        }
+
+        function submitToPage(destination){
+          var url = "/contactnetwork/interactions";
+          if (destination=="DN")
+              url = "/contactnetwork/distances";
+
+          var form = $('<form action="' + url + '" method="post">' +
+              '<textarea name="pdbs1" id="submit-pdbs1" />' +
+              '<textarea name="pdbs2" id="submit-pdbs2" />' +
+              "{% csrf_token %}" +
+              '</form>');
+          $('body').append(form);
+
+          // set values
+          $("#submit-pdbs1").val($("#input-targets-0").val());
+          $("#submit-pdbs2").val($("#input-targets-1").val());
+          form.submit();
+        }
+
+        function toggleAlert(){
+            $(".alert_pdb").fadeTo(2000, 500).slideUp(500, function(){
+                $("#success-alert").slideUp(500);
+            });
+            return false;
         }
 
         function initializeFullscreenButton(selector) {
@@ -369,12 +414,8 @@
         }
 
         function initializeSingleGroupCrystalView() {
-            initializeGoButton('#single-group-crystal-tab', renderTree);
+            initializeButtons('#single-group-crystal-tab', renderTree);
             initializeFullscreenButton('#single-group-crystal-tab');
-        }
-
-        function renderTree(data){
-            drawThisThing(data)
         }
 
         $(document).ready(function() {
@@ -410,7 +451,7 @@
         }
 
         .node, text {
-          font: 18px sans-serif;
+          font: 13px sans-serif;
         }
 
         .link {
