@@ -124,6 +124,7 @@
                 // pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
                 if (pdb.length > 0) {
                     $("#clustering-tree").html("")
+                    $("#svgloading").remove();
                     $(selector + ' .tree-container').append('<span id="svgloading">Loading...</span>');
                     $.getJSON( '/contactnetwork/clusteringdata',
                     {
