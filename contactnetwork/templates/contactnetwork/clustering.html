@@ -1,0 +1,545 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+      <div class="tab-content clearfix">
+            <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
+            <div class="tab-pane active" id="single-group-crystal-tab">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">PDBs</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input class="crystal-pdb" type="hidden" value="[]" />
+                                <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-group-crystal-pdbs-modal">Select PDBs</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-group-crystal-pdbs-modal-table">Select PDBs</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="btn btn-success btn-lg pull-left go-button">Go</div>
+                    </div>
+                    <div class="col-md-2 hidden" id="output-group0">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Group 1</h3>
+                            </div>
+                            <div class="panel-body">
+                                <textarea name="input-targets-0" id="input-targets-0" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 hidden" id="output-group1">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Group 2</h3>
+                            </div>
+                            <div class="panel-body">
+                                <textarea name="input-targets-1" id="input-targets-1" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                  <div class="tab-content">
+                      <div class="col-md-12 tab-pane active" id="single-group-tree-tab">
+                           <div class="panel panel-default no-top-border">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Structural clustering</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="tree-container">
+                                      <div class="tree-legend"></div>
+                                      <div id="clustering-tree"></div>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- END SINGLE CRYSTAL GROUP TAB -->
+        </div>
+
+    <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+    <div class="modal fade" id="single-group-crystal-pdbs-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <span id="single-group-crystal-pdbs-modal-text">0 structure(s) selected</span>
+                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <div class="tableview"></div>
+                      </div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+{% endblock %}
+{% block addon_js %}
+    <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="{% static 'home/js/newick.js' %}"> </script>
+    <script src="{% static 'home/js/clusteringtree.js' %}"> </script>
+    <script>
+
+        function downloadSVG(svgSelector, name) {
+          var svgClone = $(svgSelector).clone();
+          svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
+
+          var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
+
+          downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+        }
+
+        function initializeGoButton(selector, treeFunction) {
+            $(selector + ' .go-button').click(function() {
+                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+
+                // DEBUG input:
+                // pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+                if (pdb.length > 0) {
+                    $("#clustering-tree").html("")
+                    $(selector + ' .tree-container').append('<span id="svgloading">Loading...</span>');
+                    $.getJSON( '/contactnetwork/clusteringdata',
+                    {
+                        'pdbs': pdb,
+                    },
+                    function( data ) {
+                        // create Tee
+                        treeFunction(data["tree"]);
+                        $("#svgloading").remove();
+                        $("#output-group0").removeClass("hidden");
+                        $("#output-group1").removeClass("hidden");
+                    });
+                }
+            });
+        }
+
+        function initializeFullscreenButton(selector) {
+            $(selector + ' .btn-fullscreen').click(function() {
+                fullScreenElement = $(this).parent().next().children().first();
+                fullScreenElement.css('background-color','white');
+                toggleFullScreen(fullScreenElement.get(0));
+            });
+        }
+
+        function toggleFullScreen(fullScreenElement) {
+            if (!document.mozFullScreen && !document.webkitFullScreen) {
+                if (fullScreenElement.mozRequestFullScreen) {
+                    fullScreenElement.mozRequestFullScreen();
+                } else {
+                    fullScreenElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+                }
+            } else {
+                if (document.mozCancelFullScreen) {
+                  document.mozCancelFullScreen();
+                } else {
+                  document.webkitCancelFullScreen();
+                }
+            }
+        }
+
+        function update_text_in_modal() {
+          var total_selected = $('.pdb_selected:checked', oTable.cells().nodes()).length
+          var selected_visible = $('.pdb_selected:checked').length
+          var ModalpdbsCountSelector = '#single-group-crystal-pdbs-modal-text';
+
+          if (total_selected==selected_visible) {
+            $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
+          } else {
+            $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
+          }
+        }
+
+        function thisPDB(elem) {
+          var ReceptorName = $(elem).attr('long');
+          var pdbName = $(elem).attr('id');
+          var pdbs = [];
+          $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
+              pdbs.push($(this).attr('id'));
+          });
+          var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
+          var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
+          var ModalpdbsCountSelector = '#single-group-crystal-pdbs-modal-text';
+
+          $(pdbsInputSelector).val(JSON.stringify(pdbs));
+          // Update view
+          $(pdbsCountSelector).html(pdbs.length);
+          update_text_in_modal();
+        }
+
+        function resetselection(elem) {
+          $('.check_all:visible').prop('checked',false);
+          var pdbs = [];
+
+          $('input', oTable.cells().nodes()).prop('checked',false);
+
+          var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
+          var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
+          $(pdbsInputSelector).val(JSON.stringify(pdbs));
+          $(pdbsCountSelector).html(pdbs.length);
+
+          update_text_in_modal();
+        }
+
+        function check_all(elem) {
+          show_all = $(elem).prop("checked");
+            var pdbs = [];
+
+          // REMOVE EXISITING? Probably not, more logically that filtering adds more
+          // $('input', oTable.cells().nodes()).prop('checked',false);
+
+          if (show_all) {
+            $('.pdb_selected:visible').prop("checked",true);
+          } else {
+            $('.pdb_selected:visible').prop("checked",false);
+          }
+
+          $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
+              pdbs.push($(this).attr('id'));
+          });
+
+          var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
+          var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
+          $(pdbsInputSelector).val(JSON.stringify(pdbs));
+          // Update view
+          $(pdbsCountSelector).html(pdbs.length);
+
+          update_text_in_modal();
+        }
+
+        $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
+          {
+              return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
+                  return $('input', td).prop('checked') ? '1' : '0';
+              } );
+          };
+
+        var oTable;
+        function showPDBtable(element) {
+          var mode = "Single group of structures";
+          group = $(element+' .tableview').attr('group-number');
+          if (group) mode = mode + group;
+          if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
+              oTable = $(element+' .tableview table').DataTable({
+                'scrollX': true,
+                // 'paging': true,
+                // 'autoWidth': true,
+
+                scrollY:        '80vh',
+                // scrollCollapse: true,
+                paging:         false,
+                columnDefs: [
+                  { targets: 'no-sort', orderable: false }
+                ],
+                "aaSorting": [],
+                 "columns": [
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                { "orderDataType": "dom-checkbox" }
+                            ]
+              });
+
+              yadcf.init(oTable,
+                [
+                    {
+                        column_number : 0,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Class",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number : 1,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                          width: '70px'
+                        },
+                        filter_default_label: "PDB",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number : 2,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Receptor",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number : 3,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        html_data_type: "text",
+                        select_type_options: {
+                          width: '150px'
+                        },
+                        filter_default_label: "Family",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number : 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Species",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            minimumResultsForSearch: -1 // remove search box
+                        },
+                        filter_default_label: "State",
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+
+                    },
+                    {
+                        column_number : 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Representative",
+                        filter_reset_button_text: false,
+
+                    },
+                ],
+                {
+                    cumulative_filtering: false
+                }
+            );
+
+            yadcf.exResetAllFilters(oTable);
+
+            oTable.on('draw.dt', function (e, oSettings) {
+                update_text_in_modal();
+            });
+
+          };
+        }
+
+        $('#single-group-crystal-pdbs-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-group-crystal-pdbs-modal-table');
+        })
+
+        function initializePdbChooserTables() {
+          $.get('pdbtabledata', function ( data ) {
+            $('#single-group-crystal-pdbs-modal-table .tableview').html(data);
+            pdbtabledata = data;
+          });
+        }
+
+        function initializeSingleGroupCrystalView() {
+            initializeGoButton('#single-group-crystal-tab', renderTree);
+            initializeFullscreenButton('#single-group-crystal-tab');
+        }
+
+        function renderTree(data){
+            drawThisThing(data)
+        }
+
+        $(document).ready(function() {
+            // Get PDBs for table build
+            initializePdbChooserTables();
+
+            // Single group of PDB files
+            initializeSingleGroupCrystalView();
+        });
+    </script>
+{% endblock %}
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <style type="text/css">
+        /* START TREE */
+        .node circle {
+          fill: #fff;
+          stroke: black;
+          stroke-width: 0.5px;
+          cursor: pointer;
+        }
+
+        .node circle.group0 {
+          fill: #FF0000;
+          stroke: black;
+        }
+
+        .node circle.group1 {
+          fill: #0000FF;
+          stroke: black;
+        }
+
+        .node, text {
+          font: 18px sans-serif;
+        }
+
+        .link {
+          fill: none;
+          stroke: #ccc;
+          stroke-width: 3.5px;
+        }
+
+        .link.selected {
+          fill: none;
+          stroke: #888;
+          stroke-width: 5px;
+        }
+
+        .link.group0 {
+          fill: none;
+          stroke: #ff7c7c;
+          stroke-width: 3.5px;
+        }
+
+        .link.group0.selected {
+            stroke-width: 5px;
+            stroke: #db6d6d;
+        }
+
+        textarea#input-targets-0 {
+          background-color: rgba(255, 124, 124, 0.1);
+        }
+
+        .link.group1 {
+          fill: none;
+          stroke: #82b1ff;
+          stroke-width: 3.5px;
+        }
+
+        .link.group1.selected {
+            stroke-width: 5px;
+            stroke: #6d97db;
+        }
+
+        textarea#input-targets-1 {
+            background-color: rgba(124, 124, 255, 0.1);
+        }
+
+        circle {
+          fill : #100;
+        }
+
+
+        text {
+          fill: #000;
+        }
+
+        /* END TREE */
+
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        .no-top-border{
+            border-top: 0px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute;
+          background:white;
+          border: 1px solid #D1C9C2;
+          border-top: 1;
+          width: 400px;
+          margin: 0 auto;
+          padding:  7px 15px;
+          text-align: left;
+          -webkit-border-bottom-right-radius: 6px;
+          -webkit-border-bottom-left-radius: 6px;
+          -moz-border-radius-bottomright: 6px;
+          -moz-border-radius-bottomleft: 6px;
+          border-bottom-right-radius: 6px;
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        @media (min-width: 2200px){
+            #content {
+                width: 100%;
+                padding-left: 100px;
+                padding-right: 100px;
+            }
+        }
+
+        .modal-wide {
+          width: 1200px;
+        }
+
+        .modal-footer {
+            border-top: 0px;
+        }
+
+        @media screen and (max-width: 992px) {
+            .go-button {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        .highlighted {
+            stroke: #286090 !important;
+            stroke-width: 3 !important;
+            opacity: 1 !important;
+        }
+        .svg-download-button {
+            margin-top: 6px;
+        }
+    </style>
+
+    <!-- D3 -->
+    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
+    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
+
+
+{% endblock %}

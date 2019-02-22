@@ -19,6 +19,17 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 from django.http import JsonResponse, HttpResponse
 from collections import OrderedDict
 
+import numpy as np
+import pandas as pd
+import scipy.cluster.hierarchy as sch
+import scipy.spatial.distance as ssd
+import time
+
+def Clustering(request):
+    """
+    Show clustering page
+    """
+    return render(request, 'contactnetwork/clustering.html')
 
 def Interactions(request):
     """
@@ -215,14 +226,12 @@ def DistanceDataGroups(request):
     dis1 = Distances()
     dis1.load_pdbs(pdbs1)
     dis1.fetch_and_calculate()
-
     dis1.calculate_window(list_of_gns)
+
     dis2 = Distances()
     dis2.load_pdbs(pdbs2)
     dis2.fetch_and_calculate()
-
     dis2.calculate_window(list_of_gns)
-
 
     diff = OrderedDict()
 
@@ -271,7 +280,6 @@ def DistanceDataGroups(request):
             coord = str(res1) + ',' + str(res2)
         else:
             coord = str(res2) + ',' + str(res1)
-
 
         # if pdb_name not in data['interactions'][coord]:
         #     data['interactions'][coord][pdb_name] = []
@@ -323,6 +331,95 @@ def DistanceDataGroups(request):
     data['ngl_max_diff'] = ngl_max_diff
     return JsonResponse(data)
 
+
+def ClusteringData(request):
+    # PDB files
+    try:
+        pdbs = request.GET.getlist('pdbs[]')
+    except IndexError:
+        pdbs = []
+
+    pdbs = [pdb.upper() for pdb in pdbs]
+
+    # output dictionary
+    start = time.time()
+    data = {}
+
+    # load all
+    dis = Distances()
+    dis.load_pdbs(pdbs)
+    dis.fetch_and_calculate()
+
+    # common GNs
+    common_gn = []
+    for i,pair in enumerate(sorted(dis.stats_key.items())):
+        if len(pdbs) == pair[1][3]:
+            res1, res2 = pair[0].split("_")
+            if res1 not in common_gn:
+                common_gn.append(res1)
+            if res2 not in common_gn:
+                common_gn.append(res2)
+
+    # normalization matrix for GNs
+    normalize = np.full((len(common_gn), len(common_gn)), 0.0)
+    for i,res1 in enumerate(common_gn):
+        for j in range(i+1, len(common_gn)):
+            # grab average value
+            res2 = common_gn[j]
+            normalize[i][j] = dis.stats_key[res1+"_"+res2][1]
+    # print("Prepared normalization matrix")
+
+    pdb_distance_maps = {}
+    for pdb in pdbs:
+        # grab raw distance data per structure
+        temp = Distances()
+        temp.load_pdbs([pdb])
+        temp.fetch_distances()
+
+        # create distance map for conserved GNs
+        distance_map = np.full((len(common_gn), len(common_gn)), 0.0)
+        for i,res1 in enumerate(common_gn):
+            for j in range(i+1, len(common_gn)):
+                # grab average value
+                res2 = common_gn[j]
+                distance_map[i][j] = temp.data[res1+"_"+res2][0]
+
+        # normalize and store distance map
+        pdb_distance_maps[pdb] = np.nan_to_num(distance_map/normalize)
+    # print("Collected distances for all structures")
+
+    # calculate distance matrix
+    distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
+    for i, pdb1 in enumerate(pdbs):
+        for j in range(i+1, len(pdbs)):
+            pdb2 = pdbs[j]
+            distance = np.sum(np.absolute(pdb_distance_maps[pdb1] - pdb_distance_maps[pdb2]))
+            distance_matrix[i, j] = distance
+            distance_matrix[j, i] = distance
+    # print("Calculated pairwise distance matrix")
+
+    # hierarchical clustering
+    hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward', metric='euclidean')
+    tree = sch.to_tree(hclust, False)
+    data['tree'] = getNewick(tree, "", tree.dist, pdbs)
+
+#    print("Done", time.time()-start)
+
+    return JsonResponse(data)
+
+
+def getNewick(node, newick, parentdist, leaf_names):
+    if node.is_leaf():
+        return "%s:%.2f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
+    else:
+        if len(newick) > 0:
+            newick = "):%.2f%s" % (parentdist - node.dist, newick)
+        else:
+            newick = ");"
+        newick = getNewick(node.get_left(), newick, node.dist, leaf_names)
+        newick = getNewick(node.get_right(), ",%s" % (newick), node.dist, leaf_names)
+        newick = "(%s" % (newick)
+        return newick
 
 def DistanceData(request):
     def gpcrdb_number_comparator(e1, e2):
