@@ -1068,7 +1068,8 @@ class Alignment:
                         if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
                             for key in range(len(ZSCALES)):
                                 # Frequency AA at this position * value
-                                zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
+                                if amino_acid in AA_ZSCALES:
+                                    zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
 
                     # store average + stddev + count + display
                     for zscale in ZSCALES:
