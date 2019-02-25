@@ -39,7 +39,6 @@ class Command(BaseBuild):
             missing_a_helix = False
             for x in ['1.50x50', '2.50x50', '3.50x50', '4.50x50', '5.50x50', '6.50x50', '7.50x50']:
                 if x not in x50s:
-                    print(s,x)
                     TMb = annotations[s.protein_conformation.protein.parent.entry_name+'_'+s.pdb_code.index][x[0]+'b']
                     TMe = annotations[s.protein_conformation.protein.parent.entry_name+'_'+s.pdb_code.index][x[0]+'e']
                     if TMe=='-':
@@ -71,6 +70,9 @@ class Command(BaseBuild):
                 else:
                     segments[r.protein_segment].append(r.sequence_number)
                 c+=1
-        print('Missing helices: ', missing_helices)
-        print('Structures with issue: ', structures_with_issue)
+        if len(missing_helices)>0 or len(structures_with_issue)>0:
+            print_out = 'Missing helices: '+missing_helices+'\n'+'Structures with issue: '+structures_with_issue
+        else:
+            print_out = 'No structure residue issues detected'
+        self.logger.info('Check structure residues: '+print_out)
 

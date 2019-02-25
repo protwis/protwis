@@ -15,6 +15,7 @@ from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from residue.models import ResidueNumberingScheme
 from residue.functions import dgn, ggn
 from structure.models import Structure, Rotamer
+# from structure.functions import StructureSeqNumOverwrite
 from signprot.models import SignprotComplex
 
 from collections import OrderedDict
@@ -26,6 +27,8 @@ import hashlib
 import logging
 import numpy as np
 import time
+import os
+import json
 
 class Alignment:
     """A class representing a protein sequence alignment, with or without a reference sequence"""
@@ -1239,15 +1242,17 @@ class AlignedReferenceTemplate(Alignment):
         self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM','6G79'],
                                          'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
+        self.seq_num_overwrite_files = [i.split('.')[0] for i in os.listdir(os.sep.join([settings.DATA_DIR, 'structure_data','wt_pdb_lookup']))]
 
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None,
-                             complex_model=False, signprot=None, force_main_temp=False):
+                             complex_model=False, signprot=None, force_main_temp=False, core_alignment=None):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         self.complex = complex_model
         self.signprot = signprot
         self.force_main_temp = force_main_temp
+        self.core_alignment = core_alignment
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
             self.revise_xtal = str(reference_protein)
@@ -1290,7 +1295,7 @@ class AlignedReferenceTemplate(Alignment):
             self.loop_table = OrderedDict()
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
-            self.changes_on_db = []
+            self.changes_on_db = False
             self.main_template_structure = self.get_main_template()
 
     def local_pairwise_alignment(self, reference, template, segment):
@@ -1329,27 +1334,29 @@ class AlignedReferenceTemplate(Alignment):
         '''
         if self.force_main_temp:
             st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
+            if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
+                self.overwrite_db_seq_nums(st, st.pdb_code.index)
             self.main_template_protein = [i for i in self.ordered_proteins if i.protein==st.protein_conformation.protein.parent][0]
             return st
         i = 1
         if self.complex:
             complex_templates = self.get_template_from_gprotein(self.signprot)
-        try:
-            for st in self.similarity_table:
-                if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
-                    i+=1
-                    continue
-                # only use complex main template in table signprot_complex
-                if self.complex and st.pdb_code.index not in complex_templates:
-                    i+=1
-                    continue
-                if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
-                    self.main_template_protein = self.ordered_proteins[i]
-                    if st.pdb_code.index in self.seq_nums_overwrite_cutoff_dict:
-                        self.overwrite_db_seq_nums(st, self.seq_nums_overwrite_cutoff_dict[st.pdb_code.index])
-                    return st
-        except:
-            pass
+        # try:
+        for st in self.similarity_table:
+            if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                i+=1
+                continue
+            # only use complex main template in table signprot_complex
+            if self.complex and st.pdb_code.index not in complex_templates:
+                i+=1
+                continue
+            if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                self.main_template_protein = self.ordered_proteins[i]
+                # if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
+                #     self.overwrite_db_seq_nums(st, st.pdb_code.index)
+                return st
+        # except:
+        #     pass
 
     def get_template_from_gprotein(self, signprot):
         gprotein = Protein.objects.get(entry_name=signprot)
@@ -1362,12 +1369,10 @@ class AlignedReferenceTemplate(Alignment):
         return templates
 
     def overwrite_db_seq_nums(self, structure, cutoff):
-        resis = Residue.objects.filter(protein_conformation=structure.protein_conformation,
-                                       sequence_number__gte=cutoff)
-        for r in resis:
-            self.changes_on_db.append(r.sequence_number)
-            r.sequence_number = int(str(r.sequence_number)[1:])
-            r.save()
+        ssno = StructureSeqNumOverwrite(structure)
+        ssno.seq_num_overwrite('pdb')
+        self.changes_on_db = True
+        self.logger.info('Structure {} residue table sequence number overwrite pdb to wt'.format(structure))
 
     def create_helix_similarity_table(self):
         ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
@@ -1629,6 +1634,8 @@ class AlignedReferenceTemplate(Alignment):
             if 'TM' in ref_seglab or ref_seglab in ['ICL1','ECL1','ICL2','ECL2','H8']:
                 ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
                 for ref_position, temp_position in zip(reference.alignment[ref_seglab],template.alignment[temp_seglab]):
+                    ### Check res by res alignment
+                    # print(ref_position, temp_position)
                     if ref_position[1]!=False and temp_position[1]!=False and ref_position[1]!='' and temp_position!='':
                         bw, gn = ref_position[1].split('x')
                         gen_num = '{}x{}'.format(bw.split('.')[0],gn)

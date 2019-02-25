@@ -31,7 +31,6 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
 
-
 def fetch_pdb_info(pdbname,protein,new_xtal=False):
 
     if not protein:

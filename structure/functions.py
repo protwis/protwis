@@ -32,6 +32,7 @@ import csv
 import numpy
 import zipfile
 import pprint
+import json
 
 
 logger = logging.getLogger("protwis")
@@ -1049,6 +1050,37 @@ class PdbStateIdentifier():
     def calculate_CA_distance(self, residue1, residue2):
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
         return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
+
+
+class StructureSeqNumOverwrite():
+    def __init__(self, structure):
+        self.structure = structure
+        path = os.sep.join([settings.DATA_DIR, 'structure_data','wt_pdb_lookup', '{}.json'.format(self.structure.pdb_code.index)])
+        if os.path.isfile(path):
+            with open(path, 'r') as lookup_file:
+                self.lookup = json.load(lookup_file)
+            self.wt_pdb_table, self.pdb_wt_table = OrderedDict(), OrderedDict()
+            for i in self.lookup:
+                self.wt_pdb_table[i['WT_POS']] = i['PDB_POS']
+                self.pdb_wt_table[i['PDB_POS']] = i['WT_POS']
+        else:
+            self.lookup = None
+            self.wt_pdb_table = None
+            self.pdb_wt_table = None
+            
+    def seq_num_overwrite(self, overwrite_target):
+        ''' Overwrites Residue object sequence numbers in GPCRDB
+            @param overwrite_target: 'pdb' if converting pdb to wt, 'wt' if the other way around 
+        '''
+        resis = Residue.objects.filter(protein_conformation=self.structure.protein_conformation)
+        if overwrite_target=='pdb':
+            target_dict = self.pdb_wt_table
+        elif overwrite_target=='wt':
+            target_dict = self.wt_pdb_table
+        for r in resis:
+            if r.sequence_number in target_dict:
+                r.sequence_number = int(target_dict[r.sequence_number])
+                r.save()
 
 
 def update_template_source(template_source, keys, struct, segment, just_rot=False):
