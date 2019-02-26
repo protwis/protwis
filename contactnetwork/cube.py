@@ -60,9 +60,10 @@ def compute_interactions(pdb_name,save_to_db = False):
 
     if do_interactions:
         atom_list = Selection.unfold_entities(s[preferred_chain], 'A')
+
         # Search for all neighbouring residues
         ns = NeighborSearch(atom_list)
-        all_neighbors = ns.search_all(4.5, "R")
+        all_neighbors = ns.search_all(6.6, "R")
 
         # Filter all pairs containing non AA residues
         all_aa_neighbors = [pair for pair in all_neighbors if is_aa(pair[0]) and is_aa(pair[1])]
@@ -71,12 +72,12 @@ def compute_interactions(pdb_name,save_to_db = False):
         all_aa_neighbors = [pair for pair in all_aa_neighbors if abs(pair[0].id[1] - pair[1].id[1]) > NUM_SKIP_RESIDUES]
 
         # For each pair of interacting residues, determine the type of interaction
-        interactions = [InteractingPair(res_pair[0], res_pair[1], get_interactions(res_pair[0], res_pair[1]),dbres[res_pair[0].id[1]], dbres[res_pair[1].id[1]],struc) for res_pair in all_aa_neighbors]
+        interactions = [InteractingPair(res_pair[0], res_pair[1], dbres[res_pair[0].id[1]], dbres[res_pair[1].id[1]], struc) for res_pair in all_aa_neighbors if not is_water(res_pair[0]) and not is_water(res_pair[1]) ]
 
         # Split unto classified and unclassified.
         classified = [interaction for interaction in interactions if len(interaction.get_interactions()) > 0]
 
-    if save_to_db: 
+    if save_to_db:
 
         if do_interactions:
             # Delete previous for faster load in
@@ -101,7 +102,7 @@ def compute_interactions(pdb_name,save_to_db = False):
             if len(water_list) > 0:
                 ## Iterate water molecules over residue atom list
                 water_neighbors = [(water, match_res) for water in water_list
-                                for match_res in ns.search(water.coord, 3.5, "R") if not is_water(match_res)]
+                                for match_res in ns.search(water.coord, 3.5, "R") if not is_water(match_res) and (is_hba(match_res) or is_hbd(match_res))]
 
                 # intersect between residues sharing the same interacting water
                 for index_one in range(len(water_neighbors)):
@@ -111,15 +112,21 @@ def compute_interactions(pdb_name,save_to_db = False):
                         water_pair_two = water_neighbors[index_two]
                         res_1 = water_pair_one[1]
                         res_2 = water_pair_two[1]
+
+                        # TODO: order residues + check minimum spacing between residues
                         key =  res_1.get_parent().get_id()+str(res_1.get_id()[1]) + "_" + res_2.get_parent().get_id()+str(res_2.get_id()[1])
 
-                        # Check if interaction is polar - NOTE: this is not capturing every angle
-                        if any(get_polar_interactions(water_pair_one[0].get_parent(), water_pair_one[1])) and any(get_polar_interactions(water_pair_two[0].get_parent(), water_pair_two[1])):
-                            # NOTE: Is splitting of sidechain and backbone-mediated interactions desired?
-                            if key in interaction_pairs:
-                                interaction_pairs[key].interactions.append(WaterMediated())
-                            else:
-                                interaction_pairs[key] = InteractingPair(res_1, res_2, [WaterMediated()], dbres[res_1.id[1]], dbres[res_2.id[1]], struc)
+                        # Verify h-bonds between water and both residues
+                        matches_one = InteractingPair.verify_water_hbond(water_pair_one[1], water_pair_one[0])
+                        matches_two = InteractingPair.verify_water_hbond(water_pair_two[1], water_pair_two[0])
+                        if len(matches_one) > 0 and len(matches_two) > 0:
+                            # if not exists, create residue pair without interactions
+                            if not key in interaction_pairs:
+                                interaction_pairs[key] = InteractingPair(res_1, res_2, dbres[res_1.id[1]], dbres[res_2.id[1]], struc)
+
+                            for a,b in zip(matches_one, matches_two):
+                                # HACK: store water ID as part of first atom name
+                                interaction_pairs[key].interactions.append(WaterMediated(a + "|" + str(water_pair_one[0].get_parent().get_id()[1]), b))
 
             for p in classified:
                 p.save_into_database()

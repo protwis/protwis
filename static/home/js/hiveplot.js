@@ -93,8 +93,10 @@ function createHiveplot(data, container) {
 
     hivesvg = d3.select(container).append("svg")
         .attr("class", "hiveplot")
-        .attr("width", width)
-        .attr("height", height)
+        // .attr("width", width)
+        .attr("width", "100%")
+        // .attr("height", height)
+        // .attr('viewBox', "0 0 "+width+" "+height)
       .append("g")
         .attr("transform", "translate(" + width/2 + "," + height/2.2 + ")");
 

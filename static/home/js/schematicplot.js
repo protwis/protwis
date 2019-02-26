@@ -125,6 +125,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   const rectWidth = 30;
   const rectHeight = 14;
 
+  const paths = svg.append('g');
   const g = svg
     .selectAll('g')
     .data(isGeneric ? Object.keys(segment_map_full_gn) : Object.keys(segment_map_full))
@@ -134,6 +135,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     .attr('data-aa', d => d)
     .attr('data-segment', d => (isGeneric ? segment_map_full_gn[d] : segment_map_full[d]))
     .attr('transform', (d, i) => {
+      console.log('create',d);
       const col = segmentList.indexOf(isGeneric ? segment_map_full_gn[d] : segment_map_full[d]);
 
       const height = rectHeight + 1;
@@ -200,7 +202,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       return `translate(${x},${y})`;
     });
 
-  const paths = svg.append('g');
 
   g
     .append('rect')
@@ -330,6 +331,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         }
       })
       .attr('d', (d) => {
+        console.log(d);
         const coord = getCoordPair(d);
         return `M ${coord.sourceX} ${coord.sourceY} L ${coord.targetX} ${coord.targetY}`;
       })
@@ -752,7 +754,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function createLegendSingleCrystal() {
-    let interactionTypes = new Set();
+    let legendHtml = ""
+    /*let interactionTypes = new Set();
 
     $(`${containerSelector} .edge`).each(function () {
       const friendlyName = getFriendlyInteractionName($(this).data('interaction-type'));
@@ -777,6 +780,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         '</li>';
     });
     legendHtml += '</ul>';
+    */
 
     // Add SVG download button
     legendHtml +=
@@ -791,7 +795,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
-    $(`${containerSelector} .schematic-legend input[type=checkbox]`).each(function () {
+    /*$(`${containerSelector} .schematic-legend input[type=checkbox]`).each(function () {
       $(this).prop('checked', true);
       $(this).change(function () {
         const interactionType = $(this).data('interaction-type');
@@ -803,7 +807,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           paths.hide();
         }
       });
-    });
+    });*/
   }
 
   function createLegendSingleCrystalGroup() {
@@ -826,12 +830,13 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       '<span class="white-to-red"></span>' +
       '</div>';*/
 
-    let legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
+    let legendHtml = "";
+    /*let legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
           + `<p>Range: <span id="clscg-pdbs-range">1 - ${data.pdbs.length}</span></p>`
           + '<div class="slider-range" data-text-id="clscg-pdbs-range" id="clscg-pdbs-range-slider"></div>'
           + '<div class="temperature-scale">'
           + '<span class="white-to-red"></span>'
-          + '</div>';
+          + '</div>';*/
 
     // Add SVG download button
     legendHtml +=
@@ -872,7 +877,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());*/
 
-    $( function() {
+    /*$( function() {
       $(`${containerSelector} #clscg-pdbs-range-slider`).slider({
         range: true,
         min: 1,
@@ -896,7 +901,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
               $(this).show();
             }
           });
-    }
+    }*/
   }
 
   function createLegendTwoCrystalGroups() {
@@ -917,7 +922,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       '<span class="white-to-blue"></span>' +
       '</div>';*/
 
-    let legendHtml = '<h4 class="center">Frequency</h4>'
+    /*let legendHtml = '<h4 class="center">Frequency</h4>'
           + `<p>Group 1 range: <span id="cltcg-group1-range">0 - 1</span></p>`
           + '<div class="slider-range" data-text-id="cltcg-group1-range" id="cltcg-group1-range-slider"></div>'
           + `<p>Group 2 range: <span id="cltcg-group2-range">0 - 1</span></p>`
@@ -927,8 +932,9 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           + '<div class="temperature-scale">'
           + '<span class="red-to-gray"></span>'
           + '<span class="gray-to-blue"></span>'
-          + '</div>';
+          + '</div>';*/
 
+    let legendHtml = ""
 
     // Add SVG download button
     legendHtml +=
@@ -969,7 +975,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());*/
 
-    $( function() {
+    /*$( function() {
       $( containerSelector+" #cltcg-group1-range-slider" ).data({ "referenceContainer" : containerSelector });
       $( containerSelector+" #cltcg-group2-range-slider" ).data({ "referenceContainer" : containerSelector });
       $( containerSelector+" #cltcg-diff-range-slider" ).data({ "referenceContainer" : containerSelector });
@@ -1042,6 +1048,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
             $(this).hide();
           }
         });
-    }
+    }*/
   }
 }

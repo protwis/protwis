@@ -21,19 +21,65 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 from django.http import JsonResponse, HttpResponse
 from collections import OrderedDict
 
+import numpy as np
+import pandas as pd
+import scipy.cluster.hierarchy as sch
+import scipy.spatial.distance as ssd
+import time
+
+def Clustering(request):
+    """
+    Show clustering page
+    """
+    return render(request, 'contactnetwork/clustering.html')
 
 def Interactions(request):
     """
     Show interaction heatmap
     """
-    return render(request, 'contactnetwork/interactions.html')
+
+
+    template_data = {}
+    # check for preselections in POST data
+    if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
+        # handle post
+        pdbs1 = request.POST.get("pdbs1")
+        pdbs2 = request.POST.get("pdbs2")
+
+        # create switch
+        if pdbs1 != None and pdbs2 != None:
+            template_data["pdbs1"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
+            template_data["pdbs2"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
+        else:
+            template_data["pdbs"] = pdbs1
+            if selected == None:
+                template_data["pdbs"] = pdbs2
+
+    return render(request, 'contactnetwork/interactions.html', template_data)
 
 
 def ShowDistances(request):
     """
     Show distances heatmap
     """
-    return render(request, 'contactnetwork/distances.html')
+
+    template_data = {}
+    # check for preselections in POST data
+    if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
+        # handle post
+        pdbs1 = request.POST.get("pdbs1")
+        pdbs2 = request.POST.get("pdbs2")
+
+        # create switch
+        if pdbs1 != None and pdbs2 != None:
+            template_data["pdbs1"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
+            template_data["pdbs2"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
+        else:
+            template_data["pdbs"] = pdbs1
+            if selected == None:
+                template_data["pdbs"] = pdbs2
+
+    return render(request, 'contactnetwork/distances.html', template_data)
 
 def PdbTreeData(request):
     data = Structure.objects.values(
@@ -223,24 +269,19 @@ def DistanceDataGroups(request):
                     data['gn_map'][r.generic_number.label] = r.amino_acid
                     data['pos_map'][r.sequence_number] = r.amino_acid
                     data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
- 
+
     print('Start 1')
     dis1 = Distances()
     dis1.load_pdbs(pdbs1)
     dis1.fetch_and_calculate()
 
-    print('Calc 1')
     dis1.calculate_window(list_of_gns)
 
-    print('Start 2')
     dis2 = Distances()
     dis2.load_pdbs(pdbs2)
     dis2.fetch_and_calculate()
-
-    print('Calc 2')
     dis2.calculate_window(list_of_gns)
 
-    print('Calc stats')
     diff = OrderedDict()
     from math import sqrt
     from scipy import stats
@@ -318,7 +359,6 @@ def DistanceDataGroups(request):
         else:
             coord = str(res2) + ',' + str(res1)
 
-
         # if pdb_name not in data['interactions'][coord]:
         #     data['interactions'][coord][pdb_name] = []
 
@@ -371,6 +411,135 @@ def DistanceDataGroups(request):
     cache.set(cache_key,data,3600*24*7)
     return JsonResponse(data)
 
+
+def ClusteringData(request):
+    # PDB files
+    try:
+        pdbs = request.GET.getlist('pdbs[]')
+    except IndexError:
+        pdbs = []
+
+    pdbs = [pdb.upper() for pdb in pdbs]
+
+    # output dictionary
+    start = time.time()
+    data = {}
+
+    # load all
+    dis = Distances()
+    dis.load_pdbs(pdbs)
+#    dis.fetch_and_calculate()
+
+    # common GNs
+    common_gn = dis.fetch_common_gns_tm()
+#    for i,pair in enumerate(sorted(dis.stats_key.items())):
+#        if len(pdbs) == pair[1][3]:
+#            res1, res2 = pair[0].split("_")
+#            if res1 not in common_gn:
+#                common_gn.append(res1)
+#            if res2 not in common_gn:
+#                common_gn.append(res2)
+
+    # normalization matrix for GNs
+#    normalize = np.full((len(common_gn), len(common_gn)), 0.0)
+#    for i,res1 in enumerate(common_gn):
+#        for j in range(i+1, len(common_gn)):
+#            # grab average value
+#            res2 = common_gn[j]
+#            normalize[i][j] = dis.stats_key[res1+"_"+res2][1]
+#    print("Prepared normalization matrix")
+    # TODO : remove normalization in query and do it ourselves
+
+    pdb_distance_maps = {}
+    for pdb in pdbs:
+        cache_key = "distanceMap-" + pdb
+
+        # Cached?
+        if cache.has_key(cache_key):
+            cached_data = cache.get(cache_key)
+            distance_map = cached_data["map"]
+            structure_gn = cached_data["gns"]
+        else:
+            # grab raw distance data per structure
+            temp = Distances()
+            temp.load_pdbs([pdb])
+            temp.fetch_distances_tm()
+
+            # obtain set of GNs for this structure
+            structure_gn = []
+            for i,pair in enumerate(sorted(temp.data.items())):
+                res1, res2 = pair[0].split("_")
+                if res1 not in structure_gn:
+                    structure_gn.append(res1)
+                if res2 not in structure_gn:
+                    structure_gn.append(res2)
+
+            # create distance map
+            distance_map = np.full((len(structure_gn), len(structure_gn)), 0.0)
+            for i,res1 in enumerate(structure_gn):
+                for j in range(i+1, len(structure_gn)):
+                    # grab average value
+                    res2 = structure_gn[j]
+#                    if res1+"_"+res2 not in temp.data:
+#                        print(res1+"_"+res2, "not present for", pdb)
+#                        print(sorted(temp.data.items()))
+#                    else:
+                    if res1+"_"+res2 in temp.data:
+                        distance_map[i][j] = temp.data[res1+"_"+res2][0]
+
+            # store in cache
+            store = {
+                "map" : distance_map,
+                "gns" : structure_gn
+            }
+            cache.set(cache_key, store, 60*60*24*14)
+
+        # Filtering indices to map to common_gns
+        gn_indices = np.array([ structure_gn.index(residue) for residue in common_gn ])
+        pdb_distance_maps[pdb] = distance_map[gn_indices,:][:, gn_indices]
+
+        if "average" in pdb_distance_maps:
+            pdb_distance_maps["average"] +=  pdb_distance_maps[pdb]/len(pdbs)
+        else:
+            pdb_distance_maps["average"] =  pdb_distance_maps[pdb]/len(pdbs)
+
+    for pdb in pdbs:
+        # normalize and store distance map
+        pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"])
+    # print("Collected distances for all structures")
+
+    # calculate distance matrix
+    distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
+    for i, pdb1 in enumerate(pdbs):
+        for j in range(i+1, len(pdbs)):
+            pdb2 = pdbs[j]
+            distance = np.sum(np.absolute(pdb_distance_maps[pdb1] - pdb_distance_maps[pdb2]))
+            distance_matrix[i, j] = distance
+            distance_matrix[j, i] = distance
+    # print("Calculated pairwise distance matrix")
+
+    # hierarchical clustering
+    hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward', metric='euclidean')
+    tree = sch.to_tree(hclust, False)
+    data['tree'] = getNewick(tree, "", tree.dist, pdbs)
+
+    print("Done", time.time()-start)
+
+    return JsonResponse(data)
+
+
+def getNewick(node, newick, parentdist, leaf_names):
+    if node.is_leaf():
+        return "%s:%.2f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
+    else:
+        if len(newick) > 0:
+            newick = "):%.2f%s" % (parentdist - node.dist, newick)
+        else:
+            newick = ");"
+        newick = getNewick(node.get_left(), newick, node.dist, leaf_names)
+        newick = getNewick(node.get_right(), ",%s" % (newick), node.dist, leaf_names)
+        newick = "(%s" % (newick)
+        return newick
 
 def DistanceData(request):
     def gpcrdb_number_comparator(e1, e2):
@@ -439,9 +608,7 @@ def DistanceData(request):
     dis = Distances()
     dis.load_pdbs(pdbs)
     dis.fetch_and_calculate()
-
     dis.calculate_window()
-
 
     excluded_segment = ['C-term','N-term']
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
@@ -635,6 +802,10 @@ def InteractionData(request):
     ).filter(
         segment_filter_res1 & segment_filter_res2 & i_types_filter
     )
+
+    # Interaction type sort - optimize by statically defining interaction type order
+    order = ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']
+    interactions = sorted(interactions, key=lambda x: order.index(x['interaction_type']))
 
     # Initialize response dictionary
     data = {}

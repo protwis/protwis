@@ -651,6 +651,9 @@ class Alignment:
                             'full_consensus': self.full_consensus,
                             'generic_number_objs': self.generic_number_objs,
                             'generic_numbers': self.generic_numbers,
+#                            'numbering_schemes': self.numbering_schemes,
+                            'positions': self.positions,
+                            'segments': self.segments,
                             'zscales': self.zscales}
                 cache_alignments.set(cache_key, cache_data, 60*60*24*14)
         else:
@@ -670,11 +673,15 @@ class Alignment:
             self.full_consensus = cache_data['full_consensus']
             self.generic_number_objs = cache_data['generic_number_objs']
             self.generic_numbers = cache_data['generic_numbers']
+#            self.numbering_schemes = cache_data['numbering_schemes']
+            self.positions = cache_data['positions']
+            self.segments = cache_data['segments']
             self.zscales = cache_data['zscales']
             self.stats_done = True
 
         # Adapt alignment to order in current self.proteins
         self.proteins = [prot2 for prot1 in self.proteins for prot2 in self.unique_proteins if prot1.id==prot2.id]
+
 
     def clear_empty_positions(self):
         """Remove empty columns from the segments and matrix"""
@@ -1064,7 +1071,8 @@ class Alignment:
                         if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
                             for key in range(len(ZSCALES)):
                                 # Frequency AA at this position * value
-                                zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
+                                if amino_acid in AA_ZSCALES:
+                                    zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
 
                     # store average + stddev + count + display
                     for zscale in ZSCALES:
