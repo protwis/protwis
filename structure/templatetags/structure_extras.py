@@ -55,3 +55,7 @@ def get_refined_model_version ( objs ):
 @register.filter
 def cut_refined ( objs ):
     return objs.split('_')[0]
+
+@register.filter
+def cut_classname ( objs ):
+    return objs[5:]

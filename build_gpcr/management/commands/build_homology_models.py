@@ -7,7 +7,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source 
+from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source, StructureSeqNumOverwrite
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
 from common.models import WebLink
@@ -261,7 +261,7 @@ class CallHomologyModeling():
 
     def run(self, import_receptor=False, fast_refinement=False):
         try:
-            seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
+            # seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
 
             ##### Ignore output from that can come from BioPDB! #####
             if not self.debug:
@@ -270,7 +270,6 @@ class CallHomologyModeling():
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
                                               force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement)
-            print(self.signprot)
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor, self.signprot)
                 model, templates, similarities = ihm.find_files()
@@ -300,14 +299,9 @@ class CallHomologyModeling():
             if formatted_model==None:
                 raise ValueError('Incorrect assignment of generic numbers in {} {}'.format(self.receptor, self.state))
 
-            if Homology_model.changes_on_db!=[]:
-                cutoff = seq_nums_overwrite_cutoff_dict[Homology_model.main_structure.pdb_code.index]
-                mod_resis = [x.sequence_number for x in Residue.objects.filter(protein_conformation=Homology_model.main_structure.protein_conformation)]
-                for r in Homology_model.changes_on_db:
-                    if int(str(r)[1:]) in mod_resis:
-                        res = Residue.objects.get(protein_conformation=Homology_model.main_structure.protein_conformation, sequence_number=int(str(r)[1:]))
-                        res.sequence_number = r
-                        res.save()
+            if Homology_model.changes_on_db:
+                ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
+                ssno.seq_num_overwrite('wt')
             
             # Run clash and break test
             p = PDB.PDBParser()
@@ -323,6 +317,8 @@ class CallHomologyModeling():
                     rm.make_pirfile()
                     rm.run()
                     logger.info('Remodeled {} {} at {}'.format(self.receptor, self.signprot, hse.remodel_resis))
+                    with open('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), 'r') as remodeled_pdb:
+                        formatted_model = remodeled_pdb.read()
             else:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, receptor=self.receptor)
             
@@ -417,6 +413,11 @@ class CallHomologyModeling():
                                                                                             Homology_model.main_structure,msg))
                     print(''.join(traceback.format_tb(exc_tb)))
                 logger.error('Failed to build model {} {}\n    {}'.format(self.receptor, self.state, msg))
+                # Return main template structure residue table sequence numbering to original
+                if Homology_model.changes_on_db:
+                    ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
+                    ssno.seq_num_overwrite('wt')
+                    self.logger.info('Structure {} residue table sequence number overwrite wt to pdb'.format(structure))
                 t = tests.HomologyModelsTests()
                 if 'Number of residues in the alignment and  pdb files are different' in str(msg):
                     t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
@@ -476,7 +477,7 @@ class HomologyModeling(object):
         self.main_template_preferred_chain = ''
         self.loop_template_table = OrderedDict()
         self.loops = OrderedDict()
-        self.changes_on_db = []
+        self.changes_on_db = False
         if len(self.reference_entry_name)==4:
             self.prot_conf = ProteinConformation.objects.get(protein=self.reference_protein.parent)
             self.uniprot_id = self.reference_protein.parent.accession
@@ -553,18 +554,14 @@ class HomologyModeling(object):
                 if int(p)<prev_p:
                     sp_first_indeces.append(i)
                 prev_p = int(p)
-            print(sp_first_indeces)
         i = 0
         path = './structure/homology_models/'
-        # if self.revise_xtal==False:
-        #     if self.complex:
-        #         self.modelname = '{}_{}-{}_{}_{}_GPCRDB'.format(self.class_name, self.reference_entry_name, self.target_signprot.entry_name, 
-        #                                          self.main_structure, build_date)
-        #     else:
-        #         self.modelname = '{}_{}_{}_{}_{}_GPCRDB'.format(self.class_name, self.reference_entry_name, self.state, 
-        #                                          self.main_structure, build_date)
-        # else:
-        #     self.modelname = "{}_{}_{}_refined_{}_{}_GPCRDB".format(self.class_name, self.reference_protein.parent.entry_name, self.main_structure, self.main_structure.state.name, build_date)
+        # if self.revise_xtal==True:
+        #     pprint.pprint(self.alignment.reference_dict)
+        #     for k,l in self.alignment.reference_dict.items():
+        #         if k.startswith('ICL3'):
+
+
         with open (path+self.modelname+'.pdb', 'r+') as f:
             pdblines = f.readlines()
             out_list = []
@@ -573,6 +570,7 @@ class HomologyModeling(object):
             water_count = 0
             first_signprot_res_found = False
             atom_num = 1
+            atom_num_offset = []
 
             for line in pdblines:
                 try:
@@ -599,6 +597,8 @@ class HomologyModeling(object):
                     else:
                         whitespace = (whitespace-3)*' '
                     group1 = pdb_re.group(1)
+                    if 'OXT' in group1:
+                        atom_num_offset.append(int(pos_list[i]))
                     if self.complex:
                         if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
@@ -751,8 +751,22 @@ class HomologyModeling(object):
                 ws1 = ' '*(5-len(str(c1.sequence_number)))
                 ws2 = ' '*(5-len(str(c2.sequence_number)))
                 ssbond+='SSBOND   {} CYS {}{}{}    CYS {}{}{}\n'.format(count, chain, ws1, str(c1.sequence_number), chain, ws2, str(c2.sequence_number))
+                # for res in pdb_struct[chain]:
+                    # print(res)
+                for atom in pdb_struct[chain][c1.sequence_number]:
+                    print('c1',atom, atom.get_serial_number())
+                for atom in pdb_struct[chain][c2.sequence_number]:
+                    print('c2',atom, atom.get_serial_number())
                 sg1 = pdb_struct[chain][c1.sequence_number]['SG'].get_serial_number()
                 sg2 = pdb_struct[chain][c2.sequence_number]['SG'].get_serial_number()
+                offset = 0
+                for a in atom_num_offset:
+                    if a<c2.sequence_number:
+                        offset+=1
+                print(sg1,sg2,atom_num_offset, offset)
+                sg1-=offset
+                sg2-=offset
+                print(sg1,sg2)
                 ws3 = ' '*(5-len(str(sg1)))
                 ws4 = ' '*(5-len(str(sg2)))
                 conect+='CONECT{}{}{}{}\n'.format(ws3, str(sg1), ws4, str(sg2))
@@ -816,7 +830,8 @@ class HomologyModeling(object):
             @param order_by: str, order results by identity, similarity or simscore
         '''
         alignment = AlignedReferenceTemplate()
-        alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp)
+        alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp,
+                                       core_alignment=core_alignment)
         main_pdb_array = OrderedDict()
         if core_alignment==True:
             if self.debug:
@@ -840,7 +855,12 @@ class HomologyModeling(object):
             
             parse = GPCRDBParsingPDB()
             main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-
+            for i, j in main_pdb_array.items():
+                for k,l in j.items():
+                    try:
+                        print(k, l[0].get_parent())
+                    except:
+                        print(k, l)
             if self.main_structure.pdb_code.index=='4OR2':
                 main_pdb_array['H8'] = OrderedDict()
             try:
@@ -856,13 +876,15 @@ class HomologyModeling(object):
                 for gn, res in seg.items():
                     self.template_source = update_template_source(self.template_source, [gn.replace('.','x')],self.main_structure,seg_l)
 
-            helixends = HelixEndsModeling(self.similarity_table_all, self.template_source, self.main_structure)
+            helixends = HelixEndsModeling(self.similarity_table_all, self.template_source, self.main_structure, self.debug)
            
 
             try:
                 if (len(main_pdb_array['H8'])==0 and len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))>0 or 
                    (self.reference_protein.family.slug.startswith('004') and self.main_structure.pdb_code.index not in ['4OO9']) or 
                    (self.main_structure.pdb_code.index in ['5UNF','5UNG','5UNH','5O9H'] and self.revise_xtal==False)):
+                    if self.debug:
+                        print('Main template {} H8 is not usable, skipping'.format(self.main_structure))
                     helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
                                                  self.template_source, separate_H8=True)
                     main_pdb_array = helixends.main_pdb_array
@@ -948,6 +970,8 @@ class HomologyModeling(object):
                                 self.template_source = update_template_source(self.template_source,[gn.replace('.','x')],struct,'H8')
                         except:
                             pass
+                    if self.debug:
+                        print('Correcting helix ends of only H8')
                     helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
                                                  self.template_source, separate_H8=False)
                     self.helix_end_mods['added']['H8'] = helixends.helix_end_mods['added']['H8']
@@ -960,10 +984,26 @@ class HomologyModeling(object):
                     sep_H8 = True
                 else:
                     sep_H8 = None
+                if self.debug:
+                    if sep_H8:
+                        print('H8 build exception: skipping H8 ')
+                    else:
+                        print('H8 build exception: correcting all helices')
                 helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
                                              self.template_source, separate_H8=sep_H8)
                 self.helix_end_mods = helixends.helix_end_mods
                 self.template_source = helixends.template_source
+
+            for i,j,k,l in zip(alignment.reference_dict, alignment.template_dict, alignment.alignment_dict, main_pdb_array):
+                print(alignment.reference_dict[i])
+                print(alignment.template_dict[j])
+                print(alignment.alignment_dict[k])
+                for o in main_pdb_array[l]:
+                    try:
+                        print(main_pdb_array[l][o][0].get_parent())
+                    except:
+                        print(main_pdb_array[l][o])
+            raise AssertionError
 
             self.statistics.add_info('helix_end_mods',self.helix_end_mods)
 
@@ -1018,7 +1058,16 @@ class HomologyModeling(object):
         main_pdb_array = ref_temp_alignment[1]
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
-
+        for i,j,k,l in zip(a.reference_dict, a.template_dict, a.alignment_dict, main_pdb_array):
+            print(a.reference_dict[i])
+            print(a.template_dict[j])
+            print(a.alignment_dict[k])
+            for o in main_pdb_array[l]:
+                try:
+                    print(main_pdb_array[l][o][0].get_parent())
+                except:
+                    print(main_pdb_array[l][o])
+        raise AssertionError
         # Delete H8 from dictionaries if it's not present in reference (e.g. gnrhr_human)
         if self.revise_xtal:
             del_H8_prot = self.reference_protein.parent
@@ -1449,7 +1498,7 @@ class HomologyModeling(object):
         self.statistics.add_info('pdb_db_inconsistencies', pdb_db_inconsistencies)
         if not os.path.exists(path):
             os.mkdir(path)
-  
+
         if self.debug:
             print('Check inconsistencies: {}'.format(pdb_db_inconsistencies),datetime.now() - startTime)
 
@@ -1795,19 +1844,6 @@ class HomologyModeling(object):
 
     def build_homology_model_second_part(self):
         # write to file
-
-        # pprint.pprint(self.alignment.reference_dict['hfs2'])
-        # pprint.pprint(self.alignment.template_dict['hfs2'])
-        # pprint.pprint(self.alignment.alignment_dict['hfs2'])
-        # pprint.pprint(self.main_pdb_array['hfs2'])
-        # pprint.pprint(self.alignment.reference_dict['S2'])
-        # pprint.pprint(self.alignment.template_dict['S2'])
-        # pprint.pprint(self.alignment.alignment_dict['S2'])
-        # pprint.pprint(self.main_pdb_array['S2'])
-        # pprint.pprint(self.trimmed_residues)
-        # pprint.pprint(self.template_source)
-        # raise AssertionError
-
         if self.complex:
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:
@@ -2753,7 +2789,7 @@ class SegmentEnds(object):
 class HelixEndsModeling(HomologyModeling):
     ''' Class for modeling the helix ends of GPCRs. 
     '''
-    def __init__(self, similarity_table, template_source, main_structure):
+    def __init__(self, similarity_table, template_source, main_structure, debug=False):
         self.helix_ends = OrderedDict()
         self.helix_end_mods = OrderedDict()
         self.main_pdb_array = OrderedDict()
@@ -2763,6 +2799,7 @@ class HelixEndsModeling(HomologyModeling):
         self.main_structure = main_structure
         self.templates_to_skip = OrderedDict([('TM1',[['6BQG','6BQH'],[]]),('TM2',[[],[]]),('TM3',[[],[]]),('TM4',[[],[]]),
                                               ('TM5',[[],[]]),('TM6',[[],[]]),('TM7',[[],['5UNF','5UNG','5UNH']]),('H8',[[],[]])])
+        self.debug = debug
     
     def find_ends(self, structure, protein_conformation):
         raw_res = Residue.objects.filter(protein_conformation=protein_conformation).exclude(
@@ -2786,7 +2823,8 @@ class HelixEndsModeling(HomologyModeling):
         '''
         raw = self.find_ends(structure, structure.protein_conformation)
         anno_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
-        annotated = self.find_ends(structure, anno_conf)      
+        annotated = self.find_ends(structure, anno_conf)
+        print(annotated)
 
         if H8_alt!=None and H8_alt!=structure:
             H8_raw_conf = ProteinConformation.objects.get(protein=H8_alt.protein_conformation.protein.parent)
@@ -2814,6 +2852,7 @@ class HelixEndsModeling(HomologyModeling):
                     except:
                         pass
         ends = OrderedDict()
+        print('raw: ',raw)
         for i in raw:
             if i[0].protein_segment.slug[0]=='T' or i[0].protein_segment.slug=='H8':
                 if len(list(Residue.objects.filter(protein_conformation=i[1].protein_conformation,
@@ -2852,6 +2891,7 @@ class HelixEndsModeling(HomologyModeling):
                         i[0].end-=1
                 e = Residue.objects.get(protein_conformation=i[1].protein_conformation,sequence_number=i[0].end)
                 ends[s.protein_segment.slug] = [ggn(s.display_generic_number.label),ggn(e.display_generic_number.label)]
+        print('ends: ',ends)
         for j in annotated:
             if j[0].protein_segment.slug[0]=='T' or j[0].protein_segment.slug=='H8':
                 if j[0].start!=0:
@@ -2872,6 +2912,7 @@ class HelixEndsModeling(HomologyModeling):
                             j[0].start+=1
                     if j[0].start!=None:
                         sa = Residue.objects.get(protein_conformation=j[1].protein_conformation,sequence_number=j[0].start)
+                        print(j[0], sa, sa.display_generic_number.label)
                         ends[j[0].protein_segment.slug][0] = ggn(sa.display_generic_number.label)
                 if j[0].end!=0:
                     found_end = False    
@@ -2927,7 +2968,17 @@ class HelixEndsModeling(HomologyModeling):
             H8_alt = None
 
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
+        print(raw_helix_ends)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure, H8_alt)
+        print(anno_helix_ends)
+
+        #### Exception for TM4 start of 5ZKP
+        if main_structure.pdb_code.index in ['5ZKP']:
+            for i in ['4x38','4x39','4x40','4x41','4x42','4x43','4x44','4x45','4x46','4x47','4x48']:
+                a.template_dict['TM4'][i] = 'x'
+        elif main_structure.pdb_code.index in ['5UZ7']:
+            for i in list(range(35,50)):
+                a.template_dict['TM6']['6x'+str(i)] = 'x'
 
         # Force active state with main template 5UNF, 5UNG or 5UNH to get new TM7 end
         skip_template = False
@@ -3058,6 +3109,8 @@ class HelixEndsModeling(HomologyModeling):
                 temp_seg_seq_len = len(list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, 
                                                                    sequence_number__in=range(first_res,last_res+1))))
                 mid = temp_seg_seq_len/2
+            if ref_seg=='TM6':
+                print(first_res, last_res, mid, temp_seg_seq_len)
             if ref_seg[0] not in ['T','H']:
                 continue
             if separate_H8==True:
@@ -3098,6 +3151,8 @@ class HelixEndsModeling(HomologyModeling):
                     delete_ar.add((ref_seg, ref_res.replace('x','.')))
                 elif a.template_dict[temp_seg][temp_res]=='x' or (temp_seg[0]=='T' and temp_res.replace('x','.') not in 
                                                                                         list(main_pdb_array[temp_seg])):
+                    if ref_seg=='TM6':
+                        print(temp_res,list(full_template_dict_seg.keys()).index(temp_res), mid, offset)
                     if list(full_template_dict_seg.keys()).index(temp_res)<mid+offset:
                         modifications['added'][temp_seg][0].append(temp_res)
                     else:
@@ -3114,7 +3169,7 @@ class HelixEndsModeling(HomologyModeling):
                     del main_pdb_array[i][ii]
                 except:
                     pass
-
+            
             if ref_seg[0]=='T' or ref_seg=='H8':
                 if len(modifications['added'][ref_seg][0])>0:
                     self.helix_ends[ref_seg][0] = modifications['added'][ref_seg][0][0]
@@ -3126,7 +3181,7 @@ class HelixEndsModeling(HomologyModeling):
                     self.helix_ends[ref_seg][1] = parser.gn_indecer(modifications['removed'][ref_seg][1][0], 'x', -1)
                 if len(modifications['added'][ref_seg][0])>0:
                     found_alt_start = False
-                    for struct in self.similarity_table:
+                    for struct in list(self.similarity_table)[:5]:
                         if struct!=main_structure:
                             try:
                                 if skip_template and struct.pdb_code.index in self.templates_to_skip[ref_seg][0]:
@@ -3176,7 +3231,7 @@ class HelixEndsModeling(HomologyModeling):
                         main_pdb_array[ref_seg] = new_residues
                 if len(modifications['added'][ref_seg][1])>0:
                     found_alt_end = False
-                    for struct in self.similarity_table:
+                    for struct in list(self.similarity_table)[:5]:
                         if struct!=main_structure:
                             try:
                                 if skip_template and struct.pdb_code.index in self.templates_to_skip[ref_seg][1]:
@@ -3219,6 +3274,8 @@ class HelixEndsModeling(HomologyModeling):
         self.helix_end_mods = modifications
         self.main_pdb_array = main_pdb_array
         self.alignment = a
+        if self.debug:
+            print(self.helix_end_mods)
         return main_pdb_array, a
     
 
@@ -3245,7 +3302,7 @@ class Loops(object):
         self.model_loop = False
         self.partialECL2_1 = False
         self.partialECL2_2 = False
-        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH']}
+        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':['5ZKP'],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH']}
         self.evade_chain_break = False
     
     def fetch_loop_residues(self, main_pdb_array, superpose_modded_loop=False):

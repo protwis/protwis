@@ -7,7 +7,7 @@ from Bio.PDB.PDBIO import Select
 from common.definitions import *
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue
-from structure.functions import BlastSearch, MappedResidue
+from structure.functions import BlastSearch, MappedResidue, StructureSeqNumOverwrite
 from structure.sequence_parser import *
 
 import Bio.PDB.Polypeptide as polypeptide

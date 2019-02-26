@@ -22,6 +22,7 @@ import sys
 import re
 import math
 import yaml
+import json
 import traceback
 import subprocess
 from copy import deepcopy
@@ -206,6 +207,7 @@ class GPCRDBParsingPDB(object):
         if len(pref_chain)>1:
             pref_chain = pref_chain[0]
         for residue in pdb_struct[pref_chain]:
+            print(residue, residue['CA'].get_bfactor())
             try:
                 if -9.1 < residue['CA'].get_bfactor() < 9.1:
                     gn = str(residue['CA'].get_bfactor())
@@ -288,7 +290,8 @@ class GPCRDBParsingPDB(object):
                         except:
                             found_gn = str(gn)
                         output[found_res.protein_segment.slug][found_gn] = res
-
+        
+        raise AssertionError
         return output
 
 
@@ -608,5 +611,4 @@ class SilentModeller(object):
     def __exit__(self, *args):
         sys.stdout.close()
         sys.stdout = self._stdout
-
 

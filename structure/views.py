@@ -92,7 +92,7 @@ class ServeHomologyModels(TemplateView):
 				"protein__species",
 				"main_template__protein_conformation__protein__parent__family",
 				"main_template__pdb_code")
-			refined_models = Structure.objects.filter(refined=True, representative=True).prefetch_related(
+			refined_models = Structure.objects.filter(refined=True).prefetch_related(
 				"protein_conformation__protein__family",
 				"state",
 				"protein_conformation__protein__family__parent__parent__parent",

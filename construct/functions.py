@@ -31,7 +31,6 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
 
-
 def fetch_pdb_info(pdbname,protein,new_xtal=False):
 
     if not protein:
@@ -127,7 +126,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
             uniprot = line[7]
             start = line[8]
             end = line[9]
-            # print(line,uniprot,d['construct_crystal']['uniprot'].upper())
+            print(line,uniprot,d['construct_crystal']['uniprot'].upper())
             if uniprot == d['construct_crystal']['uniprot'].upper() or (uniprot==pdbname.upper() and uniprot_code==''):
                 uniprot_code = line[6]
                 # print(line)
@@ -225,11 +224,35 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     if pdbname.upper()=='6NIY':
         pdb_range = list(range(1,475))
 
+    # Misannotated DBREF in PDB file
+    if pdbname.upper()=='3SN6':
+        pdb_range = list(range(30,366))
+    if pdbname.upper()=='5ZKP':
+        pdb_range = list(range(6,124))+list(range(138,217))+list(range(224,316))
+    if pdbname.upper()=='5L7D':
+        pdb_range = list(range(58,429))+list(range(446,552))
+    if pdbname.upper()=='5L7I':
+        pdb_range = list(range(58,429))+list(range(446,553))
+    if pdbname.upper()=='5WIV':
+        pdb_range = list(range(32,227))+list(range(383,465))
+    if pdbname.upper()=='5WIU':
+        pdb_range = list(range(34,227))+list(range(383,463))
+    if pdbname.upper()=='5YC8' or pdbname.upper()=='5ZKC':
+        pdb_range = list(range(16,215))+list(range(380,459))
+    if pdbname.upper()=='5ZK8' or pdbname.upper()=='5ZK3':
+        pdb_range = list(range(18,215))+list(range(383,459))
+    if pdbname.upper()=='5V54':
+        pdb_range = list(range(38,192))+list(range(198,240))+list(range(305,389))
+    if pdbname.upper()=='6D32':
+        pdb_range = list(range(36,402))+list(range(416,526))
+    if pdbname.upper() in ['6H7N','6H7L','6H7M']:
+        pdb_range = list(range(40,359))
+    if pdbname.upper() in ['6H7J','6H7O']:
+        pdb_range = list(range(40,358))
 
     # Uncertain about exact cut -- pdb/article do not compliment eachother.
     if pdbname.upper()=='4XEE' or pdbname.upper()=='4XES':
         pdb_range = list(range(43,269))+list(range(297,385))
-
     if pdb_range:
         dbref_found = True
         for pos in list(range(1,len(d['wt_seq'])+1)):
@@ -724,7 +747,13 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
                 if insert_info!=False:
                     for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
                         seg_uniprot_ids[0] = elm.find('{http://uniprot.org/uniprot}fullName').text
+            # Custom annotation fixes
+            if pdbname in ['6D32','6D35'] and min_pos==416 and max_pos==525:
+                seg_uniprot_ids = ['Uncharacterized protein']
+            # elif pdbname in ['4LDE'] and min_pos==1029 and max_pos==1342:
+            #     seg_uniprot_ids = ['adrb2_human']
 
+            # print([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
             d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
 
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
