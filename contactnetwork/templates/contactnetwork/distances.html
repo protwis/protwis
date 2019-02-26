@@ -5,17 +5,23 @@
 
 
       <ul class="nav nav-tabs" id='mode_nav'>
-            <li class="active">
+            <li class="{% if not pdbs1 %}active{% endif %}">
                   <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
             </li>
-            <li>
+            <li class="{% if pdbs1 and not pdbs %}active{% endif %}">
                   <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
             </li>
           </ul>
 
         <div class="tab-content clearfix">
             <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
-            <div class="tab-pane active main_option" id="single-crystal-group-tab">
+            <div class="tab-pane main_option {% if not pdbs1 %}active{% endif %}" id="single-crystal-group-tab">
+                <!-- <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="page-header">Single group of structures interactions</h1>
+                        <p>Display similarity heatmap for a group of structures. Choose PDBs and options below.</p>
+                    </div>
+                </div> -->
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
@@ -98,7 +104,14 @@
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
             <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
-            <div class="tab-pane main_option" id="two-crystal-groups-tab">
+
+            <div class="tab-pane main_option {% if pdbs1 and not pdbs %}active{% endif %}" id="two-crystal-groups-tab">
+                <!-- <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="page-header">Two groups of structures interactions</h1>
+                        <p>Display similarity/dissimilarity heatmap for two groups of structures. Choose PDBs and options below.</p>
+                    </div>
+                </div> -->
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
@@ -1458,37 +1471,43 @@
         function initializeGoButton(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+                loadPDBsView(pdb, selector, heatmapFunction, generic)
+            });
+        }
+
+        function loadPDBsView(pdb, selector, heatmapFunction, generic) {
+            if (pdb.length > 0) {
+                $(".heatmap").hide();
+                $(".heatmap-legend").hide();
+                $(".matrix-tab:visible").click();
 
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
                 var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
-                if (pdb.length > 0 && segments.length > 0) {
-                    $(selector + " .heatmap").empty();
-                    $(selector + " .flareplot").empty();
-                    $(selector + " .ngl-container").empty();
-                    $(selector + " .heatmap-legend").hide();
-                    $(".matrix-tab:visible").click();
 
-                    $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                if (!$(selector + ' .interactions-input').val() == null)
+                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
-                    $.getJSON( '/contactnetwork/distancedata',
-                    {
-                        'segments': segments,
-                        'generic': generic,
-                        'pdbs': pdb,
-                    },
-                    function( data ) {
-                        // Re-render heatmap
-                        $(selector + " .heatmap").show();
-                        $(selector + " .heatmap-legend").show();
-                        heatmapFunction(data, selector + ' .heatmap-container');
-                        $("#svgloading").remove()
-                        createNGLview("single-group",pdb[0], pdb, false, false, data);
-                        createFlareplotBox(data, selector + " .flareplot-container");
+                $.getJSON( '/contactnetwork/distancedata',
+                {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs': pdb,
+                },
+                function( data ) {
+                    // Re-render heatmap
+                    $(".heatmap").show();
+                    $(".heatmap-legend").show();
+                    $("#svgloading").remove()
 
-                        redraw_heatmap();
-                    });
-                }
-            });
+                    heatmapFunction(data, selector + ' .heatmap-container');
+                    createNGLview("single-group",pdb[0], pdb, false, false, data);
+                    // Re-render flareplot
+                    // TODO MUNK
+                    createFlareplotBox(data, selector + " .flareplot-container");
+                    redraw_heatmap();
+                });
+            }
         }
 
         function initializeGoButtonTwoCrystalGroups(selector, heatmapFunction, generic=false) {
@@ -1496,45 +1515,46 @@
                 var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
 
+                loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic)
+            });
+        }
+
+        function loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic) {
+            if (pdbs1.length > 0 && pdbs2.length > 0) {
+                // var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                $(".heatmap").hide();
+                $(".heatmap-legend").hide();
+                $(".matrix-tab:visible").click();
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
+
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
                 var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
-                if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
-                    $(selector + " .heatmap").empty();
-                    $(selector + " .flareplot").empty();
-                    $(selector + " .ngl-container").empty();
-                    $(selector + " .heatmap-legend").hide();
-                    $(".matrix-tab:visible").click();
-                    // $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
-                    console.log('get data');
 
-                    $.getJSON( '/contactnetwork/distancedatagroups',
-                    {
-                        'segments': segments,
-                        'generic': generic,
-                        'pdbs1': pdbs1,
-                        'pdbs2': pdbs2,
-                    },
-                    function( data ) {
-                                // Re-render heatmap
-                                $("#svgloading").html('Loading... (33%)');
-                                $(".heatmap").show();
-                                $(".heatmap-legend").show();
-                                $("#svgloading").remove()
+                $.getJSON( '/contactnetwork/distancedatagroups',
+                {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs1': pdbs1,
+                    'pdbs2': pdbs2,
+                },
+                function( data ) {
+                            // Re-render heatmap
+                            $(".heatmap").show();
+                            $(".heatmap-legend").show();
+                            $("#svgloading").remove()
+                            heatmapFunction(data, selector + ' .heatmap-container');
+                            // createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic-container
+                            // createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
 
-                                console.log('heat map generation')
-                                heatmapFunction(data, selector + ' .heatmap-container');
 
-                                console.log('flareplot generation')
-                                createFlareplotBox(data, selector + " .flareplot-container");
+                            createFlareplotBox(data, selector + " .flareplot-container");
 
-                                // // Re-render flareplot
-                                console.log('ngl generation')
-                                createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2, false , data);
-
-                                redraw_heatmap();
-                            });
-                }
-            });
+                            // // Re-render flareplot
+                            // createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
+                            createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2, false , data);
+                            redraw_heatmap();
+                        });
+            }
         }
 
         function initializeFullscreenButton(selector) {
@@ -2463,7 +2483,19 @@
 
             redraw_heatmap();
 
-        });
+            {% if pdbs %}
+                // handle post data (if present) for single group
+                loadPDBsView({{ pdb | safe}}, '#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
+            {% endif %}
+
+            {% if pdbs1 and pdbs2 %}
+                // handle post data (if present) for two groups
+                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
+            {% endif %}
+
+          });
+            
+
     </script>
 {% endblock %}
 {% block addon_css %}

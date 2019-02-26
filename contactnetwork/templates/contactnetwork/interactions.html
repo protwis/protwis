@@ -5,20 +5,20 @@
 
 
       <ul class="nav nav-tabs" id='mode_nav'>
-  			<li class="active">
+  			<li class="{% if not pdbs1 and not pdbs %}active{% endif %}">
                   <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
   			</li>
-  			<li>
+  			<li class="{% if pdbs %}active{% endif %}">
                   <a href="#single-group-crystal-tab" data-toggle="tab">Single group of structures</a>
   			</li>
-  			<li>
+  			<li class="{% if pdbs1 %}active{% endif %}">
                   <a href="#two-groups-crystal-tab" data-toggle="tab">Two groups of structures</a>
   			</li>
 		  </ul>
 
         <div class="tab-content clearfix">
             <!-- BEGIN SINGLE CRYSTAL TAB -->
-		    <div class="tab-pane active main_option" id="single-crystal-tab">
+		    <div class="tab-pane main_option {% if not pdbs1 and not pdbs %}active{% endif %}" id="single-crystal-tab">
                 <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single structure interactions</h1>
@@ -211,7 +211,7 @@
             </div>
             <!-- END SINGLE CRYSTAL TAB -->
             <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
-            <div class="tab-pane main_option" id="single-group-crystal-tab">
+            <div class="tab-pane main_option {% if pdbs %}active{% endif %}" id="single-group-crystal-tab">
                 <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single group of structures interactions</h1>
@@ -405,7 +405,7 @@
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
             <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
-            <div class="tab-pane main_option" id="two-groups-crystal-tab">
+            <div class="tab-pane main_option {% if pdbs2 %}active{% endif %}" id="two-groups-crystal-tab">
                 <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Two groups of structures interactions</h1>
@@ -2708,49 +2708,53 @@
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 //pdb = ["4BVN"]
                 //pdb = ["5JQH", "3SN6", "4AMJ"]
-
-                //var segments = JSON.parse($(selector + ' .segments-input').val());
-                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
-                if (pdb.length > 0 && segments.length > 0) {
-                    var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                    $(".heatmap").hide();
-                    $(".heatmap-legend").hide();
-                    $(".matrix-tab:visible").click();
-
-                    $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
-                    if (!$(selector + ' .interactions-input').val() == null)
-                        interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-
-                    $.getJSON( '/contactnetwork/interactiondata',
-                    {
-                        'segments': segments,
-                        'generic': generic,
-                        'pdbs': pdb,
-                        'interaction_types': interactionTypes
-                    },
-                    function( data ) {
-                        // Re-render heatmap
-                        $(".heatmap").show();
-                        $(".heatmap-legend").show();
-                        heatmapFunction(data, selector + ' .heatmap-container');
-                        $("#svgloading").remove()
-                        // Re-render flareplot
-                        createFlareplotBox(data, selector + " .flareplot-container");
-
-                        if (selector == '#single-group-crystal-tab') {
-                          createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
-                          createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
-                          createNGLview("single-group",pdb[0], pdb);
-                        } else {
-                          createHiveplotBox(data, selector + " .hiveplot-container");
-                          createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
-                          createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
-                          createNGLview("single",pdb[0]);
-                        }
-                    });
-                }
+                loadPDBsView(pdb, selector, heatmapFunction, generic)
             });
         }
+
+        function loadPDBsView(pdb, selector, heatmapFunction, generic) {
+          //var segments = JSON.parse($(selector + ' .segments-input').val());
+          var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
+          if (pdb.length > 0 && segments.length > 0) {
+              var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+              $(".heatmap").hide();
+              $(".heatmap-legend").hide();
+              $(".matrix-tab:visible").click();
+
+              $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+              if (!$(selector + ' .interactions-input').val() == null)
+                  interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+
+              $.getJSON( '/contactnetwork/interactiondata',
+              {
+                  'segments': segments,
+                  'generic': generic,
+                  'pdbs': pdb,
+                  'interaction_types': interactionTypes
+              },
+              function( data ) {
+                  // Re-render heatmap
+                  $(".heatmap").show();
+                  $(".heatmap-legend").show();
+                  heatmapFunction(data, selector + ' .heatmap-container');
+                  $("#svgloading").remove()
+                  // Re-render flareplot
+                  createFlareplotBox(data, selector + " .flareplot-container");
+
+                  if (selector == '#single-group-crystal-tab') {
+                    createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
+                    createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
+                    createNGLview("single-group",pdb[0], pdb);
+                  } else {
+                    createHiveplotBox(data, selector + " .hiveplot-container");
+                    createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
+                    createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
+                    createNGLview("single",pdb[0]);
+                  }
+              });
+          }
+        }
+
 
         function initializeGoButtonTwoCrystalGroups(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
@@ -2758,61 +2762,67 @@
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
                 //pdbs1 = ["3RZE", "3SN6"]
                 //pdbs2 = ["2RH1", "3UON"]
+                loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic)
 
-                //var segments = JSON.parse($(selector + ' .segments-input').val());
-                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
-                if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
-                    var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                    $(".heatmap").hide();
-                    $(".heatmap-legend").hide();
-                    $(".matrix-tab:visible").click();
-                    $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
 
+            });
+        }
+
+        function loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic) {
+            //var segments = JSON.parse($(selector + ' .segments-input').val());
+            var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
+            if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
+                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                $(".heatmap").hide();
+                $(".heatmap-legend").hide();
+                $(".matrix-tab:visible").click();
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
+
+                $.getJSON( '/contactnetwork/interactiondata',
+                {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs': pdbs1,
+                    'interaction_types': interactionTypes
+                },
+                function( data1 ) {
+                    $("#svgloading").remove();
+                    $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (33%)</span>');
                     $.getJSON( '/contactnetwork/interactiondata',
                     {
                         'segments': segments,
                         'generic': generic,
-                        'pdbs': pdbs1,
+                        'pdbs': pdbs2,
                         'interaction_types': interactionTypes
                     },
-                    function( data1 ) {
+                    function( data2 ) {
                         $("#svgloading").remove();
-                        $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (33%)</span>');
+                        $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
+                        // NOTE: this call seems redundant, shouldn't we already have all the data we need from the previous two calls
                         $.getJSON( '/contactnetwork/interactiondata',
                         {
                             'segments': segments,
                             'generic': generic,
-                            'pdbs': pdbs2,
+                            'pdbs': pdbs1.concat(pdbs2),
                             'interaction_types': interactionTypes
-                        },
-                        function( data2 ) {
-                            $("#svgloading").remove();
-                            $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
-                            // NOTE: this call seems redundant, shouldn't we already have all the data we need from the previous two calls
-                            $.getJSON( '/contactnetwork/interactiondata',
-                            {
-                                'segments': segments,
-                                'generic': generic,
-                                'pdbs': pdbs1.concat(pdbs2),
-                                'interaction_types': interactionTypes
-                            }, function ( data3 ) {
-                                // Re-render heatmap
-                                $(".heatmap").show();
-                                $(".heatmap-legend").show();
-                                $("#svgloading").remove()
-                                heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
-                                createSchematicPlot(data3, selector + " .schematic_con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic_container
-                                createSchematicPlot(data3, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
+                        }, function ( data3 ) {
+                            // Re-render heatmap
+                            $(".heatmap").show();
+                            $(".heatmap-legend").show();
+                            $("#svgloading").remove()
+                            heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
+                            createSchematicPlot(data3, selector + " .schematic_con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic_container
+                            createSchematicPlot(data3, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
 
-                                // Re-render flareplot
-                                createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
-                                createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2);
-                            });
+                            // Re-render flareplot
+                            createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
+                            createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2);
                         });
                     });
-                }
-            });
+                });
+            }
         }
+
 
         function initializeFullscreenButton(selector) {
             // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
@@ -4229,7 +4239,7 @@
 
         function updateGeneralControls(){
             // update current vizualization
-            switch(currentViz) {
+            switch(currentViz.toLowerCase()) {
               case "matrix":
                 updateMatrix()
                 break;
@@ -4258,7 +4268,14 @@
             if (currentTab=="two-groups") createNGLRepresentations(currentTab , 1, currentTab)
         }
 
-        var currentTab = "single";
+        {% if pdbs1 %}
+            var currentTab = "two-groups";
+        {% elif pdbs %}
+          var currentTab = "single-group";
+        {% else %}
+          var currentTab = "single";
+        {% endif %}
+
         var currentViz = "matrix";
         function updateCurrentTab(id){
             var now = id.replace("-link", "")
@@ -4299,6 +4316,16 @@
             window.addEventListener("resize", redraw_ngl);
 
             window.addEventListener("resize", redraw_renders);
+
+            {% if pdbs %}
+                // handle post data (if present) for single group
+                loadPDBsView({{ pdb | safe}}, '#single-group-crystal-tab', renderSingleCrystalGroupHeatmap, true)
+            {% endif %}
+
+            {% if pdbs1 and pdbs2 %}
+                // handle post data (if present) for two groups
+                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-groups-crystal-tab', renderTwoCrystalGroupsHeatmap, true);
+            {% endif %}
         });
     </script>
 {% endblock %}

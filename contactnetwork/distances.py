@@ -26,10 +26,10 @@ class Distances():
     def fetch_agg(self):
         ## REQUIRES PSQL SETTINGS TO HAVE MORE MEMORY
         # sudo nano /etc/postgresql/9.3/main/postgresql.conf
-        # shared_buffers = 2GB  
-        # work_mem = 100MB  
+        # shared_buffers = 2GB
+        # work_mem = 100MB
         # temp_buffers = 500MB
-        # sudo /etc/init.d/postgresql restart 
+        # sudo /etc/init.d/postgresql restart
 
         ds = list(Distance.objects.filter(structure__in=self.structures) \
                             .values('gns_pair').annotate(arr=ArrayAgg('distance')).values_list('gns_pair','arr'))
@@ -55,14 +55,13 @@ class Distances():
     def fetch_and_calculate(self, with_arr = False):
         ## REQUIRES PSQL SETTINGS TO HAVE MORE MEMORY
         # sudo nano /etc/postgresql/9.3/main/postgresql.conf
-        # shared_buffers = 2GB  
-        # work_mem = 100MB  
+        # shared_buffers = 2GB
+        # work_mem = 100MB
         # temp_buffers = 500MB
-        # sudo /etc/init.d/postgresql restart 
+        # sudo /etc/init.d/postgresql restart
         ds_with_key = {}
         if with_arr:
-            ds = list(Distance.objects.filter(structure__in=self.structures) \
-                            .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+            ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                             .values('gns_pair') \
                             .annotate(mean = Avg('distance'), var = Variance('distance'), c = Count('distance'),arr=ArrayAgg('distance'),arr2=ArrayAgg('structure')).values_list('gns_pair','mean','var','c','arr','arr2').filter(c__gte=int(0.5*len(self.structures))))
             for i,d in enumerate(ds):
@@ -82,6 +81,21 @@ class Distances():
 
         self.stats_key = ds_with_key
         self.stats = stats_sorted
+
+    def fetch_common_gns_tm(self):
+        ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+                        .values('gns_pair') \
+                        .annotate(c = Count('distance')).values_list('gns_pair').filter(c__gte=int(len(self.structures))))
+        common_gn = []
+        for i,d in enumerate(ds):
+            res1, res2 = d[0].split("_")
+            if res1 not in common_gn:
+                common_gn.append(res1)
+            if res2 not in common_gn:
+                common_gn.append(res2)
+        common_gn.sort()
+
+        return common_gn
 
     def calculate_window(self, list_of_gns = None):
 
@@ -141,7 +155,7 @@ class Distances():
             # Track with i, to only do calculations once
             # now to pick all other windows going forward
             for i, b2 in enumerate(bins[i+1:]):
-                label = "{}-{}".format(b1,b2) 
+                label = "{}-{}".format(b1,b2)
                 bin_pairs[label] = [[],[],[],[]]
 
         #Populate all bin_pairs
@@ -160,7 +174,7 @@ class Distances():
                 continue
 
             label = "{}-{}".format(label1,label2)
-            
+
             if label not in bin_pairs:
                 # This should not be possible, sanity check.
                 print("LABEL MISSING IN PAIRS",label)
@@ -231,6 +245,17 @@ class Distances():
                 self.data[label] = []
             self.data[label].append(d[0]/100)
 
+    def fetch_distances_tm(self):
+        ds = Distance.objects.filter(structure__in=self.structures) \
+                .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+                .values_list('distance','gns_pair')
+        self.data = {}
+        for d in ds:
+            label = d[1]
+            if label not in self.data:
+                self.data[label] = []
+            self.data[label].append(d[0]/100)
+
     def calculate(self):
         self.stats = {}
         self.stats_list = []
@@ -243,7 +268,7 @@ class Distances():
             # continue
         print(len(self.stats))
         # stats_sorted = self.stats_list.sort(key=lambda x: x['dispersion'])
-        # stats_sorted = sorted(self.stats_list, key=lambda k: -k['dispersion']) 
+        # stats_sorted = sorted(self.stats_list, key=lambda k: -k['dispersion'])
         # print(stats_sorted[1])
         #print(data)
             #print(d.interacting_pair.res1.generic_number.label)
