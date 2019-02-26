@@ -18,7 +18,7 @@
 
         <div class="tab-content clearfix">
             <!-- BEGIN SINGLE CRYSTAL TAB -->
-		    <div class="tab-pane active" id="single-crystal-tab">
+		    <div class="tab-pane active main_option" id="single-crystal-tab">
                 <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single structure interactions</h1>
@@ -33,7 +33,8 @@
                             </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
-                                <input class="crystal-pdb" type="hidden" value="[]" />
+                                <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
+                                <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
                                 {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br> #}
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB</button> <span class="crystal-count">No structure selected.</span>
                                 <div class="btn btn-success pull-right go-button"><span>Go</span></div>
@@ -98,7 +99,6 @@
                   <li><a href="#single-schematic_con-tab" data-toggle="tab" id="single-schematic_con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-schematic_non-tab" data-toggle="tab" id="single-schematic_non-tab-link">2D Schematic (Non)</a></li>
                   <li><a href="#single-table-tab" data-toggle="tab" id="single-table-tab-link">Browser</a></li>
-                  <li><a href="#single-NGL-tab" data-toggle="tab" id="single-NGL-tab-link">NGL</a></li>
                 </ul>
                 <div class="row">
                   <div class="col-md-7 tab-content">
@@ -137,7 +137,7 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-hiveplot-tab">
+                      <div class="tab-pane" id="single-hiveplot-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -153,7 +153,7 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-schematic_con-tab">
+                      <div class="tab-pane" id="single-schematic_con-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -170,7 +170,7 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-schematic_non-tab">
+                      <div class="tab-pane" id="single-schematic_non-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -211,7 +211,7 @@
             </div>
             <!-- END SINGLE CRYSTAL TAB -->
             <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
-            <div class="tab-pane" id="single-group-crystal-tab">
+            <div class="tab-pane main_option" id="single-group-crystal-tab">
                 <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single group of structures interactions</h1>
@@ -225,10 +225,12 @@
                                 <h3 class="panel-title">PDBs</h3>
                             </div>
                             <div class="panel-body">
-                                <input class="crystal-pdb" type="hidden" value="[]" />
-                                <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-group-crystal-pdbs-modal">Select PDBs</button> #}
+                                <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
+                                <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-group-crystal-pdbs-modal-table">Select PDBs</button>
+                                <span class="crystal-count">No</span> structure(s) selected.
+                                <div class="btn btn-success pull-right go-button"><span>Go</span></div>
+                                
                             </div>
                         </div>
                     </div>
@@ -277,7 +279,7 @@
                             </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
-                                <h5>Types</h5>
+                                Types: 
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
                                   <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
@@ -299,9 +301,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-offset-3 col-md-1">
-                        <div class="btn btn-success btn-lg pull-right go-button">Go</div>
-                    </div>
                 </div>
 
 
@@ -311,12 +310,11 @@
                   <li><a href="#single-group-schematic_con-tab" data-toggle="tab" id="single-group-schematic_con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-group-schematic_non-tab" data-toggle="tab" id="single-group-schematic_non-tab-link">2D Schematic (Non)</a></li>
                   <li><a href="#single-group-table-tab" data-toggle="tab" id="single-group-table-tab-link">Browser</a></li>
-                  <li><a href="#single-group-NGL-tab" data-toggle="tab" id="single-group-NGL-tab-link">NGL</a></li>
                 </ul>
                 <div class="row">
-                  <div class="tab-content">
-                      <div class="col-md-12 tab-pane active" id="single-group-matrix-tab">
-                           <div class="panel panel-default no-top-border">
+                  <div class="col-md-7 tab-content">
+                      <div class="tab-pane active" id="single-group-matrix-tab">
+                           <div class="panel panel-default">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Interactions</h3>
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
@@ -331,10 +329,10 @@
                            </div>
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-group-table-tab">
+                      <div class="tab-pane" id="single-group-table-tab">
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-group-flareplot-tab">
+                      <div class="tab-pane" id="single-group-flareplot-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -350,7 +348,7 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-group-schematic_con-tab">
+                      <div class="tab-pane" id="single-group-schematic_con-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -367,7 +365,7 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-group-schematic_non-tab">
+                      <div class="tab-pane" id="single-group-schematic_non-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -384,7 +382,10 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="single-group-NGL-tab">
+                      
+
+                    </div>
+                    <div class="col-md-5 tab-pane" id="single-group-NGL-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -399,14 +400,12 @@
                          </div>
 
                       </div>
-
-                    </div>
                 </div>
 
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
             <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
-            <div class="tab-pane" id="two-groups-crystal-tab">
+            <div class="tab-pane main_option" id="two-groups-crystal-tab">
                 <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Two groups of structures interactions</h1>
@@ -417,17 +416,26 @@
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs</h3>
+                                <h3 class="panel-title">PDBs (Set 1)</h3>
                             </div>
                             <div class="panel-body">
-                                <input class="crystal-group-1-pdbs" type="hidden" value="[]" />
-                                <input class="crystal-group-2-pdbs" type="hidden" value="[]" />
-                                <h5><span class="crystal-count-1">0</span> structure(s) selected.</h5>
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-1">Select PDBs</button> #}
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-1-table">Select PDBs</button>
-                                <h5><span class="crystal-count-2">0</span> structure(s) selected.</h5>
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-2">Select PDBs</button> #}
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-2-table">Select PDBs</button>
+                                <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
+                                <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-1-table">Select PDBs</button> <span class="crystal-count-1">No</span> structure(s) selected.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">PDBs (Set 2)</h3>
+                            </div>
+                            <div class="panel-body">
+                                <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
+                                <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-2-table">Select PDBs</button> <span class="crystal-count-2">No</span> structure(s) selected.
+                                <div class="btn btn-success pull-right go-button">Go</div>
+                                
                             </div>
                         </div>
                     </div>
@@ -476,7 +484,7 @@
                             </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
-                                <h5>Types</h5>
+                                Types: 
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
                                   <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
@@ -499,7 +507,6 @@
                         </div>
                     </div>
                     <div class="col-md-offset-3 col-md-1">
-                        <div class="btn btn-success btn-lg pull-right go-button">Go</div>
                     </div>
                 </div>
 
@@ -510,11 +517,10 @@
                   <li><a href="#two-groups-schematic_con-tab" data-toggle="tab" id="two-groups-schematic_con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#two-groups-schematic_non-tab" data-toggle="tab" id="two-groups-schematic_non-tab-link">2D Schematic (Non)</a></li>
                   <li><a href="#two-groups-table-tab" data-toggle="tab" id="two-groups-table-tab-link">Browser</a></li>
-                  <li><a href="#two-groups-NGL-tab" data-toggle="tab" id="two-groups-NGL-tab-link">NGL</a></li>
                 </ul>
                 <div class="row">
-                  <div class="tab-content">
-                      <div class="col-md-12 tab-pane active" id="two-groups-matrix-tab">
+                  <div class="tab-content col-md-7 ">
+                      <div class="tab-pane active" id="two-groups-matrix-tab">
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Interactions</h3>
@@ -530,10 +536,10 @@
                            </div>
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="two-groups-table-tab">
+                      <div class="tab-pane" id="two-groups-table-tab">
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="two-groups-flareplot-tab">
+                      <div class="tab-pane" id="two-groups-flareplot-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -549,7 +555,7 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="two-groups-schematic_con-tab">
+                      <div class="tab-pane" id="two-groups-schematic_con-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -566,7 +572,7 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="two-groups-schematic_non-tab">
+                      <div class="tab-pane" id="two-groups-schematic_non-tab">
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
@@ -583,23 +589,24 @@
 
                       </div>
 
-                      <div class="col-md-12 tab-pane" id="two-groups-NGL-tab">
+                      
+                </div>
+                <div class="col-md-5 tab-pane" id="two-groups-NGL-tab">
 
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                <div class="clearfix"></div>
+                     <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">NGL</h3>
+                            <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="ngl-container" id="ngl-two-groups" style="margin: auto; width:100%; height:1000px;">
                             </div>
-                            <div class="panel-body">
-                                <div class="ngl-container" id="ngl-two-groups" style="margin: auto; width:100%; height:1000px;">
-                                </div>
-                            </div>
-                         </div>
+                        </div>
+                     </div>
 
-                      </div>
+                  </div>
 
-                    </div>
                 </div>
 
             </div>
@@ -2486,6 +2493,82 @@
             populateTable('two-groups-table');
         }
 
+        function redraw_renders() {
+          // Makes sure diagrams fit sizes
+
+          var visible_svg = $('svg:visible');
+          var svg_class = visible_svg.attr("class");
+
+          var width_svg = visible_svg.width();
+
+          // Don't go too high
+          if (width_svg>screen.height) width_svg = screen.height;
+          visible_svg.height(width_svg);
+
+          // Resize NGL
+          var ngl = $('.ngl-container:visible');
+          var width_ngl = ngl.width();
+
+          // Don't go too high
+          if (width_ngl>screen.height) width_ngl = screen.height;
+          ngl.height(width_svg);
+
+          console.log('redraw',svg_class,width_svg,screen.height);
+
+          if (svg_class=='heatmap') {
+            // If heatmap being resized, reset zoom
+
+              // Destroy old zoom on heatmap
+            var heatMapSelector = "#" + $('.main_option:visible').attr('id');
+            heatMapSelector = heatMapSelector+ ' .heatmap-container';
+            if (window.zoomHeatmap[heatMapSelector] != null) {
+              window.zoomHeatmap[heatMapSelector].destroy();
+              delete window.zoomHeatmap[heatMapSelector];
+
+              window.zoomHeatmap[heatMapSelector] = svgPanZoom(heatMapSelector + ' .heatmap', {
+                    zoomEnabled: true,
+                    // controlIconsEnabled: true,
+                    fit: true,
+                    center: true,
+                    minZoom: 0.40,
+                    maxZoom: 50,
+                    zoomScaleSensitivity: 0.25,
+                    dblClickZoomEnabled: true,
+                    beforeZoom: hidePopovers,
+                    beforePan: hidePopovers
+                });
+
+              window.zoomHeatmap[heatMapSelector].zoom(0.85);
+            }
+          }
+
+          if (svg_class=='hiveplot') {
+            // If heatmap being resized, reset zoom
+
+              // Destroy old zoom on heatmap
+            var container = "#" + $('.main_option:visible').attr('id');
+            container = container+ ' .hiveplot-container';
+            if (window.zoomHiveplot[container] != null) {
+              window.zoomHiveplot[container].destroy();
+              delete window.zoomHiveplot[container];
+
+              window.zoomHiveplot[container] = svgPanZoom(container + ' .hiveplot', {
+                  zoomEnabled: true,
+                  // controlIconsEnabled: true,
+                  fit: true,
+                  center: true,
+                  minZoom: 0.75,
+                  maxZoom: 50,
+                  zoomScaleSensitivity: 0.25,
+                  dblClickZoomEnabled: true
+              });
+
+              window.zoomHiveplot[container].zoom(0.85);
+            }
+          }
+
+        }
+
         function initializeSegmentButtons(selector) {
             // Initialize segment buttons.
             $(selector + ' .segments-panel button').each(function() {
@@ -4184,6 +4267,7 @@
             // update settings
             currentTab = now.substr(0,now.lastIndexOf('-'))
             currentViz = now.replace(currentTab+"-", "")
+            redraw_renders();
         }
 
         $(document).ready(function() {
@@ -4213,6 +4297,8 @@
             initializeTwoCrystalGroupsView();
 
             window.addEventListener("resize", redraw_ngl);
+
+            window.addEventListener("resize", redraw_renders);
         });
     </script>
 {% endblock %}
@@ -4268,6 +4354,10 @@
 
     <style type="text/css">
 
+        .nav-tabs {
+            border-bottom: 0px solid #ddd;
+        }
+
         .modal-wide {
           width: 1200px;
         }
@@ -4286,7 +4376,8 @@
         }
 
         .flareplot-legend {
-          top: -110px;
+          top: 20px;
+          left: 20px;
 
         }
 
