@@ -37,7 +37,7 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                      
+
                     </div>
                     <div class="col-md-offset-3 col-md-1">
                         <div class="btn btn-success btn-lg pull-right go-button">Go</div>
@@ -1249,7 +1249,7 @@
 
             console.log('added popovers',end2-end)
 
-            if ('max_dispersion' in data) { 
+            if ('max_dispersion' in data) {
 
                 // Populate heatmap legend
                 var legendHtml = '<h4 class="center">Legend</h4>'
@@ -1354,7 +1354,7 @@
           var heatmap_id = $('.heatmap:visible').attr('id');
           var ngl_id = $('.ngl-container:visible').attr('id');
           var heatMapSelector = "#" + $('.main_option:visible').attr('id');
-          
+
           current_width = $("#"+heatmap_id).width();
           if (current_width>screen.height) current_width = screen.height;
           $("#"+heatmap_id).height(current_width);
@@ -2485,16 +2485,16 @@
 
             {% if pdbs %}
                 // handle post data (if present) for single group
-                loadPDBsView({{ pdb | safe}}, '#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
+                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', renderHeatmap, true);
             {% endif %}
 
             {% if pdbs1 and pdbs2 %}
                 // handle post data (if present) for two groups
-                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
+                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', renderHeatmap, true);
             {% endif %}
 
           });
-            
+
 
     </script>
 {% endblock %}
