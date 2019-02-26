@@ -437,7 +437,7 @@ class Command(BaseBuild):
                                     not_matched +=1
                                 else:
                                     wt_r = wt_lookup[mapped_seq[seq_num_pos][1][0]]
-                                    print(seq_num_pos, mapped_seq[seq_num_pos], wt_r, residue.sequence_number, residue.amino_acid)
+                                    # print(seq_num_pos, mapped_seq[seq_num_pos], wt_r, residue.sequence_number, residue.amino_acid) #sanity check for mapped resis
                                     if residue.sequence_number!=wt_r.sequence_number and residue.amino_acid!=wt_r.amino_acid and residue.sequence_number in wt_lookup: #if pos numbers not work -- see if the pos number might be in WT and unmapped
                                         if wt_lookup[residue.sequence_number].amino_acid==residue.amino_acid:
                                             if residue.sequence_number in unmapped_ref: #WT was not mapped, so could be it

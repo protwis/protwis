@@ -299,8 +299,9 @@ class CallHomologyModeling():
             if formatted_model==None:
                 raise ValueError('Incorrect assignment of generic numbers in {} {}'.format(self.receptor, self.state))
 
-            if Homology_model.changes_on_db:
-                ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
+            # # if Homology_model.changes_on_db:
+            ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
+            if len(ssno.pdb_wt_table)>0:
                 ssno.seq_num_overwrite('wt')
             
             # Run clash and break test
@@ -414,7 +415,9 @@ class CallHomologyModeling():
                     print(''.join(traceback.format_tb(exc_tb)))
                 logger.error('Failed to build model {} {}\n    {}'.format(self.receptor, self.state, msg))
                 # Return main template structure residue table sequence numbering to original
-                if Homology_model.changes_on_db:
+                ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
+                if len(ssno.pdb_wt_table)>0:
+                # # if Homology_model.changes_on_db:
                     ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
                     ssno.seq_num_overwrite('wt')
                     self.logger.info('Structure {} residue table sequence number overwrite wt to pdb'.format(structure))
@@ -994,16 +997,16 @@ class HomologyModeling(object):
                 self.helix_end_mods = helixends.helix_end_mods
                 self.template_source = helixends.template_source
 
-            for i,j,k,l in zip(alignment.reference_dict, alignment.template_dict, alignment.alignment_dict, main_pdb_array):
-                print(alignment.reference_dict[i])
-                print(alignment.template_dict[j])
-                print(alignment.alignment_dict[k])
-                for o in main_pdb_array[l]:
-                    try:
-                        print(main_pdb_array[l][o][0].get_parent())
-                    except:
-                        print(main_pdb_array[l][o])
-            raise AssertionError
+            # for i,j,k,l in zip(alignment.reference_dict, alignment.template_dict, alignment.alignment_dict, main_pdb_array):
+            #     print(alignment.reference_dict[i])
+            #     print(alignment.template_dict[j])
+            #     print(alignment.alignment_dict[k])
+            #     for o in main_pdb_array[l]:
+            #         try:
+            #             print(main_pdb_array[l][o][0].get_parent())
+            #         except:
+            #             print(main_pdb_array[l][o])
+            # raise AssertionError
 
             self.statistics.add_info('helix_end_mods',self.helix_end_mods)
 
@@ -3065,7 +3068,8 @@ class HelixEndsModeling(HomologyModeling):
                 e_gn = Residue.objects.get(protein_conformation=protein_conf, 
                                            display_generic_number__label=dgn(raw_helix_ends[raw_seg][1],
                                                                              protein_conf))
-                seq_nums = [i for i in range(e_gn.sequence_number-e_dif+1,e_gn.sequence_number+1)]               
+                seq_nums = [i for i in range(e_gn.sequence_number-e_dif+1,e_gn.sequence_number+1)]
+                print(seq_nums)          
                 gns = [ggn(j.display_generic_number.label) for j in list(Residue.objects.filter(
                             protein_conformation=protein_conf, sequence_number__in=seq_nums))]
                 for gn in gns:

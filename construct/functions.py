@@ -126,7 +126,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
             uniprot = line[7]
             start = line[8]
             end = line[9]
-            print(line,uniprot,d['construct_crystal']['uniprot'].upper())
+            # print(line,uniprot,d['construct_crystal']['uniprot'].upper()) #show DBREF
             if uniprot == d['construct_crystal']['uniprot'].upper() or (uniprot==pdbname.upper() and uniprot_code==''):
                 uniprot_code = line[6]
                 # print(line)
