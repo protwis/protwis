@@ -1014,8 +1014,7 @@ def InteractionMatrix(request):
     #     proteins.append(r)
 
     interactions_metadata = complex_info
-    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Gprotein').values('id', 'slug')
-
+    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     prot_conf_ids = [i['conf_id'] for i in complex_info]
     remaining_residues = Residue.objects.filter(
             protein_conformation_id__in=prot_conf_ids,
