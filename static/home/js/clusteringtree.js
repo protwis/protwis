@@ -4,7 +4,7 @@ function renderTree(data) {
     var annotations = data["annotations"];
 
     var r = 1200 / 2;
-    var spacing = 200;
+    var spacing = 225;
     var innerRadius = r - spacing // change inner radius of tree with this argument
     var names = 0; // indexing for all nodes
 
@@ -189,6 +189,38 @@ function renderTree(data) {
         .attr("r", 5);
 
     // Adding annotations
+    // Annotations: state, name, family, ligand type, class
+    var spacer = 8;
+    var colorscheme = []
+    colorscheme[0] = ['#008000','#797f98','#7a97b2','#75afc9','#68c9dc','#50e4ee','#00ffff']
+    colorscheme[1] = ['#ffd700','#dfda5d','#d3d772','#cad381','#c2ce8e','#bcc998','#b7c4a0','#b4c0a6','#b0b9ad','#adb4b2','#abaeb7','#a9a9bb','#a8a2bf','#a89cc1','#a895c4','#a98fc6','#aa87c7','#ad7fc7','#b077c7','#f44191']
+    colorscheme[2] = ['#8b0000','#960110','#9e051b','#a80c25','#b1142d','#b91c35','#c1253d','#c92e43','#d03649','#d7404e','#dd4852','#e35256','#e85b59','#ed655d','#f26f60','#f67863','#fa8266','#fd8c69','#ff956d','#ffa072','#ffac77','#ffb57e','#ffbf86','#ffc98f','#ffd399','#ffdca5','#ffe5b2','#ffedbf','#fff6cf','#ffffe0']
+    var categories = [];
+    var tooltip = d3.select("body").append("div")
+                  .attr("class", "tooltip")
+                  .style("opacity", 0);
+    for  (i=4; i>1; i--) {
+        // store categories for legend
+        categories[4-i] = []
+        for (var pdb in annotations){
+            // assign color
+            if (!categories[4-i].includes(annotations[pdb][i]))
+              categories[4-i].push(annotations[pdb][i])
+            colorIndex = categories[4-i].indexOf(annotations[pdb][i]);
+            color = colorscheme[4-i][colorIndex];
+
+            // create annotation
+            vis.selectAll('g.X'+pdb)
+              //.append("circle")
+              //.attr("r", 3.25)
+              .append("rect")
+              .attr("width", spacer-1)
+              .attr("height", spacer-1)
+              .style("fill", color)
+              .attr("transform", "translate(" + (103 + Math.abs(i-5)*spacer) + ", " + -1 * (spacer-1)/2 + ")")
+        }
+    }
+
     /*for (var x in selectivityinfo){
         var spacer = 8
         if(selectivityinfo[x].indexOf("Gs family") >= 0){
@@ -239,10 +271,11 @@ function renderTree(data) {
         })
         .text(function(d) {
             // add receptor name
+            var name = annotations[d.name][1].split("_")[0].toUpperCase()
             if (d.x < 180) {
-              return d.name.replace(/_/g, ' ') + ' (' + annotations[d.name][1].split("_")[0] + ')';
+              return d.name.replace(/_/g, ' ') + ' (' + name + ')';
             } else {
-              return '(' + annotations[d.name][1].split("_")[0] + ') ' + d.name.replace(/_/g, ' ');
+              return '(' + name + ') ' + d.name.replace(/_/g, ' ');
             }
         });
 
