@@ -68,23 +68,25 @@ def ShowDistances(request):
     """
 
     template_data = {}
-    # check for preselections in POST data
-    pdbs1 = request.POST.get("pdbs1")
-    pdbs2 = request.POST.get("pdbs2")
-    if pdbs1 == "":
-        pdbs1 = None
-    if pdbs2 == "":
-        pdbs2 = None
+    
+    if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
+        # check for preselections in POST data
+        pdbs1 = request.POST.get("pdbs1")
+        pdbs2 = request.POST.get("pdbs2")
+        if pdbs1 == "":
+            pdbs1 = None
+        if pdbs2 == "":
+            pdbs2 = None
 
-    # create switch
-    if pdbs1 != None and pdbs2 != None:
-        template_data["pdbs1"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
-        template_data["pdbs2"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
-    else:
-        if pdbs1 == None:
-            template_data["pdbs"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
+        # create switch
+        if pdbs1 != None and pdbs2 != None:
+            template_data["pdbs1"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
+            template_data["pdbs2"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
         else:
-            template_data["pdbs"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
+            if pdbs1 == None:
+                template_data["pdbs"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
+            else:
+                template_data["pdbs"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
 
     return render(request, 'contactnetwork/distances.html', template_data)
 

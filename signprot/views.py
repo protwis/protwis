@@ -1,9 +1,10 @@
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinSegment, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResiduePositionSet
 
 from structure.models import Structure
@@ -453,8 +454,811 @@ def signprotdetail(request, slug):
     return render(request, 'signprot/signprot_details.html', context)
 
 def InteractionMatrix(request):
+    from django.db.models import F
+    from django.db.models import Q
+    import requests
 
-    interactions = SignprotInteractions.objects.all().values_list('gpcr_residue__sequence_number','gpcr_residue__display_generic_number__label','structure__pdb_code__index','interaction_type','signprot_residue__sequence_number','signprot_residue__display_generic_number__label')
-    context = {'interactions':json.dumps(list(interactions))}
+    dataset = {
+        '4x1h' : [
+        ['A','N',73,'2.40x40','C','C',347,'G.H5.23', ["water-mediated"]],
+        ['A','A',233,'5.68x68','C','V',340,'G.H5.16', ["hydrophobic"]],
+        ['A','V',138,'3.53x53','C','D',343,'G.H5.19', ["polar-backbone-sidechain", "hydrophobic"]],
+        ['A','V',250,'6.33x33','C','L',349,'G.H5.25', ["hydrophobic"]],
+        ['A','V',139,'3.54x54','C','V',340,'G.H5.16', ["hydrophobic", "water-mediated"]],
+        ['A','V',250,'6.33x33','C','L',344,'G.H5.20', ["hydrophobic"]],
+        ['A','V',139,'3.54x54','C','L',344,'G.H5.20', ["hydrophobic"]],
+        ['A','M',253,'6.36x36','C','G',348,'G.H5.24', ["water-mediated"]],
+        ['A','T',243,'6.26x26','C','L',341,'G.H5.17', ["hydrophobic"]],
+        ['A','K',311,'8.48x48','C','F',350,'G.H5.26', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "cation-pi", "van-der-waals"]],
+        ['A','N',310,'8.47x47','C','C',347,'G.H5.23', ["polar-sidechain-backbone"]],
+        ['A','A',246,'6.29x29','C','F',350,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['A','L',226,'5.61x61','C','L',349,'G.H5.25', ["hydrophobic"]],
+        ['A','K',245,'6.28x28','C','F',350,'G.H5.26', ["hydrophobic"]],
+        ['A','N',310,'8.47x47','C','G',348,'G.H5.24', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['A','L',226,'5.61x61','C','L',344,'G.H5.20', ["hydrophobic"]],
+        ['A','T',242,'6.25x25','C','F',350,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['A','A',246,'6.29x29','C','L',341,'G.H5.17', ["van-der-waals", "hydrophobic"]],
+        ['A','M',309,'7.56x56','C','G',348,'G.H5.24', ["water-mediated"]],
+        ['A','T',242,'6.25x25','C','L',341,'G.H5.17', ["hydrophobic"]],
+        ['A','V',230,'5.65x65','C','L',344,'G.H5.20', ["hydrophobic"]],
+        ['A','L',72,'2.39x39','C','S',346,'G.H5.22', ["van-der-waals", "hydrophobic"]],
+        ['A','E',249,'6.32x32','C','F',350,'G.H5.26', ["hydrophobic"]],
+        ['A','R',135,'3.50x50','C','L',349,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['A','K',141,'3.56x56','C','D',343,'G.H5.19', ["ionic", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','L',72,'2.39x39','C','C',347,'G.H5.23', ["water-mediated"]],
+        ['A','T',229,'5.64x64','C','V',340,'G.H5.16', ["hydrophobic"]],
+        ['A','V',139,'3.54x54','C','D',343,'G.H5.19', ["hydrophobic", "water-mediated"]],
+        ['A','A',246,'6.29x29','C','L',344,'G.H5.20', ["hydrophobic"]],
+        ['A','R',135,'3.50x50','C','C',347,'G.H5.23', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic", "water-mediated"]],
+        ],
+        '3sn6' : [
+        ['R','F',139,'34.51x51','A','R',380,'G.H5.12', ["van-der-waals", "hydrophobic"]],
+        ['R','Q',142,'34.54x54','A','I',383,'G.H5.15', ["hydrophobic"]],
+        ['R','R',228,'5.67x67','A','D',381,'G.H5.13', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','E',225,'5.64x64','A','R',380,'G.H5.12', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','F',139,'34.51x51','A','V',217,'G.S3.01', ["van-der-waals", "hydrophobic"]],
+        ['R','I',135,'3.54x54','A','L',388,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','K',140,'34.52x52','A','R',380,'G.H5.12', ["polar-sidechain-sidechain"]],
+        ['R','I',233,'5.72x72','A','Y',358,'G.h4s6.20', ["van-der-waals", "hydrophobic"]],
+        ['R','P',138,'34.50x50','A','R',380,'G.H5.12', ["hydrophobic"]],
+        ['R','A',271,'6.33x33','A','L',393,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','L',230,'5.69x69','A','L',394,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['R','P',138,'34.50x50','A','Q',384,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['R','T',274,'6.36x36','A','L',393,'G.H5.25', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','E',225,'5.64x64','A','Q',384,'G.H5.16', ["polar-sidechain-sidechain", "van-der-waals"]],
+        ['R','K',232,'5.71x71','A','D',381,'G.H5.13', ["ionic", "h-bond donor-acceptor", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','T',274,'6.36x36','A','E',392,'G.H5.24', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','P',138,'34.50x50','A','I',383,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['R','R',239,'-','A','R',347,'G.H4.17', ["polar-sidechain-backbone", "hydrophobic"]],
+        ['R','R',239,'-','A','T',350,'G.h4s6.03', ["polar-sidechain-sidechain", "hydrophobic"]],
+        ['R','P',138,'34.50x50','A','H',387,'G.H5.19', ["hydrophobic"]],
+        ['R','F',139,'34.51x51','A','F',376,'G.H5.08', ["edge-to-face", "van-der-waals", "hydrophobic"]],
+        ['R','R',239,'-','A','D',343,'G.H4.13', ["polar-sidechain-backbone"]],
+        ['R','I',233,'5.72x72','A','L',394,'G.H5.26', ["hydrophobic"]],
+        ['R','F',139,'34.51x51','A','H',41,'G.S1.02', ["edge-to-face", "hydrophobic"]],
+        ['R','R',131,'3.50x50','A','Y',391,'G.H5.23', ["cation-pi", "van-der-waals", "hydrophobic"]],
+        ['R','Q',142,'34.54x54','A','H',387,'G.H5.19', ["polar-sidechain-sidechain"]],
+        ['R','T',136,'3.55x55','A','R',380,'G.H5.12', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','Q',229,'5.68x68','A','D',381,'G.H5.13', ["polar-sidechain-sidechain", "polar-sidechain-backbone"]],
+        ['R','Q',229,'5.68x68','A','L',388,'G.H5.20', ["hydrophobic"]],
+        ['R','S',143,'34.55x55','A','A',39,'G.hns1.03', ["van-der-waals", "hydrophobic"]],
+        ['R','Q',229,'5.68x68','A','R',385,'G.H5.17', ["h-bond acceptor-donor", "polar-sidechain-sidechain", "polar-backbone-sidechain", "hydrophobic"]],
+        ['R','L',275,'6.37x37','A','L',393,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','I',135,'3.54x54','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','I',135,'3.54x54','A','H',387,'G.H5.19', ["polar-backbone-sidechain", "hydrophobic"]],
+        ['R','R',228,'5.67x67','A','Q',384,'G.H5.16', ["polar-sidechain-sidechain"]],
+        ['R','V',222,'5.61x61','A','L',393,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','I',135,'3.54x54','A','Q',384,'G.H5.16', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','T',274,'6.36x36','A','Y',391,'G.H5.23', ["polar-sidechain-backbone"]],
+        ['R','F',139,'34.51x51','A','I',383,'G.H5.15', ["hydrophobic"]],
+        ['R','R',239,'-','A','L',346,'G.H4.16', ["hydrophobic"]],
+        ['R','F',139,'34.51x51','A','C',379,'G.H5.11', ["hydrophobic"]],
+        ['R','A',226,'5.65x65','A','L',388,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','K',235,'5.74x74','A','D',323,'G.hgh4.13', ["polar-backbone-sidechain"]],
+        ['R','D',130,'3.49x49','A','Y',391,'G.H5.23', ["polar-sidechain-sidechain"]],
+        ['R','I',233,'5.72x72','A','R',385,'G.H5.17', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','Y',141,'34.53x53','A','H',387,'G.H5.19', ["pi-cation", "edge-to-face", "hydrophobic"]],
+        ['R','A',134,'3.53x53','A','H',387,'G.H5.19', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','I',135,'3.54x54','A','L',393,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','Q',229,'5.68x68','A','Q',384,'G.H5.16', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ],
+        '5g53' : [
+        ['A','Y',112,'34.53x53','C','H',387,'G.H5.19', ["pi-cation", "edge-to-face", "hydrophobic"]],
+        ['A','A',105,'3.53x53','C','H',387,'G.H5.19', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','I',106,'3.54x54','C','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['A','R',111,'34.52x52','C','R',380,'G.H5.12', ["polar-sidechain-sidechain"]],
+        ['A','M',211,'5.72x72','C','Y',358,'G.h4s6.20', ["polar-sidechain-sidechain", "hydrophobic"]],
+        ['A','P',109,'34.50x50','C','Q',384,'G.H5.16', ["hydrophobic"]],
+        ['A','R',107,'3.55x55','C','R',380,'G.H5.12', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['A','I',106,'3.54x54','C','L',388,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['A','R',293,'8.48x48','C','E',392,'G.H5.24', ["polar-backbone-sidechain", "hydrophobic"]],
+        ['A','R',111,'34.52x52','C','V',217,'G.S3.01', ["van-der-waals", "hydrophobic"]],
+        ['A','A',203,'5.64x64','C','L',388,'G.H5.20', ["hydrophobic"]],
+        ['A','Q',207,'5.68x68','C','Q',384,'G.H5.16', ["h-bond donor-acceptor", "polar-sidechain-sidechain"]],
+        ['A','Q',210,'5.71x71','C','D',381,'G.H5.13', ["h-bond donor-acceptor", "polar-sidechain-sidechain", "van-der-waals"]],
+        ['A','A',203,'5.64x64','C','Q',384,'G.H5.16', ["polar-backbone-sidechain", "hydrophobic"]],
+        ['A','L',110,'34.51x51','C','V',217,'G.S3.01', ["van-der-waals", "hydrophobic"]],
+        ['A','Q',207,'5.68x68','C','D',381,'G.H5.13', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['A','L',110,'34.51x51','C','R',380,'G.H5.12', ["hydrophobic"]],
+        ['A','R',111,'34.52x52','C','D',215,'G.s2s3.01', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['A','L',208,'5.69x69','C','L',394,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['A','R',291,'7.56x56','C','Y',391,'G.H5.23', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['A','I',106,'3.54x54','C','Q',384,'G.H5.16', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','I',108,'3.56x56','C','R',380,'G.H5.12', ["polar-backbone-sidechain"]],
+        ['A','R',102,'3.50x50','C','Y',391,'G.H5.23', ["polar-backbone-sidechain", "cation-pi", "van-der-waals", "hydrophobic"]],
+        ['A','A',231,'6.33x33','C','L',393,'G.H5.25', ["hydrophobic"]],
+        ['A','R',291,'7.56x56','C','E',392,'G.H5.24', ["polar-backbone-sidechain"]],
+        ['A','L',110,'34.51x51','C','F',219,'G.S3.03', ["hydrophobic"]],
+        ['A','I',200,'5.61x61','C','L',393,'G.H5.25', ["hydrophobic"]],
+        ['A','Q',207,'5.68x68','C','L',388,'G.H5.20', ["hydrophobic"]],
+        ['A','Q',207,'5.68x68','C','R',385,'G.H5.17', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['A','P',109,'34.50x50','C','I',383,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['A','L',110,'34.51x51','C','H',41,'H.HD.11', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','K',227,'6.29x29','C','L',394,'G.H5.26', ["polar-sidechain-sidechain", "hydrophobic"]],
+        ['A','I',106,'3.54x54','C','H',387,'G.H5.19', ["hydrophobic"]],
+        ['A','L',235,'6.37x37','C','L',393,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['A','L',110,'34.51x51','C','C',379,'G.H5.11', ["hydrophobic"]],
+        ['A','R',296,'8.51x51','C','E',392,'G.H5.24', ["ionic", "polar-sidechain-sidechain", "van-der-waals"]],
+        ['A','I',200,'5.61x61','C','L',388,'G.H5.20', ["hydrophobic"]],
+        ['A','Q',207,'5.68x68','C','Y',360,'G.S6.02', ["polar-sidechain-sidechain"]],
+        ['A','L',110,'34.51x51','C','F',376,'G.H5.08', ["van-der-waals", "hydrophobic"]],
+        ['A','L',110,'34.51x51','C','I',383,'G.H5.15', ["hydrophobic"]],
+        ['A','A',204,'5.65x65','C','L',388,'G.H5.20', ["hydrophobic"]],
+        ['A','P',109,'34.50x50','C','R',380,'G.H5.12', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ],
+        '5uz7' : [
+        ['R','L',247,'3.57x57','A','H',387,'G.H5.19', ["van-der-waals", "hydrophobic"]],
+        ['R','K',326,'5.64x64','A','R',380,'G.H5.12', ["polar-sidechain-sidechain"]],
+        ['R','L',244,'3.54x54','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','L',348,'6.45x45','A','E',392,'G.H5.24', ["hydrophobic"]],
+        ['R','V',252,'-','A','I',383,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['R','K',326,'5.64x64','A','Q',384,'G.H5.16', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','M',327,'5.65x65','A','L',394,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['R','N',396,'8.48x48','A','E',392,'G.H5.24', ["polar-backbone-sidechain"]],
+        ['R','F',253,'-','A','H',41,'G.S1.02', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','I',248,'3.58x58','A','L',388,'G.H5.20', ["hydrophobic"]],
+        ['R','N',396,'8.48x48','A','R',356,'G.h4s6.12', ["polar-sidechain-sidechain"]],
+        ['R','R',180,'2.46x46','A','Y',391,'G.H5.23', ["polar-sidechain-backbone", "cation-pi", "van-der-waals", "hydrophobic"]],
+        ['R','L',348,'6.45x45','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','V',252,'-','A','R',380,'G.H5.12', ["van-der-waals", "hydrophobic"]],
+        ['R','C',394,'7.60x60','A','E',392,'G.H5.24', ["polar-backbone-sidechain"]],
+        ['R','V',249,'3.59x59','A','Q',384,'G.H5.16', ["polar-backbone-sidechain"]],
+        ['R','R',180,'2.46x46','A','Q',390,'G.H5.22', ["h-bond donor-acceptor", "polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','L',247,'3.57x57','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','I',248,'3.58x58','A','Q',384,'G.H5.16', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','T',330,'-','A','Y',358,'G.h4s6.20', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','Y',243,'3.53x53','A','Y',391,'G.H5.23', ["van-der-waals"]],
+        ['R','H',331,'-','A','Y',358,'G.h4s6.20', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','L',323,'5.61x61','A','L',388,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','F',253,'-','A','V',217,'G.S3.01', ["hydrophobic"]],
+        ['R','V',252,'-','A','Q',384,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['R','T',254,'-','A','H',387,'G.H5.19', ["polar-sidechain-sidechain"]],
+        ['R','E',329,'-','A','R',385,'G.H5.17', ["polar-backbone-sidechain"]],
+        ['R','I',248,'3.58x58','A','H',387,'G.H5.19', ["hydrophobic"]],
+        ['R','T',345,'6.42x42','A','L',393,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','K',326,'5.64x64','A','R',385,'G.H5.17', ["polar-backbone-sidechain"]],
+        ['R','H',184,'2.50x50','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ],
+        '5vai' : [
+        ['R','L',339,'-','A','Y',358,'G.h4s6.20', ["van-der-waals", "hydrophobic"]],
+        ['R','S',352,'6.41x41','A','L',393,'G.H5.25', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['R','L',401,'7.56x56','A','E',392,'G.H5.24', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','S',352,'6.41x41','A','E',392,'G.H5.24', ["polar-sidechain-backbone"]],
+        ['R','E',262,'4.38x39','A','Q',35,'G.HN.52', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','V',331,'5.61x61','A','L',388,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','T',353,'6.42x42','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','L',255,'3.58x58','A','R',380,'G.H5.12', ["polar-backbone-sidechain"]],
+        ['R','L',359,'6.48x48','A','Y',391,'G.H5.23', ["van-der-waals", "hydrophobic"]],
+        ['R','L',251,'3.54x54','A','Y',391,'G.H5.23', ["van-der-waals", "hydrophobic"]],
+        ['R','V',405,'7.60x60','A','E',392,'G.H5.24', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','R',176,'2.46x46','A','Q',390,'G.H5.22', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','N',407,'8.48x48','A','E',392,'G.H5.24', ["polar-backbone-sidechain"]],
+        ['R','L',255,'3.58x58','A','Q',384,'G.H5.16', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','A',256,'3.59x59','A','R',380,'G.H5.12', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','Q',263,'4.39x40','A','Q',35,'G.HN.52', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','Q',263,'4.39x40','A','Q',31,'G.HN.48', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','S',352,'6.41x41','A','L',394,'G.H5.26', ["polar-sidechain-backbone"]],
+        ['R','H',180,'2.50x50','A','Y',391,'G.H5.23', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','K',334,'5.64x64','A','R',385,'G.H5.17', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','L',339,'-','A','L',394,'G.H5.26', ["hydrophobic"]],
+        ['R','E',408,'8.49x49','A','Q',390,'G.H5.22', ["h-bond acceptor-donor", "polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','K',334,'5.64x64','A','D',381,'G.H5.13', ["ionic", "h-bond donor-acceptor", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','N',406,'8.47x47','A','E',392,'G.H5.24', ["polar-sidechain-sidechain", "polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','L',339,'-','A','R',385,'G.H5.17', ["polar-backbone-sidechain"]],
+        ['R','N',338,'-','A','C',359,'G.S6.01', ["polar-sidechain-backbone"]],
+        ['R','N',338,'-','A','Y',360,'G.S6.02', ["van-der-waals", "hydrophobic"]],
+        ['R','L',356,'6.45x45','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','N',406,'8.47x47','A','Q',390,'G.H5.22', ["polar-sidechain-backbone"]],
+        ['R','L',254,'3.57x57','A','H',387,'G.H5.19', ["van-der-waals", "hydrophobic"]],
+        ['R','Y',402,'7.57x57','A','E',392,'G.H5.24', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','A',256,'3.59x59','A','Q',384,'G.H5.16', ["polar-backbone-sidechain"]],
+        ['R','S',261,'4.37x38','A','Q',35,'G.HN.52', ["polar-sidechain-sidechain", "polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','L',356,'6.45x45','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','K',342,'-','A','T',350,'G.h4s6.03', ["h-bond donor-acceptor", "polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals"]],
+        ['R','R',176,'2.46x46','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','R',264,'4.40x41','A','Q',35,'G.HN.52', ["polar-backbone-sidechain"]],
+        ],
+        '6b3j' : [
+        ['R','V',331,'5.61x61','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','S',352,'6.41x41','A','L',393,'G.H5.25', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','E',262,'4.38x39','A','K',34,'G.HN.51', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','V',331,'5.61x61','A','L',388,'G.H5.20', ["hydrophobic"]],
+        ['R','L',251,'3.54x54','A','Y',391,'G.H5.23', ["van-der-waals", "hydrophobic"]],
+        ['R','S',261,'-','A','Q',35,'G.HN.52', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','R',176,'2.46x46','A','Q',390,'G.H5.22', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "hydrophobic"]],
+        ['R','N',407,'8.48x48','A','E',392,'G.H5.24', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','L',255,'3.58x58','A','Q',384,'G.H5.16', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','S',352,'6.41x41','A','L',394,'G.H5.26', ["polar-sidechain-backbone"]],
+        ['R','H',180,'2.50x50','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','S',258,'-','A','I',383,'G.H5.15', ["hydrophobic"]],
+        ['R','R',348,'6.37x37','A','L',394,'G.H5.26', ["hydrophobic"]],
+        ['R','K',334,'5.64x64','A','Q',384,'G.H5.16', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','K',334,'5.64x64','A','D',381,'G.H5.13', ["ionic", "h-bond donor-acceptor", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','V',331,'5.61x61','A','L',394,'G.H5.26', ["hydrophobic"]],
+        ['R','V',259,'-','A','V',217,'G.S3.01', ["hydrophobic"]],
+        ['R','Y',250,'3.53x53','A','Y',391,'G.H5.23', ["van-der-waals"]],
+        ['R','L',255,'3.58x58','A','H',387,'G.H5.19', ["hydrophobic"]],
+        ['R','L',356,'6.45x45','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','K',334,'5.64x64','A','R',385,'G.H5.17', ["polar-backbone-sidechain", "hydrophobic"]],
+        ['R','V',327,'5.57x57','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','L',254,'3.57x57','A','H',387,'G.H5.19', ["van-der-waals", "hydrophobic"]],
+        ['R','E',262,'4.38x39','A','R',38,'G.hns1.02', ["ionic", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','L',255,'3.58x58','A','L',388,'G.H5.20', ["hydrophobic"]],
+        ['R','R',176,'2.46x46','A','Y',391,'G.H5.23', ["cation-pi", "hydrophobic"]],
+        ['R','K',334,'5.64x64','A','L',388,'G.H5.20', ["hydrophobic"]],
+        ],
+        '6cmo' : [
+        ['R','V',139,'3.54x54','A','L',348,'G.H5.20', ["hydrophobic"]],
+        ['R','K',311,'8.48x48','A','F',354,'G.H5.26', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','Q',237,'5.72x72','A','D',341,'G.H5.13', ["hydrophobic"]],
+        ['R','K',311,'8.48x48','A','G',352,'G.H5.24', ["polar-sidechain-backbone"]],
+        ['R','M',309,'7.56x56','A','G',352,'G.H5.24', ["van-der-waals"]],
+        ['R','M',253,'6.36x36','A','L',353,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','Q',237,'5.72x72','A','Y',320,'G.h4s6.20', ["polar-sidechain-sidechain"]],
+        ['R','A',241,'6.24x24','A','E',318,'G.h4s6.12', ["polar-backbone-sidechain"]],
+        ['R','A',246,'6.29x29','A','L',348,'G.H5.20', ["hydrophobic"]],
+        ['R','R',147,'34.55x55','A','A',31,'G.hns1.02', ["polar-sidechain-backbone"]],
+        ['R','K',245,'6.28x28','A','F',354,'G.H5.26', ["hydrophobic"]],
+        ['R','V',250,'6.33x33','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['R','K',311,'8.48x48','A','K',349,'G.H5.21', ["polar-sidechain-backbone"]],
+        ['R','T',242,'6.25x25','A','D',315,'G.h4s6.09', ["polar-sidechain-backbone"]],
+        ['R','S',240,'-','A','K',345,'G.H5.17', ["h-bond acceptor-donor", "polar-sidechain-sidechain"]],
+        ['R','E',239,'-','A','Y',320,'G.h4s6.20', ["van-der-waals", "hydrophobic"]],
+        ['R','R',147,'34.55x55','A','R',32,'G.hns1.03', ["polar-sidechain-backbone", "hydrophobic"]],
+        ['R','V',139,'3.54x54','A','N',347,'G.H5.19', ["hydrophobic"]],
+        ['R','R',135,'3.50x50','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['R','K',141,'3.56x56','A','D',193,'G.s2s3.02', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','T',243,'6.26x26','A','D',341,'G.H5.13', ["polar-sidechain-sidechain"]],
+        ['R','E',239,'-','A','E',318,'G.h4s6.12', ["polar-backbone-sidechain"]],
+        ['R','E',249,'6.32x32','A','F',354,'G.H5.26', ["hydrophobic"]],
+        ['R','S',240,'-','A','E',318,'G.h4s6.12', ["h-bond donor-acceptor", "polar-sidechain-sidechain", "polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','K',311,'8.48x48','A','L',353,'G.H5.25', ["polar-sidechain-backbone"]],
+        ['R','N',310,'8.47x47','A','G',352,'G.H5.24', ["polar-sidechain-backbone", "hydrophobic"]],
+        ['R','T',242,'6.25x25','A','F',354,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['R','E',249,'6.32x32','A','L',353,'G.H5.25', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','A',246,'6.29x29','A','F',354,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ],
+        '6d9h' : [
+        ['R','V',203,'5.61x61','A','L',354,'G.H5.25', ["hydrophobic"]],
+        ['R','K',224,'6.25x25','A','D',316,'G.h4s6.09', ["ionic", "h-bond donor-acceptor", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','I',292,'8.47x47','A','G',353,'G.H5.24', ["hydrophobic"]],
+        ['R','K',213,'5.71x71','A','D',342,'G.H5.13', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','K',231,'6.32x32','A','F',355,'G.H5.26', ["polar-sidechain-backbone"]],
+        ['R','L',113,'34.51x51','A','I',344,'G.H5.15', ["hydrophobic"]],
+        ['R','R',108,'3.53x53','A','N',348,'G.H5.19', ["polar-sidechain-sidechain", "polar-backbone-sidechain", "hydrophobic"]],
+        ['R','R',108,'3.53x53','A','D',351,'G.H5.22', ["ionic", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','I',232,'6.33x33','A','L',354,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','L',113,'34.51x51','A','F',337,'G.H5.08', ["hydrophobic"]],
+        ['R','R',105,'3.50x50','A','C',352,'G.H5.23', ["polar-sidechain-backbone", "hydrophobic"]],
+        ['R','Q',210,'5.68x68','A','I',345,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['R','V',109,'3.54x54','A','L',349,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','Q',210,'5.68x68','A','D',342,'G.H5.13', ["polar-sidechain-sidechain", "van-der-waals"]],
+        ['R','K',228,'6.29x29','A','D',316,'G.h4s6.09', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','L',211,'5.69x69','A','K',346,'G.H5.17', ["hydrophobic"]],
+        ['R','K',294,'8.49x49','A','D',351,'G.H5.22', ["ionic", "h-bond donor-acceptor", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','K',228,'6.29x29','A','F',355,'G.H5.26', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','L',236,'6.37x37','A','L',354,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','I',232,'6.33x33','A','F',355,'G.H5.26', ["hydrophobic"]],
+        ['R','D',42,'2.37x37','A','D',351,'G.H5.22', ["polar-sidechain-sidechain"]],
+        ['R','R',105,'3.50x50','A','L',354,'G.H5.25', ["hydrophobic"]],
+        ['R','I',207,'5.65x65','A','L',349,'G.H5.20', ["hydrophobic"]],
+        ['R','F',45,'2.40x40','A','D',351,'G.H5.22', ["van-der-waals"]],
+        ['R','K',224,'6.25x25','A','E',319,'G.h4s6.12', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','P',112,'34.50x50','A','N',348,'G.H5.19', ["polar-backbone-sidechain"]],
+        ['R','R',108,'3.53x53','A','C',352,'G.H5.23', ["polar-sidechain-sidechain", "van-der-waals"]],
+        ['R','P',112,'34.50x50','A','I',344,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['R','L',113,'34.51x51','A','L',195,'G.S3.01', ["hydrophobic"]],
+        ['R','I',292,'8.47x47','A','C',352,'G.H5.23', ["van-der-waals", "hydrophobic"]],
+        ['R','L',113,'34.51x51','A','T',341,'G.H5.12', ["hydrophobic"]],
+        ['R','I',207,'5.65x65','A','L',354,'G.H5.25', ["hydrophobic"]],
+        ['R','R',291,'7.56x56','A','G',353,'G.H5.24', ["hydrophobic"]],
+        ['R','P',112,'34.50x50','A','I',345,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ],
+        '6dde' : [
+        ['R','M',264,'-','A','D',341,'G.H5.13', ["polar-backbone-sidechain", "hydrophobic"]],
+        ['R','S',268,'6.23x23','A','D',315,'G.h4s6.09', ["polar-backbone-sidechain"]],
+        ['R','K',271,'6.26x26','A','K',314,'G.h4s6.08', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['R','T',103,'2.39x39','A','C',351,'G.H5.23', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','R',179,'34.57x57','A','N',347,'G.H5.19', ["polar-sidechain-sidechain", "van-der-waals"]],
+        ['R','D',177,'34.55x55','A','R',32,'G.hns1.03', ["ionic", "polar-sidechain-sidechain", "polar-backbone-sidechain"]],
+        ['R','T',103,'2.39x39','A','D',350,'G.H5.22', ["polar-sidechain-backbone"]],
+        ['R','L',259,'5.65x65','A','L',348,'G.H5.20', ["hydrophobic"]],
+        ['R','L',176,'34.54x54','A','R',32,'G.hns1.03', ["polar-backbone-sidechain", "hydrophobic"]],
+        ['R','I',278,'6.33x33','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['R','E',270,'6.25x25','A','D',315,'G.h4s6.09', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','R',165,'3.50x50','A','C',351,'G.H5.23', ["polar-sidechain-sidechain", "van-der-waals"]],
+        ['R','A',168,'3.53x53','A','N',347,'G.H5.19', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','R',263,'-','A','I',319,'G.h4s6.13', ["polar-sidechain-backbone"]],
+        ['R','M',255,'5.61x61','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['R','R',258,'5.64x64','A','I',344,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['R','I',278,'6.33x33','A','F',354,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['R','M',264,'-','A','K',345,'G.H5.17', ["hydrophobic"]],
+        ['R','L',259,'5.65x65','A','I',344,'G.H5.16', ["hydrophobic"]],
+        ['R','M',281,'6.36x36','A','L',353,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','V',173,'34.51x51','A','D',193,'G.s2s3.02', ["van-der-waals", "hydrophobic"]],
+        ['R','V',173,'34.51x51','A','F',336,'G.H5.08', ["van-der-waals", "hydrophobic"]],
+        ['R','R',277,'6.32x32','A','L',353,'G.H5.25', ["polar-sidechain-backbone"]],
+        ['R','V',262,'5.68x68','A','I',344,'G.H5.16', ["hydrophobic"]],
+        ['R','P',172,'34.50x50','A','I',343,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['R','R',165,'3.50x50','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['R','V',173,'34.51x51','A','L',194,'G.S3.01', ["hydrophobic"]],
+        ['R','L',176,'34.54x54','A','I',343,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['R','M',264,'-','A','T',316,'G.h4s6.10', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','P',172,'34.50x50','A','T',340,'G.H5.12', ["hydrophobic"]],
+        ['R','R',182,'4.40x40','A','R',24,'G.HN.48', ["polar-sidechain-sidechain", "hydrophobic"]],
+        ['R','R',263,'-','A','Y',320,'G.h4s6.20', ["van-der-waals", "hydrophobic"]],
+        ['R','P',172,'34.50x50','A','I',344,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['R','D',340,'8.47x47','A','G',352,'G.H5.24', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','V',262,'5.68x68','A','D',341,'G.H5.13', ["van-der-waals", "hydrophobic"]],
+        ['R','L',176,'34.54x54','A','L',194,'G.S3.01', ["hydrophobic"]],
+        ['R','K',271,'6.26x26','A','D',315,'G.h4s6.09', ["van-der-waals", "hydrophobic"]],
+        ['R','V',169,'3.54x54','A','L',348,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','R',263,'-','A','D',341,'G.H5.13', ["polar-backbone-sidechain"]],
+        ['R','I',278,'6.33x33','A','L',348,'G.H5.20', ["hydrophobic"]],
+        ],
+        '6ddf' : [
+        ['R','R',263,'-','A','I',319,'G.h4s6.13', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['R','M',264,'-','A','K',345,'G.H5.17', ["hydrophobic"]],
+        ['R','R',258,'5.64x64','A','I',344,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['R','R',179,'34.57x57','A','N',347,'G.H5.19', ["polar-sidechain-sidechain"]],
+        ['R','L',259,'5.65x65','A','L',348,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','I',278,'6.33x33','A','L',348,'G.H5.20', ["hydrophobic"]],
+        ['R','I',278,'6.33x33','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['R','E',270,'6.25x25','A','D',315,'G.h4s6.09', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','R',165,'3.50x50','A','C',351,'G.H5.23', ["polar-sidechain-backbone", "hydrophobic"]],
+        ['R','T',103,'2.39x39','A','C',351,'G.H5.23', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "hydrophobic"]],
+        ['R','I',278,'6.33x33','A','F',354,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['R','R',179,'34.57x57','A','C',351,'G.H5.23', ["polar-sidechain-sidechain", "van-der-waals"]],
+        ['R','A',168,'3.53x53','A','N',347,'G.H5.19', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','E',341,'8.48x48','A','F',354,'G.H5.26', ["hydrophobic"]],
+        ['R','P',172,'34.50x50','A','I',343,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['R','T',103,'2.39x39','A','D',350,'G.H5.22', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['R','V',173,'34.51x51','A','L',194,'G.S3.01', ["hydrophobic"]],
+        ['R','L',176,'34.54x54','A','I',343,'G.H5.15', ["hydrophobic"]],
+        ['R','M',264,'-','A','T',316,'G.h4s6.10', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','P',172,'34.50x50','A','T',340,'G.H5.12', ["van-der-waals", "hydrophobic"]],
+        ['R','R',263,'-','A','Y',320,'G.h4s6.20', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','P',172,'34.50x50','A','I',344,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['R','D',340,'8.47x47','A','G',352,'G.H5.24', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','V',262,'5.68x68','A','D',341,'G.H5.13', ["van-der-waals", "hydrophobic"]],
+        ['R','L',176,'34.54x54','A','L',194,'G.S3.01', ["hydrophobic"]],
+        ['R','E',341,'8.48x48','A','G',352,'G.H5.24', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['R','M',255,'5.61x61','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['R','S',268,'6.23x23','A','D',315,'G.h4s6.09', ["polar-sidechain-sidechain", "polar-backbone-sidechain", "van-der-waals"]],
+        ['R','K',271,'6.26x26','A','K',314,'G.h4s6.08', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['R','L',259,'5.65x65','A','I',344,'G.H5.16', ["hydrophobic"]],
+        ['R','D',177,'34.55x55','A','R',32,'G.hns1.03', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','D',340,'8.47x47','A','L',353,'G.H5.25', ["polar-sidechain-backbone"]],
+        ['R','L',176,'34.54x54','A','R',32,'G.hns1.03', ["hydrophobic"]],
+        ['R','M',281,'6.36x36','A','L',353,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','R',277,'6.32x32','A','F',354,'G.H5.26', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['R','A',168,'3.53x53','A','C',351,'G.H5.23', ["van-der-waals"]],
+        ['R','V',173,'34.51x51','A','D',193,'G.s2s3.02', ["hydrophobic"]],
+        ['R','V',173,'34.51x51','A','F',336,'G.H5.08', ["van-der-waals", "hydrophobic"]],
+        ['R','R',277,'6.32x32','A','L',353,'G.H5.25', ["polar-sidechain-backbone", "van-der-waals"]],
+        ['R','R',165,'3.50x50','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['R','R',263,'-','A','E',318,'G.h4s6.12', ["van-der-waals"]],
+        ['R','E',341,'8.48x48','A','L',353,'G.H5.25', ["polar-sidechain-backbone"]],
+        ['R','V',262,'5.68x68','A','I',344,'G.H5.16', ["hydrophobic"]],
+        ['R','K',271,'6.26x26','A','K',317,'G.h4s6.11', ["polar-sidechain-backbone"]],
+        ['R','R',263,'-','A','D',341,'G.H5.13', ["polar-backbone-sidechain", "hydrophobic"]],
+        ['R','M',264,'-','A','D',341,'G.H5.13', ["polar-backbone-sidechain"]],
+        ['R','K',174,'34.52x52','A','D',193,'G.s2s3.02', ["ionic", "polar-sidechain-sidechain"]],
+        ['R','D',164,'3.49x49','A','C',351,'G.H5.23', ["polar-sidechain-sidechain"]],
+        ['R','K',271,'6.26x26','A','D',315,'G.h4s6.09', ["van-der-waals", "hydrophobic"]],
+        ['R','V',169,'3.54x54','A','L',348,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','P',172,'34.50x50','A','N',347,'G.H5.19', ["polar-backbone-sidechain"]],
+        ],
+        '6e3y' : [
+        ['R','I',241,'3.58x58','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','V',242,'3.59x59','A','R',380,'G.H5.12', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','F',387,'7.60x60','A','E',392,'G.H5.24', ["polar-backbone-sidechain"]],
+        ['R','I',241,'3.58x58','A','H',387,'G.H5.19', ["hydrophobic"]],
+        ['R','F',246,'-','A','H',41,'G.S1.02', ["hydrophobic"]],
+        ['R','L',316,'5.61x61','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','R',173,'2.46x46','A','Q',390,'G.H5.22', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','N',388,'8.47x47','A','E',392,'G.H5.24', ["polar-sidechain-sidechain", "van-der-waals"]],
+        ['R','G',389,'8.48x48','A','E',392,'G.H5.24', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','V',242,'3.59x59','A','Q',384,'G.H5.16', ["polar-backbone-sidechain"]],
+        ['R','K',319,'5.64x64','A','L',388,'G.H5.20', ["hydrophobic"]],
+        ['R','F',246,'-','A','F',376,'G.H5.08', ["van-der-waals", "hydrophobic"]],
+        ['R','L',316,'5.61x61','A','L',388,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['R','L',240,'3.57x57','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','R',336,'6.40x40','A','L',393,'G.H5.25', ["polar-sidechain-backbone"]],
+        ['R','K',319,'5.64x64','A','R',385,'G.H5.17', ["polar-backbone-sidechain", "van-der-waals"]],
+        ['R','F',246,'-','A','I',383,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['R','L',237,'3.54x54','A','Y',391,'G.H5.23', ["van-der-waals", "hydrophobic"]],
+        ['R','L',320,'5.65x65','A','L',394,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['R','T',323,'-','A','Y',358,'G.h4s6.20', ["hydrophobic"]],
+        ['R','R',173,'2.46x46','A','Y',391,'G.H5.23', ["polar-sidechain-backbone", "cation-pi", "van-der-waals", "hydrophobic"]],
+        ['R','R',336,'6.40x40','A','L',394,'G.H5.26', ["polar-sidechain-sidechain"]],
+        ['R','H',177,'2.50x50','A','Y',391,'G.H5.23', ["hydrophobic"]],
+        ['R','E',248,'-','A','A',39,'G.hns1.03', ["hydrophobic"]],
+        ['R','V',245,'-','A','H',387,'G.H5.19', ["polar-backbone-sidechain"]],
+        ['R','F',246,'-','A','F',219,'G.S3.03', ["hydrophobic"]],
+        ['R','V',245,'-','A','Q',384,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['R','K',319,'5.64x64','A','Q',384,'G.H5.16', ["h-bond donor-acceptor", "polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','V',245,'-','A','I',383,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['R','F',246,'-','A','R',380,'G.H5.12', ["van-der-waals", "hydrophobic"]],
+        ['R','I',312,'5.57x57','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','E',248,'-','A','R',38,'G.hns1.02', ["van-der-waals", "hydrophobic"]],
+        ['R','F',246,'-','A','V',217,'G.S3.01', ["van-der-waals", "hydrophobic"]],
+        ['R','V',243,'3.60x60','A','R',380,'G.H5.12', ["polar-backbone-sidechain"]],
+        ['R','V',245,'-','A','R',380,'G.H5.12', ["van-der-waals", "hydrophobic"]],
+        ['R','L',341,'6.45x45','A','L',393,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['R','I',241,'3.58x58','A','L',388,'G.H5.20', ["hydrophobic"]],
+        ['R','R',336,'6.40x40','A','E',392,'G.H5.24', ["ionic", "polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals"]],
+        ['R','L',240,'3.57x57','A','H',387,'G.H5.19', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['R','L',316,'5.61x61','A','L',394,'G.H5.26', ["van-der-waals", "hydrophobic"]],
+        ['R','F',246,'-','A','C',379,'G.H5.11', ["hydrophobic"]],
+        ['R','I',241,'3.58x58','A','L',393,'G.H5.25', ["hydrophobic"]],
+        ['R','K',333,'6.37x37','A','L',394,'G.H5.26', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['R','K',319,'5.64x64','A','D',381,'G.H5.13', ["van-der-waals", "hydrophobic"]],
+        ['R','I',241,'3.58x58','A','Q',384,'G.H5.16', ["polar-backbone-sidechain", "van-der-waals"]],
+        ],
+        '6g79' : [
+        ['S','R',308,'6.29x29','A','Y',354,'G.H5.26', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "cation-pi", "van-der-waals", "hydrophobic"]],
+        ['S','N',373,'8.47x47','A','G',350,'G.H5.22', ["polar-sidechain-backbone"]],
+        ['S','K',311,'6.32x32','A','G',352,'G.H5.24', ["polar-sidechain-backbone"]],
+        ['S','I',231,'5.61x61','A','L',353,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['S','V',155,'34.51x51','A','F',336,'G.H5.08', ["hydrophobic"]],
+        ['S','I',151,'3.54x54','A','I',344,'G.H5.16', ["hydrophobic"]],
+        ['S','R',147,'3.50x50','A','C',351,'G.H5.23', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['S','R',161,'34.57x57','A','N',347,'G.H5.19', ["polar-sidechain-sidechain"]],
+        ['S','I',239,'5.69x69','A','Y',354,'G.H5.26', ["hydrophobic"]],
+        ['S','T',315,'6.36x36','A','L',353,'G.H5.25', ["polar-sidechain-backbone", "hydrophobic"]],
+        ['S','S',372,'7.56x56','A','C',351,'G.H5.23', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['S','I',151,'3.54x54','A','N',347,'G.H5.19', ["hydrophobic"]],
+        ['S','A',235,'5.65x65','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['S','R',238,'5.68x68','A','L',348,'G.H5.20', ["hydrophobic"]],
+        ['S','T',315,'6.36x36','A','G',352,'G.H5.24', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['S','I',151,'3.54x54','A','L',348,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['S','A',312,'6.33x33','A','L',353,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['S','K',311,'6.32x32','A','Y',354,'G.H5.26', ["polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['S','R',238,'5.68x68','A','D',341,'G.H5.13', ["ionic", "polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['S','S',372,'7.56x56','A','G',352,'G.H5.24', ["hydrophobic"]],
+        ['S','L',316,'6.37x37','A','L',353,'G.H5.25', ["hydrophobic"]],
+        ['S','R',238,'5.68x68','A','I',344,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['S','A',154,'34.50x50','A','I',344,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['S','A',235,'5.65x65','A','L',348,'G.H5.20', ["hydrophobic"]],
+        ['S','A',154,'34.50x50','A','I',343,'G.H5.15', ["hydrophobic"]],
+        ['S','A',150,'3.53x53','A','N',347,'G.H5.19', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['S','R',238,'5.68x68','A','Y',354,'G.H5.26', ["hydrophobic"]],
+        ['S','V',155,'34.51x51','A','T',340,'G.H5.12', ["hydrophobic"]],
+        ['S','R',308,'6.29x29','A','N',316,'G.h4s6.10', ["polar-sidechain-backbone"]],
+        ],
+        '6gdg' : [
+        ['A','Q',207,'5.68x68','D','R',375,'G.H5.17', ["polar-sidechain-backbone"]],
+        ['A','I',106,'3.54x54','D','Y',381,'G.H5.23', ["hydrophobic"]],
+        ['A','R',111,'34.52x52','D','D',215,'G.s2s3.01', ["polar-sidechain-backbone"]],
+        ['A','I',200,'5.61x61','D','L',383,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['A','R',111,'34.52x52','D','K',216,'G.s2s3.02', ["polar-sidechain-backbone", "hydrophobic"]],
+        ['A','N',113,'34.54x54','D','A',39,'H.HD.09', ["hydrophobic"]],
+        ['A','R',293,'8.48x48','D','E',382,'G.H5.24', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','E',294,'8.49x49','D','Q',380,'G.H5.22', ["polar-backbone-sidechain"]],
+        ['A','A',105,'3.53x53','D','H',377,'G.H5.19', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','L',110,'34.51x51','D','R',370,'G.H5.12', ["hydrophobic"]],
+        ['A','R',291,'7.56x56','D','Y',381,'G.H5.23', ["polar-sidechain-backbone"]],
+        ['A','Q',207,'5.68x68','D','L',384,'G.H5.26', ["hydrophobic"]],
+        ['A','A',231,'6.33x33','D','L',383,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['A','Q',207,'5.68x68','D','L',378,'G.H5.20', ["hydrophobic"]],
+        ['A','Q',207,'5.68x68','D','D',371,'G.H5.13', ["h-bond donor-acceptor", "polar-sidechain-sidechain", "polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['A','R',293,'8.48x48','D','Q',380,'G.H5.22', ["polar-backbone-sidechain"]],
+        ['A','H',230,'6.32x32','D','E',382,'G.H5.24', ["polar-sidechain-backbone"]],
+        ['A','P',109,'34.50x50','D','Q',374,'G.H5.16', ["van-der-waals", "hydrophobic"]],
+        ['A','L',208,'5.69x69','D','L',384,'G.H5.26', ["hydrophobic"]],
+        ['A','G',114,'34.55x55','D','A',39,'H.HD.09', ["hydrophobic"]],
+        ['A','S',234,'6.36x36','D','L',383,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['A','L',110,'34.51x51','D','V',217,'G.S3.01', ["hydrophobic"]],
+        ['A','R',291,'7.56x56','D','E',382,'G.H5.24', ["polar-sidechain-backbone", "polar-backbone-sidechain", "van-der-waals"]],
+        ['A','R',111,'34.52x52','D','V',217,'G.S3.01', ["van-der-waals", "hydrophobic"]],
+        ['A','Y',112,'34.53x53','D','H',377,'G.H5.19', ["edge-to-face", "hydrophobic"]],
+        ['A','Q',210,'5.71x71','D','D',371,'G.H5.13', ["polar-sidechain-sidechain"]],
+        ['A','L',110,'34.51x51','D','H',41,'H.HD.11', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','L',110,'34.51x51','D','I',373,'G.H5.15', ["hydrophobic"]],
+        ['A','I',106,'3.54x54','D','H',377,'G.H5.19', ["van-der-waals", "hydrophobic"]],
+        ['A','A',203,'5.64x64','D','L',378,'G.H5.20', ["hydrophobic"]],
+        ['A','L',110,'34.51x51','D','C',369,'G.H5.11', ["hydrophobic"]],
+        ['A','P',109,'34.50x50','D','R',370,'G.H5.12', ["hydrophobic"]],
+        ['A','I',106,'3.54x54','D','L',378,'G.H5.20', ["van-der-waals", "hydrophobic"]],
+        ['A','N',113,'34.54x54','D','R',38,'H.HD.08', ["polar-sidechain-backbone", "van-der-waals", "hydrophobic"]],
+        ['A','L',110,'34.51x51','D','F',366,'G.H5.08', ["van-der-waals", "hydrophobic"]],
+        ['A','M',211,'5.72x72','D','Y',348,'G.h4s6.20', ["hydrophobic"]],
+        ['A','S',234,'6.36x36','D','E',382,'G.H5.24', ["polar-sidechain-backbone"]],
+        ['A','I',106,'3.54x54','D','Q',374,'G.H5.16', ["polar-backbone-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','Q',207,'5.68x68','D','Q',374,'G.H5.16', ["polar-sidechain-sidechain", "van-der-waals", "hydrophobic"]],
+        ['A','P',109,'34.50x50','D','I',373,'G.H5.15', ["van-der-waals", "hydrophobic"]],
+        ['A','R',102,'3.50x50','D','Y',381,'G.H5.23', ["cation-pi", "van-der-waals", "hydrophobic"]],
+        ['A','L',235,'6.37x37','D','L',383,'G.H5.25', ["van-der-waals", "hydrophobic"]],
+        ['A','A',204,'5.65x65','D','L',378,'G.H5.20', ["hydrophobic"]],
+        ['A','R',107,'3.55x55','D','R',370,'G.H5.12', ["polar-sidechain-sidechain", "polar-backbone-sidechain", "van-der-waals"]],
+        ],
+    }
+
+    # generate complex info dataset
+    filt = [e.upper() for e in list(dataset)]
+    struc = Structure.objects.filter(pdb_code__index__in=filt).prefetch_related('protein_conformation__protein__parent')
+
+    complex_info = []
+    for s in struc:
+        r = {}
+        r['pdb_id'] = str.lower(s.pdb_code.index)
+        r['name'] = s.protein_conformation.protein.parent.name
+        r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        r['class'] = s.protein_conformation.protein.get_protein_class()
+        r['family'] = s.protein_conformation.protein.get_protein_family()
+        r['conf_id'] = s.protein_conformation.id
+        try:
+            r['gprot'] = s.get_stab_agents_gproteins()
+        except Exception:
+            r['gprot'] = ''
+        complex_info.append(r)
+
+    data = Protein.objects.filter(
+        sequence_type__slug='wt',
+        species__common_name="Human",
+        family__slug__startswith='00',  # receptors, no gproteins
+        ).prefetch_related(
+            'parent__protein_conformation',
+            'family__parent__parent__parent',
+        )
+
+    # proteins = []
+    # for s in data:
+    #     r = {}
+    #     r['name'] = s.name
+    #     r['entry_name'] = s.entry_name
+    #     r['protein_family'] = s.family.parent.short()
+    #     r['protein_class'] = s.family.parent.parent.parent.short()
+    #     r['ligand'] = s.family.parent.parent.short()
+    #     proteins.append(r)
+
+    interactions_metadata = complex_info
+    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+    prot_conf_ids = [i['conf_id'] for i in complex_info]
+    remaining_residues = Residue.objects.filter(
+            protein_conformation_id__in=prot_conf_ids,
+            ).values(
+                rec_id = F('protein_conformation__protein__id'),
+                name = F('protein_conformation__protein__parent__name'),
+                entry_name = F('protein_conformation__protein__parent__entry_name'),
+                rec_aa = F('amino_acid'),
+                rec_gn = F('display_generic_number__label'),
+            ).exclude(
+                Q(rec_gn=None)
+            )
+
+    new_dataset = []
+    for pdb_key in dataset:
+        for residue_list in dataset[pdb_key]:
+            curr_meta = None
+            while curr_meta is None:
+                # print(curr_meta)
+                for meta in interactions_metadata:
+                    if meta['pdb_id'].upper() == pdb_key.upper():
+                        curr_meta = meta
+            gprot = curr_meta['gprot']
+            entry_name = curr_meta['entry_name']
+            pdb_id = curr_meta['pdb_id']
+            residue_list.extend([gprot, entry_name, pdb_id])
+            new_dataset.append(residue_list)
+
+    context = {
+        'interactions': new_dataset,
+        'non_interactions': json.dumps(list(remaining_residues)),
+        'interactions_metadata': json.dumps(interactions_metadata),
+        # 'ps': json.dumps(list(proteins)),
+        'gprot': json.dumps(list(gprotein_order))
+        }
 
     return render(request, 'signprot/matrix.html', context)
+
+def IMSequenceSignature(request):
+
+    import time
+    t1 = time.time()
+
+    import re
+    from itertools import chain
+
+    from protein.models import Protein
+    from protein.models import ProteinSegment
+    from residue.models import ResidueGenericNumberEquivalent
+    from seqsign.sequence_signature import SignatureMatch
+    from seqsign.sequence_signature import SequenceSignature
+
+    from django.core.exceptions import ObjectDoesNotExist
+
+    # example data
+    # pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
+    # neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
+    # segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
+
+    # receive data
+    pos_set_in = request.POST.getlist('pos[]')
+    # neg_set = request.POST.getlist('neg[]')
+    segments = []
+    for s in request.POST.getlist('seg[]'):
+        try:
+            gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
+            segments.append(gen_object)
+        except ObjectDoesNotExist as e:
+            print('For {} a {} '.format(s, e))
+            continue
+
+    # get pos/neg set objects
+    pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')
+    # neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
+
+    # Calculate Sequence Signature
+    signature = SequenceSignature()
+    signature.setup_alignments(segments, pos_set, pos_set)
+    signature.calculate_signature()
+
+
+    # preprocess data for return
+    signature_data = signature.prepare_display_data()
+
+    # FEATURES AND REGIONS
+    feats = [feature for feature in signature_data['a_pos'].features_combo]
+    trans = {
+        'N-term': 'N',
+        'TM1': 1,
+        'ICL1': 12,
+        'TM2': 2,
+        'ECL1': 23,
+        'TM3': 3,
+        'ICL2': 34,
+        'TM4': 4,
+        'ECL2': 45,
+        'TM5': 5,
+        'ICL3': 56,
+        'TM6': 6,
+        'ECL3': 67,
+        'TM7': 7,
+        'ICL4': 78,
+        'H8': 8,
+        'C-term': 'C',
+    }
+
+    # GET GENERIC NUMBERS
+    generic_numbers = []
+    for _, segments in signature_data['common_generic_numbers'].items():
+        for elem, num in segments.items():
+            gnl = []
+            for x, dn in num.items():
+                if dn != '':
+                    rexp = r'(?<=<b>)\d{1,}|\.?\d{2,}[\-?\d{2,}]*|x\d{2,}'
+                    gn = re.findall(rexp, dn)
+                else:
+                    gn = ''.join([str(trans[elem]), '.', str(x)])
+                gnl.append(''.join(gn))
+            generic_numbers.append(gnl)
+
+
+    # FEATURE FREQUENCIES
+    # define list of features to keep
+    filter_features = []
+    signature_features = []
+    x = 0
+    for i, feature in enumerate(signature_data['a_pos'].feature_stats):
+        # discard unwanted features
+        # if feature in filter_features:
+        for j, segment in enumerate(feature):
+            for k, freq in enumerate(segment):
+                # freq0: score
+                # freq1: level of conservation
+                # freq2: a - b explanation
+                try:
+                    signature_features.append({
+                        'key': int(x),
+                        'feature': str(feats[i][0]),
+                        'feature_code': str(feats[i][1]),
+                        'length': str(feats[i][2]),
+                        'gn': str(generic_numbers[j][k]),
+                        'freq': int(freq[0]),
+                        'cons': int(freq[1]),
+                        # 'expl': str(freq[2]),
+                    })
+                    x += 1
+                except Exception as e:
+                    print(e)
+
+
+    # FEATURE CONSENSUS
+    generic_numbers_flat = list(chain.from_iterable(generic_numbers))
+    sigcons = []
+    x = 0
+    for segment, cons in signature_data['feats_cons_pos'].items():
+        for pos in cons:
+            # pos0: Code
+            # pos1: Name
+            # pos2: Score
+            # pos3: level of conservation
+
+            # res0: Property Abbreviation
+            # res1: Feature Score
+            # res2: Conservation Level
+            try:
+                sigcons.append({
+                    'key': int(x),
+                    'gn': str(generic_numbers_flat[x]),
+                    'code': str(pos[0]),
+                    'feature': str(pos[1]),
+                    'score': int(pos[2]),
+                    'cons': int(pos[3]),
+                    'length': str(pos[4]),
+                })
+                x += 1
+            except Exception as e:
+                    print(e)
+
+    # pass back to front
+    res = {
+        'cons': sigcons,
+        'feat': signature_features,
+    }
+
+    request.session['signature'] = signature.prepare_session_data()
+    request.session.modified = True
+
+    t2 = time.time()
+    print('Runtime: {}'.format((t2-t1)*1000.0))
+
+    return JsonResponse(res, safe=False)
+
+def IMSignatureMatch(request):
+    from seqsign.sequence_signature import SignatureMatch
+
+    signature_data = request.session.get('signature')
+    ss_pos = request.POST.getlist('pos[]')
+    cutoff = request.POST.get('cutoff')
+
+    pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
+    pos_set = [protein for protein in pos_set]
+
+    signature_match = SignatureMatch(
+        signature_data['common_positions'],
+        signature_data['numbering_schemes'],
+        signature_data['common_segments'],
+        signature_data['diff_matrix'],
+        pos_set,
+        pos_set,
+        cutoff = int(cutoff)
+    )
+
+    signature_match.score_protein_class(
+        pos_set[0].family.slug[:3]
+    )
+
+    request.session['signature_match'] = {
+        'scores': signature_match.protein_report,
+        'scores_pos': signature_match.scores_pos,
+        'scores_neg': signature_match.scores_neg,
+        'protein_signatures': signature_match.protein_signatures,
+        'signatures_pos': signature_match.signatures_pos,
+        'signatures_neg': signature_match.signatures_neg,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
+    }
+    request.session.modified = True
+
+    signature_match = {
+        'scores': signature_match.protein_report,
+        'scores_pos': signature_match.scores_pos,
+        'scores_neg': signature_match.scores_neg,
+        'protein_signatures': signature_match.protein_signatures,
+        'signatures_pos': signature_match.signatures_pos,
+        'signatures_neg': signature_match.signatures_neg,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
+    }
+
+    # {'scores': signature_match}
+    # return JsonResponse(signature_match, safe=False)
+    print(signature_match)
+    return JsonResponse('success', safe=False)
