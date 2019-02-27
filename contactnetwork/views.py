@@ -504,6 +504,16 @@ def ClusteringData(request):
             distance_matrix[i, j] = distance
             distance_matrix[j, i] = distance
 
+
+    # Collect structure annotations
+    pdb_annotations = {}
+    annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
+                    .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__family__parent__name', \
+                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name')
+    for an in annotations:
+        pdb_annotations[an[0]] = an[1:]
+    data['annotations'] = pdb_annotations
+
     # hierarchical clustering
     hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward', metric='euclidean')
     tree = sch.to_tree(hclust, False)
