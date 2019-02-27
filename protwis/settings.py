@@ -131,13 +131,13 @@ TEMPLATES = [
 ]
 
 if DEBUG:
-    TEMPLATES[0]['OPTIONS']['debug'] = False
+    TEMPLATES[0]['OPTIONS']['debug'] = True
 
 
 # Debug toolbar
 if DEBUG:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    # INTERNAL_IPS = ('10.0.2.2')
+    INTERNAL_IPS = ('10.0.2.2')
 
 
 # Logging
