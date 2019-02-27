@@ -1,6 +1,11 @@
-function renderTree(x) {
+function renderTree(data) {
+    var tree = data["tree"]; // contains tree in Newick format
+    // Annotations: state, name, family, ligand type, class
+    var annotations = data["annotations"];
+
     var r = 1200 / 2;
-    var innerRadius = r - 170 // change inner radius of tree with this argument
+    var spacing = 200;
+    var innerRadius = r - spacing // change inner radius of tree with this argument
     var names = 0; // indexing for all nodes
 
 
@@ -123,16 +128,13 @@ function renderTree(x) {
             });
     }
 
-    x = newick.parse(x);
-    var nodes = cluster.nodes(x);
+    var nodes = cluster.nodes(newick.parse(tree));
 
     nodes.forEach(function(n) {
-
         if (n.name == "") {
             n.name = names.toString();
             names++;
         }
-
     });
 
     //Uncomment the line below to show branch length
@@ -156,7 +158,7 @@ function renderTree(x) {
                 return "inner node";
             } else {
                 //return "leaf node";
-                return ('X' + n.name);
+                return ('X' + n.name + ' terminal-node');
             }
         })
         .attr("transform", function(d) {
@@ -164,8 +166,23 @@ function renderTree(x) {
         })
 
     // Add terminal node with coloring
-    node.append("circle")
-        .attr("r", 5);
+
+    // CHECK: seems to also add nodes at intersections
+    vis.selectAll("g.terminal-node").append("circle")
+        .attr("r", 5)
+        .style("fill", function(n){
+          // color based on activity
+          switch(annotations[n.name][0]){
+              case "active":
+                  return "#F00";
+              case "inactive":
+                  return "#00F";
+              case "intermediate":
+                  return "#F80";
+              default:
+                  return "#888";
+          }
+        });
 
     var innernodes = vis.selectAll('g.inner.node')
         .append("circle")
@@ -218,10 +235,15 @@ function renderTree(x) {
             return d.x < 180 ? "start" : "end";
         })
         .attr("transform", function(d) {
-            return "rotate(" + (d.x - 90) + ")translate(" + (r - 170 + 10) + ")rotate(" + (d.x < 180 ? 0 : 180) + ")";
+            return "rotate(" + (d.x - 90) + ")translate(" + (r - spacing + 10) + ")rotate(" + (d.x < 180 ? 0 : 180) + ")";
         })
         .text(function(d) {
-            return d.name.replace(/_/g, ' ');
+            // add receptor name
+            if (d.x < 180) {
+              return d.name.replace(/_/g, ' ') + ' (' + annotations[d.name][1].split("_")[0] + ')';
+            } else {
+              return '(' + annotations[d.name][1].split("_")[0] + ') ' + d.name.replace(/_/g, ' ');
+            }
         });
 
 
