@@ -290,6 +290,7 @@ def AddToSelection(request):
     # process selected object
     o = []
     if selection_type == 'reference' or selection_type == 'targets':
+        # print(selection_type, selection_subtype, selection_id)
         if selection_subtype == 'protein':
             o.append(Protein.objects.get(pk=selection_id))
         if selection_subtype == 'protein_entry':
@@ -324,21 +325,38 @@ def AddToSelection(request):
                 else:
                     o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
 
-        elif selection_subtype == 'structure_model':
-            o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=selection_id)[0])
+        # elif selection_subtype == 'structure_model_Inactive':
+        #     entry_name = '_'.join(selection_id.split('_')[:-1])
+        #     o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=entry_name, state__name='Inactive')[0])
+        # elif selection_subtype == 'structure_model_Intermediate':
+        #     entry_name = '_'.join(selection_id.split('_')[:-1])
+        #     o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=entry_name, state__name='Intermediate')[0])
+        # elif selection_subtype == 'structure_model_Active':
+        #     entry_name = '_'.join(selection_id.split('_')[:-1])
+        #     o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=entry_name, state__name='Active')[0])
 
         elif selection_subtype == 'structure_complex_receptor':
-            o.append(StructureComplexModel.objects.defer('pdb').filter(receptor_protein__entry_name=selection_id)[0])
+            o.append(StructureComplexModel.objects.filter(receptor_protein__entry_name=selection_id)[0])
 
         elif selection_subtype == 'structure_complex_signprot':
-            o.append(StructureComplexModel.objects.defer('pdb').filter(sign_protein__entry_name=selection_id)[0])
+            o.append(StructureComplexModel.objects.filter(sign_protein__entry_name=selection_id)[0])
+
+        elif selection_subtype == 'structure_model':
+            state = selection_id.split('_')[-1]
+            entry_name = '_'.join(selection_id.split('_')[:-1])
+            # print(entry_name, state)
+            o.append(StructureModel.objects.filter(protein__entry_name=entry_name, state__name=state)[0])
 
         elif selection_subtype == 'structure_models_many':
             selection_subtype = 'structure_model'
             for model in selection_id.split(","):
-                state = model.split('_')[-1]
-                entry_name = '_'.join(model.split('_')[:-1])
-                o.append(StructureModel.objects.defer('pdb').get(protein__entry_name=entry_name, state__name=state))
+                if 'refined' in model:
+                    sel1, sel2 = model.split('_')
+                    o.append(Structure.objects.get(pdb_code__index=sel1.upper()+'_refined'))
+                else:
+                    state = model.split('_')[-1]
+                    entry_name = '_'.join(model.split('_')[:-1])
+                    o.append(StructureModel.objects.get(protein__entry_name=entry_name, state__name=state))
 
 
     elif selection_type == 'segments':
@@ -379,6 +397,11 @@ def AddToSelection(request):
         template = 'common/selection_lists.html'
 
     # amino acid groups
+    # print('+++++++++++++++++++++++++')
+    # print(context['selection_type'])
+    # print(context)
+    # for c in context['selection']['targets']:
+    #     print(c, c.type, c.item)
     return render(request, template, context)
 
 def RemoveFromSelection(request):
@@ -483,7 +506,7 @@ def SelectFullSequence(request):
 
         if request.GET['protein_type'] == 'gprotein':
             segmentlist = definitions.G_PROTEIN_SEGMENTS
-            pfam = 'Gprotein'
+            pfam = 'Alpha'
         else:
             segmentlist = definitions.ARRESTIN_SEGMENTS
             pfam = 'Arrestin'
@@ -539,7 +562,7 @@ def SelectAlignableSegments(request):
     if "protein_type" in request.GET:
         if request.GET['protein_type'] == 'gprotein':
             segmentlist = definitions.G_PROTEIN_SEGMENTS
-            pfam = 'Gprotein'
+            pfam = 'Alpha'
         else:
             segmentlist = definitions.ARRESTIN_SEGMENTS
             pfam = 'Arrestin'

@@ -154,15 +154,17 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
 
             div = d3.select(containerSelector).insert("div")
                 .attr("class", "flareplot")
-                .style("width", w + "px")
-                .style("height", h + "px")
+                .style("width", "100%")
+                // .style("margin-top","100px")
+                // .style("height", h + "px")
                 .style("-webkit-backface-visibility", "hidden");
 
             var cx = w * 0.5;
             var cy = cx;
             svg = div.append("svg:svg")
-                .attr("width", w)
-                .attr("height", h)
+                .attr("viewBox", "0 0 " + w + " " + h )
+                .attr("width", "100%")
+                // .attr("height", h)
                 .append("svg:g")
                 .attr("transform", "translate(" + cx + "," + cy + ")");
 
@@ -264,7 +266,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     } else {
                       segment.nodes.sort(sortNumber);
                     }
-                    
+
                     var last = segment.nodes[(segment.nodes.length - 1)];
                     var x = (graph.trees[selectedTree].tree[segment.nodes[0]].x + graph.trees[selectedTree].tree[last].x)/2 - 90;
 

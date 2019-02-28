@@ -355,8 +355,8 @@ class Command(BaseCommand):
             for construct in Construct.objects.filter(structure__pdb_code__index=i[1].upper()):
                 try:
                     insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
-                except:
-                    print('Error with insert! FIXIT',i)
+                except Exception as e:
+                    print('Error with insert! FIXIT',i,str(e))
                 if i[4]:
                     i[4] = str(i[4])
                     #if position information add that
@@ -773,8 +773,11 @@ class Command(BaseCommand):
             if not d and 'deletions' in d:
                 d = fetch_pdb_info(pdbname,protein)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
-            for d in d['deletions']:
-                dele, created = ConstructDeletion.objects.get_or_create(construct=c, start=d['start'],end=d['end'])
+            if 'deletions' in d:
+                for d in d['deletions']:
+                    dele, created = ConstructDeletion.objects.get_or_create(construct=c, start=d['start'],end=d['end'])
+            else:
+                print('No deletions in d[]',pdbname)
 
     def json_check_for_mutations_deletions(self):
         for c in Construct.objects.all():

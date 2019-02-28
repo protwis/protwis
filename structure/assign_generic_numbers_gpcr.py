@@ -7,7 +7,7 @@ from Bio.PDB.PDBIO import Select
 from common.definitions import *
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue
-from structure.functions import BlastSearch, MappedResidue
+from structure.functions import BlastSearch, MappedResidue, StructureSeqNumOverwrite
 from structure.sequence_parser import *
 
 import Bio.PDB.Polypeptide as polypeptide
@@ -22,7 +22,7 @@ class GenericNumbering(object):
     
     
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
-    exceptions = {'6GDG':[255, 10], '6G79':[232, 10]}
+    exceptions = {'6GDG':[255, 10]}
   
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
         blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1, sequence_parser=False, signprot=False):
@@ -172,7 +172,7 @@ class GenericNumbering(object):
 
 
     def get_annotated_structure(self):
-    
+
         for chain in self.pdb_structure:
             for residue in chain:
                 if residue.id[1] in self.residues[chain.id].keys():
@@ -208,7 +208,7 @@ class GenericNumbering(object):
         #blast search goes first, looping through all the chains
         for chain in self.pdb_seq.keys():
             alignments[chain] = self.blast.run(self.pdb_seq[chain])
-            
+
         #map the results onto pdb sequence for every sequence pair from blast
         for chain in self.pdb_seq.keys():
             for alignment in alignments[chain]:
@@ -220,6 +220,7 @@ class GenericNumbering(object):
         return self.get_annotated_structure()
 
     def assign_generic_numbers_with_sequence_parser(self):
+
         for chain in self.pdb_structure:
             for residue in chain:
                 if chain.id in self.mapping:

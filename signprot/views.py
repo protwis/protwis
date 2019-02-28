@@ -42,11 +42,11 @@ class BrowseSelection(AbsTargetSelection):
         ('segments', False),
     ])
     try:
-        ppf_g = ProteinFamily.objects.get(slug="100_000")  # G proteins
-        ppf_a = ProteinFamily.objects.get(slug="200_000")  # Arrestins
-        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id, ppf_a.id])
-        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
-        ps = Protein.objects.filter(family__in=[ppf_g, ppf_a]) #
+        ppf_g = ProteinFamily.objects.get(slug="100_001")
+        # ppf_a = ProteinFamily.objects.get(slug="200_000")
+        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
+        ps = Protein.objects.filter(family__in=[ppf_g]) # ,ppf_a
         tree_indent_level = []
         # action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
@@ -985,6 +985,8 @@ def InteractionMatrix(request):
         r['pdb_id'] = str.lower(s.pdb_code.index)
         r['name'] = s.protein_conformation.protein.parent.name
         r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        r['class'] = s.protein_conformation.protein.get_protein_class()
+        r['family'] = s.protein_conformation.protein.get_protein_family()
         r['conf_id'] = s.protein_conformation.id
         try:
             r['gprot'] = s.get_stab_agents_gproteins()
@@ -1012,8 +1014,7 @@ def InteractionMatrix(request):
     #     proteins.append(r)
 
     interactions_metadata = complex_info
-    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Gprotein').values('id', 'slug')
-
+    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     prot_conf_ids = [i['conf_id'] for i in complex_info]
     remaining_residues = Residue.objects.filter(
             protein_conformation_id__in=prot_conf_ids,
@@ -1071,19 +1072,19 @@ def IMSequenceSignature(request):
     # example data
     # pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
     # neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
-    # segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
+    segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
 
     # receive data
     pos_set_in = request.POST.getlist('pos[]')
     # neg_set = request.POST.getlist('neg[]')
-    segments = []
-    for s in request.POST.getlist('seg[]'):
-        try:
-            gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
-            segments.append(gen_object)
-        except ObjectDoesNotExist as e:
-            print('For {} a {} '.format(s, e))
-            continue
+    # segments = []
+    # for s in request.POST.getlist('seg[]'):
+    #     try:
+    #         gen_object = ResidueGenericNumberEquivalent.objects.filter(label=s, scheme__slug__in=['gpcrdba', 'gpcrdbb', 'gpcrdbc', 'gpcrdbf']).first()
+    #         segments.append(gen_object)
+    #     except ObjectDoesNotExist as e:
+    #         print('For {} a {} '.format(s, e))
+    #         continue
 
     # get pos/neg set objects
     pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')

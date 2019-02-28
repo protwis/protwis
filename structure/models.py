@@ -24,6 +24,8 @@ class Structure(models.Model):
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     sodium = models.BooleanField(default=False)
+    signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.CASCADE, related_name='signprot_complex')
+    stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.pdb_code.index
@@ -97,8 +99,9 @@ class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    pdb = models.TextField()
+    pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
+    stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
 
     def __repr__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
@@ -110,16 +113,17 @@ class StructureModel(models.Model):
         db_table = 'structure_model'
 
     def get_cleaned_pdb(self):
-        return self.pdb
+        return self.pdb_data.pdb
 
 
 class StructureComplexModel(models.Model):
     receptor_protein = models.ForeignKey('protein.Protein', related_name='+', on_delete=models.CASCADE)
     sign_protein = models.ForeignKey('protein.Protein', related_name='+', on_delete=models.CASCADE)
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    pdb = models.TextField()
+    pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
     prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
+    stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
 
     def __repr__(self):
         return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+'-'+str(self.sign_protein.entry_name)+'>'
@@ -131,7 +135,28 @@ class StructureComplexModel(models.Model):
         db_table = 'structure_complex_model'
 
     def get_cleaned_pdb(self):
-        return self.pdb
+        return self.pdb_data.pdb
+
+
+class StatsText(models.Model):
+    stats_text = models.TextField()
+
+    def __repr__(self):
+        if self.stats_text and len(self.stats_text)>0:
+            line = self.stats_text.split('\n')[0]
+        else:
+            line = 'empty object'
+        return '<StatsText: >'.format(line)
+
+    def __str__(self):
+        if self.stats_text and len(self.stats_text)>0:
+            line = self.stats_text.split('\n')[0]
+        else:
+            line = 'empty object'
+        return '<StatsText: >'.format(line)
+
+    class Meta():
+        db_table = 'stats_text'
 
 
 class StructureModelStatsRotamer(models.Model):

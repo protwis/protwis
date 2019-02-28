@@ -1188,7 +1188,7 @@ var signprotmat = {
                 .legendColor()
                 .cells(5)
                 .labelFormat(d3.format(""))
-                .title("Feature Conservation (Set A / Set B)")
+                .title("Scale in %")
                 .scale(cScale)
                 .orient("horizontal")
                 .shapeWidth(30);
@@ -1245,10 +1245,10 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("class", "x axis")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + -15 + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 35 + ")")
                 .call(xAxis)
                 .selectAll("text")
-                .attr("text-anchor", "end")
+                .attr("text-anchor", "start")
                 .attr("font-size", "12px")
                 .attr("dx", "-5px")
                 .attr("dy", "-5px")

@@ -1,6 +1,6 @@
 var hivesvg, hiveTooltip;
 function createHiveplot(data, container) {
-    var width = 1200,
+    var width = 800,
         height = 1000,
         innerRadius = 0.15*(height),
         outerRadius = 0.36*(height);
@@ -92,8 +92,11 @@ function createHiveplot(data, container) {
                   .attr("id", "hiveTooltip");
 
     hivesvg = d3.select(container).append("svg")
-        .attr("width", width)
-        .attr("height", height)
+        .attr("class", "hiveplot")
+        // .attr("width", width)
+        .attr("width", "100%")
+        // .attr("height", height)
+        // .attr('viewBox', "0 0 "+width+" "+height)
       .append("g")
         .attr("transform", "translate(" + width/2 + "," + height/2.2 + ")");
 
