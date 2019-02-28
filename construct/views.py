@@ -2176,9 +2176,13 @@ def fetch_all_pdb(request):
 
 def fetch_pdb(request, slug):
 
-    protein = Protein.objects.filter(entry_name=slug.lower()).get()
-
+    try:
+        protein = Protein.objects.filter(entry_name=slug.lower()).get()
+    except:
+        protein = False
+    
     d = fetch_pdb_info(slug,protein)
+
 
     #delete before adding new
     print(d['construct_crystal']['pdb_name'])

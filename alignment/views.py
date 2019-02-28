@@ -75,8 +75,8 @@ class TargetSelectionGprotein(AbsTargetSelection):
         },
     }
     try:
-        if ProteinFamily.objects.filter(slug="100_000").exists():
-            ppf = ProteinFamily.objects.get(slug="100_000")
+        if ProteinFamily.objects.filter(slug="100_001").exists():
+            ppf = ProteinFamily.objects.get(slug="100_001")
             pfs = ProteinFamily.objects.filter(parent=ppf.id)
             ps = Protein.objects.filter(family=ppf)
 
@@ -165,7 +165,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     position_type = 'gprotein'
     rsets = ResiduePositionSet.objects.filter(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
 
-    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Gprotein').prefetch_related('generic_numbers')
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Alpha').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 class SegmentSelectionArrestin(AbsSegmentSelection):
@@ -249,38 +249,24 @@ def render_alignment(request):
     a.load_proteins_from_selection(simple_selection)
     a.load_segments_from_selection(simple_selection)
 
-    #create unique proteins_id
-    protein_ids = []
-    for p in a.proteins:
-        protein_ids.append(p.pk)
-    protein_list = ','.join(str(x) for x in sorted(protein_ids))
-
-    #create unique proteins_id
-    segments_ids = []
-    for s in a.segments:
-        segments_ids.append(s)
-    segments_list = ','.join(str(x) for x in sorted(segments_ids))
-
-    s = str(protein_list+"_"+segments_list)
-    key = "ALIGNMENT_"+hashlib.md5(s.encode('utf-8')).hexdigest()
+    key = "ALIGNMENT_" + a.get_hash()
     return_html = cache_alignment.get(key)
 
-    if return_html==None or 'Custom' in segments_ids:
+    if return_html==None:
         # build the alignment data matrix
         check = a.build_alignment()
         if check == 'Too large':
             return render(request, 'alignment/error.html', {'proteins': len(a.proteins), 'residues':a.number_of_residues_total})
+
         # calculate consensus sequence + amino acid and feature frequency
         a.calculate_statistics()
-
         num_of_sequences = len(a.proteins)
         num_residue_columns = len(a.positions) + len(a.segments)
 
         return_html = render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
             'num_residue_columns': num_residue_columns})
-    if 'Custom' not in segments_ids:
-        #update it if used
-        cache_alignment.set(key,return_html, 60*60*24*7) #set alignment cache one week
+
+    cache_alignment.set(key, return_html, 60*60*24*7) #set alignment cache one week
 
     return return_html
 

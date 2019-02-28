@@ -230,10 +230,10 @@ class ResidueFunctionBrowser(TemplateView):
 
             # Grab Gi/Gs/Gq/GI12 GPCR sets (class A)
             human_class_a_gpcrs = Protein.objects.filter(species_id=1, sequence_type_id=1, family__slug__startswith='001').distinct().prefetch_related('proteingprotein_set', 'residue_numbering_scheme')
-            gs  = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_000_001"))
-            gio = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_000_002"))
-            gq  = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_000_003"))
-            g12 = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_000_004"))
+            gs  = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_001_001"))
+            gio = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_001_002"))
+            gq  = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_001_003"))
+            g12 = list(human_class_a_gpcrs.filter(proteingprotein__slug="100_001_004"))
             all = set(gs + gio + gq + g12)
 
             # Create sequence signatures for the G-protein sets
