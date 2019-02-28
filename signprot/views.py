@@ -1073,19 +1073,19 @@ def IMSequenceSignature(request):
     # example data
     # pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
     # neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
-    # segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
+    segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
 
     # receive data
     pos_set_in = request.POST.getlist('pos[]')
     # neg_set = request.POST.getlist('neg[]')
-    segments = []
-    for s in request.POST.getlist('seg[]'):
-        try:
-            gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
-            segments.append(gen_object)
-        except ObjectDoesNotExist as e:
-            print('For {} a {} '.format(s, e))
-            continue
+    # segments = []
+    # for s in request.POST.getlist('seg[]'):
+    #     try:
+    #         gen_object = ResidueGenericNumberEquivalent.objects.filter(label=s, scheme__slug__in=['gpcrdba', 'gpcrdbb', 'gpcrdbc', 'gpcrdbf']).first()
+    #         segments.append(gen_object)
+    #     except ObjectDoesNotExist as e:
+    #         print('For {} a {} '.format(s, e))
+    #         continue
 
     # get pos/neg set objects
     pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')
