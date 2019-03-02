@@ -341,7 +341,7 @@ class ProteinConformationTemplateStructure(models.Model):
         db_table = 'protein_conformation_template_structure'
 
 class ProteinGProtein(models.Model):
-    proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair')
+    proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair', through_fields=('g_protein','protein'))
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=20, unique=True)
 
@@ -355,6 +355,10 @@ class ProteinGProteinPair(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     g_protein = models.ForeignKey('ProteinGProtein', on_delete=models.CASCADE)
     transduction = models.TextField(null=True)
+    source = models.TextField(null=True) # GuideToPharma or Asaka
+    log_rai_mean = models.FloatField(null=True)
+    log_rai_sem  = models.FloatField(null=True)
+    g_protein_subunit = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='gprotein', null=True)
 
     def __str__(self):
         return self.protein.entry_name + ", " + self.g_protein.name + ", " + self.transduction

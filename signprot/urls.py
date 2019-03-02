@@ -4,7 +4,9 @@ from signprot import views
 
 urlpatterns = [
 	url(r'^$', views.BrowseSelection.as_view(), name='index'),
-	url(r'^statistics',  views.GProtein, name='gprotein'),
+	url(r'^statistics/(?P<dataset>[^/]*?)/$',  views.GProtein, name='gprotein'),
+    url(r'^statistics',  views.GProtein, name='gprotein'),
+    url(r'^couplings',  views.Couplings, name='couplings'),
     url(r'^ginterface/(?P<protein>[^/]*?)/$', views.Ginterface, name='render'),
     url(r'^ginterface[/]?$', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^ajax/barcode/(?P<slug>[-\w]+)/(?P<cutoff>\d+\.\d{0,2})/$', views.ajaxBarcode, name='ajaxBarcode'),

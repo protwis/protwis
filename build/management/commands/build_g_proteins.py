@@ -32,8 +32,61 @@ import csv
 import shlex, subprocess
 import requests, xmltodict
 import yaml
+import xlrd
 
 from urllib.request import urlopen
+
+def read_excel(excelpath, sheet=None):
+    workbook = xlrd.open_workbook(excelpath)
+    worksheets = workbook.sheet_names()
+    data = {}
+    for worksheet_name in worksheets:
+        if sheet and worksheet_name != sheet:
+            continue
+        worksheet = workbook.sheet_by_name(worksheet_name)
+        num_rows = worksheet.nrows - 1
+        num_cells = worksheet.ncols - 1
+        curr_row = -1 #skip first, otherwise -1
+        while curr_row < num_rows:
+            curr_row += 1
+            row = worksheet.row(curr_row)
+            curr_cell = -1
+            if worksheet.cell_value(curr_row, 0) == '' and worksheet.cell_value(curr_row, 1) == 'SEM': #if empty reference
+                # If sem row, then add previous first cell, which is the protein name.
+                protein = worksheet.cell_value(curr_row-1, 0)
+                data_type = 'SEM'
+                curr_cell = 0 #skip first empty cell.
+            elif curr_row!=0 and worksheet.cell_value(curr_row, 0) == '': #if empty row
+                continue
+            elif curr_row == 0:
+                # First row -- fetch headers
+                headers = []
+                while curr_cell < num_cells:
+                    curr_cell += 1
+                    cell_value = worksheet.cell_value(curr_row, curr_cell)
+                    if cell_value:
+                        headers.append(cell_value)
+                continue
+            else:
+                # MEAN row
+                protein = worksheet.cell_value(curr_row, 0)
+                data_type = 'mean'
+
+            if protein not in data:
+                data[protein] = {}
+
+            curr_cell = 1 #Skip first two rows which contain protein and type
+            while curr_cell < num_cells:
+                curr_cell += 1
+                cell_value = worksheet.cell_value(curr_row, curr_cell)
+                gprotein = headers[curr_cell-2]
+
+                if gprotein not in data[protein]:
+                    data[protein][gprotein] = {}
+
+                data[protein][gprotein][data_type] = cell_value
+
+    return data
 
 class Command(BaseCommand):
     help = 'Build G proteins'
@@ -49,6 +102,8 @@ class Command(BaseCommand):
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
     ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
+
+    aska_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'LogRAi G-chimera submitted ver.xlsx'])
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
@@ -258,48 +313,51 @@ class Command(BaseCommand):
         else:
             filenames = False
 
-        if self.options['wt']:
-            self.add_entry()
-        elif self.options['build_datafile']:
-            self.build_table_from_fasta()
-        else:
-            #add gproteins from cgn db
-            try:
-                self.purge_signprot_complex_data()
-                self.purge_coupling_data()
-                self.purge_cgn_residues()
-                self.purge_other_subunit_residues()
-                self.purge_cgn_proteins()
-                self.purge_other_subunit_proteins()
+        self.purge_coupling_data()
+        self.create_g_proteins(filenames)
+        self.add_aska_coupling_data()
+        # if self.options['wt']:
+        #     self.add_entry()
+        # elif self.options['build_datafile']:
+        #     self.build_table_from_fasta()
+        # else:
+        #     #add gproteins from cgn db
+        #     try:
+        #         self.purge_signprot_complex_data()
+        #         self.purge_coupling_data()
+        #         self.purge_cgn_residues()
+        #         self.purge_other_subunit_residues()
+        #         self.purge_cgn_proteins()
+        #         self.purge_other_subunit_proteins()
 
-                self.ortholog_mapping = OrderedDict()
-                with open(self.ortholog_file, 'r') as ortholog_file:
-                    ortholog_data = csv.reader(ortholog_file, delimiter=',')
-                    for i,row in enumerate(ortholog_data):
-                        if i==0:
-                            header = list(row)
-                            continue
-                        for j, column in enumerate(row):
-                            if j in [0,1]:
-                                continue
-                            if '_' in column:
-                                self.ortholog_mapping[column] = row[0]
-                            else:
-                                if column=='':
-                                    continue
-                                self.ortholog_mapping[column+'_'+header[j]] = row[0]
+        #         self.ortholog_mapping = OrderedDict()
+        #         with open(self.ortholog_file, 'r') as ortholog_file:
+        #             ortholog_data = csv.reader(ortholog_file, delimiter=',')
+        #             for i,row in enumerate(ortholog_data):
+        #                 if i==0:
+        #                     header = list(row)
+        #                     continue
+        #                 for j, column in enumerate(row):
+        #                     if j in [0,1]:
+        #                         continue
+        #                     if '_' in column:
+        #                         self.ortholog_mapping[column] = row[0]
+        #                     else:
+        #                         if column=='':
+        #                             continue
+        #                         self.ortholog_mapping[column+'_'+header[j]] = row[0]
 
-                self.create_g_proteins(filenames)
-                self.cgn_create_proteins_and_families()
+        #         self.create_g_proteins(filenames)
+        #         self.cgn_create_proteins_and_families()
 
-                human_and_orths = self.cgn_add_proteins()
-                self.update_protein_conformation(human_and_orths)
-                self.create_barcode()
-                self.add_other_subunits()
+        #         human_and_orths = self.cgn_add_proteins()
+        #         self.update_protein_conformation(human_and_orths)
+        #         self.create_barcode()
+        #         self.add_other_subunits()
 
-            except Exception as msg:
-                print(msg)
-                self.logger.error(msg)
+        #     except Exception as msg:
+        #         print(msg)
+        #         self.logger.error(msg)
 
     def add_other_subunits(self):
         beta_fam, created = ProteinFamily.objects.get_or_create(slug='100_002', name='Beta', parent=ProteinFamily.objects.get(name='G-Protein'))
@@ -557,7 +615,7 @@ class Command(BaseCommand):
         # read source files
         if not filenames:
             filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('Gprotein_crossclass.csv')]
-
+        source = "GuideToPharma"
         for filename in filenames:
             filepath = os.sep.join([self.gprotein_data_path, filename])
 
@@ -596,7 +654,7 @@ class Command(BaseCommand):
                                 continue
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
                             # print(p, g)
-                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary', source = source)
                             gpair.save()
                     except:
                         print("error in primary assignment", p, gp)
@@ -608,10 +666,97 @@ class Command(BaseCommand):
                             if gp in primary: #sip those that were already primary
                                  continue
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
-                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary', source = source)
                             gpair.save()
                     except:
                         print("error in secondary assignment", p, gp)
+
+        self.logger.info('COMPLETED CREATING G PROTEINS')
+
+    def add_aska_coupling_data(self):
+        self.logger.info('CREATING ASKA COUPLING')
+
+        translation = {'Gs family':'100_001_001', 'Gi/Go family':'100_001_002', 'Gq/G11 family':'100_001_003','G12/G13 family':'100_001_004',}
+
+        # read source files
+        
+        filepath = self.aska_file
+        sheet = "LogRAi mean and SEM"
+
+        self.logger.info('Reading filename' + filepath)
+
+        data = read_excel(filepath,sheet)
+
+        source = 'Aska'
+
+        lookup = {}
+
+        for entry_name, couplings in data.items():
+            # if it has / then pick first, since it gets same protein
+            entry_name = entry_name.split("/")[0]
+            print(entry_name)
+            # append _human to entry name
+            # entry_name = "{}_HUMAN".format(entry_name).lower()
+            # Fetch protein
+            try:
+                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                print("protein not found for ", entry_name)
+                continue
+
+            for gprotein, values in couplings.items():
+                if gprotein not in lookup:
+                    gp = Protein.objects.filter(genes__name=gprotein, species__common_name="Human")[0]
+                    lookup[gprotein] = gp
+                else:
+                    gp = lookup[gprotein]
+                # Assume there are there.
+                if gp.family.slug not in lookup:
+                    g = ProteinGProtein.objects.get(slug=gp.family.slug)
+                    lookup[gp.family.slug] = g
+                else:
+                    g = lookup[gp.family.slug]
+                gpair = ProteinGProteinPair(protein=p, g_protein=g,  source = source, log_rai_mean=values['mean'], log_rai_sem=values['SEM'], g_protein_subunit = gp)
+                gpair.save()
+
+        # with open(filepath, 'r') as f:
+        #     reader = csv.reader(f)
+        #     for row in islice(reader, 1, None): # skip first line
+
+        #         entry_name = row[0]
+        #         primary = row[8]
+        #         secondary = row[9]
+        #         # fetch protein
+        #         try:
+        #             p = Protein.objects.get(entry_name=entry_name)
+        #         except Protein.DoesNotExist:
+        #             self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+        #             print("protein not found for ", entry_name)
+        #             continue
+
+        #         primary = primary.replace("G protein (identity unknown)","None") #replace none
+        #         primary = primary.split(", ")
+
+        #         secondary = secondary.replace("G protein (identity unknown)","None") #replace none
+        #         secondary = secondary.split(", ")
+
+        #         if primary=='None' and secondary=='None':
+        #             print('no data for ', entry_name)
+        #             continue
+
+        #         # print(primary,secondary)
+
+        #         try:
+        #             for gp in primary:
+        #                 if gp in ['','None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
+        #                     continue
+        #                 g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
+        #                 # print(p, g)
+        #                 gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary', source = source)
+        #                 gpair.save()
+        #         except:
+        #             print("error in primary assignment", p, gp)
 
         self.logger.info('COMPLETED CREATING G PROTEINS')
 
