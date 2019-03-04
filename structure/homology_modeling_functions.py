@@ -4,7 +4,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source, compare_and_update_template_source
+from structure.functions import HSExposureCB, PdbStateIdentifier, StructureSeqNumOverwrite, update_template_source, compare_and_update_template_source
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
 from common.models import WebLink
@@ -174,6 +174,18 @@ class GPCRDBParsingPDB(object):
             output[i] = j
         return output
 
+    def right_rotamer_select(self, rotamer):
+        ''' Filter out compound rotamers.
+        '''
+        if len(rotamer)>1:
+            for i in rotamer:
+                if i.pdbdata.pdb.startswith('COMPND')==False:
+                    rotamer = i
+                    break
+        else:
+            rotamer=rotamer[0]
+        return rotamer
+
     def pdb_array_creator(self, structure=None, filename=None):
         ''' Creates an OrderedDict() from the pdb of a Structure object where residue numbers/generic numbers are 
             keys for the residues, and atom names are keys for the Bio.PDB.Residue objects.
@@ -189,7 +201,7 @@ class GPCRDBParsingPDB(object):
         gn_array = []
         residue_array = []
         # pdb_struct = PDB.PDBParser(QUIET=True).get_structure(structure.pdb_code.index, io)[0]
-        
+
         residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
         gn_list = []
         for i in residues:
@@ -198,100 +210,140 @@ class GPCRDBParsingPDB(object):
             except:
                 pass
 
-        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
-        pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
-        pref_chain = structure.preferred_chain
-        parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
-        parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)
-        last_res = list(parent_residues)[-1].sequence_number
-        if len(pref_chain)>1:
-            pref_chain = pref_chain[0]
-        for residue in pdb_struct[pref_chain]:
-            print(residue, residue['CA'].get_bfactor())
-            try:
-                if -9.1 < residue['CA'].get_bfactor() < 9.1:
-                    gn = str(residue['CA'].get_bfactor())
-                    if len(gn.split('.')[1])==1:
-                        gn = gn+'0'
-                    if gn[0]=='-':
-                        gn = gn[1:]+'1'
-                    # Exception for 3PBL 331, gn get's assigned wrong
-                    if structure.pdb_code.index=='3PBL' and residue.get_id()[1]==331:
-                        raise Exception()
-                    #################################################
-                    if gn in gn_list:
-                        if int(residue.get_id()[1])>1000:
-                            if structure.pdb_code.index in seq_nums_overwrite_cutoff_dict and int(residue.get_id()[1])>=seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
+        ssno = StructureSeqNumOverwrite(structure)
+        ssno.seq_num_overwrite('pdb')
+        print(residues)
+        print(ssno.pdb_wt_table)
+        if len(ssno.pdb_wt_table)>0:
+            residues = residues.filter(protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']).order_by('sequence_number')
+            output = OrderedDict()
+            for r in residues:
+                print(r)
+                if r.protein_segment.slug==None:
+                    continue
+                if r.protein_segment.slug not in output:
+                    output[r.protein_segment.slug] = OrderedDict()
+                rotamer = Rotamer.objects.filter(residue=r)
+                rotamer = self.right_rotamer_select(rotamer)
+                rota_io = StringIO(rotamer.pdbdata.pdb)
+                p = PDB.PDBParser()
+                parsed_rota = p.get_structure('rota', rota_io)
+                for chain in parsed_rota[0]:
+                    for res in chain:
+                        atom_list = []
+                        for atom in res:
+                            # Skip hydrogens
+                            if atom.get_id().startswith('H'):
+                                continue
+                            if atom.get_id()=='N':
+                                bw, gn = r.display_generic_number.label.split('x')
+                                atom.set_bfactor(bw)
+                            elif atom.get_id()=='CA':
+                                bw, gn = r.display_generic_number.label.split('x')
+                                gn = "{}.{}".format(bw.split('.')[0], gn)
+                                if len(gn.split('.')[1])==3:
+                                    gn = '-'+gn[:-1]
+                                atom.set_bfactor(gn)
+                            atom_list.append(atom)
+                        output[r.protein_segment.slug][ggn(r.display_generic_number.label).replace('x','.')] = atom_list
+            import pprint
+            pprint.pprint(output)
+            raise AssertionError
+            return output
+        else:
+            assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
+            pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
+            pref_chain = structure.preferred_chain
+            parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
+            parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)
+            last_res = list(parent_residues)[-1].sequence_number
+            if len(pref_chain)>1:
+                pref_chain = pref_chain[0]
+            for residue in pdb_struct[pref_chain]:
+                print(residue, residue['CA'].get_bfactor())
+                try:
+                    if -9.1 < residue['CA'].get_bfactor() < 9.1:
+                        gn = str(residue['CA'].get_bfactor())
+                        if len(gn.split('.')[1])==1:
+                            gn = gn+'0'
+                        if gn[0]=='-':
+                            gn = gn[1:]+'1'
+                        # Exception for 3PBL 331, gn get's assigned wrong
+                        if structure.pdb_code.index=='3PBL' and residue.get_id()[1]==331:
+                            raise Exception()
+                        #################################################
+                        if gn in gn_list:
+                            if int(residue.get_id()[1])>1000:
+                                if structure.pdb_code.index in seq_nums_overwrite_cutoff_dict and int(residue.get_id()[1])>=seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
+                                    gn_array.append(gn)
+                                    residue_array.append(residue.get_list())
+                                else:
+                                    raise Exception()
+                            else:
                                 gn_array.append(gn)
                                 residue_array.append(residue.get_list())
-                            else:
-                                raise Exception()
                         else:
-                            gn_array.append(gn)
-                            residue_array.append(residue.get_list())
+                            raise Exception()
                     else:
                         raise Exception()
-                else:
-                    raise Exception()
-            except:
-                if structure!=None and structure.pdb_code.index in seq_nums_overwrite_cutoff_dict:
-                    if int(residue.get_id()[1])>seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                        gn_array.append(str(int(str(residue.get_id()[1])[1:])))
+                except:
+                    if structure!=None and structure.pdb_code.index in seq_nums_overwrite_cutoff_dict:
+                        if int(residue.get_id()[1])>seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
+                            gn_array.append(str(int(str(residue.get_id()[1])[1:])))
+                        else:
+                            gn_array.append(str(residue.get_id()[1]))
                     else:
                         gn_array.append(str(residue.get_id()[1]))
+                    residue_array.append(residue.get_list())
+            output = OrderedDict()
+            for num, label in self.segment_coding.items():
+                output[label] = OrderedDict()
+            if len(gn_array)!=len(residue_array):
+                raise AssertionError()
+            for gn, res in zip(gn_array,residue_array):
+                if '.' in gn:
+                    seg_num = int(gn.split('.')[0])
+                    seg_label = self.segment_coding[seg_num]
+                    if seg_num==8 and len(output['TM7'])==0:
+                        continue
+                    else:
+                        output[seg_label][gn] = res
                 else:
-                    gn_array.append(str(residue.get_id()[1]))
-                residue_array.append(residue.get_list())
-        output = OrderedDict()
-        for num, label in self.segment_coding.items():
-            output[label] = OrderedDict()
-        if len(gn_array)!=len(residue_array):
-            raise AssertionError()
-        for gn, res in zip(gn_array,residue_array):
-            if '.' in gn:
-                seg_num = int(gn.split('.')[0])
-                seg_label = self.segment_coding[seg_num]
-                if seg_num==8 and len(output['TM7'])==0:
-                    continue
-                else:
-                    output[seg_label][gn] = res
-            else:
-                try:
-                    found_res, found_gn = None, None
                     try:
-                        found_res = Residue.objects.get(protein_conformation=structure.protein_conformation,
-                                                        sequence_number=gn)
-                    except:
-                        # Exception for res 317 in 5VEX, 5VEW
-                        if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='317' and res[0].get_parent().get_resname()=='CYS':
-                            found_res = Residue.objects.get(protein_conformation=parent_prot_conf,
-                                                            sequence_number=gn)
-                        #####################################
-                    found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
-
-                    # Exception for res 318 in 5VEX, 5VEW
-                    if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
-                        found_gn = '5.48'
-                    #####################################
-                    if -9.1 < float(found_gn) < 9.1:
-                        if len(res)==1:
-                            continue
-                        if int(gn)>last_res:
-                            continue
-                        seg_label = self.segment_coding[int(found_gn.split('.')[0])]
-                        output[seg_label][found_gn] = res
-                except:
-                    if res[0].get_parent().get_resname()=='YCM' or res[0].get_parent().get_resname()=='CSD':
-                        found_res = Residue.objects.get(protein_conformation=parent_prot_conf, sequence_number=gn)
-                        if found_res.protein_segment.slug[0] not in ['T','H']:
-                            continue
+                        found_res, found_gn = None, None
                         try:
-                            found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
+                            found_res = Residue.objects.get(protein_conformation=structure.protein_conformation,
+                                                            sequence_number=gn)
                         except:
-                            found_gn = str(gn)
-                        output[found_res.protein_segment.slug][found_gn] = res
-        
-        raise AssertionError
+                            # Exception for res 317 in 5VEX, 5VEW
+                            if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='317' and res[0].get_parent().get_resname()=='CYS':
+                                found_res = Residue.objects.get(protein_conformation=parent_prot_conf,
+                                                                sequence_number=gn)
+                            #####################################
+                        found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
+
+                        # Exception for res 318 in 5VEX, 5VEW
+                        if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
+                            found_gn = '5.48'
+                        #####################################
+                        if -9.1 < float(found_gn) < 9.1:
+                            if len(res)==1:
+                                continue
+                            if int(gn)>last_res:
+                                continue
+                            seg_label = self.segment_coding[int(found_gn.split('.')[0])]
+                            output[seg_label][found_gn] = res
+                    except:
+                        if res[0].get_parent().get_resname()=='YCM' or res[0].get_parent().get_resname()=='CSD':
+                            found_res = Residue.objects.get(protein_conformation=parent_prot_conf, sequence_number=gn)
+                            if found_res.protein_segment.slug[0] not in ['T','H']:
+                                continue
+                            try:
+                                found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
+                            except:
+                                found_gn = str(gn)
+                            output[found_res.protein_segment.slug][found_gn] = res
+            
         return output
 
 

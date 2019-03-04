@@ -205,7 +205,7 @@ class Alignment:
                 segment_residue = [selected_segment]
 
                 # if in site search, add residue group to selected item
-                if 'site_residue_group' in s.properties:
+                if hasattr(s, 'properties') and 'site_residue_group' in s.properties:
                     segment_residue.append(s.properties['site_residue_group'])
                 selected_residue_positions.append(segment_residue)
                 continue
