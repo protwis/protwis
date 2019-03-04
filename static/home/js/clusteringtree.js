@@ -142,7 +142,7 @@ function renderTree(data) {
     vis.selectAll("g.terminal-node").append("circle")
         .attr("r", 5)
         .attr("transform", "translate(10, 0)")
-        .style("fill", function(n){
+        .style("fill", function(n) {
           // color based on activity
           if (annotations[n.name][5].length > 0){
               switch(annotations[n.name][5][0]){
@@ -171,7 +171,8 @@ function renderTree(data) {
     var categoryName = ["State", "Name", "Family", "Ligand family", "GPCR Class"]
     var spacer = 10;
     var colorscheme = []
-    colorscheme[0] = ['#008000','#797f98','#7a97b2','#75afc9','#68c9dc','#50e4ee','#00ffff']
+    //colorscheme[0] = ['#008000','#797f98','#7a97b2','#75afc9','#68c9dc','#50e4ee','#00ffff']
+    colorscheme[0] = ["#e41a1c","#377eb8","#4daf4a","#984ea3","#ff7f00","#ffff33","#a65628","#f781bf","#999999"]
     colorscheme[1] = ['#ffd700','#dfda5d','#d3d772','#cad381','#c2ce8e','#bcc998','#b7c4a0','#b4c0a6','#b0b9ad','#adb4b2','#abaeb7','#a9a9bb','#a8a2bf','#a89cc1','#a895c4','#a98fc6','#aa87c7','#ad7fc7','#b077c7','#f44191']
     colorscheme[2] = ['#8b0000','#960110','#9e051b','#a80c25','#b1142d','#b91c35','#c1253d','#c92e43','#d03649','#d7404e','#dd4852','#e35256','#e85b59','#ed655d','#f26f60','#f67863','#fa8266','#fd8c69','#ff956d','#ffa072','#ffac77','#ffb57e','#ffbf86','#ffc98f','#ffd399','#ffdca5','#ffe5b2','#ffedbf','#fff6cf','#ffffe0']
     var categories = [];
