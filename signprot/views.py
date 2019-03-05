@@ -182,7 +182,7 @@ def Couplings(request):
             elif 'secondary' in values:
                 fd[p].append('secondary')
             else:
-                fd[p].append('-')
+                fd[p].append('')
 
         s = 'GuideToPharma'
         #First loop over GuideToPharma
@@ -190,7 +190,7 @@ def Couplings(request):
             if gf in v[s]:
                 fd[p].append(v[s][gf])
             else:
-                fd[p].append("-")
+                fd[p].append("")
 
         s = 'Aska'
         for gf in distinct_g_families:
@@ -202,7 +202,7 @@ def Couplings(request):
                 else:
                     fd[p].append("No coupling")
             else:
-                fd[p].append("-")
+                fd[p].append("")
 
         for gf,sfs in distinct_g_subunit_families.items():
             for sf in sfs:
@@ -210,9 +210,9 @@ def Couplings(request):
                     if sf in v[s][gf]['subunits']:
                         fd[p].append(v[s][gf]['subunits'][sf])
                     else:
-                        fd[p].append("-")
+                        fd[p].append("")
                 else:
-                    fd[p].append("-")
+                    fd[p].append("")
 
 
     context['data'] = fd

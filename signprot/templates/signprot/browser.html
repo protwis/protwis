@@ -2,6 +2,9 @@
 {% load staticfiles %}
 
 {% block content %}
+<a id="dlink"  style="display:none;"></a>
+<input type="button" onclick="tableToExcel('couplings', 'Coupling data', 'MyFile.xls')" value="Export to Excel">
+
 <table class="table table-bordered" id="couplings">
     <thead>
         <tr>
@@ -83,7 +86,7 @@
                     // 'paging': true,
                     // 'autoWidth': true,
 
-                    scrollY:        '80vh',
+                    scrollY:        '70vh',
                     // scrollCollapse: true,
                     paging:         false,
                     columnDefs: [
@@ -223,6 +226,84 @@
                             filter_reset_button_text: false,
                         },
 
+
+                        {
+                            column_number : 15,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 16,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 17,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 18,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 19,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 20,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 21,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 22,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 23,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 24,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 25,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+
                         // {
                         //     column_number : 1,
                         //     filter_type: "multi_select",
@@ -295,6 +376,7 @@
             $('.greyscale').each(function() {
                 var s = $(this).html();
                 if (s == "-") return
+                if (!s) return
                 frequency = 0.5-(s/-2)*.5;
                 var rgb = { r: 255-frequency*255, g: 255-frequency*255, b: 255-frequency*255 };
                 var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
@@ -319,10 +401,43 @@
 
             return '#' + r + g + b;
         }
+
+        var tableToExcel = (function () {
+            var uri = 'data:application/vnd.ms-excel;base64,',
+                template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+                base64 = function (s) {
+                    return window.btoa(unescape(encodeURIComponent(s)))
+                }, format = function (s, c) {
+                    return s.replace(/{(\w+)}/g, function (m, p) {
+                        return c[p];
+                    })
+                }
+            return function (table, name, filename) {
+                if (!table.nodeType) table = document.getElementById(table)
+                var ctx = {
+                    worksheet: name || 'Worksheet',
+                    table: table.innerHTML
+                }
+           document.getElementById("dlink").href = uri + base64(format(template, ctx));
+                    document.getElementById("dlink").download = filename;
+                    document.getElementById("dlink").click();
+            }
+        })()
     </script>
 {% endblock %}
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <style type="text/css">
+        #content {
+            width: 100%;
+        }
+        .yadcf-filter-range-date, .yadcf-filter-range-number {
+            width: 30px;
+            /*font-family: sans-serif;*/
+            font-size: 100%;
+            /*font-weight: bold;*/
+        }
+    </style>
 {% endblock %}
