@@ -2,20 +2,35 @@
 {% load staticfiles %}
 
 {% block content %}
-<table class="table" id="couplings">
+<table class="table table-bordered" id="couplings">
     <thead>
         <tr>
             <th>
+                Class
+            </th>
+            <th colspan=2>
                 Receptor
             </th>
-            <th width2=70px>
-                Uniprot
+            <th colspan="4">
+                G protein coupling (merged sources)
             </th>
             <th colspan="4">
-                GuideToPharmacology
+                <a href="http://www.guidetopharmacology.org/GRAC/ReceptorFamiliesForward?type=GPCR">Guide To Pharmacology database</a>
             </th>
-            <th colspan="16">
-                Aska
+            <th colspan="4">
+                Asuka Inoue et al., Cell 2019
+            </th>
+            <th colspan="4">
+                Gi/o
+            </th>
+            <th colspan="3">
+                Gq/11
+            </th>
+            <th colspan="2">
+                G12/13
+            </th>
+            <th colspan="2">
+                Gs
             </th>
         </tr>
         <tr>
@@ -23,6 +38,11 @@
             </th>
             <th>
             </th>
+            <th>
+            </th>
+            {% for gf in distinct_gf %}
+                <th></th>
+            {% endfor %}
             {% for gf in distinct_gf %}
                 <th></th>
             {% endfor %}
@@ -41,9 +61,9 @@
     <tbody>
 {% for p,vals in data.items %}
     <tr>
-        <td>{{p}}</td>
         {% for v in vals %}
-        <td>{{v|safe}}</td>
+
+        <td{% if forloop.counter0 > 14 %} class="greyscale"{% endif %}>{{v|safe}}</td>
         {% endfor %}
     </tr>
 {% endfor %}
@@ -72,39 +92,37 @@
                   });
 
                   yadcf.init(oTable,
-                    [
+                    [   
                         {
                             column_number : 0,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Uniprot",
+                            filter_default_label: "Class",
                             filter_reset_button_text: false,
                         },
                         {
                             column_number : 1,
                             filter_type: "multi_select",
                             select_type: 'select2',
+                            filter_default_label: "Uniprot",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
                             //column_data_type: "html",
                             html_data_type: "text",
-                            filter_default_label: "Receptor",
+                            filter_default_label: "NC-IUPHAR",
                             filter_match_mode : "exact",
                             filter_reset_button_text: false,
                         },
 
                         {
-                            column_number : 2,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Gq/G11",
-                            filter_reset_button_text: false,
-                        },
-
-
-                        {
                             column_number : 3,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Gi/Go",
+                            filter_default_label: "Gq/G11",
                             filter_reset_button_text: false,
                         },
 
@@ -113,7 +131,7 @@
                             column_number : 4,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Gs",
+                            filter_default_label: "Gi/Go",
                             filter_reset_button_text: false,
                         },
 
@@ -122,12 +140,21 @@
                             column_number : 5,
                             filter_type: "multi_select",
                             select_type: 'select2',
+                            filter_default_label: "Gs",
+                            filter_reset_button_text: false,
+                        },
+
+
+                        {
+                            column_number : 6,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
                             filter_default_label: "G12/G13",
                             filter_reset_button_text: false,
                         },
 
                         {
-                            column_number : 6,
+                            column_number : 7,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             filter_default_label: "Gq/G11",
@@ -136,7 +163,7 @@
 
 
                         {
-                            column_number : 7,
+                            column_number : 8,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             filter_default_label: "Gi/Go",
@@ -145,7 +172,7 @@
 
 
                         {
-                            column_number : 8,
+                            column_number : 9,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             filter_default_label: "Gs",
@@ -154,7 +181,42 @@
 
 
                         {
-                            column_number : 9,
+                            column_number : 10,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "G12/G13",
+                            filter_reset_button_text: false,
+                        },
+
+                        {
+                            column_number : 11,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Gq/G11",
+                            filter_reset_button_text: false,
+                        },
+
+
+                        {
+                            column_number : 12,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Gi/Go",
+                            filter_reset_button_text: false,
+                        },
+
+
+                        {
+                            column_number : 13,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Gs",
+                            filter_reset_button_text: false,
+                        },
+
+
+                        {
+                            column_number : 14,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             filter_default_label: "G12/G13",
@@ -229,7 +291,34 @@
                 );
 
             yadcf.exResetAllFilters(oTable);
+
+            $('.greyscale').each(function() {
+                var s = $(this).html();
+                if (s == "-") return
+                frequency = 0.5-(s/-2)*.5;
+                var rgb = { r: 255-frequency*255, g: 255-frequency*255, b: 255-frequency*255 };
+                var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+                $(this).attr('bgcolor',hex);
+                console.log(s,hex)
+            });
+
         });
+        function rgb2hex(r,g,b) {
+            r = Math.round(r).toString(16);
+            g = Math.round(g).toString(16);
+            b = Math.round(b).toString(16);
+
+            if (r.length == 1)
+                r = '0' + r;
+
+            if (g.length == 1)
+                g = '0' + g;
+
+            if (b.length == 1)
+                b = '0' + b;
+
+            return '#' + r + g + b;
+        }
     </script>
 {% endblock %}
 {% block addon_css %}
