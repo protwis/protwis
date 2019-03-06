@@ -1028,23 +1028,26 @@ def InteractionMatrix(request):
                 Q(rec_gn=None)
             )
 
+    import ipdb; ipdb.set_trace()
     new_dataset = []
     for pdb_key in dataset:
         for residue_list in dataset[pdb_key]:
             curr_meta = None
             while curr_meta is None:
-                # print(curr_meta)
                 for meta in interactions_metadata:
                     if meta['pdb_id'].upper() == pdb_key.upper():
                         curr_meta = meta
-            gprot = curr_meta['gprot']
-            entry_name = curr_meta['entry_name']
-            pdb_id = curr_meta['pdb_id']
-            residue_list.extend([gprot, entry_name, pdb_id])
-            new_dataset.append(residue_list)
+                break
+            if curr_meta is not None:
+                gprot = curr_meta['gprot']
+                entry_name = curr_meta['entry_name']
+                pdb_id = curr_meta['pdb_id']
+                residue_list.extend([gprot, entry_name, pdb_id])
+                new_dataset.append(residue_list)
 
     context = {
         'interactions': new_dataset,
+        # 'interactions': json.dumps(dataset),
         'non_interactions': json.dumps(list(remaining_residues)),
         'interactions_metadata': json.dumps(interactions_metadata),
         # 'ps': json.dumps(list(proteins)),

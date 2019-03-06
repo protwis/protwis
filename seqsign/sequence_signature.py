@@ -101,15 +101,19 @@ class SequenceSignature:
 
         # In case positive and negative sets come from different classes
         # unify the numbering schemes
-        self.common_schemes = self.merge_numbering_schemes()
-        self.aln_pos.numbering_schemes = self.common_schemes
-        self.aln_neg.numbering_schemes = self.common_schemes
+        if protein_set_positive and protein_set_negative:
+            self.common_schemes = self.merge_numbering_schemes()
+            self.aln_pos.numbering_schemes = self.common_schemes
+            self.aln_neg.numbering_schemes = self.common_schemes
+        
         # now load the segments and generic numbers
-        self.aln_pos.load_segments(segments)
-        self.aln_neg.load_segments(segments)
+        if protein_set_positive:
+            self.aln_pos.load_segments(segments)
+            self.aln_pos.build_alignment()
+        if protein_set_negative:
+            self.aln_neg.load_segments(segments)
+            self.aln_neg.build_alignment()
 
-        self.aln_pos.build_alignment()
-        self.aln_neg.build_alignment()
 
         self.common_gn = deepcopy(self.aln_pos.generic_numbers)
         for scheme in self.aln_neg.numbering_schemes:
@@ -124,17 +128,20 @@ class SequenceSignature:
         self.common_segments = OrderedDict([
             (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
         ])
-        # tweaking alignment
-        self.aln_pos.calculate_statistics()
-        self._update_alignment(self.aln_pos)
-        # tweaking consensus seq
-        self._update_consensus_sequence(self.aln_pos)
 
-        # tweaking negative alignment
-        self.aln_neg.calculate_statistics()
-        self._update_alignment(self.aln_neg)
-        # tweaking consensus seq
-        self._update_consensus_sequence(self.aln_neg)
+        if protein_set_positive:
+            # tweaking alignment
+            self.aln_pos.calculate_statistics()
+            self._update_alignment(self.aln_pos)
+            # tweaking consensus seq
+            self._update_consensus_sequence(self.aln_pos)
+
+        if protein_set_negative:
+            # tweaking negative alignment
+            self.aln_neg.calculate_statistics()
+            self._update_alignment(self.aln_neg)
+            # tweaking consensus seq
+            self._update_consensus_sequence(self.aln_neg)
 
     def _update_alignment(self, alignment):
 
@@ -199,6 +206,26 @@ class SequenceSignature:
 
         # read selection
         for segment in negative_selection.segments:
+            segments.append(segment)
+
+        self.setup_alignments(segments)
+
+    def setup_alignments_from_selection_onesided(self, positive_selection):
+        """
+        The function gathers necessary information from provided selections
+        and runs the calculations of the sequence alignments.
+
+        Arguments:
+            positive_selection {Selection} -- selection containing first group of proteins
+        """
+
+        self.aln_pos.load_proteins_from_selection(positive_selection)
+
+        # local segment list
+        segments = []
+
+        # read selection
+        for segment in positive_selection.segments:
             segments.append(segment)
 
         self.setup_alignments(segments)
