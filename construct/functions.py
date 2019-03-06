@@ -212,8 +212,8 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     # COMPND   7  OF THE THIRD INTRACELLULAR LOOP WERE DELETED FROM THE CONSTRUCT.    
     # COMPND   8  THE CONSTRUCT WAS TRUNCATED AFTER RESIDUE 367 AND A HEXAHIS TAG     
     # COMPND   9  ADDED.   
-    if pdbname.upper()=='5A8E':
-        pdb_range = list(range(33,244))+list(range(272,367))
+    # if pdbname.upper()=='5A8E':
+    #     pdb_range = list(range(33,244))+list(range(272,367))
 
     # US28 wastruncated by 10 amino acids (1-10) at the N-terminus and 44 amino acids (311-354) at the C-terminus (US28∆N∆C) (Fig. S5B);
     # http://science.sciencemag.org/content/sci/suppl/2015/03/04/347.6226.1113.DC1/Burg.SM.pdf
@@ -227,28 +227,66 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     # Misannotated DBREF in PDB file
     if pdbname.upper()=='3SN6':
         pdb_range = list(range(30,366))
-    if pdbname.upper()=='5ZKP':
+    elif pdbname.upper()=='5ZKP':
         pdb_range = list(range(6,124))+list(range(138,217))+list(range(224,316))
-    if pdbname.upper()=='5L7D':
+    elif pdbname.upper()=='5L7D':
         pdb_range = list(range(58,429))+list(range(446,552))
-    if pdbname.upper()=='5L7I':
+    elif pdbname.upper()=='5L7I':
         pdb_range = list(range(58,429))+list(range(446,553))
-    if pdbname.upper()=='5WIV':
-        pdb_range = list(range(32,227))+list(range(383,465))
-    if pdbname.upper()=='5WIU':
-        pdb_range = list(range(34,227))+list(range(383,463))
-    if pdbname.upper()=='5YC8' or pdbname.upper()=='5ZKC':
+    elif pdbname.upper()=='5WIV':
+        pdb_range = list(range(32,177))+list(range(182,228))+list(range(383,465))
+    elif pdbname.upper()=='5WIU':
+        pdb_range = list(range(34,177))+list(range(182,228))+list(range(383,463))
+    elif pdbname.upper()=='5YC8' or pdbname.upper()=='5ZKC':
         pdb_range = list(range(16,215))+list(range(380,459))
-    if pdbname.upper()=='5ZK8' or pdbname.upper()=='5ZK3':
+    elif pdbname.upper()=='5ZK8' or pdbname.upper()=='5ZK3':
         pdb_range = list(range(18,215))+list(range(383,459))
-    if pdbname.upper()=='5V54':
+    elif pdbname.upper()=='5V54':
         pdb_range = list(range(38,192))+list(range(198,240))+list(range(305,389))
-    if pdbname.upper()=='6D32':
+    elif pdbname.upper()=='6D32':
         pdb_range = list(range(36,402))+list(range(416,526))
-    if pdbname.upper() in ['6H7N','6H7L','6H7M']:
+    elif pdbname.upper() in ['6H7N','6H7L','6H7M']:
         pdb_range = list(range(40,359))
-    if pdbname.upper() in ['6H7J','6H7O']:
+    elif pdbname.upper() in ['6H7J','6H7O']:
         pdb_range = list(range(40,358))
+    elif pdbname.upper() in ['2YDO']:
+        pdb_range = list(range(6,214))+list(range(224,325))
+    elif pdbname.upper() in ['3QAK']:
+        pdb_range = list(range(3,149))+list(range(158,209))+list(range(222,309))
+    elif pdbname.upper() in ['4BVN']:
+        pdb_range = list(range(36, 241))+list(range(275,359))
+    elif pdbname.upper() in ['4NTJ']:
+        pdb_range = list(range(16, 88))+list(range(92,133))+list(range(136,163))+list(range(179,224))+list(range(231,313))
+    elif pdbname.upper() in ['4O9R']:
+        pdb_range = list(range(192,345))+list(range(356,434))+list(range(441,497))+list(range(505,552))
+    elif pdbname.upper() in ['4UHR']:
+        pdb_range = list(range(6, 155))+list(range(158,263))+list(range(264,320))
+    elif pdbname.upper() in ['4YAY']:
+        pdb_range = list(range(12,173))+list(range(177,186))+list(range(190,225))+list(range(235,318))
+    elif pdbname.upper() in ['4ZUD']:
+        pdb_range = list(range(12,134))+list(range(141,186))+list(range(189,223))+list(range(235,305))
+    elif pdbname.upper() in ['5A8E']:
+        pdb_range = list(range(36,241))+list(range(275,355))
+    elif pdbname.upper() in ['5GLH']:
+        pdb_range = list(range(88,130))+list(range(135,207))+list(range(217,304))+list(range(311,402))
+    elif pdbname.upper() in ['5VEW','5VEX']:
+        pdb_range = list(range(136,204))+list(range(218,258))+list(range(261,373))+list(range(380,423))
+    elif pdbname.upper()=='5W0P':
+        pdb_range = list(range(1,325))
+    elif pdbname.upper()=='6HLO':
+        pdb_range = list(range(28,227))+list(range(238,279))+list(range(282,325))
+    elif pdbname.upper()=='5UZ7':
+        pdb_range = list(range(136,206))+list(range(213,332))+list(range(337,361))+list(range(366,419))
+    elif pdbname.upper()=='3OE8':
+        pdb_range = list(range(35,230))+list(range(232,306))
+    elif pdbname.upper()=='3OE9':
+        pdb_range = list(range(35,229))+list(range(236,272))+list(range(274,304))
+    elif pdbname.upper()=='3V2W':
+        pdb_range = list(range(47,149))+list(range(156,232))+list(range(245,326))
+    elif pdbname.upper()=='3V2Y':
+        pdb_range = list(range(16,149))+list(range(156,232))+list(range(245,331))
+    elif pdbname.upper()=='6G79':
+        pdb_range = list(range(45,188))+list(range(197,241))+list(range(305,339))+list(range(345,386))
 
     # Uncertain about exact cut -- pdb/article do not compliment eachother.
     if pdbname.upper()=='4XEE' or pdbname.upper()=='4XES':

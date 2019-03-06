@@ -674,9 +674,9 @@ class Alignment:
             self.generic_number_objs = cache_data['generic_number_objs']
             self.generic_numbers = cache_data['generic_numbers']
 #            self.numbering_schemes = cache_data['numbering_schemes']
-            self.positions = cache_data['positions']
-            self.segments = cache_data['segments']
-            self.zscales = cache_data['zscales']
+            # self.positions = cache_data['positions']
+            # self.segments = cache_data['segments']
+            # self.zscales = cache_data['zscales']
             self.stats_done = True
 
         # Adapt alignment to order in current self.proteins
