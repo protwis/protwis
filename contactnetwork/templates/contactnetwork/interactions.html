@@ -230,7 +230,7 @@
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-group-crystal-pdbs-modal-table">Select PDBs</button>
                                 <span class="crystal-count">No</span> structure(s) selected.
                                 <div class="btn btn-success pull-right go-button"><span>Go</span></div>
-                                
+
                             </div>
                         </div>
                     </div>
@@ -279,7 +279,7 @@
                             </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
-                                Types: 
+                                Types:
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
                                   <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
@@ -382,7 +382,7 @@
 
                       </div>
 
-                      
+
 
                     </div>
                     <div class="col-md-5 tab-pane" id="single-group-NGL-tab">
@@ -435,7 +435,7 @@
                                 <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-2-table">Select PDBs</button> <span class="crystal-count-2">No</span> structure(s) selected.
                                 <div class="btn btn-success pull-right go-button">Go</div>
-                                
+
                             </div>
                         </div>
                     </div>
@@ -484,7 +484,7 @@
                             </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
-                                Types: 
+                                Types:
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
                                   <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
@@ -589,7 +589,7 @@
 
                       </div>
 
-                      
+
                 </div>
                 <div class="col-md-5 tab-pane" id="two-groups-NGL-tab">
 
@@ -4319,7 +4319,7 @@
 
             {% if pdbs %}
                 // handle post data (if present) for single group
-                loadPDBsView({{ pdb | safe}}, '#single-group-crystal-tab', renderSingleCrystalGroupHeatmap, true)
+                loadPDBsView({{ pdbs | safe}}, '#single-group-crystal-tab', renderSingleCrystalGroupHeatmap, true)
             {% endif %}
 
             {% if pdbs1 and pdbs2 %}

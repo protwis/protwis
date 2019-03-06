@@ -38,22 +38,26 @@ def Interactions(request):
     Show interaction heatmap
     """
 
-
     template_data = {}
     # check for preselections in POST data
     if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
         # handle post
         pdbs1 = request.POST.get("pdbs1")
         pdbs2 = request.POST.get("pdbs2")
+        if pdbs1 == "":
+            pdbs1 = None
+        if pdbs2 == "":
+            pdbs2 = None
 
         # create switch
         if pdbs1 != None and pdbs2 != None:
             template_data["pdbs1"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
             template_data["pdbs2"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
         else:
-            template_data["pdbs"] = pdbs1
-            if selected == None:
-                template_data["pdbs"] = pdbs2
+            if pdbs1 == None:
+                template_data["pdbs"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
+            else:
+                template_data["pdbs"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
 
     return render(request, 'contactnetwork/interactions.html', template_data)
 
@@ -64,20 +68,25 @@ def ShowDistances(request):
     """
 
     template_data = {}
-    # check for preselections in POST data
+    
     if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
-        # handle post
+        # check for preselections in POST data
         pdbs1 = request.POST.get("pdbs1")
         pdbs2 = request.POST.get("pdbs2")
+        if pdbs1 == "":
+            pdbs1 = None
+        if pdbs2 == "":
+            pdbs2 = None
 
         # create switch
         if pdbs1 != None and pdbs2 != None:
             template_data["pdbs1"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
             template_data["pdbs2"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
         else:
-            template_data["pdbs"] = pdbs1
-            if selected == None:
-                template_data["pdbs"] = pdbs2
+            if pdbs1 == None:
+                template_data["pdbs"] = '["' + '", "'.join(pdbs2.split("\r\n")) + '"]'
+            else:
+                template_data["pdbs"] = '["' + '", "'.join(pdbs1.split("\r\n")) + '"]'
 
     return render(request, 'contactnetwork/distances.html', template_data)
 
@@ -428,28 +437,9 @@ def ClusteringData(request):
     # load all
     dis = Distances()
     dis.load_pdbs(pdbs)
-#    dis.fetch_and_calculate()
 
     # common GNs
     common_gn = dis.fetch_common_gns_tm()
-#    for i,pair in enumerate(sorted(dis.stats_key.items())):
-#        if len(pdbs) == pair[1][3]:
-#            res1, res2 = pair[0].split("_")
-#            if res1 not in common_gn:
-#                common_gn.append(res1)
-#            if res2 not in common_gn:
-#                common_gn.append(res2)
-
-    # normalization matrix for GNs
-#    normalize = np.full((len(common_gn), len(common_gn)), 0.0)
-#    for i,res1 in enumerate(common_gn):
-#        for j in range(i+1, len(common_gn)):
-#            # grab average value
-#            res2 = common_gn[j]
-#            normalize[i][j] = dis.stats_key[res1+"_"+res2][1]
-#    print("Prepared normalization matrix")
-    # TODO : remove normalization in query and do it ourselves
-
     pdb_distance_maps = {}
     for pdb in pdbs:
         cache_key = "distanceMap-" + pdb
@@ -503,10 +493,9 @@ def ClusteringData(request):
         else:
             pdb_distance_maps["average"] =  pdb_distance_maps[pdb]/len(pdbs)
 
+    # normalize and store distance map
     for pdb in pdbs:
-        # normalize and store distance map
         pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"])
-    # print("Collected distances for all structures")
 
     # calculate distance matrix
     distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
@@ -516,7 +505,16 @@ def ClusteringData(request):
             distance = np.sum(np.absolute(pdb_distance_maps[pdb1] - pdb_distance_maps[pdb2]))
             distance_matrix[i, j] = distance
             distance_matrix[j, i] = distance
-    # print("Calculated pairwise distance matrix")
+
+
+    # Collect structure annotations
+    pdb_annotations = {}
+    annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
+                    .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__family__parent__name', \
+                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name')
+    for an in annotations:
+        pdb_annotations[an[0]] = an[1:]
+    data['annotations'] = pdb_annotations
 
     # hierarchical clustering
     hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward', metric='euclidean')
