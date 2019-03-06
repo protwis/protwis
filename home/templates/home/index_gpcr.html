@@ -167,6 +167,9 @@
                         </li>
                     {% endfor %}
                     </ul>
+                    {% if users %}
+                        {{users|safe}}
+                    {% endif %}
                 </div>
             </div>
         </div>
