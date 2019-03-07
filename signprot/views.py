@@ -1218,7 +1218,7 @@ def IMSequenceSignature(request):
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-    signature.setup_alignments(segments, pos_set, pos_set)
+    signature.setup_alignments(segments, pos_set)
     signature.calculate_signature_onesided()
 
 

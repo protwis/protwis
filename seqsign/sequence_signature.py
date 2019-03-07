@@ -108,26 +108,42 @@ class SequenceSignature:
         
         # now load the segments and generic numbers
         if protein_set_positive:
+            self.common_schemes = self.merge_numbering_schemes()
             self.aln_pos.load_segments(segments)
             self.aln_pos.build_alignment()
         if protein_set_negative:
+            self.common_schemes = self.merge_numbering_schemes()
             self.aln_neg.load_segments(segments)
             self.aln_neg.build_alignment()
 
-
         self.common_gn = deepcopy(self.aln_pos.generic_numbers)
-        for scheme in self.aln_neg.numbering_schemes:
-            for segment in self.aln_neg.segments:
-                for pos in self.aln_neg.generic_numbers[scheme[0]][segment].items():
-                    if pos[0] not in self.common_gn[scheme[0]][segment].keys():
-                        self.common_gn[scheme[0]][segment][pos[0]] = pos[1]
-                self.common_gn[scheme[0]][segment] = OrderedDict(sorted(
-                    self.common_gn[scheme[0]][segment].items(),
-                    key=lambda x: x[0].split('x')
-                    ))
-        self.common_segments = OrderedDict([
-            (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
-        ])
+        if protein_set_negative:
+            for scheme in self.aln_neg.numbering_schemes:
+                for segment in self.aln_neg.segments:
+                    for pos in self.aln_neg.generic_numbers[scheme[0]][segment].items():
+                        if pos[0] not in self.common_gn[scheme[0]][segment].keys():
+                            self.common_gn[scheme[0]][segment][pos[0]] = pos[1]
+                    self.common_gn[scheme[0]][segment] = OrderedDict(sorted(
+                        self.common_gn[scheme[0]][segment].items(),
+                        key=lambda x: x[0].split('x')
+                        ))
+            self.common_segments = OrderedDict([
+                (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
+            ])
+        else:
+            for scheme in self.aln_pos.numbering_schemes:
+                for segment in self.aln_pos.segments:
+                    for pos in self.aln_pos.generic_numbers[scheme[0]][segment].items():
+                        if pos[0] not in self.common_gn[scheme[0]][segment].keys():
+                            self.common_gn[scheme[0]][segment][pos[0]] = pos[1]
+                    self.common_gn[scheme[0]][segment] = OrderedDict(sorted(
+                        self.common_gn[scheme[0]][segment].items(),
+                        key=lambda x: x[0].split('x')
+                        ))
+            self.common_segments = OrderedDict([
+                (x, sorted(list(set(self.aln_pos.segments[x])), key=lambda x:
+                    x.split('x'))) for x in self.aln_pos.segments
+            ])
 
         if protein_set_positive:
             # tweaking alignment
