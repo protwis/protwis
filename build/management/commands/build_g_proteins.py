@@ -27,7 +27,7 @@ import math
 import numpy as np
 import logging
 import csv
-import os
+import sys, os
 import csv
 import shlex, subprocess
 import requests, xmltodict
@@ -312,52 +312,52 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
+        if self.options['wt']:
+            self.add_entry()
+        elif self.options['build_datafile']:
+            self.build_table_from_fasta()
+        else:
+            #add gproteins from cgn db
+            try:
+                self.purge_signprot_complex_data()
+                self.purge_coupling_data()
+                # self.purge_cgn_residues()
+                # self.purge_other_subunit_residues()
+                self.purge_cgn_proteins()
+                self.purge_other_subunit_proteins()
 
-        self.purge_coupling_data()
-        self.create_g_proteins(filenames)
-        self.add_aska_coupling_data()
-        # if self.options['wt']:
-        #     self.add_entry()
-        # elif self.options['build_datafile']:
-        #     self.build_table_from_fasta()
-        # else:
-        #     #add gproteins from cgn db
-        #     try:
-        #         self.purge_signprot_complex_data()
-        #         self.purge_coupling_data()
-        #         self.purge_cgn_residues()
-        #         self.purge_other_subunit_residues()
-        #         self.purge_cgn_proteins()
-        #         self.purge_other_subunit_proteins()
+                self.ortholog_mapping = OrderedDict()
+                with open(self.ortholog_file, 'r') as ortholog_file:
+                    ortholog_data = csv.reader(ortholog_file, delimiter=',')
+                    for i,row in enumerate(ortholog_data):
+                        if i==0:
+                            header = list(row)
+                            continue
+                        for j, column in enumerate(row):
+                            if j in [0,1]:
+                                continue
+                            if '_' in column:
+                                self.ortholog_mapping[column] = row[0]
+                            else:
+                                if column=='':
+                                    continue
+                                self.ortholog_mapping[column+'_'+header[j]] = row[0]
 
-        #         self.ortholog_mapping = OrderedDict()
-        #         with open(self.ortholog_file, 'r') as ortholog_file:
-        #             ortholog_data = csv.reader(ortholog_file, delimiter=',')
-        #             for i,row in enumerate(ortholog_data):
-        #                 if i==0:
-        #                     header = list(row)
-        #                     continue
-        #                 for j, column in enumerate(row):
-        #                     if j in [0,1]:
-        #                         continue
-        #                     if '_' in column:
-        #                         self.ortholog_mapping[column] = row[0]
-        #                     else:
-        #                         if column=='':
-        #                             continue
-        #                         self.ortholog_mapping[column+'_'+header[j]] = row[0]
+                self.create_g_proteins(filenames)
+                self.cgn_create_proteins_and_families()
 
-        #         self.create_g_proteins(filenames)
-        #         self.cgn_create_proteins_and_families()
+                human_and_orths = self.cgn_add_proteins()
+                self.update_protein_conformation(human_and_orths)
+                self.create_barcode()
+                self.add_other_subunits()
+                if os.path.exists(self.aska_file): 
+                    self.add_aska_coupling_data()
 
-        #         human_and_orths = self.cgn_add_proteins()
-        #         self.update_protein_conformation(human_and_orths)
-        #         self.create_barcode()
-        #         self.add_other_subunits()
-
-        #     except Exception as msg:
-        #         print(msg)
-        #         self.logger.error(msg)
+            except Exception as msg:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
+                self.logger.error(msg)
 
     def add_other_subunits(self):
         beta_fam, created = ProteinFamily.objects.get_or_create(slug='100_002', name='Beta', parent=ProteinFamily.objects.get(name='G-Protein'))
@@ -694,7 +694,6 @@ class Command(BaseCommand):
         for entry_name, couplings in data.items():
             # if it has / then pick first, since it gets same protein
             entry_name = entry_name.split("/")[0]
-            print(entry_name)
             # append _human to entry name
             # entry_name = "{}_HUMAN".format(entry_name).lower()
             # Fetch protein
@@ -720,45 +719,7 @@ class Command(BaseCommand):
                 gpair = ProteinGProteinPair(protein=p, g_protein=g,  source = source, log_rai_mean=values['mean'], log_rai_sem=values['SEM'], g_protein_subunit = gp)
                 gpair.save()
 
-        # with open(filepath, 'r') as f:
-        #     reader = csv.reader(f)
-        #     for row in islice(reader, 1, None): # skip first line
-
-        #         entry_name = row[0]
-        #         primary = row[8]
-        #         secondary = row[9]
-        #         # fetch protein
-        #         try:
-        #             p = Protein.objects.get(entry_name=entry_name)
-        #         except Protein.DoesNotExist:
-        #             self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-        #             print("protein not found for ", entry_name)
-        #             continue
-
-        #         primary = primary.replace("G protein (identity unknown)","None") #replace none
-        #         primary = primary.split(", ")
-
-        #         secondary = secondary.replace("G protein (identity unknown)","None") #replace none
-        #         secondary = secondary.split(", ")
-
-        #         if primary=='None' and secondary=='None':
-        #             print('no data for ', entry_name)
-        #             continue
-
-        #         # print(primary,secondary)
-
-        #         try:
-        #             for gp in primary:
-        #                 if gp in ['','None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
-        #                     continue
-        #                 g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
-        #                 # print(p, g)
-        #                 gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary', source = source)
-        #                 gpair.save()
-        #         except:
-        #             print("error in primary assignment", p, gp)
-
-        self.logger.info('COMPLETED CREATING G PROTEINS')
+        self.logger.info('COMPLETED ADDING ASKA COULPLING DATA')
 
     def purge_cgn_proteins(self):
         try:
