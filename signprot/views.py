@@ -1152,7 +1152,6 @@ def InteractionMatrix(request):
                 Q(rec_gn=None)
             )
 
-    import ipdb; ipdb.set_trace()
     new_dataset = []
     for pdb_key in dataset:
         for residue_list in dataset[pdb_key]:
@@ -1220,11 +1219,11 @@ def IMSequenceSignature(request):
     # Calculate Sequence Signature
     signature = SequenceSignature()
     signature.setup_alignments(segments, pos_set, pos_set)
-    signature.calculate_signature()
+    signature.calculate_signature_onesided()
 
 
     # preprocess data for return
-    signature_data = signature.prepare_display_data()
+    signature_data = signature.prepare_display_data_onesided()
 
     # FEATURES AND REGIONS
     feats = [feature for feature in signature_data['a_pos'].features_combo]
@@ -1358,34 +1357,22 @@ def IMSignatureMatch(request):
         pos_set[0].family.slug[:3]
     )
 
-    request.session['signature_match'] = {
-        'scores': signature_match.protein_report,
-        'scores_pos': signature_match.scores_pos,
-        'scores_neg': signature_match.scores_neg,
-        'protein_signatures': signature_match.protein_signatures,
-        'signatures_pos': signature_match.signatures_pos,
-        'signatures_neg': signature_match.signatures_neg,
-        'signature_filtered': signature_match.signature_consensus,
-        'relevant_gn': signature_match.relevant_gn,
-        'relevant_segments': signature_match.relevant_segments,
-        'numbering_schemes': signature_match.schemes,
-    }
-    request.session.modified = True
-
     signature_match = {
         'scores': signature_match.protein_report,
-        'scores_pos': signature_match.scores_pos,
-        'scores_neg': signature_match.scores_neg,
-        'protein_signatures': signature_match.protein_signatures,
-        'signatures_pos': signature_match.signatures_pos,
-        'signatures_neg': signature_match.signatures_neg,
-        'signature_filtered': signature_match.signature_consensus,
-        'relevant_gn': signature_match.relevant_gn,
-        'relevant_segments': signature_match.relevant_segments,
-        'numbering_schemes': signature_match.schemes,
+        # 'scores_pos': signature_match.scores_pos,
+        # 'scores_neg': signature_match.scores_neg,
+        # 'protein_signatures': signature_match.protein_signatures,
+        # 'signatures_pos': signature_match.signatures_pos,
+        # 'signatures_neg': signature_match.signatures_neg,
+        # 'signature_filtered': signature_match.signature_consensus,
+        # 'relevant_gn': signature_match.relevant_gn,
+        # 'relevant_segments': signature_match.relevant_segments,
+        # 'numbering_schemes': signature_match.schemes,
     }
 
-    # {'scores': signature_match}
-    # return JsonResponse(signature_match, safe=False)
-    print(signature_match)
+    for i in signature_match:
+        print(i)
+        print(signature_match[i])
+    
     return JsonResponse('success', safe=False)
+

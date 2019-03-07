@@ -341,6 +341,91 @@ class SequenceSignature:
         self._convert_feature_stats(self.features_normalized_pos, self.aln_pos)
         self._convert_feature_stats(self.features_normalized_neg, self.aln_neg)
 
+    def calculate_signature_onesided(self):
+        """
+        Calculates the feature frequency difference between two protein sets.
+        Generates the full differential matrix as well as maximum difference for a position (for scatter plot).
+        """
+        for sid, segment in enumerate(self.aln_pos.segments):
+            self.features_normalized_pos[segment] = np.array(
+                [[x[0] for x in feat[sid]] for feat in self.aln_pos.feature_stats],
+                dtype='int'
+                )
+
+        for segment in self.aln_pos.segments:
+            #TODO: get the correct default numering scheme from settings
+            for idx, res in enumerate(self.common_gn[self.common_schemes[0][0]][segment].keys()):
+                if res not in self.aln_pos.generic_numbers[self.common_schemes[0][0]][segment].keys():
+                    self.features_normalized_pos[segment] = np.insert(self.features_normalized_pos[segment], idx, self.default_column, axis=1)
+
+            # now the difference
+            self.features_frequency_difference[segment] = np.subtract(
+                self.features_normalized_pos[segment],
+                0
+                )
+
+        self._convert_feature_stats(self.features_normalized_pos, self.aln_pos)
+
+        # Version with display data
+        for row in range(len(AMINO_ACID_GROUPS.keys())):
+            tmp_row = []
+            for segment in self.aln_pos.segments:
+                #first item is the real value,
+                # second is the assignmnent of color (via css)
+                # 0 - red, 5 - yellow, 10 - green
+                #third item is a tooltip
+                tmp_row.append([[
+                    x,
+                    int(x/20)+5 if x!= 0 else -1,
+                    "{} - {}".format(
+                        self.features_normalized_pos[segment][row][y],
+                        0
+                        )
+                    ] for y, x in enumerate(self.features_frequency_difference[segment][row])])
+            self.features_frequency_diff_display.append(tmp_row)
+
+        self.signature = OrderedDict([(x, []) for x in self.aln_pos.segments])
+        for segment in self.aln_pos.segments:
+            tmp = np.array(self.features_frequency_difference[segment])
+            signature_map = np.absolute(tmp).argmax(axis=0)
+            #signature_map = tmp.argmax(axis=0)
+            # Update mapping to prefer features with fewer amino acids
+            signature_map = self._assign_preferred_features(signature_map, segment, self.features_frequency_difference)
+
+            self.signature[segment] = []
+            for col, pos in enumerate(list(signature_map)):
+                self.signature[segment].append([
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'] if self.features_frequency_difference[segment][pos][col] > 0 else '-' + list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'], # latest implementation of NOT... properties
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos] if self.features_frequency_difference[segment][pos][col] > 0 else "Not " + list(AMINO_ACID_GROUP_NAMES.values())[pos], # latest implementation of NOT... properties
+                    self.features_frequency_difference[segment][pos][col],
+                    int(self.features_frequency_difference[segment][pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                    list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short']
+                ])
+
+        features_pos = OrderedDict()
+        self.features_consensus_pos = OrderedDict([(x, []) for x in self.aln_pos.segments])
+        for sid, segment in enumerate(self.aln_pos.segments):
+            features_pos[segment] = np.array(
+                [[x[0] for x in feat[sid]] for feat in self.aln_pos.feature_stats],
+                dtype='int'
+                )
+            features_cons_pos = features_pos[segment].argmax(axis=0)
+            features_cons_pos = self._assign_preferred_features(features_cons_pos, segment, features_pos)
+
+            for col, pos in enumerate(list(features_cons_pos)):
+                self.features_consensus_pos[segment].append([
+                    # list(AMINO_ACID_GROUPS.keys())[pos],
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['display_name_short'],
+                    list(AMINO_ACID_GROUP_NAMES.values())[pos],
+                    features_pos[segment][pos][col],
+                    int(features_pos[segment][pos][col]/20)+5,
+                    list(AMINO_ACID_GROUP_PROPERTIES.values())[pos]['length'],
+                    list(AMINO_ACID_GROUPS.keys())[pos]
+                ])
+        self._convert_feature_stats(self.features_normalized_pos, self.aln_pos)
+
     def calculate_zscales_signature(self):
         """
         Calculates the Z-scales (Z1-Z5) difference between two protein sets for each GN residue position
@@ -421,6 +506,18 @@ class SequenceSignature:
                             tooltip += "Set 2: GAP<br/>"
 
                         self.zscales_signature[zscale][segment][entry] = ["-", -1, tooltip] # diff, P-value, tooltip
+
+    def prepare_display_data_onesided(self):
+
+        options = {
+            'common_segments': self.common_segments,
+            'common_generic_numbers': self.common_gn,
+            'signature_consensus': self.signature,
+            'feats_cons_pos': self.features_consensus_pos,
+            'a_pos': self.aln_pos,
+        }
+
+        return options
 
     def prepare_display_data(self):
 
