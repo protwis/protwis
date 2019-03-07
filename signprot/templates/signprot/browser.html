@@ -5,7 +5,7 @@
 <a id="dlink"  style="display:none;"></a>
 <input type="button" onclick="tableToExcel('couplings', 'Coupling data', 'MyFile.xls')" value="Export to Excel">
 
-<table class="table table-bordered" id="couplings">
+<table class="table table-bordered text-center compact" id="couplings">
     <thead>
         <tr>
             <th>
@@ -23,17 +23,17 @@
             <th colspan="4">
                 Asuka Inoue et al., Cell 2019
             </th>
+            <th colspan="2">
+                Gs
+            </th>
             <th colspan="4">
                 Gi/o
-            </th>
-            <th colspan="3">
-                Gq/11
             </th>
             <th colspan="2">
                 G12/13
             </th>
-            <th colspan="2">
-                Gs
+            <th colspan="3">
+                Gq/11
             </th>
         </tr>
         <tr>
@@ -66,7 +66,7 @@
     <tr>
         {% for v in vals %}
 
-        <td{% if forloop.counter0 > 14 %} class="greyscale"{% endif %}>{{v|safe}}</td>
+        <td class="{% if forloop.counter0 > 2 %}greyscale{% endif %} {% if forloop.counter0 < 3 %}text-left{% endif %}">{{v|safe}}</td>
         {% endfor %}
     </tr>
 {% endfor %}
@@ -85,6 +85,7 @@
                     'scrollX': true,
                     // 'paging': true,
                     // 'autoWidth': true,
+                    // "ordering": false,
 
                     scrollY:        '70vh',
                     // scrollCollapse: true,
@@ -92,6 +93,7 @@
                     columnDefs: [
                       { targets: 'no-sort', orderable: false }
                     ],
+                    "aaSorting": []
                   });
 
                   yadcf.init(oTable,
@@ -119,13 +121,16 @@
                             filter_default_label: "NC-IUPHAR",
                             filter_match_mode : "exact",
                             filter_reset_button_text: false,
+                            select_type_options: {
+                                width: '85px',
+                            }
                         },
 
                         {
                             column_number : 3,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Gq/G11",
+                            filter_default_label: "Gs",
                             filter_reset_button_text: false,
                         },
 
@@ -143,7 +148,7 @@
                             column_number : 5,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Gs",
+                            filter_default_label: "G12/G13",
                             filter_reset_button_text: false,
                         },
 
@@ -152,7 +157,7 @@
                             column_number : 6,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "G12/G13",
+                            filter_default_label: "Gq/G11",
                             filter_reset_button_text: false,
                         },
 
@@ -160,7 +165,7 @@
                             column_number : 7,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Gq/G11",
+                            filter_default_label: "Gs",
                             filter_reset_button_text: false,
                         },
 
@@ -178,7 +183,7 @@
                             column_number : 9,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Gs",
+                            filter_default_label: "G12/G13",
                             filter_reset_button_text: false,
                         },
 
@@ -187,7 +192,7 @@
                             column_number : 10,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "G12/G13",
+                            filter_default_label: "Gq/G11",
                             filter_reset_button_text: false,
                         },
 
@@ -195,7 +200,7 @@
                             column_number : 11,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Gq/G11",
+                            filter_default_label: "Gs",
                             filter_reset_button_text: false,
                         },
 
@@ -213,7 +218,7 @@
                             column_number : 13,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Gs",
+                            filter_default_label: "G12/G13",
                             filter_reset_button_text: false,
                         },
 
@@ -222,7 +227,7 @@
                             column_number : 14,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "G12/G13",
+                            filter_default_label: "Gq/G11",
                             filter_reset_button_text: false,
                         },
 
@@ -377,11 +382,13 @@
                 var s = $(this).html();
                 if (s == "-") return
                 if (!s) return
-                frequency = 0.5-(s/-2)*.5;
+                frequency = 0.5-(s/-2.1)*.5;
                 var rgb = { r: 255-frequency*255, g: 255-frequency*255, b: 255-frequency*255 };
                 var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+                if (s == 'primary') hex = "#808080";
+                if (s == 'secondary') hex = "#bebebe";
+                if (s == 'No coupling') hex = "#f9f9f9";
                 $(this).attr('bgcolor',hex);
-                console.log(s,hex)
             });
 
         });
@@ -438,6 +445,9 @@
             /*font-family: sans-serif;*/
             font-size: 100%;
             /*font-weight: bold;*/
+        }
+        .select2-container-multi .select2-choices .select2-search-field input {
+            padding: 0px;
         }
     </style>
 {% endblock %}
