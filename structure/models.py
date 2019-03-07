@@ -24,7 +24,7 @@ class Structure(models.Model):
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     sodium = models.BooleanField(default=False)
-    signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.CASCADE, related_name='signprot_complex')
+    signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.SET_NULL, related_name='signprot_complex')
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
 
     def __str__(self):
