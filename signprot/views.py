@@ -1351,9 +1351,7 @@ def IMSignatureMatch(request):
         cutoff = int(cutoff)
     )
 
-    signature_match.score_protein_class(
-        pos_set[0].family.slug[:3]
-    )
+    signature_match.score_protein_class()
 
     signature_match = {
         'scores': signature_match.protein_report,
@@ -1368,9 +1366,19 @@ def IMSignatureMatch(request):
         # 'numbering_schemes': signature_match.schemes,
     }
 
-    for i in signature_match:
-        print(i)
-        print(signature_match[i])
-    
-    return JsonResponse('success', safe=False)
+    signature_match = prepare_signature_match(signature_match)
+    return JsonResponse(json.dumps(signature_match), safe=False)
+
+def prepare_signature_match(signature_match):
+    out = []
+    for key in signature_match:
+        if key == 'scores':
+            for elem in signature_match[key].items():
+                print(elem[0].protein.short())
+                out.append({
+                        'prot': elem[0].protein.short(),
+                        'score': elem[1][0],
+                        'nscore': elem[1][1]
+                    })
+    return out
 
