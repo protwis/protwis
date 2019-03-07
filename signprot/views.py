@@ -21,6 +21,8 @@ from collections import OrderedDict
 from common.views import AbsTargetSelection
 
 import json
+import re
+from decimal import Decimal
 # Create your views here.
 class BrowseSelection(AbsTargetSelection):
     step = 1
@@ -55,18 +57,16 @@ class BrowseSelection(AbsTargetSelection):
     except Exception as e:
         pass
 
-@cache_page(60*60*24*2) # 2 days caching
-def GProtein(request):
+#@cache_page(60*60*24*2) # 2 days caching
+def GProtein(request, dataset = "GuideToPharma"):
 
-    name_of_cache = 'gprotein_statistics'
+    name_of_cache = 'gprotein_statistics_{}'.format(dataset)
 
     context = cache.get(name_of_cache)
-
     if context==None:
 
         context = OrderedDict()
         i=0
-
         gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
         slugs = ['001','002','004','005']
         slug_translate = {'001':"ClassA", '002':"ClassB1",'004':"ClassC", '005':"ClassF"}
@@ -75,11 +75,13 @@ def GProtein(request):
             jsondata = {}
             for gp in gproteins:
                 # ps = gp.proteingproteinpair_set.all()
-                ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug)
-
+                ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug, source=dataset).prefetch_related('protein')
+                # print(ps,len(ps))
                 if ps:
                     jsondata[str(gp)] = []
                     for p in ps:
+                        if dataset=="Aska" and p.log_rai_mean<-0.5:
+                            continue
                         if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
                             selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
                         selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
@@ -96,6 +98,128 @@ def GProtein(request):
     cache.set(name_of_cache, context, 60*60*24*2) #two days timeout on cache
 
     return render(request, 'signprot/gprotein.html', context)
+
+#@cache_page(60*60*24*2) # 2 days caching
+def Couplings(request):
+
+    context = OrderedDict()
+
+    threshold_primary = -0.1
+    threshold_secondary = -0.5
+
+
+    proteins = Protein.objects.filter(sequence_type__slug='wt',family__slug__startswith='00',species__common_name='Human').all().prefetch_related('family')
+    data = {}
+    class_names = {}
+    for p in proteins:
+        p_class = p.family.slug.split('_')[0]
+        if p_class not in class_names:
+            class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
+        p_class_name = class_names[p_class].strip()
+        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short(),'GuideToPharma':{},'Aska':{}}
+
+    distinct_g_families = []
+    distinct_g_subunit_families = {}
+    distinct_sources = ['GuideToPharma','Aska']
+
+    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein','g_protein_subunit','g_protein')
+    for c in couplings:
+        p = c.protein.entry_short()
+        s = c.source
+        t = c.transduction
+        m = c.log_rai_mean
+        gf = c.g_protein.name
+        # print(gf)
+        gf = gf.replace(" family","")
+
+        if gf not in distinct_g_families:
+            distinct_g_families.append(gf)
+            distinct_g_subunit_families[gf] = []
+
+        if c.g_protein_subunit:
+            g = c.g_protein_subunit.entry_name
+            g = g.replace("_human","")
+            # print("g",g)
+            if g not in distinct_g_subunit_families[gf]:
+                distinct_g_subunit_families[gf].append(g)
+
+        if s not in data[p]:
+            data[p][s] = {}
+
+        if gf not in data[p][s]:
+            data[p][s][gf] = {}
+
+        # If transduction in GuideToPharma data
+        if t:
+            data[p][s][gf] = t
+        else:
+            if 'subunits' not in data[p][s][gf]:
+                data[p][s][gf] = {'subunits':{},'best':-2.00}
+            data[p][s][gf]['subunits'][g] = round(Decimal(m),2)
+            # get the lowest number into 'best'
+            if m>data[p][s][gf]['best']:
+                data[p][s][gf]['best'] = round(Decimal(m),2)
+
+    fd = {} #final data
+
+    for p,v in data.items():
+        fd[p] = [v['class'],p,v['pretty']]
+
+        s = 'GuideToPharma'
+        #Merge
+        for gf in distinct_g_families:
+            values = []
+            if 'GuideToPharma' in v and gf in v['GuideToPharma']:
+                values.append(v['GuideToPharma'][gf])
+            if 'Aska' in v and gf in v['Aska']:
+                best = v['Aska'][gf]['best']
+                if best > threshold_primary:
+                    values.append('primary')
+                elif best > threshold_secondary:
+                    values.append('secondary')
+            if 'primary' in values:
+                fd[p].append('primary')
+            elif 'secondary' in values:
+                fd[p].append('secondary')
+            else:
+                fd[p].append('')
+
+        s = 'GuideToPharma'
+        #First loop over GuideToPharma
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                fd[p].append(v[s][gf])
+            else:
+                fd[p].append("")
+
+        s = 'Aska'
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                if v[s][gf]['best']>threshold_primary:
+                    fd[p].append("primary")
+                elif v[s][gf]['best']>threshold_secondary:
+                    fd[p].append("secondary")
+                else:
+                    fd[p].append("No coupling")
+            else:
+                fd[p].append("")
+
+        for gf,sfs in distinct_g_subunit_families.items():
+            for sf in sfs:
+                if gf in v[s]:
+                    if sf in v[s][gf]['subunits']:
+                        fd[p].append(v[s][gf]['subunits'][sf])
+                    else:
+                        fd[p].append("")
+                else:
+                    fd[p].append("")
+
+
+    context['data'] = fd
+    context['distinct_gf'] = distinct_g_families
+    context['distinct_sf'] = distinct_g_subunit_families
+
+    return render(request, 'signprot/browser.html', context)
 
 @cache_page(60*60*24*2)
 def familyDetail(request, slug):
