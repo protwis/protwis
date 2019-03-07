@@ -1357,7 +1357,7 @@ def IMSignatureMatch(request):
         'scores': signature_match.protein_report,
         # 'scores_pos': signature_match.scores_pos,
         # 'scores_neg': signature_match.scores_neg,
-        # 'protein_signatures': signature_match.protein_signatures,
+        'protein_signatures': signature_match.protein_signatures,
         # 'signatures_pos': signature_match.signatures_pos,
         # 'signatures_neg': signature_match.signatures_neg,
         # 'signature_filtered': signature_match.signature_consensus,
@@ -1367,18 +1367,55 @@ def IMSignatureMatch(request):
     }
 
     signature_match = prepare_signature_match(signature_match)
-    return JsonResponse(json.dumps(signature_match), safe=False)
+    return JsonResponse(signature_match, safe=False)
 
 def prepare_signature_match(signature_match):
+    from common.definitions import AMINO_ACID_GROUP_PROPERTIES
+    from common.definitions import AMINO_ACID_GROUP_NAMES
+
     out = []
     for key in signature_match:
         if key == 'scores':
             for elem in signature_match[key].items():
-                print(elem[0].protein.short())
                 out.append({
+                        'entry': elem[0].protein.entry_name,
                         'prot': elem[0].protein.short(),
                         'score': elem[1][0],
                         'nscore': elem[1][1]
                     })
+
+        elif key == 'signatures_pos':
+            print(signature_match[key])
+
+        elif key == 'protein_signatures':
+            for elem in signature_match[key].items():
+                prot_entry = elem[0].protein.entry_name
+                sig = []
+                for signature in elem[1].values():
+                    for sig_elem in signature:
+                        # 0: feat code
+                        # 1: feature
+                        # 2: cons
+                        # 3: color
+                        # 4: aa
+                        # 5: gn
+                        sig.append({
+                            'code':
+                            str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('display_name_short',
+                                'XXX')),
+                            'length':
+                            str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('length',
+                                'XXX')),
+                            'gn': str(sig_elem[5]),
+                            'aa': str(sig_elem[4]),
+                            'score': str(sig_elem[2]),
+                            'feature': str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0],
+                                'XXX'))
+                            })
+
+                for i in out:
+                    if i['entry'] == prot_entry:
+                        i['sign'] = sig
+
     return out
 
