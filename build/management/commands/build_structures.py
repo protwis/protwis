@@ -174,7 +174,8 @@ class Command(BaseBuild):
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
      'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
      'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
-     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V', 'YCM':'C'}
+     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V', 
+     'YCM':'C', 'CSD':'C', 'TYS':'Y', 'SEP':'S'} #non-standard AAs
 
         atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14}
@@ -402,7 +403,7 @@ class Command(BaseBuild):
         pdblines_temp = pdb.splitlines()
         pdblines = []
         for line in pdblines_temp: #Get rid of all odd records
-            if line.startswith('ATOM') or (line[17:20]=='YCM' and line.startswith('HETATM')):
+            if line.startswith('ATOM') or (line[17:20] in ['YCM','CSD','TYS','SEP'] and line.startswith('HETATM')):
                 pdblines.append(line)
         pdblines.append('') #add a line to not "run out"
         rotamer_bulk = []
@@ -419,8 +420,8 @@ class Command(BaseBuild):
         # print('removed: ',removed)
         for i,line in enumerate(pdblines):
             # print(line)
-            if line.startswith('ATOM') or (line[17:20]=='YCM' and line.startswith('HETATM')):
-                # if line[17:20]=='YCM': # sanity check for YCM residues
+            if line.startswith('ATOM') or (line[17:20] in ['YCM','CSD','TYS','SEP'] and line.startswith('HETATM')):
+                # if line[17:20] in ['YCM','CSD','TYS','SEP']: # sanity check for non-standard helix residues
                 #     print(line)
                 chain = line[21]
                 if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
@@ -477,12 +478,12 @@ class Command(BaseBuild):
                                                 #print('could have been matched, but already aligned to another position',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         else:
                                             # print('WT pos not same AA, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
-                                            wt_pdb_lookup.append({'WT_POS':wt_r.sequence_number, 'PDB_POS': residue.sequence_number, 'AA': '.'})
+                                            wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA','.')]))
                                             mismatch_seq += 1
                                             aa_mismatch += 1
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
-                                        wt_pdb_lookup.append({'WT_POS':wt_r.sequence_number, 'PDB_POS': residue.sequence_number, 'AA': wt_r.amino_acid})
+                                        wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
                                         if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q']:
                                             if residue.sequence_number in unmapped_ref:
                                                 #print('residue.sequence_number',residue.sequence_number,'not mapped though')
