@@ -164,8 +164,8 @@ def Couplings(request):
     fd = {} #final data
 
     distinct_g_families = sorted(distinct_g_families)
-    distinct_g_families = ['Gs','Gi/Go', 'G12/G13', 'Gq/G11', ]
-    distinct_g_subunit_families = OrderedDict([('Gs',['gnal', 'gnas2']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('G12/G13',['gna12', 'gna13']), ('Gq/G11',['gna14', 'gna15', 'gnaq'])])
+    distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
+    distinct_g_subunit_families = OrderedDict([('Gs',['gnal', 'gnas2']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gna14', 'gna15', 'gnaq']), ('G12/G13',['gna12', 'gna13'])])
 
     for p,v in data.items():
         fd[p] = [v['class'],p,v['pretty']]
