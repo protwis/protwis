@@ -1,5 +1,6 @@
 {% extends "home/base.html" %}
 {% load staticfiles %}
+{% load filters %}
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
@@ -279,14 +280,14 @@
                     },
                     {
                         column_number : 19,
-                        filter_type: "text",
+                        filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Ligand Function",
                         filter_reset_button_text: false,
                     },
                     {
                         column_number : 21,
-                        filter_type: "text",
+                        filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "State",
                         filter_reset_button_text: false,
@@ -595,33 +596,25 @@
                     </td>
 
                     <td>
-                        {% if construct.crystallization %}
-                             {% for l in construct.crystallization.ligands.all %}
-
-                                {% if l.ligand.name|length < 40 %}
-                                    {{ l.ligand.name}}
+                            {% for ligand in construct.structure.ligands.all %}
+                                {% if ligand.ligand.name|safe|length > 20 %}
+                                    <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
                                 {% else %}
-                                    {{ l.ligand.name|slice:"0:40"}}..
+                                    {{ ligand.ligand.name|safe }}
                                 {% endif %}
-
-                             {% endfor %}
-                        {% else %}
+                                {% for link in ligand.ligand.properities.web_links.all %}
+                                    <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
+                                {% endfor %}
+                                    <br />
+                                {% empty %}
+                                    N/A
+                            {% endfor %}
+                        </td>
+                        <td>{% for ligand in construct.structure.ligands.all %}{{ ligand.ligand_role.name }}{% empty %}
                             N/A
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if construct.crystallization %}
-                             {% for l in construct.crystallization.ligands.all %}
-
-                                    {{ l.ligand.ligand_role.name}}
-
-                             {% endfor %}
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
+                            {% endfor %}</td>
                     <td class="text-center">{{ construct.crystal.resolution|floatformat:"1" }}</td>
-                    <td>{{ construct.structure.state.name }}</td>
+                    <td><span>{{ construct.structure.state.name }}</span></td>
                     <!--
                     <td>{{ construct.contributor.pi_name|safe }}</td>
                     <td>{{ construct.contributor.date|safe }}</td> -->
