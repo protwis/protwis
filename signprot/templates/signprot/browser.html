@@ -165,7 +165,7 @@
     </tr>
 {% endfor %}
     </tbody>
-    </table>
+</table>
 
 {% endblock %}
 
@@ -177,16 +177,11 @@
         $(document).ready(function() {
 
             oTable = $('#couplings').DataTable({
-                    'scrollX': true,
-                    // 'paging': true,
-                    // 'autoWidth': true,
-                    // "ordering": false,
-
-                    scrollY:        '70vh',
-                    // scrollCollapse: true,
-                    paging:         false,
+                    "scrollX": true,
+                    "scrollY":        '70vh',
+                    "paging":         false,
                     "aaSorting": [],
-                    "bSortCellsTop": true
+                    "bSortCellsTop": true //prevent sort arrows going on bottom row
                   });
 
                   yadcf.init(oTable,
@@ -218,7 +213,6 @@
                                 width: '95px',
                             }
                         },
-
                         {
                             column_number : 3,
                             filter_type: "multi_select",
@@ -226,8 +220,6 @@
                             filter_default_label: "Gs",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 4,
                             filter_type: "multi_select",
@@ -235,8 +227,6 @@
                             filter_default_label: "Gi/Go",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 5,
                             filter_type: "multi_select",
@@ -244,8 +234,6 @@
                             filter_default_label: "Gq/G11",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 6,
                             filter_type: "multi_select",
@@ -253,7 +241,6 @@
                             filter_default_label: "G12/G13",
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 7,
                             filter_type: "multi_select",
@@ -261,8 +248,6 @@
                             filter_default_label: "Gs",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 8,
                             filter_type: "multi_select",
@@ -270,8 +255,6 @@
                             filter_default_label: "Gi/Go",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 9,
                             filter_type: "multi_select",
@@ -279,8 +262,6 @@
                             filter_default_label: "Gq/G11",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 10,
                             filter_type: "multi_select",
@@ -288,7 +269,6 @@
                             filter_default_label: "G12/G13",
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 11,
                             filter_type: "multi_select",
@@ -296,8 +276,6 @@
                             filter_default_label: "Gs",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 12,
                             filter_type: "multi_select",
@@ -314,8 +292,6 @@
                             filter_default_label: "Gq/G11",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 14,
                             filter_type: "multi_select",
@@ -323,78 +299,66 @@
                             filter_default_label: "G12/G13",
                             filter_reset_button_text: false,
                         },
-
-
                         {
                             column_number : 15,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 16,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 17,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 18,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 19,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 20,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 21,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 22,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 23,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 24,
                             filter_type: "range_number",
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
                         {
                             column_number : 25,
                             filter_type: "range_number",
@@ -410,8 +374,10 @@
 
             yadcf.exResetAllFilters(oTable);
 
+            // Add this class to prevent main table becoming unaligned to headers if alot of headers are hidden
             $('.dataTables_scrollBody #couplings').addClass("pull-left");
 
+            // Color cells according to their content
             $('.greyscale').each(function() {
                 var s = $(this).html();
                 if (s == "-") return
@@ -427,11 +393,8 @@
 
             $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
 
-            // $("#overlay").css({ top: '0px' });
-            // $("#overlay").css('position', 'absolute');
-            // $("#overlay").css('background', 'white');
-
             function create_overlay() {
+                // This function fires upon filtering, to update what rows to show as an overlay
                 $("#overlay_table tbody tr").remove(); 
                 var $target = $("#overlay_table tbody");
                 $("#couplings tbody tr").each(function() {
@@ -442,7 +405,7 @@
                 });
                 $("#overlay_table .border-right").removeClass("border-right");
 
-
+                // While looping go find the totals for each column
                 threshold_primary = -0.1
                 threshold_secondary = -0.5
                 var $dataRows=$("#couplings tbody tr");
@@ -460,12 +423,14 @@
                         totals[i][3]+=1;
                     });
                 });
+                // attach the totals to the header row
                 var tr = $(".dataTables_scrollHead thead tr:eq(2)");
                 $.each( totals, function( index, v ) {
                     tr.find('th').eq(index+1).html(v.join("|"));
                 });
             }
 
+            // Function that detects filtering events
             $('#couplings').on( 'draw.dt', function (e,oSettings) {
                 create_overlay();
             });
@@ -475,44 +440,11 @@
 
             var left = 0;
             var old_left = 0;
-            var lastMove = (new Date()).getTime();
-            // $('.dataTables_scrollBody').scroll(function(){
-            //     // console.log('dataTables_scroll',$('.dataTables_scrollBody').scrollLeft());
-
-            //     left = $('.dataTables_scrollBody').scrollLeft();
-            //     // if (left!=old_left) $("#overlay").animate({ left: '-=300' });
-            //     if (left!=old_left) $("#overlay").hide();
-            //     // console.log('last scroll',((new Date()).getTime()-lastMove));
-            //     // if (((new Date()).getTime()-lastMove)<200) clearTimeout($.data(this, 'scrollTimer'));
-            //     clearTimeout($.data(this, 'scrollTimer'));
-            //     clearTimeout($.data(this, 'fadeout'));
-            //     $.data(this, 'scrollTimer', setTimeout(function() {
-            //         // do something
-            //         left = $('.dataTables_scrollBody').scrollLeft();
-            //         old_left = left;
-            //         // if (left!=old_left) $("#overlay").hide();
-            //         if (left>200) {
-            //             $("#overlay").css({ left: left+'px' });
-            //             $("#overlay").fadeIn();
-            //             lastMove = (new Date()).getTime();
-            //             // $("#overlay").animate({ left: left+'px' });
-            //         } else {
-            //             $.data(this, 'fadeout', setTimeout(function() {
-            //                 if ($("#overlay").is(":visible") && left<200) {
-            //                     console.log("FADEOUT"); 
-            //                     $("#overlay").animate({ left: '0px' });
-            //                     $("#overlay").fadeOut("slow");
-            //                 }
-            //             },200));
-            //         }
-            //     }, 200));
-            // });
             toggle_enabled = true;
             $('.dataTables_scrollBody').scroll(function(){
-
+                // If user scrolls and it's >100px from left, then attach fixed columns overlay
                 left = $('.dataTables_scrollBody').scrollLeft();
                 if (left!=old_left) $("#overlay").hide();
-                left = $('.dataTables_scrollBody').scrollLeft();
                 old_left = left;
 
                 if (left>100 && toggle_enabled) {
@@ -522,7 +454,7 @@
             });
 
             $(function(){
-                // Enables popover
+                // Enables popover for reference
                 $("[data-toggle=popover]").popover({container: 'body'});
             });
 
@@ -532,14 +464,9 @@
             g = Math.round(g).toString(16);
             b = Math.round(b).toString(16);
 
-            if (r.length == 1)
-                r = '0' + r;
-
-            if (g.length == 1)
-                g = '0' + g;
-
-            if (b.length == 1)
-                b = '0' + b;
+            if (r.length == 1) r = '0' + r;
+            if (g.length == 1) g = '0' + g;
+            if (b.length == 1) b = '0' + b;
 
             return '#' + r + g + b;
         }
@@ -597,13 +524,14 @@
             return function (table, name, filename) {
                     var table= $("#"+table).clone();
                     $("#excel_table").html(table);
+                    // Clean up table to remove yadcf stuff
                     $("#excel_table thead tr").css('height','');
                     $("#excel_table thead th").css('height','');
                     $("#excel_table thead div").css('height','');
                     $("#excel_table thead .yadcf-filter-wrapper").remove();
                     $("#excel_table thead button").remove();
                     var tr = $("#excel_table thead tr:eq(1)");
-
+                    // reattach th titles
                     tr.find('th').each (function( column, th) {
                       if ($(th).attr('title')) $(th).html($(th).attr('title'));
                     });     
