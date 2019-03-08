@@ -465,6 +465,17 @@
                 $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).appendTo($target);
             });
 
+            $('#couplings').on( 'draw.dt', function (e,oSettings) {
+                $("#overlay_table tbody tr").remove(); 
+                var $target = $("#overlay_table tbody");
+                $("#couplings tbody tr").each(function() {
+                    var $tds = $(this).children(),
+                        $row = $("<tr></tr>");
+                    $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).appendTo($target);
+                });
+            });
+
+
             $("#overlay").hide();
 
             console.log('bind scroll');
