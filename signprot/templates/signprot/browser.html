@@ -3,9 +3,10 @@
 
 {% block content %}
 <a id="dlink"  style="display:none;"></a>
-<input type="button" onclick="tableToExcel('couplings', 'Coupling data', 'MyFile.xls')" value="Export to Excel">
-
-
+<div id="excel_table"  style2="display:none;"></div>
+<input type="button" onclick="toggleOverlay()" id="toggle" value="Disable fixed columns">
+<input type="button" onclick="tableToExcel('couplings', 'Coupling data', 'GPCRdb_coupling.xls')" value="Export to Excel">
+<input type="button" onclick="resetHidden()" id="toggle" value="Reset hidden columns">
 
 <table class="row-border text-center compact text-nowrap" id="couplings">
     <thead>
@@ -18,58 +19,65 @@
             </th>
             <th colspan="4" class="border-right">
                 G protein coupling (merged sources)
+
+                <button type="button" class="close hide_columns" columns="3,4,5,6" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </th>
             <th colspan="4" class="border-right">
-                <a href="http://www.guidetopharmacology.org/GRAC/ReceptorFamiliesForward?type=GPCR">Guide To Pharmacology database</a>
+                <a href="http://www.guidetopharmacology.org/GRAC/ReceptorFamiliesForward?type=GPCR"  target="_blank">Guide To Pharmacology database</a>
+                <button type="button" class="close hide_columns pull-right" columns="7,8,9,10" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="btn btn-xs btn-danger pull-right" data-toggle="popover" data-placement="bottom" data-html="true"  title="Reference" data-content='Southan C, Sharman JL, Benson HE, Faccenda E, Pawson AJ, Alexander SPH, Buneman OP, Davenport AP, McGrath JC, Peters JA, Spedding M, Catterall WA, Fabbro D, Davies JA; NC-IUPHAR. (2016)<br><b>The IUPHAR/BPS Guide to PHARMACOLOGY in 2016: towards curated quantitative interactions between 1300 protein targets and 6000 ligands</b>.<br> <a href="http://nar.oxfordjournals.org/content/early/2015/10/11/nar.gkv1037.full" target="_blank"><i>Nucl. Acids Res.</i> <b>44</b> (Database Issue): D1054-68.</a> [PMID:<a href="http://www.ncbi.nlm.nih.gov/pubmed/26464438" target="_blank">26464438</a>]'>Reference</button>
             </th>
             <th colspan="4" class="border-right">
                 Asuka Inoue et al., Cell 2019
+                <button type="button" class="close hide_columns" columns="11,12,13,14" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </th>
             <th colspan="2" class="border-right">
                 Gs
+                <button type="button" class="close hide_columns" columns="15,16" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </th>
             <th colspan="4" class="border-right">
                 Gi/o
+                <button type="button" class="close hide_columns" columns="17,18,19,20" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </th>
             <th colspan="3" class="border-right">
                 Gq/11
+                <button type="button" class="close hide_columns" columns="21,22,23" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </th>
             <th colspan="2">
                 G12/13
+                <button type="button" class="close hide_columns" columns="24,25" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </th>
         </tr>
         <tr>
-            <th>
-            </th>
-            <th>
-            </th>
-            <th class="border-right">
-            </th>
             <th></th>
+            <th></th>
+            <th class="border-right"></th>
             
-                <th></th>
+                <th title="Gs"></th>
             
-                <th></th>
+                <th title="Gi/Go"></th>
             
-                <th class="border-right"></th>
+                <th title="Gq/G11"></th>
             
-            
-                <th></th>
-            
-                <th></th>
-            
-                <th></th>
-            
-                <th class="border-right"></th>
+                <th title="G12/G13" class="border-right"></th>
             
             
-                <th></th>
+                <th title="Gs"></th>
             
-                <th></th>
+                <th title="Gi/Go"></th>
             
-                <th></th>
+                <th title="Gq/G11"></th>
             
-                <th class="border-right"></th>
+                <th title="G12/G13" class="border-right"></th>
+            
+            
+                <th title="Gs"></th>
+            
+                <th title="Gi/Go"></th>
+            
+                <th title="Gq/G11"></th>
+            
+                <th title="G12/G13" class="border-right"></th>
                 
                 <th>gnal</th>
             
@@ -96,6 +104,32 @@
             
                 <th>gna13</th>
         </tr>
+        <tr id='count_row'>
+            <th colspan=3 class="border-right">Sum (Primary|Secondary|None|Total):</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th class="border-right"></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th class="border-right"></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th class="border-right"></th>
+            <th></th>
+            <th class="border-right"></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th class="border-right"></th>
+            <th></th>
+            <th></th>
+            <th class="border-right"></th>
+            <th></th>
+            <th></th>
+        </tr>
 
     </thead>
 
@@ -104,7 +138,7 @@
     <tr>
         <td class="text-left">{{vals.0}}</td>
         <td class="text-left">{{vals.1}}</td>
-        <td class="text-left border-right">{{vals.2|safe}}</td>
+        <td class="text-left border-right"><span>{{vals.2|safe}}</span></td>
         <td class="greyscale">{{vals.3}}</td>
         <td class="greyscale">{{vals.4}}</td>
         <td class="greyscale">{{vals.5}}</td>
@@ -151,10 +185,8 @@
                     scrollY:        '70vh',
                     // scrollCollapse: true,
                     paging:         false,
-                    columnDefs: [
-                      { targets: 'no-sort', orderable: false }
-                    ],
-                    "aaSorting": []
+                    "aaSorting": [],
+                    "bSortCellsTop": true
                   });
 
                   yadcf.init(oTable,
@@ -177,13 +209,13 @@
                             column_number : 2,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            //column_data_type: "html",
+                            column_data_type: "html",
                             html_data_type: "text",
                             filter_default_label: "NC-IUPHAR",
                             filter_match_mode : "exact",
                             filter_reset_button_text: false,
                             select_type_options: {
-                                width: '85px',
+                                width: '95px',
                             }
                         },
 
@@ -369,75 +401,16 @@
                             filter_default_label: ["From", "To"],
                             filter_reset_button_text: false,
                         },
-
-                        // {
-                        //     column_number : 1,
-                        //     filter_type: "multi_select",
-                        //     select_type: 'select2',
-                        //     select_type_options: {
-                        //       width: '70px'
-                        //     },
-                        //     filter_default_label: "PDB",
-                        //     filter_reset_button_text: false,
-                        // },
-                        // {
-                        //     column_number : 2,
-                        //     filter_type: "multi_select",
-                        //     select_type: 'select2',
-                        //     column_data_type: "html",
-                        //     html_data_type: "text",
-                        //     filter_default_label: "Receptor",
-                        //     filter_match_mode : "exact",
-                        //     filter_reset_button_text: false,
-                        // },
-                        // {
-                        //     column_number : 3,
-                        //     filter_type: "multi_select",
-                        //     select_type: 'select2',
-                        //     html_data_type: "text",
-                        //     select_type_options: {
-                        //       width: '150px'
-                        //     },
-                        //     filter_default_label: "Family",
-                        //     filter_match_mode : "exact",
-                        //     filter_reset_button_text: false,
-                        // },
-                        // {
-                        //     column_number : 4,
-                        //     filter_type: "multi_select",
-                        //     select_type: 'select2',
-                        //     filter_default_label: "Species",
-                        //     filter_reset_button_text: false,
-                        // },
-                        // {
-                        //     column_number : 5,
-                        //     filter_type: "multi_select",
-                        //     select_type: 'select2',
-                        //     select_type_options: {
-                        //         minimumResultsForSearch: -1 // remove search box
-                        //     },
-                        //     filter_default_label: "State",
-                        //     column_data_type: "html",
-                        //     html_data_type: "text",
-                        //     filter_match_mode : "exact",
-                        //     filter_reset_button_text: false,
-
-                        // },
-                        // {
-                        //     column_number : 6,
-                        //     filter_type: "multi_select",
-                        //     select_type: 'select2',
-                        //     filter_default_label: "Representative",
-                        //     filter_reset_button_text: false,
-
-                        // },
                     ],
+                    { filters_tr_index: 1},
                     {
                         cumulative_filtering: false
                     }
                 );
 
             yadcf.exResetAllFilters(oTable);
+
+            $('.dataTables_scrollBody #couplings').addClass("pull-left");
 
             $('.greyscale').each(function() {
                 var s = $(this).html();
@@ -453,65 +426,104 @@
             });
 
             $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
-            $("#overlay").css({ top: '0px' });
-            $("#overlay").css('position', 'absolute');
-            $("#overlay").css('background', 'white');
 
-            $("#overlay_table tbody tr").remove(); 
-            var $target = $("#overlay_table tbody");
-            $("#couplings tbody tr").each(function() {
-                var $tds = $(this).children(),
-                    $row = $("<tr></tr>");
-                $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).appendTo($target);
-            });
+            // $("#overlay").css({ top: '0px' });
+            // $("#overlay").css('position', 'absolute');
+            // $("#overlay").css('background', 'white');
 
-            $('#couplings').on( 'draw.dt', function (e,oSettings) {
+            function create_overlay() {
                 $("#overlay_table tbody tr").remove(); 
                 var $target = $("#overlay_table tbody");
                 $("#couplings tbody tr").each(function() {
                     var $tds = $(this).children(),
                         $row = $("<tr></tr>");
+                    // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
                     $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).appendTo($target);
                 });
+                $("#overlay_table .border-right").removeClass("border-right");
+
+
+                threshold_primary = -0.1
+                threshold_secondary = -0.5
+                var $dataRows=$("#couplings tbody tr");
+                var totals=[];
+                $dataRows.each(function() {
+                    $(this).find('.greyscale').each(function(i){
+                        if (!(i in totals)) totals[i] = [0,0,0,0];     
+                        if ($(this).text()=='primary') totals[i][0]+=1;
+                        if ($(this).text()=='secondary') totals[i][1]+=1;
+                        if ($(this).text()=='No coupling') totals[i][2]+=1;
+                        if (parseFloat($(this).text())>=threshold_primary) totals[i][0]+=1;
+                        if (parseFloat($(this).text())>=threshold_secondary && parseFloat($(this).text())<threshold_primary) totals[i][1]+=1;
+                        if (parseFloat($(this).text())<threshold_secondary) totals[i][2]+=1;
+                        if ($(this).text()=='') totals[i][2]+=1;
+                        totals[i][3]+=1;
+                    });
+                });
+                var tr = $(".dataTables_scrollHead thead tr:eq(2)");
+                $.each( totals, function( index, v ) {
+                    tr.find('th').eq(index+1).html(v.join("|"));
+                });
+            }
+
+            $('#couplings').on( 'draw.dt', function (e,oSettings) {
+                create_overlay();
             });
 
-
+            create_overlay();
             $("#overlay").hide();
 
-            console.log('bind scroll');
             var left = 0;
             var old_left = 0;
             var lastMove = (new Date()).getTime();
+            // $('.dataTables_scrollBody').scroll(function(){
+            //     // console.log('dataTables_scroll',$('.dataTables_scrollBody').scrollLeft());
+
+            //     left = $('.dataTables_scrollBody').scrollLeft();
+            //     // if (left!=old_left) $("#overlay").animate({ left: '-=300' });
+            //     if (left!=old_left) $("#overlay").hide();
+            //     // console.log('last scroll',((new Date()).getTime()-lastMove));
+            //     // if (((new Date()).getTime()-lastMove)<200) clearTimeout($.data(this, 'scrollTimer'));
+            //     clearTimeout($.data(this, 'scrollTimer'));
+            //     clearTimeout($.data(this, 'fadeout'));
+            //     $.data(this, 'scrollTimer', setTimeout(function() {
+            //         // do something
+            //         left = $('.dataTables_scrollBody').scrollLeft();
+            //         old_left = left;
+            //         // if (left!=old_left) $("#overlay").hide();
+            //         if (left>200) {
+            //             $("#overlay").css({ left: left+'px' });
+            //             $("#overlay").fadeIn();
+            //             lastMove = (new Date()).getTime();
+            //             // $("#overlay").animate({ left: left+'px' });
+            //         } else {
+            //             $.data(this, 'fadeout', setTimeout(function() {
+            //                 if ($("#overlay").is(":visible") && left<200) {
+            //                     console.log("FADEOUT"); 
+            //                     $("#overlay").animate({ left: '0px' });
+            //                     $("#overlay").fadeOut("slow");
+            //                 }
+            //             },200));
+            //         }
+            //     }, 200));
+            // });
+            toggle_enabled = true;
             $('.dataTables_scrollBody').scroll(function(){
-                // console.log('dataTables_scroll',$('.dataTables_scrollBody').scrollLeft());
 
                 left = $('.dataTables_scrollBody').scrollLeft();
-                // if (left!=old_left) $("#overlay").animate({ left: '-=300' });
                 if (left!=old_left) $("#overlay").hide();
-                // console.log('last scroll',((new Date()).getTime()-lastMove));
-                // if (((new Date()).getTime()-lastMove)<200) clearTimeout($.data(this, 'scrollTimer'));
-                clearTimeout($.data(this, 'scrollTimer'));
-                clearTimeout($.data(this, 'fadeout'));
-                $.data(this, 'scrollTimer', setTimeout(function() {
-                    // do something
-                    left = $('.dataTables_scrollBody').scrollLeft();
-                    old_left = left;
-                    // if (left!=old_left) $("#overlay").hide();
-                    if (left>200) {
-                        $("#overlay").css({ left: left+'px' });
-                        $("#overlay").fadeIn();
-                        lastMove = (new Date()).getTime();
-                        // $("#overlay").animate({ left: left+'px' });
-                    } else {
-                        $.data(this, 'fadeout', setTimeout(function() {
-                            if ($("#overlay").is(":visible") && left<200) {
-                                console.log("FADEOUT"); 
-                                $("#overlay").animate({ left: '0px' });
-                                $("#overlay").fadeOut("slow");
-                            }
-                        },200));
-                    }
-                }, 200));
+                left = $('.dataTables_scrollBody').scrollLeft();
+                old_left = left;
+
+                if (left>100 && toggle_enabled) {
+                    $("#overlay").css({ left: left+'px' });
+                    if ($("#overlay").is(":hidden")) $("#overlay").show();
+                }
+            });
+
+            $(function(){
+                // Enables popover
+                $("[data-toggle=popover]").popover({container: 'body'});
             });
 
         });
@@ -532,6 +544,46 @@
             return '#' + r + g + b;
         }
 
+        $('.hide_columns').click(function(evt) {
+            var columns = $(this).attr('columns').split(",");
+            columns.forEach(function(column) {
+                var column = oTable.column( column );
+                try {
+                    column.visible( false, false );
+                }
+                catch(err) {
+                    column.visible( false, false );
+                }
+            });
+            oTable.draw();
+        } );
+
+        function resetHidden() {
+            var columns = Array.from(new Array(23), (x,i) => i + 3);
+            columns.forEach(function(column) {
+                var column = oTable.column( column );
+                try {
+                    column.visible( true, false );
+                }
+                catch(err) {
+                    column.visible( true, false );
+                }
+            });
+            oTable.draw();
+        }
+
+        function toggleOverlay() {
+            if (toggle_enabled) {
+                toggle_enabled = false;
+                $("#overlay").hide();
+                $("#toggle").attr('value',"Enable fixed columns");
+            } else {
+                toggle_enabled = true;
+                $('.dataTables_scrollBody').scroll();
+                $("#toggle").attr('value',"Disable fixed columns");
+            }
+        }
+
         var tableToExcel = (function () {
             var uri = 'data:application/vnd.ms-excel;base64,',
                 template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
@@ -543,39 +595,29 @@
                     })
                 }
             return function (table, name, filename) {
-                if (!table.nodeType) table = document.getElementById(table)
+                    var table= $("#"+table).clone();
+                    $("#excel_table").html(table);
+                    $("#excel_table thead tr").css('height','');
+                    $("#excel_table thead th").css('height','');
+                    $("#excel_table thead div").css('height','');
+                    $("#excel_table thead .yadcf-filter-wrapper").remove();
+                    $("#excel_table thead button").remove();
+                    var tr = $("#excel_table thead tr:eq(1)");
+
+                    tr.find('th').each (function( column, th) {
+                      if ($(th).attr('title')) $(th).html($(th).attr('title'));
+                    });     
+
                 var ctx = {
                     worksheet: name || 'Worksheet',
-                    table: table.innerHTML
+                    table: $("#excel_table").html()
                 }
-           document.getElementById("dlink").href = uri + base64(format(template, ctx));
-                    document.getElementById("dlink").download = filename;
-                    document.getElementById("dlink").click();
+                $("#excel_table").html("");
+                document.getElementById("dlink").href = uri + base64(format(template, ctx));
+                document.getElementById("dlink").download = filename;
+                document.getElementById("dlink").click();
             }
         })()
-
-
-
-
-        $(function(){
-            $('.ali-scroll-div').scroll(function(){
-                $('.ali-main-div')
-                    .scrollLeft($('.ali-scroll-div').scrollLeft());
-                $(".ali-main-div")
-                    .scrollTop($('.ali-main-div').scrollTop());
-            });
-            $('.ali-first-col-div').scroll(function(){
-                $(".ali-main-div")
-                    .scrollTop($('.ali-first-col-div').scrollTop());
-            });
-            $('.ali-main-div').scroll(function(){
-                $('.ali-scroll-div')
-                    .scrollLeft($('.ali-main-div').scrollLeft());
-                $(".ali-first-col-div")
-                    .scrollTop($('.ali-main-div').scrollTop());
-            });
-        });
-
 
     </script>
 {% endblock %}
@@ -603,6 +645,26 @@
 
         td {
             height: 20px;
+        }
+        .popover{
+            max-width: 100%; /* Max Width of the popover (depending on the container!) */
+        }
+        #overlay
+        {
+            top: 0px;
+            position: absolute;
+            background: #f8f8f8;
+          /*border: 1px solid #333;*/
+          -webkit-box-shadow: 5px 0 2px -2px #888;
+                  box-shadow: 5px 0 2px -2px #888;
+        }
+        #overlay tbody tr {
+             background-color: #f8f8f8; 
+        }
+
+        #count_row th {
+            font-size: 11px;
+            text-align: center;
         }
     </style>
 {% endblock %}

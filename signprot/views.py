@@ -116,7 +116,7 @@ def Couplings(request):
         if p_class not in class_names:
             class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
         p_class_name = class_names[p_class].strip()
-        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short(),'GuideToPharma':{},'Aska':{}}
+        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short()[:15],'GuideToPharma':{},'Aska':{}}
 
     distinct_g_families = []
     distinct_g_subunit_families = {}
