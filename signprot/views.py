@@ -1373,16 +1373,17 @@ def prepare_signature_match(signature_match):
     from common.definitions import AMINO_ACID_GROUP_PROPERTIES
     from common.definitions import AMINO_ACID_GROUP_NAMES
 
-    out = []
+    out = {}
     for key in signature_match:
         if key == 'scores':
             for elem in signature_match[key].items():
-                out.append({
+                entry = elem[0].protein.entry_name
+                out[entry] = {
                         'entry': elem[0].protein.entry_name,
                         'prot': elem[0].protein.short(),
                         'score': elem[1][0],
                         'nscore': elem[1][1]
-                    })
+                    }
 
         elif key == 'signatures_pos':
             print(signature_match[key])
@@ -1402,20 +1403,19 @@ def prepare_signature_match(signature_match):
                         sig.append({
                             'code':
                             str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('display_name_short',
-                                'XXX')),
+                                None)),
                             'length':
                             str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('length',
-                                'XXX')),
+                                None)),
                             'gn': str(sig_elem[5]),
                             'aa': str(sig_elem[4]),
                             'score': str(sig_elem[2]),
                             'feature': str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0],
-                                'XXX'))
+                                None))
                             })
 
-                for i in out:
-                    if i['entry'] == prot_entry:
-                        i['sign'] = sig
+                if prot_entry in out:
+                    out[prot_entry]['sign'] = sig
 
     return out
 
