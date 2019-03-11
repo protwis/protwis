@@ -203,7 +203,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     });
 
 
-
   g
     .append('rect')
     .attr('width', rectWidth)

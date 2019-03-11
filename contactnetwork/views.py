@@ -515,11 +515,18 @@ def ClusteringData(request):
 
     # Collect structure annotations
     pdb_annotations = {}
+    # Grab all annotations and all the ligand role when present in aggregates
     annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
                     .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__family__parent__name', \
-                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name')
+                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name') \
+                    .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True)))
+
     for an in annotations:
-        pdb_annotations[an[0]] = an[1:]
+        pdb_annotations[an[0]] = list(an[1:])
+        # Cleanup the aggregates as None values are introduced
+        pdb_annotations[an[0]][5] = list(filter(None.__ne__, pdb_annotations[an[0]][5]))
+
+
     data['annotations'] = pdb_annotations
 
     # hierarchical clustering
