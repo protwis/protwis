@@ -495,7 +495,13 @@ def ClusteringData(request):
 
     # normalize and store distance map
     for pdb in pdbs:
-        pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"])
+        # numpy way caused error on production server
+        i,j = pdb_distance_maps[pdb].shape
+        for i in range(i):
+                for j in range(j):
+                    v = pdb_distance_maps[pdb][i][j]
+                    if v:
+                        pdb_distance_maps[pdb][i][j] = v/pdb_distance_maps["average"][i][j]
 
     # calculate distance matrix
     distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
