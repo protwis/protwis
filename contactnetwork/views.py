@@ -495,7 +495,13 @@ def ClusteringData(request):
 
     # normalize and store distance map
     for pdb in pdbs:
-        pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"])
+        # numpy way caused error on production server
+        i,j = pdb_distance_maps[pdb].shape
+        for i in range(i):
+                for j in range(j):
+                    v = pdb_distance_maps[pdb][i][j]
+                    if v:
+                        pdb_distance_maps[pdb][i][j] = v/pdb_distance_maps["average"][i][j]
 
     # calculate distance matrix
     distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
@@ -509,11 +515,18 @@ def ClusteringData(request):
 
     # Collect structure annotations
     pdb_annotations = {}
+    # Grab all annotations and all the ligand role when present in aggregates
     annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
                     .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__family__parent__name', \
-                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name')
+                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name') \
+                    .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True)))
+
     for an in annotations:
-        pdb_annotations[an[0]] = an[1:]
+        pdb_annotations[an[0]] = list(an[1:])
+        # Cleanup the aggregates as None values are introduced
+        pdb_annotations[an[0]][5] = list(filter(None.__ne__, pdb_annotations[an[0]][5]))
+
+
     data['annotations'] = pdb_annotations
 
     # hierarchical clustering
