@@ -44,7 +44,6 @@ class Command(BaseCommand):
             ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_ligand_assays', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_mutant_data', {'proc': options['proc'], 'test_run': options['test']}],
-            ['build_crystal_interactions', {'proc': options['proc']}],
             ['build_protein_sets'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
