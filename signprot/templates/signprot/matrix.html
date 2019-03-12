@@ -367,8 +367,9 @@
                 const new_data = Object.keys(data).map(key => data[key])
                 // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
                 $('#sigmatch_table').DataTable({
-                    dom: 'Bfrtip',
+                    // dom: 'Bfrtip',
                     data: new_data,
+                    destroy: true,
                     columnDefs: [
                         {
                             data: 'prot',
@@ -376,15 +377,28 @@
                             targets: 0,
                         }, {
                             data: 'nscore',
+                            title: 'Normalized Score',
+                            targets: 3,
+                        }, {
+                            data: 'score',
                             title: 'Score',
+                            targets: 2,
+                        }, {
+                            data: 'entry',
+                            title: 'Entry Name',
                             targets: 1,
+                        // }, {
+                        //     data: 'sign',
+                        //     title: 'Signature',
+                        //     targets: 5,
                         }
                     ],
-            order: [[ 1, "desc" ]],
+            order: [[ 3, "desc" ]],
                 })
             },
             error: function(error){
                 console.log(error);
+                document.querySelector("#sigm_spin").style.display = "none";
             },
             complete: function(){
                 document.querySelector("#sigm_spin").style.display = "none";
@@ -421,6 +435,9 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script>
+
+$(document).ready(function () {
+        non_interactions = signprotmat.data.annotateNonInteractionData(interactions_metadata, non_interactions);
 
         $('[data-toggle="tooltip"]').tooltip();
 
