@@ -440,20 +440,32 @@ def ClusteringData(request):
 
     # common GNs
     common_gn = dis.fetch_common_gns_tm()
-    all_gns = list(ResidueGenericNumber.objects.filter(scheme__slug='gpcrdb').all().values_list('label',flat=True))
+    all_gns = sorted(list(ResidueGenericNumber.objects.filter(scheme__slug='gpcrdb').all().values_list('label',flat=True)))
     pdb_distance_maps = {}
+    pdb_gns = {}
     for pdb in pdbs:
         cache_key = "distanceMap-" + pdb
         print(pdb)
         # Cached?
+
         if cache.has_key(cache_key):
             cached_data = cache.get(cache_key)
             distance_map = cached_data["map"]
+            structure_gn = cached_data["gns"]
         else:
             # grab raw distance data per structure
             temp = Distances()
             temp.load_pdbs([pdb])
             temp.fetch_distances_tm()
+
+            structure_gn = list(Residue.objects.filter(protein_conformation__in=temp.pconfs) \
+                .exclude(generic_number=None) \
+                .exclude(generic_number__label__contains='8x') \
+                .exclude(generic_number__label__contains='12x') \
+                .exclude(generic_number__label__contains='23x') \
+                .exclude(generic_number__label__contains='34x') \
+                .exclude(generic_number__label__contains='45x') \
+                .values_list('generic_number__label',flat=True))
 
             # create distance map
             distance_map = np.full((len(all_gns), len(all_gns)), 0.0)
@@ -466,10 +478,12 @@ def ClusteringData(request):
 
             # store in cache
             store = {
-                "map" : distance_map
+                "map" : distance_map,
+                "gns" : structure_gn
+
             }
             cache.set(cache_key, store, 60*60*24*14)
-
+        pdb_gns[pdb] = structure_gn
         # Filtering indices to map to common_gns
         gn_indices = np.array([ all_gns.index(residue) for residue in common_gn ])
         pdb_distance_maps[pdb] = distance_map[gn_indices,:][:, gn_indices]
@@ -496,7 +510,14 @@ def ClusteringData(request):
     for i, pdb1 in enumerate(pdbs):
         for j in range(i+1, len(pdbs)):
             pdb2 = pdbs[j]
-            distance = np.sum(np.absolute(pdb_distance_maps[pdb1] - pdb_distance_maps[pdb2]))
+            # Get common GNs between two PDBs
+            common_between_pdbs = sorted(list(set(pdb_gns[pdb1]).intersection(pdb_gns[pdb2])))
+            # Get common between above set and the overall common set of GNs
+            common_with_query_gns = sorted(list(set(common_gn).intersection(common_between_pdbs)))
+            # Get the indices of positions that are shared between two PDBs
+            gn_indices = np.array([ common_gn.index(residue) for residue in common_with_query_gns ])
+            # Get distance between cells that have both GNs.
+            distance = np.sum(np.absolute(pdb_distance_maps[pdb1][gn_indices,:][:, gn_indices] - pdb_distance_maps[pdb2][gn_indices,:][:, gn_indices]))
             distance_matrix[i, j] = distance
             distance_matrix[j, i] = distance
 
