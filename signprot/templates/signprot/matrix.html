@@ -214,6 +214,15 @@
     </div>
 </div>
 
+<div id="" class="svg-container" style="">
+    <div id="">
+        <h2>Match Table</h2>
+    </div>
+    <div id=''>
+        <table id='sigmatch_table'></table>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block addon_js %}
@@ -355,7 +364,24 @@
             },
             success: function(data){
                 console.log(data)
+                const new_data = Object.keys(data).map(key => data[key])
                 // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
+                $('#sigmatch_table').DataTable({
+                    dom: 'Bfrtip',
+                    data: new_data,
+                    columnDefs: [
+                        {
+                            data: 'prot',
+                            title: 'Protein',
+                            targets: 0,
+                        }, {
+                            data: 'nscore',
+                            title: 'Score',
+                            targets: 1,
+                        }
+                    ],
+            order: [[ 1, "desc" ]],
+                })
             },
             error: function(error){
                 console.log(error);
@@ -395,8 +421,7 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script>
-    $(document).ready(function () {
-        non_interactions = signprotmat.data.annotateNonInteractionData(interactions_metadata, non_interactions);
+
         $('[data-toggle="tooltip"]').tooltip();
 
         const table = $('#table-interface').DataTable({
@@ -435,7 +460,7 @@
             select: {
                 style: 'os',
             },
-            paging: false,
+            aging: false,
             buttons: [
                 {
                     text: 'Select all',
