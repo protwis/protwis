@@ -174,7 +174,8 @@ class Command(BaseBuild):
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
      'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
      'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
-     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V'}
+     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V', 
+     'YCM':'C', 'CSD':'C', 'TYS':'Y', 'SEP':'S'} #non-standard AAs
 
         atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14}
@@ -212,10 +213,15 @@ class Command(BaseBuild):
         # Reset removed, since it causes more problems than not
 
         # Overwrite reset to fix annotation
-        if structure.pdb_code.index in ['6H7N','6H7J','6H7L','6H7M','6H7O']:
+        if structure.pdb_code.index in ['6H7N','6H7J','6H7L','6H7M','6H7O','6IBL']:
             removed = list(range(3,40))
-        if structure.pdb_code.index=='6MEO':
+            deletions = deletions+[271]
+        elif structure.pdb_code.index=='6MEO':
             removed = []
+        elif structure.pdb_code.index=='5N2R':
+            deletions = [1]+list(range(209,219))+list(range(306,413))
+        elif structure.pdb_code.index in ['5WIU','5WIV']:
+            removed = removed+[1001]
         # print('removed',removed)
         # removed = []
         if len(deletions)>len(d['wt_seq'])*0.9:
@@ -257,7 +263,7 @@ class Command(BaseBuild):
         prev_id = 0
         bigjump = False
         all_pdb_residues_in_chain = 0
-        for pp in ppb.build_peptides(chain): #remove >1000 pos (fusion protein / gprotein)
+        for pp in ppb.build_peptides(chain, aa_only=False): #remove >1000 pos (fusion protein / gprotein)
             for i,res in enumerate(pp,1 ):
                 all_pdb_residues_in_chain += 1
                 residue_id = res.get_full_id()
@@ -267,7 +273,7 @@ class Command(BaseBuild):
             #print(removed)
             removed = []
 
-        for pp in ppb.build_peptides(chain): #remove >1000 pos (fusion protein / gprotein)
+        for pp in ppb.build_peptides(chain, aa_only=False): #remove >1000 pos (fusion protein / gprotein)
             for i,res in enumerate(pp,1 ):
                 id = res.id
                 residue_id = res.get_full_id()
@@ -298,7 +304,7 @@ class Command(BaseBuild):
             ranges.append((group[0], group[-1]))
         if debug: print("Removed XTAL positions due to not being WT receptor",ranges)
         i = 1
-        for pp in ppb.build_peptides(chain):
+        for pp in ppb.build_peptides(chain, aa_only=False):
             seq += str(pp.get_sequence()) #get seq from fasta (only chain A)
             for residue in pp:
                 residue_id = residue.get_full_id()
@@ -308,6 +314,7 @@ class Command(BaseBuild):
                 pos = residue_id[3][1]
                 pdbseq[chain][pos] = [i,AA[residue.resname]]
                 i += 1
+        
         parent_seq_protein = str(structure.protein_conformation.protein.parent.sequence)
         # print(structure.protein_conformation.protein.parent.entry_name)
         rs = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent).prefetch_related('display_generic_number','generic_number','protein_segment')
@@ -339,12 +346,22 @@ class Command(BaseBuild):
         gaps = 0
         unmapped_ref = {}
         ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
-        if structure.pdb_code.index in ['5WIU','5WIV']:
-            temp_seq = temp_seq[:144]+'D'+temp_seq[145:]
-            temp_seq = temp_seq[:149]+'-'+temp_seq[150:]
-        elif structure.pdb_code.index=='5ZKP':
+        # if structure.pdb_code.index in ['5WIU','5WIV']:
+        #     temp_seq = temp_seq[:144]+'D'+temp_seq[145:]
+        #     temp_seq = temp_seq[:149]+'-'+temp_seq[150:]
+        if structure.pdb_code.index=='5ZKP':
             ref_seq = ref_seq[:197]+'-'+ref_seq[198:]
             ref_seq = ref_seq[:198]+'A'+ref_seq[199:]
+        elif structure.pdb_code.index in ['5VEW','5VEX']:
+            ref_seq = ref_seq[:164]+'IG'+ref_seq[167:]
+            temp_seq = temp_seq[:166]+temp_seq[167:]
+        elif structure.pdb_code.index in ['3V2W']:
+            ref_seq = ref_seq[:201]+ref_seq[202:]
+            temp_seq = temp_seq[:207]+temp_seq[208:]
+        elif structure.pdb_code.index in ['3V2Y']:
+            ref_seq = ref_seq[:209]+ref_seq[210:]
+            temp_seq = temp_seq[:215]+temp_seq[216:]
+
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             # print(i,r,temp_seq[i-1]) #print alignment for sanity check
             if r == "-":
@@ -386,7 +403,7 @@ class Command(BaseBuild):
         pdblines_temp = pdb.splitlines()
         pdblines = []
         for line in pdblines_temp: #Get rid of all odd records
-            if line.startswith('ATOM'):
+            if line.startswith('ATOM') or (line[17:20] in ['YCM','CSD','TYS','SEP'] and line.startswith('HETATM')):
                 pdblines.append(line)
         pdblines.append('') #add a line to not "run out"
         rotamer_bulk = []
@@ -395,16 +412,24 @@ class Command(BaseBuild):
         if structure.pdb_code.index=='5LWE':
             seg_ends['5b'] = 209
             seg_ends['5e'] = 244
+        # import pprint
+        # pprint.pprint(wt_lookup)
+        # pprint.pprint(mapped_seq)
+        # pprint.pprint(unmapped_ref)
+        # print('deletions: ',deletions)
+        # print('removed: ',removed)
         for i,line in enumerate(pdblines):
             # print(line)
-            if line.startswith('ATOM'):
+            if line.startswith('ATOM') or (line[17:20] in ['YCM','CSD','TYS','SEP'] and line.startswith('HETATM')):
+                # if line[17:20] in ['YCM','CSD','TYS','SEP']: # sanity check for non-standard helix residues
+                #     print(line)
                 chain = line[21]
                 if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
                     pass
                 else:
                     nextline = pdblines[i+1]
                     residue_number = line[22:26].strip()
-                    if (check==0 or nextline[22:26].strip()==check) and nextline.startswith('TER')==False and nextline.startswith('ATOM')==True: #If this is either the begining or the same as previous line add to current rotamer
+                    if (check==0 or nextline[22:26].strip()==check) and nextline.startswith('TER')==False and (nextline.startswith('ATOM')==True or nextline.startswith('HETATM')==True): #If this is either the begining or the same as previous line add to current rotamer
                         temp += line + "\n"
                         #print('same res',pdb.splitlines()[i+1])
                     else: #if this is a new residue
@@ -441,7 +466,7 @@ class Command(BaseBuild):
                                     if residue.sequence_number!=wt_r.sequence_number and residue.amino_acid!=wt_r.amino_acid and residue.sequence_number in wt_lookup: #if pos numbers not work -- see if the pos number might be in WT and unmapped
                                         if wt_lookup[residue.sequence_number].amino_acid==residue.amino_acid:
                                             if residue.sequence_number in unmapped_ref: #WT was not mapped, so could be it
-                                               # print(residue.sequence_number,residue.amino_acid) #sanity check
+                                                # print(residue.sequence_number,residue.amino_acid) #sanity check
                                                 # print('wrongly matched, better match on pos+aa',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                                 wt_r = wt_lookup[residue.sequence_number]
                                                 matched_by_pos +=1
@@ -453,17 +478,19 @@ class Command(BaseBuild):
                                                 #print('could have been matched, but already aligned to another position',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         else:
                                             # print('WT pos not same AA, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                            wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA','.')]))
                                             mismatch_seq += 1
                                             aa_mismatch += 1
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
-                                        wt_pdb_lookup.append({'WT_POS':wt_r.sequence_number, 'PDB_POS': residue.sequence_number, 'AA': wt_r.amino_acid})
-                                        if residue.sequence_number in unmapped_ref:
-                                            #print('residue.sequence_number',residue.sequence_number,'not mapped though')
-                                            if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
-                                                #print('they are same amino acid!')
-                                                wt_r = wt_lookup[residue.sequence_number]
-                                                mismatch_seq -= 1
+                                        wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q']:
+                                            if residue.sequence_number in unmapped_ref:
+                                                #print('residue.sequence_number',residue.sequence_number,'not mapped though')
+                                                if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
+                                                    #print('they are same amino acid!')
+                                                    wt_r = wt_lookup[residue.sequence_number]
+                                                    mismatch_seq -= 1
                                         mismatch_seq += 1
                                         ### REPLACE seq number with WT to fix odd PDB annotation. FIXME kinda dangerous, but best way to ensure consistent GN numbering
                                         ### 2019.01.18 DISABLED underneat, to be sure that sequence number can be found in DB correctly.
@@ -481,11 +508,11 @@ class Command(BaseBuild):
                                     else:
                                         residue.display_generic_number = None
                                         residue.generic_number = None
-                                        #print('no GN')
+                                        # print('no GN')
 
                                     residue.protein_segment = wt_r.protein_segment
                                     residue.missing_gn = False
-                                    
+                                    # print(residue, residue.protein_segment, residue.display_generic_number, wt_r, wt_r.protein_segment, wt_r.display_generic_number)
                                     if len(seg_ends):
                                         if residue.protein_segment.slug=='TM1':
                                             if seg_ends['1b']!='-' and seg_ends['1e']!='-':
@@ -840,6 +867,8 @@ class Command(BaseBuild):
         if len(wt_pdb_lookup)>0:
             with open(wt_pdb_lookup_folder, 'w') as f2:
                 json.dump(wt_pdb_lookup, f2)
+        elif os.path.exists(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', str(structure) + '.json'])):
+            os.remove(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', str(structure) + '.json']))
         return None
 
 

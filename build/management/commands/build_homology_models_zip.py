@@ -57,8 +57,16 @@ class Command(BaseBuild):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('-f', help='Specify file name to be uploaded to GPCRdb', default=False, type=str, nargs='+')
         parser.add_argument('-c', help='Upload only complex models to GPCRdb', default=False, action='store_true')
+        parser.add_argument('--purge', help='Purge existing entries in GPCRdb', default=False, action='store_true')
         
     def handle(self, *args, **options):
+        if options['purge']:
+            StructureModelStatsRotamer.objects.all().delete()
+            StructureModelSeqSim.objects.all().delete()
+            StructureModel.objects.all().delete()
+            StructureRefinedStatsRotamer.objects.all().delete()
+            StructureRefinedSeqSim.objects.all().delete()
+            Structure.objects.filter(refined='t').delete()
         if options['c']:
             path = './structure/complex_models_zip/'
         else:
@@ -79,6 +87,7 @@ class Command(BaseBuild):
                 zip_mod.extractall(mod_dir)
                 zip_mod.close()
                 self.upload_to_db(modelname, path)
+                shutil.rmtree(mod_dir)
 
     def upload_to_db(self, modelname, path):
         ''' Upload to model to StructureModel and upload segment and rotamer info to StructureModelStatsSegment and

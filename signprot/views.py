@@ -116,7 +116,7 @@ def Couplings(request):
         if p_class not in class_names:
             class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
         p_class_name = class_names[p_class].strip()
-        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short(),'GuideToPharma':{},'Aska':{}}
+        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short()[:15],'GuideToPharma':{},'Aska':{}}
 
     distinct_g_families = []
     distinct_g_subunit_families = {}
@@ -142,6 +142,7 @@ def Couplings(request):
             # print("g",g)
             if g not in distinct_g_subunit_families[gf]:
                 distinct_g_subunit_families[gf].append(g)
+                distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
 
         if s not in data[p]:
             data[p][s] = {}
@@ -161,6 +162,10 @@ def Couplings(request):
                 data[p][s][gf]['best'] = round(Decimal(m),2)
 
     fd = {} #final data
+
+    distinct_g_families = sorted(distinct_g_families)
+    distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
+    distinct_g_subunit_families = OrderedDict([('Gs',['gnal', 'gnas2']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gna14', 'gna15', 'gnaq']), ('G12/G13',['gna12', 'gna13'])])
 
     for p,v in data.items():
         fd[p] = [v['class'],p,v['pretty']]
