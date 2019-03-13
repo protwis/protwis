@@ -1376,7 +1376,7 @@ const signprotmat = {
         .attr("class", "legend");
     },
 
-    draw_seq_cons: function(data_in, svg, xScale, xAxis) {
+    draw_seq_cons: function(data_in, svg, xScale, xAxis, sigmatch) {
       let data = data_in.cons;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
@@ -1407,6 +1407,42 @@ const signprotmat = {
           );
         });
 
+    if (sigmatch) {
+
+        svg = svg.append("g")
+        .attr("id", "sigmatch_frame")
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 140) + ")");
+
+      svg
+        .append("g")
+        .attr("id", "sigmatch_mat")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + -30 + ")")
+        .append("rect")
+        .attr("class", "border-bg")
+        .style("fill", "#ffffff")
+        .attr("x", xScale.step() / 2)
+        .attr("y", 75)
+        .attr("width", xScale.range()[1] - xScale.step())
+        .attr("height", 75);
+
+      svg
+        .append("text")
+        .attr("class", "y seq_label")
+        .attr("text-anchor", "end")
+        .attr("x", -10)
+        .attr("y", 65)
+        .text("Property");
+
+      svg
+        .append("text")
+        .attr("class", "y seq_label")
+        .attr("text-anchor", "end")
+        .attr("x", -10)
+        .attr("y", 102)
+        .text("Conservation");
+
+    } else {
+        
       svg
         .append("g")
         .attr("id", "conseq_mat")
@@ -1451,6 +1487,7 @@ const signprotmat = {
         .attr("x", -10)
         .attr("y", 102)
         .text("Conservation");
+    }
 
       let each_res = svg
         .select("g#conseq_mat")
