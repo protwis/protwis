@@ -214,8 +214,8 @@
     </div>
 </div>
 
-<div id="" class="svg-container" style="">
-    <div id="">
+<div id="sigmatch-container" class="" style="display: none">
+    <div id="sigmatch">
         <h2>Match Table</h2>
     </div>
     <div id=''>
@@ -364,6 +364,7 @@
             },
             success: function(data){
                 console.log(data)
+                document.querySelector('#sigmatch-container').style.display = "inline-block";
                 const new_data = Object.keys(data).map(key => data[key])
                 // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
                 $('#sigmatch_table').DataTable({
