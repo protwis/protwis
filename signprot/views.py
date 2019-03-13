@@ -1385,7 +1385,7 @@ def prepare_signature_match(signature_match):
                 entry = elem[0].protein.entry_name
                 out[entry] = {
                         'entry': elem[0].protein.entry_name,
-                        'prot': elem[0].protein.short(),
+                        'prot': elem[0].protein.name,
                         'score': elem[1][0],
                         'nscore': elem[1][1]
                     }

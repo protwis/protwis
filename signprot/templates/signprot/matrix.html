@@ -214,13 +214,12 @@
     </div>
 </div>
 
-<div id="sigmatch-container" class="" style="display: none">
+<div id="sigmatch-container" class="svg-container" style="display: none; padding-bottom:
+    10%">
     <div id="sigmatch">
         <h2>Match Table</h2>
     </div>
-    <div id=''>
-        <table id='sigmatch_table'></table>
-    </div>
+    <table id='sigmatch_table' class="display" style="width: 100%"></table>
 </div>
 
 {% endblock %}
@@ -248,6 +247,9 @@
     let sigScale;
     let colScale;
     let tooltip;
+
+    let sigmatch_table;
+    let sigmatch_data;
 
     let old_sets = [];
     let pos_set = [];
@@ -365,37 +367,62 @@
             success: function(data){
                 console.log(data)
                 document.querySelector('#sigmatch-container').style.display = "inline-block";
-                const new_data = Object.keys(data).map(key => data[key])
+                sigmatch_data = Object.keys(data).map(key => data[key])
                 // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
-                $('#sigmatch_table').DataTable({
-                    // dom: 'Bfrtip',
-                    data: new_data,
+                sigmatch_table = $('#sigmatch_table').DataTable({
+                    dom: 'Bfrtip',
+                    data: sigmatch_data,
                     destroy: true,
                     columnDefs: [
                         {
+                            data: null,
+                            targets: 0,
+                            defaultContent: '',
+                            orderable: false,
+                            className: 'select-checkbox',
+                        }, {
                             data: 'prot',
                             title: 'Protein',
-                            targets: 0,
+                            targets: 1,
                         }, {
                             data: 'nscore',
                             title: 'Normalized Score',
-                            targets: 3,
+                            targets: 4,
                         }, {
                             data: 'score',
                             title: 'Score',
-                            targets: 2,
+                            targets: 3,
                         }, {
                             data: 'entry',
                             title: 'Entry Name',
-                            targets: 1,
-                        // }, {
-                        //     data: 'sign',
-                        //     title: 'Signature',
-                        //     targets: 5,
+                            targets: 2,
                         }
                     ],
-            order: [[ 3, "desc" ]],
+            order: [[ 4, "desc" ]],
+            select: {
+                style: 'single',
+            },
+            aging: false,
+            buttons: [
+                {
+                    text: 'Select all',
+                    action: function () {
+                        sigmatch_table.rows().select();
+                    }
+                },
+                {
+                    text: 'Select none',
+                    action: function () {
+                        sigmatch_table.rows().deselect();
+                    }
+                },
+            ]
                 })
+            
+           sigmatch_table.on('select', function (e, dt, type, indexes) {
+                console.log(sigmatch_table.rows({ selected: true }))
+            })
+
             },
             error: function(error){
                 console.log(error);
