@@ -317,7 +317,7 @@
                 console.log(data)
                 document.querySelector('#seqsig-container').style.display = "inline-block";
                 document.querySelector('#conseq-container').style.display = "inline-block";
-                document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
+                //document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
                 // d3 draw
                 svg = signprotmat.d3.setup("div#seqsig-container", 'seqsig');
                 signprotmat.d3.draw_seq_sig(
@@ -420,7 +420,16 @@
                 })
             
            sigmatch_table.on('select', function (e, dt, type, indexes) {
-                console.log(sigmatch_table.rows({ selected: true }))
+               const entry = sigmatch_table.rows(indexes).data().toArray()[0]
+               console.log(entry)
+               svg = d3.select('svg.svg-content.conseq')
+               signprotmat.d3.draw_seq_cons(
+                    entry,
+                    svg,
+                    xScale,
+                    xAxis,
+                    true
+                );
             })
 
             },
