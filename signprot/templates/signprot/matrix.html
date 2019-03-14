@@ -198,26 +198,39 @@
     </table>
 </div> {% endcomment %}
 
-<div id="svg-container" class="svg-container">
-    <h2>Interaction Interface</h2>
+<div id="interface-container" class="">
+    <div>
+        <h2>Interaction Interface</h2>
+        <button class="btn btn-primary" data-toggle="collapse"
+            data-target="#interface-svg">Collapse</button>
+    </div>
+    <div id="interface-svg"></div>
 </div>
 
-<div id="seqsig-container" class="svg-container" style="display: none; padding-bottom: 140%">
+<div id="seqsig-container" style="display: none;">
     <div id="seqsig">
         <h2>Property Conservation</h2>
+        <button class="btn btn-primary" data-toggle="collapse"
+            data-target="#seqsig-svg">Collapse</button>
     </div>
+    <div id="seqsig-svg"></div>
 </div>
 
-<div id="conseq-container" class="svg-container" style="display: none">
-    <div id="conseq">
+<div id="conseq-container" style="display: none">
+    <div>
         <h2>Property Consensus</h2>
+        <button class="btn btn-primary" data-toggle="collapse"
+            data-target="#conseq-svg">Collapse</button>
     </div>
+    <div id="conseq-svg"></div>
 </div>
 
 <div id="sigmatch-container" class="svg-container" style="display: none; padding-bottom:
     10%">
-    <div id="sigmatch">
+    <div>
         <h2>Match Table</h2>
+        <button class="btn btn-primary" data-toggle="collapse"
+            data-target="#sigmatch_table">Collapse</button>
     </div>
     <table id='sigmatch_table' class="display" style="width: 100%"></table>
 </div>
