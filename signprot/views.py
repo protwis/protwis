@@ -1182,6 +1182,9 @@ def InteractionMatrix(request):
         'gprot': json.dumps(list(gprotein_order))
         }
 
+    request.session['signature'] = None
+    request.session.modified = True
+
     return render(request, 'signprot/matrix.html', context)
 
 def IMSequenceSignature(request):
