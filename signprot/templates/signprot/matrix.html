@@ -198,39 +198,37 @@
     </table>
 </div> {% endcomment %}
 
-<div id="interface-container" class="">
+<div id="interface-container" class="" style="margin-bottom:20px;">
     <div>
         <h2>Interaction Interface</h2>
         <button class="btn btn-primary" data-toggle="collapse"
             data-target="#interface-svg">Collapse</button>
     </div>
-    <div id="interface-svg"></div>
+    <div id="interface-svg" class="collapse in"></div>
 </div>
 
-<div id="seqsig-container" style="display: none;">
+<div id="seqsig-container" style="display: none;margin-bottom:20px;">
     <div id="seqsig">
         <h2>Property Conservation</h2>
         <button class="btn btn-primary" data-toggle="collapse"
             data-target="#seqsig-svg">Collapse</button>
     </div>
-    <div id="seqsig-svg"></div>
+    <div id="seqsig-svg" class="collapse in"></div>
 </div>
 
-<div id="conseq-container" style="display: none">
+<div id="conseq-container" style="display: none;margin-bottom:20px;">
     <div>
         <h2>Property Consensus</h2>
         <button class="btn btn-primary" data-toggle="collapse"
             data-target="#conseq-svg">Collapse</button>
     </div>
-    <div id="conseq-svg"></div>
+    <div id="conseq-svg" class="collapse in"></div>
 </div>
 
 <div id="sigmatch-container" class="svg-container" style="display: none; padding-bottom:
     10%">
     <div>
         <h2>Match Table</h2>
-        <button class="btn btn-primary" data-toggle="collapse"
-            data-target="#sigmatch_table">Collapse</button>
     </div>
     <table id='sigmatch_table' class="display" style="width: 100%"></table>
 </div>
@@ -328,17 +326,17 @@
                 $('.svg-content.seqsig').remove();
                 $('.svg-content.conseq').remove();
                 console.log(data)
-                document.querySelector('#seqsig-container').style.display = "inline-block";
-                document.querySelector('#conseq-container').style.display = "inline-block";
+                document.querySelector('#seqsig-container').style.display = "block";
+                document.querySelector('#conseq-container').style.display = "block";
                 //document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
                 // d3 draw
-                svg = signprotmat.d3.setup("div#seqsig-container", 'seqsig');
+                svg = signprotmat.d3.setup("div#seqsig-svg", 'seqsig');
                 signprotmat.d3.draw_seq_sig(
                     data,
                     svg,
                     xScale,
                 );
-                svg = signprotmat.d3.setup("div#conseq-container", 'conseq');
+                svg = signprotmat.d3.setup("div#conseq-svg", 'conseq');
                 signprotmat.d3.draw_seq_cons(
                     data,
                     svg,
@@ -641,7 +639,7 @@ $(document).ready(function () {
         ];
 
         data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
-        svg = signprotmat.d3.setup("div#svg-container");
+        svg = signprotmat.d3.setup("div#interface-svg");
         xScale = signprotmat.d3.xScale(data.transformed);
         yScale = signprotmat.d3.yScale(data.transformed, gprot);
         xAxis = signprotmat.d3.xAxis(xScale);
