@@ -124,13 +124,16 @@ var signprotmat = {
         // * SETTING UP SVG FOR OUTPUT
         setup: function (div, loc) {
             if (loc === "seqsig") {
-                h = 1500;
+                h = 1200;
+                var mt = 0;
             }
             else if (loc === "conseq") {
                 h = 0;
+                var mt = 30;
             }
             else {
                 h = 1000 - margin.top - margin.bottom;
+                var mt = 60;
             }
             var svg = d3
                 .select("body")
@@ -145,7 +148,7 @@ var signprotmat = {
                 // .classed("svg-content", true) //class to make it responsive
                 .attr("class", typeof loc !== "undefined" ? "svg-content " + loc : "svg-content")
                 .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                .attr("transform", "translate(" + margin.left + "," + mt + ")");
             return svg;
         },
         // * SETTING THE X/Y SCALE
