@@ -236,7 +236,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
     var reps = {} // store ngl representations
     var original_o
 
-    $.getJSON( "pdb/"+pdb,
+    $.getJSON( "/contactnetwork/pdb/"+pdb,
         function( data ) {
         var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
         var segments_sets = {}
@@ -348,7 +348,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 
         if (pdb2.length > 0) {
 
-            $.get('angledat?pdbs[]='+pdb2[0], function(secondArray) {
+            $.get('angledata?pdbs[]='+pdb2[0], function(secondArray) {
                 var second_residues = secondArray["data"];
 
                 scnd_angle = []

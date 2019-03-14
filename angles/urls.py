@@ -4,5 +4,5 @@ from angles import views
 
 urlpatterns = [
     url(r'^angleanalysis$', views.angleAnalysis, name='angleanalysis'),
-    url(r'^angledat$', views.get_angles, name='anglejson')
+    url(r'^angledata$', views.get_angles, name='anglejson')
 ]
