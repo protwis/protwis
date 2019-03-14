@@ -42,7 +42,10 @@ def only_antibodies ( objs ):
 
 @register.filter
 def senior_author ( objs ):
-    return objs.split(',')[-1]
+    if objs:
+        return objs.split(',')[-1]
+    else:
+        return ''
 
 @register.filter
 def cut_at_20 ( objs ):

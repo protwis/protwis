@@ -21,6 +21,7 @@ from collections import OrderedDict
 from common.views import AbsTargetSelection
 
 import json
+import re
 from decimal import Decimal
 # Create your views here.
 class BrowseSelection(AbsTargetSelection):
@@ -103,13 +104,19 @@ def Couplings(request):
 
     context = OrderedDict()
 
-    threshold = -0.5
+    threshold_primary = -0.1
+    threshold_secondary = -0.5
 
 
-    proteins = Protein.objects.filter(sequence_type__slug='wt',family__slug__startswith='00',species__common_name='Human').all()
+    proteins = Protein.objects.filter(sequence_type__slug='wt',family__slug__startswith='00',species__common_name='Human').all().prefetch_related('family')
     data = {}
+    class_names = {}
     for p in proteins:
-        data[p.entry_short()] = {'pretty':p.name,'GuideToPharma':{},'Aska':{}}
+        p_class = p.family.slug.split('_')[0]
+        if p_class not in class_names:
+            class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
+        p_class_name = class_names[p_class].strip()
+        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short()[:15],'GuideToPharma':{},'Aska':{}}
 
     distinct_g_families = []
     distinct_g_subunit_families = {}
@@ -122,6 +129,7 @@ def Couplings(request):
         t = c.transduction
         m = c.log_rai_mean
         gf = c.g_protein.name
+        # print(gf)
         gf = gf.replace(" family","")
 
         if gf not in distinct_g_families:
@@ -131,8 +139,10 @@ def Couplings(request):
         if c.g_protein_subunit:
             g = c.g_protein_subunit.entry_name
             g = g.replace("_human","")
+            # print("g",g)
             if g not in distinct_g_subunit_families[gf]:
                 distinct_g_subunit_families[gf].append(g)
+                distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
 
         if s not in data[p]:
             data[p][s] = {}
@@ -144,18 +154,40 @@ def Couplings(request):
         if t:
             data[p][s][gf] = t
         else:
-            if g not in data[p][s][gf]:
+            if 'subunits' not in data[p][s][gf]:
                 data[p][s][gf] = {'subunits':{},'best':-2.00}
             data[p][s][gf]['subunits'][g] = round(Decimal(m),2)
-
             # get the lowest number into 'best'
             if m>data[p][s][gf]['best']:
                 data[p][s][gf]['best'] = round(Decimal(m),2)
 
     fd = {} #final data
 
+    distinct_g_families = sorted(distinct_g_families)
+    distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
+    distinct_g_subunit_families = OrderedDict([('Gs',['gnal', 'gnas2']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gna14', 'gna15', 'gnaq']), ('G12/G13',['gna12', 'gna13'])])
+
     for p,v in data.items():
-        fd[p] = [v['pretty']]
+        fd[p] = [v['class'],p,v['pretty']]
+
+        s = 'GuideToPharma'
+        #Merge
+        for gf in distinct_g_families:
+            values = []
+            if 'GuideToPharma' in v and gf in v['GuideToPharma']:
+                values.append(v['GuideToPharma'][gf])
+            if 'Aska' in v and gf in v['Aska']:
+                best = v['Aska'][gf]['best']
+                if best > threshold_primary:
+                    values.append('primary')
+                elif best > threshold_secondary:
+                    values.append('secondary')
+            if 'primary' in values:
+                fd[p].append('primary')
+            elif 'secondary' in values:
+                fd[p].append('secondary')
+            else:
+                fd[p].append('')
 
         s = 'GuideToPharma'
         #First loop over GuideToPharma
@@ -163,17 +195,19 @@ def Couplings(request):
             if gf in v[s]:
                 fd[p].append(v[s][gf])
             else:
-                fd[p].append("-")
+                fd[p].append("")
 
         s = 'Aska'
         for gf in distinct_g_families:
             if gf in v[s]:
-                if v[s][gf]['best']>threshold:
-                    fd[p].append("Above threshold")
+                if v[s][gf]['best']>threshold_primary:
+                    fd[p].append("primary")
+                elif v[s][gf]['best']>threshold_secondary:
+                    fd[p].append("secondary")
                 else:
-                    fd[p].append("Below threshold")
+                    fd[p].append("No coupling")
             else:
-                fd[p].append("-")
+                fd[p].append("")
 
         for gf,sfs in distinct_g_subunit_families.items():
             for sf in sfs:
@@ -181,9 +215,9 @@ def Couplings(request):
                     if sf in v[s][gf]['subunits']:
                         fd[p].append(v[s][gf]['subunits'][sf])
                     else:
-                        fd[p].append("-")
+                        fd[p].append("")
                 else:
-                    fd[p].append("-")
+                    fd[p].append("")
 
 
     context['data'] = fd

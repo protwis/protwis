@@ -1064,9 +1064,9 @@ class StructureSeqNumOverwrite():
                 self.wt_pdb_table[i['WT_POS']] = i['PDB_POS']
                 self.pdb_wt_table[i['PDB_POS']] = i['WT_POS']
         else:
-            self.lookup = None
-            self.wt_pdb_table = None
-            self.pdb_wt_table = None
+            self.lookup = OrderedDict()
+            self.wt_pdb_table = OrderedDict()
+            self.pdb_wt_table = OrderedDict()
             
     def seq_num_overwrite(self, overwrite_target):
         ''' Overwrites Residue object sequence numbers in GPCRDB

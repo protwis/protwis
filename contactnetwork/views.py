@@ -14,7 +14,7 @@ from contactnetwork.models import *
 from contactnetwork.distances import *
 from structure.models import Structure
 from protein.models import Protein, ProteinSegment
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumber
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -440,11 +440,14 @@ def ClusteringData(request):
 
     # common GNs
     common_gn = dis.fetch_common_gns_tm()
+    all_gns = sorted(list(ResidueGenericNumber.objects.filter(scheme__slug='gpcrdb').all().values_list('label',flat=True)))
     pdb_distance_maps = {}
+    pdb_gns = {}
     for pdb in pdbs:
         cache_key = "distanceMap-" + pdb
-
+        print(pdb)
         # Cached?
+
         if cache.has_key(cache_key):
             cached_data = cache.get(cache_key)
             distance_map = cached_data["map"]
@@ -455,25 +458,21 @@ def ClusteringData(request):
             temp.load_pdbs([pdb])
             temp.fetch_distances_tm()
 
-            # obtain set of GNs for this structure
-            structure_gn = []
-            for i,pair in enumerate(sorted(temp.data.items())):
-                res1, res2 = pair[0].split("_")
-                if res1 not in structure_gn:
-                    structure_gn.append(res1)
-                if res2 not in structure_gn:
-                    structure_gn.append(res2)
+            structure_gn = list(Residue.objects.filter(protein_conformation__in=temp.pconfs) \
+                .exclude(generic_number=None) \
+                .exclude(generic_number__label__contains='8x') \
+                .exclude(generic_number__label__contains='12x') \
+                .exclude(generic_number__label__contains='23x') \
+                .exclude(generic_number__label__contains='34x') \
+                .exclude(generic_number__label__contains='45x') \
+                .values_list('generic_number__label',flat=True))
 
             # create distance map
-            distance_map = np.full((len(structure_gn), len(structure_gn)), 0.0)
-            for i,res1 in enumerate(structure_gn):
-                for j in range(i+1, len(structure_gn)):
+            distance_map = np.full((len(all_gns), len(all_gns)), 0.0)
+            for i,res1 in enumerate(all_gns):
+                for j in range(i+1, len(all_gns)):
                     # grab average value
-                    res2 = structure_gn[j]
-#                    if res1+"_"+res2 not in temp.data:
-#                        print(res1+"_"+res2, "not present for", pdb)
-#                        print(sorted(temp.data.items()))
-#                    else:
+                    res2 = all_gns[j]
                     if res1+"_"+res2 in temp.data:
                         distance_map[i][j] = temp.data[res1+"_"+res2][0]
 
@@ -481,11 +480,12 @@ def ClusteringData(request):
             store = {
                 "map" : distance_map,
                 "gns" : structure_gn
+
             }
             cache.set(cache_key, store, 60*60*24*14)
-
+        pdb_gns[pdb] = structure_gn
         # Filtering indices to map to common_gns
-        gn_indices = np.array([ structure_gn.index(residue) for residue in common_gn ])
+        gn_indices = np.array([ all_gns.index(residue) for residue in common_gn ])
         pdb_distance_maps[pdb] = distance_map[gn_indices,:][:, gn_indices]
 
         if "average" in pdb_distance_maps:
@@ -497,12 +497,27 @@ def ClusteringData(request):
     for pdb in pdbs:
         pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"])
 
+        # # numpy way caused error on production server
+        # i,j = pdb_distance_maps[pdb].shape
+        # for i in range(i):
+        #         for j in range(j):
+        #             v = pdb_distance_maps[pdb][i][j]
+        #             if v:
+        #                 pdb_distance_maps[pdb][i][j] = v/pdb_distance_maps["average"][i][j]
+
     # calculate distance matrix
     distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
     for i, pdb1 in enumerate(pdbs):
         for j in range(i+1, len(pdbs)):
             pdb2 = pdbs[j]
-            distance = np.sum(np.absolute(pdb_distance_maps[pdb1] - pdb_distance_maps[pdb2]))
+            # Get common GNs between two PDBs
+            common_between_pdbs = sorted(list(set(pdb_gns[pdb1]).intersection(pdb_gns[pdb2])))
+            # Get common between above set and the overall common set of GNs
+            common_with_query_gns = sorted(list(set(common_gn).intersection(common_between_pdbs)))
+            # Get the indices of positions that are shared between two PDBs
+            gn_indices = np.array([ common_gn.index(residue) for residue in common_with_query_gns ])
+            # Get distance between cells that have both GNs.
+            distance = np.sum(np.absolute(pdb_distance_maps[pdb1][gn_indices,:][:, gn_indices] - pdb_distance_maps[pdb2][gn_indices,:][:, gn_indices]))
             distance_matrix[i, j] = distance
             distance_matrix[j, i] = distance
 

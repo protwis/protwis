@@ -70,7 +70,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     seqStart = i;
     prevSeg = seg;
   }
-
   // Push last segment
   segments.push({
     seg: prevSeg,
@@ -125,7 +124,10 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   const rectWidth = 30;
   const rectHeight = 14;
 
-  const g = svg
+  const paths = svg.append('g');
+  const residues = svg.append('g');
+
+  const g = residues
     .selectAll('g')
     .data(isGeneric ? Object.keys(segment_map_full_gn) : Object.keys(segment_map_full))
     .enter()
@@ -200,7 +202,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       return `translate(${x},${y})`;
     });
 
-  const paths = svg.append('g');
 
   g
     .append('rect')
