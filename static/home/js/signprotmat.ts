@@ -1387,6 +1387,8 @@ const signprotmat = {
         return xScale(d.gn);
       });
 
+        console.log(data)
+
       let conseqTip = d3
         .tip()
         .attr("class", "d3-tip")
@@ -1439,7 +1441,9 @@ const signprotmat = {
         .attr("text-anchor", "end")
         .attr("x", -10)
         .attr("y", 102)
-        .text("Conservation");
+            .text("Conservation");
+
+      let group = "g#sigmatch_mat"
 
     } else {
         
@@ -1486,11 +1490,13 @@ const signprotmat = {
         .attr("text-anchor", "end")
         .attr("x", -10)
         .attr("y", 102)
-        .text("Conservation");
+            .text("Conservation");
+
+        let group = "g#conseq_mat"
     }
 
       let each_res = svg
-        .select("g#conseq_mat")
+        .select(group)
         .selectAll("text")
         .data(data)
         .enter()
@@ -1583,7 +1589,7 @@ const signprotmat = {
         .text((d: any) => d.score);
 
       // putting a black border around the signature
-      d3.select("g#conseq_mat")
+        d3.select(group)
         .append("rect")
         .attr("class", "border")
         .style("stroke", "black")

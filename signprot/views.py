@@ -1377,6 +1377,8 @@ def IMSignatureMatch(request):
 def prepare_signature_match(signature_match):
     from common.definitions import AMINO_ACID_GROUP_PROPERTIES
     from common.definitions import AMINO_ACID_GROUP_NAMES
+    from django.core.exceptions import ObjectDoesNotExist
+    from residue.models import ResidueGenericNumberEquivalent
 
     out = {}
     for elem in signature_match['scores'].items():
@@ -1390,6 +1392,7 @@ def prepare_signature_match(signature_match):
 
     for elem in signature_match['protein_signatures'].items():
         prot_entry = elem[0].protein.entry_name
+        prot_scheme_id = elem[0].protein.residue_numbering_scheme.id
         sig = []
         for signature in elem[1].values():
             for sig_elem in signature:
@@ -1399,6 +1402,17 @@ def prepare_signature_match(signature_match):
                 # 3: color
                 # 4: aa
                 # 5: gn
+                try:
+                    generic_number = ResidueGenericNumberEquivalent.objects.filter(
+                            label=str(sig_elem[5]),
+                            scheme_id=prot_scheme_id
+                            )
+                    gn = generic_number.values_list('default_generic_number__label',
+                            flat=True)[0].split('x')
+                except ObjectDoesNotExist as e:
+                    print('For {} a {} '.format(s, e))
+                    continue
+                
                 sig.append({
                     'code':
                     str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('display_name_short',
@@ -1406,7 +1420,8 @@ def prepare_signature_match(signature_match):
                     'length':
                     str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('length',
                         None)),
-                    'gn': str(sig_elem[5]),
+                    # 'gn': str(sig_elem[5]),
+                    'gn': str('{}.{}x{}'.format(gn[0], gn[1], gn[1])),
                     'aa': str(sig_elem[4]),
                     'score': str(sig_elem[2]),
                     'feature': str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0],

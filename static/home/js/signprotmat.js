@@ -1214,6 +1214,7 @@ var signprotmat = {
             data = _.filter(data, function (d) {
                 return xScale(d.gn);
             });
+            console.log(data);
             var conseqTip = d3
                 .tip()
                 .attr("class", "d3-tip")
@@ -1233,6 +1234,7 @@ var signprotmat = {
             });
             if (sigmatch) {
                 svg = svg.append("g")
+                    .attr("id", "sigmatch_frame")
                     .attr("transform", "translate(" + margin.left + "," + (margin.top + 140) + ")");
                 svg
                     .append("g")
@@ -1259,6 +1261,7 @@ var signprotmat = {
                     .attr("x", -10)
                     .attr("y", 102)
                     .text("Conservation");
+                var group = "g#sigmatch_mat";
             }
             else {
                 svg
@@ -1301,9 +1304,10 @@ var signprotmat = {
                     .attr("x", -10)
                     .attr("y", 102)
                     .text("Conservation");
+                var group = "g#conseq_mat";
             }
             var each_res = svg
-                .select("g#conseq_mat")
+                .select(group)
                 .selectAll("text")
                 .data(data)
                 .enter()
@@ -1393,7 +1397,7 @@ var signprotmat = {
                 .attr("text-anchor", "middle")
                 .text(function (d) { return d.score; });
             // putting a black border around the signature
-            d3.select("g#conseq_mat")
+            d3.select(group)
                 .append("rect")
                 .attr("class", "border")
                 .style("stroke", "black")

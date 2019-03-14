@@ -420,9 +420,10 @@
                 })
             
            sigmatch_table.on('select', function (e, dt, type, indexes) {
-               const entry = sigmatch_table.rows(indexes).data().toArray()[0]
-               console.log(entry)
-               svg = d3.select('svg.svg-content.conseq')
+               const entry = sigmatch_table.rows(indexes).data().toArray()[0];
+               console.log(entry);
+               svg = d3.select('svg.svg-content.conseq');
+               $("g#sigmatch_frame").remove();
                signprotmat.d3.draw_seq_cons(
                     entry,
                     svg,
