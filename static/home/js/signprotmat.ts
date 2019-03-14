@@ -626,7 +626,13 @@ const signprotmat = {
         // .attr("height", yScale.step() * scale_size)
         .attr("width", xScale.step())
         .attr("height", yScale.step())
-        .attr("fill", (d: any) => bwScale(d.pairs.length))
+            .attr("fill", (d: any) => {
+                if ( pdbScale.domain().length > 1) {
+                    return bwScale(d.pairs.length)
+                } else {
+                    return colScale(d.pairs[0].int_ty[0])
+                }
+            })
         .attr("class", (d: any) => "p" + d.pairs.length)
         .on("mouseover", function(d) {
           tip.show(d);

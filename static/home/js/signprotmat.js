@@ -546,7 +546,14 @@ var signprotmat = {
                 // .attr("height", yScale.step() * scale_size)
                 .attr("width", xScale.step())
                 .attr("height", yScale.step())
-                .attr("fill", function (d) { return bwScale(d.pairs.length); })
+                .attr("fill", function (d) {
+                if (pdbScale.domain().length > 1) {
+                    return bwScale(d.pairs.length);
+                }
+                else {
+                    return colScale(d.pairs[0].int_ty[0]);
+                }
+            })
                 .attr("class", function (d) { return "p" + d.pairs.length; })
                 .on("mouseover", function (d) {
                 tip.show(d);
