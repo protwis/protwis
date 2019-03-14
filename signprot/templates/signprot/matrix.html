@@ -577,9 +577,10 @@ $(document).ready(function () {
                 $('.svg-content').remove();
                 document.querySelector('#seqsig-container').style.display = "none";
                 document.querySelector('#conseq-container').style.display = "none";
+                document.getElementById("interface-svg").className = "collapse in";
 
                 data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
-                svg = signprotmat.d3.setup("div#svg-container");
+                svg = signprotmat.d3.setup("div#interface-svg");
                 xScale = signprotmat.d3.xScale(data.transformed);
                 yScale = signprotmat.d3.yScale(data.transformed, gprot);
                 xAxis = signprotmat.d3.xAxis(xScale);
