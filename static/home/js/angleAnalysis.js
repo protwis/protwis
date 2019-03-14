@@ -23,11 +23,11 @@ function initializeGoButton(selector, generic=false) {
         //var segments = JSON.parse($(selector + ' .segments-input').val());
         var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
         if (pdb.length > 0 && segments.length > 0) {
-                
+
             renderTable(pdb);
-            
+
             var second = JSON.parse($('#second-input').val());
-            
+
             createNGLview("single",pdb[0], second);
         }
     });
@@ -41,7 +41,7 @@ function initializeFullscreenButton(selector) {
 }
 
 function thisPDB(elem) {
-    
+
     var ReceptorName = $(elem).attr('long');
     var pdbName = $(elem).attr('id');
     $('.pdb_selected').not(elem).prop("checked",false);
@@ -58,7 +58,7 @@ function thisPDB(elem) {
 }
 
 function thisPDB2(elem) {
-    
+
     var ReceptorName = $(elem).attr('long');
     var pdbName = $(elem).attr('id');
     $('.pdb_selected').not(elem).prop("checked",false);
@@ -191,7 +191,7 @@ function showPDBtable(element, table) {
 
 
 function rgb2hex(r,g,b) {
-    
+
     if (r.length == 1)
         r = '0' + r;
 
@@ -205,9 +205,9 @@ function rgb2hex(r,g,b) {
 }
 
 function numberToColor(max,value) {
-    
+
     var hexc = 255/max;
-    
+
     if(value<(max/3)){
         return rgb2hex("00","00",Math.floor((max-value)*hexc).toString(16));
     } else if (value < ((2*max)/3)) {
@@ -226,7 +226,7 @@ var schemeId_grey
 function createNGLview(mode,pdb, pdb2, pdbs = false) {
     console.log(pdb)
     console.log(pdb2)
-    
+
     var gpcr_rep
     $("#ngl-"+mode).html("");
     stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
@@ -235,7 +235,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
     var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
     var reps = {} // store ngl representations
     var original_o
-    
+
     $.getJSON( "pdb/"+pdb,
         function( data ) {
         var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
@@ -268,11 +268,11 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                 ["#111", segments_sets[highlight[7]]],
                 [ "white", "*" ]
                 ])
-        
+
         var angle_color = [];
         var mediancolor = [];
         var signifcolor = [];
-        var medianwindowcolor = [];  
+        var medianwindowcolor = [];
         var hsecolor = [];
         var sasacolor = [];
         var colorstring;
@@ -281,15 +281,15 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         var score = [0,0,0,0,0];
         var axis = 100; //something larger than possible
         var j = 0;
-        
-        
+
+
 //         make variable
         var wlength = 5;
         var cutoff = 100;
-        
+
         wlength = $('#window-input').val();
         cutoff  = $('#score-input').val();
-        
+
         console.log(wlength)
         console.log(cutoff)
 //         var max = 0;
@@ -298,26 +298,26 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 //                 max = e[3]
 //             }
 //         }
-        
+
         // groups
         residue_data.forEach(function(e){
             angle_color.push([numberToColor(180,e[2]) , ""+e[1]])
-            
+
             mediancolor.push([numberToColor(90,e[3]) , ""+e[1]])
-            
+
             signifcolor.push([numberToColor(0.5,e[4]-0.5) , ""+e[1]])
-            
+
             hsecolor.push([numberToColor(40,e[5]) , ""+e[1]])
-            
+
             sasacolor.push([numberToColor(100,e[6]) , ""+e[1]])
-            
+
 //             if loop data added e[0][0] gives wrong coloring
             if(axis != Number(e[0][0])){
                 axis = Number(e[0][0])
                 j = 0
                 score = [0,0,0,0,0]
             }
-            
+
             score[j%wlength] = e[3]
             ctemp = score.reduce((a,b)=>a+b);
             if(ctemp > cutoff){
@@ -327,34 +327,34 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             }
             j +=1;
         });
-        
-        
-        
+
+
+
         angle_color.push([ "white", "*" ]);
         mediancolor.push([ "white", "*" ]);
         signifcolor.push([ "white", "*" ]);
         medianwindowcolor.push([ "white", "*" ]);
         hsecolor.push([ "white", "*" ]);
         sasacolor.push([ "white", "*" ]);
-        
+
         color_schemes['angles'] = NGL.ColormakerRegistry.addSelectionScheme(angle_color)
         color_schemes['mediancolor'] = NGL.ColormakerRegistry.addSelectionScheme(mediancolor)
         color_schemes['medianwindowcolor'] = NGL.ColormakerRegistry.addSelectionScheme(medianwindowcolor)
         color_schemes['significance'] = NGL.ColormakerRegistry.addSelectionScheme(signifcolor)
         color_schemes['hse'] = NGL.ColormakerRegistry.addSelectionScheme(hsecolor)
         color_schemes['sasa'] = NGL.ColormakerRegistry.addSelectionScheme(sasacolor)
-        
-        
-        
+
+
+
         if (pdb2.length > 0) {
-            
+
             $.get('angledat?pdbs[]='+pdb2[0], function(secondArray) {
                 var second_residues = secondArray["data"];
-                
+
                 scnd_angle = []
                 scnd_hse   = []
                 scnd_sasa  = []
-                
+
                 second_residues.forEach(function(scnd){
                     residue_data.forEach(function(e){
                         if (e[0] == scnd[0]){
@@ -364,17 +364,17 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                         }
                     });
                 });
-                
+
                 scnd_angle.push([ "white", "*" ]);
                 scnd_hse.push([ "white", "*" ]);
                 scnd_sasa.push([ "white", "*" ]);
-                
+
                 color_schemes['scnd_angle'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_angle)
                 color_schemes['scnd_hse'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_hse)
                 color_schemes['scnd_sasa'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_sasa)
-                
+
             });
-        
+
         }
 
 
@@ -410,7 +410,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                 })
 
             o.autoView();
-            
+
             // mousover and click on datatable row to highlight residue in NGL viewer
             var temprepr;
             $("#single-table-tab-table tbody").on("mouseover", "tr", function(event){
@@ -418,7 +418,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             }).mouseout(function(event){
                 o.removeRepresentation(temprepr)
             });
-            
+
             var repr_dict = {}
             $("#single-table-tab-table tbody").on("click", "tr", function(event){
                 if(residuetable.row(this).data()[1] in repr_dict){
@@ -440,12 +440,12 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
     newDiv.setAttribute("style", "position: absolute; top: 50px; left: 20px")
     var controls = '<div class="controls">'
                     + '<h3>Controls</h3>';
-    
+
     var optional = ''
     if (pdb2.length >0){
         optional = '<option value="scnd_angle">Difference angle from'+ pdb2[0] +'</option><option value="scnd_hse">Difference hse from'+ pdb2[0] +'</option><option value="scnd_sasa">Difference sasa from'+ pdb2[0] +'</option>'
     }
-    
+
     if (pdbs){
             controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
             for (var i = 0; i < pdbs.length; i++){
@@ -639,21 +639,21 @@ $('#second-structure-pdb-modal-table').on('shown.bs.modal', function (e) {
 
 
 function initializePdbChooserTables() {
-    $.get('pdbtabledata', function ( data ) {
+    $.get('/contactnetwork/pdbtabledata', function ( data ) {
     $('#single-crystal-pdb-modal-table .tableview').html(data);
     pdbtabledata = data;
     });
 }
 
 function initializeSecondTable() {
-    $.get('pdbtabledata2', function ( data ) {
+    $.get('/contactnetwork/pdbtabledata', function ( data ) {
     $('#second-structure-pdb-modal-table .tableview').html(data);
     secondtable = data;
     });
 }
 
 function initalizeSingleCrystalView() {
-    
+
     initializeGoButton('#single-crystal-tab');
     initializeFullscreenButton('#single-crystal-tab');
 }
@@ -671,5 +671,5 @@ $(document).ready(function() {
 
     // Single PDB files
     initalizeSingleCrystalView();
-    
-}); 
+
+});

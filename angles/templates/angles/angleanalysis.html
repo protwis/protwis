@@ -51,12 +51,12 @@
                             </div>
                         </div>
                     </div>
-                    
+
                 </div>
                 <div class="row">
 {% comment %}                   <div class="tab-content"> {% endcomment %}
                       <div class="col-md-6" id="single-table-tab">
-                      
+
                       <table id="single-table-tab-table" class="hover">
                         <thead>
                             <tr>
@@ -81,7 +81,7 @@
                             </tr>
                         </tfoot>
                       </table>
-                      
+
                       </div>
 
                       <div class="col-md-6" id="single-NGL-tab">
@@ -105,7 +105,7 @@
 
 
             </div>
-            <!-- END SINGLE CRYSTAL TAB -->            
+            <!-- END SINGLE CRYSTAL TAB -->
         </div>
 
 
@@ -132,7 +132,7 @@
         </div>
     </div>
     <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
-    
+
     <!-- BEGIN SECOND STRUCTURE SELECTOR TABLE -->
     <div class="modal fade" id="second-structure-pdb-modal-table" role="dialog">
         <div class="modal-dialog modal-wide">
@@ -154,8 +154,8 @@
             </div>
         </div>
     </div>
-    <!-- END SECOND STRUCTURE SELECTOR TABLE --> 
-    
+    <!-- END SECOND STRUCTURE SELECTOR TABLE -->
+
 
 {% endblock %}
 {% block addon_js %}
@@ -168,7 +168,7 @@
     <script src="{% static 'home/js/select2.js' %}"> </script>
     <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script src="{% static 'angle_script/browsertestscript.js' %}"></script>
+    <script src="{% static 'home/js/angleAnalysis.js' %}"></script>
 {% endblock %}
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
@@ -226,7 +226,7 @@
             height: 400px;
             overflow: scroll;
         }
-        
+
         @media screen and (max-width: 992px) {
             .go-button {
                 width: 100%;
@@ -476,16 +476,16 @@
         .csv-download-button {
             margin-top: 6px;
         }
-        
+
         /* Balthasars classes */
-        
+
         .table-selected {
             color: #F00;
             font-weight: bolder;
         }
-        
-        
-        
+
+
+
     </style>
 
     <!-- NGL -->

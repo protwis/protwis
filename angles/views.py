@@ -2,23 +2,20 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-import copy
-
 from django.views.decorators.cache import cache_page
 
 import contactnetwork.pdb as pdb
-
-from collections import OrderedDict
-
-
 from structure.models import Structure
 from residue.models import Residue
-from angles.models import Angle
+from angles.models import ResidueAngle as Angle
 
+import Bio.PDB
+import copy
+import io
+from collections import OrderedDict
 import numpy as np
 from sklearn.decomposition import PCA
 from numpy.core.umath_tests import inner1d
-import io
 import freesasa
 import scipy.stats as stats
 
@@ -30,14 +27,14 @@ def load_pdb_var(pdb_code, var):
     parser = pdb.PDBParser(QUIET=True)
     with io.StringIO(var) as f:
         return parser.get_structure(pdb_code,f)
-    
+
 def recurse(entity,slist):
     """
     filter a pdb structure in a recursive way
-    
+
     entity: the pdb entity, a structure should be given on the top level
-    
-    slist: the list of filter criterias, for each level.            
+
+    slist: the list of filter criterias, for each level.
     """
     for subenty in entity.get_list():
         if not subenty.id in slist[0]: entity.detach_child(subenty.id)
@@ -62,7 +59,7 @@ def pca_line(pca,h, r=0):
     """
     if ((not r) if pca.fit_transform(h)[0][0] < 0 else r):
         return pca.inverse_transform(np.asarray([[0,0,0],[1,0,0]]))
-    else:return pca.inverse_transform(np.asarray([[0,0,0],[-1,0,0]])) 
+    else:return pca.inverse_transform(np.asarray([[0,0,0],[-1,0,0]]))
 
 def calc_angle(b,c):
     """
@@ -116,213 +113,228 @@ def qgen(x, qset):
     del qset[start+1:]
     return qset
 
-def browsertest(request):
+def angleAnalysis(request):
     """
-    Show interaction heatmap
+    Show angle analysis site
     """
-    return render(request, 'angles/browsertest.html')
+    return render(request, 'angles/angleanalysis.html')
 
-
-
-class testTemplate(TemplateView):
+# TODO: rename and move to tool
+class buildAngles(TemplateView):
 
     template_name = "test.html"
     def get_context_data(self, **kwargs):
         dblist = []
         context = super(testTemplate, self).get_context_data(**kwargs)
         extra_pca = True
-        
+
         ###########################################################################
         ############################ Helper  Functions ############################
         ###########################################################################
-    
+
         failed = []
-        
-        # get preferred chain for PDB-code
+
+        # Get all structures
         references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+
+        # DEBUG for a specific PDB
+        #references = Structure.objects.filter(pdb_code__index="2R4R").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         references = list(references)
-        
+
         pids = [ref.protein_conformation.protein.id for ref in references]
-        
+
         qset = Residue.objects.filter(protein_conformation__protein__id__in=pids)
         qset = qset.filter(generic_number__label__regex=r'^[1-7]x[0-9]+').order_by('-protein_conformation__protein','-generic_number__label')
         qset = list(qset.prefetch_related('generic_number', 'protein_conformation__protein','protein_conformation__state'))
-        
+
         res_dict = {ref.pdb_code.index:qgen(ref.protein_conformation.protein,qset) for ref in references}
-        
+
         #######################################################################
         ######################### Start of main loop ##########################
         #######################################################################
-        
+
         angle_dict = [{},{},{},{}]
         median_dict = [{},{},{},{}]
-        
+
         for reference in references:
-            
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
-            
-            
+#            print(pdb_code)
+
             try:
-                
-                print(pdb_code)
-    
+            #if True:
                 structure = load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
                 state_id = reference.protein_conformation.state.id
-                
+
                 #######################################################################
                 ###################### prepare and evaluate query #####################
-                
+
                 db_reslist = res_dict[pdb_code]
-                
+                #print(db_reslist)
+
                 #######################################################################
                 ######################### filter data from db #########################
-                
+
                 def reslist_gen(x):
                     try:
                         while db_reslist[-1].generic_number.label[0] == x:
                             yield db_reslist.pop()
                     except IndexError:
                         pass
-                
+
                 # when gdict is not needed the helper can be removed
                 #db_tmlist = [[(' ',r.sequence_number,' ') for r in reslist_gen(x) if r.sequence_number in pchain and r.sequence_number < 1000] for x in ["1","2","3","4","5","6","7"]]
-                db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain and r.sequence_number < 1000] for x in ["1","2","3","4","5","6","7"]]
+                # db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain and r.sequence_number < 1000] for x in ["1","2","3","4","5","6","7"]]
+                db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain] for x in ["1","2","3","4","5","6","7"]]
                 gdict = {r[1]:r[0] for hlist in db_helper for r in hlist}
                 db_tmlist = [[(' ',r[1],' ') for r in sl] for sl in db_helper]
                 db_set = set(db_tmlist[0]+db_tmlist[1]+db_tmlist[2]+db_tmlist[3]+db_tmlist[4]+db_tmlist[5]+db_tmlist[6])
-                
+
+
                 #######################################################################
-                ############################# filter  pdb #############################
-                
+                ##################### Angles/dihedrals residues #######################
+
+                polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
+                poly = Bio.PDB.Polypeptide.Polypeptide(polychain)
+                poly.get_phi_psi_list() # backbone dihedrals
+                poly.get_theta_list() # angle three consecutive Ca atoms
+                poly.get_tau_list() # dihedral four consecutive Ca atoms
+
+                # TODO: extend with Chi1-5?
+                # https://gist.github.com/lennax/0f5f65ddbfa278713f58
+                # Definition http://www.ccp14.ac.uk/ccp/web-mirrors/garlic/garlic/commands/dihedrals.html
+                # http://biopython.org/DIST/docs/api/Bio.PDB.Polypeptide-pysrc.html#Polypeptide.get_phi_psi_list
+
+                dihedrals = {}
+                for r in poly:
+                  angle_list = ["PHI", "PSI", "THETA", "TAU"]
+                  for angle in angle_list:
+                      if angle not in r.xtra:
+                          r.xtra[angle] = None
+                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"]]
+
+                ### clean the structure to solely the 7TM bundle
                 recurse(structure, [[0], preferred_chain, db_set])
-                
-                #######################################################################
-                ############### Calculate the axes through the helices ################
-                #######################################################################
-                N = 3
-                
+
+                # Extra: remove hydrogens from structure (e.g. 5VRA)
+                for residue in structure[0][preferred_chain]:
+                    for id in [atom.id for atom in residue if atom.element == "H"]:
+                        residue.detach_child(id)
+
+                ### AXES through each of the TMs and the TM bundle (center axis)
                 hres_list = [np.asarray([pchain[r]["CA"].get_coord() for r in sl], dtype=float) for sl in db_tmlist]
                 h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else cal_pseudo_CB(pchain[r]) for r in sl], dtype=float) for sl in db_tmlist]
-    
+                #print(hres_list)
                 # fast and fancy way to take the average of N consecutive elements
+                N = 3
                 hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list])
-                
-                #######################################################################
-                ################################# PCA #################################
-                #######################################################################
-                
+                #print(hres_three)
+                ### PCA - determine axis through center + each transmembrane helix
                 helix_pcas = [PCA() for i in range(7)]
                 helix_pca_vectors = [pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)]
-                
-                # extracellular part
+
+                # Calculate PCA based on the upper (extracellular) half of the GPCR (more stable)
                 if extra_pca:
                     helices_mn = np.asarray([np.mean(h, axis=0) for h in hres_three])
-                    pos_list = np.asarray([pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
+
+                    # Sensitive to length of array, resulting in array when < 6 coordinates
+                    # TODO: investigate and make more robust
+                    #pos_list = np.asarray([pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
+
+                    pos_list = []
+                    for i,h in enumerate(hres_three):
+                        if len(h)>6:
+                            pos_list.append(pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]))
+                        else:
+                            pos_list.append(pca_line(PCA(), h))
+                    pos_list = np.asarray(pos_list)
+
                     pos_list = pos_list - (np.mean(pos_list,axis=1)-helices_mn).reshape(-1,1,3)
-                    
+
                     pca = PCA()
+                    # TODO store center_vector + vector to reference residue
                     center_vector = pca_line(pca, np.vstack(pos_list))
                 else:
                     pca = PCA()
                     center_vector = pca_line(pca, np.vstack(hres_three))
-                
-                #######################################################################
-                ################################ Angles ###############################
-                #######################################################################
-                
-                ########################### Axis to CA to CB ##########################
-    
-                b_angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)]).round(3)
-                
-                #set_bfactor(pchain,angle)
-                
-                ######################### Axis to Axis to CA ##########################
-                
-                a_angle = np.concatenate([axes_calc(h,p,pca) for h,p in zip(hres_list,helix_pcas)]).round(3)
-                
-                #set_bfactor(pchain,angle2)
-                
-                # uncomment for bulk create, update
-                # TODO: list comp + database search for all?
-                
-                # TODO: see if load from python pdb works
-                
-                ############## SASA 
 
+                ### ANGLES
+                # Center axis to helix axis to CA
+                a_angle = np.concatenate([axes_calc(h,p,pca) for h,p in zip(hres_list,helix_pcas)]).round(3)
+
+                # Center axis to CA to CB
+                b_angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)]).round(3)
+
+
+                ### freeSASA (only for TM bundle)
+                # SASA calculations - results per atom
                 res, trash = freesasa.calcBioPDB(structure)
-                
-                asa_list = []
-                oldnum   = -1
+
+                # create results dictionary per residue
+                asa_list = {}
                 atomlist = list(pchain.get_atoms())
                 for i in range(res.nAtoms()):
                     resnum = atomlist[i].get_parent().id[1]
-                    if resnum == oldnum:
-                        asa_list[-1] += res.atomArea(i)
-                    else:
-                        asa_list.append(res.atomArea(i))
-                        oldnum = resnum
-                
-                ################ HSE
-                
-                
+                    if resnum not in asa_list:
+                        asa_list[resnum] = 0
+                    asa_list[resnum] += res.atomArea(i)
+
+                ### Half-sphere exposure (HSE)
                 hse = pdb.HSExposure.HSExposureCB(structure[0])
-                hselist = [x[1][1] if x[1][1] > 0 else 0 for x in hse ]
-                
-                
-                ################ dblist gen
+                hselist = dict([ (x[0].id[1], x[1][1]) if x[1][1] > 0 else 0 for x in hse ])
+                continue
+
+                ### Collect all data in database list
                 if len(pchain) != len(hselist):
                     raise Exception("\033[91mLength mismatch hse " + pdb_code + "\033[0m")
-                    
+
                 if len(pchain) != len(asa_list):
                     raise Exception("\033[91mLength mismatch sasa " + pdb_code + "\033[0m")
-                
+
                 if np.isnan(np.sum(asa_list)):
                     raise Exception("\033[91mNAN sasa " + pdb_code + "\033[0m")
-                    
+
                 if np.isnan(np.sum(hselist)):
                     raise Exception("\033[91mNAN hse " + pdb_code + "\033[0m")
-                
-                
+
                 for res,a1,a2,asa,hse in zip(pchain,a_angle,b_angle,asa_list,hselist):
                     dblist.append([gdict[res.id[1]], a1, a2, reference,state_id-1,asa,hse])
                     if gdict[res.id[1]].generic_number.label not in angle_dict[state_id-1]:
                         angle_dict[state_id-1][gdict[res.id[1]].generic_number.label] = [round(a1,3)]
                     else:
                         angle_dict[state_id-1][gdict[res.id[1]].generic_number.label].append(round(a1,3))
-                
-        
+
             except Exception as e:
-                print("ERROR!!", pdb_code, e)
+            #else:
+                print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
                 continue
-        
+
         for i in range(4):
             for key in angle_dict[i]:
                 sortlist = np.array(angle_dict[i][key])
                 median_dict[i][key] = np.median(sortlist)
-        
+
         for i, res in enumerate(dblist):
-            
             g = res[0]
             a = res[1]
-            
+
             templist = copy.copy(angle_dict[res[4]][g.generic_number.label])
             del templist[templist.index(a)]
-            
+
             std_test = abs(np.average(templist) - int(a))/np.std(templist)
             std_len  = len(templist) - 1
             std = stats.t.cdf(std_test, df=std_len)
             dblist[i].append(0.501 if np.isnan(std) else std)
 
-        
-        
+
+
         dblist = [Angle(residue=g, diff_med=round(abs(median_dict[i][g.generic_number.label]-a1),3), angle=a1, b_angle=a2, structure=ref, sasa=round(asa,3), hse=hse, sign_med=round(sig,3)) for g,a1,a2,ref,i,asa,hse,sig in dblist]
-        
         print("created list")
         print(len(dblist))
-        
+
+        # Store the results
         # faster than updating: deleting and recreating
         Angle.objects.all().delete()
         Angle.objects.bulk_create(dblist,batch_size=5000)
@@ -330,31 +342,22 @@ class testTemplate(TemplateView):
         return context
 
 def get_angles(request):
-    
-    print("angles get called")
+    data = {error: 0}
 
-
-    # PDB files
+    # Request selection
     try:
         pdbs = request.GET.getlist('pdbs[]')
+        pdbs = [pdb.upper() for pdb in pdbs]
+
+        # Grab PDB data for (first?) PDB
+        query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number")
+
+        # Return prep data
+        data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.angle, q.diff_med, q.sign_med, q.hse, q.sasa] for q in query]
     except IndexError:
-        print("boo")
-        pdbs = []
-    
-    #print("2")
+        data['error'] = 1
+        data['errorMessage'] = "No PDB(s) selection provided"
 
-    pdbs = [pdb.upper() for pdb in pdbs]
-
-    # Use generic numbers? Defaults to True.
-    #generic = True
-    query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number")
-    # Get the relevant interactions
-    # Initialize response dictionary
-    data = {}
-    data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.angle, q.diff_med, q.sign_med, q.hse, q.sasa] for q in query]
-
-    # Create a consensus sequence.
-    
     return JsonResponse(data)
 
 def ServePDB(request, pdbname):
@@ -385,69 +388,3 @@ def ServePDB(request, pdbname):
     data['chain'] = structure.preferred_chain
 
     return JsonResponse(data)
-
-#@cache_page(60*60*24)
-def PdbTableData(request):
-
-    data = Structure.objects.filter(refined=False).select_related(
-                "state",
-                "pdb_code__web_resource",
-                "protein_conformation__protein__species",
-                "protein_conformation__protein__source",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents", "construct__crystallization__crystal_method",
-                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
-                "protein_conformation__site_protein_conformation__site")
-
-    data_dict = OrderedDict()
-    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></thead><tbody>\n"
-    for s in data:
-        pdb_id = s.pdb_code.index
-        r = {}
-        r['protein'] = s.protein_conformation.protein.parent.entry_short()
-        r['protein_long'] = s.protein_conformation.protein.parent.short()
-        r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
-        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
-        r['species'] = s.protein_conformation.protein.species.common_name
-        r['date'] = s.publication_date
-        r['state'] = s.state.name
-        r['representative'] = 'Yes' if s.representative else 'No'
-        data_dict[pdb_id] = r
-        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['representative'],r['date'],r['protein_long'],pdb_id)
-    data_table += "</tbody></table>"
-    return HttpResponse(data_table)
-
-#@cache_page(60*60*24)
-def PdbTableData2(request):
-
-    data = Structure.objects.filter(refined=False).select_related(
-                "state",
-                "pdb_code__web_resource",
-                "protein_conformation__protein__species",
-                "protein_conformation__protein__source",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents", "construct__crystallization__crystal_method",
-                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
-                "protein_conformation__site_protein_conformation__site")
-
-    data_dict = OrderedDict()
-    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></thead><tbody>\n"
-    for s in data:
-        pdb_id = s.pdb_code.index
-        r = {}
-        r['protein'] = s.protein_conformation.protein.parent.entry_short()
-        r['protein_long'] = s.protein_conformation.protein.parent.short()
-        r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
-        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
-        r['species'] = s.protein_conformation.protein.species.common_name
-        r['date'] = s.publication_date
-        r['state'] = s.state.name
-        r['representative'] = 'Yes' if s.representative else 'No'
-        data_dict[pdb_id] = r
-        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB2(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['representative'],r['date'],r['protein_long'],pdb_id)
-    data_table += "</tbody></table>"
-    return HttpResponse(data_table)
-
-
