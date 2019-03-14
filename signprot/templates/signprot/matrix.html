@@ -214,6 +214,14 @@
     </div>
 </div>
 
+<div id="sigmatch-container" class="svg-container" style="display: none; padding-bottom:
+    10%">
+    <div id="sigmatch">
+        <h2>Match Table</h2>
+    </div>
+    <table id='sigmatch_table' class="display" style="width: 100%"></table>
+</div>
+
 {% endblock %}
 
 {% block addon_js %}
@@ -239,6 +247,9 @@
     let sigScale;
     let colScale;
     let tooltip;
+
+    let sigmatch_table;
+    let sigmatch_data;
 
     let old_sets = [];
     let pos_set = [];
@@ -306,7 +317,7 @@
                 console.log(data)
                 document.querySelector('#seqsig-container').style.display = "inline-block";
                 document.querySelector('#conseq-container').style.display = "inline-block";
-                document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
+                //document.querySelector('#seqsig').scrollIntoView({behavior: 'smooth'});
                 // d3 draw
                 svg = signprotmat.d3.setup("div#seqsig-container", 'seqsig');
                 signprotmat.d3.draw_seq_sig(
@@ -355,10 +366,77 @@
             },
             success: function(data){
                 console.log(data)
+                document.querySelector('#sigmatch-container').style.display = "inline-block";
+                sigmatch_data = Object.keys(data).map(key => data[key])
                 // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
+                sigmatch_table = $('#sigmatch_table').DataTable({
+                    dom: 'Bfrtip',
+                    data: sigmatch_data,
+                    destroy: true,
+                    columnDefs: [
+                        {
+                            data: null,
+                            targets: 0,
+                            defaultContent: '',
+                            orderable: false,
+                            className: 'select-checkbox',
+                        }, {
+                            data: 'prot',
+                            title: 'Protein',
+                            targets: 1,
+                        }, {
+                            data: 'nscore',
+                            title: 'Normalized Score',
+                            targets: 4,
+                        }, {
+                            data: 'score',
+                            title: 'Score',
+                            targets: 3,
+                        }, {
+                            data: 'entry',
+                            title: 'Entry Name',
+                            targets: 2,
+                        }
+                    ],
+            order: [[ 4, "desc" ]],
+            select: {
+                style: 'single',
+            },
+            aging: false,
+            buttons: [
+                {
+                    text: 'Select all',
+                    action: function () {
+                        sigmatch_table.rows().select();
+                    }
+                },
+                {
+                    text: 'Select none',
+                    action: function () {
+                        sigmatch_table.rows().deselect();
+                    }
+                },
+            ]
+                })
+            
+           sigmatch_table.on('select', function (e, dt, type, indexes) {
+               const entry = sigmatch_table.rows(indexes).data().toArray()[0];
+               console.log(entry);
+               svg = d3.select('svg.svg-content.conseq');
+               $("g#sigmatch_frame").remove();
+               signprotmat.d3.draw_seq_cons(
+                    entry,
+                    svg,
+                    xScale,
+                    xAxis,
+                    true
+                );
+            })
+
             },
             error: function(error){
                 console.log(error);
+                document.querySelector("#sigm_spin").style.display = "none";
             },
             complete: function(){
                 document.querySelector("#sigm_spin").style.display = "none";
@@ -395,8 +473,10 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script>
-    $(document).ready(function () {
+
+$(document).ready(function () {
         non_interactions = signprotmat.data.annotateNonInteractionData(interactions_metadata, non_interactions);
+
         $('[data-toggle="tooltip"]').tooltip();
 
         const table = $('#table-interface').DataTable({
@@ -435,7 +515,7 @@
             select: {
                 style: 'os',
             },
-            paging: false,
+            aging: false,
             buttons: [
                 {
                     text: 'Select all',

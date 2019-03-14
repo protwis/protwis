@@ -1376,7 +1376,7 @@ const signprotmat = {
         .attr("class", "legend");
     },
 
-    draw_seq_cons: function(data_in, svg, xScale, xAxis) {
+    draw_seq_cons: function(data_in, svg, xScale, xAxis, sigmatch) {
       let data = data_in.cons;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
@@ -1386,6 +1386,8 @@ const signprotmat = {
       data = _.filter(data, function(d) {
         return xScale(d.gn);
       });
+
+        console.log(data)
 
       let conseqTip = d3
         .tip()
@@ -1407,6 +1409,44 @@ const signprotmat = {
           );
         });
 
+    if (sigmatch) {
+
+        svg = svg.append("g")
+        .attr("id", "sigmatch_frame")
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 140) + ")");
+
+      svg
+        .append("g")
+        .attr("id", "sigmatch_mat")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + -30 + ")")
+        .append("rect")
+        .attr("class", "border-bg")
+        .style("fill", "#ffffff")
+        .attr("x", xScale.step() / 2)
+        .attr("y", 75)
+        .attr("width", xScale.range()[1] - xScale.step())
+        .attr("height", 75);
+
+      svg
+        .append("text")
+        .attr("class", "y seq_label")
+        .attr("text-anchor", "end")
+        .attr("x", -10)
+        .attr("y", 65)
+        .text("Property");
+
+      svg
+        .append("text")
+        .attr("class", "y seq_label")
+        .attr("text-anchor", "end")
+        .attr("x", -10)
+        .attr("y", 102)
+            .text("Conservation");
+
+      let group = "g#sigmatch_mat"
+
+    } else {
+        
       svg
         .append("g")
         .attr("id", "conseq_mat")
@@ -1450,10 +1490,13 @@ const signprotmat = {
         .attr("text-anchor", "end")
         .attr("x", -10)
         .attr("y", 102)
-        .text("Conservation");
+            .text("Conservation");
+
+        let group = "g#conseq_mat"
+    }
 
       let each_res = svg
-        .select("g#conseq_mat")
+        .select(group)
         .selectAll("text")
         .data(data)
         .enter()
@@ -1546,7 +1589,7 @@ const signprotmat = {
         .text((d: any) => d.score);
 
       // putting a black border around the signature
-      d3.select("g#conseq_mat")
+        d3.select(group)
         .append("rect")
         .attr("class", "border")
         .style("stroke", "black")

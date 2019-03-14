@@ -116,7 +116,7 @@ def Couplings(request):
         if p_class not in class_names:
             class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
         p_class_name = class_names[p_class].strip()
-        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short(),'GuideToPharma':{},'Aska':{}}
+        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short()[:15],'GuideToPharma':{},'Aska':{}}
 
     distinct_g_families = []
     distinct_g_subunit_families = {}
@@ -142,6 +142,7 @@ def Couplings(request):
             # print("g",g)
             if g not in distinct_g_subunit_families[gf]:
                 distinct_g_subunit_families[gf].append(g)
+                distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
 
         if s not in data[p]:
             data[p][s] = {}
@@ -161,6 +162,10 @@ def Couplings(request):
                 data[p][s][gf]['best'] = round(Decimal(m),2)
 
     fd = {} #final data
+
+    distinct_g_families = sorted(distinct_g_families)
+    distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
+    distinct_g_subunit_families = OrderedDict([('Gs',['gnal', 'gnas2']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gna14', 'gna15', 'gnaq']), ('G12/G13',['gna12', 'gna13'])])
 
     for p,v in data.items():
         fd[p] = [v['class'],p,v['pretty']]
@@ -1157,18 +1162,20 @@ def InteractionMatrix(request):
         for residue_list in dataset[pdb_key]:
             curr_meta = None
             while curr_meta is None:
-                # print(curr_meta)
                 for meta in interactions_metadata:
                     if meta['pdb_id'].upper() == pdb_key.upper():
                         curr_meta = meta
-            gprot = curr_meta['gprot']
-            entry_name = curr_meta['entry_name']
-            pdb_id = curr_meta['pdb_id']
-            residue_list.extend([gprot, entry_name, pdb_id])
-            new_dataset.append(residue_list)
+                break
+            if curr_meta is not None:
+                gprot = curr_meta['gprot']
+                entry_name = curr_meta['entry_name']
+                pdb_id = curr_meta['pdb_id']
+                residue_list.extend([gprot, entry_name, pdb_id])
+                new_dataset.append(residue_list)
 
     context = {
         'interactions': new_dataset,
+        # 'interactions': json.dumps(dataset),
         'non_interactions': json.dumps(list(remaining_residues)),
         'interactions_metadata': json.dumps(interactions_metadata),
         # 'ps': json.dumps(list(proteins)),
@@ -1196,32 +1203,30 @@ def IMSequenceSignature(request):
     # example data
     # pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
     # neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
-    segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
+    # segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
 
     # receive data
     pos_set_in = request.POST.getlist('pos[]')
-    # neg_set = request.POST.getlist('neg[]')
-    # segments = []
-    # for s in request.POST.getlist('seg[]'):
-    #     try:
-    #         gen_object = ResidueGenericNumberEquivalent.objects.filter(label=s, scheme__slug__in=['gpcrdba', 'gpcrdbb', 'gpcrdbc', 'gpcrdbf']).first()
-    #         segments.append(gen_object)
-    #     except ObjectDoesNotExist as e:
-    #         print('For {} a {} '.format(s, e))
-    #         continue
+    segments = []
+    for s in request.POST.getlist('seg[]'):
+        try:
+            gen_object = ResidueGenericNumberEquivalent.objects.filter(label=s, scheme__slug__in=['gpcrdba', 'gpcrdbb', 'gpcrdbc', 'gpcrdbf']).first()
+            segments.append(gen_object)
+        except ObjectDoesNotExist as e:
+            print('For {} a {} '.format(s, e))
+            continue
 
-    # get pos/neg set objects
+    # get pos objects
     pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')
-    # neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-    signature.setup_alignments(segments, pos_set, pos_set)
-    signature.calculate_signature()
+    signature.setup_alignments(segments, pos_set)
+    signature.calculate_signature_onesided()
 
 
     # preprocess data for return
-    signature_data = signature.prepare_display_data()
+    signature_data = signature.prepare_display_data_onesided()
 
     # FEATURES AND REGIONS
     feats = [feature for feature in signature_data['a_pos'].features_combo]
@@ -1351,38 +1356,80 @@ def IMSignatureMatch(request):
         cutoff = int(cutoff)
     )
 
-    signature_match.score_protein_class(
-        pos_set[0].family.slug[:3]
-    )
-
-    request.session['signature_match'] = {
-        'scores': signature_match.protein_report,
-        'scores_pos': signature_match.scores_pos,
-        'scores_neg': signature_match.scores_neg,
-        'protein_signatures': signature_match.protein_signatures,
-        'signatures_pos': signature_match.signatures_pos,
-        'signatures_neg': signature_match.signatures_neg,
-        'signature_filtered': signature_match.signature_consensus,
-        'relevant_gn': signature_match.relevant_gn,
-        'relevant_segments': signature_match.relevant_segments,
-        'numbering_schemes': signature_match.schemes,
-    }
-    request.session.modified = True
+    signature_match.score_protein_class()
 
     signature_match = {
         'scores': signature_match.protein_report,
-        'scores_pos': signature_match.scores_pos,
-        'scores_neg': signature_match.scores_neg,
+        # 'scores_pos': signature_match.scores_pos,
+        # 'scores_neg': signature_match.scores_neg,
         'protein_signatures': signature_match.protein_signatures,
-        'signatures_pos': signature_match.signatures_pos,
-        'signatures_neg': signature_match.signatures_neg,
-        'signature_filtered': signature_match.signature_consensus,
-        'relevant_gn': signature_match.relevant_gn,
-        'relevant_segments': signature_match.relevant_segments,
-        'numbering_schemes': signature_match.schemes,
+        # 'signatures_pos': signature_match.signatures_pos,
+        # 'signatures_neg': signature_match.signatures_neg,
+        # 'signature_filtered': signature_match.signature_consensus,
+        # 'relevant_gn': signature_match.relevant_gn,
+        # 'relevant_segments': signature_match.relevant_segments,
+        # 'numbering_schemes': signature_match.schemes,
     }
 
-    # {'scores': signature_match}
-    # return JsonResponse(signature_match, safe=False)
-    print(signature_match)
-    return JsonResponse('success', safe=False)
+    signature_match = prepare_signature_match(signature_match)
+    return JsonResponse(signature_match, safe=False)
+
+def prepare_signature_match(signature_match):
+    from common.definitions import AMINO_ACID_GROUP_PROPERTIES
+    from common.definitions import AMINO_ACID_GROUP_NAMES
+    from django.core.exceptions import ObjectDoesNotExist
+    from residue.models import ResidueGenericNumberEquivalent
+
+    out = {}
+    for elem in signature_match['scores'].items():
+        entry = elem[0].protein.entry_name
+        out[entry] = {
+                'entry': elem[0].protein.entry_name,
+                'prot': elem[0].protein.name,
+                'score': elem[1][0],
+                'nscore': elem[1][1]
+            }
+
+    for elem in signature_match['protein_signatures'].items():
+        prot_entry = elem[0].protein.entry_name
+        prot_scheme_id = elem[0].protein.residue_numbering_scheme.id
+        sig = []
+        for signature in elem[1].values():
+            for sig_elem in signature:
+                # 0: feat code
+                # 1: feature
+                # 2: cons
+                # 3: color
+                # 4: aa
+                # 5: gn
+                try:
+                    generic_number = ResidueGenericNumberEquivalent.objects.filter(
+                            label=str(sig_elem[5]),
+                            scheme_id=prot_scheme_id
+                            )
+                    gn = generic_number.values_list('default_generic_number__label',
+                            flat=True)[0].split('x')
+                except ObjectDoesNotExist as e:
+                    print('For {} a {} '.format(s, e))
+                    continue
+                
+                sig.append({
+                    'code':
+                    str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('display_name_short',
+                        None)),
+                    'length':
+                    str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('length',
+                        None)),
+                    # 'gn': str(sig_elem[5]),
+                    'gn': str('{}.{}x{}'.format(gn[0], gn[1], gn[1])),
+                    'aa': str(sig_elem[4]),
+                    'score': str(sig_elem[2]),
+                    'feature': str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0],
+                        None))
+                    })
+
+        if prot_entry in out:
+            out[prot_entry]['cons'] = sig
+
+    return out
+
