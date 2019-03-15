@@ -558,7 +558,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 var residue_data
 
 function renderTable(pdb) {
-    $.get('angledat?pdbs[]='+pdb[0], function(newDataArray) {
+    $.get('angledata?pdbs[]='+pdb[0], function(newDataArray) {
     residue_data = newDataArray["data"]
     residuetable.clear();
     residuetable.rows.add(residue_data);
