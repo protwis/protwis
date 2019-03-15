@@ -141,9 +141,9 @@ class Command(BaseBuild):
                 StructureRefinedSeqSim.objects.filter(structure=hommod).delete()
             except:
                 original = Structure.objects.get(pdb_code__index=main_structure)
-                wl = WebLink.objects.create(index=main_structure+'_refined', web_resource=original.pdb_code.web_resource)
-                pdb = PdbData.objects.create(pdb=pdb_data)
-                stats_text = StatsText.objects.create(stats_text=''.join(templates))
+                wl,created = WebLink.objects.get_or_create(index=main_structure+'_refined', web_resource=original.pdb_code.web_resource)
+                pdb,created = PdbData.objects.get_or_create(pdb=pdb_data)
+                stats_text,created = StatsText.objects.get_or_create(stats_text=''.join(templates))
                 prot_conf = ProteinConformation.objects.get(protein=original.protein_conformation.protein.parent)
                 hommod = Structure.objects.create(preferred_chain=original.preferred_chain, resolution=original.resolution, publication_date=original.publication_date,
                                                   representative=original.representative, annotated=original.annotated, distance=original.distance, pdb_code=wl, pdb_data=pdb,
