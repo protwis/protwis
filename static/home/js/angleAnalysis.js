@@ -204,7 +204,14 @@ function rgb2hex(r,g,b) {
     return '#' + r + g + b;
 }
 
-function numberToColor(max,value) {
+function numberToColor(max,value, neg_and_pos = false) {
+    if (neg_and_pos) {
+      value = value + max
+      max = max*2
+    }
+
+    if (value > max)
+      value = max
 
     var hexc = 255/max;
 
@@ -269,12 +276,15 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                 [ "white", "*" ]
                 ])
 
-        var angle_color = [];
-        var mediancolor = [];
-        var signifcolor = [];
-        var medianwindowcolor = [];
+        var bbangle_color = [];
+        var scangle_color = [];
         var hsecolor = [];
         var sasacolor = [];
+        var phicolor = [];
+        var psicolor = [];
+        var thetacolor = [];
+        var taucolor = [];
+
         var colorstring;
         var ctemp;
         var medmax;
@@ -301,50 +311,36 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 
         // groups
         residue_data.forEach(function(e){
-            angle_color.push([numberToColor(180,e[2]) , ""+e[1]])
 
-            mediancolor.push([numberToColor(90,e[3]) , ""+e[1]])
-
-            signifcolor.push([numberToColor(0.5,e[4]-0.5) , ""+e[1]])
-
-            hsecolor.push([numberToColor(40,e[5]) , ""+e[1]])
-
-            sasacolor.push([numberToColor(100,e[6]) , ""+e[1]])
-
-//             if loop data added e[0][0] gives wrong coloring
-            if(axis != Number(e[0][0])){
-                axis = Number(e[0][0])
-                j = 0
-                score = [0,0,0,0,0]
-            }
-
-            score[j%wlength] = e[3]
-            ctemp = score.reduce((a,b)=>a+b);
-            if(ctemp > cutoff){
-                medianwindowcolor.push([numberToColor(260,ctemp) , ""+e[1]])
-            } else {
-                medianwindowcolor.push(["#00F" , ""+e[1]])
-            }
-            j +=1;
+            bbangle_color.push([numberToColor(180,e[2]) , ""+e[1]])
+            scangle_color.push([numberToColor(180,e[3]) , ""+e[1]])
+            hsecolor.push([numberToColor(40, e[4]) , ""+e[1]])
+            sasacolor.push([numberToColor(100, e[5]) , ""+e[1]])
+            phicolor.push([numberToColor(180, e[6], true) , ""+e[1]])
+            psicolor.push([numberToColor(180, e[7], true) , ""+e[1]])
+            thetacolor.push([numberToColor(180, e[8], true) , ""+e[1]])
+            taucolor.push([numberToColor(180, e[9], true) , ""+e[1]])
         });
 
-
-
-        angle_color.push([ "white", "*" ]);
-        mediancolor.push([ "white", "*" ]);
-        signifcolor.push([ "white", "*" ]);
-        medianwindowcolor.push([ "white", "*" ]);
+        // Base coloring -> white
+        bbangle_color.push([ "white", "*" ]);
+        scangle_color.push([ "white", "*" ]);
         hsecolor.push([ "white", "*" ]);
         sasacolor.push([ "white", "*" ]);
+        phicolor.push([ "white", "*" ]);
+        psicolor.push([ "white", "*" ]);
+        thetacolor.push([ "white", "*" ]);
+        taucolor.push([ "white", "*" ]);
 
-        color_schemes['angles'] = NGL.ColormakerRegistry.addSelectionScheme(angle_color)
-        color_schemes['mediancolor'] = NGL.ColormakerRegistry.addSelectionScheme(mediancolor)
-        color_schemes['medianwindowcolor'] = NGL.ColormakerRegistry.addSelectionScheme(medianwindowcolor)
-        color_schemes['significance'] = NGL.ColormakerRegistry.addSelectionScheme(signifcolor)
+        // Add to coloring schemes
+        color_schemes['BB-angles'] = NGL.ColormakerRegistry.addSelectionScheme(bbangle_color)
+        color_schemes['SC-angles'] = NGL.ColormakerRegistry.addSelectionScheme(scangle_color)
         color_schemes['hse'] = NGL.ColormakerRegistry.addSelectionScheme(hsecolor)
         color_schemes['sasa'] = NGL.ColormakerRegistry.addSelectionScheme(sasacolor)
-
-
+        color_schemes['phi'] = NGL.ColormakerRegistry.addSelectionScheme(phicolor)
+        color_schemes['psi'] = NGL.ColormakerRegistry.addSelectionScheme(psicolor)
+        color_schemes['theta'] = NGL.ColormakerRegistry.addSelectionScheme(thetacolor)
+        color_schemes['tau'] = NGL.ColormakerRegistry.addSelectionScheme(taucolor)
 
         if (pdb2.length > 0) {
 
@@ -457,7 +453,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             controls += '</select></p>';
     }
 
-    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="angles">angles</option><option value="mediancolor">mediancolor</option><option value="medianwindowcolor">medianwindowcolor</option><option value="significance">significance</option><option value="hse">hse</option><option value="sasa">sasa</option>'+ optional +'</select></p>'
+    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="BB-angles">BB-angle</option><option value="SC-angles">SC-angle</option><option value="hse">hse</option><option value="sasa">sasa</option><option value="phi">phi</option><option value="psi">psi</option><option value="theta">theta</option><option value="tau">tau</option>'+ optional +'</select></p>'
                         +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
                         +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
                         +'</div>';
@@ -489,26 +485,26 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             sele = ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+")";
             // toggle CA spheres
             if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
-            reps.int_res_gn.setVisibility(true);
-            reps.int_res.setVisibility(false);
+              reps.int_res_gn.setVisibility(true);
+              reps.int_res.setVisibility(false);
             }
             // toggle sidechains
             if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
-            reps.ball.setVisibility(true);
-            reps.ball_all.setVisibility(false);
+              reps.ball.setVisibility(true);
+              reps.ball_all.setVisibility(false);
             }
         } else {
             sele = ":"+pdb_data['chain'];
             // toggle CA spheres
             if ($("#ngl-"+mode+" #highlight_res").prop('checked')){
-            reps.int_res_gn.setVisibility(false);
-            reps.int_res.setVisibility(true);
+              reps.int_res_gn.setVisibility(false);
+              reps.int_res.setVisibility(true);
             }
 
             // toggle sidechains
             if ($("#ngl-"+mode+" #toggle_sidechains").prop('checked')){
-            reps.ball.setVisibility(false);
-            reps.ball_all.setVisibility(true);
+              reps.ball.setVisibility(false);
+              reps.ball_all.setVisibility(true);
             }
         }
 
@@ -576,49 +572,70 @@ function initializeResidueTable() {
             column_number : 0,
             filter_type: "multi_select",
             select_type: 'select2',
-            filter_default_label: "Generic number",
+            filter_default_label: "Gen. number",
             filter_reset_button_text: false,
         },
         {
             column_number : 1,
             filter_type: "multi_select",
             select_type: 'select2',
-            filter_default_label: "angle",
+            filter_default_label: "Seq. number",
             filter_reset_button_text: false,
         },
         {
             column_number : 2,
             filter_type: "multi_select",
             select_type: 'select2',
-            filter_default_label: "angle",
+            filter_default_label: "BB-angle",
             filter_reset_button_text: false,
         },
         {
             column_number : 3,
             filter_type: "multi_select",
             select_type: 'select2',
-            filter_default_label: "diff med",
+            filter_default_label: "SC-angle",
             filter_reset_button_text: false,
         },
         {
             column_number : 4,
             filter_type: "multi_select",
             select_type: 'select2',
-            filter_default_label: "sig med",
+            filter_default_label: "HSE",
             filter_reset_button_text: false,
         },
         {
             column_number : 5,
             filter_type: "multi_select",
             select_type: 'select2',
-            filter_default_label: "hse",
+            filter_default_label: "SASA",
             filter_reset_button_text: false,
         },
         {
             column_number : 6,
             filter_type: "multi_select",
             select_type: 'select2',
-            filter_default_label: "sasa",
+            filter_default_label: "phi",
+            filter_reset_button_text: false,
+        },
+        {
+            column_number : 7,
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: "psi",
+            filter_reset_button_text: false,
+        },
+        {
+            column_number : 8,
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: "theta",
+            filter_reset_button_text: false,
+        },
+        {
+            column_number : 9,
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: "tau",
             filter_reset_button_text: false,
         }
     ],
