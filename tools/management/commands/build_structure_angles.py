@@ -141,10 +141,10 @@ class Command(BaseCommand):
         failed = []
 
         # Get all structures
-        references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
-
+        #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        #references = Structure.objects.filter(pdb_code__index="2R4R").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        references = Structure.objects.filter(pdb_code__index="3SN6").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+
         references = list(references)
 
         pids = [ref.protein_conformation.protein.id for ref in references]
@@ -165,10 +165,10 @@ class Command(BaseCommand):
         for reference in references:
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
-    #            print(pdb_code)
+            print(pdb_code)
 
-            try:
-            #if True:
+            #try:
+            if True:
                 structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
                 state_id = reference.protein_conformation.state.id
@@ -246,6 +246,7 @@ class Command(BaseCommand):
 
                     # Sensitive to length of array, resulting in array when < 6 coordinates
                     # TODO: investigate and make more robust
+                    # FOR EXAMPLE: skip the first residue + focus on middle membrane and up residues (knowledge-based not structure-dependent)
                     #pos_list = np.asarray([pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
 
                     pos_list = []
@@ -258,9 +259,13 @@ class Command(BaseCommand):
 
                     pos_list = pos_list - (np.mean(pos_list,axis=1)-helices_mn).reshape(-1,1,3)
 
+                    # OLD code - same bad results?
+                    # pos_list = np.asarray([pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
+
                     pca = PCA()
                     # TODO store center_vector + vector to reference residue
                     center_vector = pca_line(pca, np.vstack(pos_list))
+                    print(center_vector)
                 else:
                     pca = PCA()
                     center_vector = pca_line(pca, np.vstack(hres_three))
@@ -289,59 +294,55 @@ class Command(BaseCommand):
                 ### Half-sphere exposure (HSE)
                 hse = pdb.HSExposure.HSExposureCB(structure[0])
                 hselist = dict([ (x[0].id[1], x[1][1]) if x[1][1] > 0 else 0 for x in hse ])
-                continue
+
+                # Few checks
+                if len(pchain) != len(a_angle):
+                    raise Exception("\033[91mLength mismatch a-angles " + pdb_code + "\033[0m")
+
+                if len(pchain) != len(b_angle):
+                    raise Exception("\033[91mLength mismatch b-angles " + pdb_code + "\033[0m")
 
                 ### Collect all data in database list
-                # TODO: fix the merging of all results and extend with psi/phi/theta/tau
-                if len(pchain) != len(hselist):
-                    raise Exception("\033[91mLength mismatch hse " + pdb_code + "\033[0m")
+                #print(a_angle) # only TM
+                #print(b_angle) # only TM
+                #print(asa_list) # only TM
+                #print(hselist) # only TM
+                #print(dihedrals) # HUSK: contains full protein!
+                for res, angle1, angle2 in zip(pchain, a_angle, b_angle):
+                    residue_id = res.id[1]
+                    # structure, residue, A-angle, B-angle, ASA, HSE, "PHI", "PSI", "THETA", "TAU"
+                    dblist.append([reference, gdict[residue_id], angle1, angle2, asa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id])
 
-                if len(pchain) != len(asa_list):
-                    raise Exception("\033[91mLength mismatch sasa " + pdb_code + "\033[0m")
-
-                if np.isnan(np.sum(asa_list)):
-                    raise Exception("\033[91mNAN sasa " + pdb_code + "\033[0m")
-
-                if np.isnan(np.sum(hselist)):
-                    raise Exception("\033[91mNAN hse " + pdb_code + "\033[0m")
-
-                for res,a1,a2,asa,hse in zip(pchain,a_angle,b_angle,asa_list,hselist):
-                    dblist.append([gdict[res.id[1]], a1, a2, reference,state_id-1,asa,hse])
-                    if gdict[res.id[1]].generic_number.label not in angle_dict[state_id-1]:
-                        angle_dict[state_id-1][gdict[res.id[1]].generic_number.label] = [round(a1,3)]
-                    else:
-                        angle_dict[state_id-1][gdict[res.id[1]].generic_number.label].append(round(a1,3))
-
-            except Exception as e:
-            #else:
+            #except Exception as e:
+            else:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
                 continue
 
-        for i in range(4):
-            for key in angle_dict[i]:
-                sortlist = np.array(angle_dict[i][key])
-                median_dict[i][key] = np.median(sortlist)
+#        for i in range(4):
+#            for key in angle_dict[i]:
+#                sortlist = np.array(angle_dict[i][key])
+#                median_dict[i][key] = np.median(sortlist)
 
-        for i, res in enumerate(dblist):
-            g = res[0]
-            a = res[1]
+#        for i, res in enumerate(dblist):
+#            g = res[0]
+#            a = res[1]
+#
+#            templist = copy.copy(angle_dict[res[4]][g.generic_number.label])
+#            del templist[templist.index(a)]
 
-            templist = copy.copy(angle_dict[res[4]][g.generic_number.label])
-            del templist[templist.index(a)]
+#            std_test = abs(np.average(templist) - int(a))/np.std(templist)
+#            std_len  = len(templist) - 1
+#            std = stats.t.cdf(std_test, df=std_len)
+#            dblist[i].append(0.501 if np.isnan(std) else std)
 
-            std_test = abs(np.average(templist) - int(a))/np.std(templist)
-            std_len  = len(templist) - 1
-            std = stats.t.cdf(std_test, df=std_len)
-            dblist[i].append(0.501 if np.isnan(std) else std)
-
-
-
-        dblist = [Angle(residue=g, diff_med=round(abs(median_dict[i][g.generic_number.label]-a1),3), angle=a1, b_angle=a2, structure=ref, sasa=round(asa,3), hse=hse, sign_med=round(sig,3)) for g,a1,a2,ref,i,asa,hse,sig in dblist]
+        #dblist = [Angle(residue=g, diff_med=round(abs(median_dict[i][g.generic_number.label]-a1),3), angle=a1, b_angle=a2, structure=ref, sasa=round(asa,3), hse=hse, sign_med=round(sig,3)) for g,a1,a2,ref,i,asa,hse,sig in dblist]
+        # structure, residue, A-angle, B-angle, ASA, HSE, "PHI", "PSI", "THETA", "TAU"
+        object_list = [Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,3), hse=hse, phi=round(phi,3), psi=round(psi,3), theta=round(theta,3), tau=round(tau,3)) for ref,res,a1,a2,asa,hse,phi,psi,theta,tau in dblist]
         print("created list")
-        print(len(dblist))
+        print(len(object_list))
 
         # Store the results
         # faster than updating: deleting and recreating
         Angle.objects.all().delete()
-        Angle.objects.bulk_create(dblist,batch_size=5000)
+        Angle.objects.bulk_create(object_list,batch_size=5000)
