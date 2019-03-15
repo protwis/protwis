@@ -259,7 +259,7 @@ def get_angles(request):
         query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number")
 
         # Return prep data
-        data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.angle, q.diff_med, q.sign_med, q.hse, q.sasa] for q in query]
+        data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.angle, q.b_angle, q.hse, q.sasa, q.phi, q.psi, q.theta, q.tau ] for q in query]
     except IndexError:
         data['error'] = 1
         data['errorMessage'] = "No PDB(s) selection provided"

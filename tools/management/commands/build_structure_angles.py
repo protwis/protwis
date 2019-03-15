@@ -142,8 +142,9 @@ class Command(BaseCommand):
 
         # Get all structures
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        references = Structure.objects.filter(pdb_code__index="3SN6").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        #references = Structure.objects.filter(pdb_code__index="6H7O").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         references = list(references)
 
@@ -167,8 +168,8 @@ class Command(BaseCommand):
             pdb_code = reference.pdb_code.index
             print(pdb_code)
 
-            #try:
-            if True:
+            try:
+            #if True:
                 structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
                 state_id = reference.protein_conformation.state.id
@@ -241,34 +242,47 @@ class Command(BaseCommand):
                 helix_pca_vectors = [pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)]
 
                 # Calculate PCA based on the upper (extracellular) half of the GPCR (more stable)
-                if extra_pca:
+                pca = PCA()
+                # DISABLED FOR NOW - not stable at all
+                if False and extra_pca:
                     helices_mn = np.asarray([np.mean(h, axis=0) for h in hres_three])
 
-                    # Sensitive to length of array, resulting in array when < 6 coordinates
                     # TODO: investigate and make more robust
                     # FOR EXAMPLE: skip the first residue + focus on middle membrane and up residues (knowledge-based not structure-dependent)
                     #pos_list = np.asarray([pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
-
                     pos_list = []
                     for i,h in enumerate(hres_three):
                         if len(h)>6:
                             pos_list.append(pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]))
                         else:
                             pos_list.append(pca_line(PCA(), h))
-                    pos_list = np.asarray(pos_list)
 
+                    pos_list = np.asarray(pos_list)
                     pos_list = pos_list - (np.mean(pos_list,axis=1)-helices_mn).reshape(-1,1,3)
 
-                    # OLD code - same bad results?
-                    # pos_list = np.asarray([pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
+                    # print cgo_arrows for each TM helix
+#                    for pos in pos_list:
+#                        a = [str(i) for i in pos[0]]
+#                        b = [str(i) for i in pos[1]]
+#                        print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
 
-                    pca = PCA()
                     # TODO store center_vector + vector to reference residue
-                    center_vector = pca_line(pca, np.vstack(pos_list))
-                    print(center_vector)
+                    center_vector = pca_line(pca, np.vstack(pos2_list))
+
+                    # average vector -> center vector ok, but PCA not initalized
+#                    center_point = [0,0,0]
+#                    vector_average = [0,0,0]
+#                    for pos in pos_list:
+#                        center_point += pos[0]/len(pos_list)
+#                        vector_average += (pos[1]-pos[0])/len(pos_list)
+
+#                    center_vector = [center_point, center_point + vector_average ]
                 else:
-                    pca = PCA()
                     center_vector = pca_line(pca, np.vstack(hres_three))
+
+#                a = [str(i) for i in center_vector[0]]
+#                b = [str(i) for i in center_vector[1]]
+#                print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
 
                 ### ANGLES
                 # Center axis to helix axis to CA
@@ -313,8 +327,8 @@ class Command(BaseCommand):
                     # structure, residue, A-angle, B-angle, ASA, HSE, "PHI", "PSI", "THETA", "TAU"
                     dblist.append([reference, gdict[residue_id], angle1, angle2, asa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id])
 
-            #except Exception as e:
-            else:
+            except Exception as e:
+            #else:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
                 continue
@@ -336,9 +350,22 @@ class Command(BaseCommand):
 #            std = stats.t.cdf(std_test, df=std_len)
 #            dblist[i].append(0.501 if np.isnan(std) else std)
 
-        #dblist = [Angle(residue=g, diff_med=round(abs(median_dict[i][g.generic_number.label]-a1),3), angle=a1, b_angle=a2, structure=ref, sasa=round(asa,3), hse=hse, sign_med=round(sig,3)) for g,a1,a2,ref,i,asa,hse,sig in dblist]
         # structure, residue, A-angle, B-angle, ASA, HSE, "PHI", "PSI", "THETA", "TAU"
-        object_list = [Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,3), hse=hse, phi=round(phi,3), psi=round(psi,3), theta=round(theta,3), tau=round(tau,3)) for ref,res,a1,a2,asa,hse,phi,psi,theta,tau in dblist]
+        object_list = []
+        for ref,res,a1,a2,asa,hse,phi,psi,theta,tau in dblist:
+            try:
+                if phi != None:
+                    phi = round(np.rad2deg(phi),3)
+                if psi != None:
+                    psi = round(np.rad2deg(psi),3)
+                if theta != None:
+                    theta = round(np.rad2deg(theta),3)
+                if tau != None:
+                    tau = round(np.rad2deg(tau),3)
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau))
+            except Exception as e:
+                print([ref,res,a1,a2,asa,hse,phi,psi,theta,tau])
+        #object_list = [Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), hse=hse, phi=round(np.rad2deg(phi),3), psi=round(np.rad2deg(psi),3), theta=round(np.rad2deg(theta),3), tau=round(np.rad2deg(tau),3)) for ref,res,a1,a2,asa,hse,phi,psi,theta,tau in dblist]
         print("created list")
         print(len(object_list))
 
