@@ -204,7 +204,7 @@ function rgb2hex(r,g,b) {
     return '#' + r + g + b;
 }
 
-function numberToColor(max,value, neg_and_pos = false) {
+function numberToColor(max, value, neg_and_pos = false) {
     if (neg_and_pos) {
       value = value + max
       max = max*2
@@ -223,6 +223,65 @@ function numberToColor(max,value, neg_and_pos = false) {
         return rgb2hex(Math.floor(value*hexc).toString(16),"00","00");
     }
 }
+
+function numberToColor3(max,value, neg_and_pos = false) {
+    if (neg_and_pos) {
+      value = value + max
+      max = max*2
+    }
+
+    if (value > max)
+      value = max
+    if (value < 0)
+      value = 0
+
+    return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+}
+
+function numberToColor2(max,value, neg_and_pos = false) {
+    if (neg_and_pos) {
+      value = value + max
+      max = max*2
+    }
+
+    if (value > max)
+      value = max
+    if (value < 0)
+      value = 0
+
+    return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+}
+
+function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
+    var color1 = rgbColor1;
+    var color2 = rgbColor2;
+    var fade = fadeFraction;
+
+    // Do we have 3 colors for the gradient? Need to adjust the params.
+    if (rgbColor3) {
+      fade = fade * 2;
+
+      // Find which interval to use and adjust the fade percentage
+      if (fade >= 1) {
+        fade -= 1;
+        color1 = rgbColor2;
+        color2 = rgbColor3;
+      }
+    }
+
+    var diffRed = color2.red - color1.red;
+    var diffGreen = color2.green - color1.green;
+    var diffBlue = color2.blue - color1.blue;
+
+    var gradient = {
+      red: parseInt(Math.floor(color1.red + (diffRed * fade)), 10),
+      green: parseInt(Math.floor(color1.green + (diffGreen * fade)), 10),
+      blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
+    };
+
+    //return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
+    return rgb2hex(gradient.red.toString(16),gradient.green.toString(16),gradient.blue.toString(16));
+  }
 
 
 
@@ -311,15 +370,34 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 
         // groups
         residue_data.forEach(function(e){
-
-            bbangle_color.push([numberToColor(180,e[2]) , ""+e[1]])
-            scangle_color.push([numberToColor(180,e[3]) , ""+e[1]])
+            bbangle_color.push([numberToColor3(180,e[2]) , ""+e[1]])
+            scangle_color.push([numberToColor3(180,e[3]) , ""+e[1]])
             hsecolor.push([numberToColor(40, e[4]) , ""+e[1]])
             sasacolor.push([numberToColor(100, e[5]) , ""+e[1]])
-            phicolor.push([numberToColor(180, e[6], true) , ""+e[1]])
-            psicolor.push([numberToColor(180, e[7], true) , ""+e[1]])
-            thetacolor.push([numberToColor(180, e[8], true) , ""+e[1]])
-            taucolor.push([numberToColor(180, e[9], true) , ""+e[1]])
+
+            // TESTING : z-scoring
+            e[6] = (e[6]+67.479)/15 //20.658
+            if (Math.abs(e[6])>1)
+              phicolor.push([numberToColor3(3, e[6], true) , ""+e[1]])
+            // TESTING : z-scoring
+            e[7] = (e[7]+33.478)/30 //34.245
+            if (Math.abs(e[7])>1)
+              psicolor.push([numberToColor3(3, e[7], true) , ""+e[1]])
+
+            // TODO: normalize all values before coloring -> we can utilize the same scheme for all values
+            // TESTING : z-scoring
+            e[8] = (e[8]-93.686)/7.462
+            // emphasize negative values - diff. distribution -> zscore not sufficient
+            if (e[8] < 0){
+              e[8] = e[8] * 1.2
+            }
+            if (Math.abs(e[8])>1)
+              thetacolor.push([numberToColor3(3, e[8], true) , ""+e[1]])
+
+            // TESTING: absolute for tau + diff max + correction
+            e[9] = (e[9]-44.066)/35.866
+            if (Math.abs(e[9])>1)
+              taucolor.push([numberToColor3(3, e[9], true) , ""+e[1]])
         });
 
         // Base coloring -> white
