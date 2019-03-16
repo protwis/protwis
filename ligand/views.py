@@ -311,14 +311,33 @@ class LigandStatistics(TemplateView):
 
         context = super().get_context_data(**kwargs)
         assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
+
+        lig_count_dict = {}
+        assays_lig = list(AssayExperiment.objects.all().values('protein__family__parent__parent__parent__name').annotate(c=Count('ligand',distinct=True)))
+        for a in assays_lig:
+            lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+        target_count_dict = {}
+        assays_target = list(AssayExperiment.objects.all().values('protein__family__parent__parent__parent__name').annotate(c=Count('protein__family',distinct=True)))
+        for a in assays_target:
+            target_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+
+        prot_count_dict = {}
+        proteins_count = list(Protein.objects.all().values('family__parent__parent__parent__name').annotate(c=Count('family',distinct=True)))
+        for pf in proteins_count:
+            prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
+
         classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006']) #ugly but fast
         proteins = Protein.objects.all().prefetch_related('family__parent__parent__parent')
         ligands = []
 
         for fam in classes:
-            lig_count = len(assays.filter(protein__family__parent__parent__parent=fam).distinct('ligand'))
-            prot_count = len(proteins.filter(family__parent__parent__parent=fam).distinct('family'))
-            target_count = len(assays.filter(protein__family__parent__parent__parent=fam).distinct('protein__family'))
+            if fam.name in lig_count_dict:
+                lig_count = lig_count_dict[fam.name]
+                target_count = target_count_dict[fam.name]
+            else:
+                lig_count = 0
+                target_count = 0
+            prot_count = prot_count_dict[fam.name]
             ligands.append({
                 'name': fam.name,
                 'num_ligands': lig_count,
@@ -328,6 +347,7 @@ class LigandStatistics(TemplateView):
                 })
         lig_count_total = sum([x['num_ligands'] for x in ligands])
         prot_count_total = len(proteins.distinct('family'))
+        prot_count_total = Protein.objects.filter(family__slug__startswith='00').all().distinct('family').count()
         target_count_total = sum([x['target_count'] for x in ligands])
         lig_total = {
             'num_ligands': lig_count_total,
