@@ -346,7 +346,6 @@ class LigandStatistics(TemplateView):
                 'target_count': target_count
                 })
         lig_count_total = sum([x['num_ligands'] for x in ligands])
-        prot_count_total = len(proteins.distinct('family'))
         prot_count_total = Protein.objects.filter(family__slug__startswith='00').all().distinct('family').count()
         target_count_total = sum([x['target_count'] for x in ligands])
         lig_total = {

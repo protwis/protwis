@@ -270,6 +270,7 @@ class PhylogeneticTreeGenerator(object):
         """
         self.d3_options['branch_length'] = {}
         coverage = PhylogeneticTree(self.root_lvl, self.tree_depth, family)
+        
         for lvl in range(self.root_lvl, self.tree_depth+1):
             if lvl+1 not in self.d3_options['branch_length']:
                 self.d3_options['branch_length'][lvl] = ''
