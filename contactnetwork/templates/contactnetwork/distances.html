@@ -463,10 +463,10 @@
           var color;
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
-                color = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
+                color = { r: 255, g: Math.round(255-255*(-fDiff)), b: Math.round(255-255*(-fDiff)) };
             else
                 // If fDiff is close to 1 we want a blue color
-                color = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
+                color = { r: Math.round(255-255*fDiff), g: Math.round(255-255*fDiff), b: 255 };
 
             if (rgb)
                 return color;
@@ -1134,7 +1134,7 @@
                             var dispersion = interactions[num][1];
                             var frequency = dispersion / data.max_dispersion;
 
-                            var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                            var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
 
                             var popoverTable = 'Distance mean: ' + Math.round(mean/10)/10 + 'Å<br />'
                             + 'Distance dispersion: ' + dispersion.toFixed(2)
@@ -2152,7 +2152,7 @@
                   var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
                   var frequency = value['avg'] / max_diff;
                   if ('max_dispersion' in distance_data) {
-                    var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                    var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
                   } else {
                     var rgb = getGradientColor(frequency, true);
                   }
@@ -2230,7 +2230,7 @@
                           var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
                           if ('max_dispersion' in distance_data) {
                             var frequency = value / distance_data['max_dispersion'];
-                            var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                            var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
                           } else {
                             var frequency = value / distance_data['max_diff'];
                             var rgb = getGradientColor(frequency, true);

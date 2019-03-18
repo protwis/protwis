@@ -197,7 +197,7 @@ class PhylogeneticTreeGenerator(object):
             'leaf_offset': 30
             }
 
-        self.families = ProteinFamily.objects.all()
+        self.families = ProteinFamily.objects.all().prefetch_related('parent')
         for family in self.families:
             if family.slug == '000':
                 self.lookup[0]['000'] = family
@@ -220,13 +220,20 @@ class PhylogeneticTreeGenerator(object):
                 'family__parent'
                 ).order_by('family__slug')
 
+        self.proteins_index = {}
+        for p in self.proteins:
+            path = p.family.parent.slug
+            if not path in self.proteins_index:
+                self.proteins_index[path] = []
+            self.proteins_index[path].append(p)
+
 
     def get_aux_data(self):
 
         self.aux_data['crystals'] = [x.protein_conformation.protein.parent.id for x in
                                                  Structure.objects.filter(refined=False)
                                                  .distinct
-                                                 ('protein_conformation__protein__parent')
+                                                 ('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent')
                                                  ]
         
         ligand_data = AssayExperiment.objects.values(
@@ -263,14 +270,14 @@ class PhylogeneticTreeGenerator(object):
         """
         self.d3_options['branch_length'] = {}
         coverage = PhylogeneticTree(self.root_lvl, self.tree_depth, family)
-
+        
         for lvl in range(self.root_lvl, self.tree_depth+1):
             if lvl+1 not in self.d3_options['branch_length']:
                 self.d3_options['branch_length'][lvl] = ''
 
             if lvl == self.tree_depth:
                 for path, branch in coverage.get_nodes(lvl-2).items():
-                    tmp_prots = self.proteins.filter(family__parent__slug=path)
+                    tmp_prots = self.proteins_index[path]
                     for protein in tmp_prots:
                         tmp_node = PhylogeneticTreeNode(
                             protein.entry_name.split("_")[0], 
