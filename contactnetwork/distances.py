@@ -3,6 +3,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 
 from structure.models import Structure
 from contactnetwork.models import *
+from residue.models import Residue
 
 from collections import OrderedDict
 
@@ -12,15 +13,17 @@ class Distances():
     """A class to do distances"""
     def __init__(self):
         self.structures = []
+        self.pconfs = []
         self.generic_numbers = OrderedDict()
         self.segments = OrderedDict()
         self.distances = {}
 
     def load_pdbs(self, pdbs):
         """Load a list of pdbs objects"""
-        structures = Structure.objects.filter(pdb_code__index__in=pdbs).all()
+        structures = Structure.objects.filter(pdb_code__index__in=pdbs).prefetch_related('protein_conformation').all()
         for s in structures:
             self.structures.append(s)
+            self.pconfs.append(s.protein_conformation)
 
 
     def fetch_agg(self):
@@ -83,17 +86,29 @@ class Distances():
         self.stats = stats_sorted
 
     def fetch_common_gns_tm(self):
-        ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
-                        .values('gns_pair') \
-                        .annotate(c = Count('distance')).values_list('gns_pair').filter(c__gte=int(len(self.structures))))
-        common_gn = []
-        for i,d in enumerate(ds):
-            res1, res2 = d[0].split("_")
-            if res1 not in common_gn:
-                common_gn.append(res1)
-            if res2 not in common_gn:
-                common_gn.append(res2)
-        common_gn.sort()
+
+        # ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+        #                 .values('gns_pair') \
+        #                 .annotate(c = Count('distance')).values_list('gns_pair').filter(c__gte=int(len(self.structures)*0.9)))
+        # common_gn = []
+        # for i,d in enumerate(ds):
+        #     res1, res2 = d[0].split("_")
+        #     if res1 not in common_gn:
+        #         common_gn.append(res1)
+        #     if res2 not in common_gn:
+        #         common_gn.append(res2)
+        # common_gn.sort()
+        res = Residue.objects.filter(protein_conformation__in=self.pconfs) \
+                        .exclude(generic_number=None) \
+                        .exclude(generic_number__label__contains='8x') \
+                        .exclude(generic_number__label__contains='12x') \
+                        .exclude(generic_number__label__contains='23x') \
+                        .exclude(generic_number__label__contains='34x') \
+                        .exclude(generic_number__label__contains='45x') \
+                        .values('generic_number__label') \
+                        .annotate(c = Count('generic_number__label')).filter(c__gte=int(len(self.structures)*0.9)).values_list('generic_number__label',flat=True).order_by('c') #.values_list('generic_number__label') #.filter(c__gte=int(len(self.structures)*0.9))
+        
+        common_gn = sorted(res)
 
         return common_gn
 
