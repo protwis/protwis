@@ -20,13 +20,14 @@ function toggleFullScreen(fullScreenElement) {
 function initializeGoButton(selector, generic=false) {
     $(selector + ' .go-button').click(function() {
         var pdb = JSON.parse($('#pdb-input').val());
+        //var pdb = ["2rh1"]
+
         //var segments = JSON.parse($(selector + ' .segments-input').val());
         var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
         if (pdb.length > 0 && segments.length > 0) {
-
             renderTable(pdb);
-
             var second = JSON.parse($('#second-input').val());
+            //var second = ["3sn6"]
 
             createNGLview("single",pdb[0], second);
         }
@@ -41,39 +42,34 @@ function initializeFullscreenButton(selector) {
 }
 
 function thisPDB(elem) {
-
+    var group = $(elem).closest('.tableview').attr('group-number');
     var ReceptorName = $(elem).attr('long');
     var pdbName = $(elem).attr('id');
     $('.pdb_selected').not(elem).prop("checked",false);
+
     var pdbs = [];
-    if ($(elem).prop("checked")) {
-        pdbs.push(pdbName);
-        // Update view
-        $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
+    if (group==0){
+      if ($(elem).prop("checked")) {
+          pdbs.push(pdbName);
+          // Update view
+          $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
+      } else {
+          // Update view
+          $(".crystal-count:visible").html('No structure selected.');
+      }
+      $('#pdb-input').val(JSON.stringify(pdbs));
     } else {
-        // Update view
-        $(".crystal-count:visible").html('No structure selected.');
+      if ($(elem).prop("checked")) {
+          pdbs.push(pdbName);
+          // Update view
+          $("#second-count").html(ReceptorName + ' - ' + pdbName + ' selected.');
+      } else {
+          // Update view
+          $("#second-count").html('No structure selected.');
+      }
+      $('#second-input').val(JSON.stringify(pdbs));
     }
-    $('#pdb-input').val(JSON.stringify(pdbs));
 }
-
-function thisPDB2(elem) {
-
-    var ReceptorName = $(elem).attr('long');
-    var pdbName = $(elem).attr('id');
-    $('.pdb_selected').not(elem).prop("checked",false);
-    var pdbs = [];
-    if ($(elem).prop("checked")) {
-        pdbs.push(pdbName);
-        // Update view
-        $("#second-count").html(ReceptorName + ' - ' + pdbName + ' selected.');
-    } else {
-        // Update view
-        $("#second-count").html('No structure selected.');
-    }
-    $('#second-input').val(JSON.stringify(pdbs));
-}
-
 
 $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
     {
@@ -288,7 +284,7 @@ function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
 var stage = [];
 var color_schemes = [];
 var schemeId_grey
-
+var chain_selection = ""
 function createNGLview(mode,pdb, pdb2, pdbs = false) {
     console.log(pdb)
     console.log(pdb2)
@@ -341,6 +337,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         var sasacolor = [];
         var phicolor = [];
         var psicolor = [];
+        var phipsicolor = [];
         var thetacolor = [];
         var taucolor = [];
 
@@ -359,8 +356,6 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         wlength = $('#window-input').val();
         cutoff  = $('#score-input').val();
 
-        console.log(wlength)
-        console.log(cutoff)
 //         var max = 0;
 //         residue_data.forEach(function(e){
 //             if (max > e[3]){
@@ -376,28 +371,55 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             sasacolor.push([numberToColor(100, e[5]) , ""+e[1]])
 
             // TESTING : z-scoring
-            e[6] = (e[6]+67.479)/15 //20.658
-            if (Math.abs(e[6])>1)
-              phicolor.push([numberToColor3(3, e[6], true) , ""+e[1]])
+            //e[6] = (e[6]+67.479)/15 //20.658
+            tmp = e[6]
+            if (tmp<-70) //3-10 helix
+              tmp = 3
+            /*else if (tmp<-60) //pi helix
+              tmp = -3*/
+            else
+              tmp = 0
+
+            if (Math.abs(tmp)>1){
+              phicolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+              phipsicolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+            }
+
             // TESTING : z-scoring
-            e[7] = (e[7]+33.478)/30 //34.245
-            if (Math.abs(e[7])>1)
-              psicolor.push([numberToColor3(3, e[7], true) , ""+e[1]])
+            //e[7] = (e[7]+33.478)/30 //34.245
+            tmp = e[7]
+            if (tmp>-10) //3-10 helix
+              tmp = 3
+            else if (tmp<-60) //pi helix
+              tmp = -3
+            else
+              tmp = 0
+
+            if (Math.abs(tmp)>1){
+              psicolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+              phipsicolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+            }
 
             // TODO: normalize all values before coloring -> we can utilize the same scheme for all values
-            // TESTING : z-scoring
-            e[8] = (e[8]-93.686)/7.462
-            // emphasize negative values - diff. distribution -> zscore not sufficient
-            if (e[8] < 0){
-              e[8] = e[8] * 1.2
-            }
-            if (Math.abs(e[8])>1)
-              thetacolor.push([numberToColor3(3, e[8], true) , ""+e[1]])
+            if (e[8]!=null){
+              // TESTING : z-scoring
+              tmp = (e[8]-93.686)/7.462
 
-            // TESTING: absolute for tau + diff max + correction
-            e[9] = (e[9]-44.066)/35.866
-            if (Math.abs(e[9])>1)
-              taucolor.push([numberToColor3(3, e[9], true) , ""+e[1]])
+              // emphasize negative values - diff. distribution -> zscore not sufficient
+              if (tmp < 0){
+                tmp = tmp * 1.2
+              }
+              if (Math.abs(tmp)>1){
+                thetacolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+              }
+            }
+
+            if (e[9]!=null){
+              // TESTING: absolute for tau + diff max + correction
+              tmp = (e[9]-44.066)/25 // was 35.866
+              if (Math.abs(tmp)>1)
+                taucolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+            }
         });
 
         // Base coloring -> white
@@ -407,6 +429,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         sasacolor.push([ "white", "*" ]);
         phicolor.push([ "white", "*" ]);
         psicolor.push([ "white", "*" ]);
+        phipsicolor.push([ "white", "*" ]);
         thetacolor.push([ "white", "*" ]);
         taucolor.push([ "white", "*" ]);
 
@@ -417,6 +440,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         color_schemes['sasa'] = NGL.ColormakerRegistry.addSelectionScheme(sasacolor)
         color_schemes['phi'] = NGL.ColormakerRegistry.addSelectionScheme(phicolor)
         color_schemes['psi'] = NGL.ColormakerRegistry.addSelectionScheme(psicolor)
+        color_schemes['phi_psi'] = NGL.ColormakerRegistry.addSelectionScheme(phipsicolor)
         color_schemes['theta'] = NGL.ColormakerRegistry.addSelectionScheme(thetacolor)
         color_schemes['tau'] = NGL.ColormakerRegistry.addSelectionScheme(taucolor)
 
@@ -426,26 +450,46 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                 var second_residues = secondArray["data"];
 
                 scnd_angle = []
-                scnd_hse   = []
-                scnd_sasa  = []
+                scnd_scangle = []
+                scnd_hse = []
+                scnd_sasa = []
+                scnd_phi = []
+                scnd_psi = []
+                scnd_theta = []
+                scnd_tau = []
 
                 second_residues.forEach(function(scnd){
                     residue_data.forEach(function(e){
                         if (e[0] == scnd[0]){
-                            scnd_angle.push([numberToColor(100, Math.abs(e[2] - scnd[2])) , ""+e[1]]);
-                            scnd_hse.push([numberToColor(40, Math.abs(e[5] - scnd[5])) , ""+e[1]]);
-                            scnd_sasa.push([numberToColor(100, Math.abs(e[6] - scnd[6])) , ""+e[1]]);
+                            scnd_angle.push([numberToColor3(50, e[2] - scnd[2], true) , ""+e[1]]);
+                            scnd_scangle.push([numberToColor3(50, e[3] - scnd[3], true) , ""+e[1]]);
+                            scnd_hse.push([numberToColor3(10, e[4] - scnd[4], true) , ""+e[1]]);
+                            scnd_sasa.push([numberToColor3(50, e[5] - scnd[5], true) , ""+e[1]]);
+                            scnd_phi.push([numberToColor3(90, e[6] - scnd[6], true) , ""+e[1]]);
+                            scnd_psi.push([numberToColor3(90, e[7] - scnd[7], true) , ""+e[1]]);
+                            scnd_theta.push([numberToColor3(90, e[8] - scnd[8], true) , ""+e[1]]);
+                            scnd_tau.push([numberToColor3(90, e[9] - scnd[9], true) , ""+e[1]]);
                         }
                     });
                 });
 
                 scnd_angle.push([ "white", "*" ]);
+                scnd_scangle.push([ "white", "*" ]);
                 scnd_hse.push([ "white", "*" ]);
                 scnd_sasa.push([ "white", "*" ]);
+                scnd_phi.push([ "white", "*" ]);
+                scnd_psi.push([ "white", "*" ]);
+                scnd_theta.push([ "white", "*" ]);
+                scnd_tau.push([ "white", "*" ]);
 
                 color_schemes['scnd_angle'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_angle)
+                color_schemes['scnd_scangle'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_scangle)
                 color_schemes['scnd_hse'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_hse)
                 color_schemes['scnd_sasa'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_sasa)
+                color_schemes['scnd_phi'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_phi)
+                color_schemes['scnd_psi'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_psi)
+                color_schemes['scnd_theta'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_theta)
+                color_schemes['scnd_tau'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_tau)
 
             });
 
@@ -455,22 +499,23 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         var stringBlob = new Blob( [ pdb_data['pdb'] ], { type: 'text/plain'} );
         stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
             original_o = o
+            chain_selection = ":" + pdb_data['chain'] + " and "
 
             gpcr_rep = o.addRepresentation( "cartoon", {
-            sele: ":"+pdb_data['chain'],
-            // radiusType: '',
-            radiusSize: 1,
-            radiusScale: 0.7,
-            // color: "atomindex",
-            // colorScale: "Accent",
-            // color: "residueindex",
-            // colorScale: "greys",
-            color: color_schemes['grey'],
-            metalness: 0,
-            colorMode: "hcl",
-            roughness: 1,
-            opacity: 1,
-            depthWrite: true
+              sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and (.CA)",
+              // radiusType: '',
+              radiusSize: 1,
+              radiusScale: 0.7,
+              // color: "atomindex",
+              // colorScale: "Accent",
+              // color: "residueindex",
+              // colorScale: "greys",
+              color: color_schemes['grey'],
+              metalness: 0,
+              colorMode: "hcl",
+              roughness: 1,
+              opacity: 1,
+              depthWrite: true
             });
 
             reps.ball_all = o.addRepresentation("ball+stick", {
@@ -483,12 +528,12 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                 visible: false
                 })
 
-            o.autoView();
+            o.autoView(":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and (.CA)")
 
             // mousover and click on datatable row to highlight residue in NGL viewer
             var temprepr;
             $("#single-table-tab-table tbody").on("mouseover", "tr", function(event){
-                temprepr = o.addRepresentation("ball+stick", {sele: ""+residuetable.row(this).data()[1]});
+                temprepr = o.addRepresentation("ball+stick", {sele: chain_selection+residuetable.row(this).data()[1]});
             }).mouseout(function(event){
                 o.removeRepresentation(temprepr)
             });
@@ -500,7 +545,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                     delete repr_dict[residuetable.row(this).data()[1]]
                     $(this).removeClass("table-selected")
                 }else{
-                    repr_dict[residuetable.row(this).data()[1]] = o.addRepresentation("ball+stick", {sele: ""+residuetable.row(this).data()[1]});
+                    repr_dict[residuetable.row(this).data()[1]] = o.addRepresentation("ball+stick", {sele: chain_selection+residuetable.row(this).data()[1]});
                     $(this).addClass("table-selected")
                 }
             });
@@ -517,7 +562,14 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 
     var optional = ''
     if (pdb2.length >0){
-        optional = '<option value="scnd_angle">Difference angle from'+ pdb2[0] +'</option><option value="scnd_hse">Difference hse from'+ pdb2[0] +'</option><option value="scnd_sasa">Difference sasa from'+ pdb2[0] +'</option>'
+        optional = '<option value="scnd_angle">Δ BB-angle</option>' +
+                  '<option value="scnd_scangle">Δ SC-angle</option>' +
+                  '<option value="scnd_hse">Δ HSE</option>' +
+                  '<option value="scnd_sasa">Δ SASA</option>' +
+                  '<option value="scnd_phi">Δ phi</option>' +
+                  '<option value="scnd_psi">Δ psi</option>' +
+                  '<option value="scnd_theta">Δ theta</option>' +
+                  '<option value="scnd_tau">Δ tau</option>'
     }
 
     if (pdbs){
@@ -531,8 +583,8 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             controls += '</select></p>';
     }
 
-    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="BB-angles">BB-angle</option><option value="SC-angles">SC-angle</option><option value="hse">hse</option><option value="sasa">sasa</option><option value="phi">phi</option><option value="psi">psi</option><option value="theta">theta</option><option value="tau">tau</option>'+ optional +'</select></p>'
-                        +'<p>Only GNs: <input type=checkbox id="ngl_only_gns"></p>'
+    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="BB-angles">BB-angle</option><option value="SC-angles">SC-angle</option><option value="hse">hse</option><option value="sasa">sasa</option><option value="phi">phi</option><option value="psi">psi</option><option value="phi_psi">phi + psi</option><option value="theta">theta</option><option value="tau">tau</option>'+ optional +'</select></p>'
+                        +'<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
                         +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
                         +'</div>';
 
@@ -735,15 +787,11 @@ $('#second-structure-pdb-modal-table').on('shown.bs.modal', function (e) {
 
 function initializePdbChooserTables() {
     $.get('/contactnetwork/pdbtabledata', function ( data ) {
-    $('#single-crystal-pdb-modal-table .tableview').html(data);
-    pdbtabledata = data;
-    });
-}
+      $('#single-crystal-pdb-modal-table .tableview').html(data);
+      $('#second-structure-pdb-modal-table .tableview').html(data);
 
-function initializeSecondTable() {
-    $.get('/contactnetwork/pdbtabledata', function ( data ) {
-    $('#second-structure-pdb-modal-table .tableview').html(data);
-    secondtable = data;
+      pdbtabledata = data;
+      secondtable = data;
     });
 }
 
@@ -755,16 +803,13 @@ function initalizeSingleCrystalView() {
 
 var selectortable
 var residuetable
-
-
 $(document).ready(function() {
     // residue Table
     initializeResidueTable();
+
     // Get PDBs for table build
     initializePdbChooserTables();
-    initializeSecondTable();
 
     // Single PDB files
     initalizeSingleCrystalView();
-
 });

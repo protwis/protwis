@@ -205,14 +205,20 @@ class Command(BaseCommand):
                 polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
                 poly = Bio.PDB.Polypeptide.Polypeptide(polychain)
                 poly.get_phi_psi_list() # backbone dihedrals
-                poly.get_theta_list() # angle three consecutive Ca atoms
-                poly.get_tau_list() # dihedral four consecutive Ca atoms
+                #poly.get_theta_list() # angle three consecutive Ca atoms
+                #poly.get_tau_list() # dihedral four consecutive Ca atoms
 
                 # TODO: extend with Chi1-5?
                 # https://gist.github.com/lennax/0f5f65ddbfa278713f58
                 # Definition http://www.ccp14.ac.uk/ccp/web-mirrors/garlic/garlic/commands/dihedrals.html
                 # http://biopython.org/DIST/docs/api/Bio.PDB.Polypeptide-pysrc.html#Polypeptide.get_phi_psi_list
 
+
+
+                ### clean the structure to solely the 7TM bundle
+                recurse(structure, [[0], preferred_chain, db_set])
+                poly.get_theta_list() # angle three consecutive Ca atoms
+                poly.get_tau_list() # dihedral four consecutive Ca atoms
                 dihedrals = {}
                 for r in poly:
                   angle_list = ["PHI", "PSI", "THETA", "TAU"]
@@ -220,9 +226,6 @@ class Command(BaseCommand):
                       if angle not in r.xtra:
                           r.xtra[angle] = None
                   dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"]]
-
-                ### clean the structure to solely the 7TM bundle
-                recurse(structure, [[0], preferred_chain, db_set])
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
