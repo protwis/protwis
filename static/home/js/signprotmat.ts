@@ -269,7 +269,7 @@ const signprotmat = {
         "van-der-waals": "#d9d9d9",
         "edge-to-face": "#969696",
         "water-mediated": "#7DB144",
-        hydrophobic: "#93d050",
+        "hydrophobic": "#93d050",
         "polar-sidechain-sidechain": "#EAA91F",
         "polar-sidechain-backbone": "#C38E1A",
         "polar-backbone-sidechain": "#C3A563",
@@ -277,7 +277,7 @@ const signprotmat = {
         "h-bond acceptor-donor": "#B24DFF",
         "cation-pi": "#0070c0",
         "pi-cation": "#005693",
-        ionic: "#00B9BF"
+        "ionic": "#00B9BF"
       };
       var colScale = d3
         .scaleOrdinal()
@@ -1174,111 +1174,17 @@ const signprotmat = {
 
     draw_seq_sig: function(data_in, svg, xScale) {
       let data = data_in.feat;
-      let fScale = signprotmat.d3.fScale(data);
-      let cScale = signprotmat.d3.cScale(data);
-      let feats = [];
-      data.forEach(d => {
-        const length_text = d.length != "" ? " (" + d.length + ")" : "";
-        feats.push({
-          code: d.feature_code,
-          feature: d.feature,
-          length: d.length,
-          comb: d.feature + length_text
-        });
-      });
-      let uniq_feats = _.uniqBy(feats, "comb");
-      console.log(uniq_feats);
-
-      // filter out NA generic numbers based on xScale
-      data = _.filter(data, function(d) {
-        return xScale(d.gn);
-      });
-
-      let seqsigTip = d3
-        .tip()
-        .attr("class", "d3-tip")
-        .html(function(d) {
-          return (
-            "Generic Residue No.: " +
-            d.gn +
-            "<br>" +
-            "Feature: " +
-            d.feature +
-            "<br>" +
-            "Length: " +
-            d.length +
-            "<br>" +
-            // "Score: " +
-            // d.expl +
-            // "<br>" +
-            "Frequency: " +
-            d.freq +
-            "<br>"
-          );
-        });
-
-      let row = svg
-        .append("g")
-        .attr("id", "seqsig_feature")
-        .attr("transform", "translate(" + 0 + "," + 0 + ")")
-        .selectAll("text")
-        .data(uniq_feats)
-        .enter();
-
-      row
-        .append("text")
-        .attr("class", "y seq_label")
-        .attr("x", -10 - xScale.step())
-        .attr("y", function(d: any) {
-          return fScale(d.comb) - fScale.step() / 2;
-        })
-        .attr("text-anchor", "end")
-        .attr("dy", 75)
-        .text(function(d: any) {
-          return d.comb;
-        });
-      row
-        .append("rect")
-        .style("fill", function(d: any) {
-          const gcol = signprotmat.d3.fScaleColor(d.code);
-          if (typeof gcol != "undefined") {
-            return gcol.bg_color;
-          } else {
-            return null;
-          }
-        })
-        .style("stroke", "black")
-        .attr("x", -xScale.step())
-        .attr("y", function(d: any) {
-          return 75 + fScale(d.comb) - fScale.step();
-        })
-        .attr("width", xScale.step())
-        .attr("height", fScale.step());
-
-      row
-        .append("text")
-        .attr("class", "y seq_label")
-        .attr("text-anchor", "middle")
-        .attr("x", -xScale.step() / 2)
-        .attr("y", function(d: any) {
-          return 75 + fScale(d.comb) - fScale.step() / 2;
-        })
-        .style("fill", (d: any) => {
-          const gcol = signprotmat.d3.fScaleColor(d.code);
-          if (typeof gcol != "undefined") {
-            if (typeof gcol.font_color != "undefined") {
-              return gcol.font_color;
-            } else {
-              return "#000000";
-            }
-          } else {
-            return "#000000";
-          }
-        })
-        .text(function(d: any) {
-          return d.code;
-        });
-
+      //let fScale = signprotmat.d3.fScale(data);
+      let cScale = signprotmat.d3.cScale();
+        let feats = [];
+        
+        let col_lengths = []
+        for ( elem of Object.keys(data)) { col_lengths.push(data[elem].length) }
+        const row_height = 30
+        const area_height = _.max(col_lengths) * row_height
+        
+        
+        // generating the white backdrop for all the properties
       svg
         .append("g")
         .attr("id", "seqsig_mat")
@@ -1289,61 +1195,25 @@ const signprotmat = {
         .attr("x", xScale.step() / 2)
         .attr("y", 75)
         .attr("width", xScale.range()[1] - xScale.step())
-        .attr("height", fScale.range()[1] - fScale.step());
+        .attr("height", area_height)
 
-      let each_res = svg
-        .select("g#seqsig_mat")
-        .selectAll("text")
-        .data(data)
+    let each_res = svg.select("g#seqsig_mat")
+        .selectAll("g")
+        .data(Object.values(data))
         .enter()
-        .append("g")
-        .call(seqsigTip)
-        .on("mouseover", function(d) {
-          if (d.freq !== 0) {
-            seqsigTip.show(d);
-          }
-        })
-        .on("mouseout", function(d) {
-          seqsigTip.hide();
-        });
+        .append('g')
+        .selectAll('rect')
+        .data(function(d){return d;})
+        .enter()
 
-      // the rectangles, colored by conservation
-      each_res
-        .append("rect")
+      each_res 
+        .append('rect')
         .attr("class", "res_rect")
-        .style("fill", function(d: any) {
-          if (d.cons <= 0) {
-            return "none";
-          } else {
-            return cScale(d.freq);
-          }
-        })
+            .style("fill", function(d){console.log(d)})
         .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-        .attr("y", function(d) {
-          const length_text = d.length != "" ? " (" + d.length + ")" : "";
-          const comb = d.feature + length_text;
-          return 75 + fScale(comb) - fScale.step();
-        })
+        .attr("y", (d: any) => 75)
         .attr("width", xScale.step())
-        .attr("height", fScale.step());
-
-      // adding the frequency text to each rectangle
-      // each_res
-      //   .append("text")
-      //   .attr("class", "res_label")
-      //   .attr("x", (d: any) => xScale(d.gn))
-      //   .attr("y", (d: any) => fScale(d.feature) - fScale.step() / 2)
-      //   .style("fill", (d: any) => {
-      //     if(Math.abs(d.freq) >= 50) {
-      //       return '#eaeaea';
-      //     } else if (Math.abs(d.freq) < 50) {
-      //       return '#000000';
-      //     }
-      //   })
-      //   .attr("text-anchor", "middle")
-      //   .attr("dy", 75)
-      //   .text((d: any) => d.freq);
-      // .text((d: any) => _.round(d.freq/100, 1));
+        .attr("height", 37.5);
 
       // putting a black border around the signature
       d3.select("g#seqsig_mat")
@@ -1354,35 +1224,8 @@ const signprotmat = {
         .attr("x", xScale.step() / 2)
         .attr("y", 75)
         .attr("width", xScale.range()[1] - xScale.step())
-        .attr("height", fScale.range()[1] - fScale.step());
+        .attr("height", area_height);
 
-      // * ADDING COLOR LEGEND
-      svg
-        .append("g")
-        .attr("class", "legendSeqSig")
-        .attr("transform", "translate(-200,20)");
-
-      let legendSeqSig = d3
-        .legendColor()
-        .cells(5)
-        .labelFormat(d3.format(""))
-        .title("Scale in %")
-        .scale(cScale)
-        .orient("horizontal")
-        .shapeWidth(30);
-
-      svg
-        .select(".legendSeqSig")
-        .call(legendSeqSig)
-        .selectAll("rect")
-        .attr("rx", 3)
-        .attr("ry", 3)
-        .style("stroke", "black")
-        .style("stroke-width", "0.1px");
-      svg
-        .select(".legendSeqSig")
-        .selectAll("text")
-        .attr("class", "legend");
     },
 
     draw_seq_cons: function(data_in, svg, xScale, xAxis, sigmatch) {
@@ -1395,8 +1238,6 @@ const signprotmat = {
       data = _.filter(data, function(d) {
         return xScale(d.gn);
       });
-
-        console.log(data)
 
       let conseqTip = d3
         .tip()
