@@ -1049,11 +1049,11 @@ var signprotmat = {
             each_res
                 .append('rect')
                 .attr("class", "res_rect")
-                .style("fill", function (d) { console.log(d); })
+                .style("fill", function (d) { return cScale(d.make); })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                .attr("y", function (d) { return 75; })
+                .attr("y", function (d, i) { return 75 + (i * row_height); })
                 .attr("width", xScale.step())
-                .attr("height", 37.5);
+                .attr("height", row_height);
             // putting a black border around the signature
             d3.select("g#seqsig_mat")
                 .append("rect")
