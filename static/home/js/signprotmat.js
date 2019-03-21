@@ -1056,7 +1056,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "seqsig_mat")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 0 + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 35 + ")")
                 .append("rect")
                 .attr("class", "border-bg")
                 .style("fill", "#ffffff")
@@ -1140,10 +1140,6 @@ var signprotmat = {
                 .attr("text-anchor", "middle")
                 .attr("x", function (d) { return xScale(d.gn); })
                 .attr("y", function (d, i) { return 75 + (i * row_height); })
-                //.attr(
-                //"transform",
-                //(d: any, i: number) => "translate(" + xScale(d.gn) + "," + 75 + ")" // + "rotate(270)"
-                //)
                 .attr("dy", row_height / 2)
                 .style("fill", function (d) {
                 var gcol = signprotmat.d3.fScaleColor(d.feature_code);
@@ -1162,6 +1158,22 @@ var signprotmat = {
                 .text(function (d) {
                 return d.feature_code;
             });
+            d3.select("svg.svg-content.seqsig")
+                .select("g")
+                .append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 50 + ")")
+                .call(xAxis)
+                .selectAll("text")
+                .attr("text-anchor", "start")
+                .attr("font-size", "12px")
+                .attr("dx", "-5px")
+                .attr("dy", "-5px")
+                .attr("transform", "rotate(-90)");
+            svg
+                .select(".x.axis")
+                .selectAll("path")
+                .remove();
             // putting a black border around the signature
             d3.select("g#seqsig_mat")
                 .append("rect")
