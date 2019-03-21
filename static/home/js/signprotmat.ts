@@ -1236,9 +1236,45 @@ const signprotmat = {
                 .data(function(d){return d;})
                 .enter();
 
-            each_res 
-                .append('rect')
-                .attr('class', 'res_rect')
+/*
+ *            each_res 
+ *                .append('rect')
+ *                .call(seqsigTip)
+ *                .on("mouseover", function(d) {
+ *                    if (d.freq !== 0) {
+ *                        seqsigTip.show(d);
+ *                    }
+ *                })
+ *                .on("mouseout", function(d) {
+ *                    seqsigTip.hide();
+ *                })
+ *                .attr("class", "res_rect")
+ *                .style("fill", d => cScale(d.freq))
+ *                .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+ *                .attr("y", (d: any, i: number) => 75 + (i * row_height))
+ *                .attr("width", xScale.step())
+ *                .attr("height", row_height);
+ *
+ *
+ *            each_res
+ *                .append("text")
+ *                .attr("class", "res_label")
+ *                .attr("x", (d: any) => xScale(d.gn))
+ *                .attr("y", (d: any, i: number) => 75 + (i * row_height))
+ *                .style("fill", (d: any) => {
+ *                    if(Math.abs(d.freq) >= 50) {
+ *                        return '#eaeaea';
+ *                    } else if (Math.abs(d.freq) < 50) {
+ *                        return '#000000';
+ *                    }
+ *                })
+ *                .attr("text-anchor", "middle")
+ *                .attr("dy", row_height / 2)
+ *                .text((d: any) => d.freq);
+ */
+
+            each_res
+                .append("rect")
                 .call(seqsigTip)
                 .on("mouseover", function(d) {
                     if (d.freq !== 0) {
@@ -1248,30 +1284,47 @@ const signprotmat = {
                 .on("mouseout", function(d) {
                     seqsigTip.hide();
                 })
-                .attr("class", "res_rect")
-                .style("fill", d => cScale(d.freq))
+                .attr('class', 'res_rect')
+                .style("fill", function(d: any) {
+                    const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                    if (typeof gcol != "undefined") {
+                        return gcol.bg_color;
+                    } else {
+                        return null;
+                    }
+                })
+                .style("stroke", "black")
                 .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
                 .attr("y", (d: any, i: number) => 75 + (i * row_height))
                 .attr("width", xScale.step())
                 .attr("height", row_height);
 
-
             each_res
                 .append("text")
                 .attr("class", "res_label")
-                .attr("x", (d: any) => xScale(d.gn))
-                .attr("y", (d: any, i: number) => 75 + (i * row_height))
+                .attr("text-anchor", "middle")
+		.attr("x", (d: any) => xScale(d.gn))
+		.attr("y", (d: any, i: number) => 75 + (i * row_height))
+                //.attr(
+                    //"transform",
+                    //(d: any, i: number) => "translate(" + xScale(d.gn) + "," + 75 + ")" // + "rotate(270)"
+                //)
+                .attr("dy", row_height / 2)
                 .style("fill", (d: any) => {
-                    if(Math.abs(d.freq) >= 50) {
-                        return '#eaeaea';
-                    } else if (Math.abs(d.freq) < 50) {
-                        return '#000000';
+                    const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                    if (typeof gcol != "undefined") {
+                        if (typeof gcol.font_color != "undefined") {
+                            return gcol.font_color;
+                        } else {
+                            return "#000000";
+                        }
+                    } else {
+                        return "#000000";
                     }
                 })
-                .attr("text-anchor", "middle")
-                .attr("dy", row_height / 2)
-                .text((d: any) => d.freq);
-            //.text((d: any) => _.round(d.freq/100, 1));
+                .text(function(d: any) {
+                    return d.feature_code;
+                });
 
             // putting a black border around the signature
             d3.select("g#seqsig_mat")
