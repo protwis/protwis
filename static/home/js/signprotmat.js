@@ -1019,9 +1019,15 @@ var signprotmat = {
             //let fScale = signprotmat.d3.fScale(data);
             var cScale = signprotmat.d3.cScale();
             var feats = [];
-            var col_lengths = [];
             for (var _i = 0, _a = Object.keys(data); _i < _a.length; _i++) {
-                elem = _a[_i];
+                key = _a[_i];
+                if (xScale(key) == null) {
+                    data = _.omit(data, key);
+                }
+            }
+            var col_lengths = [];
+            for (var _b = 0, _c = Object.keys(data); _b < _c.length; _b++) {
+                elem = _c[_b];
                 col_lengths.push(data[elem].length);
             }
             var row_height = 30;
@@ -1049,7 +1055,7 @@ var signprotmat = {
             each_res
                 .append('rect')
                 .attr("class", "res_rect")
-                .style("fill", function (d) { return cScale(d.make); })
+                .style("fill", function (d) { return cScale(d.freq); })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
                 .attr("y", function (d, i) { return 75 + (i * row_height); })
                 .attr("width", xScale.step())

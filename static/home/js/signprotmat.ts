@@ -1177,6 +1177,12 @@ const signprotmat = {
             //let fScale = signprotmat.d3.fScale(data);
             let cScale = signprotmat.d3.cScale();
             let feats = [];
+            
+            for ( key of Object.keys(data) ) {
+                if ( xScale(key) == null ){
+                    data = _.omit(data, key);
+                }
+            }
 
             let col_lengths = []
             for ( elem of Object.keys(data)) { col_lengths.push(data[elem].length) }
