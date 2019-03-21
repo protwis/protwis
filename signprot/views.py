@@ -1282,19 +1282,31 @@ def IMSequenceSignature(request):
                 # freq1: level of conservation
                 # freq2: a - b explanation
                 try:
-                    signature_features.append({
-                        'key': int(x),
-                        'feature': str(feats[i][0]),
-                        'feature_code': str(feats[i][1]),
-                        'length': str(feats[i][2]),
-                        'gn': str(generic_numbers[j][k]),
-                        'freq': int(freq[0]),
-                        'cons': int(freq[1]),
-                        # 'expl': str(freq[2]),
-                    })
+                    if int(freq[0]) > 0:
+                        signature_features.append({
+                            'key': int(x),
+                            'feature': str(feats[i][0]),
+                            'feature_code': str(feats[i][1]),
+                            'length': str(feats[i][2]),
+                            'gn': str(generic_numbers[j][k]),
+                            'freq': int(freq[0]),
+                            'cons': int(freq[1]),
+                            # 'expl': str(freq[2]),
+                        })
                     x += 1
                 except Exception as e:
                     print(e)
+
+    grouped_features = {}
+    for feature in signature_features:
+        if feature['gn'] not in grouped_features:
+            grouped_features[feature['gn']] = []
+        grouped_features[feature['gn']].append(feature)
+
+    for key in grouped_features:
+        curr_group = grouped_features[key]
+        grouped_features[key] = sorted(curr_group, key=lambda feature: feature['freq'],
+                reverse=True) 
 
 
     # FEATURE CONSENSUS
@@ -1328,7 +1340,7 @@ def IMSequenceSignature(request):
     # pass back to front
     res = {
         'cons': sigcons,
-        'feat': signature_features,
+        'feat': grouped_features,
     }
 
     request.session['signature'] = signature.prepare_session_data()
@@ -1363,15 +1375,15 @@ def IMSignatureMatch(request):
 
     signature_match = {
         'scores': signature_match.protein_report,
-        # 'scores_pos': signature_match.scores_pos,
-        # 'scores_neg': signature_match.scores_neg,
+        'scores_pos': signature_match.scores_pos,
+        'scores_neg': signature_match.scores_neg,
         'protein_signatures': signature_match.protein_signatures,
-        # 'signatures_pos': signature_match.signatures_pos,
-        # 'signatures_neg': signature_match.signatures_neg,
-        # 'signature_filtered': signature_match.signature_consensus,
-        # 'relevant_gn': signature_match.relevant_gn,
-        # 'relevant_segments': signature_match.relevant_segments,
-        # 'numbering_schemes': signature_match.schemes,
+        'signatures_pos': signature_match.signatures_pos,
+        'signatures_neg': signature_match.signatures_neg,
+        'signature_filtered': signature_match.signature_consensus,
+        'relevant_gn': signature_match.relevant_gn,
+        'relevant_segments': signature_match.relevant_segments,
+        'numbering_schemes': signature_match.schemes,
     }
 
     signature_match = prepare_signature_match(signature_match)
@@ -1393,6 +1405,9 @@ def prepare_signature_match(signature_match):
                 'nscore': elem[1][1]
             }
 
+    # for elem in signature_match['signature_filtered'].items():
+        # print(elem)
+
     for elem in signature_match['protein_signatures'].items():
         prot_entry = elem[0].protein.entry_name
         prot_scheme_id = elem[0].protein.residue_numbering_scheme.id
@@ -1405,16 +1420,16 @@ def prepare_signature_match(signature_match):
                 # 3: color
                 # 4: aa
                 # 5: gn
-                try:
-                    generic_number = ResidueGenericNumberEquivalent.objects.filter(
-                            label=str(sig_elem[5]),
-                            scheme_id=prot_scheme_id
-                            )
-                    gn = generic_number.values_list('default_generic_number__label',
-                            flat=True)[0].split('x')
-                except ObjectDoesNotExist as e:
-                    print('For {} a {} '.format(s, e))
-                    continue
+                # try:
+                    # generic_number = ResidueGenericNumberEquivalent.objects.filter(
+                            # label=str(sig_elem[5]),
+                            # scheme_id=prot_scheme_id
+                            # )
+                    # gn = generic_number.values_list('default_generic_number__label',
+                            # flat=True)[0].split('x')
+                # except ObjectDoesNotExist as e:
+                    # print('For {} a {} '.format(s, e))
+                    # continue
                 
                 sig.append({
                     'code':
@@ -1423,8 +1438,8 @@ def prepare_signature_match(signature_match):
                     'length':
                     str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('length',
                         None)),
-                    # 'gn': str(sig_elem[5]),
-                    'gn': str('{}.{}x{}'.format(gn[0], gn[1], gn[1])),
+                    'gn': str(sig_elem[5]),
+                    # 'gn': str('{}.{}x{}'.format(gn[0], gn[1], gn[1])),
                     'aa': str(sig_elem[4]),
                     'score': str(sig_elem[2]),
                     'feature': str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0],
