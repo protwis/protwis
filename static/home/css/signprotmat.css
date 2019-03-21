@@ -134,6 +134,7 @@ line {
     display: inline;
     font-size: 75%;
     dominant-baseline: central;
+    pointer-events: none;
 }
 
 /* removing unnecessary paths via assigning no stroke */

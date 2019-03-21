@@ -1190,6 +1190,30 @@ const signprotmat = {
             const area_height = _.max(col_lengths) * row_height
 
 
+            let seqsigTip = d3
+                .tip()
+                .attr("class", "d3-tip")
+                .html(function(d) {
+                    return (
+                        "Generic Residue No.: " +
+                        d.gn +
+                        "<br>" +
+                        "Feature: " +
+                        d.feature +
+                        "<br>" +
+                        "Length: " +
+                        d.length +
+                        "<br>" +
+                        // "Score: " +
+                        // d.expl +
+                        // "<br>" +
+                        "Frequency: " +
+                        d.freq +
+                        "<br>"
+                    );
+                });
+
+
             // generating the white backdrop for all the properties
             svg
                 .append("g")
@@ -1210,16 +1234,44 @@ const signprotmat = {
                 .append('g')
                 .selectAll('rect')
                 .data(function(d){return d;})
-                .enter()
+                .enter();
 
             each_res 
                 .append('rect')
+                .attr('class', 'res_rect')
+                .call(seqsigTip)
+                .on("mouseover", function(d) {
+                    if (d.freq !== 0) {
+                        seqsigTip.show(d);
+                    }
+                })
+                .on("mouseout", function(d) {
+                    seqsigTip.hide();
+                })
                 .attr("class", "res_rect")
                 .style("fill", d => cScale(d.freq))
                 .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
                 .attr("y", (d: any, i: number) => 75 + (i * row_height))
                 .attr("width", xScale.step())
                 .attr("height", row_height);
+
+
+            each_res
+                .append("text")
+                .attr("class", "res_label")
+                .attr("x", (d: any) => xScale(d.gn))
+                .attr("y", (d: any, i: number) => 75 + (i * row_height))
+                .style("fill", (d: any) => {
+                    if(Math.abs(d.freq) >= 50) {
+                        return '#eaeaea';
+                    } else if (Math.abs(d.freq) < 50) {
+                        return '#000000';
+                    }
+                })
+                .attr("text-anchor", "middle")
+                .attr("dy", row_height / 2)
+                .text((d: any) => d.freq);
+            //.text((d: any) => _.round(d.freq/100, 1));
 
             // putting a black border around the signature
             d3.select("g#seqsig_mat")

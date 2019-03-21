@@ -1032,6 +1032,26 @@ var signprotmat = {
             }
             var row_height = 30;
             var area_height = _.max(col_lengths) * row_height;
+            var seqsigTip = d3
+                .tip()
+                .attr("class", "d3-tip")
+                .html(function (d) {
+                return ("Generic Residue No.: " +
+                    d.gn +
+                    "<br>" +
+                    "Feature: " +
+                    d.feature +
+                    "<br>" +
+                    "Length: " +
+                    d.length +
+                    "<br>" +
+                    // "Score: " +
+                    // d.expl +
+                    // "<br>" +
+                    "Frequency: " +
+                    d.freq +
+                    "<br>");
+            });
             // generating the white backdrop for all the properties
             svg
                 .append("g")
@@ -1054,12 +1074,39 @@ var signprotmat = {
                 .enter();
             each_res
                 .append('rect')
+                .attr('class', 'res_rect')
+                .call(seqsigTip)
+                .on("mouseover", function (d) {
+                if (d.freq !== 0) {
+                    seqsigTip.show(d);
+                }
+            })
+                .on("mouseout", function (d) {
+                seqsigTip.hide();
+            })
                 .attr("class", "res_rect")
                 .style("fill", function (d) { return cScale(d.freq); })
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
                 .attr("y", function (d, i) { return 75 + (i * row_height); })
                 .attr("width", xScale.step())
                 .attr("height", row_height);
+            each_res
+                .append("text")
+                .attr("class", "res_label")
+                .attr("x", function (d) { return xScale(d.gn); })
+                .attr("y", function (d, i) { return 75 + (i * row_height); })
+                .style("fill", function (d) {
+                if (Math.abs(d.freq) >= 50) {
+                    return '#eaeaea';
+                }
+                else if (Math.abs(d.freq) < 50) {
+                    return '#000000';
+                }
+            })
+                .attr("text-anchor", "middle")
+                .attr("dy", row_height / 2)
+                .text(function (d) { return d.freq; });
+            //.text((d: any) => _.round(d.freq/100, 1));
             // putting a black border around the signature
             d3.select("g#seqsig_mat")
                 .append("rect")
