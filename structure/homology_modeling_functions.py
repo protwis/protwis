@@ -52,6 +52,8 @@ class SignprotFunctions(object):
             ordered_prots, non_ordered_prots = [], []
             prots = [i.entry_name for i in Protein.objects.filter(family__name=s, species__common_name='Human')]
             for p in prots:
+                if p=='gnal_human':
+                    continue
                 if len(SignprotComplex.objects.filter(protein__entry_name=p))>0:
                     ordered_prots.append(p)
                 else:
