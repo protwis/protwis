@@ -1414,15 +1414,29 @@ const signprotmat = {
                     d.active = active;
 
                     // set style in regards to active
-                    if (d.active) {
-                        curr.style("stroke", "yellow").style("stroke-width", 2);
-                        con_seq[d.gn] = [d]
-                    } else {
-                        curr.style("stroke", "black").style("stroke-width", 1);
-                        //index = con_seq.indexOf(d);
-                        //con_seq.splice(index, 1);
+		    if (d.active && d.gn in con_seq) {
+			console.log('first')
 			con_seq = _.omit(con_seq, d.gn)
-                    }
+			con_seq[d.gn] = [d]
+			curr.style("stroke", "yellow").style("stroke-width", 2);
+			d3.select("g#seqsig_mat")
+			    .selectAll('rect.res_rect')
+			    .filter(e => e.active)
+			    .filter(e => e.gn == d.gn)
+			    .filter(e => (e.feature_code + e.length != d.feature_code + d.length))
+			    .style("stroke", "black")
+			    .style("stroke-width", 1);
+		    } else if (d.active) {
+			console.log('second')
+			con_seq[d.gn] = [d]
+			curr.style("stroke", "yellow").style("stroke-width", 2);
+		    } else {
+			console.log('third')
+			con_seq = _.omit(con_seq, d.gn)
+			curr.style("stroke", "black").style("stroke-width", 1);
+		    }
+		console.log(con_seq)
+
                     signprotmat.d3.conSeqUpdate(row_height);
                     //signprotmat.d3.colorRecResidues(d);
                     //signprotmat.d3.colorSigResidues(d);
