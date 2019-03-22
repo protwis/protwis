@@ -138,6 +138,7 @@ class Command(BaseBuild):
         for i,j in self.gprotein_targets.items():
             for s in j:
                 s_c+=1
+
         print('receptors to model: {}'.format(len(self.receptor_list)))
         print('signaling proteins per receptor: {}'.format(s_c))
 
@@ -174,9 +175,6 @@ class Command(BaseBuild):
                 # Only build gnat models with opsins
                 if receptor.family.parent.name!='Opsins' and target in ['gnat1_human','gnat2_human','gnat3_human']:
                     continue
-                # Skip Golf
-                if target=='gnal_human':
-                    continue
                 # print(receptor, target)
                 import_receptor = False
                 if len(SignprotComplex.objects.filter(structure__protein_conformation__protein__parent__entry_name=receptor.entry_name, protein__entry_name=target))>0:
@@ -199,8 +197,10 @@ class Command(BaseBuild):
                             mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
                             mod.run(fast_refinement=True)
 
-
     def purge_complex_entries(self):
+        if os.path.exists('./structure/complex_models_zip/'):
+            for i in os.listdir('./structure/complex_models_zip/'):
+                shutil.rmtree('./structure/complex_models_zip/'+i)
         try:
             StructureComplexModelSeqSim.objects.all().delete()
         except:
