@@ -73,6 +73,8 @@ class Command(BaseBuild):
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         parser.add_argument('--skip_existing', help='Skip rebuilding models already in protwis/structure/complex_models_zip/', 
                             default=False, action='store_true')
+        parser.add_argument('-z', help='Create zip file of complex model directory containing all built complex models', default=False,
+                            action='store_true')
         
     def handle(self, *args, **options):
         if options['purge']:
@@ -150,6 +152,14 @@ class Command(BaseBuild):
             if i.startswith('Class') and not i.endswith('.zip'):
                 shutil.rmtree('./structure/complex_models_zip/'+i)
         
+        #create master zip for archive
+        if options['z']:
+            os.chdir('./structure/')
+            zipf = zipfile.ZipFile('../static/homology_models/GPCRdb_complex_homology_models_{}.zip'.format(str(build_date)),'w',zipfile.ZIP_DEFLATED)
+            for root, dirs, files in os.walk('complex_models_zip'):
+                for f in files:
+                    zipf.write(os.path.join(root, f))
+            zipf.close()
 
     def main_func(self, positions, itearation, count, lock):
         processor_id = round(self.processors*positions[0]/len(self.receptor_list))+1
