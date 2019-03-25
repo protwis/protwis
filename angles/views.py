@@ -36,6 +36,7 @@ def get_angles(request):
 
         # Grab PDB data
         if len(pdbs)==1:
+            pdbs = list(pdbs)
             query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number")
             # Prep data
             data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.hse, q.sasa, q.phi, q.psi, q.theta, q.tau ] for q in query]

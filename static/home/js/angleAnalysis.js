@@ -53,8 +53,8 @@ function thisPDB(elem) {
           // Update view
           $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
       } else if (pdbs.length>=1){
-        // Update view
-        $(".crystal-count:visible").html(pdbs.length + ' structures selected.');
+          // Update view
+          $(".crystal-count:visible").html(pdbs.length + ' structures selected.');
       } else {
           // Update view
           $(".crystal-count:visible").html('No structure selected.');
@@ -66,13 +66,13 @@ function thisPDB(elem) {
       });
       if (pdbs.length==1 && $(elem).prop("checked")) {
           // Update view
-          $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
+          $("#second-count").html(ReceptorName + ' - ' + pdbName + ' selected.');
       } else if (pdbs.length>=1){
-        // Update view
-        $(".crystal-count:visible").html(pdbs.length + ' structures selected.');
+          // Update view
+          $("#second-count").html(pdbs.length + ' structures selected.');
       } else {
           // Update view
-          $(".crystal-count:visible").html('No structure selected.');
+          $("#second-count").html('No structure selected.');
       }
       $('#second-input').val(JSON.stringify(pdbs));
     }
