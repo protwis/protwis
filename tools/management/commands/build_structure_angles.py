@@ -310,7 +310,8 @@ class Command(BaseCommand):
 
                 ### Half-sphere exposure (HSE)
                 hse = pdb.HSExposure.HSExposureCB(structure[0])
-                hselist = dict([ (x[0].id[1], x[1][1]) if x[1][1] > 0 else 0 for x in hse ])
+                # x[1] contains HSE - 0 outer half, 1 - inner half, 2 - ?
+                hselist = dict([ (x[0].id[1], x[1][0]) if x[1][0] > 0 else (x[0].id[1], 0) for x in hse ])
 
                 # Few checks
                 if len(pchain) != len(a_angle):
@@ -331,7 +332,7 @@ class Command(BaseCommand):
                     dblist.append([reference, gdict[residue_id], angle1, angle2, asa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id])
 
             except Exception as e:
-            #else:
+#            else:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
                 continue
