@@ -20,7 +20,8 @@ function toggleFullScreen(fullScreenElement) {
 function initializeGoButton(selector, generic=false) {
     $(selector + ' .go-button').click(function() {
         var pdb = JSON.parse($('#pdb-input').val());
-        //var pdb = ['2rh1', '3SN6', '5JQH', '3PDS', '3NYA', '3NY9', '3NY8', '6MXT', '5D5A', '5D5B', '4LDL', '4LDO', '4LDE', '4QKX', '3D4S', '5D6L', '3P0G', '5X7D', '4GBR', '4GBR']
+        if (pdb.length == 0)
+          pdb = ['2rh1', '4bvn']
 
         //var segments = JSON.parse($(selector + ' .segments-input').val());
         var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
@@ -291,7 +292,7 @@ var stage = [];
 var color_schemes = [];
 var schemeId_grey
 var chain_selection = ""
-function createNGLview(mode,pdb, pdb2, pdbs = false) {
+function createNGLview(mode, pdb, pdb2, pdbs = false) {
     var gpcr_rep
     $("#ngl-"+mode).html("");
     stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
@@ -375,9 +376,8 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 
               if (Math.abs(e[2][2]-e[2][0])>20)
                 bbangle_color.push([numberToColor2(90,Math.abs(e[2][2]-e[2][0])), ngl_selection])
-              if (Math.abs(e[3][2]-e[3][0])>20){
+              if (Math.abs(e[3][2]-e[3][0])>20)
                 scangle_color.push([numberToColor2(90,Math.abs(e[3][2]-e[3][0])), ngl_selection])
-              }
               if (Math.abs(e[4][2]-e[4][0])>5)
                 hsecolor.push([numberToColor3(10, e[4][2]-e[4][0], true), ngl_selection])
               if (Math.abs(e[5][2]-e[5][0])>20)
@@ -473,8 +473,12 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
         color_schemes['tau'] = NGL.ColormakerRegistry.addSelectionScheme(taucolor)
 
         if (pdb2.length > 0) {
+            // corrected ugly hack with ugly hack - just for debugging purposes
+            query = 'angledata?'
+            for (i in pdb2)
+              query += "pdbs[]=" + pdb2[i] + "&"
 
-            $.get('angledata?pdbs[]='+pdb2[0], function(secondArray) {
+            $.get(query, function(secondArray) {
                 var second_residues = secondArray["data"];
 
                 scnd_angle = []
@@ -486,25 +490,66 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                 scnd_theta = []
                 scnd_tau = []
 
+                // TODO: Not necessary to perform a double loop - return a dictionary
                 second_residues.forEach(function(scnd){
                     residue_data.forEach(function(e){
                         if (e[0] == scnd[0]){
-                            if (Math.abs(e[2] - scnd[2])>=15)
-                              scnd_angle.push([numberToColor3(50, e[2] - scnd[2], true) , ""+e[1]]);
-                            if (Math.abs(e[3] - scnd[3])>=15)
-                              scnd_scangle.push([numberToColor3(50, e[3] - scnd[3], true) , ""+e[1]]);
-                            if (Math.abs(e[4] - scnd[4])>=3)
-                              scnd_hse.push([numberToColor3(10, e[4] - scnd[4], true) , ""+e[1]]);
-                            if (Math.abs(e[5] - scnd[5])>=10)
-                              scnd_sasa.push([numberToColor3(50, e[5] - scnd[5], true) , ""+e[1]]);
-                            if (Math.abs(e[6] - scnd[6])>=15)
-                              scnd_phi.push([numberToColor3(60, e[6] - scnd[6], true) , ""+e[1]]);
-                            if (Math.abs(e[7] - scnd[7])>=15)
-                              scnd_psi.push([numberToColor3(60, e[7] - scnd[7], true) , ""+e[1]]);
-                            if (Math.abs(e[8] - scnd[8])>=15)
-                              scnd_theta.push([numberToColor3(60, e[8] - scnd[8], true) , ""+e[1]]);
-                            if (Math.abs(e[9] - scnd[9])>=15)
-                              scnd_tau.push([numberToColor3(60, e[9] - scnd[9], true) , ""+e[1]]);
+                            gn = pdb_data["gn_map"].indexOf(e[0])
+                            ngl_selection = ":" + pdb_data['chain'] + " and " + pdb_data["only_gn"][gn]
+                            if (Array.isArray(e[2]) && Array.isArray(scnd[2])){
+                                diff = []
+                                for (var i=2; i < e.length; i++) {
+                                  if (scnd[i][2] > e[i][2] && scnd[i][0] < e[i][0]) {
+                                      if (Math.abs(scnd[i][2]-e[i][2]) > Math.abs(scnd[i][0]-e[i][0]))
+                                          diff.push(scnd[i][2]-e[i][2])
+                                      else
+                                          diff.push(scnd[i][0]-e[i][0])
+                                  } else if (scnd[i][2] > e[i][2] || scnd[i][0] < e[i][0]){
+                                      if (scnd[i][2] > e[i][2])
+                                          diff.push(scnd[i][2]-e[i][2])
+                                      else
+                                          diff.push(scnd[i][0]-e[i][0])
+                                  } else {
+                                    diff.push(0)
+                                  }
+                                  //diff.push((e[i][2]-e[i][0]) - (scnd[i][2]-scnd[i][0])) // difference range
+                                  //diff.push(e[i][1] - scnd[i][1]) // average difference
+                                }
+
+                                if (Math.abs(diff[0])>20)
+                                  scnd_angle.push([numberToColor2(90,Math.abs(diff[0])), ngl_selection])
+                                if (Math.abs(diff[1])>20)
+                                  scnd_scangle.push([numberToColor2(90,Math.abs(diff[1])), ngl_selection])
+                                if (Math.abs(diff[2])>5)
+                                  scnd_hse.push([numberToColor3(10, diff[2], true), ngl_selection])
+                                if (Math.abs(diff[3])>20)
+                                  scnd_sasa.push([numberToColor3(100, diff[3], true), ngl_selection])
+                                if (Math.abs(diff[4])>20)
+                                  scnd_phi.push([numberToColor3(90, diff[4], true), ngl_selection])
+                                if (Math.abs(diff[5])>20)
+                                  scnd_psi.push([numberToColor3(90, diff[5], true), ngl_selection])
+                                if (Math.abs(diff[6])>20)
+                                  scnd_theta.push([numberToColor3(45, diff[6], true), ngl_selection])
+                                if (Math.abs(diff[7])>10)
+                                  scnd_tau.push([numberToColor3(45, diff[7], true), ngl_selection])
+                            } else {
+                                if (Math.abs(e[2] - scnd[2])>=15)
+                                  scnd_angle.push([numberToColor3(50, e[2] - scnd[2], true), ngl_selection])
+                                if (Math.abs(e[3] - scnd[3])>=15)
+                                  scnd_scangle.push([numberToColor3(50, e[3] - scnd[3], true), ngl_selection])
+                                if (Math.abs(e[4] - scnd[4])>=3)
+                                  scnd_hse.push([numberToColor3(10, e[4] - scnd[4], true), ngl_selection])
+                                if (Math.abs(e[5] - scnd[5])>=10)
+                                  scnd_sasa.push([numberToColor3(50, e[5] - scnd[5], true), ngl_selection])
+                                if (Math.abs(e[6] - scnd[6])>=15)
+                                  scnd_phi.push([numberToColor3(60, e[6] - scnd[6], true), ngl_selection])
+                                if (Math.abs(e[7] - scnd[7])>=15)
+                                  scnd_psi.push([numberToColor3(60, e[7] - scnd[7], true), ngl_selection])
+                                if (Math.abs(e[8] - scnd[8])>=15)
+                                  scnd_theta.push([numberToColor3(60, e[8] - scnd[8], true), ngl_selection])
+                                if (Math.abs(e[9] - scnd[9])>=15)
+                                  scnd_tau.push([numberToColor3(60, e[9] - scnd[9], true), ngl_selection])
+                            }
                         }
                     });
                 });
@@ -751,6 +796,8 @@ function renderTable(pdb) {
       residuetable.draw();
 
       var second = JSON.parse($('#second-input').val());
+      if (second.length == 0)
+        second = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
       createNGLview("single",pdb[0], second);
     });
 

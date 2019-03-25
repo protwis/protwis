@@ -32,7 +32,7 @@ def get_angles(request):
     # Request selection
     try:
         pdbs = request.GET.getlist('pdbs[]')
-        pdbs = [pdb.upper() for pdb in pdbs]
+        pdbs = set([pdb.upper() for pdb in pdbs])
 
         # Grab PDB data
         if len(pdbs)==1:
