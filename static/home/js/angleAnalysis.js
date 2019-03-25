@@ -20,16 +20,12 @@ function toggleFullScreen(fullScreenElement) {
 function initializeGoButton(selector, generic=false) {
     $(selector + ' .go-button').click(function() {
         var pdb = JSON.parse($('#pdb-input').val());
-        //var pdb = ["2rh1"]
+        //var pdb = ['2rh1', '3SN6', '5JQH', '3PDS', '3NYA', '3NY9', '3NY8', '6MXT', '5D5A', '5D5B', '4LDL', '4LDO', '4LDE', '4QKX', '3D4S', '5D6L', '3P0G', '5X7D', '4GBR', '4GBR']
 
         //var segments = JSON.parse($(selector + ' .segments-input').val());
         var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
         if (pdb.length > 0 && segments.length > 0) {
             renderTable(pdb);
-            var second = JSON.parse($('#second-input').val());
-            //var second = ["3sn6"]
-
-            createNGLview("single",pdb[0], second);
         }
     });
 }
@@ -45,27 +41,37 @@ function thisPDB(elem) {
     var group = $(elem).closest('.tableview').attr('group-number');
     var ReceptorName = $(elem).attr('long');
     var pdbName = $(elem).attr('id');
-    $('.pdb_selected').not(elem).prop("checked",false);
+    //$('.pdb_selected').not(elem).prop("checked",false);
 
     var pdbs = [];
     if (group==0){
-      if ($(elem).prop("checked")) {
-          pdbs.push(pdbName);
+      $('.pdb_selected:checked', oTable["firsttable"].cells().nodes()).each(function() {
+          pdbs.push($(this).attr('id'));
+      });
+      if (pdbs.length==1 && $(elem).prop("checked")) {
           // Update view
           $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
+      } else if (pdbs.length>=1){
+        // Update view
+        $(".crystal-count:visible").html(pdbs.length + ' structures selected.');
       } else {
           // Update view
           $(".crystal-count:visible").html('No structure selected.');
       }
       $('#pdb-input').val(JSON.stringify(pdbs));
     } else {
-      if ($(elem).prop("checked")) {
-          pdbs.push(pdbName);
+      $('.pdb_selected:checked', oTable["secondtable"].cells().nodes()).each(function() {
+          pdbs.push($(this).attr('id'));
+      });
+      if (pdbs.length==1 && $(elem).prop("checked")) {
           // Update view
-          $("#second-count").html(ReceptorName + ' - ' + pdbName + ' selected.');
+          $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
+      } else if (pdbs.length>=1){
+        // Update view
+        $(".crystal-count:visible").html(pdbs.length + ' structures selected.');
       } else {
           // Update view
-          $("#second-count").html('No structure selected.');
+          $(".crystal-count:visible").html('No structure selected.');
       }
       $('#second-input').val(JSON.stringify(pdbs));
     }
@@ -286,9 +292,6 @@ var color_schemes = [];
 var schemeId_grey
 var chain_selection = ""
 function createNGLview(mode,pdb, pdb2, pdbs = false) {
-    console.log(pdb)
-    console.log(pdb2)
-
     var gpcr_rep
     $("#ngl-"+mode).html("");
     stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
@@ -358,17 +361,41 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 
 //         var max = 0;
 //         residue_data.forEach(function(e){
-//             if (max > e[3]){
+//             if (max < e[3]){
 //                 max = e[3]
 //             }
 //         }
 
         // groups
         residue_data.forEach(function(e){
-            bbangle_color.push([numberToColor3(180,e[2]) , ""+e[1]])
-            scangle_color.push([numberToColor3(180,e[3]) , ""+e[1]])
-            hsecolor.push([numberToColor(40, e[4]) , ""+e[1]])
-            sasacolor.push([numberToColor(100, e[5]) , ""+e[1]])
+          if (Array.isArray(e[2])){
+            if (pdb_data["gn_map"].indexOf(e[0]) >= 0) {
+              gn = pdb_data["gn_map"].indexOf(e[0])
+              ngl_selection = ":" + pdb_data['chain'] + " and " + pdb_data["only_gn"][gn]
+
+              if (Math.abs(e[2][2]-e[2][0])>20)
+                bbangle_color.push([numberToColor2(90,Math.abs(e[2][2]-e[2][0])), ngl_selection])
+              if (Math.abs(e[3][2]-e[3][0])>20){
+                scangle_color.push([numberToColor2(90,Math.abs(e[3][2]-e[3][0])), ngl_selection])
+              }
+              if (Math.abs(e[4][2]-e[4][0])>5)
+                hsecolor.push([numberToColor3(10, e[4][2]-e[4][0], true), ngl_selection])
+              if (Math.abs(e[5][2]-e[5][0])>20)
+                sasacolor.push([numberToColor3(100, e[5][2]-e[5][0], true), ngl_selection])
+              if (Math.abs(e[6][2]-e[6][0])>20)
+                phicolor.push([numberToColor3(90, e[6][2]-e[6][0], true), ngl_selection])
+              if (Math.abs(e[7][2]-e[7][0])>20)
+                psicolor.push([numberToColor3(90, e[7][2]-e[7][0], true), ngl_selection])
+              if (Math.abs(e[8][2]-e[8][0])>10)
+                thetacolor.push([numberToColor3(45, e[8][2]-e[8][0], true), ngl_selection])
+              if (Math.abs(e[9][2]-e[9][0])>10)
+                taucolor.push([numberToColor3(45, e[9][2]-e[9][0], true), ngl_selection])
+            }
+          } else {
+            bbangle_color.push([numberToColor2(140,e[2]-40) , chain_selection+e[1]])
+            scangle_color.push([numberToColor2(140,e[3]-40) , chain_selection+e[1]])
+            hsecolor.push([numberToColor(40, e[4]) , chain_selection+e[1]])
+            sasacolor.push([numberToColor(100, e[5]) , chain_selection+e[1]])
 
             // TESTING : z-scoring
             //e[6] = (e[6]+67.479)/15 //20.658
@@ -381,8 +408,8 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
               tmp = 0
 
             if (Math.abs(tmp)>1){
-              phicolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
-              phipsicolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+              phicolor.push([numberToColor3(3, tmp, true) , chain_selection+e[1]])
+              phipsicolor.push([numberToColor3(3, tmp, true) , chain_selection+e[1]])
             }
 
             // TESTING : z-scoring
@@ -396,8 +423,8 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
               tmp = 0
 
             if (Math.abs(tmp)>1){
-              psicolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
-              phipsicolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+              psicolor.push([numberToColor3(3, tmp, true) , chain_selection+e[1]])
+              phipsicolor.push([numberToColor3(3, tmp, true) , chain_selection+e[1]])
             }
 
             // TODO: normalize all values before coloring -> we can utilize the same scheme for all values
@@ -410,7 +437,7 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                 tmp = tmp * 1.2
               }
               if (Math.abs(tmp)>1){
-                thetacolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+                thetacolor.push([numberToColor3(3, tmp, true) , chain_selection+e[1]])
               }
             }
 
@@ -418,8 +445,9 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
               // TESTING: absolute for tau + diff max + correction
               tmp = (e[9]-44.066)/25 // was 35.866
               if (Math.abs(tmp)>1)
-                taucolor.push([numberToColor3(3, tmp, true) , ""+e[1]])
+                taucolor.push([numberToColor3(3, tmp, true) , chain_selection+e[1]])
             }
+          }
         });
 
         // Base coloring -> white
@@ -461,14 +489,22 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
                 second_residues.forEach(function(scnd){
                     residue_data.forEach(function(e){
                         if (e[0] == scnd[0]){
-                            scnd_angle.push([numberToColor3(50, e[2] - scnd[2], true) , ""+e[1]]);
-                            scnd_scangle.push([numberToColor3(50, e[3] - scnd[3], true) , ""+e[1]]);
-                            scnd_hse.push([numberToColor3(10, e[4] - scnd[4], true) , ""+e[1]]);
-                            scnd_sasa.push([numberToColor3(50, e[5] - scnd[5], true) , ""+e[1]]);
-                            scnd_phi.push([numberToColor3(90, e[6] - scnd[6], true) , ""+e[1]]);
-                            scnd_psi.push([numberToColor3(90, e[7] - scnd[7], true) , ""+e[1]]);
-                            scnd_theta.push([numberToColor3(90, e[8] - scnd[8], true) , ""+e[1]]);
-                            scnd_tau.push([numberToColor3(90, e[9] - scnd[9], true) , ""+e[1]]);
+                            if (Math.abs(e[2] - scnd[2])>=15)
+                              scnd_angle.push([numberToColor3(50, e[2] - scnd[2], true) , ""+e[1]]);
+                            if (Math.abs(e[3] - scnd[3])>=15)
+                              scnd_scangle.push([numberToColor3(50, e[3] - scnd[3], true) , ""+e[1]]);
+                            if (Math.abs(e[4] - scnd[4])>=3)
+                              scnd_hse.push([numberToColor3(10, e[4] - scnd[4], true) , ""+e[1]]);
+                            if (Math.abs(e[5] - scnd[5])>=10)
+                              scnd_sasa.push([numberToColor3(50, e[5] - scnd[5], true) , ""+e[1]]);
+                            if (Math.abs(e[6] - scnd[6])>=15)
+                              scnd_phi.push([numberToColor3(60, e[6] - scnd[6], true) , ""+e[1]]);
+                            if (Math.abs(e[7] - scnd[7])>=15)
+                              scnd_psi.push([numberToColor3(60, e[7] - scnd[7], true) , ""+e[1]]);
+                            if (Math.abs(e[8] - scnd[8])>=15)
+                              scnd_theta.push([numberToColor3(60, e[8] - scnd[8], true) , ""+e[1]]);
+                            if (Math.abs(e[9] - scnd[9])>=15)
+                              scnd_tau.push([numberToColor3(60, e[9] - scnd[9], true) , ""+e[1]]);
                         }
                     });
                 });
@@ -533,20 +569,28 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
             // mousover and click on datatable row to highlight residue in NGL viewer
             var temprepr;
             $("#single-table-tab-table tbody").on("mouseover", "tr", function(event){
-                temprepr = o.addRepresentation("ball+stick", {sele: chain_selection+residuetable.row(this).data()[1]});
+                gn = pdb_data["gn_map"].indexOf(residuetable.row(this).data()[0])
+                if (gn > -1) {
+                  ngl_selection = ":" + pdb_data['chain'] + " and " + pdb_data["only_gn"][gn]
+                  temprepr = o.addRepresentation("ball+stick", {sele: ngl_selection});
+                }
             }).mouseout(function(event){
                 o.removeRepresentation(temprepr)
             });
 
             var repr_dict = {}
             $("#single-table-tab-table tbody").on("click", "tr", function(event){
-                if(residuetable.row(this).data()[1] in repr_dict){
-                    o.removeRepresentation(repr_dict[residuetable.row(this).data()[1]])
-                    delete repr_dict[residuetable.row(this).data()[1]]
+                if(residuetable.row(this).data()[0] in repr_dict){
+                    o.removeRepresentation(repr_dict[residuetable.row(this).data()[0]])
+                    delete repr_dict[residuetable.row(this).data()[0]]
                     $(this).removeClass("table-selected")
                 }else{
-                    repr_dict[residuetable.row(this).data()[1]] = o.addRepresentation("ball+stick", {sele: chain_selection+residuetable.row(this).data()[1]});
+                  gn = pdb_data["gn_map"].indexOf(residuetable.row(this).data()[0])
+                  if (gn > -1) {
+                    ngl_selection = ":" + pdb_data['chain'] + " and " + pdb_data["only_gn"][gn]
+                    repr_dict[residuetable.row(this).data()[0]] = o.addRepresentation("ball+stick", {sele: ngl_selection});
                     $(this).addClass("table-selected")
+                  }
                 }
             });
 
@@ -682,13 +726,32 @@ function createNGLview(mode,pdb, pdb2, pdbs = false) {
 }
 
 var residue_data
-
 function renderTable(pdb) {
-    $.get('angledata?pdbs[]='+pdb[0], function(newDataArray) {
-    residue_data = newDataArray["data"]
-    residuetable.clear();
-    residuetable.rows.add(residue_data);
-    residuetable.draw();
+    // corrected ugly hack with ugly hack - just for debugging purposes
+    query = 'angledata?'
+    for (i in pdb)
+      query += "pdbs[]=" + pdb[i] + "&"
+
+    // TODO if multiple values -> show (rounded) range
+
+    $.get(query, function(newDataArray) {
+      residue_data = newDataArray["data"]
+      residuetable.clear();
+
+      // TODO clean residue data
+      row_data = $.extend(true, [], residue_data)
+      if (Array.isArray(row_data[0][2])) {
+        for (i in row_data) {
+          for (j=2; j < row_data[0].length; j++) {
+            row_data[i][j] = Math.round(row_data[i][j][2]-row_data[i][j][0])
+          }
+        }
+      }
+      residuetable.rows.add(row_data);
+      residuetable.draw();
+
+      var second = JSON.parse($('#second-input').val());
+      createNGLview("single",pdb[0], second);
     });
 
 }
