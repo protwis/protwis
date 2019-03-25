@@ -144,7 +144,7 @@ class Command(BaseCommand):
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        #references = Structure.objects.filter(pdb_code__index="6H7O").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # references = Structure.objects.filter(pdb_code__index="3SN6").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         references = list(references)
 
@@ -246,46 +246,48 @@ class Command(BaseCommand):
 
                 # Calculate PCA based on the upper (extracellular) half of the GPCR (more stable)
                 pca = PCA()
-                # DISABLED FOR NOW - not stable at all
-                if False and extra_pca:
-                    helices_mn = np.asarray([np.mean(h, axis=0) for h in hres_three])
+                if extra_pca:
+                    minlength = 100
+                    for i,h in enumerate(hres_three):
+                        if len(h)<minlength:
+                            minlength = len(h)
 
-                    # TODO: investigate and make more robust
-                    # FOR EXAMPLE: skip the first residue + focus on middle membrane and up residues (knowledge-based not structure-dependent)
-                    #pos_list = np.asarray([pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]) for i,h in enumerate(hres_three)])
+                    if minlength > 6:
+                        minlength = 6
+
+                    # create PCA per helix using extracellular half
+                    # Exlude the first turn if possible (often still part of loop)
                     pos_list = []
                     for i,h in enumerate(hres_three):
-                        if len(h)>6:
-                            pos_list.append(pca_line(PCA(), h[:len(h)//2:(-(i%2) or 1)]))
+                        if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
+                            h = np.flip(h, 0)
+
+                        if len(h)>minlength+3:
+                            pos_list.append(pca_line(PCA(), h[3:minlength+3]))
                         else:
-                            pos_list.append(pca_line(PCA(), h))
+                            pos_list.append(pca_line(PCA(), h[0:minlength]))
 
-                    pos_list = np.asarray(pos_list)
-                    pos_list = pos_list - (np.mean(pos_list,axis=1)-helices_mn).reshape(-1,1,3)
 
-                    # print cgo_arrows for each TM helix
-#                    for pos in pos_list:
-#                        a = [str(i) for i in pos[0]]
-#                        b = [str(i) for i in pos[1]]
-#                        print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
+                    # create fake coordinates along each helix PCA to create center PCA
+                    # UGLY hack - should be cleand up
+                    coord_list = []
+                    for pos in pos_list:
+                        start = pos[0]
+                        vector = pos[1]-pos[0]
+                        line_points = []
+                        for i in range(-45,55):
+                            line_points.append(start+i*vector)
 
-                    # TODO store center_vector + vector to reference residue
-                    center_vector = pca_line(pca, np.vstack(pos2_list))
-
-                    # average vector -> center vector ok, but PCA not initalized
-#                    center_point = [0,0,0]
-#                    vector_average = [0,0,0]
-#                    for pos in pos_list:
-#                        center_point += pos[0]/len(pos_list)
-#                        vector_average += (pos[1]-pos[0])/len(pos_list)
-
-#                    center_vector = [center_point, center_point + vector_average ]
+                        coord_list.append(line_points)
+                    center_vector = pca_line(pca, np.vstack(coord_list))
                 else:
-                    center_vector = pca_line(pca, np.vstack(hres_three))
+                    # Less robust with differing TM lengths
+                    center_vector = pca_line( pca, np.vstack(hres_three))
 
-#                a = [str(i) for i in center_vector[0]]
-#                b = [str(i) for i in center_vector[1]]
-#                print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
+                # DEBUG print arrow for PyMol
+                #a = [str(i) for i in center_vector[0]]
+                #b = [str(i) for i in center_vector[1]]
+                #print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
 
                 ### ANGLES
                 # Center axis to helix axis to CA
