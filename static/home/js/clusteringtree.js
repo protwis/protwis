@@ -4,7 +4,7 @@ function renderTree(data) {
     var annotations = data["annotations"];
 
     var r = 1200 / 2;
-    var spacing = 235;
+    var spacing = 240;
     var innerRadius = r - spacing // change inner radius of tree with this argument
     var names = 0; // indexing for all nodes
 
