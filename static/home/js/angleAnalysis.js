@@ -85,6 +85,18 @@ $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
         } );
     };
 
+function check_all(elem) {
+  show_all = $(elem).prop("checked");
+
+  if (show_all) {
+    $('.pdb_selected:visible').prop("checked",true);
+  } else {
+    $('.pdb_selected:visible').prop("checked",false);
+  }
+
+  thisPDB(elem)
+}
+
 var oTable = [];
 function showPDBtable(element, table) {
     if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
@@ -795,9 +807,11 @@ function renderTable(pdb) {
       residuetable.rows.add(row_data);
       residuetable.draw();
 
+      var first = JSON.parse($('#pdb-input').val());
       var second = JSON.parse($('#second-input').val());
-      if (second.length == 0)
+      if (first.length == 0 && second.length == 0)
         second = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+
       createNGLview("single",pdb[0], second);
     });
 
@@ -805,7 +819,10 @@ function renderTable(pdb) {
 
 
 function initializeResidueTable() {
-    residuetable = $("#single-table-tab-table").DataTable();
+    residuetable = $("#single-table-tab-table").DataTable({
+      aLengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+      iDisplayLength: 25
+    });
     yadcf.init(residuetable,
     [
         {
