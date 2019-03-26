@@ -39,7 +39,7 @@ def get_angles(request):
             pdbs = list(pdbs)
             query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number")
             # Prep data
-            data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.hse, q.sasa, q.phi, q.psi, q.theta, q.tau ] for q in query]
+            data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.hse, q.rsa, q.phi, q.psi, q.theta, q.tau ] for q in query]
         else:
             print(pdbs)
             query = Angle.objects.filter(structure__pdb_code__index__in=pdbs).prefetch_related("residue__generic_number") \
@@ -47,7 +47,8 @@ def get_angles(request):
                     .annotate(min_aangle = Min('a_angle'), avg_aangle=Avg('a_angle'), max_aangle = Max('a_angle'), \
                         min_bangle = Min('b_angle'), avg_bangle=Avg('b_angle'), max_bangle = Max('b_angle'), \
                         min_hse = Min('hse'), avg_hse=Avg('hse'), max_hse = Max('hse'), \
-                        min_sasa = Min('sasa'), avg_sasa=Avg('sasa'), max_sasa = Max('sasa'), \
+                        #min_sasa = Min('sasa'), avg_sasa=Avg('sasa'), max_sasa = Max('sasa'), \
+                        min_rsa = Min('rsa'), avg_rsa=Avg('rsa'), max_rsa = Max('rsa'), \
                         min_phi = Min('phi'), avg_phi=Avg('phi'), max_phi = Max('phi'), \
                         min_psi = Min('psi'), avg_psi=Avg('psi'), max_psi = Max('psi'), \
                         min_theta = Min('theta'), avg_theta=Avg('theta'), max_theta = Max('theta'), \
@@ -57,7 +58,8 @@ def get_angles(request):
                             [q["min_aangle"], q["avg_aangle"], q["max_aangle"]], \
                             [q["min_bangle"], q["avg_bangle"], q["max_bangle"]], \
                             [q["min_hse"], q["avg_hse"], q["max_hse"]], \
-                            [q["min_sasa"], q["avg_sasa"], q["max_sasa"]], \
+                            #[q["min_sasa"], q["avg_sasa"], q["max_sasa"]], \
+                            [q["min_rsa"], q["avg_rsa"], q["max_rsa"]], \
                             [q["min_phi"], q["avg_phi"], q["max_phi"]], \
                             [q["min_psi"], q["avg_psi"], q["max_psi"]], \
                             [q["min_theta"], q["avg_theta"], q["max_theta"]], \

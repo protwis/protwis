@@ -7,6 +7,7 @@ class ResidueAngle(models.Model):
     b_angle     = models.FloatField()
     hse         = models.IntegerField(default=0)
     sasa        = models.FloatField(default=0)
+    rsa         = models.FloatField(default=0)
     phi         = models.FloatField(default=0, null=True)
     psi         = models.FloatField(default=0, null=True)
     theta       = models.FloatField(default=0, null=True)

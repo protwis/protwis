@@ -54,7 +54,7 @@ maxSASA = {
     "PHE": 228,
     "GLY":  97,
     "HIS": 216,
-    "ISO": 195,
+    "ILE": 195,
     "LYS": 230,
     "LEU": 191,
     "MET": 203,
@@ -307,8 +307,8 @@ class Command(BaseCommand):
                         if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
                             h = np.flip(h, 0)
 
-                        if len(h)>minlength+3:
-                            pos_list.append(pca_line(PCA(), h[3:minlength+3]))
+                        if len(h)>minlength+2:
+                            pos_list.append(pca_line(PCA(), h[2:minlength+2]))
                         else:
                             pos_list.append(pca_line(PCA(), h[0:minlength]))
 
@@ -348,17 +348,26 @@ class Command(BaseCommand):
 
                 # create results dictionary per residue
                 asa_list = {}
+                rsa_list = {}
                 atomlist = list(pchain.get_atoms())
                 for i in range(res.nAtoms()):
                     resnum = atomlist[i].get_parent().id[1]
-                    resname = atomlist[i].get_parent().get_resname()
                     if resnum not in asa_list:
                         asa_list[resnum] = 0
+                        rsa_list[resnum] = 0
 
+                    resname = atomlist[i].get_parent().get_resname()
                     if resname in maxSASA:
-                        asa_list[resnum] += res.atomArea(i)/maxSASA[resname]
+                        rsa_list[resnum] += res.atomArea(i)/maxSASA[resname]*100
                     else:
-                        asa_list[resnum] += res.atomArea(i) # What to do with modified AA?
+                        rsa_list[resnum] = None
+
+                    asa_list[resnum] += res.atomArea(i)
+
+                # correct for N/C-term exposure
+                for i in rsa_list:
+                    if (rsa_list[i]>100):
+                        rsa_list[i] = 100
 
                 ### Half-sphere exposure (HSE)
                 hse = pdb.HSExposure.HSExposureCB(structure[0])
@@ -380,8 +389,8 @@ class Command(BaseCommand):
                 #print(dihedrals) # HUSK: contains full protein!
                 for res, angle1, angle2 in zip(pchain, a_angle, b_angle):
                     residue_id = res.id[1]
-                    # structure, residue, A-angle, B-angle, ASA, HSE, "PHI", "PSI", "THETA", "TAU"
-                    dblist.append([reference, gdict[residue_id], angle1, angle2, asa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id])
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA"
+                    dblist.append([reference, gdict[residue_id], angle1, angle2, rsa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id] + [asa_list[residue_id]])
 
             except Exception as e:
 #            else:
@@ -406,9 +415,9 @@ class Command(BaseCommand):
 #            std = stats.t.cdf(std_test, df=std_len)
 #            dblist[i].append(0.501 if np.isnan(std) else std)
 
-        # structure, residue, A-angle, B-angle, ASA, HSE, "PHI", "PSI", "THETA", "TAU"
+        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA"
         object_list = []
-        for ref,res,a1,a2,asa,hse,phi,psi,theta,tau in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,asa in dblist:
             try:
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
@@ -418,10 +427,10 @@ class Command(BaseCommand):
                     theta = round(np.rad2deg(theta),3)
                 if tau != None:
                     tau = round(np.rad2deg(tau),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau))
             except Exception as e:
-                print([ref,res,a1,a2,asa,hse,phi,psi,theta,tau])
-        #object_list = [Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), hse=hse, phi=round(np.rad2deg(phi),3), psi=round(np.rad2deg(psi),3), theta=round(np.rad2deg(theta),3), tau=round(np.rad2deg(tau),3)) for ref,res,a1,a2,asa,hse,phi,psi,theta,tau in dblist]
+                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau, asa])
+
         print("created list")
         print(len(object_list))
 
