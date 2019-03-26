@@ -92,6 +92,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = '/protwis/static/protwis'
 STATICFILES_DIRS = (os.sep.join([BASE_DIR, "static"]),)
+EXCEL_DATA = (os.sep.join([BASE_DIR, "excel"]),)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/protwis/media/protwis'
 
