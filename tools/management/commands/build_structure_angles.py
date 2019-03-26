@@ -25,6 +25,51 @@ HSE  = True
 extra_pca = True
 print_pdb = False
 
+# Empirical values as defined by Tien et al. Plos ONE 2013
+maxSASA = {
+    "A": 121,
+    "C": 148,
+    "D": 187,
+    "E": 214,
+    "F": 228,
+    "G":  97,
+    "H": 216,
+    "I": 195,
+    "K": 230,
+    "L": 191,
+    "M": 203,
+    "N": 187,
+    "P": 154,
+    "Q": 214,
+    "R": 265,
+    "S": 143,
+    "T": 163,
+    "V": 165,
+    "W": 264,
+    "Y": 255,
+    "ALA": 121,
+    "CYS": 148,
+    "ASP": 187,
+    "GLU": 214,
+    "PHE": 228,
+    "GLY":  97,
+    "HIS": 216,
+    "ISO": 195,
+    "LYS": 230,
+    "LEU": 191,
+    "MET": 203,
+    "ASN": 187,
+    "PRO": 154,
+    "GLN": 214,
+    "ARG": 265,
+    "SER": 143,
+    "THR": 163,
+    "VAL": 165,
+    "TRP": 264,
+    "TYR": 255
+}
+
+
 class Command(BaseCommand):
 
     help = "Command to calculate all angles for residues in each TM helix."
@@ -306,9 +351,14 @@ class Command(BaseCommand):
                 atomlist = list(pchain.get_atoms())
                 for i in range(res.nAtoms()):
                     resnum = atomlist[i].get_parent().id[1]
+                    resname = atomlist[i].get_parent().get_resname()
                     if resnum not in asa_list:
                         asa_list[resnum] = 0
-                    asa_list[resnum] += res.atomArea(i)
+
+                    if resname in maxSASA:
+                        asa_list[resnum] += res.atomArea(i)/maxSASA[resname]
+                    else:
+                        asa_list[resnum] += res.atomArea(i) # What to do with modified AA?
 
                 ### Half-sphere exposure (HSE)
                 hse = pdb.HSExposure.HSExposureCB(structure[0])
