@@ -1204,116 +1204,157 @@ const signprotmat = {
                 .select("g#con_seq_mat")
                 .selectAll("g")
                 .data(Object.values(con_seq))
-		.enter()
-		.append('g')
-		.selectAll('rect')
-		.data(d => d);
+                .join('g');
 
-
-            // update existing nodes
+            // PROPERTY CODES
             con_seq_mat
-                .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-                .attr("y", 75);
-
-            // create nodes for new data
-            con_seq_mat
-                .enter()
-                .append("rect")
-                .call(seqsigTip)
-                .on("mouseover", function(d) {
-                    if (d.freq !== 0) {
+                .selectAll('rect.res_rect')
+                .data(d => d)
+                .join(
+                    enter => enter.append("rect")
+                    .attr('class', 'res_rect')
+                    .call(seqsigTip)
+                    .on("mouseover", function(d) {
                         seqsigTip.show(d);
-                    }
-                })
-                .on("mouseout", function(d) {
-                    seqsigTip.hide();
-                })
-                .attr('class', 'res_rect')
-                .style("fill", function(d: any) {
-                    const gcol = signprotmat.d3.fScaleColor(d.feature_code);
-                    if (typeof gcol != "undefined") {
-                        return gcol.bg_color;
-                    } else {
-                        return null;
-                    }
-                })
-                .style("stroke", "black")
-                .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-                .attr("y", 75)
-		.attr("width", xScale.step())
-		.attr("height", row_height)
+                    })
+                    .on("mouseout", function(d) {
+                        seqsigTip.hide();
+                    })
+                    .style("fill", function(d: any) {
+                        const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                        if (typeof gcol != "undefined") {
+                            return gcol.bg_color;
+                        } else {
+                            return null;
+                        }
+                    })
+                    .style("stroke", "black")
+                    .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+                    .attr("y", 75)
+                    .attr("width", xScale.step())
+                    .attr("height", row_height),
+                    update => update
+                    .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+                    .attr("y", 75)
+                    .style("fill", function(d: any) {
+                        const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                        if (typeof gcol != "undefined") {
+                            return gcol.bg_color;
+                        } else {
+                            return null;
+                        }
+                    }),
+                    exit => exit.remove()
+                );
 
-	    con_seq_mat
-		.enter()
-		.append("text")
-		.attr("class", "res_label")
-		.attr("text-anchor", "middle")
-		.attr("x", (d: any) => xScale(d.gn))
-                .attr("y", 75)
-                .attr("dy", row_height / 2)
-                .style("fill", (d: any) => {
-                    const gcol = signprotmat.d3.fScaleColor(d.feature_code);
-                    if (typeof gcol != "undefined") {
-                        if (typeof gcol.font_color != "undefined") {
-                            return gcol.font_color;
+            con_seq_mat
+                .selectAll('text.res_label')
+                .data(d => d)
+                .join(
+                    enter => enter.append("text")
+                    .attr("class", "res_label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", (d: any) => xScale(d.gn))
+                    .attr("y", 75)
+                    .attr("dy", row_height / 2)
+                    .style("fill", (d: any) => {
+                        const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                        if (typeof gcol != "undefined") {
+                            if (typeof gcol.font_color != "undefined") {
+                                return gcol.font_color;
+                            } else {
+                                return "#000000";
+                            }
                         } else {
                             return "#000000";
                         }
-                    } else {
-                        return "#000000";
-                    }
-                })
-                .text(function(d: any) {
-                    return d.feature_code;
-                });
-            // create nodes for new data
+                    })
+                    .text(d => d.feature_code),
+                    update => update
+                    .attr("x", (d: any) => xScale(d.gn))
+                    .attr("y", 75)
+                    .style("fill", (d: any) => {
+                        const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                        if (typeof gcol != "undefined") {
+                            if (typeof gcol.font_color != "undefined") {
+                                return gcol.font_color;
+                            } else {
+                                return "#000000";
+                            }
+                        } else {
+                            return "#000000";
+                        }
+                    })
+                    .text(d => d.feature_code),
+                    exit => exit.remove()
+                );
+
+            // CONSERVATION
             con_seq_mat
-                .enter()
-                .append("rect")
-                .attr('class', 'res_rect')
-                .style("fill", function(d: any) {
-                    if (d.cons === -1) {
-                        return "#ffffff";
-                    } else {
-                        return cScale(d.freq);
-                    }
-                })
-                .style("stroke", "black")
-                .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-                .attr("y", (d: any) => 75 + row_height)
-                .attr("width", xScale.step())
-                .attr("height", row_height / 2);
-
-	    con_seq_mat
-		.enter()
-		.append("text")
-		.attr("class", "res_label")
-		.attr("text-anchor", "middle")
-		.attr("x", (d: any) => xScale(d.gn))
-                .attr("y", 75 + row_height)
-                .attr("dy", row_height / 4)
-                .style("fill", (d: any) => {
-                    if (Math.abs(d.freq) >= 50) {
-                        return "#eaeaea";
-                    } else if (Math.abs(d.freq) < 50) {
-                        return "#000000";
-                    }
-                })
-                .text(function(d: any) {
-                    return d.freq;
-                });
-            // discard removed nodes
-            con_seq_mat.exit().remove();
+                .selectAll('rect.cons_rect')
+                .data(d => d)
+                .join(
+                    enter => enter.append('rect')
+                    .attr('class', 'cons_rect')
+                    .style("fill", function(d: any) {
+                        if (d.cons === -1) {
+                            return "#ffffff";
+                        } else {
+                            return cScale(d.freq);
+                        }
+                    })
+                    .style("stroke", "black")
+                    .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+                    .attr("y", (d: any) => 75 + row_height)
+                    .attr("width", xScale.step())
+                    .attr("height", row_height / 2),
+                    update => update
+                    .style("fill", function(d: any) {
+                        if (d.cons === -1) {
+                            return "#ffffff";
+                        } else {
+                            return cScale(d.freq);
+                        }
+                    })
+                    .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+                    .attr("y", (d: any) => 75 + row_height),
+                    exit => exit.remove()
+                );
 
 
-/*
- *            con_seq_mat
- *                .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
- *                .attr("y", 75 + row_height);
- *
- *            // discard removed nodes
- *            con_seq_mat.exit().remove();
- */
+
+            con_seq_mat
+                .selectAll('text.cons_label')
+                .data(d => d)
+                .join(
+                    enter => enter.append('text')
+                    .attr("class", "cons_label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", (d: any) => xScale(d.gn))
+                    .attr("y", 75 + row_height)
+                    .attr("dy", row_height / 4)
+                    .style("fill", (d: any) => {
+                        if (Math.abs(d.freq) >= 50) {
+                            return "#eaeaea";
+                        } else if (Math.abs(d.freq) < 50) {
+                            return "#000000";
+                        }
+                    })
+                    .text(d => d.freq),
+                    update => update
+                    .attr("x", (d: any) => xScale(d.gn))
+                    .attr("y", 75 + row_height)
+                    .style("fill", (d: any) => {
+                        if (Math.abs(d.freq) >= 50) {
+                            return "#eaeaea";
+                        } else if (Math.abs(d.freq) < 50) {
+                            return "#000000";
+                        }
+                    })
+                    .text(d => d.freq),
+                    exit => exit.remove()
+                );
+
         },
         draw_seq_sig: function(data_in, svg, xScale) {
             let data = data_in.feat;
@@ -1473,7 +1514,7 @@ const signprotmat = {
 			con_seq = _.omit(con_seq, d.gn)
 			curr.style("stroke", "black").style("stroke-width", 1);
 		    }
-                    console.log(con_seq)
+                    //console.log(con_seq)
 
                     signprotmat.d3.conSeqUpdate(row_height);
                 })

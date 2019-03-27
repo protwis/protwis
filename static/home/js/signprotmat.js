@@ -1042,28 +1042,19 @@ var signprotmat = {
                 .select("g#con_seq_mat")
                 .selectAll("g")
                 .data(Object.values(con_seq))
-                .enter()
-                .append('g')
-                .selectAll('rect')
-                .data(function (d) { return d; });
-            // update existing nodes
+                .join('g');
             con_seq_mat
-                .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                .attr("y", 75);
-            // create nodes for new data
-            con_seq_mat
-                .enter()
-                .append("rect")
+                .selectAll('rect.res_rect')
+                .data(function (d) { return d; })
+                .join(function (enter) { return enter.append("rect")
+                .attr('class', 'res_rect')
                 .call(seqsigTip)
                 .on("mouseover", function (d) {
-                if (d.freq !== 0) {
-                    seqsigTip.show(d);
-                }
+                seqsigTip.show(d);
             })
                 .on("mouseout", function (d) {
                 seqsigTip.hide();
             })
-                .attr('class', 'res_rect')
                 .style("fill", function (d) {
                 var gcol = signprotmat.d3.fScaleColor(d.feature_code);
                 if (typeof gcol != "undefined") {
@@ -1077,10 +1068,22 @@ var signprotmat = {
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
                 .attr("y", 75)
                 .attr("width", xScale.step())
-                .attr("height", row_height);
+                .attr("height", row_height); }, function (update) { return update
+                .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                .attr("y", 75)
+                .style("fill", function (d) {
+                var gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                if (typeof gcol != "undefined") {
+                    return gcol.bg_color;
+                }
+                else {
+                    return null;
+                }
+            }); }, function (exit) { return exit.remove(); });
             con_seq_mat
-                .enter()
-                .append("text")
+                .selectAll('text.res_label')
+                .data(function (d) { return d; })
+                .join(function (enter) { return enter.append("text")
                 .attr("class", "res_label")
                 .attr("text-anchor", "middle")
                 .attr("x", function (d) { return xScale(d.gn); })
@@ -1100,14 +1103,29 @@ var signprotmat = {
                     return "#000000";
                 }
             })
-                .text(function (d) {
-                return d.feature_code;
-            });
-            // create nodes for new data
+                .text(function (d) { return d.feature_code; }); }, function (update) { return update
+                .attr("x", function (d) { return xScale(d.gn); })
+                .attr("y", 75)
+                .style("fill", function (d) {
+                var gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                if (typeof gcol != "undefined") {
+                    if (typeof gcol.font_color != "undefined") {
+                        return gcol.font_color;
+                    }
+                    else {
+                        return "#000000";
+                    }
+                }
+                else {
+                    return "#000000";
+                }
+            })
+                .text(function (d) { return d.feature_code; }); }, function (exit) { return exit.remove(); });
             con_seq_mat
-                .enter()
-                .append("rect")
-                .attr('class', 'res_rect')
+                .selectAll('rect.cons_rect')
+                .data(function (d) { return d; })
+                .join(function (enter) { return enter.append('rect')
+                .attr('class', 'cons_rect')
                 .style("fill", function (d) {
                 if (d.cons === -1) {
                     return "#ffffff";
@@ -1120,11 +1138,22 @@ var signprotmat = {
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
                 .attr("y", function (d) { return 75 + row_height; })
                 .attr("width", xScale.step())
-                .attr("height", row_height / 2);
+                .attr("height", row_height / 2); }, function (update) { return update
+                .style("fill", function (d) {
+                if (d.cons === -1) {
+                    return "#ffffff";
+                }
+                else {
+                    return cScale(d.freq);
+                }
+            })
+                .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                .attr("y", function (d) { return 75 + row_height; }); }, function (exit) { return exit.remove(); });
             con_seq_mat
-                .enter()
-                .append("text")
-                .attr("class", "res_label")
+                .selectAll('text.cons_label')
+                .data(function (d) { return d; })
+                .join(function (enter) { return enter.append('text')
+                .attr("class", "cons_label")
                 .attr("text-anchor", "middle")
                 .attr("x", function (d) { return xScale(d.gn); })
                 .attr("y", 75 + row_height)
@@ -1137,19 +1166,18 @@ var signprotmat = {
                     return "#000000";
                 }
             })
-                .text(function (d) {
-                return d.freq;
-            });
-            // discard removed nodes
-            con_seq_mat.exit().remove();
-            /*
-             *            con_seq_mat
-             *                .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-             *                .attr("y", 75 + row_height);
-             *
-             *            // discard removed nodes
-             *            con_seq_mat.exit().remove();
-             */
+                .text(function (d) { return d.freq; }); }, function (update) { return update
+                .attr("x", function (d) { return xScale(d.gn); })
+                .attr("y", 75 + row_height)
+                .style("fill", function (d) {
+                if (Math.abs(d.freq) >= 50) {
+                    return "#eaeaea";
+                }
+                else if (Math.abs(d.freq) < 50) {
+                    return "#000000";
+                }
+            })
+                .text(function (d) { return d.freq; }); }, function (exit) { return exit.remove(); });
         },
         draw_seq_sig: function (data_in, svg, xScale) {
             var data = data_in.feat;
@@ -1301,7 +1329,7 @@ var signprotmat = {
                     con_seq = _.omit(con_seq, d.gn);
                     curr.style("stroke", "black").style("stroke-width", 1);
                 }
-                console.log(con_seq);
+                //console.log(con_seq)
                 signprotmat.d3.conSeqUpdate(row_height);
             })
                 .attr('class', 'res_rect')
