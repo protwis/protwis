@@ -77,7 +77,6 @@ class Protein(models.Model):
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('ProteinState', on_delete=models.CASCADE)
-    template_structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE)
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
 
     # non-database attributes

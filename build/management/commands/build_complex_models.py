@@ -135,8 +135,7 @@ class Command(BaseBuild):
                     if break_loop: break
                 if break_loop: break
 
-        # Offset target counter to -1 to correct for skipping Golf
-        s_c = -1
+        s_c = 0
         for i,j in self.gprotein_targets.items():
             for s in j:
                 s_c+=1

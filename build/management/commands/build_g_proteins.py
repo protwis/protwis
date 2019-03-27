@@ -403,7 +403,7 @@ class Command(BaseCommand):
             prot, created = Protein.objects.get_or_create(entry_name=up['entry_name'], accession=acc, name=name, sequence=up['sequence'], family=proteinfamily, parent=None, 
                                                           residue_numbering_scheme=None, sequence_type=pst, source=source, species=species)
             state = ProteinState.objects.get(slug='active')
-            prot_conf, created = ProteinConformation.objects.get_or_create(protein=prot, state=state, template_structure=None)
+            prot_conf, created = ProteinConformation.objects.get_or_create(protein=prot, state=state)
 
     def fetch_missing_uniprot_files(self):
         BASE = 'http://www.uniprot.org'
@@ -828,7 +828,7 @@ class Command(BaseCommand):
             gp = Protein.objects.get(accession=g)
 
             try:
-                pc, created= ProteinConformation.objects.get_or_create(protein=gp, state=state, template_structure=None)
+                pc, created= ProteinConformation.objects.get_or_create(protein=gp, state=state)
                 self.logger.info('Created protein conformation')
             except:
                 self.logger.error('Failed to create protein conformation')
