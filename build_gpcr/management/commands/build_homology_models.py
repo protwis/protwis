@@ -74,6 +74,7 @@ class Command(BaseBuild):
         parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
         parser.add_argument('-x', help='Select crystal structure refinement for all crystals in the db', default=False, action='store_true')
         parser.add_argument('--purge', help='Purge all existing records', default=False, action='store_true')
+        parser.add_argument('--purge_zips', help='Purge all zips in homology_models_zip dir', default=False, action='store_true')
         parser.add_argument('-i', help='Number of MODELLER iterations for model building', default=1, type=int)
         parser.add_argument('--test_run', action='store_true', help='Build only a test set of homology models ', default=False)
         parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
@@ -113,10 +114,20 @@ class Command(BaseBuild):
         # Build all
         if options['purge']:
             # if updating all, then delete existing
-            print("Delete existing")                                      
+            print("Delete existing db entries")                                      
             StructureModel.objects.all().delete()
             StructureModelSeqSim.objects.all().delete()
             StructureModelStatsRotamer.objects.all().delete()
+        if options['purge_zips']:
+            hommod_zip_path = './structure/homology_models_zip/'
+            if os.path.exists(hommod_zip_path):
+                files = os.listdir(hommod_zip_path)
+                for f in files:
+                    try:
+                        os.unlink(hommod_zip_path+f)
+                    except:
+                        shutil.rmtree(hommod_zip_path+f)
+            print("Delete existing local zips")
 
         if options['r']:
             all_receptors = Protein.objects.filter(entry_name__in=options['r'])
