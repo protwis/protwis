@@ -1176,6 +1176,29 @@ const signprotmat = {
         conSeqUpdate: function(row_height) {
 	    let cScale = signprotmat.d3.cScale();
             
+            let seqsigTip = d3
+                .tip()
+                .attr("class", "d3-tip")
+                .html(function(d) {
+                    return (
+                        "Generic Residue No.: " +
+                        d.gn +
+                        "<br>" +
+                        "Feature: " +
+                        d.feature +
+                        "<br>" +
+                        "Length: " +
+                        d.length +
+                        "<br>" +
+                        // "Score: " +
+                        // d.expl +
+                        // "<br>" +
+                        "Frequency: " +
+                        d.freq +
+                        "<br>"
+                    );
+                });
+
 	    // create selection and bind data
             let con_seq_mat = d3
                 .select("g#con_seq_mat")
@@ -1196,6 +1219,15 @@ const signprotmat = {
             con_seq_mat
                 .enter()
                 .append("rect")
+                .call(seqsigTip)
+                .on("mouseover", function(d) {
+                    if (d.freq !== 0) {
+                        seqsigTip.show(d);
+                    }
+                })
+                .on("mouseout", function(d) {
+                    seqsigTip.hide();
+                })
                 .attr('class', 'res_rect')
                 .style("fill", function(d: any) {
                     const gcol = signprotmat.d3.fScaleColor(d.feature_code);
@@ -1435,7 +1467,7 @@ const signprotmat = {
 			con_seq = _.omit(con_seq, d.gn)
 			curr.style("stroke", "black").style("stroke-width", 1);
 		    }
-		console.log(con_seq)
+                    console.log(con_seq)
 
                     signprotmat.d3.conSeqUpdate(row_height);
                     //signprotmat.d3.colorRecResidues(d);

@@ -1017,6 +1017,26 @@ var signprotmat = {
         },
         conSeqUpdate: function (row_height) {
             var cScale = signprotmat.d3.cScale();
+            var seqsigTip = d3
+                .tip()
+                .attr("class", "d3-tip")
+                .html(function (d) {
+                return ("Generic Residue No.: " +
+                    d.gn +
+                    "<br>" +
+                    "Feature: " +
+                    d.feature +
+                    "<br>" +
+                    "Length: " +
+                    d.length +
+                    "<br>" +
+                    // "Score: " +
+                    // d.expl +
+                    // "<br>" +
+                    "Frequency: " +
+                    d.freq +
+                    "<br>");
+            });
             // create selection and bind data
             var con_seq_mat = d3
                 .select("g#con_seq_mat")
@@ -1034,6 +1054,15 @@ var signprotmat = {
             con_seq_mat
                 .enter()
                 .append("rect")
+                .call(seqsigTip)
+                .on("mouseover", function (d) {
+                if (d.freq !== 0) {
+                    seqsigTip.show(d);
+                }
+            })
+                .on("mouseout", function (d) {
+                seqsigTip.hide();
+            })
                 .attr('class', 'res_rect')
                 .style("fill", function (d) {
                 var gcol = signprotmat.d3.fScaleColor(d.feature_code);
