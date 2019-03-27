@@ -66,7 +66,8 @@ class Command(BaseBuild):
         parser.add_argument('-r', help='''Run program for specific receptor(s) by giving UniProt common name as 
                                           argument (e.g. 5ht2a_human)''', 
                             default=False, type=str, nargs='+')
-        parser.add_argument('--purge', help='Purge all existing records', default=False, action='store_true')
+        parser.add_argument('--purge', help='Purge all existing db records', default=False, action='store_true')
+        parser.add_argument('--purge_zips', help='Purge all existing local model zips', default=False, action='store_true')
         parser.add_argument('--test_run', action='store_true', help='Build only one complex model', default=False)
         parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
         parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str, nargs='+')
@@ -78,7 +79,19 @@ class Command(BaseBuild):
         
     def handle(self, *args, **options):
         if options['purge']:
+            print("Delete existing db entries")
             self.purge_complex_entries()
+        if options['purge_zips']:
+            print("Delete existing local zips")
+            complex_zip_path = './structure/complex_models_zip/'
+            if os.path.exists(complex_zip_path):
+                files = os.listdir(complex_zip_path)
+                for f in files:
+                    try:
+                        os.unlink(complex_zip_path+f)
+                    except:
+                        shutil.rmtree(complex_zip_path+f)
+
         self.debug = options['debug']
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')

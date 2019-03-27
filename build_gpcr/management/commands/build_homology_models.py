@@ -119,6 +119,7 @@ class Command(BaseBuild):
             StructureModelSeqSim.objects.all().delete()
             StructureModelStatsRotamer.objects.all().delete()
         if options['purge_zips']:
+            print("Delete existing local zips")
             hommod_zip_path = './structure/homology_models_zip/'
             if os.path.exists(hommod_zip_path):
                 files = os.listdir(hommod_zip_path)
@@ -127,7 +128,6 @@ class Command(BaseBuild):
                         os.unlink(hommod_zip_path+f)
                     except:
                         shutil.rmtree(hommod_zip_path+f)
-            print("Delete existing local zips")
 
         if options['r']:
             all_receptors = Protein.objects.filter(entry_name__in=options['r'])
