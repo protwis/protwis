@@ -1289,6 +1289,47 @@ const signprotmat = {
                     exit => exit.remove()
                 );
 
+            // PROPERTY LENGTH
+            con_seq_mat
+                .selectAll('rect.len_rect')
+                .data(d => d)
+                .join(
+                    enter => enter.append('rect')
+                    .attr('class', 'len_rect')
+                    .style("fill", "#ffffff")
+                    .style("stroke", "black")
+                    .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+                    .attr("y", (d: any) => 75 + row_height)
+                    .attr("width", xScale.step())
+                    .attr("height", row_height / 2),
+                    update => update
+                    .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+                    .attr("y", (d: any) => 75 + row_height),
+                    exit => exit.remove()
+                );
+
+
+
+            con_seq_mat
+                .selectAll('text.len_label')
+                .data(d => d)
+                .join(
+                    enter => enter.append('text')
+                    .attr("class", "len_label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", (d: any) => xScale(d.gn))
+                    .attr("y", 75 + row_height)
+                    .attr("dy", row_height / 4)
+                    .style("fill", "#000000")
+                    .text(d => d.length),
+                    update => update
+                    .attr("x", (d: any) => xScale(d.gn))
+                    .attr("y", 75 + row_height)
+                    .style("fill", "#000000")
+                    .text(d => d.length),
+                    exit => exit.remove()
+                );
+
             // CONSERVATION
             con_seq_mat
                 .selectAll('rect.cons_rect')
@@ -1305,7 +1346,7 @@ const signprotmat = {
                     })
                     .style("stroke", "black")
                     .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-                    .attr("y", (d: any) => 75 + row_height)
+                    .attr("y", (d: any) => 75 + 1.5 * row_height)
                     .attr("width", xScale.step())
                     .attr("height", row_height / 2),
                     update => update
@@ -1317,7 +1358,7 @@ const signprotmat = {
                         }
                     })
                     .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-                    .attr("y", (d: any) => 75 + row_height),
+                    .attr("y", (d: any) => 75 + 1.5 * row_height),
                     exit => exit.remove()
                 );
 
@@ -1331,7 +1372,7 @@ const signprotmat = {
                     .attr("class", "cons_label")
                     .attr("text-anchor", "middle")
                     .attr("x", (d: any) => xScale(d.gn))
-                    .attr("y", 75 + row_height)
+                    .attr("y", 75 + 1.5 * row_height)
                     .attr("dy", row_height / 4)
                     .style("fill", (d: any) => {
                         if (Math.abs(d.freq) >= 50) {
@@ -1343,7 +1384,7 @@ const signprotmat = {
                     .text(d => d.freq),
                     update => update
                     .attr("x", (d: any) => xScale(d.gn))
-                    .attr("y", 75 + row_height)
+                    .attr("y", 75 + 1.5 * row_height)
                     .style("fill", (d: any) => {
                         if (Math.abs(d.freq) >= 50) {
                             return "#eaeaea";
@@ -1402,7 +1443,7 @@ const signprotmat = {
             svg
                 .append("g")
                 .attr("id", "seqsig_mat")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 50 + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 90 + ")")
                 .append("rect")
                 .attr("class", "border-bg")
                 .style("fill", "#ffffff")

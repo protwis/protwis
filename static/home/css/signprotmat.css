@@ -130,7 +130,7 @@ line {
 }
 
 
-.res_label, .cons_label{
+.res_label, .cons_label, .len_label {
     display: inline;
     font-size: 75%;
     dominant-baseline: central;
