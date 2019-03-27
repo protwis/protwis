@@ -1438,18 +1438,23 @@ const signprotmat = {
                     // https://stackoverflow.com/a/20251369/8160230
                     // select the rect under cursor
                     let curr = d3.select(this);
-
-                    // Determine if current rect was clicked before
-                    let active = d.active ? false : true;
-
-                    // Update whether or not the elements are active
-                    d.active = active;
+                    d.active = true
 
                     // set style in regards to active
-		    if (d.active && d.gn in con_seq) {
-			console.log('first')
+                    if (d.active && d.gn in con_seq && d.key == con_seq[d.gn][0].key) {
+                        // remove prev. sele. rectangle
+                        con_seq[d.gn].active = false
 			con_seq = _.omit(con_seq, d.gn)
-			con_seq[d.gn] = [d]
+                        curr.style("stroke", "black").style("stroke-width", 1);
+                    } else if (d.active && d.gn in con_seq) {
+                        // change the selected property to the clicked one
+                        // remove the active value from the prev. selec. property
+                        con_seq[d.gn].active = false
+                        // remove the previously selected property 
+                        con_seq = _.omit(con_seq, d.gn)
+                        // add the new prop to the object
+                        con_seq[d.gn] = [d]
+                        // apply appropriate syling
 			curr.style("stroke", "yellow").style("stroke-width", 2);
 			d3.select("g#seqsig_mat")
 			    .selectAll('rect.res_rect')
@@ -1458,20 +1463,19 @@ const signprotmat = {
 			    .filter(e => (e.feature_code + e.length != d.feature_code + d.length))
 			    .style("stroke", "black")
 			    .style("stroke-width", 1);
-		    } else if (d.active) {
-			console.log('second')
+                    } else if (d.active) {
+                        // add a newly clicked rectangle
 			con_seq[d.gn] = [d]
 			curr.style("stroke", "yellow").style("stroke-width", 2);
-		    } else {
-			console.log('third')
+                    } else {
+                        // edge case rect removal
+                        con_seq[d.gn].active = false
 			con_seq = _.omit(con_seq, d.gn)
 			curr.style("stroke", "black").style("stroke-width", 1);
 		    }
                     console.log(con_seq)
 
                     signprotmat.d3.conSeqUpdate(row_height);
-                    //signprotmat.d3.colorRecResidues(d);
-                    //signprotmat.d3.colorSigResidues(d);
                 })
                 .attr('class', 'res_rect')
                 .style("fill", function(d: any) {
