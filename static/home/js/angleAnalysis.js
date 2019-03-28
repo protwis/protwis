@@ -392,8 +392,8 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                 scangle_color.push([numberToColor2(90,Math.abs(e[3][2]-e[3][0])), ngl_selection])
               if (Math.abs(e[4][2]-e[4][0])>5)
                 hsecolor.push([numberToColor3(10, e[4][2]-e[4][0], true), ngl_selection])
-              if (Math.abs(e[5][2]-e[5][0])>20)
-                sasacolor.push([numberToColor3(100, e[5][2]-e[5][0], true), ngl_selection])
+              if (Math.abs(e[5][2]-e[5][0])>10)
+                sasacolor.push([numberToColor3(50, e[5][2]-e[5][0], true), ngl_selection])
               if (Math.abs(e[6][2]-e[6][0])>20)
                 phicolor.push([numberToColor3(90, e[6][2]-e[6][0], true), ngl_selection])
               if (Math.abs(e[7][2]-e[7][0])>20)
@@ -511,7 +511,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                             if (Array.isArray(e[2]) && Array.isArray(scnd[2])){
                                 diff = []
                                 for (var i=2; i < e.length; i++) {
-                                  if (scnd[i][2] > e[i][2] && scnd[i][0] < e[i][0]) {
+                                  /*if (scnd[i][2] > e[i][2] && scnd[i][0] < e[i][0]) {
                                       if (Math.abs(scnd[i][2]-e[i][2]) > Math.abs(scnd[i][0]-e[i][0]))
                                           diff.push(scnd[i][2]-e[i][2])
                                       else
@@ -523,9 +523,9 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                                           diff.push(scnd[i][0]-e[i][0])
                                   } else {
                                     diff.push(0)
-                                  }
+                                  }*/
                                   //diff.push((e[i][2]-e[i][0]) - (scnd[i][2]-scnd[i][0])) // difference range
-                                  //diff.push(e[i][1] - scnd[i][1]) // average difference
+                                  diff.push(e[i][1] - scnd[i][1]) // average difference
                                 }
 
                                 if (Math.abs(diff[0])>20)
@@ -534,8 +534,8 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                                   scnd_scangle.push([numberToColor2(90,Math.abs(diff[1])), ngl_selection])
                                 if (Math.abs(diff[2])>5)
                                   scnd_hse.push([numberToColor3(10, diff[2], true), ngl_selection])
-                                if (Math.abs(diff[3])>20)
-                                  scnd_sasa.push([numberToColor3(100, diff[3], true), ngl_selection])
+                                if (Math.abs(diff[3])>10)
+                                  scnd_sasa.push([numberToColor3(50, diff[3], true), ngl_selection])
                                 if (Math.abs(diff[4])>20)
                                   scnd_phi.push([numberToColor3(90, diff[4], true), ngl_selection])
                                 if (Math.abs(diff[5])>20)
