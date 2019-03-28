@@ -22,9 +22,15 @@ import scipy.stats as stats
 
 def angleAnalysis(request):
     """
-    Show angle analysis site
+    Show angle analysis page
     """
     return render(request, 'angles/angleanalysis.html')
+
+def structureCheck(request):
+    """
+    Show structure annotation check page
+    """
+    return render(request, 'angles/structureCheck.html')
 
 def get_angles(request):
     data = {'error': 0}
