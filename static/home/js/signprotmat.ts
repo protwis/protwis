@@ -1206,6 +1206,10 @@ const signprotmat = {
                 .data(Object.values(con_seq))
                 .join('g');
 
+            const svg = d3.select('svg.svg-content.seqsig')
+            const t = svg.transition()
+                    .duration(750);
+
             // PROPERTY CODES
             con_seq_mat
                 .selectAll('rect.res_rect')
@@ -1228,6 +1232,16 @@ const signprotmat = {
                             return null;
                         }
                     })
+                    //.style("fill", '#ffffff')
+                    //.call(enter => enter.transition(t)
+                        //.style("fill", function(d: any) {
+                            //const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                            //if (typeof gcol != "undefined") {
+                                //return gcol.bg_color;
+                            //} else {
+                                //return null;
+                            //}
+                        //}))
                     .style("stroke", "black")
                     .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
                     .attr("y", 75)
@@ -1236,6 +1250,8 @@ const signprotmat = {
                     update => update
                     .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
                     .attr("y", 75)
+                    //.style("fill", '#ffffff')
+                    .call(update => update.transition(t)
                     .style("fill", function(d: any) {
                         const gcol = signprotmat.d3.fScaleColor(d.feature_code);
                         if (typeof gcol != "undefined") {
@@ -1243,7 +1259,7 @@ const signprotmat = {
                         } else {
                             return null;
                         }
-                    }),
+                    })),
                     exit => exit.remove()
                 );
 
@@ -1523,17 +1539,19 @@ const signprotmat = {
                     d.active = true
 
                     // set style in regards to active
-                    if (d.active && d.gn in con_seq && d.key == con_seq[d.gn][0].key) {
+                    if (d.active && con_seq[d.gn].length > 0 && d.key == con_seq[d.gn][0].key) {
                         // remove prev. sele. rectangle
                         con_seq[d.gn].active = false
-			con_seq = _.omit(con_seq, d.gn)
+                        //con_seq = _.omit(con_seq, d.gn)
+                        con_seq[d.gn] = []
                         curr.style("stroke", "black").style("stroke-width", 1);
-                    } else if (d.active && d.gn in con_seq) {
+                    } else if (d.active && con_seq[d.gn].length > 0) {
                         // change the selected property to the clicked one
                         // remove the active value from the prev. selec. property
                         con_seq[d.gn].active = false
                         // remove the previously selected property 
-                        con_seq = _.omit(con_seq, d.gn)
+                        //con_seq = _.omit(con_seq, d.gn)
+                        con_seq[d.gn] = []
                         // add the new prop to the object
                         con_seq[d.gn] = [d]
                         // apply appropriate syling
