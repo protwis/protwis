@@ -343,6 +343,7 @@
                     xScale,
                     xAxis
                 );
+                initialize_consensus(data.feat);
             },
             error: function(error){
                 console.log(error)
@@ -352,6 +353,14 @@
                 document.querySelector("#calc_spin").style.display = "none";
             }
         });
+    };
+
+    const initialize_consensus = function(data){
+        const row_height = 30;
+        for (let key of Object.keys(data)) {
+            con_seq[key] = [data[key][0]];
+        };
+        signprotmat.d3.conSeqUpdate(row_height);
     };
 
     const run_sig_match = function(){
