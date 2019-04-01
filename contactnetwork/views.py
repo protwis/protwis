@@ -97,7 +97,7 @@ def ShowDistances(request):
     """
 
     template_data = {}
-    
+
     if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
         # check for preselections in POST data
         pdbs1 = request.POST.get("pdbs1")
@@ -168,7 +168,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-@cache_page(60*60*24)
+@cache_page(60*60*24*7)
 def PdbTableData(request):
 
     data = Structure.objects.filter(refined=False).select_related(
@@ -353,11 +353,11 @@ def InteractionBrowserData(request):
                 ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name').all()
     r_lookup = {}
     r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
-    
+
     for r in residues:
         r_lookup[r['pk']] = r
         r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
-    
+
     for i in interactions:
         s = i['interacting_pair__referenced_structure__pk']
         pdb_name = s_lookup[s][1]
@@ -421,14 +421,14 @@ def InteractionBrowserData(request):
                     data['secondary'][c][i][setname] += 1
                     if aa_pair not in data['secondary'][c][i]['aa_pairs']:
                         data['secondary'][c][i]['aa_pairs'][aa_pair] = copy.deepcopy(aa_pairs_dict)
-                        # Count overall occurances in sets 
+                        # Count overall occurances in sets
                         aa1 = s[1]
                         aa2 = s[2]
                         gen1 = c.split(",")[0]
                         gen2 = c.split(",")[1]
                         pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
                         pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
-                        pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2)) 
+                        pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2))
                         pdbs1_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
                         pdbs2_with_pair = list(set(pdbs_intersection).intersection(pdbs2))
                         data['secondary'][c][i]['aa_pairs'][aa_pair]['pair_set1'] = pdbs1_with_pair
@@ -438,8 +438,8 @@ def InteractionBrowserData(request):
                             data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = class_pair_lookup[c+aa_pair]
                         else:
                             data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = 0
-                        
-                    data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1 
+
+                    data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
 
         data['secondary'][c] = OrderedDict(sorted(data['secondary'][c].items(), key=lambda x: order.index(x[0])))
 
@@ -977,16 +977,24 @@ def DistanceData(request):
 
         # if pdb_name not in data['interactions'][coord]:
         #     data['interactions'][coord][pdb_name] = []
+        if len(proteins) > 1:
+            if d[4]:
+                if len(data['interactions'])<50000:
+                    data['interactions'][coord] = [round(d[1]),round(d[4],3)]
+                else:
+                    break
 
-        if d[4]:
-            if len(data['interactions'])<50000:
+                if d[4]>max_dispersion:
+                    max_dispersion = round(d[4],3)
+        else:
+            if d[1]:
+                if len(data['interactions'])<50000:
+                    data['interactions'][coord] = [round(d[1]),round(d[1],3)]
+                else:
+                    break
 
-                data['interactions'][coord] = [round(d[1]),round(d[4],3)]
-            else:
-                break
-
-            if d[4]>max_dispersion:
-                max_dispersion = round(d[4],3)
+                if d[1]>max_dispersion:
+                    max_dispersion = round(d[1],3)
         # data['sequence_numbers'] = sorted(number_dict)
     if (generic):
         data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
