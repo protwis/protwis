@@ -75,7 +75,11 @@ class Command(BaseBuild):
 
         self.models_to_do = []
 
-        if options['purge']:
+        if options['c'] and options['purge']:
+            StructureComplexModelStatsRotamer.objects.all().delete()
+            StructureComplexModelSeqSim.objects.all().delete()
+            StructureComplexModel.objects.all().delete()
+        elif options['purge']:
             StructureModelStatsRotamer.objects.all().delete()
             StructureModelSeqSim.objects.all().delete()
             StructureModel.objects.all().delete()
@@ -254,19 +258,30 @@ class Command(BaseBuild):
                                                                 stats_text=stats_text)
             res_prot = r_prot
             bulk_residues = []
-            prot_residues = {}
+            r_residues, s_residues, b_residues, g_residues = {}, {}, {}, {}
+
             for r in Residue.objects.filter(protein_conformation__protein=res_prot).all():
-                prot_residues[r.sequence_number] = r
+                r_residues[r.sequence_number] = r
+                residues = r_residues
+            for s in Residue.objects.filter(protein_conformation__protein=s_prot).all():
+                s_residues[s.sequence_number] = s
+            for b in Residue.objects.filter(protein_conformation__protein=signprot_complex.beta_protein).all():
+                b_residues[b.sequence_number] = b
+            for g in Residue.objects.filter(protein_conformation__protein=signprot_complex.gamma_protein).all():
+                g_residues[g.sequence_number] = g
             for r in templates[1:]:
                 r = r.split(',')
                 if r[0]=='HN':
                     res_prot = s_prot
+                    residues = s_residues
                 elif r[0]=='Beta':
                     res_prot = signprot_complex.beta_protein
+                    residues = b_residues
                 elif r[0]=='Gamma':
                     res_prot = signprot_complex.gamma_protein
+                    residues = g_residues
                 # res = Residue.objects.get(protein_conformation__protein=res_prot, sequence_number=r[1])
-                res = prot_residues[int(r[1])]
+                res = residues[int(r[1])]
                 scmsr = StructureComplexModelStatsRotamer()
                 if r[4]=='None':
                     bb_s = None
