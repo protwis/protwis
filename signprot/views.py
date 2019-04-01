@@ -105,7 +105,7 @@ def Couplings(request):
     context = OrderedDict()
 
     threshold_primary = -0.1
-    threshold_secondary = -0.5
+    threshold_secondary = -1
 
 
     proteins = Protein.objects.filter(sequence_type__slug='wt',family__slug__startswith='00',species__common_name='Human').all().prefetch_related('family')
