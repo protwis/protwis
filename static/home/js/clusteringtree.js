@@ -76,7 +76,7 @@ function renderTree(data) {
 
     //Branch length function
     function phylo(n, offset) {
-        if (n.length != null) offset += n.length * 115;
+        if (n.length != null) offset += n.length/10;
         n.y = offset;
         if (n.children)
             n.children.forEach(function(n) {
@@ -85,7 +85,6 @@ function renderTree(data) {
     }
 
     var nodes = cluster.nodes(newick.parse(tree));
-
     nodes.forEach(function(n) {
         if (n.name == "") {
             n.name = names.toString();
@@ -93,8 +92,8 @@ function renderTree(data) {
         }
     });
 
-    //Uncomment the line below to show branch length
-    // phylo(nodes[0], 0);
+    // Utilized to calculate actual branch lengths
+    phylo(nodes[0], 0);
 
     var link = vis.selectAll("path.link")
         .data(cluster.links(nodes))
@@ -162,9 +161,24 @@ function renderTree(data) {
           }
         });
 
-    var innernodes = vis.selectAll('g.inner.node')
+
+    vis.selectAll('g.inner.node')
         .append("circle")
-        .attr("r", 5);
+        .attr("r", 5)
+        .attr('data-length', function(n){ return Math.round(n.y*10) })
+        .on("mouseover", function(d,i) {
+            tooltip
+                .style("background-color", shadeColor("#999999", 50))
+                .style("border-color", "#999999")
+                .style("display", "block")
+                .style("opacity", .9);
+            tooltip.html(d3.select(this).attr("data-length"))
+                .style("left", (d3.event.pageX + 5) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+            })
+        .on("mouseout", function(d) {
+            tooltip.style("display", "none")
+        });
 
     // Adding annotations
     // Annotations: state, name, family, ligand type, class
@@ -221,42 +235,6 @@ function renderTree(data) {
         }
     }
 
-    /*for (var x in selectivityinfo){
-        var spacer = 8
-        if(selectivityinfo[x].indexOf("Gs family") >= 0){
-          var leafwithname = vis.selectAll('g.X'+x)
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", "blue")
-              .attr("transform", "translate(" + (23 + spacer) + ",0)");
-        }
-
-        if(selectivityinfo[x].indexOf("Gi/Go family") >= 0){
-          var leafwithname = vis.selectAll('g.X'+x)
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", "red")
-              .attr("transform", "translate(" + (23  + 2*spacer) + ",0)");
-        }
-
-        if(selectivityinfo[x].indexOf("Gq/G11 family") >= 0){
-          var leafwithname = vis.selectAll('g.X'+x)
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", "black")
-              .attr("transform", "translate(" + (23 + 3*spacer) + ",0)");
-        }
-
-        if( selectivityinfo[x].indexOf("G12/G13 family") >= 0){
-          var leafwithname = vis.selectAll('g.X'+x)
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", "green")
-              .attr("transform", "translate(" + (23 + 4*spacer) + ",0)");
-        }
-    }*/
-
-
     var label = vis.selectAll("text")
         .data(nodes.filter(function(d) {
             return d.x !== undefined && !d.children;
@@ -267,7 +245,7 @@ function renderTree(data) {
             return d.x < 180 ? "start" : "end";
         })
         .attr("transform", function(d) {
-            return "rotate(" + (d.x - 90) + ")translate(" + (r - spacing + 18) + ")rotate(" + (d.x < 180 ? 0 : 180) + ")";
+            return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 18) + ")rotate(" + (d.x < 180 ? 0 : 180) + ")";
         })
         .text(function(d) {
             // add receptor name
