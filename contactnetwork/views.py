@@ -726,9 +726,8 @@ def ClusteringData(request):
     pdb_gns = {}
     for pdb in pdbs:
         cache_key = "distanceMap-" + pdb
-        print(pdb)
-        # Cached?
 
+        # Cached?
         if cache.has_key(cache_key):
             cached_data = cache.get(cache_key)
             distance_map = cached_data["map"]
@@ -805,6 +804,7 @@ def ClusteringData(request):
 
     # Collect structure annotations
     pdb_annotations = {}
+
     # Grab all annotations and all the ligand role when present in aggregates
     annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
                     .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__family__parent__name', \
@@ -813,9 +813,9 @@ def ClusteringData(request):
 
     for an in annotations:
         pdb_annotations[an[0]] = list(an[1:])
+
         # Cleanup the aggregates as None values are introduced
         pdb_annotations[an[0]][6] = list(filter(None.__ne__, pdb_annotations[an[0]][6]))
-
 
     data['annotations'] = pdb_annotations
 
@@ -824,10 +824,38 @@ def ClusteringData(request):
     tree = sch.to_tree(hclust, False)
     data['tree'] = getNewick(tree, "", tree.dist, pdbs)
 
-    print("Done", time.time()-start)
+    # Order distance_matrix by hclust
+    N = len(distance_matrix)
+    res_order = seriation(hclust, N, N + N-2)
+    seriated_dist = np.zeros((N,N))
+    a,b = np.triu_indices(N,k=1)
+    seriated_dist[a,b] = distance_matrix[ [res_order[i] for i in a], [res_order[j] for j in b]]
+    seriated_dist[b,a] = seriated_dist[a,b]
+
+    data['distance_matrix'] = seriated_dist.tolist()
+    data['dm_labels'] = [pdbs[i] for i in res_order]
 
     return JsonResponse(data)
 
+# For reordering matrix based on h-tree
+# Borrowed from https://gmarti.gitlab.io/ml/2017/09/07/how-to-sort-distance-matrix.html
+def seriation(Z,N,cur_index):
+    '''
+        input:
+            - Z is a hierarchical tree (dendrogram)
+            - N is the number of points given to the clustering process
+            - cur_index is the position in the tree for the recursive traversal
+        output:
+            - order implied by the hierarchical tree Z
+
+        seriation computes the order implied by a hierarchical tree (dendrogram)
+    '''
+    if cur_index < N:
+        return [cur_index]
+    else:
+        left = int(Z[cur_index-N,0])
+        right = int(Z[cur_index-N,1])
+        return (seriation(Z,N,left) + seriation(Z,N,right))
 
 def getNewick(node, newick, parentdist, leaf_names):
     if node.is_leaf():

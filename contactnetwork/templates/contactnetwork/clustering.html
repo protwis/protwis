@@ -23,7 +23,7 @@
                     <div class="col-md-1">
                         <div class="btn btn-success btn-lg pull-left go-button">Go</div>
                     </div>
-                    <div class="col-md-1 hidden" id="output-group0">
+                    <div class="col-md-2 hidden" id="output-group0">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Group 1</h3>
@@ -33,7 +33,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-1 hidden" id="output-group1">
+                    <div class="col-md-2 hidden" id="output-group1">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Group 2</h3>
@@ -54,8 +54,10 @@
                       <div class="col-md-12 tab-pane active" id="single-group-tree-tab">
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Structural clustering</h3>
+                                  <h3 class="panel-title pull-left">Distance-based structure clustering</h3>
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download-alt btn-download-alt"></span> <!-- Use this one for figure downloads? -->
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -116,20 +118,23 @@
         window.zoomCluster = {};
 
         function downloadSVG(svgSelector, name) {
-          var svgClone = $(svgSelector).clone();
-          svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
+          if ($(svgSelector).length > 0) {
+            var svgClone = $(svgSelector).clone();
+            var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
 
-          var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
-
-          downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+            downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+          }
         }
 
+        var lastData;
         function initializeButtons(selector, treeFunction) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
 
                 // DEBUG input:
-                // pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+                if (pdb.length == 0)
+                  pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+
                 if (pdb.length > 1) {
                     $("#clustering-tree").html("")
                     $("#svgloading").remove();
@@ -139,6 +144,8 @@
                         'pdbs': pdb,
                     },
                     function( data ) {
+                        lastData = data
+
                         // create Tee
                         treeFunction(data);
 
@@ -208,12 +215,53 @@
             return false;
         }
 
-        function initializeFullscreenButton(selector) {
+        function initializeTopButtons(selector) {
+            // Fullscreen SVG
             $(selector + ' .btn-fullscreen').click(function() {
                 fullScreenElement = $(this).parent().next().children().first();
                 fullScreenElement.css('background-color','white');
                 toggleFullScreen(fullScreenElement.get(0));
             });
+
+            // Distance matrix download
+            $(selector + ' .btn-download-alt').click(function() {
+                // svg download
+                downloadSVG("#clustering-tree svg", "GPCR_structure_clustering.svg")
+            });
+
+            // Distance matrix download
+            $(selector + ' .btn-download').click(function() {
+                // create download table
+                if (lastData != undefined){
+                    var header = lastData['dm_labels']
+                    header.unshift("PDB-code")
+
+                    var data = [];
+                    data.push(header);
+
+                    for (var i = 0; i < lastData["distance_matrix"].length ; i++){
+                      var row = lastData["distance_matrix"][i]
+                      row.unshift(header[i+1])
+                      data.push(row);
+                    }
+
+                    // Convert to CSV
+                    var csv = Papa.unparse(data);
+
+                    // Download file
+                    downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), "GPCR_structure_clustering.csv");
+                }
+            });
+        }
+
+        function downloadURI(uri, name) {
+            var link = document.createElement("a");
+            link.download = name;
+            link.href = uri;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            delete link;
         }
 
         function toggleFullScreen(fullScreenElement) {
@@ -437,7 +485,7 @@
 
             // Single group of PDB files
             initializeButtons('#single-group-crystal-tab', renderTree);
-            initializeFullscreenButton('#single-group-crystal-tab');
+            initializeTopButtons('#single-group-crystal-tab');
         });
     </script>
 {% endblock %}
@@ -520,6 +568,10 @@
         }
 
         /* END TREE */
+
+        .btn-download, .btn-download-alt, .btn-fullscreen {
+          margin-right: 10px;
+        }
 
         .select2-result-label{
             font-size:x-small;
