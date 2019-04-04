@@ -86,10 +86,17 @@ function renderTree(data) {
 
     var nodes = cluster.nodes(newick.parse(tree));
     nodes.forEach(function(n) {
-        if (n.name == "") {
+        // HACK: the internal nodes names are now cluster scoring values
+        if (n.name != "" && !isNaN(n.name)) {
+            n.score = n.name
             n.name = names.toString();
             names++;
         }
+        // ORIGINAL
+        /*if (n.name == "") {
+            n.name = names.toString();
+            names++;
+        }*/
     });
 
     // Utilized to calculate actual branch lengths
@@ -166,13 +173,20 @@ function renderTree(data) {
         .append("circle")
         .attr("r", 5)
         .attr('data-length', function(n){ return Math.round(n.y*10) })
+        .attr('data-score', function(n){ return n.score })
         .on("mouseover", function(d,i) {
+            var distance = d3.select(this).attr("data-length")
+            var score = d3.select(this).attr("data-score")
+            var label = "Root node"
+            if (distance > 0)
+                label = "Distance from root: " + distance + "<br/>Silhouette coefficient: " + score;
+
             tooltip
                 .style("background-color", shadeColor("#999999", 50))
                 .style("border-color", "#999999")
                 .style("display", "block")
                 .style("opacity", .9);
-            tooltip.html(d3.select(this).attr("data-length"))
+            tooltip.html(label)
                 .style("left", (d3.event.pageX + 5) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
             })

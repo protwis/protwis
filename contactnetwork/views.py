@@ -820,9 +820,14 @@ def ClusteringData(request):
     data['annotations'] = pdb_annotations
 
     # hierarchical clustering
-    hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward', metric='euclidean')
+    hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward')
     tree = sch.to_tree(hclust, False)
-    data['tree'] = getNewick(tree, "", tree.dist, pdbs)
+
+    #inconsistency = sch.inconsistent(hclust)
+    #inconsistency = sch.maxinconsts(hclust, inconsistency)
+    silhouette_coefficient = {}
+    getSilhouetteIndex(tree, distance_matrix, silhouette_coefficient)
+    data['tree'] = getNewick(tree, "", tree.dist, pdbs, silhouette_coefficient)
 
     # Order distance_matrix by hclust
     N = len(distance_matrix)
@@ -857,18 +862,66 @@ def seriation(Z,N,cur_index):
         right = int(Z[cur_index-N,1])
         return (seriation(Z,N,left) + seriation(Z,N,right))
 
-def getNewick(node, newick, parentdist, leaf_names):
+def getNewick(node, newick, parentdist, leaf_names, silhouette_coefficient):
     if node.is_leaf():
         return "%s:%.2f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
     else:
+        si_node = silhouette_coefficient[node.id]
         if len(newick) > 0:
-            newick = "):%.2f%s" % (parentdist - node.dist, newick)
+            newick = ")%.2f:%.2f%s" % (si_node, parentdist - node.dist, newick)
         else:
             newick = ");"
-        newick = getNewick(node.get_left(), newick, node.dist, leaf_names)
-        newick = getNewick(node.get_right(), ",%s" % (newick), node.dist, leaf_names)
+        newick = getNewick(node.get_left(), newick, node.dist, leaf_names, silhouette_coefficient)
+        newick = getNewick(node.get_right(), ",%s" % (newick), node.dist, leaf_names, silhouette_coefficient)
         newick = "(%s" % (newick)
         return newick
+
+def getSilhouetteIndex(node, distance_matrix, results):
+    # set rootnode (DEBUG purposes)
+    if node.id not in results:
+        results[node.id] = 0
+
+    if not node.is_leaf():
+        # get list of indices cluster left (A)
+        a = node.get_left().pre_order(lambda x: x.id)
+
+        # get list of indices cluster right (B)
+        b = node.get_right().pre_order(lambda x: x.id)
+
+        if len(a) > 1:
+            # calculate average Si - cluster A
+            si_a = calculateSilhouetteIndex(distance_matrix, a, b)
+            results[node.get_left().id] = si_a
+
+            getSilhouetteIndex(node.get_left(), distance_matrix, results)
+
+        if len(b) > 1:
+            # calculate average Si - cluster B
+            si_b = calculateSilhouetteIndex(distance_matrix, b, a)
+            results[node.get_right().id] = si_b
+
+            getSilhouetteIndex(node.get_right(), distance_matrix, results)
+
+# Implementation based on Rousseeuw, P.J. J. Comput. Appl. Math. 20 (1987): 53-65
+def calculateSilhouetteIndex(distance_matrix, a, b):
+    si = 0
+    for i in a:
+        # calculate ai - avg distance within cluster
+        ai = 0
+        for j in a:
+            if i != j:
+                ai += distance_matrix[i,j]/(len(a)-1)
+
+        # calculate bi - avg distance to closest cluster
+        bi = 0
+        for j in b:
+            bi += distance_matrix[i,j]/len(b)
+
+        # silhouette index (averaged)
+        si += (bi-ai)/max(ai,bi)/len(a)
+
+    return si
+
 
 def DistanceData(request):
     def gpcrdb_number_comparator(e1, e2):
