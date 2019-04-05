@@ -434,6 +434,14 @@ class FamilyAlignmentPartial(FamilyAlignment):
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
+class FamilyAlignmentSpecies(FamilyAlignment):
+    """
+    Get a full sequence alignment of a protein family
+    \n/alignment/family/{slug}//{species}
+    \n{slug} is a protein family identifier, e.g. 001_001_001
+    \n{species} is a species identifier from Uniprot, e.g. Homo sapiens
+    """
+
 class FamilyAlignmentPartialSpecies(FamilyAlignment):
     """
     Get a partial sequence alignment of a protein family

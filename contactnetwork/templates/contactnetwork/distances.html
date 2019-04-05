@@ -448,10 +448,10 @@
 
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
-                color = { r: basal + (fDiff * -1*shift), g: basal-basal*(-fDiff), b: basal-basal*(-fDiff) };
+                color = { r: Math.round(basal + (fDiff * -1*shift)), g: Math.round(basal-basal*(-fDiff)), b: Math.round(basal-basal*(-fDiff)) };
             else
                 // If fDiff is close to 1 we want a blue color
-                color = { r: basal-basal*fDiff, g: basal-basal*fDiff, b: basal + (fDiff * shift)};
+                color = { r: Math.round(basal-basal*fDiff), g: Math.round(basal-basal*fDiff), b: Math.round(basal + (fDiff * shift))};
 
             if (rgb)
                 return color;
