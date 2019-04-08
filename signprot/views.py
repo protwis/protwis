@@ -80,7 +80,7 @@ def GProtein(request, dataset = "GuideToPharma"):
                 if ps:
                     jsondata[str(gp)] = []
                     for p in ps:
-                        if dataset=="Aska" and p.log_rai_mean<-0.5:
+                        if dataset=="Aska" and p.log_rai_mean<-1:
                             continue
                         if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
                             selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
@@ -157,6 +157,8 @@ def Couplings(request):
             if 'subunits' not in data[p][s][gf]:
                 data[p][s][gf] = {'subunits':{},'best':-2.00}
             data[p][s][gf]['subunits'][g] = round(Decimal(m),2)
+            if round(Decimal(m),2)== -0.00:
+                data[p][s][gf]['subunits'][g] = 0.00
             # get the lowest number into 'best'
             if m>data[p][s][gf]['best']:
                 data[p][s][gf]['best'] = round(Decimal(m),2)
@@ -165,7 +167,7 @@ def Couplings(request):
 
     distinct_g_families = sorted(distinct_g_families)
     distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
-    distinct_g_subunit_families = OrderedDict([('Gs',['gnal', 'gnas2']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gna14', 'gna15', 'gnaq']), ('G12/G13',['gna12', 'gna13'])])
+    distinct_g_subunit_families = OrderedDict([('Gs',['gnas2','gnal']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gnaq', 'gna14', 'gna15']), ('G12/G13',['gna12', 'gna13'])])
 
     for p,v in data.items():
         fd[p] = [v['class'],p,v['pretty']]
