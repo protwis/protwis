@@ -866,7 +866,7 @@ def getNewick(node, newick, parentdist, leaf_names, silhouette_coefficient):
     if node.is_leaf():
         return "%s:%.2f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
     else:
-        s 0i_node = silhouette_coefficient[node.id]
+        si_node = silhouette_coefficient[node.id]
         if len(newick) > 0:
             newick = ")%.2f:%.2f%s" % (si_node, parentdist - node.dist, newick)
         else:
