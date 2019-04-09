@@ -866,7 +866,7 @@ def getNewick(node, newick, parentdist, leaf_names, silhouette_coefficient):
     if node.is_leaf():
         return "%s:%.2f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
     else:
-        si_node = silhouette_coefficient[node.id]
+        s 0i_node = silhouette_coefficient[node.id]
         if len(newick) > 0:
             newick = ")%.2f:%.2f%s" % (si_node, parentdist - node.dist, newick)
         else:
@@ -1058,7 +1058,7 @@ def DistanceData(request):
 
         # if pdb_name not in data['interactions'][coord]:
         #     data['interactions'][coord][pdb_name] = []
-        if len(proteins) > 1:
+        if len(pdbs) > 1:
             if d[4]:
                 if len(data['interactions'])<50000:
                     data['interactions'][coord] = [round(d[1]),round(d[4],3)]
