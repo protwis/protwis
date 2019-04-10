@@ -130,10 +130,11 @@ line {
 }
 
 
-.res_label {
+.res_label, .cons_label, .len_label {
     display: inline;
     font-size: 75%;
     dominant-baseline: central;
+    pointer-events: none;
 }
 
 /* removing unnecessary paths via assigning no stroke */
