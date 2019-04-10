@@ -111,7 +111,7 @@ class StructureComplexProtein(models.Model):
 
 class StructureVectors(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    center_axis = models.CharField(max_length=100)
+    center_axis = models.CharField(max_length=200)
     tm1_axis = models.CharField(max_length=100)
 
     class Meta():

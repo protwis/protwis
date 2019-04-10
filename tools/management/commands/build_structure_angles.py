@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 import contactnetwork.pdb as pdb
-from structure.models import Structure
+from structure.models import Structure, StructureVectors
 from residue.models import Residue
 from angles.models import ResidueAngle as Angle
 
@@ -332,7 +332,7 @@ class Command(BaseCommand):
                 # DEBUG print arrow for PyMol
                 #a = [str(i) for i in center_vector[0]]
                 #b = [str(i) for i in center_vector[1]]
-                #print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
+                # print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
 
                 ### ANGLES
                 # Center axis to helix axis to CA
@@ -341,6 +341,28 @@ class Command(BaseCommand):
                 # Center axis to CA to CB
                 b_angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)]).round(3)
 
+                # STORE STRUCTURE REFERENCES
+                # center axis
+                c_axis = []
+                c_axis.append([str(i) for i in center_vector[0]])
+                c_axis.append([str(i) for i in center_vector[1]])
+
+                # create vector to 1x46 (tm1) - for alignment
+                # find correct residue
+                tm1_index = -1
+                for i,(res,num) in enumerate(db_helper[0]):
+                    if res.generic_number.label == "1x46":
+                        tm1_index = i
+                        break
+
+                if tm1_index < 0:
+                    break
+                tm1_ref = -1 * pca.transform([hres_list[0][tm1_index]])
+                tm1_axis = [str(i) for i in tm1_ref[0]]
+                print(str(c_axis))
+                print(str(tm1_axis))
+                sv = StructureVectors(structure = reference, center_axis = str(c_axis), tm1_axis = str(tm1_axis))
+                sv.save()
 
                 ### freeSASA (only for TM bundle)
                 # SASA calculations - results per atom
