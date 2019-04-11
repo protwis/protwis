@@ -582,11 +582,8 @@ def signprotdetail(request, slug):
 
     return render(request, 'signprot/signprot_details.html', context)
 
-def InteractionMatrix(request):
-    from django.db.models import F
-    from django.db.models import Q
-    import requests
 
+def interface_dataset():
     dataset = {
         '4x1h' : [
         ['A','N',73,'2.40x40','C','C',347,'G.H5.23', ["water-mediated"]],
@@ -1103,7 +1100,18 @@ def InteractionMatrix(request):
         ['A','R',107,'3.55x55','D','R',370,'G.H5.12', ["polar-sidechain-sidechain", "polar-backbone-sidechain", "van-der-waals"]],
         ],
     }
+    
+    return dataset
 
+
+def InteractionMatrix(request):
+    from django.db.models import F
+    from django.db.models import Q
+    from signprot.views import interface_dataset
+    import requests
+
+    dataset = interface_dataset()
+    
     # generate complex info dataset
     filt = [e.upper() for e in list(dataset)]
     struc = Structure.objects.filter(pdb_code__index__in=filt).prefetch_related('protein_conformation__protein__parent')
