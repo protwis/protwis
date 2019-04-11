@@ -4,7 +4,7 @@ from django.db import connection
 from django.db import IntegrityError
 
 
-from common.models import WebResource, WebLink
+from common.models import WebResource, WebLink, Publication
 
 from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
@@ -33,6 +33,7 @@ import shlex, subprocess
 import requests, xmltodict
 import yaml
 import xlrd
+from collections import defaultdict
 
 from urllib.request import urlopen
 
@@ -614,20 +615,25 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('Gprotein_crossclass.csv')]
+            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('iuphar_coupling_data.csv')]
         source = "GuideToPharma"
         for filename in filenames:
             filepath = os.sep.join([self.gprotein_data_path, filename])
 
             self.logger.info('Reading filename' + filename)
 
+            pub_years = defaultdict(int)
+            pub_years_protein = defaultdict(set)
+
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
                 for row in islice(reader, 1, None): # skip first line
 
-                    entry_name = row[0]
-                    primary = row[8]
-                    secondary = row[9]
+                    entry_name = row[3]
+                    primary = row[11]
+                    secondary = row[12]
+                    primary_pubmed = row[15]
+                    secondary_pubmed = row[16]
                     # fetch protein
                     try:
                         p = Protein.objects.get(entry_name=entry_name)
@@ -646,8 +652,6 @@ class Command(BaseCommand):
                         print('no data for ', entry_name)
                         continue
 
-                    # print(primary,secondary)
-
                     try:
                         for gp in primary:
                             if gp in ['','None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
@@ -656,8 +660,31 @@ class Command(BaseCommand):
                             # print(p, g)
                             gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary', source = source)
                             gpair.save()
-                    except:
-                        print("error in primary assignment", p, gp)
+
+                            for pmid in primary_pubmed.split("|"):
+                                try:
+                                    test = int(pmid)
+                                except:
+                                    continue
+                                try:
+                                    pub = Publication.objects.get(web_link__index=pmid,web_link__web_resource__slug='pubmed')
+                                except Publication.DoesNotExist as e:
+                                    pub = Publication()
+                                    try:
+                                        pub.web_link = WebLink.objects.get(index=pmid,
+                                            web_resource__slug='pubmed')
+                                    except WebLink.DoesNotExist:
+                                        wl = WebLink.objects.create(index=pmid,
+                                            web_resource = WebResource.objects.get(slug='pubmed'))
+                                        pub.web_link = wl
+                                pub.update_from_pubmed_data(index=pmid)
+                                pub.save()
+                                pub_years[pub.year] += 1
+                                pub_years_protein[pub.year].add(entry_name)
+                                gpair.references.add(pub)
+
+                    except Exception as e:
+                        print("error in primary assignment", p, gp,e )
 
                     try:
                         for gp in secondary:
@@ -668,9 +695,33 @@ class Command(BaseCommand):
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
                             gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary', source = source)
                             gpair.save()
-                    except:
-                        print("error in secondary assignment", p, gp)
 
+                            for pmid in secondary_pubmed.split("|"):
+                                try:
+                                    test = int(pmid)
+                                except:
+                                    continue
+
+                                try:
+                                    pub = Publication.objects.get(web_link__index=pmid,web_link__web_resource__slug='pubmed')
+                                except Publication.DoesNotExist as e:
+                                    pub = Publication()
+                                    try:
+                                        pub.web_link = WebLink.objects.get(index=pmid,
+                                            web_resource__slug='pubmed')
+                                    except WebLink.DoesNotExist:
+                                        wl = WebLink.objects.create(index=pmid,
+                                            web_resource = WebResource.objects.get(slug='pubmed'))
+                                        pub.web_link = wl
+                                pub.update_from_pubmed_data(index=pmid)
+                                pub.save()
+                                pub_years[pub.year] += 1
+                                pub_years_protein[pub.year].add(entry_name)
+                                gpair.references.add(pub)
+                    except Exception as e:
+                        print("error in secondary assignment", p, gp,e)
+        # for key, value in sorted(pub_years.items()):
+        #     print(key, value,pub_years_protein[key])
         self.logger.info('COMPLETED CREATING G PROTEINS')
 
     def add_aska_coupling_data(self):

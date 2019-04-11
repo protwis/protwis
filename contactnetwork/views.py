@@ -97,7 +97,7 @@ def ShowDistances(request):
     """
 
     template_data = {}
-    
+
     if request.POST and (request.POST.get("pdbs1") != None or request.POST.get("pdbs2") != None):
         # check for preselections in POST data
         pdbs1 = request.POST.get("pdbs1")
@@ -168,7 +168,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-@cache_page(60*60*24)
+@cache_page(60*60*24*7)
 def PdbTableData(request):
 
     data = Structure.objects.filter(refined=False).select_related(
@@ -353,11 +353,11 @@ def InteractionBrowserData(request):
                 ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name').all()
     r_lookup = {}
     r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
-    
+
     for r in residues:
         r_lookup[r['pk']] = r
         r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
-    
+
     for i in interactions:
         s = i['interacting_pair__referenced_structure__pk']
         pdb_name = s_lookup[s][1]
@@ -421,14 +421,14 @@ def InteractionBrowserData(request):
                     data['secondary'][c][i][setname] += 1
                     if aa_pair not in data['secondary'][c][i]['aa_pairs']:
                         data['secondary'][c][i]['aa_pairs'][aa_pair] = copy.deepcopy(aa_pairs_dict)
-                        # Count overall occurances in sets 
+                        # Count overall occurances in sets
                         aa1 = s[1]
                         aa2 = s[2]
                         gen1 = c.split(",")[0]
                         gen2 = c.split(",")[1]
                         pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
                         pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
-                        pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2)) 
+                        pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2))
                         pdbs1_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
                         pdbs2_with_pair = list(set(pdbs_intersection).intersection(pdbs2))
                         data['secondary'][c][i]['aa_pairs'][aa_pair]['pair_set1'] = pdbs1_with_pair
@@ -438,8 +438,8 @@ def InteractionBrowserData(request):
                             data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = class_pair_lookup[c+aa_pair]
                         else:
                             data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = 0
-                        
-                    data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1 
+
+                    data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
 
         data['secondary'][c] = OrderedDict(sorted(data['secondary'][c].items(), key=lambda x: order.index(x[0])))
 
@@ -726,9 +726,8 @@ def ClusteringData(request):
     pdb_gns = {}
     for pdb in pdbs:
         cache_key = "distanceMap-" + pdb
-        print(pdb)
-        # Cached?
 
+        # Cached?
         if cache.has_key(cache_key):
             cached_data = cache.get(cache_key)
             distance_map = cached_data["map"]
@@ -805,42 +804,124 @@ def ClusteringData(request):
 
     # Collect structure annotations
     pdb_annotations = {}
+
     # Grab all annotations and all the ligand role when present in aggregates
     annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
                     .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__family__parent__name', \
-                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name') \
+                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name') \
                     .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True)))
 
     for an in annotations:
         pdb_annotations[an[0]] = list(an[1:])
-        # Cleanup the aggregates as None values are introduced
-        pdb_annotations[an[0]][5] = list(filter(None.__ne__, pdb_annotations[an[0]][5]))
 
+        # Cleanup the aggregates as None values are introduced
+        pdb_annotations[an[0]][6] = list(filter(None.__ne__, pdb_annotations[an[0]][6]))
 
     data['annotations'] = pdb_annotations
 
     # hierarchical clustering
-    hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward', metric='euclidean')
+    hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward')
     tree = sch.to_tree(hclust, False)
-    data['tree'] = getNewick(tree, "", tree.dist, pdbs)
 
-    print("Done", time.time()-start)
+    #inconsistency = sch.inconsistent(hclust)
+    #inconsistency = sch.maxinconsts(hclust, inconsistency)
+    silhouette_coefficient = {}
+    getSilhouetteIndex(tree, distance_matrix, silhouette_coefficient)
+    data['tree'] = getNewick(tree, "", tree.dist, pdbs, silhouette_coefficient)
+
+    # Order distance_matrix by hclust
+    N = len(distance_matrix)
+    res_order = seriation(hclust, N, N + N-2)
+    seriated_dist = np.zeros((N,N))
+    a,b = np.triu_indices(N,k=1)
+    seriated_dist[a,b] = distance_matrix[ [res_order[i] for i in a], [res_order[j] for j in b]]
+    seriated_dist[b,a] = seriated_dist[a,b]
+
+    data['distance_matrix'] = seriated_dist.tolist()
+    data['dm_labels'] = [pdbs[i] for i in res_order]
 
     return JsonResponse(data)
 
+# For reordering matrix based on h-tree
+# Borrowed from https://gmarti.gitlab.io/ml/2017/09/07/how-to-sort-distance-matrix.html
+def seriation(Z,N,cur_index):
+    '''
+        input:
+            - Z is a hierarchical tree (dendrogram)
+            - N is the number of points given to the clustering process
+            - cur_index is the position in the tree for the recursive traversal
+        output:
+            - order implied by the hierarchical tree Z
 
-def getNewick(node, newick, parentdist, leaf_names):
+        seriation computes the order implied by a hierarchical tree (dendrogram)
+    '''
+    if cur_index < N:
+        return [cur_index]
+    else:
+        left = int(Z[cur_index-N,0])
+        right = int(Z[cur_index-N,1])
+        return (seriation(Z,N,left) + seriation(Z,N,right))
+
+def getNewick(node, newick, parentdist, leaf_names, silhouette_coefficient):
     if node.is_leaf():
         return "%s:%.2f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
     else:
+        si_node = silhouette_coefficient[node.id]
         if len(newick) > 0:
-            newick = "):%.2f%s" % (parentdist - node.dist, newick)
+            newick = ")%.2f:%.2f%s" % (si_node, parentdist - node.dist, newick)
         else:
             newick = ");"
-        newick = getNewick(node.get_left(), newick, node.dist, leaf_names)
-        newick = getNewick(node.get_right(), ",%s" % (newick), node.dist, leaf_names)
+        newick = getNewick(node.get_left(), newick, node.dist, leaf_names, silhouette_coefficient)
+        newick = getNewick(node.get_right(), ",%s" % (newick), node.dist, leaf_names, silhouette_coefficient)
         newick = "(%s" % (newick)
         return newick
+
+def getSilhouetteIndex(node, distance_matrix, results):
+    # set rootnode (DEBUG purposes)
+    if node.id not in results:
+        results[node.id] = 0
+
+    if not node.is_leaf():
+        # get list of indices cluster left (A)
+        a = node.get_left().pre_order(lambda x: x.id)
+
+        # get list of indices cluster right (B)
+        b = node.get_right().pre_order(lambda x: x.id)
+
+        if len(a) > 1:
+            # calculate average Si - cluster A
+            si_a = calculateSilhouetteIndex(distance_matrix, a, b)
+            results[node.get_left().id] = si_a
+
+            getSilhouetteIndex(node.get_left(), distance_matrix, results)
+
+        if len(b) > 1:
+            # calculate average Si - cluster B
+            si_b = calculateSilhouetteIndex(distance_matrix, b, a)
+            results[node.get_right().id] = si_b
+
+            getSilhouetteIndex(node.get_right(), distance_matrix, results)
+
+# Implementation based on Rousseeuw, P.J. J. Comput. Appl. Math. 20 (1987): 53-65
+def calculateSilhouetteIndex(distance_matrix, a, b):
+    si = 0
+    for i in a:
+        # calculate ai - avg distance within cluster
+        ai = 0
+        for j in a:
+            if i != j:
+                ai += distance_matrix[i,j]/(len(a)-1)
+
+        # calculate bi - avg distance to closest cluster
+        bi = 0
+        for j in b:
+            bi += distance_matrix[i,j]/len(b)
+
+        # silhouette index (averaged)
+        si += (bi-ai)/max(ai,bi)/len(a)
+
+    return si
+
 
 def DistanceData(request):
     def gpcrdb_number_comparator(e1, e2):
@@ -977,16 +1058,24 @@ def DistanceData(request):
 
         # if pdb_name not in data['interactions'][coord]:
         #     data['interactions'][coord][pdb_name] = []
+        if len(proteins) > 1:
+            if d[4]:
+                if len(data['interactions'])<50000:
+                    data['interactions'][coord] = [round(d[1]),round(d[4],3)]
+                else:
+                    break
 
-        if d[4]:
-            if len(data['interactions'])<50000:
+                if d[4]>max_dispersion:
+                    max_dispersion = round(d[4],3)
+        else:
+            if d[1]:
+                if len(data['interactions'])<50000:
+                    data['interactions'][coord] = [round(d[1]),round(d[1],3)]
+                else:
+                    break
 
-                data['interactions'][coord] = [round(d[1]),round(d[4],3)]
-            else:
-                break
-
-            if d[4]>max_dispersion:
-                max_dispersion = round(d[4],3)
+                if d[1]>max_dispersion:
+                    max_dispersion = round(d[1],3)
         # data['sequence_numbers'] = sorted(number_dict)
     if (generic):
         data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))

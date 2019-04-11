@@ -4,7 +4,7 @@ function renderTree(data) {
     var annotations = data["annotations"];
 
     var r = 1200 / 2;
-    var spacing = 235;
+    var spacing = 240;
     var innerRadius = r - spacing // change inner radius of tree with this argument
     var names = 0; // indexing for all nodes
 
@@ -76,7 +76,7 @@ function renderTree(data) {
 
     //Branch length function
     function phylo(n, offset) {
-        if (n.length != null) offset += n.length * 115;
+        if (n.length != null) offset += n.length/10;
         n.y = offset;
         if (n.children)
             n.children.forEach(function(n) {
@@ -85,16 +85,22 @@ function renderTree(data) {
     }
 
     var nodes = cluster.nodes(newick.parse(tree));
-
     nodes.forEach(function(n) {
-        if (n.name == "") {
+        // HACK: the internal nodes names are now cluster scoring values
+        if (n.name != "" && !isNaN(n.name)) {
+            n.score = n.name
             n.name = names.toString();
             names++;
         }
+        // ORIGINAL
+        /*if (n.name == "") {
+            n.name = names.toString();
+            names++;
+        }*/
     });
 
-    //Uncomment the line below to show branch length
-    // phylo(nodes[0], 0);
+    // Utilized to calculate actual branch lengths
+    phylo(nodes[0], 0);
 
     var link = vis.selectAll("path.link")
         .data(cluster.links(nodes))
@@ -124,7 +130,7 @@ function renderTree(data) {
     // Add terminal node with coloring
     vis.selectAll("g.terminal-node").append("circle")
         .attr("r", 5)
-        .style("fill", function(n){
+        .style("fill", function(n) {
           // color based on activity
           switch(annotations[n.name][0]){
               case "active":
@@ -144,8 +150,8 @@ function renderTree(data) {
         .attr("transform", "translate(10, 0)")
         .style("fill", function(n) {
           // color based on activity
-          if (annotations[n.name][5].length > 0){
-              switch(annotations[n.name][5][0]){
+          if (annotations[n.name][6].length > 0){
+              switch(annotations[n.name][6][0]){
                   case "agonist":
                   case "agonist-partial":
                   case "pam":
@@ -162,32 +168,57 @@ function renderTree(data) {
           }
         });
 
-    var innernodes = vis.selectAll('g.inner.node')
+
+    vis.selectAll('g.inner.node')
         .append("circle")
-        .attr("r", 5);
+        .attr("r", 5)
+        .style("fill", function(n){ if (isNaN(n.score)) return "#FFFFFF"; var score = n.score; if (score>1) score=1; if (score>0){ return shadeColor2("#AAAAAA", 100-(score*70-30))} else { return "#FFAAAA"} })
+        .attr('data-length', function(n){ return Math.round(n.y*10) })
+        .attr('data-score', function(n){ return n.score })
+        .on("mouseover", function(d,i) {
+            var distance = d3.select(this).attr("data-length")
+            var score = d3.select(this).attr("data-score")
+            var label = "Root node"
+            if (distance > 0)
+                label = "Distance from root: " + distance + "<br/>Silhouette coefficient: " + score;
+
+            tooltip
+                .style("background-color", shadeColor("#999999", 50))
+                .style("border-color", "#999999")
+                .style("display", "block")
+                .style("opacity", .9);
+            tooltip.html(label)
+                .style("left", (d3.event.pageX + 5) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+            })
+        .on("mouseout", function(d) {
+            tooltip.style("display", "none")
+        });
 
     // Adding annotations
     // Annotations: state, name, family, ligand type, class
-    var categoryName = ["State", "Name", "Family", "Ligand family", "GPCR Class"]
+    var categoryName = ["State", "Name", "Family", "Ligand family", "GPCR Class", "Method"]
     var spacer = 10;
     var colorscheme = []
-    //colorscheme[0] = ['#008000','#797f98','#7a97b2','#75afc9','#68c9dc','#50e4ee','#00ffff']
-    colorscheme[0] = ["#e41a1c","#377eb8","#4daf4a","#984ea3","#ff7f00","#ffff33","#a65628","#f781bf","#999999"]
-    colorscheme[1] = ['#ffd700','#dfda5d','#d3d772','#cad381','#c2ce8e','#bcc998','#b7c4a0','#b4c0a6','#b0b9ad','#adb4b2','#abaeb7','#a9a9bb','#a8a2bf','#a89cc1','#a895c4','#a98fc6','#aa87c7','#ad7fc7','#b077c7','#f44191']
-    colorscheme[2] = ['#8b0000','#960110','#9e051b','#a80c25','#b1142d','#b91c35','#c1253d','#c92e43','#d03649','#d7404e','#dd4852','#e35256','#e85b59','#ed655d','#f26f60','#f67863','#fa8266','#fd8c69','#ff956d','#ffa072','#ffac77','#ffb57e','#ffbf86','#ffc98f','#ffd399','#ffdca5','#ffe5b2','#ffedbf','#fff6cf','#ffffe0']
+    colorscheme[0] = ['#008000','#797f98','#7a97b2','#75afc9','#68c9dc','#50e4ee','#00ffff']
+    colorscheme[1] = ["#e41a1c","#377eb8","#4daf4a","#984ea3","#ff7f00","#ffff33","#a65628","#f781bf","#999999"]
+    colorscheme[2] = ['#ffd700','#dfda5d','#d3d772','#cad381','#c2ce8e','#bcc998','#b7c4a0','#b4c0a6','#b0b9ad','#adb4b2','#abaeb7','#a9a9bb','#a8a2bf','#a89cc1','#a895c4','#a98fc6','#aa87c7','#ad7fc7','#b077c7','#f44191']
+    colorscheme[3] = ['#8b0000','#960110','#9e051b','#a80c25','#b1142d','#b91c35','#c1253d','#c92e43','#d03649','#d7404e','#dd4852','#e35256','#e85b59','#ed655d','#f26f60','#f67863','#fa8266','#fd8c69','#ff956d','#ffa072','#ffac77','#ffb57e','#ffbf86','#ffc98f','#ffd399','#ffdca5','#ffe5b2','#ffedbf','#fff6cf','#ffffe0']
+
     var categories = [];
     var tooltip = d3.select("body").append("div")
                   .attr("class", "tooltip")
                   .style("opacity", 0);
-    for  (i=4; i>1; i--) {
+    for  (i=5; i>1; i--) {
         // store categories for legend
-        categories[4-i] = []
+        categories[5-i] = []
+        var ref = 5-i;
         for (var pdb in annotations){
             // assign color
-            if (!categories[4-i].includes(annotations[pdb][i]))
-              categories[4-i].push(annotations[pdb][i])
-            colorIndex = categories[4-i].indexOf(annotations[pdb][i]);
-            color = colorscheme[4-i][colorIndex];
+            if (!categories[ref].includes(annotations[pdb][i]))
+              categories[ref].push(annotations[pdb][i])
+            colorIndex = categories[ref].indexOf(annotations[pdb][i]);
+            color = colorscheme[ref][colorIndex];
 
             // create tooltip
             var popoverTable = "<h3>" + annotations[pdb][1] + " ("+ pdb + ")" + "</h3>"  + categoryName[i] + ": " + annotations[pdb][i];
@@ -200,12 +231,10 @@ function renderTree(data) {
               .attr("width", spacer-1)
               .attr("height", spacer-1)
               .style("fill", color)
-              .attr("transform", "translate(" + (110 + Math.abs(i-5)*spacer) + ", " + -1 * (spacer-1)/2 + ")")
+              .attr("transform", "translate(" + (110 + Math.abs(i-6)*spacer) + ", " + -1 * (spacer-1)/2 + ")")
               .attr('data-content', popoverTable)
               .attr('data-color', color)
               .on("mouseover", function(d,i) {
-//                  tooltip.transition()
-//                      .duration(200)
                   tooltip
                       .style("background-color", shadeColor(d3.select(this).attr("data-color"), 50))
                       .style("border-color", d3.select(this).attr("data-color"))
@@ -216,49 +245,10 @@ function renderTree(data) {
                       .style("top", (d3.event.pageY - 28) + "px");
                   })
               .on("mouseout", function(d) {
-                  /*tooltip.transition()
-  //                    .duration(500)
-                      .style("opacity", 0);*/
                   tooltip.style("display", "none")
               });
         }
     }
-
-    /*for (var x in selectivityinfo){
-        var spacer = 8
-        if(selectivityinfo[x].indexOf("Gs family") >= 0){
-          var leafwithname = vis.selectAll('g.X'+x)
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", "blue")
-              .attr("transform", "translate(" + (23 + spacer) + ",0)");
-        }
-
-        if(selectivityinfo[x].indexOf("Gi/Go family") >= 0){
-          var leafwithname = vis.selectAll('g.X'+x)
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", "red")
-              .attr("transform", "translate(" + (23  + 2*spacer) + ",0)");
-        }
-
-        if(selectivityinfo[x].indexOf("Gq/G11 family") >= 0){
-          var leafwithname = vis.selectAll('g.X'+x)
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", "black")
-              .attr("transform", "translate(" + (23 + 3*spacer) + ",0)");
-        }
-
-        if( selectivityinfo[x].indexOf("G12/G13 family") >= 0){
-          var leafwithname = vis.selectAll('g.X'+x)
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", "green")
-              .attr("transform", "translate(" + (23 + 4*spacer) + ",0)");
-        }
-    }*/
-
 
     var label = vis.selectAll("text")
         .data(nodes.filter(function(d) {
@@ -270,7 +260,7 @@ function renderTree(data) {
             return d.x < 180 ? "start" : "end";
         })
         .attr("transform", function(d) {
-            return "rotate(" + (d.x - 90) + ")translate(" + (r - spacing + 18) + ")rotate(" + (d.x < 180 ? 0 : 180) + ")";
+            return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 18) + ")rotate(" + (d.x < 180 ? 0 : 180) + ")";
         })
         .text(function(d) {
             // add receptor name
@@ -389,6 +379,26 @@ function renderTree(data) {
         R = parseInt(R + (255-R)*percent/100);
         G = parseInt(G + (255-R)*percent/100);
         B = parseInt(B + (255-R)*percent/100);
+
+        var RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
+        var GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
+        var BB = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
+
+        return "#"+RR+GG+BB;
+    }
+
+    // Based on https://stackoverflow.com/questions/5560248
+    function shadeColor2(color, percent) {
+        var R = parseInt(color.substring(1,3),16);
+        var G = parseInt(color.substring(3,5),16);
+        var B = parseInt(color.substring(5,7),16);
+
+        R = parseInt(R * percent/100);
+        G = parseInt(G * percent/100);
+        B = parseInt(B * percent/100);
+        R = (R<255)?R:255;
+        G = (G<255)?G:255;
+        B = (B<255)?B:255;
 
         var RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
         var GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));

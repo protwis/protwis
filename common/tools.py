@@ -137,7 +137,7 @@ def fetch_from_entrez(index, cache_dir=False):
     max_tries = 5
     while tries < max_tries:
         if tries > 0:
-            logger.warning('Failed fetching {}, retrying'.format(full_url))
+            logger.warning('Failed fetching pubmed {}, retrying'.format(str(index)))
             
         try:
             Entrez.email = 'info@gpcrdb.org'

@@ -29,6 +29,8 @@ urlpatterns = [
         name='familyalignment-partial'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/statistics/$', views.FamilyAlignmentPartial.as_view(), {'statistics': True},
         name='familyalignment-partial-statistics'),
+    url(r'^alignment/family/(?P<slug>[^/]+)//(?P<latin_name>[^/]+)/$', views.FamilyAlignmentSpecies.as_view(),
+        name='familyalignment-partial-statistics'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/(?P<latin_name>[^/]+)/$', views.FamilyAlignmentPartialSpecies.as_view(),
         name='familyalignment-partial-statistics'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/(?P<latin_name>[^/]+)/statistics/$', views.FamilyAlignmentPartialSpecies.as_view(), {'statistics': True},
