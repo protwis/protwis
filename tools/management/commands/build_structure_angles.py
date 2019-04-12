@@ -10,6 +10,7 @@ import copy
 import freesasa
 import io
 import logging
+import math
 
 import numpy as np
 import scipy.stats as stats
@@ -189,7 +190,7 @@ class Command(BaseCommand):
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        # references = Structure.objects.filter(pdb_code__index="3SN6").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        #references = Structure.objects.filter(pdb_code__index="2RH1").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         references = list(references)
 
@@ -200,6 +201,9 @@ class Command(BaseCommand):
         qset = list(qset.prefetch_related('generic_number', 'protein_conformation__protein','protein_conformation__state'))
 
         res_dict = {ref.pdb_code.index:qgen(ref.protein_conformation.protein,qset) for ref in references}
+
+        # clean structure vectors table
+        StructureVectors.objects.all().delete()
 
         #######################################################################
         ######################### Start of main loop ##########################
@@ -280,11 +284,11 @@ class Command(BaseCommand):
                 ### AXES through each of the TMs and the TM bundle (center axis)
                 hres_list = [np.asarray([pchain[r]["CA"].get_coord() for r in sl], dtype=float) for sl in db_tmlist]
                 h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else cal_pseudo_CB(pchain[r]) for r in sl], dtype=float) for sl in db_tmlist]
-                #print(hres_list)
+
                 # fast and fancy way to take the average of N consecutive elements
                 N = 3
                 hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list])
-                #print(hres_three)
+
                 ### PCA - determine axis through center + each transmembrane helix
                 helix_pcas = [PCA() for i in range(7)]
                 helix_pca_vectors = [pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)]
@@ -343,12 +347,11 @@ class Command(BaseCommand):
 
                 # STORE STRUCTURE REFERENCES
                 # center axis
-                c_axis = []
-                c_axis.append([str(i) for i in center_vector[0]])
-                c_axis.append([str(i) for i in center_vector[1]])
+                c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
+                translation = np.array2string(center_vector[0], separator=',')
 
                 # create vector to 1x46 (tm1) - for alignment
-                # find correct residue
+                # UGLY find correct residue - to optimize
                 tm1_index = -1
                 for i,(res,num) in enumerate(db_helper[0]):
                     if res.generic_number.label == "1x46":
@@ -357,11 +360,16 @@ class Command(BaseCommand):
 
                 if tm1_index < 0:
                     break
-                tm1_ref = -1 * pca.transform([hres_list[0][tm1_index]])
-                tm1_axis = [str(i) for i in tm1_ref[0]]
-                print(str(c_axis))
-                print(str(tm1_axis))
-                sv = StructureVectors(structure = reference, center_axis = str(c_axis), tm1_axis = str(tm1_axis))
+
+                # transform coordinates to pca
+                tm1_ref = pca.transform([hres_list[0][tm1_index]])[0]
+                tm1_coord1 = tm1_ref[1]/math.sqrt(math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
+                tm1_coord2 = tm1_ref[2]/math.sqrt(math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
+
+                # calculate rotation to point [0, 0,1] (skipping X-axis as it's the center axis)
+                angle = math.atan2(0, 1) - math.atan2(tm1_coord1, tm1_coord2)
+
+                sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector), tm1_angle = angle)
                 sv.save()
 
                 ### freeSASA (only for TM bundle)
