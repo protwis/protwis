@@ -3,7 +3,7 @@ function initializeGoButton(selector, generic=false) {
     $(selector + ' .go-button').click(function() {
         var pdb = JSON.parse($('#pdb-input').val());
         if (pdb.length == 0)
-          pdb = ['2rh1', '4bvn']
+          pdb = ['3VW7', '5IUB', '6AKX', '6IGL', '4RWD']
 
         selectedPDBs = pdb
         console.log(selectedPDBs)
@@ -262,6 +262,59 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                 sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and sidechainAttached",
                 visible: false
                 })
+
+            // alignment of GPCR structure
+            if ("tm1_angle" in pdb_data){
+              var translation = JSON.parse(pdb_data["translation"])
+              var center_axis = JSON.parse(pdb_data["center_axis"])
+              var tm1_angle = pdb_data["tm1_angle"]
+              console.log(translation)
+              console.log(center_axis)
+              console.log(tm1_angle)
+
+              /*o.setPosition(translation)
+
+              var quaternion = new NGL.Quaternion();
+              v1 = new NGL.Vector3(0,1,0)
+              v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+              quaternion.setFromUnitVectors( v2, v1 )
+
+              var quaternion2 = new NGL.Quaternion()
+              quaternion2.setFromAxisAngle( v2, tm1_angle)
+              o.quaternion.multiplyQuaternions(quaternion, quaternion2)
+              o.updateMatrix()*/
+
+              v1 = new NGL.Vector3(0,1,0)
+              v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+              var quaternion = new NGL.Quaternion(); // create one and reuse it
+              quaternion.setFromUnitVectors( v2, v1 )
+              o.setRotation(quaternion)
+
+              var tm1_vector = []
+              var ref_tm1 = pdb_data["only_gn"][pdb_data["gn_map"].indexOf("1x46")]
+
+              o.structure.eachAtom(function (ap) {
+                tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                tm1_vector.applyMatrix4(o.matrix)
+              }, new NGL.Selection(":A and "+ ref_tm1 +" and .CA"))
+
+              var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+              v.applyMatrix4(o.matrix)
+
+              tm1_vector.sub(v)
+              tm1_vector.y = 0
+
+              var quaternion2 = new NGL.Quaternion()
+              v3 = new NGL.Vector3(0, 0, -1)
+
+              quaternion2.setFromAxisAngle(v2, v3.angleTo(tm1_vector) + Math.PI/2)
+              o.quaternion.multiplyQuaternions(quaternion, quaternion2)
+              o.updateMatrix()
+
+              var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+              v.applyMatrix4(o.matrix)
+              o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+            }
 
             o.autoView(":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and (.CA)")
 

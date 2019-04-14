@@ -14,7 +14,7 @@ import copy
 
 from contactnetwork.models import *
 from contactnetwork.distances import *
-from structure.models import Structure
+from structure.models import Structure, StructureVectors
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber
 
@@ -1346,11 +1346,19 @@ def ServePDB(request, pdbname):
         if gn[0] not in segments:
             segments[gn[0]] = []
         segments[gn[0]].append(gn[1])
+
     data = {}
     data['pdb'] = structure.pdb_data.pdb
     data['only_gn'] = only_gn
     data['gn_map'] = gn_map
     data['segments'] = segments
     data['chain'] = structure.preferred_chain
+    # positioning data
+    sv = StructureVectors.objects.filter(structure=structure)
+    if sv.exists():
+        sv = sv.get()
+        data['translation'] = sv.translation
+        data['tm1_angle'] = sv.tm1_angle
+        data['center_axis'] = sv.center_axis
 
     return JsonResponse(data)
