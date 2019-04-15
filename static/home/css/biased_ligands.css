@@ -35,14 +35,6 @@
 * {
   box-sizing: border-box; }
 
-body {
-  font-family: 'Helvetica Neue', Arial, Sans-serif;
-  font-size: 16px;
-  max-width: 1024px;
-  margin: 20px auto;
-  background: #c8c8c8;
-  color: #02151a; }
-
 .hero {
   margin-bottom: 40px; }
   .hero h2 {
