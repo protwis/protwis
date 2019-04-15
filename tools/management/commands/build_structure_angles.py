@@ -190,7 +190,7 @@ class Command(BaseCommand):
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        #references = Structure.objects.filter(pdb_code__index="2RH1").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        #references = Structure.objects.filter(pdb_code__index="3SN6").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         references = list(references)
 
@@ -261,8 +261,6 @@ class Command(BaseCommand):
                 # https://gist.github.com/lennax/0f5f65ddbfa278713f58
                 # Definition http://www.ccp14.ac.uk/ccp/web-mirrors/garlic/garlic/commands/dihedrals.html
                 # http://biopython.org/DIST/docs/api/Bio.PDB.Polypeptide-pysrc.html#Polypeptide.get_phi_psi_list
-
-
 
                 ### clean the structure to solely the 7TM bundle
                 recurse(structure, [[0], preferred_chain, db_set])
@@ -348,7 +346,12 @@ class Command(BaseCommand):
                 # STORE STRUCTURE REFERENCES
                 # center axis
                 c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
-                translation = np.array2string(center_vector[0], separator=',')
+                translation = np.array2string(-1*center_vector[0], separator=',')
+
+#                print(pca.transform([center_vector[0]])[0])
+                print(np.array2string(pca.inverse_transform([[0,0,0]])[0],separator=","))
+                print(np.array2string(pca.inverse_transform([[0,0,-1]])[0],separator=","))
+#                print(pca.transform([[0,0,-1]])[0])
 
                 # create vector to 1x46 (tm1) - for alignment
                 # UGLY find correct residue - to optimize
@@ -363,11 +366,35 @@ class Command(BaseCommand):
 
                 # transform coordinates to pca
                 tm1_ref = pca.transform([hres_list[0][tm1_index]])[0]
-                tm1_coord1 = tm1_ref[1]/math.sqrt(math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
-                tm1_coord2 = tm1_ref[2]/math.sqrt(math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
+                tm1_ref[0] = 0
+#                print(np.array2string(tm1_ref,separator=","))
+                tm1_length = math.sqrt(math.pow(tm1_ref[0],2)+math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
+#                tm1_ref = tm1_ref/tm1_length
+#                print(np.array2string(pca.inverse_transform(tm1_ref),separator=","))
 
-                # calculate rotation to point [0, 0,1] (skipping X-axis as it's the center axis)
-                angle = math.atan2(0, 1) - math.atan2(tm1_coord1, tm1_coord2)
+#                tm1_coord1 = -1*tm1_ref[1]/math.sqrt(math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
+#                tm1_coord2 = -1*tm1_ref[2]/math.sqrt(math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
+#                print(tm1_coord1)
+#                print(tm1_coord2)
+
+                # calculate rotation to point [0, 0, 1] (skipping X-axis as it's the center axis)
+#                angle = math.atan2(-1, 0) - math.atan2(tm1_coord1, tm1_coord2)
+                angle = math.atan2(0, -1) - math.atan2(tm1_ref[1], tm1_ref[2])
+#                if angle > math.pi:
+#                    angle = 2*math.pi - angle
+#                else:
+#                    angle = math.pi - angle
+
+                print("$$$$$$")
+                tm1_ref = tm1_ref/tm1_length
+                print(np.array2string(pca.inverse_transform(tm1_ref),separator=","))
+                print("$$$$$$")
+
+                print(math.atan2(0, -1) - math.atan2(tm1_ref[1], tm1_ref[2]))
+                print(angle)
+                print(translation)
+                print(c_vector)
+
 
                 sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector), tm1_angle = angle)
                 sv.save()
@@ -423,7 +450,7 @@ class Command(BaseCommand):
                     dblist.append([reference, gdict[residue_id], angle1, angle2, rsa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id] + [asa_list[residue_id]])
 
             except Exception as e:
-#            else:
+            #else:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
                 continue
