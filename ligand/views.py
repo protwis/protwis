@@ -2,18 +2,21 @@ from django.db.models import Count, Avg, Min, Max
 from collections import defaultdict
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.views.generic import TemplateView, View
+#from braces.views import SelectRelatedMixin
+from django.views.generic import TemplateView, View, ListView
+
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
-from ligand.models import Ligand, AssayExperiment, LigandProperities, LigandVendorLink
+from ligand.models import Ligand, BiasedExperiment, AssayExperiment, LigandProperities, LigandVendorLink
 from protein.models import Protein, Species, ProteinFamily
 
 from copy import deepcopy
 import itertools
 import json
-    
+#import braces
+
 class LigandBrowser(TemplateView):
     """
     Per target summary of ligands.
@@ -25,7 +28,7 @@ class LigandBrowser(TemplateView):
         context = super(LigandBrowser, self).get_context_data(**kwargs)
 
         ligands = AssayExperiment.objects.values(
-            'protein__entry_name', 
+            'protein__entry_name',
             'protein__species__common_name',
             'protein__family__name',
             'protein__family__parent__name',
@@ -51,8 +54,8 @@ def LigandDetails(request, ligand_id):
         'protein',
         ).annotate(num_records = Count('protein__entry_name')
                    ).order_by('protein__entry_name')
-    
-    
+
+
     ligand_data = []
 
     for record in record_count:
@@ -73,7 +76,7 @@ def LigandDetails(request, ligand_id):
 
         #Flattened list of lists of dict values
         values = list(itertools.chain(*[itertools.chain(*tmp[x].values()) for x in tmp.keys()]))
-        
+
         ligand_data.append({
             'protein_name': protein_details.entry_name,
             'receptor_family': protein_details.family.parent.name,
@@ -89,7 +92,7 @@ def LigandDetails(request, ligand_id):
             })
 
     context = {'ligand_data': ligand_data, 'ligand':ligand_id}
-    
+
     return render(request, 'ligand_details.html', context)
 
 
@@ -105,9 +108,9 @@ def TargetDetailsCompact(request, **kwargs):
         #elif slug.count('_') == 3:
         elif slug.count('_') == 1 and len(slug) != 7:
             ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-    
+
         if slug.count('_') == 1 and len(slug) == 7:
-            f = ProteinFamily.objects.get(slug=slug)      
+            f = ProteinFamily.objects.get(slug=slug)
         else:
             f = slug
 
@@ -182,7 +185,7 @@ def TargetDetailsCompact(request, **kwargs):
                 'logp': lig.properities.logp,
                 })
     context['ligand_data'] = ligand_data
-    
+
     return render(request, 'target_details_compact.html', context)
 
 def TargetDetails(request, **kwargs):
@@ -198,9 +201,9 @@ def TargetDetails(request, **kwargs):
         #elif slug.count('_') == 3:
         elif slug.count('_') == 1 and len(slug) != 7:
             ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-    
+
         if slug.count('_') == 1 and len(slug) == 7:
-            f = ProteinFamily.objects.get(slug=slug)      
+            f = ProteinFamily.objects.get(slug=slug)
         else:
             f = slug
 
@@ -345,7 +348,7 @@ class LigandStatistics(TemplateView):
             class_subset = AssayExperiment.objects.filter(
                 id=prot_class['protein__family__parent__parent__parent']).values(
                     'protein').annotate(
-                        avg_num_ligands=Avg('ligand', distinct=True), 
+                        avg_num_ligands=Avg('ligand', distinct=True),
                         p_count=Count('protein')
                         )
             prot_class['avg_num_ligands']=class_subset[0]['avg_num_ligands']
@@ -393,3 +396,8 @@ class LigandStatistics(TemplateView):
         context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('ligands'))
 
         return context
+
+class ExperimentView(ListView):
+    model = BiasedExperiment
+    context_object_name = 'experiments'
+    template_name = 'biased_experiment.html'

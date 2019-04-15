@@ -1,0 +1,69 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+
+{% block addon_js %}
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script src="{% static 'home/js/multifilter.js' %}"> </script>
+
+<script type='text/javascript'>
+  $(document).ready(function() {
+    $('.filter').multifilter()
+  })
+</script>
+{% endblock %}
+
+
+{% block content %}
+
+  <div class="container">
+    <div class="row">
+      <div class="col s12">
+        <div id="main" class="card">
+          <div class="card-content">
+            <span id="title" class="card-title">Article List</span>
+
+            <div class='container'>
+              <div class='filters'>
+                <div class='filter-container'>
+                  <input autocomplete='off' class='filter' name='Author' placeholder='Author' data-col='Author' />
+                </div>
+                <div class='filter-container'>
+                  <input autocomplete='off' class='filter' name='Ligand' placeholder='Ligand' data-col='Ligand' />
+                </div>
+                <div class='filter-container'>
+                  <input autocomplete='off' class='filter' name='DOI' placeholder='DOI' data-col='DOI' />
+                </div>
+                <div class='filter-container'>
+                  <input autocomplete='off' class='filter' name='Temp' placeholder='Temp' data-col='Temp' />
+                </div>
+                <div class='clearfix'></div>
+              </div>
+            </div>
+            <div class='container'>
+              <table>
+                <thead>
+                  <th>Author</th>
+                  <th>Ligand</th>
+                  <th>DOI</th>
+                  <th>Temp</th>
+                </thead>
+                <tbody>
+                  {% for experiment in experiments %}
+                  <tr>
+                    <td>{{experiment.experiment_author}} </td>
+                    <td>{{experiment.ligand.receptor_id_type}}</td>
+                    <td>{{experiment.publication.doi}}</td>
+                  </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
