@@ -36,12 +36,12 @@ class Command(BaseBuild):
     ligand_cache = {}
     data_all = []
 
-    logging.basicConfig(filename= 'biased_ligands.log',level=logging.INFO)
+    logging.basicConfig(filename= 'biased_ligands.log',level=logging.CRITICAL)
     logger = logging.getLogger(__name__)
     syslog = logging.StreamHandler()
     formatter = logging.Formatter('%(asctime)s : %(message)s')
     syslog.setFormatter(formatter)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.CRITICAL)
     logger.addHandler(syslog)
 
     def add_arguments(self, parser):
@@ -128,10 +128,10 @@ class Command(BaseBuild):
         temp = []
         print("start")
         for i,r in enumerate(rows,1):
-            if i<2700:
-                continue
-            if i>2800:
-                break
+            #if i<1341:
+            #    continue
+            #if i> 1359:
+            #    break
 
             d = {}
             if r[5]!='':
@@ -217,9 +217,9 @@ class Command(BaseBuild):
                     else:
                         mut = self.fetch_mutation(protein, res, d['receptor_mut_aa'], d['source_file'])
 
+
                 except Exception as msg:
-                    print(" Fetch Error at line " + d['source_file'], msg)
-                    #self.logger.info("Error happened during fetching at ___" + d['source_file'] + " and msg: ", msg )
+                    print(" Fetch Error at line" + d['source_file'], msg)
                     continue
 
                 #fetch reference ligand
@@ -297,7 +297,7 @@ class Command(BaseBuild):
 
                 except Exception as msg:
                     print("experiment_entry problem on row", d['source_file'])
-                    #self.logger.info("Error happened during saving at ___" + d['source_file'] + " and msg: ", msg )
+                    print(msg)
                     continue
 
             temp.append(d)
@@ -319,6 +319,7 @@ class Command(BaseBuild):
                                           amino_acid = amino_acid)
             mut = mut.get()
             print("Mutation search is ___________", mut)
+
 
         except Exception as msg:
             #print("error message from mutation: " + source, msg)
@@ -344,6 +345,7 @@ class Command(BaseBuild):
             res = res.get()
         except Exception as msg:
             print("error message from residue: ",msg)
+            self.logger.info("error message from residue: " + source, msg)
             res = None
         return res
 
@@ -358,6 +360,7 @@ class Command(BaseBuild):
         except Exception as msg:
             print("error message from receptor: ",msg, source)
             protein = None
+            #self.logger.info("error message from receptor: " + source, msg)
         return protein
 
     def fetch_ligand(self, ligand_id, ligand_type, ligand_name, source_file):
@@ -379,7 +382,9 @@ class Command(BaseBuild):
             except Exception as msg:
                 print('Something errored with ligand, aborting entry of mutation', ligand_name, ligand_type, ligand_id, source_file)
                 print(msg)
+                self.logger.info("error message from ligand: " + source, msg)
                 l = None
+
             self.ligand_cache[str(ligand_name),ligand_id] = l
 
         return l

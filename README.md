@@ -9,3 +9,5 @@ INSTALLATION
 ------------
 
 Please follow the [instructions in the documentation](http://docs.gpcrdb.org/local_installation.html#for-development).
+
+test

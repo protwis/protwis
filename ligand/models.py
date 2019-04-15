@@ -310,7 +310,7 @@ class ChemblAssay(models.Model):
 
 #Experiment Part - start
 class BiasedExperiment(models.Model):
-    submission_author = models.CharField(max_length=70)
+    submission_author = models.CharField(max_length=50)
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
@@ -318,10 +318,10 @@ class BiasedExperiment(models.Model):
                                     null = True)
     residue = models.ForeignKey('residue.Residue', on_delete = models.CASCADE,
                                     null = True)
-    bias_measure_type = models.CharField(max_length=70)
-    bias_pathway_relationship = models.CharField(max_length=70)
-    bias_quantitive_activity = models.CharField(max_length=70)
-    bias_qualitative_activity = models.CharField(max_length=70)
+    bias_measure_type = models.CharField(max_length=50)
+    bias_pathway_relationship = models.CharField(max_length=50)
+    bias_quantitive_activity = models.CharField(max_length=50)
+    bias_qualitative_activity = models.CharField(max_length=50)
     bias_ligand_reference = models.ForeignKey(Ligand, related_name = 'ExperimentAssay.bias_ligand_reference+',
                                         on_delete = models.CASCADE,
                                         null = True, blank = True)
@@ -336,16 +336,16 @@ class ExperimentAssay(models.Model):
                 ('ap', 'approximately')
                 )
 
-    signalling_protein = models.CharField(max_length=70) #TODO link to actual protein
-    cell_line  = models.CharField(max_length=70, null = True)
-    assay_type = models.CharField(max_length=70, null = True)
-    assay_measure = models.CharField(max_length=70, null = True)
+    signalling_protein = models.CharField(max_length=50) #TODO link to actual protein
+    cell_line  = models.CharField(max_length=50, null = True)
+    assay_type = models.CharField(max_length=50, null = True)
+    assay_measure = models.CharField(max_length=50, null = True)
     ligand_function = models.CharField(max_length=30, null = True)
     quantitive_measure_type = models.CharField(max_length=10, null = True)
     quantitive_activity = models.FloatField(max_length=10, null = True)
     quantitive_activity_sign = models.CharField(max_length=3, choices = equations, null = True)
     quantitive_unit = models.CharField(max_length=10, null = True)
-    qualitative_activity = models.CharField(max_length=70, null = True)
+    qualitative_activity = models.CharField(max_length=50, null = True)
 
     quantitive_efficacy = models.FloatField(max_length=10, null = True)
     efficacy_measure_type = models.CharField(max_length=30, null = True)
