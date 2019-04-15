@@ -264,11 +264,9 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                 })
 
             // alignment of GPCR structure
-            if ("tm1_angle" in pdb_data){
+            if ("translation" in pdb_data){
               var translation = JSON.parse(pdb_data["translation"])
               var center_axis = JSON.parse(pdb_data["center_axis"])
-              var tm1_angle = pdb_data["tm1_angle"]
-              console.log(tm1_angle)
 
               // calculate rotation and apply
               v1 = new NGL.Vector3(0,1,0)
