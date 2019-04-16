@@ -33,18 +33,18 @@
     <div class="col s12">
       <div id="main" class="card">
         <div class="card-content">
-          <span id="title" class="card-title">Article List</span>
 
           <div class='container'>
             <div class='filters'>
               <div class='filter-container'>
-                <input autocomplete='off' class='filter' name='Author' placeholder='Author' data-col='Author' />
+            <!-- change names -->
+                <input autocomplete='off' class='filter' name='Author' placeholder='Submission Author' data-col='Author' />
               </div>
               <div class='filter-container'>
-                <input autocomplete='off' class='filter' name='Ligand' placeholder='Ligand' data-col='Ligand' />
+                <input autocomplete='off' class='filter' name='Ligand' placeholder='Bias type' data-col='Ligand' />
               </div>
               <div class='filter-container'>
-                <input autocomplete='off' class='filter' name='DOI' placeholder='DOI' data-col='DOI' />
+                <input autocomplete='off' class='filter' name='DOI' placeholder='Bias Measure' data-col='DOI' />
               </div>
 
               <div class='clearfix'></div>
@@ -53,9 +53,9 @@
           <div class='container'>
             <table id="table1" class="table table-striped table-bordered">
               <thead>
-                <th>Author</th>
-                <th>Ligand</th>
-                <th>DOI</th>
+                <th>Submission Author</th>
+                <th>Bias type</th>
+                <th>Bias Measure</th>
               </thead>
               <tbody>
                 {% for experiment in experiments %}

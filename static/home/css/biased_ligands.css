@@ -63,11 +63,11 @@
     padding-right: 0; }
   .filter-container input {
     -webkit-appearance: none;
-    border: 2px solid #b31d14;
-    background: #c8c8c8;
+    border: 2px solid rgb(221, 221, 221);
+    background: #ffffff;
     border-radius: 3px;
     font-size: 18px;
-    width: 100%; }
+    width: 100%
     .filter-container input:focus {
       outline: none; }
 

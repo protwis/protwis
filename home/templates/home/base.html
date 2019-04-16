@@ -8,7 +8,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Test Case</title>
+    <title>{% site_title %}</title>
 
     <!-- Bootstrap -->
     <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -38,7 +38,6 @@
     <![endif]-->
   </head>
   <body>
-    <h1>test msg</h1>
     {% mainmenu %}
 
     <div class="container" id="content">
@@ -73,13 +72,10 @@
         });
     </script>
     <script>
-
 $('.videoLink').click(function(e) {
     e.preventDefault();
-
     $("#fp-modal").remove();
     $("body").append("<div id=\"fp-modal\"></div>");
-
     mp4 = $(this).attr('mp4');
     flowplayer("#fp-modal", {
     // ratio: 9/16,
@@ -94,13 +90,11 @@ $('.videoLink').click(function(e) {
     });
     $("#fp-modal").click();
 });
-
 $('.refLink').click(function(e){
     e.preventDefault();
     url = $(this).attr('url');
     window.open(url);
 });
-
 $('.refLink').tooltip();
 </script>
     <!-- Include custom ajax functions -->
