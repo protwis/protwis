@@ -130,8 +130,8 @@ class Command(BaseBuild):
         for i,r in enumerate(rows,1):
             #if i<1341:
             #    continue
-            #if i> 1359:
-            #    break
+            if i> 120:
+                break
 
             d = {}
             if r[5]!='':
