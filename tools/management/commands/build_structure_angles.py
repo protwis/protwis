@@ -348,55 +348,7 @@ class Command(BaseCommand):
                 c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
                 translation = np.array2string(-1*center_vector[0], separator=',')
 
-#                print(pca.transform([center_vector[0]])[0])
-                print(np.array2string(pca.inverse_transform([[0,0,0]])[0],separator=","))
-                print(np.array2string(pca.inverse_transform([[0,0,-1]])[0],separator=","))
-#                print(pca.transform([[0,0,-1]])[0])
-
-                # create vector to 1x46 (tm1) - for alignment
-                # UGLY find correct residue - to optimize
-                tm1_index = -1
-                for i,(res,num) in enumerate(db_helper[0]):
-                    if res.generic_number.label == "1x46":
-                        tm1_index = i
-                        break
-
-                if tm1_index < 0:
-                    break
-
-                # transform coordinates to pca
-                tm1_ref = pca.transform([hres_list[0][tm1_index]])[0]
-                tm1_ref[0] = 0
-#                print(np.array2string(tm1_ref,separator=","))
-                tm1_length = math.sqrt(math.pow(tm1_ref[0],2)+math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
-#                tm1_ref = tm1_ref/tm1_length
-#                print(np.array2string(pca.inverse_transform(tm1_ref),separator=","))
-
-#                tm1_coord1 = -1*tm1_ref[1]/math.sqrt(math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
-#                tm1_coord2 = -1*tm1_ref[2]/math.sqrt(math.pow(tm1_ref[1],2)+math.pow(tm1_ref[2],2))
-#                print(tm1_coord1)
-#                print(tm1_coord2)
-
-                # calculate rotation to point [0, 0, 1] (skipping X-axis as it's the center axis)
-#                angle = math.atan2(-1, 0) - math.atan2(tm1_coord1, tm1_coord2)
-                angle = math.atan2(0, -1) - math.atan2(tm1_ref[1], tm1_ref[2])
-#                if angle > math.pi:
-#                    angle = 2*math.pi - angle
-#                else:
-#                    angle = math.pi - angle
-
-                print("$$$$$$")
-                tm1_ref = tm1_ref/tm1_length
-                print(np.array2string(pca.inverse_transform(tm1_ref),separator=","))
-                print("$$$$$$")
-
-                print(math.atan2(0, -1) - math.atan2(tm1_ref[1], tm1_ref[2]))
-                print(angle)
-                print(translation)
-                print(c_vector)
-
-
-                sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector), tm1_angle = angle)
+                sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector))
                 sv.save()
 
                 ### freeSASA (only for TM bundle)

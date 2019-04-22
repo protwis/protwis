@@ -1358,7 +1358,6 @@ def ServePDB(request, pdbname):
     if sv.exists():
         sv = sv.get()
         data['translation'] = sv.translation
-        data['tm1_angle'] = sv.tm1_angle
         data['center_axis'] = sv.center_axis
 
     return JsonResponse(data)

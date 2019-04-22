@@ -113,7 +113,6 @@ class StructureVectors(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     translation = models.CharField(max_length=100, null=True)
     center_axis = models.CharField(max_length=100)
-    tm1_angle = models.FloatField(default=0, null=True)
 
     class Meta():
         db_table = 'structure_vectors'
