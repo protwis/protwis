@@ -1428,18 +1428,17 @@ const signprotmat = {
     },
     draw_seq_sig: function(data_in, svg, xScale) {
       let data = data_in.feat;
-      //let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale();
       let feats = [];
 
-      for (key of Object.keys(data)) {
+      for (let key of Object.keys(data)) {
         if (xScale(key) == null) {
           data = _.omit(data, key);
         }
       }
 
       let col_lengths = [];
-      for (elem of Object.keys(data)) {
+      for (let elem of Object.keys(data)) {
         col_lengths.push(data[elem].length);
       }
       const row_height = 30;
