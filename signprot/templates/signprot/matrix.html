@@ -368,6 +368,18 @@
             success: function(data){
                 $('.svg-content.seqsig').remove();
                 $('.svg-content.conseq').remove();
+
+                // sorting data correctly, first by frequency; then by length
+                let tmp_data = {}
+                for (let rec_gn in data.feat) {
+                  let position = _.orderBy(
+                      data.feat[rec_gn],
+                      ['freq', 'sort_score'],
+                      ['desc', 'asc']
+                  )
+                  tmp_data[rec_gn] = position
+                }
+                data.feat = tmp_data
                 console.log(data)
                 document.querySelector('#seqsig-container').style.display = "block";
                 document.querySelector('#conseq-container').style.display = "block";
