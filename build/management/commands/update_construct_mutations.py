@@ -714,7 +714,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
-                d = fetch_pdb_info(pdbname,protein)
+                d = fetch_pdb_info(pdbname,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             pdb_deletions = []
             for d in d['deletions']:
