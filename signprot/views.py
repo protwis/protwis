@@ -1219,8 +1219,6 @@ def IMSequenceSignature(request):
     # receive data
     pos_set_in = request.POST.getlist('pos[]')
     ignore_in_alignment = json.loads(request.POST.get('ignore'))
-    print(ignore_in_alignment)
-    ignore_in_alignment = None
     segments = []
     for s in request.POST.getlist('seg[]'):
         try:
@@ -1235,7 +1233,7 @@ def IMSequenceSignature(request):
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-    signature.setup_alignments(segments, pos_set, ignore_in_alignment)
+    signature.setup_alignments(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
     signature.calculate_signature_onesided()
 
 
