@@ -172,7 +172,7 @@ function renderTree(data) {
     vis.selectAll('g.inner.node')
         .append("circle")
         .attr("r", 5)
-        .style("fill", function(n){ if (isNaN(n.score)) return "#FFFFFF"; var score = n.score; if (score>1) score=1; if (score>0){ return shadeColor2("#AAAAAA", 100-(score*70-30))} else { return "#FFAAAA"} })
+        .style("fill", function(n){ if (isNaN(n.score)) return "#FFFFFF"; var score = n.score; if (score>1) score=1; if (score>0){ return shadeColor2("#AAAAAA", 100-(score*80-20))} else { return "#FFAAAA"} })
         .attr('data-length', function(n){ return Math.round(n.y*10) })
         .attr('data-score', function(n){ return n.score })
         .on("mouseover", function(d,i) {
