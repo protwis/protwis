@@ -855,7 +855,7 @@
             match_scroll_position();
             
             //Get rid of header padding between two tables - not working FIXME
-            $("#structures_frozen_div > #structures_frozen_wrapper > .dataTables_scroll > .dataTables_scrollHead > .dataTables_scrollHeadInner").css("padding-right","0px");
+            // $("#structures_frozen_div > #structures_frozen_wrapper > .dataTables_scroll > .dataTables_scrollHead > .dataTables_scrollHeadInner").css("padding-right","0px");
 
             //Match sorting
             $('.sorting').click(function(){
@@ -868,11 +868,17 @@
                 Sort($(this), oTable1, oTable2);
             });
 
+            $('yadcf-filter-reset-button').click(function(){
+                update_tables('structures_frozen', 'structures_scrollable', 2);
+            });
+
             //Match row highlight in other table
             match_row_highlight('structures_frozen', 'structures_scrollable');
 
             //Catch triggered filter and match other table
-            catch_filter('structures_frozen', 'structures_scrollable');
+            catch_filter('structures_frozen', 'structures_scrollable', oTable1, oTable2);
+            oTable1.draw();
+            oTable2.draw();
         });
 
     </script> 

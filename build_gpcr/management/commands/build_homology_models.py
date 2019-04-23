@@ -55,6 +55,8 @@ atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8,
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
 gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
 gprotein_segment_slugs = [i.slug for i in gprotein_segments]
+structures_with_num_issues = [i.split('.')[0] for i in os.listdir(os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup']))]
+
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -1567,12 +1569,12 @@ class HomologyModeling(object):
                     last_five = last_five[-5:]
             else:
                 last_five = []
-            if self.main_structure==N_struct:
+            if self.main_structure==N_struct and len(self.helix_end_mods['removed']['TM1'][0])==0:
                 try:
                     temp_coo = list(parse.fetch_residues_from_pdb(N_struct,last_five).values())
                 except:
                     temp_coo = None
-            elif len(last_five)==5:
+            elif len(last_five)==5 or len(self.helix_end_mods['removed']['TM1'][0])>0:
                 try:
                     temp_nums = last_five + [i for i in range(last_five[-1]+1,last_five[-1]+5)]
                     template = parse.fetch_residues_from_pdb(N_struct,temp_nums)
@@ -1592,7 +1594,7 @@ class HomologyModeling(object):
                     temp_coo = None
             else:
                 temp_coo = None
-
+            
             r_i, t_i, a_i, arr_i = OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict()
             N_r, N_t, N_a, N_arr = OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict()
             n_count = 0
@@ -3002,10 +3004,14 @@ class HelixEndsModeling(HomologyModeling):
         except:
             H8_alt = None
         print('separate_H8',separate_H8)
+        if separate_H8==False and H8_alt.pdb_code.index in structures_with_num_issues:
+            ssno = StructureSeqNumOverwrite(H8_alt)
+            ssno.seq_num_overwrite('pdb')
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
         print(raw_helix_ends)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure, H8_alt)
         print(anno_helix_ends)
+
 
         #### Exception for TM4 start of 5ZKP
         if main_structure.pdb_code.index in ['5ZKP']:
@@ -3310,6 +3316,9 @@ class HelixEndsModeling(HomologyModeling):
         self.helix_end_mods = modifications
         self.main_pdb_array = main_pdb_array
         self.alignment = a
+        if separate_H8==False and H8_alt.pdb_code.index in structures_with_num_issues:
+            ssno = StructureSeqNumOverwrite(H8_alt)
+            ssno.seq_num_overwrite('wt')
         if self.debug:
             print(self.helix_end_mods)
         return main_pdb_array, a
