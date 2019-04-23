@@ -1100,7 +1100,7 @@ def interface_dataset():
         ['A','R',107,'3.55x55','D','R',370,'G.H5.12', ["polar-sidechain-sidechain", "polar-backbone-sidechain", "van-der-waals"]],
         ],
     }
-    
+
     return dataset
 
 
@@ -1111,7 +1111,7 @@ def InteractionMatrix(request):
     import requests
 
     dataset = interface_dataset()
-    
+
     # generate complex info dataset
     filt = [e.upper() for e in list(dataset)]
     struc = Structure.objects.filter(pdb_code__index__in=filt).prefetch_related('protein_conformation__protein__parent')
@@ -1218,6 +1218,9 @@ def IMSequenceSignature(request):
 
     # receive data
     pos_set_in = request.POST.getlist('pos[]')
+    ignore_in_alignment = json.loads(request.POST.get('ignore'))
+    print(ignore_in_alignment)
+    ignore_in_alignment = None
     segments = []
     for s in request.POST.getlist('seg[]'):
         try:
@@ -1232,7 +1235,7 @@ def IMSequenceSignature(request):
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-    signature.setup_alignments(segments, pos_set)
+    signature.setup_alignments(segments, pos_set, ignore_in_alignment)
     signature.calculate_signature_onesided()
 
 
@@ -1314,7 +1317,7 @@ def IMSequenceSignature(request):
     for key in grouped_features:
         curr_group = grouped_features[key]
         grouped_features[key] = sorted(curr_group, key=lambda feature: feature['freq'],
-                reverse=True) 
+                reverse=True)
 
 
     # FEATURE CONSENSUS
@@ -1438,7 +1441,7 @@ def prepare_signature_match(signature_match):
                 # except ObjectDoesNotExist as e:
                     # print('For {} a {} '.format(s, e))
                     # continue
-                
+
                 sig.append({
                     'code':
                     str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('display_name_short',
@@ -1458,4 +1461,3 @@ def prepare_signature_match(signature_match):
             out[prot_entry]['cons'] = sig
 
     return out
-
