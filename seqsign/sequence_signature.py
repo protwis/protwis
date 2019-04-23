@@ -360,7 +360,7 @@ class SequenceSignature:
 
     def calculate_signature_onesided(self):
         """
-        Calculates the feature frequency difference between two protein sets.
+        Calculates the feature frequency for one protein set.
         Generates the full differential matrix as well as maximum difference for a position (for scatter plot).
         """
         for sid, segment in enumerate(self.aln_pos.segments):
