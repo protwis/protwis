@@ -293,8 +293,50 @@
             };
     };
 
+    const get_ignore = function(){
+        // get all residues for all valid receptor proteins
+        let data_non = non_interactions;
+
+        // filter the residues based on the valid generic numbers
+        data_non = _.filter(data_non, function(d) {
+            return xScale(d.rec_gn);
+        });
+
+        // filter the residues based on teh valid pdbs
+        data_non = _.filter(data_non, function(d) {
+            return pdbScale(d.pdb_id);
+        });
+
+        // reformat the data such that rec_gn are keys and
+        // values are an array of entry_names with an
+        // interaction at that position
+        const data_int = data.receptor.reduce( function (acc, current) {
+            acc[current.rec_gn] = [current.entry_name].concat(acc[current.rec_gn])
+            return acc;
+        }, {});
+
+        // reformat the non interacting data in the same way
+        // but also exclude all proteins that already
+        // have an interaction registered in the data_int object
+        const ignore_markers = data_non.reduce(function (acc, current) {
+            let protein_array = data_int[current.rec_gn]
+            if ( !protein_array.includes(current.entry_name) ) {
+                acc[current.rec_gn] = [current.entry_name].concat(acc[current.rec_gn])
+            }
+            return acc;
+        }, {});
+
+        // example return
+        // ignore_markers = {
+        //    '2.39x39': [ "oprm_mouse", "oprm_mouse" ],
+        //}
+
+        return ignore_markers;
+    }
+
     const run_seq_sig = function(){
         let segments = get_gn();
+        let ignore_markers = get_ignore();
         //let pos_set = ["5ht2c_human", "acm4_human", "drd1_human"];
         //let neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"];
         //console.log(segments);
@@ -317,6 +359,7 @@
                 csrfmiddlewaretoken: "{{ csrf_token }}",
                 pos: pos_set,
                 seg: segments.label,
+                ignore: JSON.stringify(ignore_markers),
             },
             beforeSend: function(){
                 old_sets = pos_set;
@@ -438,7 +481,7 @@
                 },
             ]
                 })
-            
+
            sigmatch_table.on('select', function (e, dt, type, indexes) {
                const entry = sigmatch_table.rows(indexes).data().toArray()[0];
                console.log(entry);
