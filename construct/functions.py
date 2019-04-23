@@ -96,13 +96,13 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     except:
         pass
     if not pdbdata_raw:
-    pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
-    pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
+        pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+        pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
         if not os.path.isfile(pdb_path):
-    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-    pdbdata_raw = urlopen(url).read().decode('utf-8')
-    with open(pdb_path, 'w') as f:
-        f.write(pdbdata_raw)
+            url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+            pdbdata_raw = urlopen(url).read().decode('utf-8')
+            with open(pdb_path, 'w') as f:
+                f.write(pdbdata_raw)
         else:
             with open(pdb_path, 'r') as pdb_file:
                 pdbdata_raw = pdb_file.read()
