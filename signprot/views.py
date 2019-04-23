@@ -1187,7 +1187,7 @@ def InteractionMatrix(request):
         'non_interactions': json.dumps(list(remaining_residues)),
         'interactions_metadata': json.dumps(interactions_metadata),
         # 'ps': json.dumps(list(proteins)),
-        'gprot': json.dumps(list(gprotein_order))
+        'gprot': json.dumps(list(gprotein_order)),
         }
 
     request.session['signature'] = None
@@ -1208,6 +1208,7 @@ def IMSequenceSignature(request):
     from residue.models import ResidueGenericNumberEquivalent
     from seqsign.sequence_signature import SignatureMatch
     from seqsign.sequence_signature import SequenceSignature
+    from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES
 
     from django.core.exceptions import ObjectDoesNotExist
 
@@ -1292,19 +1293,35 @@ def IMSequenceSignature(request):
                 # freq2: a - b explanation
                 try:
                     if int(freq[0]) > 0:
+                        dkey = int(x)
+                        dfeature = str(feats[i][0])
+                        dfeature_code = str(feats[i][1])
+                        dlength = str(feats[i][2])
+                        dgn = str(generic_numbers[j][k])
+                        dfreq = int(freq[0])
+                        dcons = int(freq[1])
+
+                        sort_code = dfeature_code + '_' + dlength
+                        if sort_code in AMINO_ACID_GROUPS:
+                            sort_score = len(AMINO_ACID_GROUPS[sort_code])
+                        else:
+                            sort_score = 99
+
                         signature_features.append({
-                            'key': int(x),
-                            'feature': str(feats[i][0]),
-                            'feature_code': str(feats[i][1]),
-                            'length': str(feats[i][2]),
-                            'gn': str(generic_numbers[j][k]),
-                            'freq': int(freq[0]),
-                            'cons': int(freq[1]),
+                            'key': dkey,
+                            'feature': dfeature,
+                            'feature_code': dfeature_code,
+                            'length': dlength,
+                            'gn': dgn,
+                            'freq': dfreq,
+                            'cons': dcons,
+                            'sort_score': sort_score,
                             # 'expl': str(freq[2]),
                         })
                     x += 1
                 except Exception as e:
                     print(e)
+                    continue
 
     grouped_features = {}
     for feature in signature_features:
