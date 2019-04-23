@@ -45,13 +45,14 @@ def get_angles(request):
             pdbs = list(pdbs)
             query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number")
             # Prep data
-            data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.hse, q.rsa, q.phi, q.psi, q.theta, q.tau ] for q in query]
+            data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.hse, q.rsa, q.phi, q.psi, q.theta, q.tau, q.outer_angle ] for q in query]
         else:
             print(pdbs)
             query = Angle.objects.filter(structure__pdb_code__index__in=pdbs).prefetch_related("residue__generic_number") \
                     .values("residue__generic_number__label") \
                     .annotate(min_aangle = Min('a_angle'), avg_aangle=Avg('a_angle'), max_aangle = Max('a_angle'), \
                         min_bangle = Min('b_angle'), avg_bangle=Avg('b_angle'), max_bangle = Max('b_angle'), \
+                        min_outer = Min('outer_angle'), avg_outer=Avg('outer_angle'), max_outer = Max('outer_angle'), \
                         min_hse = Min('hse'), avg_hse=Avg('hse'), max_hse = Max('hse'), \
                         #min_sasa = Min('sasa'), avg_sasa=Avg('sasa'), max_sasa = Max('sasa'), \
                         min_rsa = Min('rsa'), avg_rsa=Avg('rsa'), max_rsa = Max('rsa'), \
@@ -59,6 +60,7 @@ def get_angles(request):
                         min_psi = Min('psi'), avg_psi=Avg('psi'), max_psi = Max('psi'), \
                         min_theta = Min('theta'), avg_theta=Avg('theta'), max_theta = Max('theta'), \
                         min_tau = Min('tau'), avg_tau=Avg('tau'), max_tau = Max('tau'))
+
             # Prep data
             data['data'] = [[q["residue__generic_number__label"], " ", \
                             [q["min_aangle"], q["avg_aangle"], q["max_aangle"]], \
@@ -70,6 +72,7 @@ def get_angles(request):
                             [q["min_psi"], q["avg_psi"], q["max_psi"]], \
                             [q["min_theta"], q["avg_theta"], q["max_theta"]], \
                             [q["min_tau"], q["avg_tau"], q["max_tau"]], \
+                            [q["min_outer"], q["avg_outer"], q["max_outer"]], \
                             ] for q in query]
 
     except IndexError:

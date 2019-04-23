@@ -70,6 +70,30 @@ maxSASA = {
     "TYR": 255
 }
 
+# Most outer residue atom
+outerAtom = {
+    "ALA": 'CB', # endpoint
+    "CYS": 'SG', # endpoint
+    "ASP": 'CG', # middle point - rotation small effect
+    "GLU": 'CD', # middle point - rotation small effect
+    "PHE": 'CZ', # endpoint
+    "GLY": 'CA', # no sidechain
+    "HIS": 'CG', # no sidechain
+    "ILE": 'CD1', # outer endpoint
+    "LYS": 'NZ', # endpoint
+    "LEU": 'CG', # middle point - rotation small effect
+    "MET": 'CE', # endpoint
+    "ASN": 'CG', # middle point - flippable residue
+    "PRO": 'CG', # rigid
+    "GLN": 'CD', # middle point - flippable residue
+    "ARG": 'CZ', # middle point - rotation small effect
+    "SER": 'OG', # endpoint
+    "THR": 'OG1', # endpoint donor - capture H-bond change
+    "VAL": 'CB', # middle point - rotation small effect
+    "TRP": 'CZ3', # second ring - capture rotation
+    "TYR": 'OH' # endpoint
+}
+
 
 class Command(BaseCommand):
 
@@ -218,7 +242,7 @@ class Command(BaseCommand):
             print(pdb_code)
 
             try:
-            #if True:
+#            if True:
                 structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
                 state_id = reference.protein_conformation.state.id
@@ -247,7 +271,6 @@ class Command(BaseCommand):
                 db_tmlist = [[(' ',r[1],' ') for r in sl] for sl in db_helper]
                 db_set = set(db_tmlist[0]+db_tmlist[1]+db_tmlist[2]+db_tmlist[3]+db_tmlist[4]+db_tmlist[5]+db_tmlist[6])
 
-
                 #######################################################################
                 ##################### Angles/dihedrals residues #######################
 
@@ -272,7 +295,22 @@ class Command(BaseCommand):
                   for angle in angle_list:
                       if angle not in r.xtra:
                           r.xtra[angle] = None
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"]]
+
+                  # Add outer angle
+                  outer = None
+                  try:
+                      angle_atoms = [r[a].get_vector() for a in ['N','CA', outerAtom[r.resname]]]
+
+                      # use pseudo CB placement when glycine
+                      if r.resname == 'GLY':
+                          angle_atoms[2] = Bio.PDB.vectors.Vector(*cal_pseudo_CB(r))
+
+                      outer = Bio.PDB.calc_angle(*angle_atoms)
+                  except Exception as e:
+#                      print(pdb_code, " - ANGLE ERROR - ", e)
+                      outer = None
+
+                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], outer]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -398,11 +436,11 @@ class Command(BaseCommand):
                 #print(dihedrals) # HUSK: contains full protein!
                 for res, angle1, angle2 in zip(pchain, a_angle, b_angle):
                     residue_id = res.id[1]
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA"
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "OUTER", "ASA"
                     dblist.append([reference, gdict[residue_id], angle1, angle2, rsa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id] + [asa_list[residue_id]])
 
             except Exception as e:
-            #else:
+#            else:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
                 continue
@@ -426,7 +464,7 @@ class Command(BaseCommand):
 
         # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,asa in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,outer,asa in dblist:
             try:
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
@@ -436,7 +474,9 @@ class Command(BaseCommand):
                     theta = round(np.rad2deg(theta),3)
                 if tau != None:
                     tau = round(np.rad2deg(tau),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau))
+                if outer != None:
+                    outer = round(np.rad2deg(outer),3)
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, outer_angle=outer))
             except Exception as e:
                 print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau, asa])
 
