@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinSegment, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
-from residue.models import Residue, ResiduePositionSet
+from residue.models import Residue, ResiduePositionSet, ResidueGenericNumberEquivalent
 
 from structure.models import Structure
 from mutation.models import MutationExperiment
@@ -13,7 +13,10 @@ from common.selection import Selection
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from common.diagrams_arrestin import DrawArrestinPlot
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES
 
+from seqsign.sequence_signature import SignatureMatch
+from seqsign.sequence_signature import SequenceSignature
 from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions
 
 from common import definitions
@@ -22,6 +25,11 @@ from common.views import AbsTargetSelection
 
 import json
 import re
+import time
+from itertools import chain
+
+
+from django.core.exceptions import ObjectDoesNotExist
 from decimal import Decimal
 # Create your views here.
 class BrowseSelection(AbsTargetSelection):
