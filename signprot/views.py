@@ -1296,6 +1296,21 @@ def get_signature_features(signature_data, generic_numbers, feats):
     return signature_features
 
 
+def group_signature_features(signature_features):
+    grouped_features = {}
+    for feature in signature_features:
+        if feature['gn'] not in grouped_features:
+            grouped_features[feature['gn']] = []
+        grouped_features[feature['gn']].append(feature)
+
+    for key in grouped_features:
+        curr_group = grouped_features[key]
+        grouped_features[key] = sorted(curr_group, key=lambda feature: feature['freq'],
+                reverse=True)
+
+    return grouped_features
+
+
 def IMSequenceSignature(request):
     t1 = time.time()
 
@@ -1341,16 +1356,7 @@ def IMSequenceSignature(request):
     # FEATURE FREQUENCIES
     signature_features = get_signature_features(signature_data, generic_numbers, feats)
 
-    grouped_features = {}
-    for feature in signature_features:
-        if feature['gn'] not in grouped_features:
-            grouped_features[feature['gn']] = []
-        grouped_features[feature['gn']].append(feature)
-
-    for key in grouped_features:
-        curr_group = grouped_features[key]
-        grouped_features[key] = sorted(curr_group, key=lambda feature: feature['freq'],
-                reverse=True)
+    grouped_features = group_signature_features(signature_features)
 
 
     # FEATURE CONSENSUS
