@@ -582,11 +582,8 @@ def signprotdetail(request, slug):
 
     return render(request, 'signprot/signprot_details.html', context)
 
-def InteractionMatrix(request):
-    from django.db.models import F
-    from django.db.models import Q
-    import requests
 
+def interface_dataset():
     dataset = {
         '4x1h' : [
         ['A','N',73,'2.40x40','C','C',347,'G.H5.23', ["water-mediated"]],
@@ -1104,6 +1101,17 @@ def InteractionMatrix(request):
         ],
     }
 
+    return dataset
+
+
+def InteractionMatrix(request):
+    from django.db.models import F
+    from django.db.models import Q
+    from signprot.views import interface_dataset
+    import requests
+
+    dataset = interface_dataset()
+
     # generate complex info dataset
     filt = [e.upper() for e in list(dataset)]
     struc = Structure.objects.filter(pdb_code__index__in=filt).prefetch_related('protein_conformation__protein__parent')
@@ -1179,7 +1187,7 @@ def InteractionMatrix(request):
         'non_interactions': json.dumps(list(remaining_residues)),
         'interactions_metadata': json.dumps(interactions_metadata),
         # 'ps': json.dumps(list(proteins)),
-        'gprot': json.dumps(list(gprotein_order))
+        'gprot': json.dumps(list(gprotein_order)),
         }
 
     request.session['signature'] = None
@@ -1200,6 +1208,7 @@ def IMSequenceSignature(request):
     from residue.models import ResidueGenericNumberEquivalent
     from seqsign.sequence_signature import SignatureMatch
     from seqsign.sequence_signature import SequenceSignature
+    from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES
 
     from django.core.exceptions import ObjectDoesNotExist
 
@@ -1210,10 +1219,14 @@ def IMSequenceSignature(request):
 
     # receive data
     pos_set_in = request.POST.getlist('pos[]')
+    ignore_in_alignment = json.loads(request.POST.get('ignore'))
     segments = []
     for s in request.POST.getlist('seg[]'):
         try:
-            gen_object = ResidueGenericNumberEquivalent.objects.filter(label=s, scheme__slug__in=['gpcrdba', 'gpcrdbb', 'gpcrdbc', 'gpcrdbf']).first()
+            gen_object = ResidueGenericNumberEquivalent.objects.filter(
+                    label=s,
+                    scheme__slug__in=['gpcrdba']
+                    ).get()
             segments.append(gen_object)
         except ObjectDoesNotExist as e:
             print('For {} a {} '.format(s, e))
@@ -1224,7 +1237,7 @@ def IMSequenceSignature(request):
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-    signature.setup_alignments(segments, pos_set)
+    signature.setup_alignments(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
     signature.calculate_signature_onesided()
 
 
@@ -1283,19 +1296,35 @@ def IMSequenceSignature(request):
                 # freq2: a - b explanation
                 try:
                     if int(freq[0]) > 0:
+                        dkey = int(x)
+                        dfeature = str(feats[i][0])
+                        dfeature_code = str(feats[i][1])
+                        dlength = str(feats[i][2])
+                        dgn = str(generic_numbers[j][k])
+                        dfreq = int(freq[0])
+                        dcons = int(freq[1])
+
+                        sort_code = dfeature_code + '_' + dlength
+                        if sort_code in AMINO_ACID_GROUPS:
+                            sort_score = len(AMINO_ACID_GROUPS[sort_code])
+                        else:
+                            sort_score = 99
+
                         signature_features.append({
-                            'key': int(x),
-                            'feature': str(feats[i][0]),
-                            'feature_code': str(feats[i][1]),
-                            'length': str(feats[i][2]),
-                            'gn': str(generic_numbers[j][k]),
-                            'freq': int(freq[0]),
-                            'cons': int(freq[1]),
+                            'key': dkey,
+                            'feature': dfeature,
+                            'feature_code': dfeature_code,
+                            'length': dlength,
+                            'gn': dgn,
+                            'freq': dfreq,
+                            'cons': dcons,
+                            'sort_score': sort_score,
                             # 'expl': str(freq[2]),
                         })
                     x += 1
                 except Exception as e:
                     print(e)
+                    continue
 
     grouped_features = {}
     for feature in signature_features:
@@ -1306,7 +1335,7 @@ def IMSequenceSignature(request):
     for key in grouped_features:
         curr_group = grouped_features[key]
         grouped_features[key] = sorted(curr_group, key=lambda feature: feature['freq'],
-                reverse=True) 
+                reverse=True)
 
 
     # FEATURE CONSENSUS
@@ -1430,7 +1459,7 @@ def prepare_signature_match(signature_match):
                 # except ObjectDoesNotExist as e:
                     # print('For {} a {} '.format(s, e))
                     # continue
-                
+
                 sig.append({
                     'code':
                     str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('display_name_short',
@@ -1450,4 +1479,3 @@ def prepare_signature_match(signature_match):
             out[prot_entry]['cons'] = sig
 
     return out
-
