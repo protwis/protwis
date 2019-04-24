@@ -1310,6 +1310,35 @@ def group_signature_features(signature_features):
 
     return grouped_features
 
+def get_signature_consensus(signature_data, generic_numbers):
+    sigcons = []
+    x = 0
+    for segment, cons in signature_data['feats_cons_pos'].items():
+        for pos in cons:
+            # pos0: Code
+            # pos1: Name
+            # pos2: Score
+            # pos3: level of conservation
+
+            # res0: Property Abbreviation
+            # res1: Feature Score
+            # res2: Conservation Level
+            try:
+                sigcons.append({
+                    'key': int(x),
+                    'gn': str(generic_numbers[x]),
+                    'code': str(pos[0]),
+                    'feature': str(pos[1]),
+                    'score': int(pos[2]),
+                    'cons': int(pos[3]),
+                    'length': str(pos[4]),
+                })
+                x += 1
+            except Exception as e:
+                    print(e)
+
+    return sigcons
+
 
 def IMSequenceSignature(request):
     t1 = time.time()
@@ -1355,37 +1384,12 @@ def IMSequenceSignature(request):
 
     # FEATURE FREQUENCIES
     signature_features = get_signature_features(signature_data, generic_numbers, feats)
-
     grouped_features = group_signature_features(signature_features)
 
 
     # FEATURE CONSENSUS
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
-    sigcons = []
-    x = 0
-    for segment, cons in signature_data['feats_cons_pos'].items():
-        for pos in cons:
-            # pos0: Code
-            # pos1: Name
-            # pos2: Score
-            # pos3: level of conservation
-
-            # res0: Property Abbreviation
-            # res1: Feature Score
-            # res2: Conservation Level
-            try:
-                sigcons.append({
-                    'key': int(x),
-                    'gn': str(generic_numbers_flat[x]),
-                    'code': str(pos[0]),
-                    'feature': str(pos[1]),
-                    'score': int(pos[2]),
-                    'cons': int(pos[3]),
-                    'length': str(pos[4]),
-                })
-                x += 1
-            except Exception as e:
-                    print(e)
+    sigcons = get_signature_consensus(signature_data, generic_numbers_flat)
 
     # pass back to front
     res = {
