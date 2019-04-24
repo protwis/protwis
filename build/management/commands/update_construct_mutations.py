@@ -93,10 +93,10 @@ class Command(BaseCommand):
 
     def rebuild_constructs(self):
         self.purge_construct_data()
-
         structures = Structure.objects.all().exclude(refined=True)
         for s in structures:
             pdbname = str(s)
+            cache.delete(pdbname+"_auto_d")
             self.all_pdbs.append(pdbname)
             protein_conformation = s.protein_conformation
 
@@ -465,7 +465,7 @@ class Command(BaseCommand):
             # d = cache.get(pdbname+"_deletions")
             # # d = None
             # if not d:
-            #     d = fetch_pdb_info(pdbname,protein)
+            #     d = fetch_pdb_info(pdbname,protein,ignore_gasper_annotation=True)
             #     cache.set(pdbname+"_deletions",d,60*60*24)
             # #print(d['auxiliary'])
             # found = False
@@ -714,7 +714,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
-                d = fetch_pdb_info(pdbname,protein,ignore_gasper_annotation=True)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             pdb_deletions = []
             for d in d['deletions']:
@@ -771,7 +771,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d and 'deletions' in d:
-                d = fetch_pdb_info(pdbname,protein)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             if 'deletions' in d:
                 for d in d['deletions']:
@@ -830,7 +830,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
-                d = fetch_pdb_info(pdbname,protein)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             # print('pdb',d['mutations'])
             cons_muts = ConstructMutation.objects.filter(construct = c)
@@ -976,7 +976,7 @@ class Command(BaseCommand):
                 else:
                     d = cache.get(c_pdb+"_auto_d")
                     if not d:
-                        d = fetch_pdb_info(c_pdb,protein)
+                        d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                         cache.set(c_pdb+"_auto_d",d,60*60*24)
                     cached_mutations[c_pdb] = d
                 # Find construct mutation
@@ -1052,7 +1052,7 @@ class Command(BaseCommand):
             d = cache.get(c_pdb+"_auto_d")
             if not d:
                 protein = Protein.objects.filter(entry_name=c_pdb.lower()).get()
-                d = fetch_pdb_info(c_pdb,protein)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(c_pdb+"_auto_d",d,60*60*24)
             if len(d['mutations']):
                 missing2.append(c_pdb)

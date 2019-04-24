@@ -2182,7 +2182,7 @@ def fetch_pdb(request, slug):
     except:
         protein = False
     
-    d = fetch_pdb_info(slug,protein)
+    d = fetch_pdb_info(slug,protein, ignore_gasper_annotation=True)
 
 
     #delete before adding new
