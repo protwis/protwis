@@ -1203,33 +1203,24 @@ def InteractionMatrix(request):
 
     return render(request, 'signprot/matrix.html', context)
 
-def IMSequenceSignature(request):
 
-    import time
-    t1 = time.time()
+def get_entry_names(request):
+    '''Extract a list of entry names from the post request'''
+    return request.POST.getlist('pos[]')
 
-    import re
-    from itertools import chain
 
-    from protein.models import Protein
-    from protein.models import ProteinSegment
-    from residue.models import ResidueGenericNumberEquivalent
-    from seqsign.sequence_signature import SignatureMatch
-    from seqsign.sequence_signature import SequenceSignature
-    from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES
+def get_ignore_info(request):
+    '''Extract a dict of residues to ignore from the post request'''
+    ignore_dict = request.POST.get('ignore')
+    return json.loads(ignore_dict)
 
-    from django.core.exceptions import ObjectDoesNotExist
 
-    # example data
-    # pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
-    # neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
-    # segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
-
-    # receive data
-    pos_set_in = request.POST.getlist('pos[]')
-    ignore_in_alignment = json.loads(request.POST.get('ignore'))
+def get_protein_segments(request):
+    '''From a list of given generic numbers (3x50), query appropriate generic residue
+    number objects'''
     segments = []
-    for s in request.POST.getlist('seg[]'):
+    segment_raw = request.POST.getlist('seg[]')
+    for s in segment_raw:
         try:
             gen_object = ResidueGenericNumberEquivalent.objects.filter(
                     label=s,
@@ -1239,6 +1230,15 @@ def IMSequenceSignature(request):
         except ObjectDoesNotExist as e:
             print('For {} a {} '.format(s, e))
             continue
+    return segments
+
+
+def IMSequenceSignature(request):
+    t1 = time.time()
+
+    pos_set_in = get_entry_names(request)
+    ignore_in_alignment = get_ignore_info(request)
+    segments = get_protein_segments(request)
 
     # get pos objects
     pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')
@@ -1247,8 +1247,6 @@ def IMSequenceSignature(request):
     signature = SequenceSignature()
     signature.setup_alignments(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
     signature.calculate_signature_onesided()
-
-
     # preprocess data for return
     signature_data = signature.prepare_display_data_onesided()
 
@@ -1389,7 +1387,6 @@ def IMSequenceSignature(request):
     return JsonResponse(res, safe=False)
 
 def IMSignatureMatch(request):
-    from seqsign.sequence_signature import SignatureMatch
 
     signature_data = request.session.get('signature')
     ss_pos = request.POST.getlist('pos[]')
@@ -1427,10 +1424,6 @@ def IMSignatureMatch(request):
     return JsonResponse(signature_match, safe=False)
 
 def prepare_signature_match(signature_match):
-    from common.definitions import AMINO_ACID_GROUP_PROPERTIES
-    from common.definitions import AMINO_ACID_GROUP_NAMES
-    from django.core.exceptions import ObjectDoesNotExist
-    from residue.models import ResidueGenericNumberEquivalent
 
     out = {}
     for elem in signature_match['scores'].items():
