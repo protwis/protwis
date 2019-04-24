@@ -1223,7 +1223,10 @@ def IMSequenceSignature(request):
     segments = []
     for s in request.POST.getlist('seg[]'):
         try:
-            gen_object = ResidueGenericNumberEquivalent.objects.filter(label=s, scheme__slug__in=['gpcrdba', 'gpcrdbb', 'gpcrdbc', 'gpcrdbf']).first()
+            gen_object = ResidueGenericNumberEquivalent.objects.filter(
+                    label=s,
+                    scheme__slug__in=['gpcrdba']
+                    ).get()
             segments.append(gen_object)
         except ObjectDoesNotExist as e:
             print('For {} a {} '.format(s, e))
