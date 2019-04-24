@@ -1206,6 +1206,7 @@ def InteractionMatrix(request):
 
 
 def IMSequenceSignature(request):
+    '''Accept set of proteins + generic numbers and calculate the signature for those'''
     t1 = time.time()
 
     pos_set_in = get_entry_names(request)
@@ -1269,8 +1270,9 @@ def IMSequenceSignature(request):
 
     return JsonResponse(res, safe=False)
 
-def IMSignatureMatch(request):
 
+def IMSignatureMatch(request):
+    '''Take the signature stored in the session and query the db'''
     signature_data = request.session.get('signature')
     ss_pos = request.POST.getlist('pos[]')
     cutoff = request.POST.get('cutoff')
@@ -1306,60 +1308,3 @@ def IMSignatureMatch(request):
     signature_match = prepare_signature_match(signature_match)
     return JsonResponse(signature_match, safe=False)
 
-def prepare_signature_match(signature_match):
-
-    out = {}
-    for elem in signature_match['scores'].items():
-        entry = elem[0].protein.entry_name
-        out[entry] = {
-                'entry': elem[0].protein.entry_name,
-                'prot': elem[0].protein.name,
-                'score': elem[1][0],
-                'nscore': elem[1][1]
-            }
-
-    # for elem in signature_match['signature_filtered'].items():
-        # print(elem)
-
-    for elem in signature_match['protein_signatures'].items():
-        prot_entry = elem[0].protein.entry_name
-        prot_scheme_id = elem[0].protein.residue_numbering_scheme.id
-        sig = []
-        for signature in elem[1].values():
-            for sig_elem in signature:
-                # 0: feat code
-                # 1: feature
-                # 2: cons
-                # 3: color
-                # 4: aa
-                # 5: gn
-                # try:
-                    # generic_number = ResidueGenericNumberEquivalent.objects.filter(
-                            # label=str(sig_elem[5]),
-                            # scheme_id=prot_scheme_id
-                            # )
-                    # gn = generic_number.values_list('default_generic_number__label',
-                            # flat=True)[0].split('x')
-                # except ObjectDoesNotExist as e:
-                    # print('For {} a {} '.format(s, e))
-                    # continue
-
-                sig.append({
-                    'code':
-                    str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('display_name_short',
-                        None)),
-                    'length':
-                    str(AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get('length',
-                        None)),
-                    'gn': str(sig_elem[5]),
-                    # 'gn': str('{}.{}x{}'.format(gn[0], gn[1], gn[1])),
-                    'aa': str(sig_elem[4]),
-                    'score': str(sig_elem[2]),
-                    'feature': str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0],
-                        None))
-                    })
-
-        if prot_entry in out:
-            out[prot_entry]['cons'] = sig
-
-    return out
