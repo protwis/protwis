@@ -2,9 +2,7 @@ from django.db.models import Count, Avg, Min, Max
 from collections import defaultdict
 from django.shortcuts import render
 from django.http import HttpResponse
-#from braces.views import SelectRelatedMixin
-from django.views.generic import TemplateView, View, ListView
-
+from django.views.generic import TemplateView, View, ListView, DetailView
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
@@ -397,7 +395,17 @@ class LigandStatistics(TemplateView):
 
         return context
 
-class ExperimentView(ListView):
+
+class ExperimentEntryView(DetailView):
+    context_object_name = 'experiment'
     model = BiasedExperiment
-    context_object_name = 'experiments'
-    template_name = 'biased_experiment.html'
+    template_name = 'biased_experiment_data.html'
+
+def output_bias(request):
+    couplings = BiasedExperiment.objects.prefetch_related('ligand','publication',
+                                                          'receptor','mutation__protein', 'residue'
+        )
+    context = {
+    'data' : couplings
+    }
+    return render(request, 'biased_experiment.html', context)

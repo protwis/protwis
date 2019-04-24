@@ -1,0 +1,132 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/biased_ligands.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div class="container body-content">
+
+  <h2 class="sub-header">Experiment Data</h2>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered">
+      <tr>
+        <td>Ligand</td>
+        <td>{{experiment.ligand.name}}</td>
+      </tr>
+      <tr>
+        <td>Receptor</td>
+        <td>{{experiment.receptor.entry_name}}</td>
+      </tr>
+      <tr>
+        <td>Mutation</td>
+        <td>{{experiment.mutation.amino_acid}}</td>
+      </tr>
+      <tr>
+        <td>Residue</td>
+        <td>{{experiment.residue.amino_acid}}</td>
+      </tr>
+      <tr>
+        <td>Bias Measure Type</td>
+        <td>{{experiment.bias_measure_type}}</td>
+      </tr>
+      <tr>
+        <td>Bias Pathway</td>
+        <td>{{experiment.bias_pathway_relationship}}</td>
+      </tr>
+      <tr>
+        <td>Quantitative Activity</td>
+        <td>{{experiment.bias_quantitive_activity}}</td>
+      </tr>
+      <tr>
+        <td>Qualitative Activity</td>
+        <td>{{experiment.bias_qualitative_activity}}</td>
+      </tr>
+      <tr>
+        <td>Article DOI</td>
+        <td>{{experiment.publication.reference}}</td>
+      </tr>
+    </table>
+  </div>
+
+
+  {%for data in experiment.experiment_data.all%}
+  <div class="col-xs-6">
+    <h2 class="sub-header">Experiment Assay</h2>
+    <h3 class="sub-header">Pathway {{ forloop.counter }}: {{data.signalling_protein}} </h3>
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <tr>
+          <td>Signalling Protein</td>
+          <td>{{data.signalling_protein}}</td>
+        </tr>
+        <tr>
+          <td>Cell Line</td>
+          <td>{{data.cell_line}}</td>
+        </tr>
+        <tr>
+          <td>Assay Type</td>
+          <td>{{data.assay_type}}</td>
+        </tr>
+        <tr>
+          <td>Assay Measure</td>
+          <td>{{data.assay_measure}}</td>
+        </tr>
+        <tr>
+          <td>Ligand Function</td>
+          <td>{{data.ligand_function}}</td>
+        </tr>
+        <tr>
+          <td>Quantitive Measure Type</td>
+          <td>{{data.quantitive_measure_type}}</td>
+        </tr>
+        <tr>
+          <td>Quantitive Activity sign</td>
+          <td>{{data.quantitive_activity_sign}}</td>
+        </tr>
+        <tr>
+          <td>Quantitive Activity</td>
+          <td>{{data.quantitive_activity}}</td>
+        </tr>
+        <tr>
+          <td>Quantitive Unit</td>
+          <td>{{data.quantitive_unit}}</td>
+        </tr>
+
+        <tr>
+          <td>Qualitative Activity</td>
+          <td>{{data.qualitative_activity}}</td>
+        </tr>
+        <tr>
+          <td>Quantitive Efficacy</td>
+          <td>{{data.quantitive_efficacy}}</td>
+        </tr>
+        <tr>
+          <td>Efficacy Sign</td>
+          <td>{{data.efficacy_sign}}</td>
+        </tr>
+        <tr>
+          <td>Efficacy Measure Type</td>
+          <td>{{data.efficacy_measure_type}}</td>
+        </tr>
+
+        <tr>
+          <td>Efficacy Unit</td>
+          <td>{{data.efficacy_unit}}</td>
+        </tr>
+        <tr>
+          <td>Ligand Reference</td>
+          <td>{{data.ligand_reference}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  {%endfor%}
+
+</div>
+
+
+
+
+{% endblock %}

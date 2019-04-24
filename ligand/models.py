@@ -327,7 +327,8 @@ class BiasedExperiment(models.Model):
                                         null = True, blank = True)
 class ExperimentAssay(models.Model):
     biased_experiment = models.ForeignKey(
-                        BiasedExperiment, on_delete = models.CASCADE
+                        BiasedExperiment, related_name='experiment_data',
+                        on_delete = models.CASCADE
                         )
     equations = (
                 ('gt', 'greater_than'),
