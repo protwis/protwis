@@ -214,7 +214,7 @@ class Command(BaseCommand):
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        #references = Structure.objects.filter(pdb_code__index="3SN6").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+#        references = Structure.objects.filter(pdb_code__index="6AK3").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         references = list(references)
 
@@ -417,7 +417,8 @@ class Command(BaseCommand):
                         rsa_list[i] = 100
 
                 ### Half-sphere exposure (HSE)
-                hse = pdb.HSExposure.HSExposureCB(structure[0])
+                hse = pdb.HSExposure.HSExposureCB(structure[0][preferred_chain])
+
                 # x[1] contains HSE - 0 outer half, 1 - inner half, 2 - ?
                 hselist = dict([ (x[0].id[1], x[1][0]) if x[1][0] > 0 else (x[0].id[1], 0) for x in hse ])
 
@@ -434,10 +435,28 @@ class Command(BaseCommand):
                 #print(asa_list) # only TM
                 #print(hselist) # only TM
                 #print(dihedrals) # HUSK: contains full protein!
+
+                # Correct for missing values
+                for res in pchain:
+                    residue_id = res.id[1]
+                    if not residue_id in rsa_list:
+                        rsa_list[residue_id] = None
+                    if not residue_id in hselist:
+                        hselist[residue_id] = None
+                    if not residue_id in dihedrals:
+                        dihedrals[residue_id] = None
+                    if not residue_id in asa_list:
+                        asa_list[residue_id] = None
+
+
                 for res, angle1, angle2 in zip(pchain, a_angle, b_angle):
                     residue_id = res.id[1]
                     # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "OUTER", "ASA"
-                    dblist.append([reference, gdict[residue_id], angle1, angle2, rsa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id] + [asa_list[residue_id]])
+                    dblist.append([reference, gdict[residue_id], angle1, angle2, \
+                        rsa_list[residue_id], \
+                        hselist[residue_id]] + \
+                        dihedrals[residue_id] + \
+                        [asa_list[residue_id]])
 
             except Exception as e:
 #            else:
