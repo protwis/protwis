@@ -162,7 +162,7 @@ class QueryPDB():
                                                                       parent=protein, residue_numbering_scheme=protein.residue_numbering_scheme,
                                                                       sequence_type=ProteinSequenceType.objects.get(slug='mod'), source=ProteinSource.objects.get(name='OTHER'),
                                                                       species=protein.species)
-                    new_prot_conf, created = ProteinConformation.objects.get_or_create(protein=new_prot, state=state, template_structure=None)
+                    new_prot_conf, created = ProteinConformation.objects.get_or_create(protein=new_prot, state=state)
                     for line in lines:
                         if line.startswith('REVDAT   1'):
                             publication_date = line[13:22]
