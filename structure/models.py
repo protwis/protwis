@@ -59,7 +59,7 @@ class Structure(models.Model):
                 tmp.append(line)
 
         return '\n'.join(tmp)
-    
+
     def get_ligand_pdb(self, ligand):
 
         tmp = []
@@ -108,6 +108,14 @@ class StructureComplexProtein(models.Model):
 
     class Meta():
         db_table = 'structure_complex_protein'
+
+class StructureVectors(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    translation = models.CharField(max_length=100, null=True)
+    center_axis = models.CharField(max_length=100)
+
+    class Meta():
+        db_table = 'structure_vectors'
 
 
 class StructureModel(models.Model):

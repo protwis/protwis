@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 import contactnetwork.pdb as pdb
-from structure.models import Structure
+from structure.models import Structure, StructureVectors
 from residue.models import Residue
 from angles.models import ResidueAngle as Angle
 
@@ -10,6 +10,7 @@ import copy
 import freesasa
 import io
 import logging
+import math
 
 import numpy as np
 import scipy.stats as stats
@@ -67,6 +68,30 @@ maxSASA = {
     "VAL": 165,
     "TRP": 264,
     "TYR": 255
+}
+
+# Most outer residue atom
+outerAtom = {
+    "ALA": 'CB', # endpoint
+    "CYS": 'SG', # endpoint
+    "ASP": 'CG', # middle point - rotation small effect
+    "GLU": 'CD', # middle point - rotation small effect
+    "PHE": 'CZ', # endpoint
+    "GLY": 'CA', # no sidechain
+    "HIS": 'CG', # no sidechain
+    "ILE": 'CD1', # outer endpoint
+    "LYS": 'NZ', # endpoint
+    "LEU": 'CG', # middle point - rotation small effect
+    "MET": 'CE', # endpoint
+    "ASN": 'CG', # middle point - flippable residue
+    "PRO": 'CG', # rigid
+    "GLN": 'CD', # middle point - flippable residue
+    "ARG": 'CZ', # middle point - rotation small effect
+    "SER": 'OG', # endpoint
+    "THR": 'OG1', # endpoint donor - capture H-bond change
+    "VAL": 'CB', # middle point - rotation small effect
+    "TRP": 'CZ3', # second ring - capture rotation
+    "TYR": 'OH' # endpoint
 }
 
 
@@ -189,7 +214,7 @@ class Command(BaseCommand):
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        # references = Structure.objects.filter(pdb_code__index="3SN6").filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+#        references = Structure.objects.filter(pdb_code__index="6AK3").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         references = list(references)
 
@@ -200,6 +225,9 @@ class Command(BaseCommand):
         qset = list(qset.prefetch_related('generic_number', 'protein_conformation__protein','protein_conformation__state'))
 
         res_dict = {ref.pdb_code.index:qgen(ref.protein_conformation.protein,qset) for ref in references}
+
+        # clean structure vectors table
+        StructureVectors.objects.all().delete()
 
         #######################################################################
         ######################### Start of main loop ##########################
@@ -214,7 +242,7 @@ class Command(BaseCommand):
             print(pdb_code)
 
             try:
-            #if True:
+#            if True:
                 structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
                 state_id = reference.protein_conformation.state.id
@@ -243,7 +271,6 @@ class Command(BaseCommand):
                 db_tmlist = [[(' ',r[1],' ') for r in sl] for sl in db_helper]
                 db_set = set(db_tmlist[0]+db_tmlist[1]+db_tmlist[2]+db_tmlist[3]+db_tmlist[4]+db_tmlist[5]+db_tmlist[6])
 
-
                 #######################################################################
                 ##################### Angles/dihedrals residues #######################
 
@@ -258,8 +285,6 @@ class Command(BaseCommand):
                 # Definition http://www.ccp14.ac.uk/ccp/web-mirrors/garlic/garlic/commands/dihedrals.html
                 # http://biopython.org/DIST/docs/api/Bio.PDB.Polypeptide-pysrc.html#Polypeptide.get_phi_psi_list
 
-
-
                 ### clean the structure to solely the 7TM bundle
                 recurse(structure, [[0], preferred_chain, db_set])
                 poly.get_theta_list() # angle three consecutive Ca atoms
@@ -270,7 +295,22 @@ class Command(BaseCommand):
                   for angle in angle_list:
                       if angle not in r.xtra:
                           r.xtra[angle] = None
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"]]
+
+                  # Add outer angle
+                  outer = None
+                  try:
+                      angle_atoms = [r[a].get_vector() for a in ['N','CA', outerAtom[r.resname]]]
+
+                      # use pseudo CB placement when glycine
+                      if r.resname == 'GLY':
+                          angle_atoms[2] = Bio.PDB.vectors.Vector(*cal_pseudo_CB(r))
+
+                      outer = Bio.PDB.calc_angle(*angle_atoms)
+                  except Exception as e:
+#                      print(pdb_code, " - ANGLE ERROR - ", e)
+                      outer = None
+
+                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], outer]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -280,11 +320,11 @@ class Command(BaseCommand):
                 ### AXES through each of the TMs and the TM bundle (center axis)
                 hres_list = [np.asarray([pchain[r]["CA"].get_coord() for r in sl], dtype=float) for sl in db_tmlist]
                 h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else cal_pseudo_CB(pchain[r]) for r in sl], dtype=float) for sl in db_tmlist]
-                #print(hres_list)
+
                 # fast and fancy way to take the average of N consecutive elements
                 N = 3
                 hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list])
-                #print(hres_three)
+
                 ### PCA - determine axis through center + each transmembrane helix
                 helix_pcas = [PCA() for i in range(7)]
                 helix_pca_vectors = [pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)]
@@ -332,7 +372,7 @@ class Command(BaseCommand):
                 # DEBUG print arrow for PyMol
                 #a = [str(i) for i in center_vector[0]]
                 #b = [str(i) for i in center_vector[1]]
-                #print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
+                # print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
 
                 ### ANGLES
                 # Center axis to helix axis to CA
@@ -341,6 +381,13 @@ class Command(BaseCommand):
                 # Center axis to CA to CB
                 b_angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)]).round(3)
 
+                # STORE STRUCTURE REFERENCES
+                # center axis
+                c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
+                translation = np.array2string(-1*center_vector[0], separator=',')
+
+                sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector))
+                sv.save()
 
                 ### freeSASA (only for TM bundle)
                 # SASA calculations - results per atom
@@ -370,7 +417,8 @@ class Command(BaseCommand):
                         rsa_list[i] = 100
 
                 ### Half-sphere exposure (HSE)
-                hse = pdb.HSExposure.HSExposureCB(structure[0])
+                hse = pdb.HSExposure.HSExposureCB(structure[0][preferred_chain])
+
                 # x[1] contains HSE - 0 outer half, 1 - inner half, 2 - ?
                 hselist = dict([ (x[0].id[1], x[1][0]) if x[1][0] > 0 else (x[0].id[1], 0) for x in hse ])
 
@@ -387,10 +435,28 @@ class Command(BaseCommand):
                 #print(asa_list) # only TM
                 #print(hselist) # only TM
                 #print(dihedrals) # HUSK: contains full protein!
+
+                # Correct for missing values
+                for res in pchain:
+                    residue_id = res.id[1]
+                    if not residue_id in rsa_list:
+                        rsa_list[residue_id] = None
+                    if not residue_id in hselist:
+                        hselist[residue_id] = None
+                    if not residue_id in dihedrals:
+                        dihedrals[residue_id] = None
+                    if not residue_id in asa_list:
+                        asa_list[residue_id] = None
+
+
                 for res, angle1, angle2 in zip(pchain, a_angle, b_angle):
                     residue_id = res.id[1]
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA"
-                    dblist.append([reference, gdict[residue_id], angle1, angle2, rsa_list[residue_id], hselist[residue_id]] + dihedrals[residue_id] + [asa_list[residue_id]])
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "OUTER", "ASA"
+                    dblist.append([reference, gdict[residue_id], angle1, angle2, \
+                        rsa_list[residue_id], \
+                        hselist[residue_id]] + \
+                        dihedrals[residue_id] + \
+                        [asa_list[residue_id]])
 
             except Exception as e:
 #            else:
@@ -417,7 +483,7 @@ class Command(BaseCommand):
 
         # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,asa in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,outer,asa in dblist:
             try:
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
@@ -427,7 +493,9 @@ class Command(BaseCommand):
                     theta = round(np.rad2deg(theta),3)
                 if tau != None:
                     tau = round(np.rad2deg(tau),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau))
+                if outer != None:
+                    outer = round(np.rad2deg(outer),3)
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, outer_angle=outer))
             except Exception as e:
                 print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau, asa])
 

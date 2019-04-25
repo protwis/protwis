@@ -21,7 +21,8 @@ function initializeGoButton(selector, generic=false) {
     $(selector + ' .go-button').click(function() {
         var pdb = JSON.parse($('#pdb-input').val());
         if (pdb.length == 0)
-          pdb = ['2rh1', '4bvn']
+          //pdb = ['2rh1', '4bvn']
+          pdb = ['2rh1']
 
         //var segments = JSON.parse($(selector + ' .segments-input').val());
         var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','TM1','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
@@ -104,7 +105,7 @@ function showPDBtable(element, table) {
         'scrollX': true,
         // 'autoWidth': true,
         scrollY:        '80vh',
-        // scrollCollapse: true,
+        //scrollCollapse: true,
         paging:         false,
         columnDefs: [
             { targets: 'no-sort', orderable: false }
@@ -349,6 +350,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
 
         var bbangle_color = [];
         var scangle_color = [];
+        var outerangle_color = [];
         var hsecolor = [];
         var sasacolor = [];
         var phicolor = [];
@@ -390,6 +392,8 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                 bbangle_color.push([numberToColor2(90,Math.abs(e[2][2]-e[2][0])), ngl_selection])
               if (Math.abs(e[3][2]-e[3][0])>20)
                 scangle_color.push([numberToColor2(90,Math.abs(e[3][2]-e[3][0])), ngl_selection])
+              if (Math.abs(e[10][2]-e[10][0])>20)
+                outerangle_color.push([numberToColor2(90,Math.abs(e[10][2]-e[10][0])), ngl_selection])
               if (Math.abs(e[4][2]-e[4][0])>5)
                 hsecolor.push([numberToColor3(10, e[4][2]-e[4][0], true), ngl_selection])
               if (Math.abs(e[5][2]-e[5][0])>10)
@@ -406,8 +410,11 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
           } else {
             bbangle_color.push([numberToColor2(140,e[2]-40) , chain_selection+e[1]])
             scangle_color.push([numberToColor2(140,e[3]-40) , chain_selection+e[1]])
+            outerangle_color.push([numberToColor(140, e[10]-40) , chain_selection+e[1]])
             hsecolor.push([numberToColor(40, e[4]) , chain_selection+e[1]])
             sasacolor.push([numberToColor(100, e[5]) , chain_selection+e[1]])
+
+
 
             // TESTING : z-scoring
             //e[6] = (e[6]+67.479)/15 //20.658
@@ -465,6 +472,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
         // Base coloring -> white
         bbangle_color.push([ "white", "*" ]);
         scangle_color.push([ "white", "*" ]);
+        outerangle_color.push([ "white", "*" ]);
         hsecolor.push([ "white", "*" ]);
         sasacolor.push([ "white", "*" ]);
         phicolor.push([ "white", "*" ]);
@@ -476,6 +484,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
         // Add to coloring schemes
         color_schemes['BB-angles'] = NGL.ColormakerRegistry.addSelectionScheme(bbangle_color)
         color_schemes['SC-angles'] = NGL.ColormakerRegistry.addSelectionScheme(scangle_color)
+        color_schemes['Outer-angles'] = NGL.ColormakerRegistry.addSelectionScheme(outerangle_color)
         color_schemes['hse'] = NGL.ColormakerRegistry.addSelectionScheme(hsecolor)
         color_schemes['sasa'] = NGL.ColormakerRegistry.addSelectionScheme(sasacolor)
         color_schemes['phi'] = NGL.ColormakerRegistry.addSelectionScheme(phicolor)
@@ -495,6 +504,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
 
                 scnd_angle = []
                 scnd_scangle = []
+                scnd_outerangle = []
                 scnd_hse = []
                 scnd_sasa = []
                 scnd_phi = []
@@ -544,6 +554,8 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                                   scnd_theta.push([numberToColor3(45, diff[6], true), ngl_selection])
                                 if (Math.abs(diff[7])>10)
                                   scnd_tau.push([numberToColor3(45, diff[7], true), ngl_selection])
+                                if (Math.abs(diff[8])>10)
+                                  scnd_outerangle.push([numberToColor2(90,Math.abs(diff[8])), ngl_selection])
                             } else {
                                 if (Math.abs(e[2] - scnd[2])>=15)
                                   scnd_angle.push([numberToColor3(50, e[2] - scnd[2], true), ngl_selection])
@@ -561,6 +573,8 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                                   scnd_theta.push([numberToColor3(60, e[8] - scnd[8], true), ngl_selection])
                                 if (Math.abs(e[9] - scnd[9])>=15)
                                   scnd_tau.push([numberToColor3(60, e[9] - scnd[9], true), ngl_selection])
+                                if (Math.abs(e[10] - scnd[10])>=15)
+                                  scnd_outerangle.push([numberToColor3(50, e[10] - scnd[10], true), ngl_selection])
                             }
                         }
                     });
@@ -568,6 +582,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
 
                 scnd_angle.push([ "white", "*" ]);
                 scnd_scangle.push([ "white", "*" ]);
+                scnd_outerangle.push([ "white", "*" ]);
                 scnd_hse.push([ "white", "*" ]);
                 scnd_sasa.push([ "white", "*" ]);
                 scnd_phi.push([ "white", "*" ]);
@@ -577,6 +592,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
 
                 color_schemes['scnd_angle'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_angle)
                 color_schemes['scnd_scangle'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_scangle)
+                color_schemes['scnd_outerangle'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_outerangle)
                 color_schemes['scnd_hse'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_hse)
                 color_schemes['scnd_sasa'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_sasa)
                 color_schemes['scnd_phi'] = NGL.ColormakerRegistry.addSelectionScheme(scnd_phi)
@@ -620,6 +636,45 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
                 sele: ":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and sidechainAttached",
                 visible: false
                 })
+
+                // alignment of GPCR structure
+                if ("translation" in pdb_data){
+                  var translation = JSON.parse(pdb_data["translation"])
+                  var center_axis = JSON.parse(pdb_data["center_axis"])
+
+                  // calculate rotation and apply
+                  v1 = new NGL.Vector3(0,1,0)
+                  v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+                  var quaternion = new NGL.Quaternion(); // create one and reuse it
+                  quaternion.setFromUnitVectors( v2, v1 )
+                  o.setRotation(quaternion)
+
+                  // calculate translation and apply
+                  var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+                  v.applyMatrix4(o.matrix)
+                  o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+
+                  // calculate H8 position (based on TM1)
+                  var tm1_vector
+                  var ref_tm1 = pdb_data["only_gn"][pdb_data["gn_map"].indexOf("1x46")]
+                  o.structure.eachAtom(function (ap) {
+                    tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                    tm1_vector.applyMatrix4(o.matrix)
+                  }, new NGL.Selection(":"+pdb_data['chain']+" and "+ ref_tm1 +" and .CA"))
+
+                  tm1_vector.y = 0 // height position doesn't matter
+                  tm1_vector.normalize()
+
+                  // calculate rotation angle around Y-axis (as the GPCR is now upright)
+                  v3 = new NGL.Vector3(-1, 0, 0)
+                  var m = new NGL.Matrix4()
+                  if (tm1_vector.z < 0)
+                    m.makeRotationY(v3.angleTo(tm1_vector))
+                  else if (tm1_vector.z > 0)
+                    m.makeRotationY(-1*v3.angleTo(tm1_vector))
+
+                  o.setTransform(m)
+                }
 
             o.autoView(":"+pdb_data['chain']+" and ("+pdb_data['only_gn'].join(", ")+") and (.CA)")
 
@@ -665,6 +720,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
     if (pdb2.length >0){
         optional = '<option value="scnd_angle">Δ BB-angle</option>' +
                   '<option value="scnd_scangle">Δ SC-angle</option>' +
+                  '<option value="scnd_outerangle">Δ Outer-angle</option>' +
                   '<option value="scnd_hse">Δ HSE</option>' +
                   '<option value="scnd_sasa">Δ SASA</option>' +
                   '<option value="scnd_phi">Δ phi</option>' +
@@ -684,7 +740,7 @@ function createNGLview(mode, pdb, pdb2, pdbs = false) {
             controls += '</select></p>';
     }
 
-    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="BB-angles">BB-angle</option><option value="SC-angles">SC-angle</option><option value="hse">hse</option><option value="sasa">sasa</option><option value="phi">phi</option><option value="psi">psi</option><option value="phi_psi">phi + psi</option><option value="theta">theta</option><option value="tau">tau</option>'+ optional +'</select></p>'
+    controls += '<p>Colors: <select id="ngl_color"><option value="grey">greys</option><option value="blue">blue</option><option value="BB-angles">BB-angle</option><option value="SC-angles">SC-angle</option><option value="Outer-angles">Outer-angle</option><option value="hse">hse</option><option value="sasa">sasa</option><option value="phi">phi</option><option value="psi">psi</option><option value="phi_psi">phi + psi</option><option value="theta">theta</option><option value="tau">tau</option>'+ optional +'</select></p>'
                         +'<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
                         +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
                         +'</div>';
@@ -820,8 +876,16 @@ function renderTable(pdb) {
 
 function initializeResidueTable() {
     residuetable = $("#single-table-tab-table").DataTable({
-      aLengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-      iDisplayLength: 25
+//      aLengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+//      iDisplayLength: 25,
+      'scrollX': true,
+      // 'autoWidth': true,
+      scrollY:        '80vh',
+      //scrollCollapse: true,
+      paging:         false,
+      columnDefs: [
+          { targets: 'no-sort', orderable: false }
+      ],
     });
     yadcf.init(residuetable,
     [

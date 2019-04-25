@@ -214,6 +214,8 @@
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
+                                <span class="secondary-info"></span>
+
                                 <table class="table secondary-table display">
                                   <thead>
                                     <tr>
@@ -669,6 +671,9 @@
           data = data_groups;
           var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
           var table = $(selector + " .secondary-table");
+          var info = $(selector + " .secondary-info");
+
+          info.html("Information about " + id);
 
           // reset tbody
           var tbody = table.find('tbody'); 
