@@ -952,8 +952,18 @@
                     tmp[i] = Math.round(tmp[i]*10)/10
                 }
 
-
-                coloringData[tabMap[selector]][tmp[0]] = tmp[tmp.length - 1]
+                // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
+                var tmp2 = []
+                tmp2.push(tmp[tmp.length - 1])
+                tmp2.push(tmp[2])
+                if (tabMap[selector]=="two-groups"){
+                    tmp2.push(tmp[3]-tmp[1])
+                    tmp2.push(tmp[5])
+                    tmp2.push(tmp[6]-tmp[4])
+                } else if (tabMap[selector]=="single-group"){
+                    tmp2.push(tmp[3]-tmp[1])
+                }
+                coloringData[tabMap[selector]][tmp[0]] = tmp2
 
                 rowset.push(tmp)
             });
@@ -1426,6 +1436,7 @@
         var color_schemes = {};
         var reps = {} // store ngl representations
         var gpcr_rep = {}
+        var selectColoring = {} // store coloring settings
         var int_labels = []
         function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false) {
             $("#ngl-"+mode).html("");
@@ -1753,7 +1764,24 @@
 //              controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="grey">greys</option></select></p><br/>';
             }
 
-//            controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
+            controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
+            controls += '<p><select id="ngl_coloring_'+mode+'">'
+            if (mode == "single-group"){
+              controls += '<option value="averageG1">Average</option>'
+              controls += '<option value="rangeG1">Variation in group</option>'
+              controls += '<option value="diff" SELECTED>Difference with class</option>'
+            } else if (mode == "two-groups"){
+              controls += '<option value="averageG1">Average group 1</option>'
+              controls += '<option value="averageG2">Average group 2</option>'
+              controls += '<option value="rangeG1">Variation in group 1</option>'
+              controls += '<option value="rangeG2">Variation in group 2</option>'
+              controls += '<option value="diff" SELECTED>Difference between groups</option>'
+            } else {
+              controls += '<option value="value">Value</option>'
+              controls += '<option value="diff" SELECTED>Difference with class</option>'
+            }
+            controls += '</select></p>'
+
 //                              +'<p>Highlight interacting res: <input type=checkbox id="highlight_res" checked></p>'
 //                              +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
 //                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
@@ -1764,6 +1792,12 @@
             newDiv.innerHTML = controls;
 
             $("#ngl-"+mode).append(newDiv);
+
+            selectColoring[mode] = "diff"
+            $('#ngl_coloring_'+mode).change(function(e) {
+                selectColoring[mode] = $(this).val()
+                updateStructureRepresentations(mode)
+              });
 
             if (two_structures) {
               // structure selection
@@ -1804,21 +1838,21 @@
                 updateStructureRepresentations(mode);
             });
 
-            $("#ngl-"+mode+" #highlight_res").change(function(e){
+/*            $("#ngl-"+mode+" #highlight_res").change(function(e){
                 updateStructureRepresentations(mode);
             });
 
             $("#ngl-"+mode+" #toggle_interactions").change(function(e){
                 updateStructureRepresentations(mode);
-            });
+            });*/
 
             /*$("#ngl-"+mode+" #toggle_sidechains").change(function(e){
                 updateStructureRepresentations(mode);
             });*/
 
-            $("#ngl-"+mode+" #toggle_sidechains_int").change(function(e){
+/*            $("#ngl-"+mode+" #toggle_sidechains_int").change(function(e){
                 updateStructureRepresentations(mode);
-            });
+            });*/
 
             /*$("#ngl-"+mode+" #ngl_contacts").change(function(e){
                 updateStructureRepresentations(mode);
@@ -1892,7 +1926,6 @@
 
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
-          console.log("UPDATE "+mode)
           var structures = 1;
 //          if (mode=="two-groups")
 //            structures = 2;
@@ -1902,13 +1935,34 @@
               var color_scheme = []
 
               if (coloringData[mode] != undefined){
+                // find selected coloring option
+                var colorIndex = 0
+                switch (selectColoring[mode]) {
+                  case "averageG1":
+                  case "value":
+                    colorIndex = 1
+                    break;
+                  case "rangeG1":
+                    colorIndex = 2
+                    break;
+                  case "averageG2":
+                    colorIndex = 3
+                    break;
+                  case "rangeG2":
+                    colorIndex = 4
+                    break;
+                  case "diff":
+                  default :
+                    colorIndex = 0
+                }
+
                 for (gn_key in coloringData[mode]){
                   // select residue
                   gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                   ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
 
                   // add color
-                  color_scheme.push([numberToColor3(45, coloringData[mode][gn_key], true) , ngl_selection])
+                  color_scheme.push([numberToColor3(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                 }
 
                 color_scheme.push([ "white", "*" ]);
@@ -1917,6 +1971,16 @@
                     color: diff_coloring
                 });
               }
+
+              // Update cartoon using selection
+              checked = $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
+              sele = ":"+pdb_data[mode][key]['chain'];
+              int_sele = sele
+              if (checked)
+                sele = ":"+pdb_data[mode][key]['chain']+" and ("+pdb_data[mode][key]['only_gn'].join(", ")+")";
+                int_sele =
+
+              gpcr_rep[mode][key].setSelection(sele);
             }
           }
         }
