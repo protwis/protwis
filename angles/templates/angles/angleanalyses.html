@@ -942,11 +942,11 @@
                 tmp = tmp.flat()
 
                 // add the diff column
-                if (tmp.length>3){
+                if (tmp.length>6){
                   tmp.push(tmp[2] - tmp[5])
                   for (var i=1; i<tmp.length;i++)
                     tmp[i] = Math.round(tmp[i]*10)/10
-                } else{
+                } else {
                   tmp.push(tmp[2] - tmp[4])
                   for (var i=2; i<tmp.length;i++)
                     tmp[i] = Math.round(tmp[i]*10)/10
@@ -1956,13 +1956,61 @@
                     colorIndex = 0
                 }
 
+                var colorType = $(tabMap[mode] + " .variable_selector").val()
                 for (gn_key in coloringData[mode]){
                   // select residue
                   gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                   ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
 
                   // add color
-                  color_scheme.push([numberToColor3(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                  switch(colorType){
+                    case "outer_angle":
+                    case "bb_angle":
+                    case "sc_angle":
+                      if (colorIndex == 1)
+                        color_scheme.push([numberToColor2(180, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor3(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "HSE":
+                      if (colorIndex == 1){
+                        color_scheme.push([numberToColor2(30, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      } else {
+                        color_scheme.push([numberToColor3(10, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      }
+                      break;
+                    case "SASA":
+                      if (colorIndex == 1)
+                        color_scheme.push([numberToColor2(150, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor3(75, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "RSA":
+                      if (colorIndex == 1)
+                        color_scheme.push([numberToColor2(100, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor3(50, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "phi":
+                    case "psi":
+                      if (colorIndex == 1)
+                        color_scheme.push([numberToColor2(90, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor3(60, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "tau":
+                      if (colorIndex == 1)
+                        color_scheme.push([numberToColor2(90, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor3(30, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "theta":
+                      if (colorIndex == 1)
+                        color_scheme.push([numberToColor2(90, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor3(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                  }
                 }
 
                 color_scheme.push([ "white", "*" ]);
