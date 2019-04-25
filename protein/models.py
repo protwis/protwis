@@ -77,7 +77,6 @@ class Protein(models.Model):
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('ProteinState', on_delete=models.CASCADE)
-    template_structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE)
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
 
     # non-database attributes
@@ -359,6 +358,8 @@ class ProteinGProteinPair(models.Model):
     log_rai_mean = models.FloatField(null=True)
     log_rai_sem  = models.FloatField(null=True)
     g_protein_subunit = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='gprotein', null=True)
+    references = models.ManyToManyField('common.Publication')
+
 
     def __str__(self):
         return self.protein.entry_name + ", " + self.g_protein.name + ", " + self.transduction

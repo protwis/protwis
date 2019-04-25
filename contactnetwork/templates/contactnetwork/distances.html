@@ -448,10 +448,10 @@
 
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
-                color = { r: basal + (fDiff * -1*shift), g: basal-basal*(-fDiff), b: basal-basal*(-fDiff) };
+                color = { r: Math.round(basal + (fDiff * -1*shift)), g: Math.round(basal-basal*(-fDiff)), b: Math.round(basal-basal*(-fDiff)) };
             else
                 // If fDiff is close to 1 we want a blue color
-                color = { r: basal-basal*fDiff, g: basal-basal*fDiff, b: basal + (fDiff * shift)};
+                color = { r: Math.round(basal-basal*fDiff), g: Math.round(basal-basal*fDiff), b: Math.round(basal + (fDiff * shift))};
 
             if (rgb)
                 return color;
@@ -463,10 +463,10 @@
           var color;
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
-                color = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
+                color = { r: 255, g: Math.round(255-255*(-fDiff)), b: Math.round(255-255*(-fDiff)) };
             else
                 // If fDiff is close to 1 we want a blue color
-                color = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
+                color = { r: Math.round(255-255*fDiff), g: Math.round(255-255*fDiff), b: 255 };
 
             if (rgb)
                 return color;
@@ -1134,7 +1134,7 @@
                             var dispersion = interactions[num][1];
                             var frequency = dispersion / data.max_dispersion;
 
-                            var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                            var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
 
                             var popoverTable = 'Distance mean: ' + Math.round(mean/10)/10 + 'Å<br />'
                             + 'Distance dispersion: ' + dispersion.toFixed(2)
@@ -2124,7 +2124,7 @@
             pdb_data[mode] = [];
             int_labels[mode] = []
 
-            console.log('data!?',distance_data['ngl_data']);
+//            console.log('data!?',distance_data['ngl_data']);
 
             var first_structure;
             var num_set1;
@@ -2152,7 +2152,7 @@
                   var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
                   var frequency = value['avg'] / max_diff;
                   if ('max_dispersion' in distance_data) {
-                    var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                    var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
                   } else {
                     var rgb = getGradientColor(frequency, true);
                   }
@@ -2230,7 +2230,7 @@
                           var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
                           if ('max_dispersion' in distance_data) {
                             var frequency = value / distance_data['max_dispersion'];
-                            var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                            var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
                           } else {
                             var frequency = value / distance_data['max_diff'];
                             var rgb = getGradientColor(frequency, true);
@@ -2327,7 +2327,46 @@
                     res_int_gn = Object.assign([], res_int);
                     res_int_gn = intersect(res_int_gn, pdb_data[mode][0]['only_gn']);
 
-                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)");
+                    // Automatic GPCR positioning
+                    if ("translation" in pdb_data[mode][0]){
+                      var translation = JSON.parse(pdb_data[mode][0]["translation"])
+                      var center_axis = JSON.parse(pdb_data[mode][0]["center_axis"])
+
+                      // calculate rotation and apply
+                      v1 = new NGL.Vector3(0,1,0)
+                      v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+                      var quaternion = new NGL.Quaternion(); // create one and reuse it
+                      quaternion.setFromUnitVectors( v2, v1 )
+                      o.setRotation(quaternion)
+
+                      // calculate translation and apply
+                      var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+                      v.applyMatrix4(o.matrix)
+                      o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+
+                      // calculate H8 position (based on TM1)
+                      var tm1_vector
+                      var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                      o.structure.eachAtom(function (ap) {
+                        tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                        tm1_vector.applyMatrix4(o.matrix)
+                      }, new NGL.Selection(":"+pdb_data[mode][0]['chain']+" and "+ ref_tm1 +" and .CA"))
+
+                      tm1_vector.y = 0 // height position doesn't matter
+                      tm1_vector.normalize()
+
+                      // calculate rotation angle around Y-axis (as the GPCR is now upright)
+                      v3 = new NGL.Vector3(-1, 0, 0)
+                      var m = new NGL.Matrix4()
+                      if (tm1_vector.z < 0)
+                        m.makeRotationY(v3.angleTo(tm1_vector))
+                      else if (tm1_vector.z > 0)
+                        m.makeRotationY(-1*v3.angleTo(tm1_vector))
+
+                      o.setTransform(m)
+                    }
+
+                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)");
                 } );
 
             });

@@ -210,21 +210,28 @@ function match_rowheight(table1_id, table2_id) {
     });
 }
 
-function catch_filter(table1_id, table2_id) {
-    $('#'+table2_id).on( 'draw.dt', function (e,oSettings) {
-        $('#loading_div').show();
-        update_tables(table1_id, table2_id, 2);
-        var scrollable_height = $('.yadcf-datatables-table--'+table2_id+' > thead > tr').eq(1).eq(0).height();
-        $('.yadcf-datatables-table--'+table1_id+' > thead > tr').eq(1).css('height', scrollable_height);
-        $('#loading_div').hide();
-    });
-    $('#'+table1_id).on( 'draw.dt', function (e,oSettings) {
-        $('#loading_div').show();
-        update_tables(table1_id, table2_id, 1);
-        var frozen_height = $('.yadcf-datatables-table--'+table1_id+' > thead > tr').eq(1).eq(0).height();
-        $('.yadcf-datatables-table--'+table2_id+' > thead > tr').eq(1).css('height', frozen_height);
-        $('#loading_div').hide();
-    });
+var trigger_draw = true
+
+function catch_filter(table1_id, table2_id, oTable1, oTable2) {
+    if (trigger_draw==true) {
+        $('#'+table2_id).on( 'draw.dt', function (e,oSettings) {
+            $('#loading_div').show();
+            update_tables(table1_id, table2_id, 2);
+            var scrollable_height = $('.yadcf-datatables-table--'+table2_id+' > thead > tr').eq(1).eq(0).height();
+            $('.yadcf-datatables-table--'+table1_id+' > thead > tr').eq(1).css('height', scrollable_height);
+            $('#loading_div').hide();
+        });
+        $('#'+table1_id).on( 'draw.dt', function (e,oSettings) {
+            $('#loading_div').show();
+            update_tables(table1_id, table2_id, 1);
+            var frozen_height = $('.yadcf-datatables-table--'+table1_id+' > thead > tr').eq(1).eq(0).height();
+            $('.yadcf-datatables-table--'+table2_id+' > thead > tr').eq(1).css('height', frozen_height);
+            trigger_draw = false;
+            oTable2.draw();
+            trigger_draw = true;
+            $('#loading_div').hide();
+        });
+    }
 }
 
 function update_tables(table1_id, table2_id, source_table) {

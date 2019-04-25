@@ -3513,6 +3513,45 @@
                     reps[mode][0].structureComponent = o
                     createNGLRepresentations(mode, 0, false)
 
+                    // Automatic GPCR positioning
+                    if ("translation" in pdb_data[mode][0]){
+                      var translation = JSON.parse(pdb_data[mode][0]["translation"])
+                      var center_axis = JSON.parse(pdb_data[mode][0]["center_axis"])
+
+                      // calculate rotation and apply
+                      v1 = new NGL.Vector3(0,1,0)
+                      v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+                      var quaternion = new NGL.Quaternion(); // create one and reuse it
+                      quaternion.setFromUnitVectors( v2, v1 )
+                      o.setRotation(quaternion)
+
+                      // calculate translation and apply
+                      var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+                      v.applyMatrix4(o.matrix)
+                      o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+
+                      // calculate H8 position (based on TM1)
+                      var tm1_vector
+                      var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                      o.structure.eachAtom(function (ap) {
+                        tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                        tm1_vector.applyMatrix4(o.matrix)
+                      }, new NGL.Selection(":"+pdb_data[mode][0]['chain']+" and "+ ref_tm1 +" and .CA"))
+
+                      tm1_vector.y = 0 // height position doesn't matter
+                      tm1_vector.normalize()
+
+                      // calculate rotation angle around Y-axis (as the GPCR is now upright)
+                      v3 = new NGL.Vector3(-1, 0, 0)
+                      var m = new NGL.Matrix4()
+                      if (tm1_vector.z < 0)
+                        m.makeRotationY(v3.angleTo(tm1_vector))
+                      else if (tm1_vector.z > 0)
+                        m.makeRotationY(-1*v3.angleTo(tm1_vector))
+
+                      o.setTransform(m)
+                    }
+
                     o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)")
                 } );
 
@@ -3589,14 +3628,14 @@
                             var atoms1 = first_structure.structure.getView(new NGL.Selection(selectionOne))
                             var atoms2 = o.structure.getView(new NGL.Selection(selectionTwo))
 
-                            // calculate and apply transformation to the first structure
-                            var superpose = new NGL.Superposition(atoms1, atoms2)
-                            superpose.transform(first_structure.structure)
-                            first_structure.structure.refreshPosition()
-                            first_structure.updateRepresentations({ 'position': true })
+                            // Due to superposing apply transformation to second struture
+                            var superpose = new NGL.Superposition(atoms2, atoms1)
+                            superpose.transform(o.structure)
+                            o.structure.refreshPosition()
+                            o.updateRepresentations({ 'position': true })
+                            o.setTransform(first_structure.matrix)
 
                             //// END SUPERPOSE ////
-
                             gpcr_rep[mode][1] = o.addRepresentation( "cartoon", {
                               sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+")",
                               radiusSize: 1,

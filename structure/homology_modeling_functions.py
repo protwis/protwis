@@ -50,8 +50,10 @@ class SignprotFunctions(object):
         d = {}
         for s in subfamilies:
             ordered_prots, non_ordered_prots = [], []
-            prots = [i.entry_name for i in Protein.objects.filter(family__name=s, species__common_name='Human')]
+            prots = [i.entry_name for i in Protein.objects.filter(family__name=s, species__common_name='Human', accession__isnull=False)]
             for p in prots:
+                if p=='gnal_human':
+                    continue
                 if len(SignprotComplex.objects.filter(protein__entry_name=p))>0:
                     ordered_prots.append(p)
                 else:
@@ -61,7 +63,7 @@ class SignprotFunctions(object):
 
     def get_other_subtypes_in_subfam(self, protein):
         this_prot = Protein.objects.get(entry_name=protein)
-        return [i.entry_name for i in Protein.objects.filter(family=this_prot.family, species__common_name='Human').exclude(entry_name=protein)]
+        return [i.entry_name for i in Protein.objects.filter(family=this_prot.family, species__common_name='Human', accession__isnull=False).exclude(entry_name=protein)]
 
 
 class GPCRDBParsingPDB(object):
