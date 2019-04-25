@@ -148,13 +148,17 @@ class SequenceSignature:
 
         if protein_set_positive:
             # tweaking alignment
-            self.aln_pos.calculate_statistics(ignore_in_alignment)
+            if ignore_in_alignment:
+                self.aln_pos.calculate_statistics(ignore_in_alignment)
+            self.aln_pos.calculate_statistics()
             self._update_alignment(self.aln_pos)
             # tweaking consensus seq
             self._update_consensus_sequence(self.aln_pos)
 
         if protein_set_negative:
             # tweaking negative alignment
+            if ignore_in_alignment:
+                self.aln_neg.calculate_statistics(ignore_in_alignment)
             self.aln_neg.calculate_statistics()
             self._update_alignment(self.aln_neg)
             # tweaking consensus seq
