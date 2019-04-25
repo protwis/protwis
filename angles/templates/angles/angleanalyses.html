@@ -853,7 +853,28 @@
           // store data globally for easy access
           angleData[selector] = data
 
-          // TODO: show controls (variable selector) + slider
+          // Add controls to generic control panel and show
+          var cp = $(selector + ' .controls-panel .panel-body')
+          cp.parent().parent().removeClass("hidden");
+
+          // add selector
+          var selectVariable = '<select class="variable_selector">';
+          selectVariable += '<option value="bb_angle">Angle of C&alpha; atom relative to GPCR core</option>';
+          selectVariable += '<option value="sc_angle">Angle of C&beta; atom relative to GPCR core</option>';
+          selectVariable += '<option value="outer_angle" SELECTED>Most outer angle</option>';
+          selectVariable += '<option value="HSE">Half-sphere exposure</option>';
+          selectVariable += '<option value="SASA">Solvent Accessible Surface Area (SASA)</option>';
+          selectVariable += '<option value="RSA">Relative SASA</option>';
+          selectVariable += '<option value="phi">Phi dihedral</option>';
+          selectVariable += '<option value="psi">Psi dihedral</option>';
+          selectVariable += '<option value="tau">Tau angle</option>';
+          selectVariable += '<option value="theta">Theta dihedral</option>';
+          selectVariable += '</select>';
+          cp.html(selectVariable)
+
+          $(selector + " .variable_selector").change(function(e) {
+              updateDataTable(selector, $(this).val())
+            });
 
           // draw table
           updateDataTable(selector)
@@ -881,8 +902,10 @@
             coloringData[tabMap[selector]] = {}
 
             // remove old table (if present)
-            if ( $.fn.DataTable.isDataTable( selector + " .heatmap-table" ))
-              $(selector + " .heatmap-table").clear()
+            if ( $.fn.DataTable.isDataTable( selector + " .heatmap-table" )){
+              $(selector + " .heatmap-table").DataTable().clear()
+              $(selector + " .heatmap-table").DataTable().destroy()
+            }
 
             // selector
             var dataSelector = [0]
@@ -895,8 +918,9 @@
 
             // Add selected variable
             dataSelector.push(availableVariables[variable])
-            headers.push(data["headers"])
-            headers.push(data["headers2"])
+
+            headers.push($.extend(true,[],data["headers"]))
+            headers.push($.extend(true,[],data["headers2"]))
             headers.push({title: "Diff"})
 
             // add rows based on selection
@@ -982,36 +1006,38 @@
             });
 
 
-            repr_dict[tabMap[selector]] = {}
-            $(selector + " .heatmap-table tbody").on("click", "tr", function(event){
-                mode = tabMap[selector]
-                key = 0
+            if (repr_dict[tabMap[selector]] == undefined){
+              repr_dict[tabMap[selector]] = {}
+              $(selector + " .heatmap-table tbody").on("click", "tr", function(event){
+                  mode = tabMap[selector]
+                  key = 0
 
-                gn_key = $(selector + " .heatmap-table").DataTable().row(this).data()[0]
-                if (gn_key in repr_dict[mode]){
-                  for (i in repr_dict[mode][gn_key])
-                    reps[mode][i].structureComponent.removeRepresentation(repr_dict[mode][gn_key][i])
+                  gn_key = $(selector + " .heatmap-table").DataTable().row(this).data()[0]
+                  if (gn_key in repr_dict[mode]){
+                    for (i in repr_dict[mode][gn_key])
+                      reps[mode][i].structureComponent.removeRepresentation(repr_dict[mode][gn_key][i])
 
-                  $(this).removeClass("table-selected")
-                } else {
-                  gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
-                  repr_dict[mode][gn_key] = {}
-                  if (gn > -1) {
-                    ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
-                    repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
-                  }
-
-                  if (mode=="two-groups"){
-                    key = 1
+                    $(this).removeClass("table-selected")
+                  } else {
                     gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
+                    repr_dict[mode][gn_key] = {}
                     if (gn > -1) {
                       ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
                       repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                     }
+
+                    if (mode=="two-groups"){
+                      key = 1
+                      gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
+                      if (gn > -1) {
+                        ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                        repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
+                      }
+                    }
+                    $(this).addClass("table-selected")
                   }
-                  $(this).addClass("table-selected")
-                }
-            });
+              });
+            }
         }
 
         function addClickHandler(elem, arg1, arg2) {
