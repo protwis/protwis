@@ -82,7 +82,8 @@ class SequenceSignature:
                     pref_feat = efeat
         return pref_feat
 
-    def setup_alignments(self, segments, protein_set_positive=None, protein_set_negative=None):
+    def setup_alignments(self, segments, protein_set_positive=None,
+            protein_set_negative=None, ignore_in_alignment=None):
         """Setup (fetch and normalize) the data necessary for calculation of the signature.
 
         Arguments:
@@ -105,7 +106,7 @@ class SequenceSignature:
             self.common_schemes = self.merge_numbering_schemes()
             self.aln_pos.numbering_schemes = self.common_schemes
             self.aln_neg.numbering_schemes = self.common_schemes
-        
+
         # now load the segments and generic numbers
         if protein_set_positive:
             self.common_schemes = self.merge_numbering_schemes()
@@ -147,6 +148,8 @@ class SequenceSignature:
 
         if protein_set_positive:
             # tweaking alignment
+            if ignore_in_alignment:
+                self.aln_pos.calculate_statistics(ignore_in_alignment)
             self.aln_pos.calculate_statistics()
             self._update_alignment(self.aln_pos)
             # tweaking consensus seq
@@ -154,6 +157,8 @@ class SequenceSignature:
 
         if protein_set_negative:
             # tweaking negative alignment
+            if ignore_in_alignment:
+                self.aln_neg.calculate_statistics(ignore_in_alignment)
             self.aln_neg.calculate_statistics()
             self._update_alignment(self.aln_neg)
             # tweaking consensus seq
@@ -359,7 +364,7 @@ class SequenceSignature:
 
     def calculate_signature_onesided(self):
         """
-        Calculates the feature frequency difference between two protein sets.
+        Calculates the feature frequency for one protein set.
         Generates the full differential matrix as well as maximum difference for a position (for scatter plot).
         """
         for sid, segment in enumerate(self.aln_pos.segments):
