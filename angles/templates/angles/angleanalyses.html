@@ -1517,7 +1517,7 @@
                       metalness: 0,
                       colorMode: "hcl",
                       roughness: 1,
-                      opacity: 0.6,
+                      opacity: 1,
                       side: "front",
                       depthWrite: true
                     });
@@ -1963,50 +1963,64 @@
                   ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
 
                   // add color
+                  // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
                   switch(colorType){
                     case "outer_angle":
                     case "bb_angle":
                     case "sc_angle":
-                      if (colorIndex == 1)
+                      if (colorIndex == 1 || colorIndex == 3)
                         color_scheme.push([numberToColor2(180, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor2(90, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
                       else
                         color_scheme.push([numberToColor3(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       break;
                     case "HSE":
-                      if (colorIndex == 1){
+                      if (colorIndex == 1 || colorIndex == 3)
                         color_scheme.push([numberToColor2(30, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
-                      } else {
+                      else if (colorIndex == 2 || colorIndex == 4)
+                          color_scheme.push([numberToColor2(10, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else
                         color_scheme.push([numberToColor3(10, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
-                      }
                       break;
                     case "SASA":
-                      if (colorIndex == 1)
+                      if (colorIndex == 1 || colorIndex == 3)
                         color_scheme.push([numberToColor2(150, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                          color_scheme.push([numberToColor2(75, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
                       else
-                        color_scheme.push([numberToColor3(75, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                        color_scheme.push([numberToColor3(50, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       break;
                     case "RSA":
-                      if (colorIndex == 1)
+                      if (colorIndex == 1 || colorIndex == 3)
                         color_scheme.push([numberToColor2(100, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor2(50, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
                       else
                         color_scheme.push([numberToColor3(50, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       break;
                     case "phi":
                     case "psi":
-                      if (colorIndex == 1)
+                      if (colorIndex == 1 || colorIndex == 3)
                         color_scheme.push([numberToColor2(90, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor2(45, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
                       else
                         color_scheme.push([numberToColor3(60, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       break;
                     case "tau":
-                      if (colorIndex == 1)
+                      if (colorIndex == 1 || colorIndex == 3)
                         color_scheme.push([numberToColor2(90, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor2(30, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
                       else
                         color_scheme.push([numberToColor3(30, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       break;
                     case "theta":
-                      if (colorIndex == 1)
+                      if (colorIndex == 1 || colorIndex == 3)
                         color_scheme.push([numberToColor2(90, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor2(30, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
                       else
                         color_scheme.push([numberToColor3(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       break;
