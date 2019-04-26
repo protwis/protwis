@@ -1141,6 +1141,10 @@ def InteractionMatrix(request):
             r['gprot'] = s.get_stab_agents_gproteins()
         except Exception:
             r['gprot'] = ''
+        try:
+            r['gprot_class'] = s.get_signprot_gprot_family()
+        except Exception:
+            r['gprot_class'] = ''
         complex_info.append(r)
 
     data = Protein.objects.filter(
@@ -1235,7 +1239,7 @@ def IMSequenceSignature(request):
     # FEATURE FREQUENCIES
     signature_features = get_signature_features(signature_data, generic_numbers, feats)
     grouped_features = group_signature_features(signature_features)
-    
+
     # FEATURE CONSENSUS
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
     sigcons = get_signature_consensus(signature_data, generic_numbers_flat)
