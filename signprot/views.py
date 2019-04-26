@@ -27,6 +27,7 @@ from common.views import AbsTargetSelection
 import json
 import re
 import time
+import pickle
 from itertools import chain
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -1238,6 +1239,16 @@ def IMSequenceSignature(request):
     # FEATURE CONSENSUS
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
     sigcons = get_signature_consensus(signature_data, generic_numbers_flat)
+
+    rec_class = pos_set[0].get_protein_class()
+
+    dump = {
+        'rec_class': rec_class,
+        'signature': signature,
+        'consensus': signature_data,
+        }
+    with open('signprot/notebooks/pickles/{}.p'.format(rec_class), 'wb+') as out_file:
+        pickle.dump(dump, out_file)
 
     # pass back to front
     res = {
