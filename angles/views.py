@@ -87,9 +87,13 @@ def get_angles(request):
                             [q["min_tau"], q["avg_tau"], q["max_tau"]], \
                             ] for q in query]
 
-            data['headers'] = [{"title" : "Min"},{"title" : "Avg"},{"title" : "Max"}]
+            if len(pdbs2)==0:
+                data['headers'] = [{"title" : "Group<br/>Min"},{"title" : "Group<br/>Avg"},{"title" : "Group<br/>Max"}]
+            else:
+                data['headers'] = [{"title" : "Group 1<br/>Min"},{"title" : "Group 1<br/>Avg"},{"title" : "Group 1<br/>Max"}]
 
         # Select PDBs from same Class + same state
+        data['headers2'] = [{"title" : "Group 2<br/>Min"},{"title" : "Group 2<br/>Avg"},{"title" : "Group 2<br/>Max"}]
         if len(pdbs2)==0:
             # select structure(s)
             structures = Structure.objects.filter(pdb_code__index__in=pdbs) \
@@ -105,6 +109,8 @@ def get_angles(request):
             set2 = Structure.objects.filter(protein_conformation__state__slug__in=states).filter(query).values_list('pdb_code__index')
 
             pdbs2 = [ x[0] for x in set2 ]
+
+            data['headers2'] = [{"title" : "Class<br/>Min"},{"title" : "Class<br/>Avg"},{"title" : "Class<br/>Max"}]
 
         query = Angle.objects.filter(structure__pdb_code__index__in=pdbs2).prefetch_related("residue__generic_number") \
                 .values("residue__generic_number__label") \
@@ -133,7 +139,7 @@ def get_angles(request):
                         [q["min_tau"], q["avg_tau"], q["max_tau"]], \
                         ] for q in query}
 
-        data['headers2'] = [{"title" : "Min"},{"title" : "Avg"},{"title" : "Max"}]
+
 
     except IndexError:
         data['error'] = 1

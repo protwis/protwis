@@ -996,6 +996,7 @@
                   ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
                   //temprepr = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                   reps[mode][key].hover.setSelection(ngl_selection)
+//                  reps[mode][key].structureComponent.autoView(ngl_selection)
                 }
 
                 if (mode=="two-groups"){
@@ -1026,6 +1027,9 @@
                   if (gn_key in repr_dict[mode]){
                     for (i in repr_dict[mode][gn_key])
                       reps[mode][i].structureComponent.removeRepresentation(repr_dict[mode][gn_key][i])
+                      // reset autoview
+
+                    delete repr_dict[mode][gn_key]
 
                     $(this).removeClass("table-selected")
                   } else {
@@ -1034,6 +1038,7 @@
                     if (gn > -1) {
                       ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
                       repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
+                      reps[mode][key].structureComponent.autoView(ngl_selection, 1000)
                     }
 
                     if (mode=="two-groups"){
@@ -1859,10 +1864,8 @@
             });*/
         }
 
-        var linkMap = {}
         var linkColourScheme = {}
         function createNGLRepresentations(mode, structureNumber, update = false) {
-            var links = []
             var res_int = []
             if (mode in reps && structureNumber in reps[mode] && reps[mode][structureNumber].structureComponent)
               var o = reps[mode][structureNumber].structureComponent;
@@ -1870,16 +1873,7 @@
               return  // NGL not initialized
 
             // initialize linkMap + colorScheme
-            if (!(mode in linkMap)) linkMap[mode] = {}
-            if (!(structureNumber in linkMap[mode])) linkMap[mode][structureNumber] = {}
             if (!(mode in linkColourScheme)) linkColourScheme[mode] = {}
-
-            // remove existing representations
-            var enabledInteractions = []
-            if (update){
-              // create new links overview
-              reps[mode][structureNumber].structureComponent.removeRepresentation(reps[mode][structureNumber].links)
-            }
 
             var gnOnly = !update || $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
 
