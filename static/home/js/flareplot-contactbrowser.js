@@ -7,7 +7,7 @@
  * @param containerSelector
  * @returns {{getNumFrames, setFrame, framesIntersect, framesSum, setTrack, setTree, getTreeNames, getTrackNames, addNodeToggleListener, addNodeHoverListener, addEdgeToggleListener, addEdgeHoverListener, graph}}
  */
-function createFlareplot(width, inputGraph, containerSelector, contiguousOutward = false){
+function createFlareplot(width, inputGraph, containerSelector, contiguousOutward = true){
     var w = width;
     var h = w;
     var outwardShift = 0;

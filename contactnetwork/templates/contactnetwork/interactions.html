@@ -3147,7 +3147,7 @@
         }
 
         var flareplot = {};
-        var contiguous = false;
+        var contiguous = true;
         var interactionsToggleList = [];
         function createFlareplotBox(data, container, toggle = false) {
             // clean
@@ -3155,7 +3155,7 @@
                 $(container).children().last().remove();
             } else {
                 // in case refresh with new parameters => reset
-                contiguous = false;
+                contiguous = true;
                 $(container).html("");
             }
 
@@ -3169,7 +3169,7 @@
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
-                    content += '<p>Contiguous segments:<br/>lines outwards: <input type=checkbox id="flareplot_contiguous"></p>';
+                    content += '<p>Contiguous segments:<br/>lines outward: <input type=checkbox id="flareplot_contiguous" checked></p>';
 
                 content += '<p>Line colors: <select id="flareplot_color">'
                         +'<option value="none">None (gray)</option>'
@@ -4468,7 +4468,7 @@
         .flareplot-legend {
           top: 20px;
           left: 20px;
-
+          z-index: 1;
         }
 
         .heatmap {
