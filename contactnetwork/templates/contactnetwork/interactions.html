@@ -3408,6 +3408,7 @@
             //var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
             var blue_colors = ['#f0fcfa','#D3E4EA','#B6CDDB', '#99B5CC',    '#7C9EBD',    '#5F86AE', '#426F9F',    '#255790',    '#084081']
             var red_colors = ['#fbf0fc','#f3dbec','#ebc5df', '#dda8bc',    '#cc7b7f',    '#d3574e', '#be372b',    '#ac1808',    '#811808']
+            var rb_colors = ['#736DA7','#5EB7B7','#CE9AC6', '#DD7D7E', '#E6AF7C', '#DEDB75', '#80B96F', '#000000']  // #C897B8
 
             $.getJSON( "pdb/"+pdb,
               function( data ) {
@@ -3444,6 +3445,17 @@
                           [ "white", "*" ]
                           ])
 
+                color_schemes[mode][0]['rainbow'] = NGL.ColormakerRegistry.addSelectionScheme([
+                        [rb_colors[0], segments_sets[highlight[0]]],
+                        [rb_colors[1], segments_sets[highlight[1]]],
+                        [rb_colors[2], segments_sets[highlight[2]]],
+                        [rb_colors[3], segments_sets[highlight[3]]],
+                        [rb_colors[4], segments_sets[highlight[4]]],
+                        [rb_colors[5], segments_sets[highlight[5]]],
+                        [rb_colors[6], segments_sets[highlight[6]]],
+                        [rb_colors[7], segments_sets[highlight[7]]],
+                        [ "white", "*" ]
+                        ])
 
                 chain_set1 = pdb_data[mode][0]['chain'];
                 num_set1 = pdb_data[mode][0]['only_gn'];
@@ -3592,6 +3604,18 @@
                                 [red_colors[6], segments_sets[highlight[5]]],
                                 [red_colors[7], segments_sets[highlight[6]]],
                                 [red_colors[8], segments_sets[highlight[7]]],
+                                [ "white", "*" ]
+                                ])
+
+                        color_schemes[mode][1]['rainbow'] = NGL.ColormakerRegistry.addSelectionScheme([
+                                [rb_colors[0], segments_sets[highlight[0]]],
+                                [rb_colors[1], segments_sets[highlight[1]]],
+                                [rb_colors[2], segments_sets[highlight[2]]],
+                                [rb_colors[3], segments_sets[highlight[3]]],
+                                [rb_colors[4], segments_sets[highlight[4]]],
+                                [rb_colors[5], segments_sets[highlight[5]]],
+                                [rb_colors[6], segments_sets[highlight[6]]],
+                                [rb_colors[7], segments_sets[highlight[7]]],
                                 [ "white", "*" ]
                                 ])
 
@@ -3759,7 +3783,7 @@
                 }
                 controls += '</select></p>';
             }
-            controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="grey">greys</option></select></p><br/>';
+            controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
 
 
             if (two_structures){
@@ -3774,7 +3798,7 @@
                       controls += '<option value="'+pdbs_set2[i]+'">'+pdbs_set2[i]+'</option>';
               }
               controls += '</select></p>';
-              controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="grey">greys</option></select></p><br/>';
+              controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
             }
 
             controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
