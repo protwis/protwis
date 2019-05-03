@@ -7,7 +7,7 @@
  * @param containerSelector
  * @returns {{getNumFrames, setFrame, framesIntersect, framesSum, setTrack, setTree, getTreeNames, getTrackNames, addNodeToggleListener, addNodeHoverListener, addEdgeToggleListener, addEdgeHoverListener, graph}}
  */
-function createFlareplot(width, inputGraph, containerSelector, contiguousOutward = false){
+function createFlareplot(width, inputGraph, containerSelector, contiguousOutward = true){
     var w = width;
     var h = w;
     var outwardShift = 0;
@@ -369,6 +369,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         graph.segments[c.segment] = {};
                         graph.segments[c.segment]["name"] = c.segment;
                         graph.segments[c.segment]["color"] = c.color;
+                        graph.segments[c.segment]["rainbow"] = c.rainbow;
                         graph.segments[c.segment]["count"] = 1;
                         graph.segments[c.segment]["nodes"] = [name];
                     } else {
@@ -438,6 +439,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         interactions: e.interactions,
                         opacity: e.opacity || graph.defaults.edgeOpacity || 1,
                         segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
+                        rainbow: e.rainbow || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
                         width: e.width || graph.defaults.edgeWidth || 1
                     };
 
@@ -453,6 +455,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             interactions: edge.interactions,
                             opacity: edge.opacity,
                             segment: edge.segment,
+                            rainbow: edge.rainbow,
                             width: edge.width
                         };
                         t.allEdges.push({
@@ -465,6 +468,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             interactions: edge.interactions,
                             opacity: edge.opacity,
                             segment: edge.segment,
+                            rainbow: edge.rainbow,
                             width: edge.width
                         });
                     } else {
@@ -1132,6 +1136,10 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return getColorStrongestInteraction(Object.keys(d.interactions).filter(value => -1 !== interactions.indexOf(value)), false); });
                 break;
+              case "rainbow":
+                svg.selectAll("path.link")
+                    .style("stroke", function(d){ return d.rainbow; });
+              break;
               case "segment":
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return d.segment; });
@@ -1140,6 +1148,15 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return d.color; });
                 break;
+            }
+
+            if (color=="rainbow"){
+              svg.selectAll("g.trackElement").select("path")
+                  .style("fill", function(d){ return d.rainbow; });
+            } else {
+              // default
+              svg.selectAll("g.trackElement").select("path")
+                  .style("fill", function(d){ return d.color; });
             }
         }
 
