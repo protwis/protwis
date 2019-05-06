@@ -3494,31 +3494,39 @@
                     // Add residue labels for GN residues
                     pdb_data[mode][0]['only_gn'].forEach( function(resNo, index){
                       var genNo = pdb_data[mode][0]['gn_map'][index]
-                      int_labels[mode][0][resNo] = genNo
+                      int_labels[mode][0][o.structure.id + "|" + resNo] = genNo
                     })
 
                     // listen to `hovered` signal to move tooltip around and change its text
-                    // TODO: implement this to handle two structures
                     stage[mode].signals.hovered.add(function (pickingProxy) {
                       var label_index = false
+                      var hide = true
 
                       if (pickingProxy && (pickingProxy.distance || pickingProxy.atom)) {
                         var mp = pickingProxy.mouse.position
+
                         if (pickingProxy.distance){
-                          label_index = pickingProxy.distance.atom1.resno + "-" + pickingProxy.distance.atom2.resno;
+                          label_index = pickingProxy.distance.atom1.structure.id + "|" + pickingProxy.distance.atom1.resno + "-" + pickingProxy.distance.atom2.resno;
                           ngl_tooltip.innerText = "INTERACTION:"
                         } else {
-                          label_index = pickingProxy.atom.resno;
+                          label_index = pickingProxy.atom.structure.id + "|" + pickingProxy.atom.resno;
                           ngl_tooltip.innerText = "RESIDUE:"
                         }
-                      }
 
-                      if (label_index && (label_index in int_labels[mode][0])) {
-                        ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
-                        ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
-                        ngl_tooltip.style.left = mp.x + 3 + "px"
-                        ngl_tooltip.style.display = "block"
-                      } else {
+                        if (label_index){
+                          if (label_index in int_labels[mode][0]) {
+                            ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
+                            hide = false
+                          } else if (mode=="two-groups" && (label_index in int_labels[mode][1])) {
+                            ngl_tooltip.innerText += " " +int_labels[mode][1][label_index]
+                            hide = false
+                          }
+                          ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
+                          ngl_tooltip.style.left = mp.x + 3 + "px"
+                          ngl_tooltip.style.display = "block"
+                        }
+                      }
+                      if (hide) {
                         ngl_tooltip.style.display = "none"
                       }
                     })
@@ -3673,6 +3681,12 @@
                               side: "front",
                               depthWrite: true
                             });
+
+                            // Add residue labels for GN residues
+                            pdb_data[mode][1]['only_gn'].forEach( function(resNo, index){
+                              var genNo = pdb_data[mode][1]['gn_map'][index]
+                              int_labels[mode][1][o.structure.id + "|" + resNo] = genNo
+                            })
 
                             reps[mode][1].structureComponent = o
                             createNGLRepresentations(mode, 1, false)
@@ -3935,6 +3949,7 @@
 
                     // create link for "distance" representation
                     links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
+                    int_labels[mode][structureNumber][o.structure.id + "|" + resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                   }
                 });
             } else if (mode=='single-group') {
@@ -3970,6 +3985,7 @@
                   if (!res_int.includes(resNo2)) res_int.push(resNo2)
 
                   links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
+                  int_labels[mode][structureNumber][o.structure.id + "|" + resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                 });
             } else {
               // get cutoffs from control-tab if sliders are initialized
@@ -4019,7 +4035,7 @@
                   }
 
                   links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getFrequencyColor(-1*frequency)}, "resID":resNo1+"-"+resNo2})
-                  int_labels[mode][structureNumber][resNo1+"-"+resNo2] = genNo1+" - "+genNo2
+                  int_labels[mode][structureNumber][o.structure.id + "|" + resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                 });
             }
 
