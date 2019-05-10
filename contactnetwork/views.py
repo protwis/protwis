@@ -671,66 +671,76 @@ def DistanceDataGroups(request):
                     data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
 
     print('Start 1')
+    start = time.time()
     dis1 = Distances()
     dis1.load_pdbs(pdbs1)
-    dis1.fetch_and_calculate()
+    dis1.fetch_and_calculate(with_arr = True)
+    print('done fetching set 1',time.time()-start)
+    # dis1.calculate_window(list_of_gns)
+#    dis1.calculate()
 
-    dis1.calculate_window(list_of_gns)
-
+    start = time.time()
     dis2 = Distances()
     dis2.load_pdbs(pdbs2)
-    dis2.fetch_and_calculate()
-    dis2.calculate_window(list_of_gns)
+    dis2.fetch_and_calculate(with_arr = True)
+    # dis2.calculate_window(list_of_gns)
+    #dis2.calculate()
+    print('done fetching set 2',time.time()-start)
 
     diff = OrderedDict()
     from math import sqrt
     from scipy import stats
 
-    for d1 in dis1.stats_window_reduced:
+    # for d1 in dis1.stats_window_reduced:
     # for d1 in dis1.stats_window:
-    # for d1 in dis1.stats:
-        label = d1[0]
-        mean1 = d1[1]
-        dispersion1 = d1[4]
-        try:
-            #see if label is there
-            d2 = dis2.stats_window_key[label]
-            mean2 = d2[1]
-            dispersion2 = d2[4]
-            # mean2 = dis2.stats_key[label][1]
-            mean_diff = mean2-mean1
 
-            var1,var2 = d1[2],d2[2]
-            std1,std2 = sqrt(d1[2]),sqrt(d2[2])
+    start = time.time()
+    total = {}
+    common_labels = list(set(dis1.stats_key.keys()).intersection(dis2.stats_key.keys()))
+    for label in common_labels:
 
-            n1, n2 = d1[3],d2[3]
-            se1, se2 = std1/sqrt(n1), std2/sqrt(n2)
-            sed = sqrt(se1**2.0 + se2**2.0)
-            t_stat = (mean1 - mean2) / sed
+        # Get variables
+        d1, d2 = dis1.stats_key[label],dis2.stats_key[label]
+        # Correct decimal
+        mean1, mean2 = d1[1]/100,d2[1]/100
+        std1,std2 = d1[2]/100,d2[2]/100
+        var1,var2 = std1**2,std2**2
+        n1, n2 = d1[4],d2[4]
 
 
-            t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+        d1[5] = [x / 100 for x in d1[5]]
+        d2[5] = [x / 100 for x in d2[5]]
+        # Make easier readable output
+        individual_pdbs_1 = dict(zip(d1[6], d1[5]))
+        individual_pdbs_2 = dict(zip(d2[6], d2[5]))
 
-            df = n1+n2 - 2
+        mean_diff = mean2-mean1
 
-            p = 1 - stats.t.cdf(t_stat_welch,df=df)
+        # Save values for NGL calcs
+        gn1,gn2 = label.split("_")
+        if gn1 not in total:
+            total[gn1] = {}
+        if gn2 not in total:
+            total[gn2] = {}
+        total[gn1][gn2] = total[gn2][gn1] = round(mean_diff,1)
 
-            # print(label,mean1,mean2,std1,std2,n1,n2,t_stat,t_stat_welch,p)
+        ## T test to assess seperation of data
+        t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+        df = n1+n2 - 2
+        p = 1 - stats.t.cdf(t_stat_welch,df=df)
 
-            diff[label] = [round(mean_diff),[std1,std2],[mean1,mean2],[n1,n2],p]
+        diff[label] = [round(mean_diff,1),[std1,std2],[mean1,mean2],[n1,n2],p,[individual_pdbs_1,individual_pdbs_2]]
 
-
-        except:
-            pass
     diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1][0])))
 
+    print('done diff',time.time()-start)
     compared_stats = {}
 
     # Remove differences that seem statistically irrelevant
     for label,d in diff.items():
-        if d[-1]>0.05:
-            d[0] = 0
+        if d[4]>0.05:
             #print(label,d)
+            d[0] = 0
     print('done')
 
     # Dict to keep track of which residue numbers are in use
@@ -738,6 +748,10 @@ def DistanceDataGroups(request):
     max_diff = 0
     #for d in dis.stats:
     for key,d in diff.items():
+
+        # Ignore low means diff.
+        if d[0]<0.5 and d[0]>-0.5:
+            continue
         res1 = key.split("_")[0]
         res2 = key.split("_")[1]
         res1_seg = res1.split("x")[0]
@@ -763,7 +777,7 @@ def DistanceDataGroups(request):
         #     data['interactions'][coord][pdb_name] = []
 
         if d:
-            if len(data['interactions'])<50000:
+            if len(data['interactions'])<10000:
 
                 data['interactions'][coord] = d
             else:
@@ -780,22 +794,14 @@ def DistanceDataGroups(request):
 
     data['segments'] = list(data['segments'])
     data['pdbs'] = list(pdbs1+pdbs2)
+    data['pdbs1'] = list(pdbs1)
+    data['pdbs2'] = list(pdbs2)
     data['max_diff'] = max_diff
-
-    total = {}
+    print(len(data['interactions']),'len data')
+    #total = {}
+    start = time.time()
     ngl_max_diff = 0
-    for i,gn1 in enumerate(list_of_gns):
-        if gn1 not in total:
-            total[gn1] = {}
-        for gn2 in list_of_gns[i:]:
-            if gn2 not in total:
-                total[gn2] = {}
-            label = "{}_{}".format(gn1,gn2)
-            if label in dis1.stats_window_key:
-                if label in dis2.stats_window_key:
-                    value = round(dis2.stats_window_key[label][1]-dis1.stats_window_key[label][1])
-                    total[gn1][gn2] =  value
-                    total[gn2][gn1] =  value
+    for gn1 in total.keys():
         vals = []
         for gn,val in total[gn1].items():
             if gn[0]!=gn1[0]:
@@ -805,6 +811,7 @@ def DistanceDataGroups(request):
         if abs(total[gn1]['avg'])>ngl_max_diff:
             ngl_max_diff = round(abs(total[gn1]['avg']))
 
+    print('done ngl',time.time()-start)
     data['ngl_data'] = total
     data['ngl_max_diff'] = ngl_max_diff
     print('send json')
@@ -1098,13 +1105,16 @@ def DistanceData(request):
 
     dis = Distances()
     dis.load_pdbs(pdbs)
-    dis.fetch_and_calculate()
-    dis.calculate_window()
+    start = time.time()
+    dis.fetch_and_calculate(with_arr = True)
+    print('done fetching',time.time()-start)
+    # dis.calculate_window()
 
     excluded_segment = ['C-term','N-term']
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs_lower).distinct().all()
 
+    start = time.time()
     list_of_gns = []
     if len(proteins)>1:
         a = Alignment()
@@ -1138,10 +1148,12 @@ def DistanceData(request):
                     data['pos_map'][r.sequence_number] = r.amino_acid
                     data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
 
+    print('done alignment',time.time()-start)
     # Dict to keep track of which residue numbers are in use
     number_dict = set()
     max_dispersion = 0
-    for d in dis.stats_window_reduced:
+    start = time.time()
+    for d in dis.stats:
         # print(d)
         res1 = d[0].split("_")[0]
         res2 = d[0].split("_")[1]
@@ -1168,23 +1180,28 @@ def DistanceData(request):
         # if pdb_name not in data['interactions'][coord]:
         #     data['interactions'][coord][pdb_name] = []
         if len(pdbs) > 1:
-            if d[4]:
-                if len(data['interactions'])<50000:
-                    data['interactions'][coord] = [round(d[1]),round(d[4],3)]
+            if d[3]:
+                # correct data decimal
+                d[5] = [x / 100 for x in d[5]]
+                # Make easier readable output
+                individual_pdbs = dict(zip(d[6], d[5]))
+
+                if len(data['interactions'])<2000:
+                    data['interactions'][coord] = [round(d[1])/100,round(d[3],3),individual_pdbs]
                 else:
                     break
 
-                if d[4]>max_dispersion:
-                    max_dispersion = round(d[4],3)
+                if d[3]>max_dispersion:
+                    max_dispersion = round(d[3],3)
         else:
             if d[1]:
-                if len(data['interactions'])<50000:
-                    data['interactions'][coord] = [round(d[1]),round(d[1],3)]
+                if len(data['interactions'])<2000:
+                    data['interactions'][coord] = [round(d[1])/100,round(d[1],3)/100,d[-1]]
                 else:
                     break
 
-                if d[1]>max_dispersion:
-                    max_dispersion = round(d[1],3)
+                if d[1]>max_dispersion*100:
+                    max_dispersion = round(d[1],3)/100
         # data['sequence_numbers'] = sorted(number_dict)
     if (generic):
         data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
@@ -1196,6 +1213,7 @@ def DistanceData(request):
     data['pdbs'] = list(pdbs)
     data['max_dispersion'] = max_dispersion
 
+    print('done data prep',time.time()-start)
     total = {}
     ngl_max_diff = 0
     for i,gn1 in enumerate(list_of_gns):
@@ -1205,8 +1223,8 @@ def DistanceData(request):
             if gn2 not in total:
                 total[gn2] = {}
             label = "{}_{}".format(gn1,gn2)
-            if label in dis.stats_window_key:
-                value = dis.stats_window_key[label][4]
+            if label in dis.stats_key:
+                value = dis.stats_key[label][3]
                 total[gn1][gn2] =  value
                 total[gn2][gn1] =  value
         vals = []
@@ -1214,9 +1232,9 @@ def DistanceData(request):
             if gn[0]!=gn1[0]:
                 #if not same segment
                 vals.append(val)
-        total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),1)
+        total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),3)**2
         if abs(total[gn1]['avg'])>ngl_max_diff:
-            ngl_max_diff = round(abs(total[gn1]['avg']))
+            ngl_max_diff = round(abs(total[gn1]['avg']),3)
 
     data['ngl_data'] = total
     data['ngl_max_diff'] = ngl_max_diff
