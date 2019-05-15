@@ -764,7 +764,7 @@ class Alignment:
         """A placeholder for an instance specific function"""
         return generic_number
 
-    def calculate_statistics(self, ignore=None):
+    def calculate_statistics(self, ignore={}):
         """Calculate consesus sequence and amino acid and feature frequency"""
 
         if not self.stats_done:
