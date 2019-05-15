@@ -212,37 +212,62 @@ const run_sig_match = function(){
             orderable: false,
             className: 'select-checkbox',
           }, {
-            data: 'prot',
-            title: 'Protein',
+            data: 'class',
+            title: 'Class',
             targets: 1,
           }, {
-            data: 'nscore',
-            title: 'Normalized Score',
-            targets: 4,
+            data: 'prot',
+            title: 'Protein',
+            targets: 2,
           }, {
-            data: 'score',
+            data: 'nscore',
             title: 'Score',
-            targets: 3,
+            targets: 4,
+          // }, {
+          //   data: 'score',
+          //   title: 'Score',
+          //   targets: 4,
           }, {
             data: 'entry',
             title: 'Entry Name',
-            targets: 2,
-          }
+            targets: 3,
+          }, {
+            data: 'Gs',
+            title: '   Gs   ',
+            targets: 5,
+            className: 'dt-center',
+          }, {
+            data: 'Gi/Go',
+            title: 'Gi / Go ',
+            targets: 6,
+            className: 'dt-center',
+          }, {
+            data: 'Gq/G11',
+            title: 'Gq / G11',
+            targets: 7,
+            className: 'dt-center',
+          }, {
+            data: 'G12/G13',
+            title: 'G12 / G13',
+            targets: 8,
+            className: 'dt-center',
+          },
         ],
         order: [[ 4, "desc" ]],
+        pageLength: 20,
         select: {
           style: 'single',
         },
         aging: false,
         buttons: [
+          // {
+          //   text: 'Select all',
+          //   action: function () {
+          //     sigmatch_table.rows().select();
+          //   }
+          // },
           {
-            text: 'Select all',
-            action: function () {
-              sigmatch_table.rows().select();
-            }
-          },
-          {
-            text: 'Select none',
+            text: 'Deselect',
             action: function () {
               sigmatch_table.rows().deselect();
             }

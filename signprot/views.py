@@ -18,7 +18,16 @@ from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_
 from seqsign.sequence_signature import SignatureMatch
 from seqsign.sequence_signature import SequenceSignature
 from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions
-from signprot.interactions import *
+from signprot.interactions import (
+    get_entry_names,
+    get_ignore_info,
+    get_protein_segments,
+    get_generic_numbers,
+    get_signature_features,
+    group_signature_features,
+    get_signature_consensus,
+    prepare_signature_match,
+)
 
 from common import definitions
 from collections import OrderedDict

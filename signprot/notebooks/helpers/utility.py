@@ -9,7 +9,7 @@ from IPython.display import display
 import pandas as pd
 
 
-from signprot.interactions import get_generic_numbers, get_signature_consensus
+# from signprot.interactions import get_generic_numbers, get_signature_consensus
 from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinGProteinPair
 
 
