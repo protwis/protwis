@@ -3147,7 +3147,7 @@
         }
 
         var flareplot = {};
-        var contiguous = false;
+        var contiguous = true;
         var interactionsToggleList = [];
         function createFlareplotBox(data, container, toggle = false) {
             // clean
@@ -3155,7 +3155,7 @@
                 $(container).children().last().remove();
             } else {
                 // in case refresh with new parameters => reset
-                contiguous = false;
+                contiguous = true;
                 $(container).html("");
             }
 
@@ -3169,10 +3169,11 @@
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
-                    content += '<p>Contiguous segments:<br/>lines outwards: <input type=checkbox id="flareplot_contiguous"></p>';
+                    content += '<p>Contiguous segments:<br/>lines outward: <input type=checkbox id="flareplot_contiguous" checked></p>';
 
                 content += '<p>Line colors: <select id="flareplot_color">'
                         +'<option value="none">None (gray)</option>'
+                        +'<option value="rainbow">GPCR rainbow</option>'
                         +'<option value="segment">GPCR segment</option>';
 
                 // if single structure - use interaction coloring
@@ -3408,6 +3409,7 @@
             //var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
             var blue_colors = ['#f0fcfa','#D3E4EA','#B6CDDB', '#99B5CC',    '#7C9EBD',    '#5F86AE', '#426F9F',    '#255790',    '#084081']
             var red_colors = ['#fbf0fc','#f3dbec','#ebc5df', '#dda8bc',    '#cc7b7f',    '#d3574e', '#be372b',    '#ac1808',    '#811808']
+            var rb_colors = ['#736DA7','#5EB7B7','#CE9AC6', '#DD7D7E', '#E6AF7C', '#DEDB75', '#80B96F', '#000000']  // #C897B8
 
             $.getJSON( "pdb/"+pdb,
               function( data ) {
@@ -3444,6 +3446,17 @@
                           [ "white", "*" ]
                           ])
 
+                color_schemes[mode][0]['rainbow'] = NGL.ColormakerRegistry.addSelectionScheme([
+                        [rb_colors[0], segments_sets[highlight[0]]],
+                        [rb_colors[1], segments_sets[highlight[1]]],
+                        [rb_colors[2], segments_sets[highlight[2]]],
+                        [rb_colors[3], segments_sets[highlight[3]]],
+                        [rb_colors[4], segments_sets[highlight[4]]],
+                        [rb_colors[5], segments_sets[highlight[5]]],
+                        [rb_colors[6], segments_sets[highlight[6]]],
+                        [rb_colors[7], segments_sets[highlight[7]]],
+                        [ "white", "*" ]
+                        ])
 
                 chain_set1 = pdb_data[mode][0]['chain'];
                 num_set1 = pdb_data[mode][0]['only_gn'];
@@ -3513,6 +3526,45 @@
                     reps[mode][0].structureComponent = o
                     createNGLRepresentations(mode, 0, false)
 
+                    // Automatic GPCR positioning
+                    if ("translation" in pdb_data[mode][0]){
+                      var translation = JSON.parse(pdb_data[mode][0]["translation"])
+                      var center_axis = JSON.parse(pdb_data[mode][0]["center_axis"])
+
+                      // calculate rotation and apply
+                      v1 = new NGL.Vector3(0,1,0)
+                      v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+                      var quaternion = new NGL.Quaternion(); // create one and reuse it
+                      quaternion.setFromUnitVectors( v2, v1 )
+                      o.setRotation(quaternion)
+
+                      // calculate translation and apply
+                      var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+                      v.applyMatrix4(o.matrix)
+                      o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+
+                      // calculate H8 position (based on TM1)
+                      var tm1_vector
+                      var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                      o.structure.eachAtom(function (ap) {
+                        tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                        tm1_vector.applyMatrix4(o.matrix)
+                      }, new NGL.Selection(":"+pdb_data[mode][0]['chain']+" and "+ ref_tm1 +" and .CA"))
+
+                      tm1_vector.y = 0 // height position doesn't matter
+                      tm1_vector.normalize()
+
+                      // calculate rotation angle around Y-axis (as the GPCR is now upright)
+                      v3 = new NGL.Vector3(-1, 0, 0)
+                      var m = new NGL.Matrix4()
+                      if (tm1_vector.z < 0)
+                        m.makeRotationY(v3.angleTo(tm1_vector))
+                      else if (tm1_vector.z > 0)
+                        m.makeRotationY(-1*v3.angleTo(tm1_vector))
+
+                      o.setTransform(m)
+                    }
+
                     o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)")
                 } );
 
@@ -3556,6 +3608,18 @@
                                 [ "white", "*" ]
                                 ])
 
+                        color_schemes[mode][1]['rainbow'] = NGL.ColormakerRegistry.addSelectionScheme([
+                                [rb_colors[0], segments_sets[highlight[0]]],
+                                [rb_colors[1], segments_sets[highlight[1]]],
+                                [rb_colors[2], segments_sets[highlight[2]]],
+                                [rb_colors[3], segments_sets[highlight[3]]],
+                                [rb_colors[4], segments_sets[highlight[4]]],
+                                [rb_colors[5], segments_sets[highlight[5]]],
+                                [rb_colors[6], segments_sets[highlight[6]]],
+                                [rb_colors[7], segments_sets[highlight[7]]],
+                                [ "white", "*" ]
+                                ])
+
                         color_schemes[mode][1]['grey'] = color_schemes[mode][0]['grey']
 
                         var stringBlob = new Blob( [ pdb_data[mode][1]['pdb'] ], { type: 'text/plain'} );
@@ -3589,14 +3653,14 @@
                             var atoms1 = first_structure.structure.getView(new NGL.Selection(selectionOne))
                             var atoms2 = o.structure.getView(new NGL.Selection(selectionTwo))
 
-                            // calculate and apply transformation to the first structure
-                            var superpose = new NGL.Superposition(atoms1, atoms2)
-                            superpose.transform(first_structure.structure)
-                            first_structure.structure.refreshPosition()
-                            first_structure.updateRepresentations({ 'position': true })
+                            // Due to superposing apply transformation to second struture
+                            var superpose = new NGL.Superposition(atoms2, atoms1)
+                            superpose.transform(o.structure)
+                            o.structure.refreshPosition()
+                            o.updateRepresentations({ 'position': true })
+                            o.setTransform(first_structure.matrix)
 
                             //// END SUPERPOSE ////
-
                             gpcr_rep[mode][1] = o.addRepresentation( "cartoon", {
                               sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+")",
                               radiusSize: 1,
@@ -3720,7 +3784,7 @@
                 }
                 controls += '</select></p>';
             }
-            controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="grey">greys</option></select></p><br/>';
+            controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
 
 
             if (two_structures){
@@ -3735,7 +3799,7 @@
                       controls += '<option value="'+pdbs_set2[i]+'">'+pdbs_set2[i]+'</option>';
               }
               controls += '</select></p>';
-              controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="grey">greys</option></select></p><br/>';
+              controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
             }
 
             controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
@@ -4405,7 +4469,7 @@
         .flareplot-legend {
           top: 20px;
           left: 20px;
-
+          z-index: 1;
         }
 
         .heatmap {

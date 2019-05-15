@@ -177,7 +177,7 @@ class Command(BaseCommand):
                     try:
                         arrestin = Protein.objects.get(accession=accession)
 
-                        pc, created = ProteinConformation.objects.get_or_create(protein=arrestin, state=state, template_structure=None)
+                        pc, created = ProteinConformation.objects.get_or_create(protein=arrestin, state=state)
                         self.logger.info('Created protein conformation')
                     except Exception as msg:
                         self.logger.error('Failed to create protein conformation', msg)

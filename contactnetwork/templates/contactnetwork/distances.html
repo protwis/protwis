@@ -448,10 +448,10 @@
 
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
-                color = { r: basal + (fDiff * -1*shift), g: basal-basal*(-fDiff), b: basal-basal*(-fDiff) };
+                color = { r: Math.round(basal + (fDiff * -1*shift)), g: Math.round(basal-basal*(-fDiff)), b: Math.round(basal-basal*(-fDiff)) };
             else
                 // If fDiff is close to 1 we want a blue color
-                color = { r: basal-basal*fDiff, g: basal-basal*fDiff, b: basal + (fDiff * shift)};
+                color = { r: Math.round(basal-basal*fDiff), g: Math.round(basal-basal*fDiff), b: Math.round(basal + (fDiff * shift))};
 
             if (rgb)
                 return color;
@@ -463,10 +463,10 @@
           var color;
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
-                color = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
+                color = { r: 255, g: Math.round(255-255*(-fDiff)), b: Math.round(255-255*(-fDiff)) };
             else
                 // If fDiff is close to 1 we want a blue color
-                color = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
+                color = { r: Math.round(255-255*fDiff), g: Math.round(255-255*fDiff), b: 255 };
 
             if (rgb)
                 return color;
@@ -957,6 +957,8 @@
 
         function renderHeatmap(data, heatMapSelector) {
 
+            var amount_of_data = 5000;
+
             var start = new Date().getTime();
             // Destroy old zoom on heatmap
             if (window.zoomHeatmap[heatMapSelector] != null) {
@@ -981,9 +983,14 @@
 
             // Draw heatmap
             var interactions = data.interactions;
+            var relevant_interactions = Object.keys(interactions).slice(0, amount_of_data);
             var segment_map = data.segment_map;
             var sequence_numbers = data.sequence_numbers;
             var num_seq_numbers = Object.keys(data.sequence_numbers).length;
+
+            var pdbs = data.pdbs;
+            var pdbs1 = data.pdbs1;
+            var pdbs2 = data.pdbs2;
             x = 0; wi = num_seq_numbers;
             y = 0; hi = num_seq_numbers;
 
@@ -1105,6 +1112,7 @@
             rects = Array();
             // Draw cells
             var svgns = "http://www.w3.org/2000/svg";
+            console.log(relevant_interactions);
             for (i = 0; i < num_seq_numbers; i++) {
                 for (var j = 0; j < num_seq_numbers; j++) {
                     // Get the sequence numbers
@@ -1118,8 +1126,7 @@
                     if (num2 in interactions) num = num2;
 
                     // console.log(num,'num of freq',interactions.length);
-                    if (num in interactions) {
-
+                    if (relevant_interactions.indexOf(num) >= 0) {
                         // rects.push(rect);
                         // var cell = heatmap.rect(i, j, 1, 1);
 
@@ -1134,11 +1141,13 @@
                             var dispersion = interactions[num][1];
                             var frequency = dispersion / data.max_dispersion;
 
-                            var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                            var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
 
-                            var popoverTable = 'Distance mean: ' + Math.round(mean/10)/10 + 'Å<br />'
-                            + 'Distance dispersion: ' + dispersion.toFixed(2)
-                            + '<br />[Dispersion is variance over mean, giving an indication of relative flexibility of data]'
+                            var popoverTable = 'Distance mean: ' + Math.round(mean*10)/10 + 'Å<br />'
+                            + 'Distance coefficient of variation: ' + dispersion.toFixed(2)
+                            + '<br />[coefficient of variation is standard deviation over mean, giving an indication of relative flexibility of data]'
+                            + '<br /> #TABLE#';
+                            
 
                             // cell.attr({
                             //     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
@@ -1159,6 +1168,7 @@
                             rect.setAttributeNS(null, 'class', "heatmap-interaction");
                             rect.setAttributeNS(null, 'title', "Distance between " + seq_i + ", " + seq_j);
                             rect.setAttributeNS(null, 'data-content', popoverTable);
+                            rect.setAttributeNS(null, 'data-extra', JSON.stringify(interactions[num][2]));
 
                         } else {
                             var values = interactions[num]
@@ -1169,11 +1179,11 @@
                             var ns = values[3];
                             var rgb = getGradientColor(frequency, true);
 
-                            var popoverTable = 'Difference of means: ' + Math.round(difference/10)/10 + 'Å<br />'
+                            var popoverTable = 'Difference of means: ' + Math.round(difference*10)/10 + 'Å<br />'
                                 + '<table class="table"><thead><tr><th>Mean</th><th>Std</th><th>N</th></tr></thead>'
-                                + '<tbody><tr><td>' + Math.round(means[0]/10)/10 + ' Å</td><td>' + Math.round(std[0])/100 + '</td><td>' + Math.round(ns[0]) + '</td></tr>'
-                                + '<tr><td>' + Math.round(means[1]/10)/10 + ' Å</td><td>' + Math.round(std[1])/100 + '</td><td>' + Math.round(ns[1]) + '</td></tr></tbody></table>'
-                                + 'p-value: ' + Math.round(values[4]*10000) / 10000 + '<br />'
+                                + '<tbody><tr><td>' + Math.round(means[0]*10)/10 + ' Å</td><td>' + Math.round(std[0]*10)/10 + '</td><td>' + Math.round(ns[0]) + '</td></tr>'
+                                + '<tr><td>' + Math.round(means[1]*10)/10 + ' Å</td><td>' + Math.round(std[1]*10)/10 + '</td><td>' + Math.round(ns[1]) + '</td></tr></tbody></table>'
+                                + 'p-value: ' + Math.round(values[4]*10000) / 10000 + '<br /> #TABLE#'
 
                             // cell.attr({
                             //     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
@@ -1193,6 +1203,8 @@
                             rect.setAttributeNS(null, 'class', "heatmap-interaction");
                             rect.setAttributeNS(null, 'title', "Distance between " + seq_i + ", " + seq_j);
                             rect.setAttributeNS(null, 'data-content', popoverTable);
+                            rect.setAttributeNS(null, 'data-extra', JSON.stringify(values[5]));
+
                         }
 
                         // document.getElementById(heatmap_id+'_content').appendChild(rect);
@@ -1224,6 +1236,82 @@
                 var $this = $(this);
                 //if not already initialized
                 if (!$this.data('bs.popover')) {
+
+                    if ('max_dispersion' in data) {
+                    // Build data table
+                    var individual_pdb_values = JSON.parse($(this).attr("data-extra"));
+                    var total = 0;
+                    var length = 0;
+                    for (var pdb in individual_pdb_values) {
+                        total += individual_pdb_values[pdb];
+                        length++;
+                    }
+                    var avg = total / length;
+                    var pdbs_per_line = 8;
+                    var table = "<table class='table'><tr>";
+                    pdbs.forEach(function (pdb, i) {
+                        if (i % pdbs_per_line == 0) {
+                            // Make a new line to prevent too big tables.
+                            table += "</tr><tr>";
+                            pdbs_slice = pdbs.slice(i, i+pdbs_per_line);
+                            pdbs_slice.forEach(function (pdb, i) {
+                                table += `<th>${pdb}</th>`
+                            });
+                            table += "</tr><tr>";
+                        }
+
+                        if (pdb in individual_pdb_values) {
+                            fold = individual_pdb_values[pdb]/avg;
+                            if (fold>1) { fold = 1/fold; }
+                            var color = rgb2hex(255, Math.round(255*(fold)), Math.round(255*(fold)));
+                            table += `<td bgcolor='${color}'>${individual_pdb_values[pdb]}</td>`;
+                        } else {
+                            table += "<td>N/A</td>";
+                        }
+                    });
+                    table += "</tr></table>";
+                  } else {
+                    var sets = JSON.parse($(this).attr("data-extra"));
+                    var table = "";
+                    sets.forEach(function (individual_pdb_values, i) {
+                      if (i==0) pdbs = pdbs1;
+                      if (i==1) pdbs = pdbs2;
+                      var total = 0;
+                      var length = 0;
+                      for (var pdb in individual_pdb_values) {
+                          total += individual_pdb_values[pdb];
+                          length++;
+                      }
+                      var avg = total / length;
+                      var pdbs_per_line = 8;
+                      table += "<table class='table'><tr>";
+                      pdbs.forEach(function (pdb, i) {
+                          if (i % pdbs_per_line == 0) {
+                              // Make a new line to prevent too big tables.
+                              table += "</tr><tr>";
+                              pdbs_slice = pdbs.slice(i, i+pdbs_per_line);
+                              pdbs_slice.forEach(function (pdb, i) {
+                                  table += `<th>${pdb}</th>`
+                              });
+                              table += "</tr><tr>";
+                          }
+
+                          if (pdb in individual_pdb_values) {
+                              fold = individual_pdb_values[pdb]/avg;
+                              if (fold>1) { fold = 1/fold; }
+                              var color = rgb2hex(255, Math.round(255*(fold)), Math.round(255*(fold)));
+                              table += `<td bgcolor='${color}'>${individual_pdb_values[pdb]}</td>`;
+                          } else {
+                              table += "<td>N/A</td>";
+                          }
+                      });
+                      table += "</tr></table>";
+                    });
+                  }
+                  // Copy table to data-content
+                  new_content = $(this).attr("data-content").replace("#TABLE#", table);
+                  $(this).attr("data-content",new_content);
+
                   $this.popover({
                     'container': heatMapSelector,
                     'placement': 'bottom',
@@ -1251,7 +1339,7 @@
 
                 // Populate heatmap legend
                 var legendHtml = '<h4 class="center">Legend</h4>'
-                    + '<p>Range: 0 to ' + Math.round(data.max_dispersion/10)/10 + '</p>'
+                    + '<p>Range: 0 to ' + Math.round(data.max_dispersion*100)/100 + '</p>'
                     + '<div class="temperature-scale">'
                     + '<span class="gray-to-red"></span>'
                     + '</div>';
@@ -1260,7 +1348,7 @@
 
                 // Populate heatmap legend
                 var legendHtml = '<h4 class="center">Legend</h4>'
-                    + '<p>Range: -' + Math.round(data.max_diff/10)/10 + 'Å to ' + Math.round(data.max_diff/10)/10 + 'Å</p>'
+                    + '<p>Range: -' + Math.round(data.max_diff*10)/10 + 'Å to ' + Math.round(data.max_diff*10)/10 + 'Å</p>'
                     + '<div class="temperature-scale">'
                     + '<span class="red-to-gray"></span>'
                     + '<span class="gray-to-blue"></span>'
@@ -2124,7 +2212,7 @@
             pdb_data[mode] = [];
             int_labels[mode] = []
 
-            console.log('data!?',distance_data['ngl_data']);
+//            console.log('data!?',distance_data['ngl_data']);
 
             var first_structure;
             var num_set1;
@@ -2152,7 +2240,7 @@
                   var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
                   var frequency = value['avg'] / max_diff;
                   if ('max_dispersion' in distance_data) {
-                    var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                    var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
                   } else {
                     var rgb = getGradientColor(frequency, true);
                   }
@@ -2230,7 +2318,7 @@
                           var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
                           if ('max_dispersion' in distance_data) {
                             var frequency = value / distance_data['max_dispersion'];
-                            var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+                            var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
                           } else {
                             var frequency = value / distance_data['max_diff'];
                             var rgb = getGradientColor(frequency, true);
@@ -2327,7 +2415,46 @@
                     res_int_gn = Object.assign([], res_int);
                     res_int_gn = intersect(res_int_gn, pdb_data[mode][0]['only_gn']);
 
-                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)");
+                    // Automatic GPCR positioning
+                    if ("translation" in pdb_data[mode][0]){
+                      var translation = JSON.parse(pdb_data[mode][0]["translation"])
+                      var center_axis = JSON.parse(pdb_data[mode][0]["center_axis"])
+
+                      // calculate rotation and apply
+                      v1 = new NGL.Vector3(0,1,0)
+                      v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+                      var quaternion = new NGL.Quaternion(); // create one and reuse it
+                      quaternion.setFromUnitVectors( v2, v1 )
+                      o.setRotation(quaternion)
+
+                      // calculate translation and apply
+                      var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+                      v.applyMatrix4(o.matrix)
+                      o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+
+                      // calculate H8 position (based on TM1)
+                      var tm1_vector
+                      var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                      o.structure.eachAtom(function (ap) {
+                        tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                        tm1_vector.applyMatrix4(o.matrix)
+                      }, new NGL.Selection(":"+pdb_data[mode][0]['chain']+" and "+ ref_tm1 +" and .CA"))
+
+                      tm1_vector.y = 0 // height position doesn't matter
+                      tm1_vector.normalize()
+
+                      // calculate rotation angle around Y-axis (as the GPCR is now upright)
+                      v3 = new NGL.Vector3(-1, 0, 0)
+                      var m = new NGL.Matrix4()
+                      if (tm1_vector.z < 0)
+                        m.makeRotationY(v3.angleTo(tm1_vector))
+                      else if (tm1_vector.z > 0)
+                        m.makeRotationY(-1*v3.angleTo(tm1_vector))
+
+                      o.setTransform(m)
+                    }
+
+                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)");
                 } );
 
             });
@@ -2390,7 +2517,7 @@
             } else {
               // structure selection
               $("#ngl_pdb_"+mode+"_ref").change(function(e){
-                    createNGLview(mode, $(this).val(), pdbs, pdbs_set2);
+                    createNGLview(mode, $(this).val(), pdbs, pdbs_set2, false, distance_data);
               });
             }
 
@@ -2958,6 +3085,10 @@
          div#hiveTooltip {
            background-color: white;
            .border-radius ( 5px );
+         }
+
+         .popover {
+             max-width: 1200px
          }
     </style>
 

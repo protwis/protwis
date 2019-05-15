@@ -66,17 +66,32 @@ class Command(BaseBuild):
         parser.add_argument('-r', help='''Run program for specific receptor(s) by giving UniProt common name as 
                                           argument (e.g. 5ht2a_human)''', 
                             default=False, type=str, nargs='+')
-        parser.add_argument('--purge', help='Purge all existing records', default=False, action='store_true')
+        parser.add_argument('--purge', help='Purge all existing db records', default=False, action='store_true')
+        parser.add_argument('--purge_zips', help='Purge all existing local model zips', default=False, action='store_true')
         parser.add_argument('--test_run', action='store_true', help='Build only one complex model', default=False)
         parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
         parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str, nargs='+')
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         parser.add_argument('--skip_existing', help='Skip rebuilding models already in protwis/structure/complex_models_zip/', 
                             default=False, action='store_true')
+        parser.add_argument('-z', help='Create zip file of complex model directory containing all built complex models', default=False,
+                            action='store_true')
         
     def handle(self, *args, **options):
         if options['purge']:
+            print("Delete existing db entries")
             self.purge_complex_entries()
+        if options['purge_zips']:
+            print("Delete existing local zips")
+            complex_zip_path = './structure/complex_models_zip/'
+            if os.path.exists(complex_zip_path):
+                files = os.listdir(complex_zip_path)
+                for f in files:
+                    try:
+                        os.unlink(complex_zip_path+f)
+                    except:
+                        shutil.rmtree(complex_zip_path+f)
+
         self.debug = options['debug']
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')
@@ -133,11 +148,11 @@ class Command(BaseBuild):
                     if break_loop: break
                 if break_loop: break
 
-        # Offset target counter to -1 to correct for skipping Golf
-        s_c = -1
+        s_c = 0
         for i,j in self.gprotein_targets.items():
             for s in j:
                 s_c+=1
+
         print('receptors to model: {}'.format(len(self.receptor_list)))
         print('signaling proteins per receptor: {}'.format(s_c))
 
@@ -149,6 +164,14 @@ class Command(BaseBuild):
             if i.startswith('Class') and not i.endswith('.zip'):
                 shutil.rmtree('./structure/complex_models_zip/'+i)
         
+        #create master zip for archive
+        if options['z']:
+            os.chdir('./structure/')
+            zipf = zipfile.ZipFile('../static/homology_models/GPCRdb_complex_homology_models_{}.zip'.format(str(build_date)),'w',zipfile.ZIP_DEFLATED)
+            for root, dirs, files in os.walk('complex_models_zip'):
+                for f in files:
+                    zipf.write(os.path.join(root, f))
+            zipf.close()
 
     def main_func(self, positions, itearation, count, lock):
         processor_id = round(self.processors*positions[0]/len(self.receptor_list))+1
@@ -174,9 +197,6 @@ class Command(BaseBuild):
                 # Only build gnat models with opsins
                 if receptor.family.parent.name!='Opsins' and target in ['gnat1_human','gnat2_human','gnat3_human']:
                     continue
-                # Skip Golf
-                if target=='gnal_human':
-                    continue
                 # print(receptor, target)
                 import_receptor = False
                 if len(SignprotComplex.objects.filter(structure__protein_conformation__protein__parent__entry_name=receptor.entry_name, protein__entry_name=target))>0:
@@ -199,8 +219,10 @@ class Command(BaseBuild):
                             mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
                             mod.run(fast_refinement=True)
 
-
     def purge_complex_entries(self):
+        if os.path.exists('./structure/complex_models_zip/'):
+            for i in os.listdir('./structure/complex_models_zip/'):
+                shutil.rmtree('./structure/complex_models_zip/'+i)
         try:
             StructureComplexModelSeqSim.objects.all().delete()
         except:
