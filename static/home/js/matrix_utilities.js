@@ -187,7 +187,7 @@ const run_sig_match = function(){
     type: 'POST',
     url: '/signprot/matrix/sigmat/',
     data: {
-      csrfmiddlewaretoken: "{{ csrf_token }}",
+      csrfmiddlewaretoken: csrf_token,
       pos: pos_set,
       seg: segments.label,
       cutoff: cutoff,

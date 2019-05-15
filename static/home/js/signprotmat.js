@@ -1362,58 +1362,62 @@ var signprotmat = {
                 .on("mouseout", function (d) {
                 seqsigTip.hide();
             })
-                .on("click", function (d) {
-                var index;
-                // let rect_x = d3.event.target.getAttribute('x')
-                // let rect_y = d3.event.target.getAttribute('y')
-                // console.log(rect_x, rect_y)
-                // https://stackoverflow.com/a/20251369/8160230
-                // select the rect under cursor
-                var curr = d3.select(this);
-                d.active = true;
-                // set style in regards to active
-                if (d.active &&
-                    con_seq[d.gn].length > 0 &&
-                    d.key == con_seq[d.gn][0].key) {
-                    // remove prev. sele. rectangle
-                    con_seq[d.gn].active = false;
-                    //con_seq = _.omit(con_seq, d.gn)
-                    con_seq[d.gn] = [];
-                    curr.style("stroke", "black").style("stroke-width", 1);
-                }
-                else if (d.active && con_seq[d.gn].length > 0) {
-                    // change the selected property to the clicked one
-                    // remove the active value from the prev. selec. property
-                    con_seq[d.gn].active = false;
-                    // remove the previously selected property
-                    //con_seq = _.omit(con_seq, d.gn)
-                    con_seq[d.gn] = [];
-                    // add the new prop to the object
-                    con_seq[d.gn] = [d];
-                    // apply appropriate syling
-                    curr.style("stroke", "yellow").style("stroke-width", 2);
-                    d3.select("g#seqsig_mat")
-                        .selectAll("rect.res_rect")
-                        .filter(function (e) { return e.active; })
-                        .filter(function (e) { return e.gn == d.gn; })
-                        .filter(function (e) { return e.feature_code + e.length != d.feature_code + d.length; })
-                        .style("stroke", "black")
-                        .style("stroke-width", 1);
-                }
-                else if (d.active) {
-                    // add a newly clicked rectangle
-                    con_seq[d.gn] = [d];
-                    curr.style("stroke", "yellow").style("stroke-width", 2);
-                }
-                else {
-                    // edge case rect removal
-                    con_seq[d.gn].active = false;
-                    con_seq = _.omit(con_seq, d.gn);
-                    curr.style("stroke", "black").style("stroke-width", 1);
-                }
-                //console.log(con_seq)
-                signprotmat.d3.conSeqUpdate(row_height);
-            })
+                // .on("click", function(d) {
+                //   let index;
+                //   // let rect_x = d3.event.target.getAttribute('x')
+                //   // let rect_y = d3.event.target.getAttribute('y')
+                //   // console.log(rect_x, rect_y)
+                //
+                //   // https://stackoverflow.com/a/20251369/8160230
+                //   // select the rect under cursor
+                //   let curr = d3.select(this);
+                //   d.active = true;
+                //
+                //   // set style in regards to active
+                //   if (
+                //     d.active &&
+                //     con_seq[d.gn].length > 0 &&
+                //     d.key == con_seq[d.gn][0].key
+                //   ) {
+                //     // remove prev. sele. rectangle
+                //     con_seq[d.gn].active = false;
+                //     //con_seq = _.omit(con_seq, d.gn)
+                //     con_seq[d.gn] = [];
+                //     curr.style("stroke", "black").style("stroke-width", 1);
+                //   } else if (d.active && con_seq[d.gn].length > 0) {
+                //     // change the selected property to the clicked one
+                //     // remove the active value from the prev. selec. property
+                //     con_seq[d.gn].active = false;
+                //     // remove the previously selected property
+                //     //con_seq = _.omit(con_seq, d.gn)
+                //     con_seq[d.gn] = [];
+                //     // add the new prop to the object
+                //     con_seq[d.gn] = [d];
+                //     // apply appropriate syling
+                //     curr.style("stroke", "yellow").style("stroke-width", 2);
+                //     d3.select("g#seqsig_mat")
+                //       .selectAll("rect.res_rect")
+                //       .filter(e => e.active)
+                //       .filter(e => e.gn == d.gn)
+                //       .filter(
+                //         e => e.feature_code + e.length != d.feature_code + d.length
+                //       )
+                //       .style("stroke", "black")
+                //       .style("stroke-width", 1);
+                //   } else if (d.active) {
+                //     // add a newly clicked rectangle
+                //     con_seq[d.gn] = [d];
+                //     curr.style("stroke", "yellow").style("stroke-width", 2);
+                //   } else {
+                //     // edge case rect removal
+                //     con_seq[d.gn].active = false;
+                //     con_seq = _.omit(con_seq, d.gn);
+                //     curr.style("stroke", "black").style("stroke-width", 1);
+                //   }
+                //   //console.log(con_seq)
+                //
+                //   signprotmat.d3.conSeqUpdate(row_height);
+                // })
                 .attr("class", "res_rect")
                 .style("fill", function (d) {
                 var gcol = signprotmat.d3.fScaleColor(d.feature_code);
