@@ -27,6 +27,7 @@ from common.views import AbsTargetSelection
 import json
 import re
 import time
+import pickle
 from itertools import chain
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -89,7 +90,7 @@ def GProtein(request, dataset = "GuideToPharma"):
                 if ps:
                     jsondata[str(gp)] = []
                     for p in ps:
-                        if dataset=="Aska" and p.log_rai_mean<-0.5:
+                        if dataset=="Aska" and p.log_rai_mean<-1:
                             continue
                         if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
                             selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
@@ -114,7 +115,7 @@ def Couplings(request):
     context = OrderedDict()
 
     threshold_primary = -0.1
-    threshold_secondary = -0.5
+    threshold_secondary = -1
 
 
     proteins = Protein.objects.filter(sequence_type__slug='wt',family__slug__startswith='00',species__common_name='Human').all().prefetch_related('family')
@@ -166,6 +167,8 @@ def Couplings(request):
             if 'subunits' not in data[p][s][gf]:
                 data[p][s][gf] = {'subunits':{},'best':-2.00}
             data[p][s][gf]['subunits'][g] = round(Decimal(m),2)
+            if round(Decimal(m),2)== -0.00:
+                data[p][s][gf]['subunits'][g] = 0.00
             # get the lowest number into 'best'
             if m>data[p][s][gf]['best']:
                 data[p][s][gf]['best'] = round(Decimal(m),2)
@@ -174,7 +177,7 @@ def Couplings(request):
 
     distinct_g_families = sorted(distinct_g_families)
     distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
-    distinct_g_subunit_families = OrderedDict([('Gs',['gnal', 'gnas2']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gna14', 'gna15', 'gnaq']), ('G12/G13',['gna12', 'gna13'])])
+    distinct_g_subunit_families = OrderedDict([('Gs',['gnas2','gnal']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gnaq', 'gna14', 'gna15']), ('G12/G13',['gna12', 'gna13'])])
 
     for p,v in data.items():
         fd[p] = [v['class'],p,v['pretty']]
@@ -1138,6 +1141,10 @@ def InteractionMatrix(request):
             r['gprot'] = s.get_stab_agents_gproteins()
         except Exception:
             r['gprot'] = ''
+        try:
+            r['gprot_class'] = s.get_signprot_gprot_family()
+        except Exception:
+            r['gprot_class'] = ''
         complex_info.append(r)
 
     data = Protein.objects.filter(
@@ -1225,25 +1232,6 @@ def IMSequenceSignature(request):
 
     # FEATURES AND REGIONS
     feats = [feature for feature in signature_data['a_pos'].features_combo]
-    trans = {
-        'N-term': 'N',
-        'TM1': 1,
-        'ICL1': 12,
-        'TM2': 2,
-        'ECL1': 23,
-        'TM3': 3,
-        'ICL2': 34,
-        'TM4': 4,
-        'ECL2': 45,
-        'TM5': 5,
-        'ICL3': 56,
-        'TM6': 6,
-        'ECL3': 67,
-        'TM7': 7,
-        'ICL4': 78,
-        'H8': 8,
-        'C-term': 'C',
-    }
 
     # GET GENERIC NUMBERS
     generic_numbers = get_generic_numbers(signature_data)
@@ -1251,10 +1239,20 @@ def IMSequenceSignature(request):
     # FEATURE FREQUENCIES
     signature_features = get_signature_features(signature_data, generic_numbers, feats)
     grouped_features = group_signature_features(signature_features)
-    
+
     # FEATURE CONSENSUS
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
     sigcons = get_signature_consensus(signature_data, generic_numbers_flat)
+
+    rec_class = pos_set[0].get_protein_class()
+
+    dump = {
+        'rec_class': rec_class,
+        'signature': signature,
+        'consensus': signature_data,
+        }
+    with open('signprot/notebooks/pickles/{}.p'.format(rec_class), 'wb+') as out_file:
+        pickle.dump(dump, out_file)
 
     # pass back to front
     res = {

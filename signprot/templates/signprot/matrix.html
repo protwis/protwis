@@ -585,8 +585,13 @@ $(document).ready(function () {
                     data: 'gprot',
                     title: 'G-Protein',
                     targets: 5,
+                },
+                {
+                    data: 'gprot_class',
+                    title: 'G-Protein Class',
+                    targets: 6,
                 }],
-            order: [[ 5, "asc" ],[ 3, "asc" ]],
+            order: [[ 6, "desc" ],[ 5, "asc" ],[ 3, "asc" ]],
             select: {
                 style: 'os',
             },

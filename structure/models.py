@@ -38,6 +38,9 @@ class Structure(models.Model):
         else:
             return '-'
 
+    def get_signprot_gprot_family(self):
+        return str(self.signprot_complex.protein.family)
+
     def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
 
         tmp = []
@@ -59,7 +62,7 @@ class Structure(models.Model):
                 tmp.append(line)
 
         return '\n'.join(tmp)
-    
+
     def get_ligand_pdb(self, ligand):
 
         tmp = []
@@ -93,6 +96,29 @@ class Structure(models.Model):
 
     class Meta():
         db_table = 'structure'
+
+
+class StructureComplexProtein(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
+    chain = models.CharField(max_length=1)
+
+    def __repr__(self):
+        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
+
+    def __str__(self):
+        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_complex_protein'
+
+class StructureVectors(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    translation = models.CharField(max_length=100, null=True)
+    center_axis = models.CharField(max_length=100)
+
+    class Meta():
+        db_table = 'structure_vectors'
 
 
 class StructureModel(models.Model):

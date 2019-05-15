@@ -1967,15 +1967,23 @@ def HommodDownload(request):
 	zip_io = BytesIO()
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
 		for hommod in hommodels:
+			io = StringIO(hommod.pdb_data.pdb)
+			stats_text = StringIO(hommod.stats_text.stats_text)
 			try: 
 				hommod.refined
 				version = hommod.pdb_data.pdb.split('\n')[0][-10:]
-				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.zip'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+																   hommod.pdb_code.index, hommod.state.name, version)
+				stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
 																   hommod.pdb_code.index, hommod.state.name, version)
 			except:
-				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.zip'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
 																		  hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
-			backup_zip.write('./structure/homology_models_zip/'+mod_name, mod_name)
+				stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+																		  hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+			backup_zip.writestr(mod_name, io.getvalue())
+			backup_zip.writestr(stat_name, stats_text.getvalue())
+
 	response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
 	response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_homology_models' + ".zip"
 	response['Content-Length'] = zip_io.tell()
@@ -1989,9 +1997,14 @@ def ComplexmodDownload(request):
 	zip_io = BytesIO()
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
 		for hommod in hommodels:
-			mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.zip'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+			io = StringIO(hommod.pdb_data.pdb)
+			stats_text = StringIO(hommod.stats_text.stats_text)
+			mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
 															   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-			backup_zip.write('./structure/complex_models_zip/'+mod_name, mod_name)
+			stat_name = 'Class{}_{}-{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+															   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+			backup_zip.writestr(mod_name, io.getvalue())
+			backup_zip.writestr(stat_name, stats_text.getvalue())
 	response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
 	response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_complex_homology_models' + ".zip"
 	response['Content-Length'] = zip_io.tell()
@@ -2000,32 +2013,50 @@ def ComplexmodDownload(request):
 def SingleModelDownload(request, modelname, state, csv=False):
 	"Download single homology model"
 	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+	zip_io = BytesIO()
 	if state=='refined':
 		hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
 	else:
 		hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
 	if state=='refined':
 		version = hommod.pdb_data.pdb.split('\n')[0][-10:]
-		file_name = 'Class{}_{}_{}_{}_{}_GPCRdb.zip'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+		mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
+																 hommod.pdb_code.index, hommod.state.name, version)
+		stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
 																 hommod.pdb_code.index, hommod.state.name, version)
 	else:
-		file_name = 'Class{}_{}_{}_{}_{}_GPCRdb.zip'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+		mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
 																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
-	zipfile = open('./structure/homology_models_zip/'+file_name, 'rb')
-	response = HttpResponse(zipfile, content_type="application/zip")
-	response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+		stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+	io = StringIO(hommod.pdb_data.pdb)
+	stats_text = StringIO(hommod.stats_text.stats_text)
+	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
+		backup_zip.writestr(mod_name, io.getvalue())
+		backup_zip.writestr(stat_name, stats_text.getvalue())
+	response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
+	response['Content-Disposition'] = 'attachment; filename=%s' % mod_name.split('.')[0] + ".zip"
+	response['Content-Length'] = zip_io.tell()
 
 	return response
 
 def SingleComplexModelDownload(request, modelname, signprot, csv=False):
 	"Download single homology model"
 	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+	zip_io = BytesIO()
 	hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
-	file_name = 'Class{}_{}-{}_{}_{}_GPCRdb.zip'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+	mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
 														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-	zipfile = open('./structure/complex_models_zip/'+file_name, 'rb')
-	response = HttpResponse(zipfile, content_type='application/zip')
-	response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+	stat_name = 'Class{}_{}-{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+	io = StringIO(hommod.pdb_data.pdb)
+	stats_text = StringIO(hommod.stats_text.stats_text)
+	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
+		backup_zip.writestr(mod_name, io.getvalue())
+		backup_zip.writestr(stat_name, stats_text.getvalue())
+	response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
+	response['Content-Disposition'] = 'attachment; filename=%s' % mod_name.split('.')[0] + ".zip"
+	response['Content-Length'] = zip_io.tell()
 
 	return response
 

@@ -55,6 +55,7 @@ INSTALLED_APPS = (
     'mutational_landscape',
     'contactnetwork',
     'seqsign',
+    'angles',
 )
 
 MIDDLEWARE = (

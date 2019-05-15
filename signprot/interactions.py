@@ -39,6 +39,25 @@ def get_protein_segments(request):
 
 def get_generic_numbers(signature_data):
     """Parse the generic numbers in the signature data"""
+    trans = {
+        'N-term': 'N',
+        'TM1': 1,
+        'ICL1': 12,
+        'TM2': 2,
+        'ECL1': 23,
+        'TM3': 3,
+        'ICL2': 34,
+        'TM4': 4,
+        'ECL2': 45,
+        'TM5': 5,
+        'ICL3': 56,
+        'TM6': 6,
+        'ECL3': 67,
+        'TM7': 7,
+        'ICL4': 78,
+        'H8': 8,
+        'C-term': 'C',
+    }
     generic_numbers = []
     for _, segments in signature_data["common_generic_numbers"].items():
         for elem, num in segments.items():

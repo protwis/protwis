@@ -124,13 +124,13 @@ function parseGPCRdb2flare(data) {
       // Single group has a max_dispersion value
       var dispersion = data.interactions[pair][1];
       var frequency = dispersion / data.max_dispersion;
-      var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
+      var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
     } else if ("max_diff" in data) {
       // two groups has a max_dispersion value
       var difference = data.interactions[pair][0];
       var frequency = difference / data.max_diff;
       var rgb = getGradientColor(frequency, true);
-    } 
+    }
     // console.log(pair,data.interactions[pair]);
     if ("frequency" in data){
         dataFlare.edges.push({
