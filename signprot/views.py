@@ -1246,13 +1246,13 @@ def IMSequenceSignature(request):
 
     rec_class = pos_set[0].get_protein_class()
 
-    dump = {
-        'rec_class': rec_class,
-        'signature': signature,
-        'consensus': signature_data,
-        }
-    with open('signprot/notebooks/pickles/{}.p'.format(rec_class), 'wb+') as out_file:
-        pickle.dump(dump, out_file)
+    # dump = {
+    #     'rec_class': rec_class,
+    #     'signature': signature,
+    #     'consensus': signature_data,
+    #     }
+    # with open('signprot/notebooks/pickles/{}.p'.format(rec_class), 'wb+') as out_file:
+    #     pickle.dump(dump, out_file)
 
     # pass back to front
     res = {
