@@ -55,7 +55,10 @@
                            <div class="panel panel-default">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Matrix</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right">
+                                    <span class="glyphicon glyphicon-download btn-download"></span>
+                                    <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -72,7 +75,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Flareplot</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -88,7 +94,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">NGL</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -198,7 +207,10 @@
                            <div class="panel panel-default">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Matrix</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right">
+                                    <span class="glyphicon glyphicon-download btn-download"></span>
+                                    <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -215,7 +227,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Flareplot</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -231,7 +246,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">NGL</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -343,6 +361,12 @@
     <!-- END TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
 {% endblock %}
 {% block addon_js %}
+
+  
+    <script type="text/javascript" src="{% static 'home/js/canvas-toBlob.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/FileSaver.min.js' %}"> </script>
+
+
     <script type="text/javascript" src="{% static 'home/js/snap.svg-v5.min.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
 
@@ -351,6 +375,7 @@
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
     <script src="{% static 'home/js/select2.js' %}"> </script>
     <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script>
         window.zoomHeatmap = {};
@@ -561,13 +586,101 @@
             }
         }
 
-        function downloadSVG(svgSelector, name) {
-          var svgClone = $(svgSelector).clone();
-          svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
+        function generateStyleDefs(svgDomElement) {
+          var styleDefs = "";
+          var sheets = document.styleSheets;
+          for (var i = 0; i < sheets.length; i++) {
+            var rules = sheets[i].cssRules;
+            for (var j = 0; j < rules.length; j++) {
+              var rule = rules[j];
+              if (rule.style) {
+                var selectorText = rule.selectorText;
+                var elems = svgDomElement.querySelectorAll(selectorText);
 
+                if (elems.length) {
+                  styleDefs += selectorText + " { " + rule.style.cssText + " }\n";
+                }
+              }
+            }
+          }
+
+          var s = document.createElement('style');
+          s.setAttribute('type', 'text/css');
+          s.innerHTML = styleDefs;
+
+          var defs = document.createElement('defs');
+          defs.appendChild(s);
+          svgDomElement.insertBefore(defs, svgDomElement.firstChild);
+        }
+
+
+
+        function downloadSVG(svgSelector, filetype) {
+          var options = {};
+          svg_class = svgSelector.closest(".panel-body").find("div").attr("class");
+          var svgClone = svgSelector.clone();
+          // remove data stuff that makes it slow
+
+          if (svg_class=='heatmap-container') {
+            svgClone.find('rect').removeAttr('data-content');
+            svgClone.find('rect').removeAttr('title');
+            svgClone.find('rect').removeAttr('data-extra');
+
+            // Figure out how much to translate svg to offset for the headers
+            textNode1 = svgSelector.find('text').first().get(0);
+            bbox1 = textNode1.getBBox();
+            extra_x = parseInt(bbox1.height)-2;
+            max_x = parseInt(svgClone.find('rect').last().attr('x'))+extra_x;
+            svgClone.removeAttr('style');
+            svgClone.removeAttr('preserveAspectRatio');
+            svgClone.attr('height', '2000');
+            svgClone.attr('width', '2000');
+            svgClone.attr('viewBox', '0 0 '+(max_x+2)+' '+(max_x+2));
+            svgClone.find('.svg-pan-zoom_viewport').removeAttr('transform');
+            svgClone.find('.svg-pan-zoom_viewport').attr('transform','translate('+extra_x+','+extra_x+')');
+          } else if (svg_class=='flareplot-container') {
+
+            svgClone.attr("version", "1.1");
+            svgClone.attr("xmlns", "http://www.w3.org/2000/svg");
+            svgClone.attr("xmlns:xlink", "http://www.w3.org/1999/xlink");
+            svgClone.attr('height', '2000');
+            svgClone.attr('width', '2000');
+          } else if (svg_class=='ngl-container') {
+            // Requires canvas-toBlob.js
+            svgSelector.get(0).toBlob(function(blob) {
+                saveAs(blob, "ngl_view_distances.png");
+            });
+            return
+          }
+          svgClone.css('background-color','white');
+
+          // Get styles
+          generateStyleDefs(svgClone.get(0));
           var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
 
-          downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+          // downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), 'distances_'+svg_class+'.svg');
+
+          // If SVG, end here.
+          if (filetype=='svg') {
+            downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), 'distances_'+svg_class+'.svg');
+            return 
+          }
+
+          var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( escapedSVG ) ) ); // Convert SVG string to data URL
+          var image = new Image();
+          image.onload = function() {
+            var canvas = document.createElement("canvas");
+            canvas.width = image.width;
+            canvas.height = image.height;
+            var context = canvas.getContext('2d');
+            context.drawImage(image, 0, 0);
+            // // Requires canvas-toBlob.js
+            canvas.toBlob( function(blob) {
+              saveAs( blob, 'distances_'+svg_class+'.png' ); // FileSaver.js function
+            }); 
+          };
+          image.src = imgsrc;
+
         }
 
         function downloadSingleCrystalCSV(singleCrystalSvgSelector, name) {
@@ -967,7 +1080,7 @@
             }
 
             var end = new Date().getTime();
-            console.log('Remove old zoom',end-start);
+            // console.log('Remove old zoom',end-start);
 
             // Destroy old legend content
             $(heatMapSelector + ' .heatmap-legend').empty();
@@ -1038,16 +1151,17 @@
 
             // Determine font-size
             label_font_size = Math.round(1*num_seq_numbers/20);
-            console.log(num_seq_numbers,'num_seq_numbers',label_font_size);
+            // console.log(num_seq_numbers,'num_seq_numbers',label_font_size);
 
             lines = Array();
             // Draw segments
+            last_end = 0
             segments.forEach(function(s) {
                 var rgb = getSegmentColor(s.seg);
                 // Place the segments vertically.
                 var cell = heatmap.rect(s.start, 0, s.end - s.start + 1, 0);
                 var line = heatmap.line(s.start, 0, s.start, num_seq_numbers);
-
+                last_end = s.end;
                 cell.attr({
                     // 'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                     'fill': "#FFFFFF",
@@ -1074,6 +1188,19 @@
                 // label.transform("r270s-1,1");
             });
 
+                var line = heatmap.line(last_end+1, 0, last_end+1, num_seq_numbers);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+                lines.push(line);
+                var line = heatmap.line(0, 0,  num_seq_numbers, 0);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+                lines.push(line);
+
             segments.forEach(function(s) {
                 rgb = getSegmentColor(s.seg);
 
@@ -1092,7 +1219,7 @@
                     'strokeWidth': "0.1"
                 });
 
-                var label = heatmap.text(0, s.start + (s.end - s.start + 1)/2, "TM"+s.seg);
+                var label = heatmap.text(6, s.start + (s.end - s.start + 1)/2, "TM"+s.seg);
 
                 label.attr({
                     'text-anchor': 'end',
@@ -1106,13 +1233,13 @@
                 lines.push(line);
                 labelGroup.add(label);
             });
-            console.log('segments drawn')
+            // console.log('segments drawn')
             var start = new Date().getTime();
             cells = Array();
             rects = Array();
             // Draw cells
             var svgns = "http://www.w3.org/2000/svg";
-            console.log(relevant_interactions);
+            // console.log(relevant_interactions);
             for (i = 0; i < num_seq_numbers; i++) {
                 for (var j = 0; j < num_seq_numbers; j++) {
                     // Get the sequence numbers
@@ -1228,7 +1355,7 @@
 
             var end = new Date().getTime();
 
-            console.log('cells added',$('rect.heatmap-interaction').length,end-start);
+            // console.log('cells added',$('rect.heatmap-interaction').length,end-start);
             // Add popover to cells
 
             $(heatMapSelector + ' rect.heatmap-interaction').click(function() {
@@ -1333,7 +1460,7 @@
 
             var end2 = new Date().getTime();
 
-            console.log('added popovers',end2-end)
+            // console.log('added popovers',end2-end)
 
             if ('max_dispersion' in data) {
 
@@ -1359,11 +1486,17 @@
 
 
             // Add SVG download button
-            // legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            // legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\',\'svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
             //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
             //               '</button>';
+            // legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\',\'png\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download PNG' +
+            //               '</button>';
+            // legendHtml += '<button onclick="saveSvgAsPng(document.getElementById(\'heatmap_double\'), \'test.png\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG2' +
+            //               '</button>';
 
-            // // Add CSV download button
+            // Add CSV download button
             // legendHtml += '<br /><button onclick="downloadSingleCrystalGroupCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
             //   '</button>';
 
@@ -1429,19 +1562,28 @@
             });
             // Create table view
             // populateTable('two-groups-table');
-            console.log('finished heatmap')
-
+            old_heatmap_width = 0;
+            // console.log('finished heatmap')
             // This function is also used on resize, to make sure thigs dont get out of shape
-            redraw_heatmap();
+            // redraw_heatmap();
 
         }
 
+        var old_heatmap_width = 0;
         function redraw_heatmap() {
           var heatmap_id = $('.heatmap:visible').attr('id');
           var ngl_id = $('.ngl-container:visible').attr('id');
           var heatMapSelector = "#" + $('.main_option:visible').attr('id');
 
           current_width = $("#"+heatmap_id).width();
+
+          // console.log('current_width',current_width,old_heatmap_width);
+          if (current_width && current_width!=old_heatmap_width) {
+            // console.log('change zoom'); 
+          } else {
+            // do nothing
+            return;
+          }
           if (current_width>screen.height) current_width = screen.height;
           $("#"+heatmap_id).height(current_width);
 
@@ -1458,12 +1600,12 @@
           if (current_width>screen.height) current_width = screen.height;
           $(heatMapSelector + " .flareplot-container svg").height(current_width);
 
-          // console.log('current_width',current_width);
+          old_heatmap_width = current_width;
 
           // Destroy old zoom on heatmap
           heatMapSelector = heatMapSelector+ ' .heatmap-container';
           if (window.zoomHeatmap[heatMapSelector] != null) {
-            console.log('REMOVE ZOOOOM');
+            // console.log('Reset heatmap zoom');
             window.zoomHeatmap[heatMapSelector].destroy();
             delete window.zoomHeatmap[heatMapSelector];
 
@@ -1483,6 +1625,7 @@
             window.zoomHeatmap[heatMapSelector].zoom(0.85);
             // if ($("#"+heatmap_id).width()>screen.height) window.zoomHeatmap[heatMapSelector].zoom(0.5);
           }
+
         }
 
 
@@ -1586,11 +1729,11 @@
                     $(".heatmap-legend").show();
                     $("#svgloading").remove()
 
-                    heatmapFunction(data, selector + ' .heatmap-container');
                     createNGLview("single-group",pdb[0], pdb, false, false, data);
                     // Re-render flareplot
                     // TODO MUNK
                     createFlareplotBox(data, selector + " .flareplot-container");
+                    heatmapFunction(data, selector + ' .heatmap-container');
                     redraw_heatmap();
                 });
             }
@@ -1628,7 +1771,6 @@
                             $(".heatmap").show();
                             $(".heatmap-legend").show();
                             $("#svgloading").remove()
-                            heatmapFunction(data, selector + ' .heatmap-container');
                             // createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic-container
                             // createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
 
@@ -1638,6 +1780,7 @@
                             // // Re-render flareplot
                             // createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
                             createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2, false , data);
+                            heatmapFunction(data, selector + ' .heatmap-container');
                             redraw_heatmap();
                         });
             }
@@ -1646,9 +1789,15 @@
         function initializeFullscreenButton(selector) {
             // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
             $(selector + ' .btn-fullscreen').click(function() {
-                fullScreenElement = $(this).parent().next().children().first();
+                fullScreenElement = $(this).closest(".panel-heading").next().children().first();
                 fullScreenElement.css('background-color','white');
                 toggleFullScreen(fullScreenElement.get(0));
+            });
+            $(selector + ' .btn-download').click(function() {
+                DownloadElement = $(this).closest(".panel-heading").next().find("svg,canvas");
+                downloadSVG(DownloadElement,'png');
+                // fullScreenElement.css('background-color','white');
+                // toggleFullScreen(fullScreenElement.get(0));
             });
         }
 
@@ -2244,7 +2393,7 @@
                   } else {
                     var rgb = getGradientColor(frequency, true);
                   }
-                  // console.log( key + "("+resNo1+")" + ": " + value['avg'] ,rgb,"rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")");
+                  // console.log( key + "("+resNo1+")" + ": " + value['avg'],max_diff ,rgb,"rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",rgb2hex(rgb.r, rgb.g, rgb.b));
                   if (resNo1) {
                     distance_colors.push([rgb2hex(rgb.r, rgb.g, rgb.b),resNo1+", "]);
                   }

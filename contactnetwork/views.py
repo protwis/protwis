@@ -809,7 +809,7 @@ def DistanceDataGroups(request):
                 vals.append(val)
         total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),1)
         if abs(total[gn1]['avg'])>ngl_max_diff:
-            ngl_max_diff = round(abs(total[gn1]['avg']))
+            ngl_max_diff = round(abs(total[gn1]['avg']),1)
 
     print('done ngl',time.time()-start)
     data['ngl_data'] = total
