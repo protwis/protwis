@@ -25,11 +25,13 @@ path.arc {
     cursor: pointer;
 }
 
+
 .link {
-    stroke: #000;
+    /*stroke: #000;*/
     stroke-opacity: .1;
     /*pointer-events: none;*/
 }
+
 
 .link.source, .link.target {
     stroke-opacity: 1;

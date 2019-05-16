@@ -56,7 +56,7 @@
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Matrix</h3>
                                   <span class="pull-right">
-                                    <span class="glyphicon glyphicon-download btn-download"></span>
+                                    <span class="glyphicon glyphicon-download btn-download png"></span>
                                     <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                   </span>
                                   <div class="clearfix"></div>
@@ -76,7 +76,7 @@
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Flareplot</h3>
                                 <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download"></span>
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 </span>
                                 <div class="clearfix"></div>
@@ -95,7 +95,7 @@
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">NGL</h3>
                                 <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download"></span>
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 </span>
                                 <div class="clearfix"></div>
@@ -208,7 +208,7 @@
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Matrix</h3>
                                   <span class="pull-right">
-                                    <span class="glyphicon glyphicon-download btn-download"></span>
+                                    <span class="glyphicon glyphicon-download btn-download png"></span>
                                     <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                   </span>
                                   <div class="clearfix"></div>
@@ -228,7 +228,7 @@
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Flareplot</h3>
                                 <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download"></span>
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 </span>
                                 <div class="clearfix"></div>
@@ -247,7 +247,7 @@
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">NGL</h3>
                                 <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download"></span>
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 </span>
                                 <div class="clearfix"></div>
@@ -365,6 +365,7 @@
   
     <script type="text/javascript" src="{% static 'home/js/canvas-toBlob.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/FileSaver.min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/contactnetworkDownloadDiagrams.js' %}"> </script>
 
 
     <script type="text/javascript" src="{% static 'home/js/snap.svg-v5.min.js' %}"> </script>
@@ -586,102 +587,7 @@
             }
         }
 
-        function generateStyleDefs(svgDomElement) {
-          var styleDefs = "";
-          var sheets = document.styleSheets;
-          for (var i = 0; i < sheets.length; i++) {
-            var rules = sheets[i].cssRules;
-            for (var j = 0; j < rules.length; j++) {
-              var rule = rules[j];
-              if (rule.style) {
-                var selectorText = rule.selectorText;
-                var elems = svgDomElement.querySelectorAll(selectorText);
 
-                if (elems.length) {
-                  styleDefs += selectorText + " { " + rule.style.cssText + " }\n";
-                }
-              }
-            }
-          }
-
-          var s = document.createElement('style');
-          s.setAttribute('type', 'text/css');
-          s.innerHTML = styleDefs;
-
-          var defs = document.createElement('defs');
-          defs.appendChild(s);
-          svgDomElement.insertBefore(defs, svgDomElement.firstChild);
-        }
-
-
-
-        function downloadSVG(svgSelector, filetype) {
-          var options = {};
-          svg_class = svgSelector.closest(".panel-body").find("div").attr("class");
-          var svgClone = svgSelector.clone();
-          // remove data stuff that makes it slow
-
-          if (svg_class=='heatmap-container') {
-            svgClone.find('rect').removeAttr('data-content');
-            svgClone.find('rect').removeAttr('title');
-            svgClone.find('rect').removeAttr('data-extra');
-
-            // Figure out how much to translate svg to offset for the headers
-            textNode1 = svgSelector.find('text').first().get(0);
-            bbox1 = textNode1.getBBox();
-            extra_x = parseInt(bbox1.height)-2;
-            max_x = parseInt(svgClone.find('rect').last().attr('x'))+extra_x;
-            svgClone.removeAttr('style');
-            svgClone.removeAttr('preserveAspectRatio');
-            svgClone.attr('height', '2000');
-            svgClone.attr('width', '2000');
-            svgClone.attr('viewBox', '0 0 '+(max_x+2)+' '+(max_x+2));
-            svgClone.find('.svg-pan-zoom_viewport').removeAttr('transform');
-            svgClone.find('.svg-pan-zoom_viewport').attr('transform','translate('+extra_x+','+extra_x+')');
-          } else if (svg_class=='flareplot-container') {
-
-            svgClone.attr("version", "1.1");
-            svgClone.attr("xmlns", "http://www.w3.org/2000/svg");
-            svgClone.attr("xmlns:xlink", "http://www.w3.org/1999/xlink");
-            svgClone.attr('height', '2000');
-            svgClone.attr('width', '2000');
-          } else if (svg_class=='ngl-container') {
-            // Requires canvas-toBlob.js
-            svgSelector.get(0).toBlob(function(blob) {
-                saveAs(blob, "ngl_view_distances.png");
-            });
-            return
-          }
-          svgClone.css('background-color','white');
-
-          // Get styles
-          generateStyleDefs(svgClone.get(0));
-          var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
-
-          // downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), 'distances_'+svg_class+'.svg');
-
-          // If SVG, end here.
-          if (filetype=='svg') {
-            downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), 'distances_'+svg_class+'.svg');
-            return 
-          }
-
-          var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( escapedSVG ) ) ); // Convert SVG string to data URL
-          var image = new Image();
-          image.onload = function() {
-            var canvas = document.createElement("canvas");
-            canvas.width = image.width;
-            canvas.height = image.height;
-            var context = canvas.getContext('2d');
-            context.drawImage(image, 0, 0);
-            // // Requires canvas-toBlob.js
-            canvas.toBlob( function(blob) {
-              saveAs( blob, 'distances_'+svg_class+'.png' ); // FileSaver.js function
-            }); 
-          };
-          image.src = imgsrc;
-
-        }
 
         function downloadSingleCrystalCSV(singleCrystalSvgSelector, name) {
             var data = [];
@@ -1792,12 +1698,6 @@
                 fullScreenElement = $(this).closest(".panel-heading").next().children().first();
                 fullScreenElement.css('background-color','white');
                 toggleFullScreen(fullScreenElement.get(0));
-            });
-            $(selector + ' .btn-download').click(function() {
-                DownloadElement = $(this).closest(".panel-heading").next().find("svg,canvas");
-                downloadSVG(DownloadElement,'png');
-                // fullScreenElement.css('background-color','white');
-                // toggleFullScreen(fullScreenElement.get(0));
             });
         }
 
