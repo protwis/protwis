@@ -18,7 +18,16 @@ from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_
 from seqsign.sequence_signature import SignatureMatch
 from seqsign.sequence_signature import SequenceSignature
 from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions
-from signprot.interactions import *
+from signprot.interactions import (
+    get_entry_names,
+    get_ignore_info,
+    get_protein_segments,
+    get_generic_numbers,
+    get_signature_features,
+    group_signature_features,
+    get_signature_consensus,
+    prepare_signature_match,
+)
 
 from common import definitions
 from collections import OrderedDict
@@ -1137,6 +1146,7 @@ def InteractionMatrix(request):
         r['class'] = s.protein_conformation.protein.get_protein_class()
         r['family'] = s.protein_conformation.protein.get_protein_family()
         r['conf_id'] = s.protein_conformation.id
+        r['organism'] = s.protein_conformation.protein.species.common_name
         try:
             r['gprot'] = s.get_stab_agents_gproteins()
         except Exception:
@@ -1246,13 +1256,13 @@ def IMSequenceSignature(request):
 
     rec_class = pos_set[0].get_protein_class()
 
-    dump = {
-        'rec_class': rec_class,
-        'signature': signature,
-        'consensus': signature_data,
-        }
-    with open('signprot/notebooks/pickles/{}.p'.format(rec_class), 'wb+') as out_file:
-        pickle.dump(dump, out_file)
+    # dump = {
+    #     'rec_class': rec_class,
+    #     'signature': signature,
+    #     'consensus': signature_data,
+    #     }
+    # with open('signprot/notebooks/pickles/{}.p'.format(rec_class), 'wb+') as out_file:
+    #     pickle.dump(dump, out_file)
 
     # pass back to front
     res = {
@@ -1289,6 +1299,7 @@ def IMSignatureMatch(request):
     )
 
     signature_match.score_protein_class()
+    request.session['signature_match'] = signature_match
 
     signature_match = {
         'scores': signature_match.protein_report,
@@ -1306,3 +1317,14 @@ def IMSignatureMatch(request):
     signature_match = prepare_signature_match(signature_match)
     return JsonResponse(signature_match, safe=False)
 
+
+def render_IMSigMat(request):
+
+    signature_match = request.session.get('signature_match')
+
+    response = render(
+        request,
+        'signature_match.html',
+        {'scores': signature_match}
+        )
+    return response

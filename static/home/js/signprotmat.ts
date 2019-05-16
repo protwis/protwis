@@ -1466,6 +1466,14 @@ const signprotmat = {
             "<br>"
           );
         });
+     
+      let viewbox_svg = d3.select('.svg-content.seqsig')
+     
+      const viewbox = viewbox_svg.attr('viewBox')
+      const viewbox_1 = viewbox.slice(0, 9)
+      
+      const new_vb = viewbox_1 + (area_height + Math.round(area_height / 4) + 150)
+      viewbox_svg.attr('viewBox', new_vb)
 
       // generating the white backdrop for all the properties
       svg

@@ -1292,6 +1292,11 @@ var signprotmat = {
                     d.freq +
                     "<br>");
             });
+            var viewbox_svg = d3.select('.svg-content.seqsig');
+            var viewbox = viewbox_svg.attr('viewBox');
+            var viewbox_1 = viewbox.slice(0, 9);
+            var new_vb = viewbox_1 + (area_height + Math.round(area_height / 4) + 150);
+            viewbox_svg.attr('viewBox', new_vb);
             // generating the white backdrop for all the properties
             svg
                 .append("g")

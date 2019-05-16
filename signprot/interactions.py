@@ -2,12 +2,22 @@ import json
 import re
 import time
 from itertools import chain
+import string
+import random
 
 from residue.models import ResidueGenericNumberEquivalent
 from common.definitions import *
+from signprot.notebooks.helpers.utility import (
+    prepare_coupling_data_container,
+    fill_coupling_data_container,
+    process_coupling_data,
+)
 
 from django.core.exceptions import ObjectDoesNotExist
 
+
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 def get_entry_names(request):
     """Extract a list of entry names from the post request"""
@@ -168,6 +178,19 @@ def get_signature_consensus(signature_data, generic_numbers):
 
 
 def prepare_signature_match(signature_match):
+    repl_str = id_generator(6)
+    sign_true = '<i class="fa mattab fa-check {}"></i>'.format(repl_str)
+    sign_false = '<i class="fa mattab fa-times"></i>'
+    gprots = ['Gs','Gi/Go','Gq/G11','G12/G13']
+    class_coupling = 'coupling '
+
+    coupling_data = prepare_coupling_data_container()
+    coupling_data = fill_coupling_data_container(coupling_data)
+    coupling_data = process_coupling_data(coupling_data)
+    
+    coupling_data_dict = {}
+    for e in coupling_data:
+        coupling_data_dict[e['rec_obj'].entry_name] = e
 
     out = {}
     for elem in signature_match["scores"].items():
@@ -176,56 +199,69 @@ def prepare_signature_match(signature_match):
             "entry": elem[0].protein.entry_name,
             "prot": elem[0].protein.name,
             "score": elem[1][0],
-            "nscore": elem[1][1],
+            "nscore": round(elem[1][1], 1),
+            "class": elem[0].protein.get_protein_class()
         }
+
+    for elem in signature_match["scores"].items():
+        entry = elem[0].protein.entry_name
+        coupling_entry = coupling_data_dict.get(entry)
+
+        for gprot in gprots:
+            if coupling_entry:
+                ce = coupling_entry
+                cl = ce['coupling'].get(gprot, '')
+                out[entry][gprot] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[gprot] else sign_false
+            else:
+                out[entry][gprot] = sign_false
 
     # for elem in signature_match['signature_filtered'].items():
     # print(elem)
 
-    for elem in signature_match["protein_signatures"].items():
-        prot_entry = elem[0].protein.entry_name
-        prot_scheme_id = elem[0].protein.residue_numbering_scheme.id
-        sig = []
-        for signature in elem[1].values():
-            for sig_elem in signature:
-                # 0: feat code
-                # 1: feature
-                # 2: cons
-                # 3: color
-                # 4: aa
-                # 5: gn
-                # try:
-                # generic_number = ResidueGenericNumberEquivalent.objects.filter(
-                # label=str(sig_elem[5]),
-                # scheme_id=prot_scheme_id
-                # )
-                # gn = generic_number.values_list('default_generic_number__label',
-                # flat=True)[0].split('x')
-                # except ObjectDoesNotExist as e:
-                # print('For {} a {} '.format(s, e))
-                # continue
-
-                sig.append(
-                    {
-                        "code": str(
-                            AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get(
-                                "display_name_short", None
-                            )
-                        ),
-                        "length": str(
-                            AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get(
-                                "length", None
-                            )
-                        ),
-                        "gn": str(sig_elem[5]),
-                        # 'gn': str('{}.{}x{}'.format(gn[0], gn[1], gn[1])),
-                        "aa": str(sig_elem[4]),
-                        "score": str(sig_elem[2]),
-                        "feature": str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0], None)),
-                    }
-                )
-
-        if prot_entry in out:
-            out[prot_entry]["cons"] = sig
+    # for elem in signature_match["protein_signatures"].items():
+    #     prot_entry = elem[0].protein.entry_name
+    #     prot_scheme_id = elem[0].protein.residue_numbering_scheme.id
+    #     sig = []
+    #     for signature in elem[1].values():
+    #         for sig_elem in signature:
+    #             # 0: feat code
+    #             # 1: feature
+    #             # 2: cons
+    #             # 3: color
+    #             # 4: aa
+    #             # 5: gn
+    #             # try:
+    #             # generic_number = ResidueGenericNumberEquivalent.objects.filter(
+    #             # label=str(sig_elem[5]),
+    #             # scheme_id=prot_scheme_id
+    #             # )
+    #             # gn = generic_number.values_list('default_generic_number__label',
+    #             # flat=True)[0].split('x')
+    #             # except ObjectDoesNotExist as e:
+    #             # print('For {} a {} '.format(s, e))
+    #             # continue
+    #
+    #             sig.append(
+    #                 {
+    #                     "code": str(
+    #                         AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get(
+    #                             "display_name_short", None
+    #                         )
+    #                     ),
+    #                     "length": str(
+    #                         AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get(
+    #                             "length", None
+    #                         )
+    #                     ),
+    #                     "gn": str(sig_elem[5]),
+    #                     # 'gn': str('{}.{}x{}'.format(gn[0], gn[1], gn[1])),
+    #                     "aa": str(sig_elem[4]),
+    #                     "score": str(sig_elem[2]),
+    #                     "feature": str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0], None)),
+    #                 }
+    #             )
+    #
+    #     if prot_entry in out:
+    #         out[prot_entry]["cons"] = sig
 
     return out
