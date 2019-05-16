@@ -16,6 +16,6 @@ urlpatterns = [
     url(r'^matrix[/]?$', views.InteractionMatrix, name='InteractionMatrix'),
     url(r'^matrix/seqsig/', views.IMSequenceSignature, name='SequenceSignature'),
     url(r'^matrix/sigmat/', views.IMSignatureMatch, name='SignatureMatch'),
-    url(r'^matrix/render_sigmat/(?P<cutoff>[\d]+)/$', views.render_IMSigMat, name='renderSignatureMatch'),
+    url(r'^matrix/render_sigmat/$', views.render_IMSigMat, name='renderSignatureMatch'),
     url(r'^(?P<slug>[-\w]+)/$', views.signprotdetail, name='signprotdetail'),
 ]

@@ -177,10 +177,10 @@ const initialize_consensus = function(data){
 const run_sig_match = function(){
   let cutoff = $('#cutoff-val').val();
   if (cutoff == '') {
-    cutoff = 40;
+    cutoff = 0;
   }
 
-  cutoff = 40;
+  cutoff = 0;
   let segments = get_gn();
 
   let req = $.ajax({
@@ -199,7 +199,6 @@ const run_sig_match = function(){
       console.log(data)
       document.querySelector('#sigmatch-container').style.display = "inline-block";
       sigmatch_data = Object.keys(data).map(key => data[key])
-      // window.location.href = 'http://0.0.0.0:8000/seqsign/render_signature_match_scores/'+cutoff;
       sigmatch_table = $('#sigmatch_table').DataTable({
         dom: 'Bfrtip',
         data: sigmatch_data,
