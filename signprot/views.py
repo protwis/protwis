@@ -1261,7 +1261,7 @@ def IMSequenceSignature(request):
     #     'signature': signature,
     #     'consensus': signature_data,
     #     }
-    # with open('signprot/notebooks/pickles/{}.p'.format(rec_class), 'wb+') as out_file:
+    # with open('signprot/notebooks/interface_pickles/{}.p'.format(rec_class), 'wb+') as out_file:
     #     pickle.dump(dump, out_file)
 
     # pass back to front
