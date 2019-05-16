@@ -289,8 +289,8 @@ const csrf_token = "{{ csrf_token }}"
 
 $('#score-button').click( function () {
     const cutoff = 40;
-    window.location.href = window.location.origin +
-        '/signprot/matrix/render_sigmat/'+cutoff;
+    const render_url = window.location.origin + '/signprot/matrix/render_sigmat/' + cutoff;
+    window.open(render_url,'_blank');
 });
 
 </script>

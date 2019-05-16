@@ -1312,6 +1312,18 @@ def IMSignatureMatch(request):
         'numbering_schemes': signature_match.schemes,
     }
 
+    request.session['signature_match'] = signature_match
     signature_match = prepare_signature_match(signature_match)
     return JsonResponse(signature_match, safe=False)
 
+
+def render_IMSigMat(request, cutoff):
+
+    signature_match = request.session.get('signature_match')
+
+    response = render(
+        request,
+        'signature_match.html',
+        {'scores': signature_match}
+        )
+    return response
