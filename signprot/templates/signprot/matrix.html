@@ -64,37 +64,7 @@
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="panel panel-default">
-
-            <div class="panel-heading">
-                <h3 class="panel-title">Find Similar Proteins</h3>
-            </div>
-
-            <div class="panel-body">
-                <p>Click the button to find similar proteins, based on the sequence features.</p>
-                <button type="button" class="btn btn-primary" onClick="run_sig_match();">Find <i id="sigm_spin" class="fa fa-spinner fa-spin"
-                        style="display: none"></i></button>
-            <a id='score-button' href="javascript:void(0)" class="btn btn-success">Find similar proteins</a>
-            </div>
-
-        </div>
-    </div>
 </div>
-<!-- <div class="row">                                                  -->
-<!--     <div class="col-md-6">                                         -->
-<!--         <div class="panel panel-default">                          -->
-
-<!--             <div class="panel-heading">                            -->
-<!--                 <h3 class="panel-title">Visualization Options</h3> -->
-<!--             </div>                                                 -->
-
-<!--             <div class="panel-body">                               -->
-<!--             </div>                                                 -->
-
-<!--         </div>                                                     -->
-<!--     </div>                                                         -->
-<!-- </div>                                                             -->
 
 
 <div class="modal fade" id="interface-modal-table" role="dialog">
@@ -177,14 +147,13 @@
 
                     <div class="panel-body">
 
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <p><b>Hide / Show </b></p>
                             <button class="btn btn-primary" data-toggle="collapse"
                                 data-target="#interface-svg">Collapse</button>
                         </div>
-                        <!-- <a id='score-button' href="javascript:void(0)" class="btn btn-success">Find similar proteins</a> -->
 
-                        <div class="col-md-4">
+                        <div class="col-md-5">
                             <p><b>Color by</b> Interaction or Residue: </p>
 
                             <div class="btn-group btn-group-sm" role="group">
@@ -194,7 +163,7 @@
                                     Interaction </button>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-5">
 
                             <p><b>Filter</b> for residue pairs with <span id='currentpairs'>1</span> <br /> or more interfaces.</p>
 
@@ -231,8 +200,41 @@
 <div id="seqsig-container" style="display: none;margin-bottom:20px;">
     <div id="seqsig">
         <h2>Property Conservation</h2>
-        <button class="btn btn-primary" data-toggle="collapse"
-            data-target="#seqsig-svg">Collapse</button>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Controls</h3>
+                    </div>
+
+                    <div class="panel-body">
+
+                        <div class="col-md-2">
+                            <p><b>Hide / Show </b></p>
+                            <button class="btn btn-primary" data-toggle="collapse"
+                                data-target="#seqsig-svg">Collapse</button>
+                        </div>
+
+                        <div class="col-md-10">
+                            <p>Click the button to <b>find similar proteins</b>, based on the sequence features.</p>
+                            <button 
+                                type="button" 
+                                class="btn btn-primary" 
+                                onClick="run_sig_match();">
+                                Find Proteins
+                                <i id="sigm_spin" 
+                                    class="fa fa-spinner fa-spin" 
+                                    style="display: none">
+                                </i>
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
     </div>
     <div id="seqsig-svg" class="collapse in"></div>
 </div>
@@ -250,6 +252,25 @@
     10%">
     <div>
         <h2>Match Table</h2>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Controls</h3>
+                    </div>
+
+                    <div class="panel-body">
+                        <div class="col-md-12">
+                            <p><b>Show</b> how the sequence alignemnts that correspond to the shown score</p>
+                            <a id='score-button' href="javascript:void(0)" class="btn
+                                btn-primary">Show Alignment</a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
     </div>
     <table id='sigmatch_table' class="display" style="width: 100%"></table>
 </div>
