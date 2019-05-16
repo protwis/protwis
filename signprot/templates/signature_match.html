@@ -11,8 +11,7 @@
 <table>
         <tr>
             <!-- static column -->
-            <td>
-                <div class="ali-first-scroll-div"></div>
+            <td style="padding-top: 27px;">
                 <div class="ali-first-col-div">
                     <table>
                         <!-- segment line -->
@@ -30,50 +29,17 @@
                         <!-- consensus sequence -->
                         <tr>
                             <td class="ali-td ali-td-first-col">
-                                Receptor name
+                                <b>Receptor name</b>
                             </td>
                             <td class="ali-td ali-td-first-col">
-                                Receptor family
+                                <b>Receptor family</b>
                             </td>
                         </tr>
-
-                        <!-- protein names -->
-                        {% for p in scores.scored_proteins %}
-                            {% if 'Common G-alpha numbering scheme' in scores.schemes.0 %}
-                                <tr>
-                                    <td class="ali-td ali-td-first-col">
-                                        <a href='/signprot/{{ p.protein.entry_name }}'>
-                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% elif 'Common arrestin numbering scheme' in scores.schemes.0 %}
-                                <tr>
-                                    <td class="ali-td ali-td-first-col">
-                                        <a href='/signprot/{{ p.protein.entry_name }}'>
-                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% else %}
-                                <tr>
-                                    <td class="ali-td ali-td-first-col">
-                                        <a href='/protein/{{ p.protein.entry_name }}'>
-                                            [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
-                                        </a>
-                                    </td>
-                                    <td class="ali-td ali-td-first-col">
-                                        {{ p.protein.family.parent.name }}
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-
 
                         {% comment %} POSITIVE SET {% endcomment %}
                         <tr>
                             <td class="ali-td ali-td-first-col">
-                                Protein set 1
+                                Seed Set or something
                             </td>
                         </tr>
                         {% for p in scores.scored_proteins_pos %}
@@ -107,13 +73,13 @@
                             {% endif %}
                         {% endfor %}
 
-                        {% comment %} NEGATIVE SET {% endcomment %}
                         <tr>
                             <td class="ali-td ali-td-first-col">
-                                Protein set 2
+                                The Other Set
                             </td>
                         </tr>
-                        {% for p in scores.scored_proteins_neg %}
+                        <!-- protein names -->
+                        {% for p in scores.scored_proteins %}
                             {% if 'Common G-alpha numbering scheme' in scores.schemes.0 %}
                                 <tr>
                                     <td class="ali-td ali-td-first-col">
@@ -138,11 +104,13 @@
                                         </a>
                                     </td>
                                     <td class="ali-td ali-td-first-col">
-                                        {{ p.protein.family.parent.parent.name }}
+                                        {{ p.protein.family.parent.name }}
                                     </td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
+
+
                         <!-- numbering scheme lines -->
                         {% for ns in scores.schemes %}
                         <tr>
@@ -154,9 +122,8 @@
             </td>
 
         <!-- similarity score column -->
-        <td>
+        <td style=padding-top:27px;">
                 <!-- stats column -->
-                <div class="ali-first-scroll-div"></div>
                 <div class="ali-first-col-div">
                     <table>
                         <!-- segment line -->
@@ -183,25 +150,13 @@
                             <td colspan="1" class="ali-td ali-td-first-col">
                                     <div data-toggle="tooltip" data-placement="top" data-html="true"
                                     title="Normalized signature match score">
-                                        Score
+                                        <b>Score</b>
                                     </div>
                             </td>
                         </tr>
 
-                        <!-- protein lines -->
-                        {% for p, ps in scores.protein_report.items %}
-                        <tr>
-                            <!-- <td class="ali-td ali-td-first-col">
-                                {{ ps.0|floatformat:"-2" }}
-                            </td> -->
-                            <td class="ali-td ali-td-first-col">
-                                {{ ps.1|floatformat:"-2" }}
-                            </td>
-                        </tr>
-                        {% endfor %}
                         <!-- Empty line for header -->
                         <tr><td class="ali-td ali-td-first-col"></td></tr>
-
                         <!-- Scores for positive set -->
                         {% for p, ps in scores.scores_pos.items %}
                         <tr>
@@ -213,11 +168,12 @@
                             </td>
                         </tr>
                         {% endfor %}
+
                         <!-- Empty line for header -->
                         <tr><td class="ali-td ali-td-first-col"></td></tr>
 
-                        <!-- Scores for negative set -->
-                        {% for p, ps in scores.scores_neg.items %}
+                        <!-- protein lines -->
+                        {% for p, ps in scores.protein_report.items %}
                         <tr>
                             <!-- <td class="ali-td ali-td-first-col">
                                 {{ ps.0|floatformat:"-2" }}
@@ -288,22 +244,6 @@
                                 {% endfor %}
                             </tr>
                         </thead>
-                            <!-- sequence lines -->
-                            {% for p, row in scores.protein_signatures.items %}
-                            <tr>
-                                {% for segment, s in row.items %}
-                                    {% for r in s %}
-                                        <td class="ali-td ali-residue " bgcolor="{{ r.3 }}">
-                                            <div data-toggle="tooltip" data-placement="top" data-html="true" title="{{ r.1|safe }} ({{ r.2 }})<br>{{ r.4 }}: {{ r.5 }}">
-                                                {{ r.4 }}
-                                            </div>
-                                        </td>
-                                    {% endfor %}
-                                    <td class="ali-td">&nbsp;</td>
-                                {% endfor %}
-                            </tr>
-                            {% endfor %}
-
                             <!-- Empty line for header -->
                             <tr><td class="ali-td ali-td-first-col"></td></tr>
 
@@ -324,7 +264,9 @@
 
                             <!-- Empty line for header -->
                             <tr><td class="ali-td ali-td-first-col"></td></tr>
-                            {% for p, row in scores.signatures_neg.items %}
+
+                            <!-- sequence lines -->
+                            {% for p, row in scores.protein_signatures.items %}
                             <tr>
                                 {% for segment, s in row.items %}
                                     {% for r in s %}
@@ -338,6 +280,7 @@
                                 {% endfor %}
                             </tr>
                             {% endfor %}
+
 
                             <!-- generic number lines -->
                             {% for ns, segments in scores.relevant_gn.items %}

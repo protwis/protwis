@@ -1298,6 +1298,7 @@ def IMSignatureMatch(request):
     )
 
     signature_match.score_protein_class()
+    request.session['signature_match'] = signature_match
 
     signature_match = {
         'scores': signature_match.protein_report,
@@ -1312,7 +1313,6 @@ def IMSignatureMatch(request):
         'numbering_schemes': signature_match.schemes,
     }
 
-    request.session['signature_match'] = signature_match
     signature_match = prepare_signature_match(signature_match)
     return JsonResponse(signature_match, safe=False)
 
