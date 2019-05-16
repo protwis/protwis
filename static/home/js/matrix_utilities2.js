@@ -18,33 +18,39 @@ $(document).ready(function () {
         title: 'Name',
         targets: 1,
       }, {
-        data: 'class',
-        title: 'Class',
-        targets: 3,
-      }, {
         data: 'family',
         title: 'Family',
         targets: 2,
       }, {
+        data: 'class',
+        title: 'Class',
+        targets: 3,
+      }, {
+        data: 'organism',
+        title: 'Organism',
+        targets: 4,
+      }, {
         data: 'pdb_id',
         title: 'PDB',
-        targets: 4,
+        targets: 5,
       },
       {
         data: 'gprot',
         title: 'G-Protein',
-        targets: 5,
+        targets: 6,
       },
       {
         data: 'gprot_class',
         title: 'G-Protein Class',
-        targets: 6,
+        targets: 7,
       }],
-    order: [[ 6, "desc" ],[ 5, "asc" ],[ 3, "asc" ]],
+    order: [[ 7, "desc" ],[ 6, "asc" ],[ 3, "asc" ]],
     select: {
       style: 'os',
     },
-    aging: false,
+    paging: false,
+    scrollY: '60vh',
+    scrollCollapse: true,
     buttons: [
       {
         text: 'Select all',

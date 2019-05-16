@@ -1146,6 +1146,7 @@ def InteractionMatrix(request):
         r['class'] = s.protein_conformation.protein.get_protein_class()
         r['family'] = s.protein_conformation.protein.get_protein_family()
         r['conf_id'] = s.protein_conformation.id
+        r['organism'] = s.protein_conformation.protein.species.common_name
         try:
             r['gprot'] = s.get_stab_agents_gproteins()
         except Exception:
@@ -1317,7 +1318,7 @@ def IMSignatureMatch(request):
     return JsonResponse(signature_match, safe=False)
 
 
-def render_IMSigMat(request, cutoff):
+def render_IMSigMat(request):
 
     signature_match = request.session.get('signature_match')
 
