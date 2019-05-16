@@ -75,6 +75,7 @@
                 <p>Click the button to find similar proteins, based on the sequence features.</p>
                 <button type="button" class="btn btn-primary" onClick="run_sig_match();">Find <i id="sigm_spin" class="fa fa-spinner fa-spin"
                         style="display: none"></i></button>
+            <a id='score-button' href="javascript:void(0)" class="btn btn-success">Find similar proteins</a>
             </div>
 
         </div>
@@ -243,6 +244,14 @@ const interactions_metadata = {{ interactions_metadata | safe}};
 // const ps = {{ ps | safe}};
 const gprot = {{ gprot | safe}};
 const csrf_token = "{{ csrf_token }}"
+
+
+$('#score-button').click( function () {
+    const cutoff = 40;
+    window.location.href = window.location.origin +
+        '/signprot/matrix/render_sigmat/'+cutoff;
+});
+
 </script>
 
 <script src="{% static 'home/js/matrix_utilities.js' %}"></script>

@@ -203,6 +203,7 @@ const run_sig_match = function(){
       sigmatch_table = $('#sigmatch_table').DataTable({
         dom: 'Bfrtip',
         data: sigmatch_data,
+        scrollY: '60vh',
         destroy: true,
         columnDefs: [
           {
@@ -254,11 +255,10 @@ const run_sig_match = function(){
           },
         ],
         order: [[ 4, "desc" ]],
-        pageLength: 20,
         select: {
           style: 'single',
         },
-        aging: false,
+        paging: false,
         buttons: [
           // {
           //   text: 'Select all',
