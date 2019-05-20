@@ -13,6 +13,7 @@ urlpatterns = [
     url(r'^(?P<ligand_id>[-\w]+)/$',LigandDetails, name='ligand_detail'),
     url(r'^statistics', cache_page(3600*24*7)(LigandStatistics.as_view()), name='ligand_statistics'),
     url(r'^bias', output_bias , name='biased_ligands'),
+    url(r'^list', bias_list , name='biased_ligands_list'),
     url(r'^experiment/(?P<pk>[-\w]+)/detail/$', ExperimentEntryView.as_view()),
 
 ]
