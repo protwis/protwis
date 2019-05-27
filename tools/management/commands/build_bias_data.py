@@ -136,7 +136,7 @@ class Command(BaseBuild):
             # code to skip rows in excel for faster testing
             if i < 0:
                 continue
-            if i > 200:
+            if i > 100:
                 break
             print(i)
             d = {}
@@ -153,12 +153,12 @@ class Command(BaseBuild):
                     d['receptor_wt'] = r[10].strip()
                     d['receptor_mut_aa'] = r[11]
                     d['cell_line1'] = r[12]
-                    d['protein1'] = r[13].lower()
-                    d['protein1_assay'] = r[14]
+                    d['protein1'] = r[13].lower().strip()
+                    d['protein1_assay'] = r[14].strip()
                     d['protein1_assay_method'] = r[15]
                     d['cell_line2'] = r[16]
-                    d['protein2'] = r[17].lower()
-                    d['protein2_assay'] = r[18]
+                    d['protein2'] = r[17].lower().strip()
+                    d['protein2_assay'] = r[18].strip()
                     d['protein2_assay_method'] = r[19]
                     d['protein1_ligand_activity'] = r[20]
                     d['protein1_ligand_mtype'] = r[21]
