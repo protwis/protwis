@@ -1297,7 +1297,7 @@ def IMSignatureMatch(request):
         signature_data['diff_matrix'],
         pos_set,
         pos_set,
-        cutoff = int(cutoff)
+        cutoff = 0
     )
 
     maj_pfam = Counter(pfam).most_common()[0][0]
