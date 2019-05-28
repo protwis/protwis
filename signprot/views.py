@@ -31,6 +31,7 @@ from signprot.interactions import (
 
 from common import definitions
 from collections import OrderedDict
+from collections import Counter
 from common.views import AbsTargetSelection
 
 import json
@@ -1287,6 +1288,7 @@ def IMSignatureMatch(request):
 
     pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
     pos_set = [protein for protein in pos_set]
+    pfam = [protein.family.slug[:3] for protein in pos_set]
 
     signature_match = SignatureMatch(
         signature_data['common_positions'],
@@ -1298,7 +1300,8 @@ def IMSignatureMatch(request):
         cutoff = int(cutoff)
     )
 
-    signature_match.score_protein_class()
+    maj_pfam = Counter(pfam).most_common()[0][0]
+    signature_match.score_protein_class(maj_pfam)
     request.session['signature_match'] = signature_match
 
     signature_match = {
