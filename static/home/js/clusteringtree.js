@@ -2,7 +2,6 @@ function renderTree(data) {
     var tree = data["tree"]; // contains tree in Newick format
     // Annotations: state, name, family, ligand type, class
     var annotations = data["annotations"];
-
     var r = 1200 / 2;
     var spacing = 240;
     var innerRadius = r - spacing // change inner radius of tree with this argument
@@ -132,15 +131,19 @@ function renderTree(data) {
         .attr("r", 5)
         .style("fill", function(n) {
           // color based on activity
-          switch(annotations[n.name][0]){
-              case "active":
-                  return "#F00";
-              case "inactive":
-                  return "#00F";
-              case "intermediate":
-                  return "#F80";
-              default:
-                  return "#888";
+          if (annotations[n.name]) {
+              switch(annotations[n.name][0]){
+                  case "active":
+                      return "#F00";
+                  case "inactive":
+                      return "#00F";
+                  case "intermediate":
+                      return "#F80";
+                  default:
+                      return "#888";
+              }
+          } else {
+            return "#000";
           }
         });
 
@@ -150,21 +153,23 @@ function renderTree(data) {
         .attr("transform", "translate(10, 0)")
         .style("fill", function(n) {
           // color based on activity
-          if (annotations[n.name][6].length > 0){
-              switch(annotations[n.name][6][0]){
-                  case "agonist":
-                  case "agonist-partial":
-                  case "pam":
-                      return "#F00";
-                  case "antagonist":
-                  case "inverse-agonist":
-                  case "nam":
-                      return "#00F";
-                  default:
-                      return "#888";
+          if (annotations[n.name]) {
+              if (annotations[n.name][6].length > 0){
+                  switch(annotations[n.name][6][0]){
+                      case "agonist":
+                      case "agonist-partial":
+                      case "pam":
+                          return "#F00";
+                      case "antagonist":
+                      case "inverse-agonist":
+                      case "nam":
+                          return "#00F";
+                      default:
+                          return "#888";
+                  }
+              } else {
+                  return "#888";
               }
-          } else {
-              return "#888";
           }
         });
 
@@ -264,11 +269,13 @@ function renderTree(data) {
         })
         .text(function(d) {
             // add receptor name
-            var name = annotations[d.name][1].split("_")[0].toUpperCase()
-            if (d.x < 180) {
-              return d.name.replace(/_/g, ' ') + ' (' + name + ')';
-            } else {
-              return '(' + name + ') ' + d.name.replace(/_/g, ' ');
+            if (annotations[d.name]) {
+                var name = annotations[d.name][1].split("_")[0].toUpperCase()
+                if (d.x < 180) {
+                  return d.name.replace(/_/g, ' ') + ' (' + name + ')';
+                } else {
+                  return '(' + name + ') ' + d.name.replace(/_/g, ' ');
+                }
             }
         });
 
