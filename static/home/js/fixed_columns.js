@@ -1,10 +1,13 @@
 function update_text_in_modal() {
+  console.log('update text!');
   var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-    // console.log('update modal',mode);
-
-  if (mode=='Single group of structures') {
+  if (mode=='Single group of structures' || $("#single-group-tree-tab").length) {
+    var pdbs = [];
+    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
+        pdbs.push($(this).attr('id'));
+    });
     var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-    var selected_visible = $('.pdb_selected:checked').length
+    var selected_visible = $('.dataTables_scrollBody:visible .pdb_selected:checked').length
     var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
 
     if (total_selected==selected_visible) {
@@ -12,6 +15,13 @@ function update_text_in_modal() {
     } else {
       $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
     }
+
+    var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
+    var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
+
+    $(pdbsInputSelector).val(JSON.stringify(pdbs));
+    $(pdbsCountSelector).html(pdbs.length);
+
   } else if (mode=='Two groups of structures') {
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
@@ -24,9 +34,38 @@ function update_text_in_modal() {
     } else {
       $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
     }
+    var pdbs = [];
+    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
+        pdbs.push($(this).attr('id'));
+    });
+
+    var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
+    var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
+    $(pdbsInputSelector).val(JSON.stringify(pdbs));
+    // Update view
+    $(pdbsCountSelector).html(pdbs.length);
+
   }
+  updateSelected();
+}
 
 
+function updateSelected(){
+    console.log('update selected!');
+    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();    
+    group = $('.tableview:visible').attr('group-number');
+    if (group) mode = mode + group;
+    // $('.dataTables_scrollBody:visible .pdb_selected').closest("tr").removeClass("selected");
+    // $(".dataTables_scrollBody:visible").find('#overlay_table tr').removeClass("selected");
+    $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
+        if ($(this).prop("checked")) {
+            $(this).closest("tr").addClass("selected");
+            $(this).closest(".dataTables_scrollBody").find("#overlay_"+$(this).attr('id')).addClass("selected");
+        } else {
+            $(this).closest("tr").removeClass("selected");
+            $(this).closest(".dataTables_scrollBody").find("#overlay_"+$(this).attr('id')).removeClass("selected");
+        }
+    });
 }
 
 function thisPDB(elem) {
@@ -35,7 +74,6 @@ function thisPDB(elem) {
   var pdbName = $(elem).attr('id');
   // console.log('thisPDB',pdbName);
   if (mode=='Single structure') {
-    $('.pdb_selected').not(elem).prop("checked",false);
     var pdbs = [];
     if ($(elem).prop("checked")) {
       pdbs.push(pdbName);
@@ -46,74 +84,27 @@ function thisPDB(elem) {
       $(".crystal-count:visible").html('No structure selected.');
     }
     $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
-  } else if (mode=='Single group of structures') {
-    var pdbs = [];
-    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-        pdbs.push($(this).attr('id'));
-    });
-    var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-    var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
-    var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
-
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    // Update view
-    $(pdbsCountSelector).html(pdbs.length);
-  }  else if (mode=='Two groups of structures') {
-
-    group = $(elem).closest('.tableview').attr('group-number');
-    if (group) mode = mode + group;
-
-    var pdbs = [];
-    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-        pdbs.push($(this).attr('id'));
-    });
-
-    var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
-    var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    // Update view
-    $(pdbsCountSelector).html(pdbs.length);
-  }
+  } 
   update_text_in_modal();
 }
 
-function resetselection(elem) {
-  var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+function resetselection(not_update) {
+  var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();  
+  group = $('.tableview:visible').attr('group-number');
+  if (group) mode = mode + group;
 
   $('.check_all:visible').prop('checked',false);
 
-  if (mode=='Single group of structures') {
-    var pdbs = [];
+  $('input', oTable[mode].cells().nodes()).prop('checked',false);
 
-    $('input', oTable[mode].cells().nodes()).prop('checked',false);
-
-    var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-    var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    $(pdbsCountSelector).html(pdbs.length);
-  }  else if (mode=='Two groups of structures') {
-
-    group = $('.tableview:visible').attr('group-number');
-    if (group) mode = mode + group;
-    var pdbs = [];
-
-    $('input', oTable[mode].cells().nodes()).prop('checked',false);
-
-    var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
-    var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    $(pdbsCountSelector).html(pdbs.length);
-  }
-
-  update_text_in_modal();
+  if (!not_update) update_text_in_modal();
 }
 
 function check_all(elem) {
   var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
   show_all = $(elem).prop("checked");
 
-
-  if (mode=='Single group of structures') {
+  if (mode=='Single group of structures' || $("#single-group-tree-tab").length) {
     var pdbs = [];
 
     // REMOVE EXISITING? Probably not, more logically that filtering adds more
@@ -124,18 +115,7 @@ function check_all(elem) {
     } else {
       $('.pdb_selected:visible').prop("checked",false);
     }
-
-    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-        pdbs.push($(this).attr('id'));
-    });
-
-    var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-    var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    // Update view
-    $(pdbsCountSelector).html(pdbs.length);
   }  else if (mode=='Two groups of structures') {
-
     group = $(elem).closest('.tableview').attr('group-number');
     if (group) mode = mode + group;
     var pdbs = [];
@@ -145,19 +125,8 @@ function check_all(elem) {
     } else {
       $('.pdb_selected:visible').prop("checked",false);
     }
-
-    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-        pdbs.push($(this).attr('id'));
-    });
-
-    var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
-    var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
-    $(pdbsInputSelector).val(JSON.stringify(pdbs));
-    // Update view
-    $(pdbsCountSelector).html(pdbs.length);
-  }
-
-  update_text_in_modal();
+  } 
+  // update_text_in_modal();
 }
 
 $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
@@ -167,6 +136,37 @@ $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
       } );
   };
 
+function pastePDBs() {
+    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim(); 
+    group = $('.tableview:visible').attr('group-number');
+    if (group) mode = mode + group;
+    pdbs = $('.pastePDBs:visible').val().toUpperCase();
+    pdbs = pdbs.split(/[ ,]+/);
+    resetselection(1);
+    $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
+        pdb = $(this).attr('id')
+        check  = $.inArray(pdb,pdbs);
+        if (check!==-1) {
+            $(this).prop("checked",true);
+            pdbs.splice(check,1);
+        }
+    });
+    if (pdbs.length) {
+        var popOverSettings = {
+            placement: 'bottom',
+            container: 'body',
+            title: 'PDBs not found', //Sepcify the selector here
+            content: pdbs
+        }
+        $('.pastePDBs').popover(popOverSettings);
+        $('.pastePDBs').popover('show');
+    } else {
+        $('.pastePDBs').popover('destroy');
+    }
+    oTable[mode].order( [[ 17, 'desc' ]] );
+    oTable[mode].draw();
+}
+
 var oTable = [];
 function showPDBtable(element) {
   var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
@@ -174,6 +174,8 @@ function showPDBtable(element) {
   if (group) mode = mode + group;
   // console.log(element,mode,group);
   if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
+      console.log(mode);
+      $(element+' .tableview').before('<span><input type=text class="pastePDBs"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
       oTable[mode] = $(element+' .tableview table').DataTable({
         'scrollX': true,
         // 'paging': true,
@@ -353,9 +355,21 @@ function showPDBtable(element) {
     yadcf.exResetAllFilters(oTable[mode]);
 
     oTable[mode].on('draw.dt', function (e, oSettings) {
-        update_text_in_modal();
         create_overlay(element+' .structure_selection');
+        update_text_in_modal();
+
+        // rebind click event
+        $('.structure_overlay tr').click(function(event) {
+            if (event.target.type !== 'checkbox') {
+              $(':checkbox', this).trigger('click');
+              if ($(':checkbox', this).length === 0) {
+                pdb_id = $(this).attr('id').split("_")[1];
+                $('#'+pdb_id+':checkbox:visible').trigger('click');
+              }
+            }
+        });
     });
+
 
     $(element+' .dataTables_scrollBody').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
 
@@ -376,6 +390,16 @@ function showPDBtable(element) {
     create_overlay(element+' .structure_selection');
     track_scrolling(element);
 
+    $('.dataTables_scrollBody tr').click(function(event) {
+        if (event.target.type !== 'checkbox') {
+          $(':checkbox', this).trigger('click');
+          if ($(':checkbox', this).length === 0) {
+            pdb_id = $(this).attr('id').split("_")[1];
+            $('#'+pdb_id+':checkbox:visible').trigger('click');
+          }
+        }
+    });
+
   };
 }
 
@@ -385,7 +409,7 @@ function create_overlay(table_id) {
     var $target = $(".overlay_table tbody");
     $(table_id+" tbody tr").each(function() {
         var $tds = $(this).children(),
-            $row = $("<tr></tr>");
+            $row = $("<tr id='overlay_"+$tds.eq(6).html()+"'></tr>");
         // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
         $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).appendTo($target);
     });
