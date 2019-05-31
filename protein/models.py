@@ -235,6 +235,10 @@ class ProteinFamily(models.Model):
     def short(self):
         return self.name.replace("Class ","").replace(" receptors","").replace(" receptor family","")
 
+    def shorter(self):
+        import re
+        return re.sub(r'\(.*\)', ' ', self.name).replace("Class ","").replace(" receptors","").replace(" receptor family","")
+
     def __str__(self):
         return self.name
 

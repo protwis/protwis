@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q, F
+from django.db.models import Q, F, Prefetch
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 from django.db import connection
@@ -15,8 +15,11 @@ import copy
 from contactnetwork.models import *
 from contactnetwork.distances import *
 from structure.models import Structure, StructureVectors
+from structure.templatetags.structure_extras import *
+from construct.models import Construct
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber
+from interaction.models import StructureLigandInteraction
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -171,34 +174,118 @@ def PdbTreeData(request):
 @cache_page(60*60*24*7)
 def PdbTableData(request):
 
-    data = Structure.objects.filter(refined=False).select_related(
+    constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
+    methods = {}
+    for c in constructs:
+        # print(c.name)
+        if c.crystallization and c.crystallization.crystal_method:
+            method = c.crystallization.crystal_method.name
+        else:
+            method = "N/A"
+        methods[c.name] = method
+
+    data = Structure.objects.filter(refined=False).prefetch_related(
+                "pdb_code",
                 "state",
-                "pdb_code__web_resource",
-                "protein_conformation__protein__species",
-                "protein_conformation__protein__source",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents", "construct__crystallization__crystal_method",
-                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
-                "protein_conformation__site_protein_conformation__site")
+                "stabilizing_agents",
+                "structureligandinteraction_set__ligand__properities__ligand_type",
+                "structureligandinteraction_set__ligand_role",
+                "protein_conformation__protein__parent__parent__parent",
+                "protein_conformation__protein__parent__family__parent",
+                "protein_conformation__protein__parent__family__parent__parent__parent",
+                "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
 
     data_dict = OrderedDict()
-    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></thead><tbody>\n"
+    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=5>Structure</th><th colspan=2>Signalling protein</th> \
+                                                                       <th colspan=2>Auxilary protein</th><th colspan=3>Ligand</th><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></tr> \
+                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
+
     for s in data:
         pdb_id = s.pdb_code.index
         r = {}
         r['protein'] = s.protein_conformation.protein.parent.entry_short()
         r['protein_long'] = s.protein_conformation.protein.parent.short()
         r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
-        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
+        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.shorter()
         r['species'] = s.protein_conformation.protein.species.common_name
-        r['date'] = s.publication_date
+        # # r['date'] = s.publication_date
         r['state'] = s.state.name
-        r['representative'] = 'Yes' if s.representative else 'No'
+        # r['representative'] = 'Yes' if s.representative else 'No'
+
+        a_list = []
+        for a in s.stabilizing_agents.all():
+            a_list.append(a)
+        g_protein = only_gproteins(a_list)
+        arrestin = only_arrestins(a_list)
+        fusion = only_fusions(a_list)
+        antibody = only_antibodies(a_list)
+
+        r['method'] = methods[pdb_id] 
+        r['resolution'] = s.resolution
+        r['7tm_distance'] = s.distance
+        r['g_protein'] = g_protein
+        r['arrestin']  = arrestin
+        r['fusion'] = fusion
+        r['antibody'] = antibody
+
+        r['ligand'] = "-"
+        r['ligand_function'] = "-"
+        r['ligand_type'] = "-"
+
+        for l in s.ligands.all():
+            r['ligand'] = l.ligand.name
+            if len(r['ligand'])>20:
+                r['ligand'] = r['ligand'][:20] + ".."
+            r['ligand_function'] = l.ligand_role.name
+            r['ligand_type'] = l.ligand.properities.ligand_type.name
+        
+
         data_dict[pdb_id] = r
-        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['representative'],r['date'],r['protein_long'],pdb_id)
+        data_table += "<tr> \
+                        <td>{}</td> \
+                        <td><span>{}</span></td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></td> \
+                        </tr>\n".format(
+                                        r['protein'],
+                                        r['protein_long'],
+                                        r['protein_family'],
+                                        r['class'],
+                                        r['species'],
+                                        r['method'],
+                                        pdb_id,
+                                        r['resolution'],
+                                        r['state'],
+                                        r['7tm_distance'],
+                                        r['g_protein'],
+                                        r['arrestin'],
+                                        r['fusion'],
+                                        r['antibody'],
+                                        r['ligand'],
+                                        r['ligand_function'],
+                                        r['ligand_type'],
+                                        r['protein_long'],
+                                        pdb_id
+                                        )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
+
+    # return render(request, 'contactnetwork/test.html', {'data_table':data_table})
 
 def InteractionBrowserData(request):
     def gpcrdb_number_comparator(e1, e2):

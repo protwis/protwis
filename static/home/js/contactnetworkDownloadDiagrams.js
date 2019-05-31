@@ -101,7 +101,7 @@
             svgClone.find('.svg-pan-zoom_viewport').removeAttr('transform');
 
           }
-          svgClone.css('background-color','white');
+          // svgClone.css('background-color','white');
 
           // Get styles
           generateStyleDefs(svgClone.get(0));
