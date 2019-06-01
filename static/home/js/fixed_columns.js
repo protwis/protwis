@@ -74,6 +74,7 @@ function thisPDB(elem) {
   var pdbName = $(elem).attr('id');
   // console.log('thisPDB',pdbName);
   if (mode=='Single structure') {
+    $('.pdb_selected').not(elem).prop("checked",false);
     var pdbs = [];
     if ($(elem).prop("checked")) {
       pdbs.push(pdbName);
@@ -100,9 +101,18 @@ function resetselection(not_update) {
   if (!not_update) update_text_in_modal();
 }
 
-function check_all(elem) {
+function check_all(elem, button) {
   var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-  show_all = $(elem).prop("checked");
+  show_all = $('.check_all:visible').prop("checked");
+  if (button) {
+    if (show_all) {
+        $('.check_all:visible').prop("checked", false);
+        show_all = false;
+    } else {
+        $('.check_all:visible').prop("checked", true);
+        show_all = true;
+    }
+  }
 
   if (mode=='Single group of structures' || $("#single-group-tree-tab").length) {
     var pdbs = [];
@@ -126,7 +136,9 @@ function check_all(elem) {
       $('.pdb_selected:visible').prop("checked",false);
     }
   } 
-  // update_text_in_modal();
+  if (button) {
+      update_text_in_modal();
+    }
 }
 
 $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
@@ -163,8 +175,35 @@ function pastePDBs() {
     } else {
         $('.pastePDBs').popover('destroy');
     }
-    oTable[mode].order( [[ 17, 'desc' ]] );
+    oTable[mode].order( [[ 18, 'desc' ]] );
     oTable[mode].draw();
+}
+
+function exportPDBs() {
+    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim(); 
+    group = $('.tableview:visible').attr('group-number');
+    if (group) mode = mode + group;
+    var pdbs = [];
+    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
+        pdbs.push($(this).attr('id'));
+    });
+
+
+    var textArea = document.createElement("textarea");
+    textArea.value = pdbs;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        var successful = document.execCommand('copy');
+        var msg = successful ? 'Successful' : 'Unsuccessful';
+        $(".export_pdbs").html(msg);
+        setTimeout("$('.export_pdbs').html('Export selected PDB codes');", 4000);
+    } catch (err) {
+        $(".export_pdbs").html('Oops, unable to copy');
+    }
+
+    document.body.removeChild(textArea);
 }
 
 var oTable = [];
@@ -175,13 +214,15 @@ function showPDBtable(element) {
   // console.log(element,mode,group);
   if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
       console.log(mode);
-      $(element+' .tableview').before('<span><input type=text class="pastePDBs"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
+      $(element+' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
+      $(element+' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
+      $(element+' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
       oTable[mode] = $(element+' .tableview table').DataTable({
         'scrollX': true,
         // 'paging': true,
         // 'autoWidth': true,
 
-        scrollY:        '80vh',
+        scrollY:        '75vh',
         // scrollCollapse: true,
         paging:         false,
         columnDefs: [
@@ -189,6 +230,7 @@ function showPDBtable(element) {
         ],
         "aaSorting": [],
          "columns": [
+                        null,
                         null,
                         null,
                         null,
@@ -237,7 +279,7 @@ function showPDBtable(element) {
                 select_type_options: {
                   width: '150px'
                 },
-                filter_default_label: "Family",
+                filter_default_label: "Rec Family",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
             },
@@ -287,6 +329,7 @@ function showPDBtable(element) {
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "State",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
 
             },
@@ -294,53 +337,61 @@ function showPDBtable(element) {
                 column_number : 9,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "7TM Open IC (Å)",
+                filter_default_label: "Contact rep.",
                 filter_reset_button_text: false,
+
             },
             {
                 column_number : 10,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "G protein",
+                filter_default_label: "7TM Open IC (Å)",
                 filter_reset_button_text: false,
             },
             {
                 column_number : 11,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "B arrestin",
+                filter_default_label: "G protein",
                 filter_reset_button_text: false,
             },
             {
                 column_number : 12,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Fusion",
+                filter_default_label: "B arrestin",
                 filter_reset_button_text: false,
             },
             {
                 column_number : 13,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Antibody",
+                filter_default_label: "Fusion",
                 filter_reset_button_text: false,
             },
             {
                 column_number : 14,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Ligand",
+                filter_default_label: "Antibody",
                 filter_reset_button_text: false,
             },
             {
                 column_number : 15,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Ligand function",
+                filter_default_label: "Ligand",
                 filter_reset_button_text: false,
             },
             {
                 column_number : 16,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Ligand function",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 17,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Ligand type",
@@ -368,13 +419,26 @@ function showPDBtable(element) {
               }
             }
         });
+        $('.structure_overlay tr').css( 'cursor', 'pointer' );
     });
 
 
     $(element+' .dataTables_scrollBody').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
-
     $(element+" .structure_overlay").hide();
     
+    $(element+' .dataTables_scrollBody').before("<div class='top_scroll'><div>&nbsp;</div></div>");
+      
+    $('.top_scroll').css({
+        'width': '100%',
+        'overflow-x': 'scroll',
+        'overflow-y': 'auto',
+    });
+    $('.top_scroll div').css({
+        // 'background-color': 'red',
+        'font-size': '1px',
+        'line-height': '1px',
+    });
+
     $('.structure_overlay').css({
         'top': '0px',
         'position': 'absolute',
@@ -390,6 +454,24 @@ function showPDBtable(element) {
     create_overlay(element+' .structure_selection');
     track_scrolling(element);
 
+    $(function() {
+      var tableContainer = $(".dataTables_scrollBody");
+      var table = $(".dataTables_scrollBody table");
+      var fakeContainer = $(".top_scroll");
+      var fakeDiv = $(".top_scroll div");
+
+      var tableWidth = table.width();
+      fakeDiv.width(tableWidth);
+
+      fakeContainer.scroll(function() {
+        tableContainer.scrollLeft(fakeContainer.scrollLeft());
+      });
+      tableContainer.scroll(function() {
+        fakeContainer.scrollLeft(tableContainer.scrollLeft());
+      });
+    })
+
+    $('.dataTables_scrollBody tr').css( 'cursor', 'pointer' );
     $('.dataTables_scrollBody tr').click(function(event) {
         if (event.target.type !== 'checkbox') {
           $(':checkbox', this).trigger('click');
