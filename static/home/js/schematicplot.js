@@ -221,19 +221,19 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   switch (config.type) {
     case 'singleCrystal':
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystal(getInteractionsSingleCrystal());
       createLegendSingleCrystal();
       break;
     case 'singleCrystalGroup':
       // getInteractionsCrystalGroup();
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystalGroup();
       createLegendSingleCrystalGroup();
       break;
     case 'twoCrystalGroups':
       // getInteractionsCrystalGroup();
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicTwoCrystalGroups();
       createLegendTwoCrystalGroups();
       break;
