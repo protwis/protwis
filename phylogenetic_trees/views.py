@@ -69,13 +69,18 @@ class TreeSettings(AbsMiscSelection):
         ('targets', True),
         ('segments', True),
     ])
-    buttons = {
-        'continue': {
-            'label': 'Draw tree',
-            'url': '/phylogenetic_trees/render',
+    buttons = OrderedDict({
+        'continue_new': {
+            'label': 'Draw tree using new code',
+            'url': '/phylogenetic_trees/render_new',
             'color': 'success',
         },
-    }
+        'continue': {
+            'label': 'Draw tree using previous code',
+            'url': '/phylogenetic_trees/render',
+            'color': 'success',
+        }
+    })
     tree_settings = True
 
 
