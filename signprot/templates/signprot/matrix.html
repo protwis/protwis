@@ -142,10 +142,18 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Controls</h3>
+                        <h3 class="panel-title"></h3>
                     </div>
 
                     <div class="panel-body">
+
+                        <div class="col-md-12">
+                            <p>
+                            The darker the rectangle in the matrix, the more interacting
+                            residue pairs are observed across receptor/signaling protein
+                            complexes (colored from white to black).
+                            </p>
+                        </div>
 
                         <div class="col-md-2">
                             <p><b>Hide / Show </b></p>
@@ -205,7 +213,7 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Controls</h3>
+                        <h3 class="panel-title"></h3>
                     </div>
 
                     <div class="panel-body">
@@ -218,13 +226,13 @@
 
                         <div class="col-md-10">
                             <p>Click the button to <b>find similar proteins</b>, based on the sequence features.</p>
-                            <button 
-                                type="button" 
-                                class="btn btn-primary" 
+                            <button
+                                type="button"
+                                class="btn btn-primary"
                                 onClick="run_sig_match();">
                                 Find Proteins
-                                <i id="sigm_spin" 
-                                    class="fa fa-spinner fa-spin" 
+                                <i id="sigm_spin"
+                                    class="fa fa-spinner fa-spin"
                                     style="display: none">
                                 </i>
                             </button>
@@ -257,12 +265,26 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Controls</h3>
+                        <h3 class="panel-title"></h3>
                     </div>
 
+
                     <div class="panel-body">
+
                         <div class="col-md-12">
-                            <p><b>Show</b> the sequence alignemnts that correspond to the shown score</p>
+                            <p>
+                            Receptors are marked with two different kinds of symbols:
+                            <ul>
+                                <li><i class="fa mattab fa-check"></i></li>
+                                <li><i class="fa mattab fa-times"></i></li>
+                            </ul>
+                            Coloring the symbols black and grey shows primary and
+                            secondary coupling respectively.
+                            </p>
+                        </div>
+
+                        <div class="col-md-12">
+                            <p><b>Show</b> the sequence alignments that correspond to the shown score</p>
                             <a id='score-button' href="javascript:void(0)" class="btn
                                 btn-primary">Show Alignment</a>
                         </div>

@@ -167,9 +167,9 @@ line {
 }
 
 .coupling.prim {
-    background-color: red;
+    background-color: #000000;
 }
 
 .coupling.seco {
-    background-color: blue;
+    background-color: #7F7F7F;
 }

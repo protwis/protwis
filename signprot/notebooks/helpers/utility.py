@@ -8,8 +8,6 @@ from pathlib import Path
 from IPython.display import display
 import pandas as pd
 
-
-# from signprot.interactions import get_generic_numbers, get_signature_consensus
 from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinGProteinPair
 
 
@@ -35,6 +33,8 @@ def extract_per_attr(data, attr, name):
 
 
 def calc_consensus_from_signature(signature_dict):
+    from signprot.interactions import get_generic_numbers, get_signature_consensus
+    
     signature = signature_dict["signature"]
 
     sig_data = signature.prepare_display_data()
@@ -69,6 +69,16 @@ def summarize_df(df):
     print("\n")
 
     display(df.head())
+
+
+def show_group_top_n(df, group='feature', n=5):
+    count_col = "{}_count".format(group)
+    print(count_col)
+    d1 = df.groupby(group)[group].agg(
+        {count_col: len}).sort_values(
+        count_col, ascending=False).head(n).reset_index()
+
+    display(d1)
 
 
 def compare_sets(
