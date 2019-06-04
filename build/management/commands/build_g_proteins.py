@@ -4,14 +4,14 @@ from django.db import connection
 from django.db import IntegrityError
 
 
-from common.models import WebResource, WebLink
+from common.models import WebResource, WebLink, Publication
 
 from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
 
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 
-from signprot.models import SignprotStructure, SignprotBarcode
+from signprot.models import SignprotStructure, SignprotBarcode, SignprotComplex
 import pandas as pd
 
 from optparse import make_option
@@ -20,28 +20,95 @@ from itertools import islice
 import pandas as pd
 from Bio import SeqIO
 import Bio.PDB as PDB
+from Bio import pairwise2
+from Bio.pairwise2 import format_alignment
 from collections import OrderedDict
 import math
 import numpy as np
 import logging
 import csv
-import os
+import sys, os
 import csv
+import shlex, subprocess
+import requests, xmltodict
+import yaml
+import xlrd
+from collections import defaultdict
 
 from urllib.request import urlopen
+
+def read_excel(excelpath, sheet=None):
+    workbook = xlrd.open_workbook(excelpath)
+    worksheets = workbook.sheet_names()
+    data = {}
+    for worksheet_name in worksheets:
+        if sheet and worksheet_name != sheet:
+            continue
+        worksheet = workbook.sheet_by_name(worksheet_name)
+        num_rows = worksheet.nrows - 1
+        num_cells = worksheet.ncols - 1
+        curr_row = -1 #skip first, otherwise -1
+        while curr_row < num_rows:
+            curr_row += 1
+            row = worksheet.row(curr_row)
+            curr_cell = -1
+            if worksheet.cell_value(curr_row, 0) == '' and worksheet.cell_value(curr_row, 1) == 'SEM': #if empty reference
+                # If sem row, then add previous first cell, which is the protein name.
+                protein = worksheet.cell_value(curr_row-1, 0)
+                data_type = 'SEM'
+                curr_cell = 0 #skip first empty cell.
+            elif curr_row!=0 and worksheet.cell_value(curr_row, 0) == '': #if empty row
+                continue
+            elif curr_row == 0:
+                # First row -- fetch headers
+                headers = []
+                while curr_cell < num_cells:
+                    curr_cell += 1
+                    cell_value = worksheet.cell_value(curr_row, curr_cell)
+                    if cell_value:
+                        headers.append(cell_value)
+                continue
+            else:
+                # MEAN row
+                protein = worksheet.cell_value(curr_row, 0)
+                data_type = 'mean'
+
+            if protein not in data:
+                data[protein] = {}
+
+            curr_cell = 1 #Skip first two rows which contain protein and type
+            while curr_cell < num_cells:
+                curr_cell += 1
+                cell_value = worksheet.cell_value(curr_row, curr_cell)
+                gprotein = headers[curr_cell-2]
+
+                if gprotein not in data[protein]:
+                    data[protein][gprotein] = {}
+
+                data[protein][gprotein][data_type] = cell_value
+
+    return data
 
 class Command(BaseCommand):
     help = 'Build G proteins'
 
     # source file directory
     gprotein_data_path = os.sep.join([settings.DATA_DIR, 'g_protein_data'])
+    if not os.path.exists(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])):
+        with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt']),'w') as f:
+            f.write('PDB_ID\tPDB_Chain\tPosition\tResidue\tCGN\tEnsembl_Protein_ID\tUniprot_ACC\tUniprot_ID\tsortColumn\n')
     gprotein_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])
     barcode_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'barcode_data.csv'])
     pdbs_path = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'pdbs'])
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
+    ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
 
-    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
+    aska_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'LogRAi G-chimera submitted ver.xlsx'])
+
+    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
+    local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
+    local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
 
     logger = logging.getLogger(__name__)
@@ -51,34 +118,311 @@ class Command(BaseCommand):
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--wt', default=False, type=str, help='Add wild type protein sequence to data')
         parser.add_argument('--xtal', default=False, type=str, help='Add xtal to data')
+        parser.add_argument('--build_datafile', default=False, action='store_true', help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
 
 
     def handle(self, *args, **options):
         self.options = options
         # self.update_alignment()
-        # self.add_entry()
+
+        # self.add_new_orthologs()
+        # return 0
+
+        # self.fetch_missing_uniprot_files()
+        # return 0
+
+        # files = os.listdir(self.local_uniprot_dir)
+        # for f in files:
+        #     print(f)
+        #     with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot', f]), 'r') as fi:
+        #         for l in fi.readlines():
+        #             if l.startswith('DE'):
+        #                 print(l)
+        # return 0
+
+        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_segment_ends.yaml']), 'r') as yfile:
+        #     dic = yaml.load(yfile)
+        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'test_alignment.fasta']), 'w') as testfile:
+
+        #     for record in SeqIO.parse(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_proteins.fasta']), 'fasta'):
+        #         sp, accession, name, ens = record.id.split('|')
+        #         sequence = record.seq
+        #         for d in dic:
+        #             if name.lower() in dic[d]:
+        #                 offset = 0
+        #                 try:
+        #                     for seg in ['HN','S1','H1','HA','HB','HC','HD','HE','HF','S2','S3','H2','S4','H3','S5','HG','H4','S6','H5']:
+        #                         s, e = dic[d][name.lower()][seg][0], dic[d][name.lower()][seg][1]
+        #                         sequence = sequence[:s-1+offset]+'['+sequence[s-1+offset:e+offset]+']'+sequence[e+offset:]
+        #                         offset+=2
+        #                     break
+        #                 except:
+        #                     pass
+        #         testfile.write(record.id+'\n'+str(sequence)+'\n')
+            
+
+        # return 0
+
+        # dic = {}
+        # for record in SeqIO.parse(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_proteins.fasta']), 'fasta'):
+        #     sp, accession, name, ens = record.id.split('|')
+        #     if 'HUMAN' in name:
+        #         subtype = name.split('_')[0].lower()
+        #         dic[subtype] = {name.lower(): {}}
+        #     else:
+        #         dic[subtype][name.lower()] = {}
+
+        #     # dic[subtype][name.lower()]['accession'] = accession
+        #     # dic[subtype][name.lower()]['ensemble'] = 
+        #     try:
+        #         p = Protein.objects.get(entry_name=name.lower())
+        #         helices = ProteinSegment.objects.filter(proteinfamily='Alpha', category__in=['helix','sheet'])
+        #         for h in helices:
+        #             helix_resis = Residue.objects.filter(protein_conformation__protein=p, protein_segment=h)
+        #             start, end = helix_resis[0], helix_resis.reverse()[0]
+        #             dic[subtype][name.lower()][h.slug] = [start.sequence_number, end.sequence_number]
+        #     except:
+        #         print(name)
+            
+        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_segment_ends.yaml']), 'w') as f:
+        #     yaml.dump(dic, f, indent=4)
+        # return 0
+
+        # with open(self.barcode_data_file,'r') as bdf:
+        #     bdf_lines = bdf.readlines()
+        #     new_lines = []
+        #     for line in bdf_lines:
+        #         line_split = line.split(',')
+        #         if line_split[4] in ['G.hgh4.09','G.hgh4.10','G.H4.01','G.H4.02','G.H4.03','G.H4.04','G.H4.05','G.H4.06','G.H4.07','G.H4.08','G.H4.09','G.H4.10','G.H4.11','G.H4.12','G.H4.13',
+        #                              'G.H4.14','G.H4.15','G.H4.16','G.H4.17','G.H4.18','G.H4.19','G.H4.20','G.H4.21','G.H4.22','G.H4.23','G.H4.24','G.H4.25','G.H4.26','G.H4.27']:
+        #             line_split[1] = str(0)
+        #             line_split[2] = str(0)
+        #             line_split[5] = str(0)+'\n'
+        #         if line_split[4] in ['G.hgh4.09','G.hgh4.10']:
+        #             if line_split[3] not in ['GNAS2', 'GNAL']:
+        #                 if line_split[4]=='G.hgh4.09':
+        #                     line_split[4] = 'G.H4.01'
+        #                 if line_split[4]=='G.hgh4.10':
+        #                     line_split[4] = 'G.H4.02'
+        #         elif line_split[4]=='G.H4.01':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.11'
+        #             else:
+        #                 line_split[4] = 'G.H4.03'
+        #         elif line_split[4]=='G.H4.02':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.12'
+        #             else:
+        #                 line_split[4] = 'G.H4.04'
+        #         elif line_split[4]=='G.H4.03':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.13'
+        #             else:
+        #                 line_split[4] = 'G.H4.05'
+        #         elif line_split[4]=='G.H4.04':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.14'
+        #             else:
+        #                 line_split[4] = 'G.H4.06'
+        #         elif line_split[4]=='G.H4.05':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.15'
+        #             else:
+        #                 line_split[4] = 'G.H4.07'
+        #         elif line_split[4]=='G.H4.06':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.16'
+        #             else:
+        #                 line_split[4] = 'G.H4.08'
+        #         elif line_split[4]=='G.H4.07':
+        #             if line_split[3] in ['GNAS2', 'GNAL']:
+        #                 line_split[4] = 'G.hgh4.17'
+        #             else:
+        #                 line_split[4] = 'G.H4.09'
+        #         if line_split[3] in ['GNAS2', 'GNAL']:
+        #             if line_split[4]=='G.H4.08':
+        #                 line_split[4] = 'G.hgh4.18'
+        #             elif line_split[4]=='G.H4.09':
+        #                 line_split[4] = 'G.hgh4.19'
+        #             elif line_split[4]=='G.H4.10':
+        #                 line_split[4] = 'G.hgh4.20'
+        #             elif line_split[4]=='G.H4.11':
+        #                 line_split[4] = 'G.hgh4.21'
+        #             elif line_split[4]=='G.H4.12':
+        #                 line_split[4] = 'G.H4.01'
+        #             elif line_split[4]=='G.H4.13':
+        #                 line_split[4] = 'G.H4.02'
+        #             elif line_split[4]=='G.H4.14':
+        #                 line_split[4] = 'G.H4.03'
+        #             elif line_split[4]=='G.H4.15':
+        #                 line_split[4] = 'G.H4.04'
+        #             elif line_split[4]=='G.H4.16':
+        #                 line_split[4] = 'G.H4.05'
+        #             elif line_split[4]=='G.H4.17':
+        #                 line_split[4] = 'G.H4.06'
+        #             elif line_split[4]=='G.H4.18':
+        #                 line_split[4] = 'G.H4.07'
+        #             elif line_split[4]=='G.H4.19':
+        #                 line_split[4] = 'G.H4.08'
+        #             elif line_split[4]=='G.H4.20':
+        #                 line_split[4] = 'G.H4.10'
+        #             elif line_split[4]=='G.H4.21':
+        #                 line_split[4] = 'G.H4.11'
+        #             elif line_split[4]=='G.H4.22':
+        #                 line_split[4] = 'G.H4.12'
+        #             elif line_split[4]=='G.H4.23':
+        #                 line_split[4] = 'G.H4.13'
+        #             elif line_split[4]=='G.H4.24':
+        #                 line_split[4] = 'G.H4.14'
+        #             elif line_split[4]=='G.H4.25':
+        #                 line_split[4] = 'G.H4.15'
+        #             elif line_split[4]=='G.H4.26':
+        #                 line_split[4] = 'G.H4.16'
+        #             elif line_split[4]=='G.H4.27':
+        #                 line_split[4] = 'G.H4.17'
+        #         else:
+        #             if line_split[4]=='G.H4.20':
+        #                 line_split[4] = 'G.H4.10'
+        #             elif line_split[4]=='G.H4.21':
+        #                 line_split[4] = 'G.H4.11'
+        #             elif line_split[4]=='G.H4.22':
+        #                 line_split[4] = 'G.H4.12'
+        #             elif line_split[4]=='G.H4.23':
+        #                 line_split[4] = 'G.H4.13'
+        #             elif line_split[4]=='G.H4.24':
+        #                 line_split[4] = 'G.H4.14'
+        #             elif line_split[4]=='G.H4.25':
+        #                 line_split[4] = 'G.H4.15'
+        #             elif line_split[4]=='G.H4.26':
+        #                 line_split[4] = 'G.H4.16'
+        #             elif line_split[4]=='G.H4.27':
+        #                 line_split[4] = 'G.H4.17'
+        #         new_lines.append(line_split)
+        #     with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'barcode_test.csv']), 'w') as f:
+        #         out_lines = []
+        #         for l in new_lines:
+        #             out_line = ','.join(l)
+        #             out_lines.append(out_line)
+        #         out = ''.join(out_lines)
+        #         f.write(out)
+
+        # return 0
+
 
         if options['filename']:
             filenames = options['filename']
         else:
             filenames = False
+        if self.options['wt']:
+            self.add_entry()
+        elif self.options['build_datafile']:
+            self.build_table_from_fasta()
+        else:
+            #add gproteins from cgn db
+            try:
+                self.purge_signprot_complex_data()
+                self.purge_coupling_data()
+                # self.purge_cgn_residues()
+                # self.purge_other_subunit_residues()
+                self.purge_cgn_proteins()
+                self.purge_other_subunit_proteins()
 
-        #add gproteins from cgn db
-        try:
-            self.purge_coupling_data()
-            # self.purge_cgn_residues()
-            # self.purge_cgn_proteins()
+                self.ortholog_mapping = OrderedDict()
+                with open(self.ortholog_file, 'r') as ortholog_file:
+                    ortholog_data = csv.reader(ortholog_file, delimiter=',')
+                    for i,row in enumerate(ortholog_data):
+                        if i==0:
+                            header = list(row)
+                            continue
+                        for j, column in enumerate(row):
+                            if j in [0,1]:
+                                continue
+                            if '_' in column:
+                                self.ortholog_mapping[column] = row[0]
+                            else:
+                                if column=='':
+                                    continue
+                                self.ortholog_mapping[column+'_'+header[j]] = row[0]
 
-            self.create_g_proteins(filenames)
-            self.cgn_create_proteins_and_families()
+                self.create_g_proteins(filenames)
+                self.cgn_create_proteins_and_families()
 
-            human_and_orths = self.cgn_add_proteins()
-            self.update_protein_conformation(human_and_orths)
-            self.create_barcode()
+                human_and_orths = self.cgn_add_proteins()
+                self.update_protein_conformation(human_and_orths)
+                self.create_barcode()
+                self.add_other_subunits()
+                if os.path.exists(self.aska_file): 
+                    self.add_aska_coupling_data()
 
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
+            except Exception as msg:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
+                self.logger.error(msg)
+
+    def add_other_subunits(self):
+        beta_fam, created = ProteinFamily.objects.get_or_create(slug='100_002', name='Beta', parent=ProteinFamily.objects.get(name='G-Protein'))
+        gigsgt, created = ProteinFamily.objects.get_or_create(slug='100_002_001', name='G(I)/G(S)/G(T)', parent=beta_fam)
+        gamma_fam, created = ProteinFamily.objects.get_or_create(slug='100_003', name='Gamma', parent=ProteinFamily.objects.get(name='G-Protein'))
+        gigsgo, created = ProteinFamily.objects.get_or_create(slug='100_003_001', name='G(I)/G(S)/G(O)', parent=gamma_fam)
+
+        # create proteins
+        self.create_beta_gamma_proteins(self.local_uniprot_beta_dir, gigsgt)
+        self.create_beta_gamma_proteins(self.local_uniprot_gamma_dir, gigsgo)
+        # create residues
+        self.create_beta_gamma_residues(gigsgt)
+        self.create_beta_gamma_residues(gigsgo)
+
+    def create_beta_gamma_residues(self, proteinfamily):
+        bulk = []
+        fam = Protein.objects.filter(family=proteinfamily)
+        for prot in fam:
+            for i,j in enumerate(prot.sequence):
+                prot_conf = ProteinConformation.objects.get(protein=prot)
+                r = Residue(sequence_number=i+1, amino_acid=j, display_generic_number=None, generic_number=None, protein_conformation=prot_conf, protein_segment=None)
+                bulk.append(r)
+                if len(bulk) % 10000 == 0:
+                    self.logger.info('Inserted bulk {} (Index:{})'.format(len(bulk),i))
+                    # print(len(bulk),"inserts!",index)
+                    Residue.objects.bulk_create(bulk)
+                    # print('inserted!')
+                    bulk = []
+        Residue.objects.bulk_create(bulk)
+
+    def create_beta_gamma_proteins(self, uniprot_dir, proteinfamily):
+        files = os.listdir(uniprot_dir)
+        for f in files:
+            acc = f.split('.')[0]
+            up = self.parse_uniprot_file(acc)
+            pst = ProteinSequenceType.objects.get(slug='wt')
+            species = Species.objects.get(common_name=up['species_common_name'])
+            source = ProteinSource.objects.get(name=up['source'])
+            try:
+                name = up['names'][0].split('Guanine nucleotide-binding protein ')[1]
+            except:
+                name = up['names'][0]
+            prot, created = Protein.objects.get_or_create(entry_name=up['entry_name'], accession=acc, name=name, sequence=up['sequence'], family=proteinfamily, parent=None, 
+                                                          residue_numbering_scheme=None, sequence_type=pst, source=source, species=species)
+            state = ProteinState.objects.get(slug='active')
+            prot_conf, created = ProteinConformation.objects.get_or_create(protein=prot, state=state)
+
+    def fetch_missing_uniprot_files(self):
+        BASE = 'http://www.uniprot.org'
+        KB_ENDPOINT = '/uniprot/'
+        uniprot_files = os.listdir(self.local_uniprot_dir)
+        new_uniprot_files = os.listdir(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot']))
+        for record in SeqIO.parse(self.alignment_file, 'fasta'):
+            sp, accession, name, ens = record.id.split('|')
+            if accession+'.txt' not in uniprot_files and accession+'.txt' not in new_uniprot_files:
+                g_prot, species = name.split('_')
+                result = requests.get(BASE + KB_ENDPOINT + accession + '.txt')
+                with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot', accession+'.txt']), 'w') as f:
+                    f.write(result.text)
+            else:
+                try:
+                    os.rename(os.sep.join([self.local_uniprot_dir, accession+'.txt']), os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot', accession+'.txt']))
+                except:
+                    print('Missing: {}'.format(accession))
 
     def update_alignment(self):
         with open(self.lookup, 'r') as csvfile:
@@ -97,6 +441,62 @@ class Command(BaseCommand):
         residue_data['sortColumn'] = residue_data['sortColumn'].astype(int)
 
         residue_data.to_csv(path_or_buf=self.gprotein_data_path+'/test.txt', sep='\t', na_rep='NA', index=False)
+
+    def add_new_orthologs(self):
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        with open(self.lookup, 'r') as csvfile:
+            lookup_data = csv.reader(csvfile, delimiter=',', quotechar='"')
+            lookup_dict = OrderedDict([('-1','NA.N-terminal insertion.-1'),('-2','NA.N-terminal insertion.-2'),('-3','NA.N-terminal insertion.-3')])
+            for row in lookup_data:
+                lookup_dict[row[0]] = row[1:]
+        fasta_dict = OrderedDict()
+        for record in SeqIO.parse(self.alignment_file, 'fasta'):
+            sp, accession, name, ens = record.id.split('|')
+            g_prot, species = name.split('_')
+            if g_prot not in fasta_dict:
+                fasta_dict[g_prot] = OrderedDict([(name, [accession, ens, str(record.seq)])])
+            else:
+                fasta_dict[g_prot][name] = [accession, ens, str(record.seq)]
+        with open(self.ortholog_file, 'r') as ortholog_file:
+            ortholog_data = csv.reader(ortholog_file, delimiter=',')
+            for i,row in enumerate(ortholog_data):
+                if i==0:
+                    header = list(row)
+                    continue
+                for j, column in enumerate(row):
+                    if j in [0,1]:
+                        continue
+                    if column!='':
+                        if '_' in column:
+                            entry_name = column
+                            BASE = 'http://www.uniprot.org'
+                            KB_ENDPOINT = '/uniprot/'
+                            result = requests.get(BASE + KB_ENDPOINT, params={'query': 'mnemonic:{}'.format(entry_name), 'format':'list'})
+                            accession = result.text.replace('\n','')
+                        else:
+                            entry_name = '{}_{}'.format(column,header[j])
+                            accession = column
+                        if entry_name not in fasta_dict[row[0]]:
+                            result = requests.get('https://www.uniprot.org/uniprot/{}.xml'.format(accession))
+                            uniprot_entry = result.text
+                            try:
+                                entry_dict = xmltodict.parse(uniprot_entry)
+                            except:
+                                self.logger.warning('Skipped: {}'.format(accession))
+                                continue
+                            try:
+                                ensembl = [i for i in entry_dict['uniprot']['entry']['dbReference'] if i['@type']=='Ensembl'][0]['@id']
+                            except:
+                                self.logger.warning('Missing Ensembl: {}'.format(accession))
+                            sequence = entry_dict['uniprot']['entry']['sequence']['#text'].replace('\n','')
+                            seqc = SeqCompare()
+                            aligned_seq = seqc.align(fasta_dict[row[0]][row[0]+'_HUMAN'][2],sequence)
+                            fasta_dict[row[0]][entry_name] = [accession, ensembl, aligned_seq]
+                            
+        with open(os.sep.join([settings.DATA_DIR, 'g_protein_data','fasta_test.fa']),'w') as f:
+            for g,val in fasta_dict.items():
+                for i,j in val.items():
+                    f.write('>sp|{}|{}|{}\n{}\n'.format(j[0],i,j[1],j[2]))
 
     def add_entry(self):
         if not self.options['wt']:
@@ -130,9 +530,21 @@ class Command(BaseCommand):
                     if i=='-':
                         continue
                     count_res+=1
-                    cgn = lookup_dict[str(count_sort)][6].replace('(','').replace(')','')
+                    try:
+                        cgn = lookup_dict[str(count_sort)][6].replace('(','').replace(')','')
+                    except:
+                        print('Dict error: {}'.format(self.options['wt']))
                     line = 'NA\tNA\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(count_res, i, cgn, ens, accession, name, count_sort)
                     f.write(line)
+
+    def build_table_from_fasta(self):
+        os.chdir('/vagrant/shared/sites/protwis')
+        for record in SeqIO.parse(self.alignment_file, 'fasta'):
+            sp, accession, name, ens = record.id.split('|')
+            if len(record.seq)!=455:
+                continue
+            command = "/env/bin/python3 manage.py build_g_proteins --wt "+str(name.lower())
+            subprocess.call(shlex.split(command))
 
     def purge_coupling_data(self):
         try:
@@ -147,6 +559,22 @@ class Command(BaseCommand):
             Residue.objects.filter(generic_number_id__scheme__slug="cgn").delete()
         except:
             self.logger.warning('Existing Residue data cannot be deleted')
+
+    def purge_other_subunit_residues(self):
+        try:
+            Residue.objects.filter(protein_conformation__protein__family__parent__name="Beta").delete()
+        except:
+            self.logger.warning('Existing Residue data cannot be deleted')
+        try:
+            Residue.objects.filter(protein_conformation__protein__family__parent__name="Gamma").delete()
+        except:
+            self.logger.warning('Existing Residue data cannot be deleted')
+
+    def purge_signprot_complex_data(self):
+        try:
+            SignprotComplex.objects.all().delete()
+        except:
+            self.logger.warning('SignprotComplex data cannot be deleted')
 
     def create_barcode(self):
 
@@ -183,25 +611,29 @@ class Command(BaseCommand):
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
 
-        translation = {'Gs family':'100_000_001', 'Gi/Go family':'100_000_002', 'Gq/G11 family':'100_000_003','G12/G13 family':'100_000_004',}
+        translation = {'Gs family':'100_001_001', 'Gi/Go family':'100_001_002', 'Gq/G11 family':'100_001_003','G12/G13 family':'100_001_004',}
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('Gprotein_crossclass.csv')]
-
+            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('iuphar_coupling_data.csv')]
+        source = "GuideToPharma"
         for filename in filenames:
             filepath = os.sep.join([self.gprotein_data_path, filename])
 
             self.logger.info('Reading filename' + filename)
 
+            pub_years = defaultdict(int)
+            pub_years_protein = defaultdict(set)
+
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
                 for row in islice(reader, 1, None): # skip first line
 
-                    entry_name = row[0]
-                    primary = row[8]
-                    secondary = row[9]
-
+                    entry_name = row[3]
+                    primary = row[11]
+                    secondary = row[12]
+                    primary_pubmed = row[15]
+                    secondary_pubmed = row[16]
                     # fetch protein
                     try:
                         p = Protein.objects.get(entry_name=entry_name)
@@ -220,18 +652,39 @@ class Command(BaseCommand):
                         print('no data for ', entry_name)
                         continue
 
-                    # print(primary,secondary)
-
                     try:
                         for gp in primary:
                             if gp in ['','None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
                                 continue
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
                             # print(p, g)
-                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary', source = source)
                             gpair.save()
-                    except:
-                        print("error in primary assignment", p, gp)
+
+                            for pmid in primary_pubmed.split("|"):
+                                try:
+                                    test = int(pmid)
+                                except:
+                                    continue
+                                try:
+                                    pub = Publication.objects.get(web_link__index=pmid,web_link__web_resource__slug='pubmed')
+                                except Publication.DoesNotExist as e:
+                                    pub = Publication()
+                                    try:
+                                        pub.web_link = WebLink.objects.get(index=pmid,
+                                            web_resource__slug='pubmed')
+                                    except WebLink.DoesNotExist:
+                                        wl = WebLink.objects.create(index=pmid,
+                                            web_resource = WebResource.objects.get(slug='pubmed'))
+                                        pub.web_link = wl
+                                pub.update_from_pubmed_data(index=pmid)
+                                pub.save()
+                                pub_years[pub.year] += 1
+                                pub_years_protein[pub.year].add(entry_name)
+                                gpair.references.add(pub)
+
+                    except Exception as e:
+                        print("error in primary assignment", p, gp,e )
 
                     try:
                         for gp in secondary:
@@ -240,18 +693,96 @@ class Command(BaseCommand):
                             if gp in primary: #sip those that were already primary
                                  continue
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
-                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary', source = source)
                             gpair.save()
-                    except:
-                        print("error in secondary assignment", p, gp)
 
+                            for pmid in secondary_pubmed.split("|"):
+                                try:
+                                    test = int(pmid)
+                                except:
+                                    continue
+
+                                try:
+                                    pub = Publication.objects.get(web_link__index=pmid,web_link__web_resource__slug='pubmed')
+                                except Publication.DoesNotExist as e:
+                                    pub = Publication()
+                                    try:
+                                        pub.web_link = WebLink.objects.get(index=pmid,
+                                            web_resource__slug='pubmed')
+                                    except WebLink.DoesNotExist:
+                                        wl = WebLink.objects.create(index=pmid,
+                                            web_resource = WebResource.objects.get(slug='pubmed'))
+                                        pub.web_link = wl
+                                pub.update_from_pubmed_data(index=pmid)
+                                pub.save()
+                                pub_years[pub.year] += 1
+                                pub_years_protein[pub.year].add(entry_name)
+                                gpair.references.add(pub)
+                    except Exception as e:
+                        print("error in secondary assignment", p, gp,e)
+        # for key, value in sorted(pub_years.items()):
+        #     print(key, value,pub_years_protein[key])
         self.logger.info('COMPLETED CREATING G PROTEINS')
+
+    def add_aska_coupling_data(self):
+        self.logger.info('CREATING ASKA COUPLING')
+
+        translation = {'Gs family':'100_001_001', 'Gi/Go family':'100_001_002', 'Gq/G11 family':'100_001_003','G12/G13 family':'100_001_004',}
+
+        # read source files
+        
+        filepath = self.aska_file
+        sheet = "LogRAi mean and SEM"
+
+        self.logger.info('Reading filename' + filepath)
+
+        data = read_excel(filepath,sheet)
+
+        source = 'Aska'
+
+        lookup = {}
+
+        for entry_name, couplings in data.items():
+            # if it has / then pick first, since it gets same protein
+            entry_name = entry_name.split("/")[0]
+            # append _human to entry name
+            # entry_name = "{}_HUMAN".format(entry_name).lower()
+            # Fetch protein
+            try:
+                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                print("protein not found for ", entry_name)
+                continue
+
+            for gprotein, values in couplings.items():
+                if gprotein not in lookup:
+                    gp = Protein.objects.filter(genes__name=gprotein, species__common_name="Human")[0]
+                    lookup[gprotein] = gp
+                else:
+                    gp = lookup[gprotein]
+                # Assume there are there.
+                if gp.family.slug not in lookup:
+                    g = ProteinGProtein.objects.get(slug=gp.family.slug)
+                    lookup[gp.family.slug] = g
+                else:
+                    g = lookup[gp.family.slug]
+                gpair = ProteinGProteinPair(protein=p, g_protein=g,  source = source, log_rai_mean=values['mean'], log_rai_sem=values['SEM'], g_protein_subunit = gp)
+                gpair.save()
+
+        self.logger.info('COMPLETED ADDING ASKA COULPLING DATA')
 
     def purge_cgn_proteins(self):
         try:
             Protein.objects.filter(residue_numbering_scheme__slug='cgn').delete()
         except:
             self.logger.info('Protein to delete not found')
+
+    def purge_other_subunit_proteins(self):
+        try:
+            Protein.objects.filter(residue_numbering_scheme=None).delete()
+        except:
+            self.logger.info('Protein to delete not found')    
 
     def add_cgn_residues(self, gprotein_list):
         #Parsing pdb uniprot file for residues
@@ -262,41 +793,82 @@ class Command(BaseCommand):
         cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
 
 
-        for index, row in residue_data.iterrows():
-            #fetch protein for protein conformation
-            pr, c= Protein.objects.get_or_create(accession=row['Uniprot_ACC'])
+        # Temp files to speed things up
+        temp = {}
+        temp['proteins'] = {}
+        temp['rgn'] = {}
+        temp['segment'] = {}
+        temp['equivalent'] = {}
+        bulk = []
+        
 
-            #fetch protein conformation
-            pc, c= ProteinConformation.objects.get_or_create(protein_id=pr)
+        self.logger.info('Insert residues: {} rows'.format(len(residue_data)))
+        for index, row in residue_data.iterrows():
+
+            if row['Uniprot_ACC'] in temp['proteins']:
+                pr = temp['proteins'][row['Uniprot_ACC']][0]
+                pc = temp['proteins'][row['Uniprot_ACC']][1]
+            else:
+                #fetch protein for protein conformation
+                pr, c= Protein.objects.get_or_create(accession=row['Uniprot_ACC'])
+
+                #fetch protein conformation
+                pc, c= ProteinConformation.objects.get_or_create(protein_id=pr)
+                temp['proteins'][row['Uniprot_ACC']] = [pr,pc]
 
             #fetch residue generic number
             rgnsp=[]
+
+
             if(int(row['CGN'].split('.')[2])<10):
                 rgnsp = row['CGN'].split('.')
                 rgn_new = rgnsp[0]+'.'+rgnsp[1]+'.0'+rgnsp[2]
-                rgn, c= ResidueGenericNumber.objects.get_or_create(label=rgn_new)
+
+                if rgn_new in temp['rgn']:
+                    rgn = temp['rgn'][rgn_new]
+                else:
+                    rgn, c= ResidueGenericNumber.objects.get_or_create(label=rgn_new)
+                    temp['rgn'][rgn_new] = rgn
 
             else:
-                rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
+
+                if row['CGN'] in temp['rgn']:
+                    rgn = temp['rgn'][row['CGN']]
+                else:
+                    rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
+                    temp['rgn'][row['CGN']] = rgn
 
             #fetch protein segment id
-            ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Gprotein')
+            if row['CGN'].split(".")[1] in temp['segment']:
+                ps = temp['segment'][row['CGN'].split(".")[1]]
+            else:
+                ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Alpha')
+                temp['segment'][row['CGN'].split(".")[1]] = ps
 
             try:
-                Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
+                bulk_r = Residue(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
                 # self.logger.info("Residues added to db")
-
+                bulk.append(bulk_r)
             except:
                 self.logger.error("Failed to add residues")
-
+            if len(bulk) % 10000 == 0:
+                self.logger.info('Inserted bulk {} (Index:{})'.format(len(bulk),index))
+                # print(len(bulk),"inserts!",index)
+                Residue.objects.bulk_create(bulk)
+                # print('inserted!')
+                bulk = []
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=cgn_scheme)
+                if rgn.label not in temp['equivalent']:
+                    ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=cgn_scheme)
+                    temp['equivalent'][rgn.label] = 1
                 # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
+        self.logger.info('Inserted bulk {} (Index:{})'.format(len(bulk),index))
+        Residue.objects.bulk_create(bulk)
 
     def update_protein_conformation(self, gprotein_list):
         #gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human', 'gna13_human']
@@ -307,7 +879,7 @@ class Command(BaseCommand):
             gp = Protein.objects.get(accession=g)
 
             try:
-                pc, created= ProteinConformation.objects.get_or_create(protein=gp, state=state, template_structure=None)
+                pc, created= ProteinConformation.objects.get_or_create(protein=gp, state=state)
                 self.logger.info('Created protein conformation')
             except:
                 self.logger.error('Failed to create protein conformation')
@@ -339,7 +911,7 @@ class Command(BaseCommand):
         #ResidueGenericNumber.objects.filter(scheme_id=12).delete()
 
         for rgn in residue_generic_numbers.unique():
-            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Gprotein')
+            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Alpha')
 
             rgnsp=[]
 
@@ -372,10 +944,10 @@ class Command(BaseCommand):
         #Human proteins from CGN with families as keys: http://www.mrc-lmb.cam.ac.uk/CGN/about.html
         cgn_dict = {}
         cgn_dict['G-Protein']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
-        cgn_dict['100_000_001']=['GNAS2_HUMAN', 'GNAL_HUMAN']
-        cgn_dict['100_000_002']=['GNAI2_HUMAN', 'GNAI1_HUMAN', 'GNAI3_HUMAN', 'GNAT2_HUMAN', 'GNAT1_HUMAN', 'GNAT3_HUMAN', 'GNAZ_HUMAN', 'GNAO_HUMAN' ]
-        cgn_dict['100_000_003']=['GNAQ_HUMAN', 'GNA11_HUMAN', 'GNA14_HUMAN', 'GNA15_HUMAN']
-        cgn_dict['100_000_004']=['GNA12_HUMAN', 'GNA13_HUMAN']
+        cgn_dict['100_001_001']=['GNAS2_HUMAN', 'GNAL_HUMAN']
+        cgn_dict['100_001_002']=['GNAI2_HUMAN', 'GNAI1_HUMAN', 'GNAI3_HUMAN', 'GNAT2_HUMAN', 'GNAT1_HUMAN', 'GNAT3_HUMAN', 'GNAZ_HUMAN', 'GNAO_HUMAN' ]
+        cgn_dict['100_001_003']=['GNAQ_HUMAN', 'GNA11_HUMAN', 'GNA14_HUMAN', 'GNA15_HUMAN']
+        cgn_dict['100_001_004']=['GNA12_HUMAN', 'GNA13_HUMAN']
 
         #list of all 16 proteins
         cgn_proteins_list=[]
@@ -419,19 +991,18 @@ class Command(BaseCommand):
         allprots = list(df.Uniprot_ID.unique())
         allprots = list(set(allprots) - set(cgn_proteins_list))
 
-        for gp in cgn_proteins_list:
-            for p in allprots:
-                if str(p).startswith(gp.split('_')[0]):
-                    orthologs_pairs.append((str(p), gp))
-                    orthologs.append(str(p))
+        # for gp in cgn_proteins_list:
+        for p in allprots:
+            # if str(p).startswith(gp.split('_')[0]):
+            if str(p) in self.ortholog_mapping:
+                # orthologs_pairs.append((str(p), self.ortholog_mapping[str(p)]+'_HUMAN'))
+                orthologs.append(str(p))
 
         accessions_orth= df.loc[df['Uniprot_ID'].isin(orthologs)]
         accessions_orth= accessions_orth['Uniprot_ACC'].unique()
 
-
         for a in accessions_orth:
             up = self.parse_uniprot_file(a)
-
             #Fetch Protein Family for gproteins
             for k in cgn_dict.keys():
                 name=str(up['entry_name']).upper()
@@ -439,10 +1010,16 @@ class Command(BaseCommand):
 
                 if name in cgn_dict[k]:
                     pfm = ProteinFamily.objects.get(slug=k)
-
+                else:
+                    try:
+                        if self.ortholog_mapping[str(up['entry_name']).upper()]+'_HUMAN' in cgn_dict[k]:
+                            pfm = ProteinFamily.objects.get(slug=k)
+                    except:
+                        pass
+            
             #Create new Protein
             self.cgn_creat_gproteins(pfm, rns, a, up)
-
+        
         #human gproteins
         orthologs_lower = [x.lower() for x in orthologs]
         #print(orthologs_lower)
@@ -457,7 +1034,6 @@ class Command(BaseCommand):
         return list(accessions_all)
 
     def cgn_creat_gproteins(self, family, residue_numbering_scheme, accession, uniprot):
-
         # get/create protein source
         try:
             source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
@@ -502,7 +1078,10 @@ class Command(BaseCommand):
         if accession:
             p.accession = accession
         p.entry_name = uniprot['entry_name'].lower()
-        p.name = uniprot['names'][0].split('Guanine nucleotide-binding protein ')[1]
+        try:
+            p.name = uniprot['names'][0].split('Guanine nucleotide-binding protein ')[1]
+        except:
+            p.name = uniprot['names'][0]
         p.sequence = uniprot['sequence']
 
         try:
@@ -560,12 +1139,12 @@ class Command(BaseCommand):
     def cgn_parent_protein_family(self):
 
         pf_cgn, created_pf = ProteinFamily.objects.get_or_create(slug='100', defaults={
-            'name': 'G-Protein'})
+            'name': 'G-Protein'}, parent=ProteinFamily.objects.get(slug='000'))
 
         pff_cgn = ProteinFamily.objects.get(slug='100', name='G-Protein')
 
         #Changed name "No Ligands" to "Gprotein"
-        pf1_cgn = ProteinFamily.objects.get_or_create(slug='100_000', name='Gprotein', parent=pff_cgn)
+        pf1_cgn = ProteinFamily.objects.get_or_create(slug='100_001', name='Alpha', parent=pff_cgn)
 
     def create_cgn_rns(self):
         rns_cgn, created= ResidueNumberingScheme.objects.get_or_create(slug='cgn', short_name='CGN', defaults={
@@ -581,28 +1160,28 @@ class Command(BaseCommand):
         cgn_dict = {}
 
         levels = ['2', '3']
-        keys = ['Gprotein', 'Gs', 'Gi/o', 'Gq/11', 'G12/13', '000']
+        keys = ['Alpha', 'Gs', 'Gi/o', 'Gq/11', 'G12/13', '001']
         slug1='100'
         slug3= ''
         i=1
 
-        cgn_dict['Gprotein']=['000']
-        cgn_dict['000']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
+        cgn_dict['Alpha']=['001']
+        cgn_dict['001']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
 
         #Protein families to be added
         #Key of dictionary is level in hierarchy
-        cgn_dict['1']=['Gprotein']
-        cgn_dict['2']=['000']
+        cgn_dict['1']=['Alpha']
+        cgn_dict['2']=['001']
         cgn_dict['3']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
 
         #Protein lines not to be added to Protein families
         cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI2', 'GNAI3', 'GNAT2', 'GNAT1', 'GNAT3', 'GNAO', 'GNAZ', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
 
-        for entry in cgn_dict['000']:
+        for entry in cgn_dict['001']:
 
             name = entry
 
-            slug2= '_000'
+            slug2= '_001'
             slug3= '_00' + str(i)
 
             slug = slug1 + slug2 + slug3
@@ -610,7 +1189,7 @@ class Command(BaseCommand):
             slug3 = ''
             i = i+1
 
-            pff_cgn = ProteinFamily.objects.get(slug='100_000')
+            pff_cgn = ProteinFamily.objects.get(slug='100_001')
 
             new_pf, created = ProteinFamily.objects.get_or_create(slug=slug, name=entry, parent=pff_cgn)
 
@@ -724,3 +1303,12 @@ class Command(BaseCommand):
             local_file.close()
 
         return up
+
+
+class SeqCompare(object):
+    def __init__(self):
+        pass
+
+    def align(self, seq1, seq2):
+        for p in pairwise2.align.globalms(seq1, seq2, 8, 5, -5, -5):
+            return format_alignment(*p).split('\n')[2]

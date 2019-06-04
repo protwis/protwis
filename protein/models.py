@@ -12,7 +12,7 @@ class Protein(models.Model):
     family = models.ForeignKey('ProteinFamily', on_delete=models.CASCADE)
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
     source = models.ForeignKey('ProteinSource', on_delete=models.CASCADE)
-    residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme', on_delete=models.CASCADE)
+    residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme', on_delete=models.CASCADE, null=True)
     sequence_type = models.ForeignKey('ProteinSequenceType', on_delete=models.CASCADE)
     states = models.ManyToManyField('ProteinState', through='ProteinConformation')
     endogenous_ligands = models.ManyToManyField('ligand.Ligand')
@@ -54,7 +54,7 @@ class Protein(models.Model):
     def get_helical_box_no_buttons(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawHelixBox(residuelist,self.get_protein_class(),str(self), nobuttons=1)
-        
+
     def get_snake_plot_no_buttons(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1)
@@ -77,7 +77,6 @@ class Protein(models.Model):
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('ProteinState', on_delete=models.CASCADE)
-    template_structure = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE)
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
 
     # non-database attributes
@@ -234,7 +233,11 @@ class ProteinFamily(models.Model):
     name = models.CharField(max_length=200)
 
     def short(self):
-        return self.name.replace("Class ","").replace(" receptors","")
+        return self.name.replace("Class ","").replace(" receptors","").replace(" receptor family","")
+
+    def shorter(self):
+        import re
+        return re.sub(r'\(.*\)', ' ', self.name).replace("Class ","").replace(" receptors","").replace(" receptor family","")
 
     def __str__(self):
         return self.name
@@ -341,7 +344,7 @@ class ProteinConformationTemplateStructure(models.Model):
         db_table = 'protein_conformation_template_structure'
 
 class ProteinGProtein(models.Model):
-    proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair')
+    proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair', through_fields=('g_protein','protein'))
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=20, unique=True)
 
@@ -355,6 +358,12 @@ class ProteinGProteinPair(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     g_protein = models.ForeignKey('ProteinGProtein', on_delete=models.CASCADE)
     transduction = models.TextField(null=True)
+    source = models.TextField(null=True) # GuideToPharma or Asaka
+    log_rai_mean = models.FloatField(null=True)
+    log_rai_sem  = models.FloatField(null=True)
+    g_protein_subunit = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='gprotein', null=True)
+    references = models.ManyToManyField('common.Publication')
+
 
     def __str__(self):
         return self.protein.entry_name + ", " + self.g_protein.name + ", " + self.transduction

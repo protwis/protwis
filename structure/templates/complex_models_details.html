@@ -1,0 +1,553 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% load structure_extras %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<style>
+canvas {
+    border:2px solid #888888;
+}
+.col-md-3 {
+    color: black;
+}
+</style>
+
+<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
+
+<div class="row text-success">
+    <div class="text-center">
+        <h2>{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.name|safe }} complex homology model</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>RECEPTOR CLASS</h4>
+    </div>
+    <div class="col-md-9">
+        {{ model.receptor_protein.get_protein_class }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>RECEPTOR</h4>
+    </div>
+    <div class="col-md-9">
+        <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.name|safe }}</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>SPECIES</h4>
+    </div>
+    <div class="col-md-9">
+        {{ model.receptor_protein.species.latin_name }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>G-PROTEIN CLASS</h4>
+    </div>
+    <div class="col-md-9">
+        {{ model.sign_protein.family|safe }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>G-PROTEIN</h4>
+    </div>
+    <div class="col-md-9">
+        <a href="/protein/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>VERSION</h4>
+    </div>
+    <div class="col-md-9">
+    {{ model.version|date:"Y-m-d" }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>MODEL</h4>
+    </div>
+    <div class="col-md-9">
+        <div class="btn-group">
+            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download</a>
+        </div>
+        <div>
+            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+        </div>
+        <div style="float: left; width: 60%;">
+            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+            </div>
+
+            <br>
+
+            <!-- <div class="btn-group">
+                {% if model.refined %}
+                    <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download .pdb</a>
+                {% else %}
+                    <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download .pdb</a>
+                {% endif %}
+            </div>
+            <div class="btn-group">
+                  <a id="download_csv_btn" class="btn btn-primary btn-mini " href="#" onClick="javascript:downloadCSV();">Download .csv</a>
+            </div> -->
+
+            <!-- <div class="btn-group">
+                <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
+            </div> -->
+            
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>MAIN TEMPLATE</h4>
+    </div>
+    <div class="col-md-9">
+        <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
+        
+        <div class="btn-group", style="padding: 0px 0px 5px 5px;">
+            <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
+        </div>
+        <br>
+        <a href="/signprot/{{ signprot_template.entry_name }}">{{ signprot_template.name|safe }}</a> (sequence similarity: {{ signprot_sim }}%)
+        {% if signprot_template.entry_name != model.sign_protein.entry_name %}
+            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
+                <a id="align_btn2" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>RECEPTOR TEMPLATES</h4>
+    </div>
+    <style>
+        .table-th {
+            background:#eaeaea;
+            border-bottom:1px solid #9ea7af;
+            border-right: 1px solid #9ea7af;
+            padding:5px;
+            font-size: 12px;
+            text-align:left;
+            vertical-align:middle;
+        }
+        .table-td {
+            text-align:center;
+            border-right: 1px solid #9ea7af;
+        }
+    </style>
+    <div class="col-md-9">
+        <div style='width: 70%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+                {% for prot, bts in backbone_templates.items %}
+                    {% for bt in bts %}
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
+                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
+                        
+                        
+                    {% endfor %}
+                {% endfor %}
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
+                        None
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th class='table-th'></th>
+                    <th class='table-th'>Main template (%)</th>
+                    <th class='table-th'>Additional templates (%)</th>
+                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
+                    <td class="table-td">{{bb_main}}</td>
+                    <td class="table-td">{{bb_alt}}</td>
+                    <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
+                </tr>
+                <tr>
+                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
+                    <td class="table-td">{{sc_main}}</td>
+                    <td class="table-td">{{sc_alt}}</td>
+                    <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        Number of backbone templates: {{ backbone_templates_number }}<br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+        <!-- <div class="btn-group">
+            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_csv">Download .csv</a>
+        </div> -->
+        <style>
+            table.dataTable thead th {padding: 3px 1px 3px 3px;}
+        </style>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+            <table class="display" id="rotamers">
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>GPCRdb#</th>
+                        <th>Backbone</th>
+                        <th>PDB</th>
+                        <th>Rotamer</th>
+                        <th>PDB</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rota in receptor_rotamers %}
+                    <tr>
+                        <td>{{ rota.residue.protein_segment.slug }}</td>
+                        <td>{{ rota.residue.sequence_number }}</td>
+                        {% if rota.residue.display_generic_number %}
+                            <td>{{ rota.residue.display_generic_number.label }}</td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if rota.backbone_template %}
+                            <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                        {% if rota.rotamer_template %}
+                            <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<br>
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>G-PROTEIN TEMPLATES</h4>
+    </div>
+    <div class="col-md-9">
+        <style>
+            table.dataTable thead th {padding: 3px 1px 3px 3px;}
+        </style>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+            <table class="display" id="signprot_rotamers">
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>CGN#</th>
+                        <th>Backbone</th>
+                        <th>PDB</th>
+                        <th>Rotamer</th>
+                        <th>PDB</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rota in signprot_rotamers %}
+                    <tr>
+                        <td>{{ rota.residue.protein_segment.slug }}</td>
+                        <td>{{ rota.residue.sequence_number }}</td>
+                        {% if rota.residue.protein_segment in loop_segments %}
+                            <td></td>
+                        {% else %}
+                            <td>{{ rota.residue.generic_number.label }}</td>
+                        {% endif %}
+                        {% if rota.backbone_template %}
+                            <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                        {% if rota.rotamer_template %}
+                            <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<br>
+<style>
+.inline {display:inline;}
+.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+</style>
+
+<div class="inline">
+
+
+    <div style="padding-top: 0px; float: right; font-size: 10px; white-space: nowrap; width: 50%;">
+
+
+        <!-- <div style=" height: 25vh;">
+            <div style="width: 5%; height: 100%; float:left;">
+                <p style="transform: rotate(270deg);text-align:center; vertical-align:middle; line-height: 30vh;"><b>RECEPTOR</b><p>
+            </div>
+
+        </div> -->
+       <!--  <div style="height: 25vh;">
+            <div style="width: 5%; height: 100%;  float:left;">
+                <p style="transform: rotate(270deg);text-align:center; vertical-align:middle; line-height: 35vh;"><b>SIGNALING PROTEIN</b><p>
+            </div> -->
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block addon_js %}
+    <script src="{% static 'home/js/ngl.js' %}"> </script>
+        <script>
+        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
+        // http://arose.github.io/ngl/api/Stage.html
+        // http://arose.github.io/ngl/js/examples.js
+        // http://arose.github.io/ngl/
+        document.addEventListener( "DOMContentLoaded", function(){
+            stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+            var color_residues = "{{color_residues}}";
+            var color_array = [];
+            var l = color_residues.split(",")
+            for (i=0; i<l.length; i++) {
+                var ar = l[i].split(":");
+                for (j=0; j<ar.length; j++) {
+                    ar[j] = ar[j].replace(" ","")
+                    ar[j] = ar[j].replace("&#39;","")
+                    ar[j] = ar[j].replace("&#39;","")
+                    ar[j] = ar[j].replace("{","")
+                    ar[j] = ar[j].replace("}","")
+                    ar[j] = ar[j].replace("Rand","R and")
+                    ar[j] = ar[j].replace("R and",":R and")
+                }
+                color_array.push(ar);
+            }
+            var color_residues2 = "{{signprot_color_residues}}";
+            var l = color_residues2.split(',')
+            for (i=0; i<l.length; i++) {
+                var ar = l[i].split(':');
+                for (j=0; j<ar.length; j++) {
+                    ar[j] = ar[j].replace(" ","")
+                    ar[j] = ar[j].replace("&#39;","")
+                    ar[j] = ar[j].replace("&#39;","")
+                    ar[j] = ar[j].replace("{","")
+                    ar[j] = ar[j].replace("}","")
+                    ar[j] = ar[j].replace("Aand","A and")
+                    ar[j] = ar[j].replace("A and",":A and")
+                }
+
+                color_array.push(ar);
+            }
+            color_array.push(["darkorchid","*"])
+
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
+
+            if ("{{state}}"=="refined") {
+                stage.loadFile( "../pdb/{{modelname}}-{{signprot}}", { ext: "pdb" }  ).then( function( o ){
+                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
+                    o.centerView();
+                } );
+            }
+            else {
+                stage.loadFile( "view/{{modelname}}-{{signprot}}", { ext: "pdb" }  ).then( function( o ){
+                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
+                    o.centerView();
+                } );
+            }
+        });
+
+        $( "#fullscreen" ).click(function() {
+            stage.toggleFullscreen();
+        });
+    </script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/table2csv.js' %}"> </script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            ClearSelection('targets');
+            ClearSelection('reference');
+            var table = $('#rotamers').DataTable({
+                'scrollX': true,
+                'scrollY': '15vh',
+                'bScrollCollapse': true,
+                'paging': false,
+                'orderCellsTop': true,
+                'autoWidth': false,
+                'dom': 'iTlfrt',
+                'order': [[1, "asc"]], // order by date
+
+                'tableTools': {
+                    "sRowSelect": "single",
+                    "aButtons": []
+                },
+
+                initComplete: function () {
+                    $('#rotamers').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
+                        aoColumns: [
+                            { type: "select" }, // segment
+                            { type: "number-range"}, // seq num
+                            { type: "text" }, // gn
+                            { type: "text" }, // backbone
+                            { type: "text" }, // backbone xtal
+                            { type: "text" }, // rotamer
+                            { type: "text" }, // rotamer xtal
+                        ]
+                    });
+                },
+            });
+            var table2 = $('#signprot_rotamers').DataTable({
+                'scrollX': true,
+                'scrollY': '15vh',
+                'bScrollCollapse': true,
+                'paging': false,
+                'orderCellsTop': true,
+                'autoWidth': false,
+                'dom': 'iTlfrt',
+                'order': [[1, "asc"]], // order by date
+
+                'tableTools': {
+                    "sRowSelect": "single",
+                    "aButtons": []
+                },
+
+                initComplete: function () {
+                    $('#signprot_rotamers').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
+                        aoColumns: [
+                            { type: "select" }, // segment
+                            { type: "number-range"}, // seq num
+                            { type: "text" }, // gn
+                            { type: "text" }, // backbone
+                            { type: "text" }, // backbone xtal
+                            { type: "text" }, // rotamer
+                            { type: "text" }, // rotamer xtal
+                        ]
+                    });
+                },
+            });
+            $('#align_btn1').click(function () {
+                var checked_data = ["{{model.receptor_protein.entry_name}}", "{{model.main_template.pdb_code.index}}"];
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i];
+                    if (i==0) {
+                        AddToSelection('targets', 'structure_complex_receptor',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                window.location.href = '/structure/selection_convert_model';
+            });
+            $('#align_btn2').click(function () {
+                var checked_data = ["{{model.sign_protein.entry_name}}", "{{model.main_template.pdb_code.index}}"];
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i];
+                    if (i==0) {
+                        AddToSelection('targets', 'structure_complex_signprot',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                window.location.href = '/structure/selection_convert_signprot_model';
+            });
+            $('#superpose_btn').click(function () {
+                var table2 = Array.from("{{template_list}}".split(","));
+                var template_list = []
+                for (i=0; i<table2.length; i++) {
+                    template_list.push(table2[i].replace("&#39;","").replace("&#39;",""))
+                }
+                ClearSelection('targets');
+                ClearSelection('reference');
+                var div = document.createElement("div");
+                
+                div.innerHTML = "{{model.receptor_protein.entry_name}}";
+                if (typeof div.innerText !== "undefined") {
+                    AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
+                } else {
+                    AddToSelection('reference', 'structure_complex_receptor', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
+                }
+
+                // }
+
+
+                for (i = 0; i < template_list.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = template_list[i];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    }
+
+                }
+                window.location.href = '/structure/superposition_workflow_index';
+            });
+        });
+
+        function downloadCSV() {
+          $('#rotamers').table2csv({filename: 'Complex_model_templates.csv', quoteFields: true});
+        }
+    </script>
+
+{% endblock %}

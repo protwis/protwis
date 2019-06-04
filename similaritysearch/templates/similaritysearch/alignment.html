@@ -25,7 +25,7 @@
                     <tr>
                         <td colspan="3" class="ali-td ali-td-first-col"></td>
                     </tr>
-                    
+
                     <!-- numbering scheme lines -->
                     {% for ns in a.numbering_schemes %}
                     <tr>
@@ -68,28 +68,56 @@
                         </td>
                     </tr>
                     {% endfor %}
-                    
-                    {% if a.consensus %}                    
+
+                    {% if a.consensus %}
                     <!-- consensus sequence -->
                     <tr>
                         <td colspan="3" class="ali-td ali-td-first-col">
                         </td>
                     </tr>
-                    
-                    <!-- feature frequence -->
+
+                    <!-- feature consensus -->
                     <tr>
                         <td colspan="3" class="ali-td ali-td-first-col">
                         </td>
                     </tr>
-                    {% for feature in a.features %}
+                    <!-- Length -->
+                    <tr>
+                        <td colspan="3" class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    <!-- feature frequency -->
+                    <tr>
+                        <td colspan="3" class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% for feature in a.features_combo %}
                     <tr>
                         <td class="ali-td ali-td-first-col">
                         </td>
                     </tr>
                     {% endfor %}
 
-                    <!-- amino acid frequency -->
+                    <!-- Z-scales -->
                     <tr>
+                        <td colspan="3" class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% for scale in a.zscales %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- numbering scheme lines -->
+                    {% for ns in a.numbering_schemes %}
+                    <tr>
+                        <td colspan="3" class="ali-td-generic-num ali-td-first-col">
+                        </td>
+                    </tr>
+                    <!-- amino acid frequency -->
+                    {% comment %}<tr>
                         <td colspan="3" class="ali-td ali-td-first-col">
                         </td>
                     </tr>
@@ -97,7 +125,7 @@
                     <tr>
                         <td class="ali-td ali-td-first-col">
                         </td>
-                    </tr>
+                    </tr> {% endcomment %}
                     {% endfor %}
                     {% endif %}
 

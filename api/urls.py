@@ -8,7 +8,7 @@ urlpatterns = [
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
-    
+
     url(r'^proteinfamily/$', views.ProteinFamilyList.as_view(), name='proteinfamily-list'),
     url(r'^proteinfamily/(?P<slug>[^/]+)/$', views.ProteinFamilyDetail.as_view(), name='proteinfamily-detail'),
     url(r'^proteinfamily/children/(?P<slug>[^/]+)/$', views.ProteinFamilyChildrenList.as_view(),
@@ -22,12 +22,14 @@ urlpatterns = [
 
     url(r'^residues/(?P<entry_name>[^/]+)/$', views.ResiduesList.as_view(), name='residues'),
     url(r'^residues/extended/(?P<entry_name>[^/]+)/$', views.ResiduesExtendedList.as_view(), name='residues-extended'),
-    
+
     url(r'^alignment/family/(?P<slug>[^/]+)/$', views.FamilyAlignment.as_view(), name='familyalignment'),
     url(r'^alignment/family/(?P<slug>[^/]+)/statistics/$', views.FamilyAlignment.as_view(), {'statistics': True}, name='familyalignment-statistics'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/$', views.FamilyAlignmentPartial.as_view(),
         name='familyalignment-partial'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/statistics/$', views.FamilyAlignmentPartial.as_view(), {'statistics': True},
+        name='familyalignment-partial-statistics'),
+    url(r'^alignment/family/(?P<slug>[^/]+)//(?P<latin_name>[^/]+)/$', views.FamilyAlignmentSpecies.as_view(),
         name='familyalignment-partial-statistics'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/(?P<latin_name>[^/]+)/$', views.FamilyAlignmentPartialSpecies.as_view(),
         name='familyalignment-partial-statistics'),
@@ -41,6 +43,8 @@ urlpatterns = [
         name='proteinalignment-partial'),
     url(r'^alignment/protein/(?P<proteins>[^/]+)/(?P<segments>[^/]+)/statistics/$', views.ProteinAlignmentStatistics.as_view(), {'statistics': True},
         name='proteinalignment-statistics'),
+    url(r'^alignment/similarity/(?P<proteins>[^/]+)/$', views.ProteinSimilaritySearchAlignment.as_view(),
+        name='proteinsimilarityalignment'),
     url(r'^alignment/similarity/(?P<proteins>[^/]+)/(?P<segments>[^/]+)/$', views.ProteinSimilaritySearchAlignment.as_view(),
         name='proteinsimilarityalignment'),
 

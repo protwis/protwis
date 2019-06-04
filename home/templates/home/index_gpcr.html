@@ -83,9 +83,9 @@
                     </div>
                     <div class='col-md-11'>
                         <p><strong>GPCRdb</strong> contains data, diagrams and web tools for G protein-coupled
-                        receptors (GPCRs). Users can browse all GPCR crystal structures and the largest collections of
+                        receptors (GPCRs). Users can browse all GPCR  structures and the largest collections of
                         receptor mutants. Diagrams can be produced and downloaded to illustrate receptor residues
-                        (snake-plot and helix box diagrams) and relationships (phylogenetic trees). Reference (crystal)
+                        (snake-plot and helix box diagrams) and relationships (phylogenetic trees). Reference (structure)
                         structure-based sequence alignments take into account helix bulges and constrictions, display
                         statistics of amino acid conservation and have been assigned generic residue numbering for
                         equivalent residues in different receptors. For an overview read the GPCRdb
@@ -167,6 +167,9 @@
                         </li>
                     {% endfor %}
                     </ul>
+                    {% if users %}
+                        {{users|safe}}
+                    {% endif %}
                 </div>
             </div>
         </div>

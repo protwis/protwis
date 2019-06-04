@@ -1,0 +1,161 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+    <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+<!-- <style>
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #eee;
+    shape-rendering: crispEdges;
+}
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+</style> -->
+{% endblock %}
+
+{% block content %}
+<table cellspacing='10'>
+    <tr>
+        <td>
+            <form id="cutoff-set" style="display: inline;" >
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">Signature frequency cutoff: </span>
+                    <input id="cutoff-val" type="text" class="form-control" size=15 placeholder="40">
+                    <div class="input-group-btn">
+                        <button id="cutoff-apply" class="btn btn-outline-secondary" type="button"><i class="glyphicon glyphicon-filter"></i></button>
+                    </div>
+                </div>
+            </form>
+        </td>
+        <td>
+            <a id='selection-button' href="render_signature_excel" class="btn btn-success">Download excel file</a>
+        </td>
+        <td>
+            <a id='score-button' href="javascript:void(0)" class="btn btn-success">Find similar proteins</a>
+        </td>
+    </tr>
+</table>
+
+<!-- <h4>A sequence signature of your receptor panel</h4>
+
+<script type="text/javascript" charset="utf-8">
+  {#  data = {{ signature_data|safe }}; #}
+   {# options = {{ signature_options|safe }}; #}
+</script>
+<br/>
+<br/>
+<div id='signature_plot'></div> -->
+
+<!-- Alignment table -->
+
+<!--
+    The layout is as follows:
+
+    Sequence signature
+        -> generic numbers
+        -> feature signature
+        -> feature consensus
+        -> generic numbers
+    Alignment 1 (positive):
+        -> generic numbers
+        -> feature stats
+        -> feature consensus
+        -> generic numbers
+        -> sequence alignment
+        -> sequence consensus
+        -> generic numbers
+    Alignment 2 (negative):
+        -> generic numbers
+        -> feature stats
+        -> feature consensus
+        -> generic numbers
+        -> sequence alignment
+        -> sequence consensus
+        -> generic numbers
+
+ -->
+<table id='test'>
+    <tr>
+        <!-- static column -->
+        <td>
+            <div class="ali-first-scroll-div"></div>
+            <div class="ali-first-col-div">
+                <table>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_left_panel.html' %}</td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_aln_pos_left_panel.html' %}</td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_aln_neg_left_panel.html' %}</td>
+                    </tr>
+                    <tr>
+                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_zscores_left_panel.html' %}</td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+
+        <!-- scrollable column -->
+        <td>
+            <div class="ali-scroll-div">
+                <div class="internal-scroll-div">
+                    &nbsp;
+                </div>
+            </div>
+            <div class="ali-main-div">
+                <div class="dynamic-div">
+                    <table>
+                        <tr>
+                            <td>{% include 'signature_right_panel.html' %}</td>
+                        </tr>
+                        <tr>
+                            <td>{% include 'signature_aln_pos_right_panel.html' %}</td>
+                        </tr>
+                        <tr>
+                            <td>{% include 'signature_aln_neg_right_panel.html' %}</td>
+                        </tr>
+                        <tr>
+                            <td>{% include 'signature_zscores_right_panel.html' %}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </td>
+    </tr>
+</table>
+
+
+<!-- sequence alignment ends -->
+{% endblock %}
+{% block addon_js %}
+
+    <script src="{% static 'home/js/alignment.js' %}"></script>
+    <!-- <script src="{% static 'home/js/scatter_plot.js' %}"></script> -->
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script type="text/javascript" charset="utf-8">
+        $('#cutoff-set').submit(function(e){e.preventDefault()});
+        $('#cutoff-val').keydown( function (event) {
+            if (event.keyCode == 13) {
+                var cutoff = parseInt($('#cutoff-val').val());
+                ApplyCutoff(cutoff);
+            };
+        });
+        $('#score-button').click( function () {
+            var cutoff = $('#cutoff-val').val();
+            if (cutoff == '') {
+                cutoff = 40;
+            }
+            window.location.href = 'render_signature_match_scores/'+cutoff;
+        });
+        //$(window).load(function () {
+        //    draw_scatter_plot(data, options);
+        //});
+
+    </script>
+{% endblock %}

@@ -27,7 +27,9 @@ urlpatterns = [
     url(r'^signprot/',include('signprot.urls')),
     url(r'^ligand/',include('ligand.urls')),
     url(r'^mutational_landscape/',include('mutational_landscape.urls')),
-    url(r'^contactnetwork/', include('contactnetwork.urls'))
+    url(r'^contactnetwork/', include('contactnetwork.urls')),
+    url(r'^seqsign/', include('seqsign.urls')),
+    url(r'^angles/', include('angles.urls')),
 ]
 
 handler404 = views.error404

@@ -15,6 +15,9 @@ DOCUMENTATION_URL = 'http://docs.gpcrdb.org/'
 # Analytics
 GOOGLE_ANALYTICS_KEY = False
 
+# Display users
+GOOGLE_ANALYTICS_API = False
+
 # Database
 
 DATABASES = {

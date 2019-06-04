@@ -1,0 +1,587 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<!-- <link rel="stylesheet" href="{% static 'home/css/jquery.fixedHeader.dataTables.min.css' %}" type="text/css" />-->
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/residue_function_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+
+<!--
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.fixedColumns.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+-->
+
+<script src="{% static 'home/js/table2csv.js' %}"> </script>
+
+
+<script type="text/javascript" charset="utf-8">
+  // make table interactive
+  $(document).ready( function () {
+    var oTable = $('#residue_function_browser').DataTable({
+      scrollY:        "80vh",
+      scrollX:        true,
+      scrollCollapse: true,
+      paging:         false,
+      "order": [],
+        columnDefs: [
+          { targets: 'no-sort', orderable: false }
+
+        ],
+        fixedColumns:   {
+           leftColumns: 1,
+        }
+    });
+
+    var prev_ids = Array()
+    var current_align_ids = Array()
+
+    yadcf.init(oTable,
+        [
+            {
+                column_number : 0,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                column_data_type: "rendered_html",
+                html_data_type: "text",
+                filter_default_label: "Filter",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '55px',
+                },
+                sort_as: "none"
+            },
+            {
+                column_number : 1,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "Segment",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                },
+                sort_as: "none"
+            },
+            {
+                column_number : 2,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "Placement",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                }
+            },
+            {
+                column_number : 3,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "Bundle",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                }
+            },
+            {
+                column_number : 4,
+                filter_type: "range_number",
+                filter_delay: 150,
+                select_type_options: {
+                    width: '60px',
+                }
+            },
+            {
+                column_number : 5,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "Amino acid",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '90px',
+                }
+            },
+            {
+                column_number : 6,
+                filter_type: "range_number",
+                filter_delay: 150,
+                select_type_options: {
+                    width: '60px',
+                }
+            },
+            {
+                column_number : 7,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "Property",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                }
+            },
+            {
+                column_number : 8,
+                filter_type: "range_number",
+                filter_delay: 150,
+                select_type_options: {
+                    width: '60px',
+                }
+            },
+            {
+              column_number : 9,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+              column_number : 10,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+              column_number : 11,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+                column_number : 12,
+                filter_type: "select",
+                select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "-",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                }
+            },
+            {
+              column_number : 13,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+              column_number : 14,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+              column_number : 15,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+              column_number : 16,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+              column_number : 17,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+              column_number : 18,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+              column_number : 19,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            },
+            {
+                column_number : 20,
+                filter_type: "select",
+                select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "-",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                }
+            },
+            {
+                column_number : 21,
+                filter_type: "select",
+                select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "-",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                }
+            },
+            {
+              column_number : 22,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            }
+            ,
+            {
+              column_number : 23,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            }
+            ,
+            {
+              column_number : 24,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            }
+            ,
+            {
+              column_number : 25,
+              filter_type: "range_number",
+              filter_delay: 150,
+              select_type_options: {
+                  width: '60px',
+              }
+            }
+        ],
+        {
+            cumulative_filtering: false
+        }
+    );
+
+    yadcf.exResetAllFilters(oTable);
+
+    // Enable column toggling
+    $('.column_toggle').change(function(evt) {
+        var columns = $(this).attr('data-column').split(",");
+        var checked = this.checked;
+        columns.forEach(function(column) {
+            var column = oTable.column( column );
+            try {
+                column.visible( checked );
+            }
+            catch(err) {
+                column.visible( checked );
+            }
+        });
+        oTable.draw();
+    });
+
+    // Move unit header after init YADCF - to keep column toggling functionality
+    var unitHeader = $('tr:nth-child(2)', oTable.table().header() );
+    unitHeader.insertAfter($('tr:last', oTable.table().header() ));
+
+    // Enable toggling filters for range filters
+    $('.showRangeFilter').click(function(evt) {
+        evt.stopPropagation();
+        $('.yadcf-filter-range', $(this).parent()).toggle();
+    });
+
+    // Enable tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+
+  });
+
+  // enable CSV download
+  function download(){
+    $('#residue_function_browser').table2csv({filename: 'GPCRdb_residue_function.csv', quoteFields: true});
+  }
+
+/*  function assign_to_row(){
+    $('tbody tr').click(function(event) {
+      if (event.target.type !== 'checkbox') {
+        $(':checkbox', this).trigger('click');
+      }
+    });
+  }*/
+</script>
+{% endblock %}
+
+{% block content %}
+<!--<div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
+  <br>Loading...
+</div>-->
+<div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="rfb_div">
+    <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:download()"><span class="glyphicon glyphicon-download"></span> CSV Download</a><br/>
+    <br/>
+    <span class="rfb_category_toggles">Show/hide columns:</span>
+    <div class="btn-group" data-toggle="buttons">
+      <label class="btn btn-default btn-xs active">
+        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="1,2,3,4" checked="checked"> Structural position
+      </label>
+      <label class="btn btn-default btn-xs active">
+        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="5,6,7,8" checked="checked"> Consensus sequence
+      </label>
+      <label class="btn btn-default btn-xs active">
+        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="9,10,11,12" checked="checked"> Pockets
+      </label>
+      <label class="btn btn-default btn-xs active">
+        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="13,14,15,16" checked="checked"> Mutation data
+      </label>
+      <label class="btn btn-default btn-xs active">
+        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="17,18,19,20,21" checked="checked"> Structure data
+      </label>
+      <label class="btn btn-default btn-xs active">
+        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="22,23,24,25" checked="checked"> Post-translational modifications
+      </label>
+      <label class="btn btn-default btn-xs active">
+        <input class="column_toggle" type="checkbox" value="struct_pos" data-column="26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43" checked="checked"> Sequence signatures
+      </label>
+    </div>
+    <br><br>
+    <table width="100%" class="display compact" id="residue_function_browser">
+        <thead>
+            <tr class='over_header' style='max-height: 20px'>
+                <th colspan=1 class="over_header">POSITION</th>
+                <th colspan=4 class="over_header">STRUCTURAL POSITION</th>
+                <th colspan=4 class="over_header">CLASS CONSENSUS SEQUENCE</th>
+                <th colspan=4 class="over_header">POCKETS</th>
+                <th colspan=4 class="over_header">MUTATION DATA</th>
+                <th colspan=5 class="over_header">STRUCTURE DATA</th>
+                <th colspan=4 class="over_header">POST-TRANSLATIONAL MODIFICATIONS</th>
+                <th colspan=6 class="over_header">CONSITUTIVE ACTIVITY SEQUENCE SIGNATURES</th>
+                <th colspan=12 class="over_header">G PROTEIN-COUPLING SEQUENCE SIGNATURES</th>
+            </tr>
+            <tr class='unit_header over_header'>
+               <th></th>
+               <th></th>
+               <th></th>
+               <th></th>
+               <th>#residues</th>
+               <th></th>
+               <th>%</th>
+               <th></th>
+               <th>%</th>
+               <th>#PDBs</th>
+               <th>#PDBs</th>
+               <th>#PDBs</th>
+               <th></th>
+               <th>#mutations</th>
+               <th>#mutations</th>
+               <th>#PDBs</th>
+               <th>#GPCRs</th>
+               <th>#residues</th>
+               <th>#residues</th>
+               <th>#PDBs</th>
+               <th></th>
+               <th></th>
+               <th>#datapoints</th>
+               <th>#datapoints</th>
+               <th>#datapoints</th>
+               <th>#datapoints</th>
+               <th>%</th>
+               <th></th>
+               <th></th>
+               <th>%</th>
+               <th></th>
+               <th></th>
+               <th>%</th>
+               <th></th>
+               <th></th>
+               <th>%</th>
+               <th></th>
+               <th></th>
+               <th>%</th>
+               <th></th>
+               <th></th>
+               <th>%</th>
+               <th></th>
+               <th></th>
+            </tr>
+            <tr>
+                <th class="general-th"></th>
+
+                <!-- Positional data -->
+                <th class="positional-th"></th>
+                <th class="positional-th"></th>
+                <th class="positional-th"></th>
+                <th class="positional-th">Distance from<br/>membrane center<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
+
+                <!-- SEQUENCE DATA -->
+                <th class="general-th"></th>
+                <th class="general-th">Amino acid<br/>Conservation<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
+                <th class="general-th"></th>
+                <th class="general-th">Property<br/>conservation<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
+
+                <!-- POCKETS -->
+                <th class="positional-th">Ligand<br/>contacts<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
+                <th class="structural-th">G-protein<br/>contacts<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
+                <th class="structural-th">Arrestin<br/>contacts<br/><span class="showRangeFilter glyphicon glyphicon-filter"></span></th>
+                <th class="positional-th">Sodium</th>
+
+                <!-- Mutation data -->
+                <th class="mutational-th">≥5x change<br/>ligand affinity</th>
+                <th class="mutational-th">≥30% change<br/>basal activity</th>
+                <th class="mutational-th">Thermo-<br/>stabilizing</th>
+                <th class="mutational-th">Natural<br/>variations</th>
+
+                <!-- X-ray data -->
+                <th class="structural-th">Unique active<br/>contacts</th>
+                <th class="structural-th">Unique inactive<br/>contacts</th>
+                <th class="structural-th">Intra-segment<br/>contacts</th>
+                <th class="positional-th">Microswitch</th>
+                <th class="positional-th">Rotamer switch</th>
+
+                <!-- PTM -->
+                <th class="mutational-th">Phosphorylation</th>
+                <th class="mutational-th">Palmitoylation</th>
+                <th class="mutational-th">Glycosylation</th>
+                <th class="mutational-th">Ubiquitylation</th>
+
+                <!-- Signatures data-->
+                <th class="signatures-th">High CA<br/>SignScore</th>
+                <th class="signatures-th">High CA<br/>SignProp</th>
+                <th class="signatures-th">High CA<br/>Symbol</th>
+                <th class="signatures-th">Low CA<br/>SignScore</th>
+                <th class="signatures-th">Low CA<br/>SignProp</th>
+                <th class="signatures-th">Low CA<br/>Symbol</th>
+                <th class="signatures-th">Gs<br/>SignScore</th>
+                <th class="signatures-th">Gs<br/>SignProp</th>
+                <th class="signatures-th">Gs<br/>Symbol</th>
+                <th class="signatures-th">Gi/o<br/>SignScore</th>
+                <th class="signatures-th">Gi/o<br/>SignProp</th>
+                <th class="signatures-th">Gi/o<br/>Symbol</th>
+                <th class="signatures-th">Gq/11<br/>SignScore</th>
+                <th class="signatures-th">Gq/11<br/>SignProp</th>
+                <th class="signatures-th">Gq/11<br/>Symbol</th>
+                <th class="signatures-th">G12/13<br/>SignScore</th>
+                <th class="signatures-th">G12/13<br/>SignProp</th>
+                <th class="signatures-th">G12/13<br/>Symbol</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in signatures %}
+              {% if entry|length > 1 %}
+                <tr>
+                    <td data-order="{{ entry.sort }}"><span>{{ entry.position }}</span></td>
+
+                    <!-- Positional data -->
+                    <td><span>{{ entry.segment }}</span></td>
+                    <td><span>{{ entry.membane_segment }}</span></td>
+                    <td><span>{{ entry.residue_orientation }}</span></td>
+                    <td>{{ entry.membane_placement }}</td>
+
+                    <!-- SEQUENCE DATA -->
+                    <td><span data-toggle="tooltip" data-placement="top" title="{{ entry.class_a_aa_name }}">{{ entry.class_a_aa }}</span></td>
+                    <td>{{ entry.class_a_aa_cons }}</td>
+                    <td><span data-toggle="tooltip" data-placement="top" title="{{ entry.class_a_prop }}">{{ entry.class_a_symb }}</span></td>
+                    <td>{{ entry.class_a_prop_cons }}</td>
+
+                    <!-- POCKETS -->
+                    <td>{{ entry.ligand_binding }}</td>
+                    <td>{{ entry.gprotein_interface }}</td>
+                    <td>{{ entry.arrestin_interface }}</td>
+                    <td><span>{{ entry.sodium }}</span></td>
+
+                    <!-- Mutation data -->
+                    <td>{{ entry.ligand_mutations }}</td>
+                    <td>{{ entry.basal_mutations }}</td>
+                    <td>{{ entry.thermo_mutations }}</td>
+                    <td>{{ entry.natural_mutations }}</td>
+
+                    <!-- X-ray data -->
+                    <td>{{ entry.active_contacts }}</td>
+                    <td>{{ entry.inactive_contacts }}</td>
+                    <td>{{ entry.intrasegment_contacts }}</td>
+                    <td><span>{{ entry.microswitch }}</span></td>
+                    <td><span>{{ entry.rotamer_switch }}</span></td>
+
+                    <!-- PTM -->
+                    <td>{{ entry.phos }}</td>
+                    <td>{{ entry.palm }}</td>
+                    <td>{{ entry.glyc }}</td>
+                    <td>{{ entry.ubiq }}</td>
+
+                    <!-- Signatures data-->
+                    <td>{{ entry.cah_score }}</td>
+                    <td>{{ entry.cah_prop }}</td>
+                    <td>{{ entry.cah_symb }}</td>
+                    <td>{{ entry.cal_score }}</td>
+                    <td>{{ entry.cal_prop }}</td>
+                    <td>{{ entry.cal_symb }}</td>
+                    <td>{{ entry.gs_score }}</td>
+                    <td>{{ entry.gs_prop }}</td>
+                    <td>{{ entry.gs_symb }}</td>
+                    <td>{{ entry.gio_score }}</td>
+                    <td>{{ entry.gio_prop }}</td>
+                    <td>{{ entry.gio_symb }}</td>
+                    <td>{{ entry.gq_score }}</td>
+                    <td>{{ entry.gq_prop }}</td>
+                    <td>{{ entry.gq_symb }}</td>
+                    <td>{{ entry.g12_score }}</td>
+                    <td>{{ entry.g12_prop }}</td>
+                    <td>{{ entry.g12_symb }}</td>
+                </tr>
+              {% else %}
+<!--                <tr>
+                  <td colspan=39><h3><b>{{ entry.position }}</b></h3></td>
+                </tr>-->
+              {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

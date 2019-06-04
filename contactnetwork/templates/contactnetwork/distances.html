@@ -1,0 +1,2880 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+
+      <ul class="nav nav-tabs" id='mode_nav'>
+            <li class="{% if not pdbs1 %}active{% endif %}">
+                  <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
+            </li>
+            <li class="{% if pdbs1 and not pdbs %}active{% endif %}">
+                  <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
+            </li>
+          </ul>
+
+        <div class="tab-content clearfix">
+            <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
+            <div class="tab-pane main_option {% if not pdbs1 %}active{% endif %}" id="single-crystal-group-tab">
+                <!-- <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="page-header">Single group of structures interactions</h1>
+                        <p>Display similarity heatmap for a group of structures. Choose PDBs and options below.</p>
+                    </div>
+                </div> -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Structures</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input class="crystal-pdb" type="hidden" value="[]" />
+                                <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select Structures</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+
+                    </div>
+                    <div class="col-md-offset-3 col-md-1">
+                        <div class="btn btn-success btn-lg pull-right go-button">Go</div>
+                    </div>
+                </div>
+
+
+                <!-- <ul class="nav nav-tabs">
+                  <li class="active"><a href="#single-group-matrix-tab" data-toggle="tab" class='matrix-tab'>Matrix</a></li>
+                  <li><a href="#single-group-flareplot-tab" data-toggle="tab" id="single-group-flareplot-tab-link">Flareplot</a></li>
+                  <li><a href="#single-group-NGL-tab" data-toggle="tab" id="single-group-NGL-link">NGL</a></li>
+                </ul> -->
+                <div class="row">
+                      <div class="col-md-4 tab-pane active" id="single-group-matrix-tab">
+                           <div class="panel panel-default">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Matrix</h3>
+                                  <span class="pull-right">
+                                    <span class="glyphicon glyphicon-download btn-download png"></span>
+                                    <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  </span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <div class="heatmap-legend"></div>
+                                      <svg class="heatmap" id="heatmap_single" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+
+                      <div class="col-md-4 tab-pane" id="single-group-flareplot-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">Flareplot</h3>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="flareplot-container">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-4 tab-pane" id="single-group-NGL-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">NGL</h3>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-single-group" style="margin: auto; width:100%; ">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                </div>
+
+            </div>
+            <!-- END SINGLE CRYSTAL GROUP TAB -->
+            <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
+
+            <div class="tab-pane main_option {% if pdbs1 and not pdbs %}active{% endif %}" id="two-crystal-groups-tab">
+                <!-- <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="page-header">Two groups of structures interactions</h1>
+                        <p>Display similarity/dissimilarity heatmap for two groups of structures. Choose PDBs and options below.</p>
+                    </div>
+                </div> -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Structures Group 1</h3>
+                            </div>
+                            <div class="panel-body">
+                                <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
+                                <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
+                                <h5><span class="crystal-count-1">0</span> structure(s) selected.</h5>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1">Select Structures</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Structures Group 2</h3>
+                            </div>
+                            <div class="panel-body">
+                                <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
+                               <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
+                                <h5><span class="crystal-count-2">0</span> structure(s) selected.</h5>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2">Select Structures</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures</button>
+                            </div>
+                        </div>
+                    </div>
+<!--                    <div class="col-md-5">
+                        <div class="panel panel-default segments-panel">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Segments</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input type="hidden" class="segments-input" value="[]" />
+                                <h5>Helices</h5>
+                                <div class="btn-group buttons-helices">
+                                  <button type="button" class="btn btn-primary all-button">All</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM1">TM1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM2">TM2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM3">TM3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM4">TM4</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM5">TM5</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM6">TM6</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM7">TM7</button>
+                                  <button type="button" class="btn btn-primary" data-segment="H8">H8</button>
+                                </div>
+                                <h5>Loops</h5>
+                                <div class="btn-group buttons-loops">
+                                  <button type="button" class="btn btn-primary all-button">All</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ICL1">ICL1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL1">ECL1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ICL2">ICL2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL2">ECL2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ICL3">ICL3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL3">ECL3</button>
+                                </div>
+                                <h5>Termini</h5>
+                                <div class="btn-group buttons-termini">
+                                  <button type="button" class="btn btn-primary all-button">All</button>
+                                  <button type="button" class="btn btn-primary" data-segment="N-term">N-term</button>
+                                  <button type="button" class="btn btn-primary" data-segment="C-term">C-term</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div> -->
+                    <div class="col-md-4">
+
+                    </div>
+                    <div class="col-md-offset-3 col-md-1">
+                        <div class="btn btn-success btn-lg pull-right go-button">Go</div>
+                    </div>
+                </div>
+
+
+                <!-- <ul class="nav nav-tabs">
+                  <li class="active"><a href="#two-groups-matrix-tab" data-toggle="tab" class='matrix-tab'>Matrix</a></li>
+                  <li><a href="#two-groups-flareplot-tab" data-toggle="tab" id="two-groups-flareplot-tab-link">Flareplot</a></li>
+                  <li><a href="#two-groups-NGL-tab" data-toggle="tab" id="two-groups-NGL-link">NGL</a></li>
+                </ul> -->
+                <div class="row">
+                      <div class="col-md-4 tab-pane active" id="two-groups-matrix-tab">
+                           <div class="panel panel-default">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Matrix</h3>
+                                  <span class="pull-right">
+                                    <span class="glyphicon glyphicon-download btn-download png"></span>
+                                    <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  </span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <div class="heatmap-legend"></div>
+                                      <svg class="heatmap"  id="heatmap_double" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+
+                      <div class="col-md-4 tab-pane" id="two-groups-flareplot-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">Flareplot</h3>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="flareplot-container">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                      <div class="col-md-4 tab-pane" id="two-groups-NGL-tab">
+
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">NGL</h3>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-two-groups" style="margin: auto; width:100%; ">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+
+                </div>
+
+            </div>
+            <!-- END TWO CRYSTAL GROUPS TAB -->
+        </div>
+
+
+
+    <!-- BEGIN SINGLE CRYSTAL PDB CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-pdb-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures from table</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <div class="tableview"></div>
+                        </div>
+                      <div class="clearfix"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
+
+    <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-group-pdbs-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
+                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <div class="tableview"></div>
+                      </div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+
+    <!-- BEGIN TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
+    <div class="modal fade" id="two-crystal-group-pdbs-modal-1-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures</h4>
+                </div>
+                <div class="modal-body">
+                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
+                        <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <div class="tableview group-number-1" group-number="1"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- END TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
+
+    <!-- BEGIN TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
+    <div class="modal fade" id="two-crystal-group-pdbs-modal-2-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of structures</h4>
+                </div>
+                <div class="modal-body">
+                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
+                        <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <div class="tableview group-number-2" group-number="2"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
+{% endblock %}
+{% block addon_js %}
+
+  
+    <script type="text/javascript" src="{% static 'home/js/canvas-toBlob.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/FileSaver.min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/contactnetworkDownloadDiagrams.js' %}"> </script>
+
+
+    <script type="text/javascript" src="{% static 'home/js/snap.svg-v5.min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+    <!-- NGL -->
+    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+
+    <!-- Flareplot -->
+    <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare_distances.js' %}"> </script>
+
+    <!-- 2D schematics -->
+    <script type="text/javascript" src="{% static 'home/js/schematicplot.js' %}"> </script>
+
+    <!-- PDB table -->
+    <script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
+
+    <!-- D3 -->
+    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
+    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
+
+    <!-- Hiveplot -->
+    <script type="text/javascript" src="{% static 'home/js/hiveplot.js' %}"> </script>
+
+
+    <!-- TODO: Solve the conflict between flareplot-main.js and the existing PDB selector -->
+    <script type="text/javascript" src="{% static 'home/js/flareplot-distancebrowser.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/flareplot-selectors.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/flareplot-rangeslider.js' %}"> </script>
+
+    <script>
+        window.zoomHeatmap = {};
+        window.zoomHiveplot = {};
+
+        // create NGL tooltip
+        var ngl_tooltip = document.createElement("div")
+        Object.assign(ngl_tooltip.style, {
+          display: "none",
+          position: "fixed",
+          zIndex: 10,
+          pointerEvents: "none",
+          backgroundColor: "rgba( 0, 0, 0, 0.6 )",
+          color: "lightgrey",
+          padding: "8px",
+          fontFamily: "sans-serif"
+        })
+        document.body.appendChild(ngl_tooltip)
+
+        function toggleFullScreen(fullScreenElement) {
+            if (!document.mozFullScreen && !document.webkitFullScreen) {
+                if (fullScreenElement.mozRequestFullScreen) {
+                    fullScreenElement.mozRequestFullScreen();
+                } else {
+                    fullScreenElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+                }
+            } else {
+                if (document.mozCancelFullScreen) {
+                  document.mozCancelFullScreen();
+                } else {
+                  document.webkitCancelFullScreen();
+                }
+            }
+            setTimeout(redraw_ngl,1000);
+            console.log('going fullscreen with',fullScreenElement);
+        }
+
+        function hidePopovers() {
+            $('.popover').each(function(){
+                $(this).remove();
+            });
+        }
+
+        function HSVtoRGB(h, s, v) {
+            var r, g, b, i, f, p, q, t;
+            if (arguments.length === 1) {
+                s = h.s, v = h.v, h = h.h;
+            }
+            i = Math.floor(h * 6);
+            f = h * 6 - i;
+            p = v * (1 - s);
+            q = v * (1 - f * s);
+            t = v * (1 - (1 - f) * s);
+            switch (i % 6) {
+                case 0: r = v, g = t, b = p; break;
+                case 1: r = q, g = v, b = p; break;
+                case 2: r = p, g = v, b = t; break;
+                case 3: r = p, g = q, b = v; break;
+                case 4: r = t, g = p, b = v; break;
+                case 5: r = v, g = p, b = q; break;
+            }
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        function rgb2hex(r,g,b) {
+            r = Math.round(r).toString(16);
+            g = Math.round(g).toString(16);
+            b = Math.round(b).toString(16);
+
+            if (r.length == 1)
+                r = '0' + r;
+
+            if (g.length == 1)
+                g = '0' + g;
+
+            if (b.length == 1)
+                b = '0' + b;
+
+            return '#' + r + g + b;
+        }
+
+
+        function getFrequencyColor(frequency, rgb = true) {
+            return getGradientColor(-1*frequency, rgb);
+        }
+
+        function getFlareGradientColor(fDiff, rgb = true) {
+            var color;
+            var shift = 80;
+            var basal = 255 - shift;
+
+            if (fDiff <= 0)
+                // If fDiff is close to -1, we want a red color
+                color = { r: Math.round(basal + (fDiff * -1*shift)), g: Math.round(basal-basal*(-fDiff)), b: Math.round(basal-basal*(-fDiff)) };
+            else
+                // If fDiff is close to 1 we want a blue color
+                color = { r: Math.round(basal-basal*fDiff), g: Math.round(basal-basal*fDiff), b: Math.round(basal + (fDiff * shift))};
+
+            if (rgb)
+                return color;
+            else
+                return rgb2hex(color.r, color.g, color.b);
+        }
+
+        function getGradientColor(fDiff, rgb = true){
+          var color;
+            if (fDiff <= 0)
+                // If fDiff is close to -1, we want a red color
+                color = { r: 255, g: Math.round(255-255*(-fDiff)), b: Math.round(255-255*(-fDiff)) };
+            else
+                // If fDiff is close to 1 we want a blue color
+                color = { r: Math.round(255-255*fDiff), g: Math.round(255-255*fDiff), b: 255 };
+
+            if (rgb)
+                return color;
+            else
+                return rgb2hex(color.r, color.g, color.b);
+        }
+
+
+        function getSegmentColor(segmentName) {
+            var r, g, b;
+
+            switch (segmentName) {
+                case 'N-term':
+                case 'C-term':
+                    r = 190; g = 190; b = 190;
+                    //r = 255; g = 150; b = 150;
+                    break;
+                case 'TM1':
+                case 'TM2':
+                case 'TM3':
+                case 'TM4':
+                case 'TM5':
+                case 'TM6':
+                case 'TM7':
+                case 'H8':
+                    r = 230; g = 230; b = 230;
+                    //r = 150; g = 255; b = 150;
+                    break;
+                case 'ECL1':
+                case 'ECL2':
+                case 'ECL3':
+                    r = 190; g = 190; b = 190;
+                    //r = 150; g = 150; b = 255;
+                    break;
+                case 'ICL1':
+                case 'ICL2':
+                case 'ICL3':
+                    r = 190; g = 190; b = 190;
+                    //r = 150; g = 150; b = 255;
+                    break;
+                default:
+                    r = 0; g = 0; b = 0;
+            }
+
+            return { r: r, g: g, b: b };
+        }
+
+        function getAminoAcidOneLetterCode(threeLetterCode) {
+            switch (threeLetterCode.toUpperCase()) {
+                case 'ALA':
+                    return 'A';
+                case 'ARG':
+                    return 'R';
+                case 'ASN':
+                    return 'N';
+                case 'ASP':
+                    return 'D';
+                case 'CYS':
+                    return 'C';
+                case 'GLN':
+                    return 'Q';
+                case 'GLU':
+                    return 'E';
+                case 'GLY':
+                    return 'G';
+                case 'HIS':
+                    return 'H';
+                case 'ILE':
+                    return 'I';
+                case 'LEU':
+                    return 'L';
+                case 'LYS':
+                    return 'K';
+                case 'MET':
+                    return 'M';
+                case 'PHE':
+                    return 'F';
+                case 'PRO':
+                    return 'P';
+                case 'SER':
+                    return 'S';
+                case 'THR':
+                    return 'T';
+                case 'TRP':
+                    return 'W';
+                case 'TYR':
+                    return 'Y';
+                case 'VAL':
+                    return 'V';
+                default:
+                    return null;
+            }
+        }
+
+
+
+        function downloadSingleCrystalCSV(singleCrystalSvgSelector, name) {
+            var data = [];
+            var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
+            data.push(header);
+
+            $(singleCrystalSvgSelector + ' rect[data-interaction-type]').each(function(e) {
+              var rect = $(this);
+              var resNo1 = rect.data('res-no-1');
+              var resNo2 = rect.data('res-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var aa1 = rect.data('aa-1');
+              var aa2 = rect.data('aa-2');
+              var iType = rect.data('interaction-type');
+              data.push([resNo1, resNo2, seg1, seg2, genNo1, genNo2, aa1, aa2, iType]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        }
+
+        function populateTable(selector) {
+          var table = [];
+              rows = []
+          if (selector=='single-table') {
+              var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
+              $('#single-crystal-tab .heatmap-container rect[data-interaction-type]').each(function(e) {
+                  var rect = $(this);
+                  var resNo1 = rect.data('res-no-1');
+                  var resNo2 = rect.data('res-no-2');
+                  var seg1 = rect.data('seg-1');
+                  var seg2 = rect.data('seg-2');
+                  var genNo1 = rect.data('gen-no-1');
+                  var genNo2 = rect.data('gen-no-2');
+                  var aa1 = rect.data('aa-1');
+                  var aa2 = rect.data('aa-2');
+                  var iType = rect.data('interaction-type');
+                  rows.push('<tr><td>'+resNo1+'</td><td>'+resNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+aa1+'</td><td>'+aa2+'</td><td>'+iType+'</td>')
+                });
+          } else if (selector=='single-group-table') {
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2',  'Number of interactions', 'Number of crystals', 'Frequency'];
+            $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var nInteractions = rect.data('num-interactions');
+              var nTotalInteractions = rect.data('total-possible-interactions');
+              var frequency = rect.data('frequency');
+            //data.push([resNo1, resNo2, seg1, seg2, genNo1, genNo2, aa1, aa2, iType]);
+            rows.push('<tr><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+nInteractions+'</td><td>'+nTotalInteractions+'</td><td>'+frequency+'</td>')
+            });
+
+          } else if (selector=='two-groups-table') {
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
+            $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var numIntsGroup1 = rect.data('group-1-num-ints');
+              var numIntsGroup2 = rect.data('group-2-num-ints');
+              var numPdbsGroup1 = rect.data('group-1-num-pdbs');
+              var numPdbsGroup2 = rect.data('group-2-num-pdbs');
+              var freqGroup1 = rect.data('group-1-freq');
+              var freqGroup2 = rect.data('group-2-freq');
+              var fDiff = rect.data('frequency-diff').toFixed(2);
+              rows.push('<tr><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+numIntsGroup1+'</td><td>'+numIntsGroup2+'</td><td>'+freqGroup1+'</td><td>'+freqGroup2+'</td><td>'+fDiff+'</td>')
+            });
+
+          }
+          table.push('<table id="'+selector+'" class="table display" width="100%"><thead><tr>');
+          header.forEach(function(h) {
+            table.push('<th></th>'); //'+h+'
+          });
+          table.push('</tr</thead>');
+          table.push('<tbody>');
+          table = table.concat(rows);
+          table.push('</tbody></table>');
+          $("#"+selector+"-tab").html(table.join( "" ));
+
+          $("#"+selector+"-tab-link").click(function(e){
+              setTimeout(renderTable,100,"#"+selector);
+          });
+
+        }
+
+
+        function renderTable(mode) {
+          if ( ! $.fn.DataTable.isDataTable(mode ) ) {
+          oTable[mode] = $(mode).DataTable({
+                'scrollX': true,
+                scrollY:        '80vh',
+                paging:         false,
+                columnDefs: [
+                  { targets: 'no-sort', orderable: false }
+                ],
+                "aaSorting": [],
+              });
+              if (mode=='#single-table') {
+                  yadcf.init(oTable[mode],
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #2",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Amino acid #1",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 7,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Amino acid #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 8,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Interaction Type",
+                            filter_reset_button_text: false,
+
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+
+                );
+              } else if (mode=='#single-group-table') {
+                  yadcf.init(oTable[mode],
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Number of interactions",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Total Structures",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Frequency",
+                            filter_reset_button_text: false,
+
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+
+                );
+              } else if (mode=='#two-groups-table') {
+                  yadcf.init(oTable[mode],
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Interactions group 1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Interactions group 2",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Frequency group 1",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 7,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Frequency group 2",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 8,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Frequency difference",
+                            filter_reset_button_text: false,
+
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+
+                );
+              }
+
+            yadcf.exResetAllFilters(oTable[mode]);
+          }
+        }
+
+        function downloadSingleCrystalGroupCSV(singleGroupSvgSelector, name) {
+            var data = [];
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Frequency',  'Number of interactions', 'Number of crystals'];
+            data.push(header);
+
+            $(singleGroupSvgSelector + ' rect[data-frequency]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var nInteractions = rect.data('num-interactions');
+              var nTotalInteractions = rect.data('total-possible-interactions');
+              var frequency = rect.data('frequency');
+              data.push([genNo1, genNo2, seg1, seg2, nInteractions, nTotalInteractions, frequency]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        }
+
+        function downloadTwoCrystalGroupsCSV(twoGroupsSvgSelector, name) {
+            var data = [];
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Crystals group 1', 'Crystals group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
+            data.push(header);
+
+            $(twoGroupsSvgSelector + ' rect[data-frequency-diff]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var numIntsGroup1 = rect.data('group-1-num-ints');
+              var numIntsGroup2 = rect.data('group-2-num-ints');
+              var numPdbsGroup1 = rect.data('group-1-num-pdbs');
+              var numPdbsGroup2 = rect.data('group-2-num-pdbs');
+              var freqGroup1 = rect.data('group-1-freq');
+              var freqGroup2 = rect.data('group-2-freq');
+              var fDiff = rect.data('frequency-diff').toFixed(2);
+              data.push([genNo1, genNo2, seg1, seg2, numIntsGroup1, numIntsGroup2, numPdbsGroup1, numPdbsGroup2, freqGroup1, freqGroup2, fDiff]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        }
+
+        function downloadURI(uri, name) {
+            var link = document.createElement("a");
+            link.download = name;
+            link.href = uri;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            delete link;
+        }
+
+        function renderHeatmap(data, heatMapSelector) {
+
+            var amount_of_data = 5000;
+
+            var start = new Date().getTime();
+            // Destroy old zoom on heatmap
+            if (window.zoomHeatmap[heatMapSelector] != null) {
+                window.zoomHeatmap[heatMapSelector].destroy();
+                delete window.zoomHeatmap[heatMapSelector];
+            }
+
+            var end = new Date().getTime();
+            // console.log('Remove old zoom',end-start);
+
+            // Destroy old legend content
+            $(heatMapSelector + ' .heatmap-legend').empty();
+
+            // Destroy all previous contents
+            var heatmap_id = $(heatMapSelector + ' .heatmap').attr("id");
+            $("#"+heatmap_id+"_content").remove();
+            $(heatMapSelector + ' .heatmap-interaction').remove();
+            $(heatMapSelector + ' .heatmap').empty();
+            var heatmap = Snap(heatMapSelector + ' .heatmap');
+            var heatmap_id = $(heatMapSelector + ' .heatmap').attr("id");
+
+
+            // Draw heatmap
+            var interactions = data.interactions;
+            var relevant_interactions = Object.keys(interactions).slice(0, amount_of_data);
+            var segment_map = data.segment_map;
+            var sequence_numbers = data.sequence_numbers;
+            var num_seq_numbers = Object.keys(data.sequence_numbers).length;
+
+            var pdbs = data.pdbs;
+            var pdbs1 = data.pdbs1;
+            var pdbs2 = data.pdbs2;
+            x = 0; wi = num_seq_numbers;
+            y = 0; hi = num_seq_numbers;
+
+            heatmap.attr({viewBox:[x,y,wi,hi].join(',')});
+            heatmap.attr({viewBox:[x,y,wi,hi].join(' ')});
+
+            // Contains all labels
+            var labelGroup = heatmap.g();
+
+            // Contains all content
+            var contentGroup = heatmap.g();
+            contentGroup.attr('id',heatmap_id+'_content');
+
+            // Compute segment offsets
+            var i;
+
+            var segments = [];
+
+            var seg, prevSeg = segment_map[sequence_numbers[0]];
+            var seqStart = 0;
+
+            for (i = 0; i < num_seq_numbers; i++) {
+                seg = segment_map[sequence_numbers[i]];
+
+                if (seg === prevSeg) {
+                    continue;
+                }
+
+                segments.push({
+                    seg: prevSeg,
+                    start: seqStart,
+                    end: i-1
+                });
+
+                seqStart = i;
+                prevSeg = seg;
+            }
+
+            // Push last segment
+            segments.push({
+                seg: prevSeg,
+                start: seqStart,
+                end: i-1
+            });
+
+            // Determine font-size
+            label_font_size = Math.round(1*num_seq_numbers/20);
+            // console.log(num_seq_numbers,'num_seq_numbers',label_font_size);
+
+            lines = Array();
+            // Draw segments
+            last_end = 0
+            segments.forEach(function(s) {
+                var rgb = getSegmentColor(s.seg);
+                // Place the segments vertically.
+                var cell = heatmap.rect(s.start, 0, s.end - s.start + 1, 0);
+                var line = heatmap.line(s.start, 0, s.start, num_seq_numbers);
+                last_end = s.end;
+                cell.attr({
+                    // 'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                    'fill': "#FFFFFF",
+                    'fill-opacity': "0.5"
+                });
+
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+
+
+                // Add text
+                var label = heatmap.text(s.start + (s.end - s.start + 1)/2 - label_font_size, -1 + cell.getBBox().height, "TM"+s.seg);
+                label.attr({
+                    'text-anchor': 'start',
+                    'font-size': label_font_size
+                });
+
+                // contentGroup.add(cell);
+                lines.push(line);
+                labelGroup.add(label);
+
+                // label.transform("r270s-1,1");
+            });
+
+                var line = heatmap.line(last_end+1, 0, last_end+1, num_seq_numbers);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+                lines.push(line);
+                var line = heatmap.line(0, 0,  num_seq_numbers, 0);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+                lines.push(line);
+
+            segments.forEach(function(s) {
+                rgb = getSegmentColor(s.seg);
+
+                // Place the segments horizontally.
+                cell = heatmap.rect(0, s.start, num_seq_numbers, s.end - s.start + 1);
+                line = heatmap.line(0, s.end+1, num_seq_numbers, s.end+1);
+
+                cell.attr({
+                    // 'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                    'fill': "#FFFFFF",
+                    'fill-opacity': "0.5"
+                });
+
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+
+                var label = heatmap.text(6, s.start + (s.end - s.start + 1)/2, "TM"+s.seg);
+
+                label.attr({
+                    'text-anchor': 'end',
+                    'font-size': label_font_size,
+                    'alignment-baseline': 'middle'
+                });
+
+                label.transform("r270");
+
+                contentGroup.add(cell);
+                lines.push(line);
+                labelGroup.add(label);
+            });
+            // console.log('segments drawn')
+            var start = new Date().getTime();
+            cells = Array();
+            rects = Array();
+            // Draw cells
+            var svgns = "http://www.w3.org/2000/svg";
+            // console.log(relevant_interactions);
+            for (i = 0; i < num_seq_numbers; i++) {
+                for (var j = 0; j < num_seq_numbers; j++) {
+                    // Get the sequence numbers
+                    var seq_i = data.sequence_numbers[i];
+                    var seq_j = data.sequence_numbers[j];
+
+                    // Only draw if an interaction exists
+                    var num = seq_i + "," + seq_j;
+                    var num2 = seq_j + "," + seq_i;
+
+                    if (num2 in interactions) num = num2;
+
+                    // console.log(num,'num of freq',interactions.length);
+                    if (relevant_interactions.indexOf(num) >= 0) {
+                        // rects.push(rect);
+                        // var cell = heatmap.rect(i, j, 1, 1);
+
+                        var rect = document.createElementNS(svgns, 'rect');
+                        rect.setAttributeNS(null, 'x', i);
+                        rect.setAttributeNS(null, 'y', j);
+                        rect.setAttributeNS(null, 'height', '1');
+                        rect.setAttributeNS(null, 'width', '1');
+
+                        if ('max_dispersion' in data) {
+                            var mean = interactions[num][0];
+                            var dispersion = interactions[num][1];
+                            var frequency = dispersion / data.max_dispersion;
+
+                            var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
+
+                            var popoverTable = 'Distance mean: ' + Math.round(mean*10)/10 + 'Å<br />'
+                            + 'Distance coefficient of variation: ' + dispersion.toFixed(2)
+                            + '<br />[coefficient of variation is standard deviation over mean, giving an indication of relative flexibility of data]'
+                            + '<br /> #TABLE#';
+                            
+
+                            // cell.attr({
+                            //     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                            //     'data-num-interactions': mean,
+                            //     // 'data-total-possible-interactions': data.pdbs.length,
+                            //     'data-frequency': frequency,
+                            //     // 'data-gen-no-1': seq_i,
+                            //     // 'data-gen-no-2': seq_j,
+                            //     // 'data-seg-1': segment_map[seq_i],
+                            //     // 'data-seg-2': segment_map[seq_j],
+                            //     'class': 'heatmap-interaction',
+                            //     'title': 'Distance between ' + seq_i + ', ' + seq_j,
+                            //     'data-content': popoverTable,
+                            // });
+
+
+                            rect.setAttributeNS(null, 'fill', "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")");
+                            rect.setAttributeNS(null, 'class', "heatmap-interaction");
+                            rect.setAttributeNS(null, 'title', "Distance between " + seq_i + ", " + seq_j);
+                            rect.setAttributeNS(null, 'data-content', popoverTable);
+                            rect.setAttributeNS(null, 'data-extra', JSON.stringify(interactions[num][2]));
+
+                        } else {
+                            var values = interactions[num]
+                            var difference = values[0];
+                            var frequency = difference / data.max_diff;
+                            var std = values[1];
+                            var means = values[2];
+                            var ns = values[3];
+                            var rgb = getGradientColor(frequency, true);
+
+                            var popoverTable = 'Difference of means: ' + Math.round(difference*10)/10 + 'Å<br />'
+                                + '<table class="table"><thead><tr><th>Mean</th><th>Std</th><th>N</th></tr></thead>'
+                                + '<tbody><tr><td>' + Math.round(means[0]*10)/10 + ' Å</td><td>' + Math.round(std[0]*10)/10 + '</td><td>' + Math.round(ns[0]) + '</td></tr>'
+                                + '<tr><td>' + Math.round(means[1]*10)/10 + ' Å</td><td>' + Math.round(std[1]*10)/10 + '</td><td>' + Math.round(ns[1]) + '</td></tr></tbody></table>'
+                                + 'p-value: ' + Math.round(values[4]*10000) / 10000 + '<br /> #TABLE#'
+
+                            // cell.attr({
+                            //     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                            //     'data-num-interactions': difference,
+                            //     // 'data-total-possible-interactions': data.pdbs.length,
+                            //     'data-frequency': frequency,
+                            //     // 'data-gen-no-1': seq_i,
+                            //     // 'data-gen-no-2': seq_j,
+                            //     // 'data-seg-1': segment_map[seq_i],
+                            //     // 'data-seg-2': segment_map[seq_j],
+                            //     'class': 'heatmap-interaction',
+                            //     'title': 'Distance between ' + seq_i + ', ' + seq_j,
+                            //     'data-content': popoverTable,
+                            // });
+
+                            rect.setAttributeNS(null, 'fill', "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")");
+                            rect.setAttributeNS(null, 'class', "heatmap-interaction");
+                            rect.setAttributeNS(null, 'title', "Distance between " + seq_i + ", " + seq_j);
+                            rect.setAttributeNS(null, 'data-content', popoverTable);
+                            rect.setAttributeNS(null, 'data-extra', JSON.stringify(values[5]));
+
+                        }
+
+                        // document.getElementById(heatmap_id+'_content').appendChild(rect);
+                        document.getElementById(heatmap_id).appendChild(rect);
+                        // cells.push(cell);
+                    }
+                }
+            }
+            // contentGroup.add(cells);
+
+            // Start new g() here so it comes on top of cells
+            var contentLines = heatmap.g();
+            contentLines.add(lines);
+            contentLines.add(labelGroup);
+
+            // Rotate contents
+            // var g = heatmap.g();
+            // g.add(contentGroup);
+            // g.add(labelGroup);
+            // g.transform("r225s-1,1");
+
+            var end = new Date().getTime();
+
+            // console.log('cells added',$('rect.heatmap-interaction').length,end-start);
+            // Add popover to cells
+
+            $(heatMapSelector + ' rect.heatmap-interaction').click(function() {
+              // alert( "Handler for .click() called." );
+                var $this = $(this);
+                //if not already initialized
+                if (!$this.data('bs.popover')) {
+
+                    if ('max_dispersion' in data) {
+                    // Build data table
+                    var individual_pdb_values = JSON.parse($(this).attr("data-extra"));
+                    var total = 0;
+                    var length = 0;
+                    for (var pdb in individual_pdb_values) {
+                        total += individual_pdb_values[pdb];
+                        length++;
+                    }
+                    var avg = total / length;
+                    var pdbs_per_line = 8;
+                    var table = "<table class='table'><tr>";
+                    pdbs.forEach(function (pdb, i) {
+                        if (i % pdbs_per_line == 0) {
+                            // Make a new line to prevent too big tables.
+                            table += "</tr><tr>";
+                            pdbs_slice = pdbs.slice(i, i+pdbs_per_line);
+                            pdbs_slice.forEach(function (pdb, i) {
+                                table += `<th>${pdb}</th>`
+                            });
+                            table += "</tr><tr>";
+                        }
+
+                        if (pdb in individual_pdb_values) {
+                            fold = individual_pdb_values[pdb]/avg;
+                            if (fold>1) { fold = 1/fold; }
+                            var color = rgb2hex(255, Math.round(255*(fold)), Math.round(255*(fold)));
+                            table += `<td bgcolor='${color}'>${individual_pdb_values[pdb]}</td>`;
+                        } else {
+                            table += "<td>N/A</td>";
+                        }
+                    });
+                    table += "</tr></table>";
+                  } else {
+                    var sets = JSON.parse($(this).attr("data-extra"));
+                    var table = "";
+                    sets.forEach(function (individual_pdb_values, i) {
+                      if (i==0) pdbs = pdbs1;
+                      if (i==1) pdbs = pdbs2;
+                      var total = 0;
+                      var length = 0;
+                      for (var pdb in individual_pdb_values) {
+                          total += individual_pdb_values[pdb];
+                          length++;
+                      }
+                      var avg = total / length;
+                      var pdbs_per_line = 8;
+                      table += "<table class='table'><tr>";
+                      pdbs.forEach(function (pdb, i) {
+                          if (i % pdbs_per_line == 0) {
+                              // Make a new line to prevent too big tables.
+                              table += "</tr><tr>";
+                              pdbs_slice = pdbs.slice(i, i+pdbs_per_line);
+                              pdbs_slice.forEach(function (pdb, i) {
+                                  table += `<th>${pdb}</th>`
+                              });
+                              table += "</tr><tr>";
+                          }
+
+                          if (pdb in individual_pdb_values) {
+                              fold = individual_pdb_values[pdb]/avg;
+                              if (fold>1) { fold = 1/fold; }
+                              var color = rgb2hex(255, Math.round(255*(fold)), Math.round(255*(fold)));
+                              table += `<td bgcolor='${color}'>${individual_pdb_values[pdb]}</td>`;
+                          } else {
+                              table += "<td>N/A</td>";
+                          }
+                      });
+                      table += "</tr></table>";
+                    });
+                  }
+                  // Copy table to data-content
+                  new_content = $(this).attr("data-content").replace("#TABLE#", table);
+                  $(this).attr("data-content",new_content);
+
+                  $this.popover({
+                    'container': heatMapSelector,
+                    'placement': 'bottom',
+                    'animation': true,
+                    'html': true,
+                    'tabindex': '0'
+                  }).popover('show');
+                }
+            });
+
+            // Old popover binding -- created them all and could be slow for large data
+            // $(heatMapSelector + ' rect.heatmap-interaction').popover({
+            //     'container': heatMapSelector,
+            //     'placement': 'bottom',
+            //     'animation': true,
+            //     'html': true,
+            //     'tabindex': '0'
+            // });
+
+            var end2 = new Date().getTime();
+
+            // console.log('added popovers',end2-end)
+
+            if ('max_dispersion' in data) {
+
+                // Populate heatmap legend
+                var legendHtml = '<h4 class="center">Legend</h4>'
+                    + '<p>Range: 0 to ' + Math.round(data.max_dispersion*100)/100 + '</p>'
+                    + '<div class="temperature-scale">'
+                    + '<span class="gray-to-red"></span>'
+                    + '</div>';
+
+            } else {
+
+                // Populate heatmap legend
+                var legendHtml = '<h4 class="center">Legend</h4>'
+                    + '<p>Range: -' + Math.round(data.max_diff*10)/10 + 'Å to ' + Math.round(data.max_diff*10)/10 + 'Å</p>'
+                    + '<div class="temperature-scale">'
+                    + '<span class="red-to-gray"></span>'
+                    + '<span class="gray-to-blue"></span>'
+                    + '</div>';
+
+            }
+
+
+
+            // Add SVG download button
+            // legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\',\'svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+            //               '</button>';
+            // legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\',\'png\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download PNG' +
+            //               '</button>';
+            // legendHtml += '<button onclick="saveSvgAsPng(document.getElementById(\'heatmap_double\'), \'test.png\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG2' +
+            //               '</button>';
+
+            // Add CSV download button
+            // legendHtml += '<br /><button onclick="downloadSingleCrystalGroupCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
+            //   '</button>';
+
+
+            $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
+
+            // $( function() {
+            //   $( heatMapSelector+" .slider-range" ).slider({
+            //     range: true,
+            //     min: 1,
+            //     max: data.pdbs.length,
+            //     step: 1,
+            //     values: [0,data.pdbs.length],
+            //     slide: function( event, ui ) {
+            //       $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+            //       setTimeout(getRangeChangeFunction,100)
+            //     }
+            //   });
+            // } );
+
+            // function getRangeChangeFunction() {
+
+            //         var [tMin,tMax] = $(heatMapSelector + ' .heatmap-legend #pdbs-range-slider').slider( "option", "values" );
+
+            //         // Hide all below min treshold
+            //         $(heatMapSelector + ' rect').each(function() {
+            //             var n = $(this).data("num-interactions");
+            //             if (n < tMin || tMax < n) {
+            //                 $(this).hide();
+            //             } else {
+            //                 $(this).show();
+            //             }
+            //         });
+
+            // }
+
+
+            // // Make zoomable
+            window.zoomHeatmap[heatMapSelector] = svgPanZoom(heatMapSelector + ' .heatmap', {
+                zoomEnabled: true,
+                // controlIconsEnabled: true,
+                fit: true,
+                center: true,
+                minZoom: 0.75,
+                maxZoom: 50,
+                zoomScaleSensitivity: 0.25,
+                dblClickZoomEnabled: true,
+                beforeZoom: hidePopovers,
+                beforePan: hidePopovers
+            });
+
+            // // Set initial zoom level
+            // window.zoomHeatmap[heatMapSelector].zoom(0.50);
+            // window.zoomHeatmap[heatMapSelector].pan({x: 50, y: 30});
+
+            // Close popovers on clicking elsewhere
+            $('html').on('mousedown', function(e) {
+                if(!$(e.target).closest('.popover').length) {
+                    if ($(e.target).closest(heatMapSelector).length) {
+                        hidePopovers();
+                    }
+                }
+            });
+            // Create table view
+            // populateTable('two-groups-table');
+            old_heatmap_width = 0;
+            // console.log('finished heatmap')
+            // This function is also used on resize, to make sure thigs dont get out of shape
+            // redraw_heatmap();
+
+        }
+
+        var old_heatmap_width = 0;
+        function redraw_heatmap() {
+          var heatmap_id = $('.heatmap:visible').attr('id');
+          var ngl_id = $('.ngl-container:visible').attr('id');
+          var heatMapSelector = "#" + $('.main_option:visible').attr('id');
+
+          current_width = $("#"+heatmap_id).width();
+
+          // console.log('current_width',current_width,old_heatmap_width);
+          if (current_width && current_width!=old_heatmap_width) {
+            // console.log('change zoom'); 
+          } else {
+            // do nothing
+            return;
+          }
+          if (current_width>screen.height) current_width = screen.height;
+          $("#"+heatmap_id).height(current_width);
+
+          current_width = $("#"+ngl_id).width();
+          if (current_width>screen.height) current_width = screen.height;
+          $("#"+ngl_id).height(current_width);
+
+
+          current_width = $(heatMapSelector + " .flareplot-container").width();
+          if (current_width>screen.height) current_width = screen.height;
+          $(heatMapSelector + " .flareplot-container").height(current_width);
+
+          current_width = $(heatMapSelector + " .flareplot-container svg").width();
+          if (current_width>screen.height) current_width = screen.height;
+          $(heatMapSelector + " .flareplot-container svg").height(current_width);
+
+          old_heatmap_width = current_width;
+
+          // Destroy old zoom on heatmap
+          heatMapSelector = heatMapSelector+ ' .heatmap-container';
+          if (window.zoomHeatmap[heatMapSelector] != null) {
+            // console.log('Reset heatmap zoom');
+            window.zoomHeatmap[heatMapSelector].destroy();
+            delete window.zoomHeatmap[heatMapSelector];
+
+            window.zoomHeatmap[heatMapSelector] = svgPanZoom(heatMapSelector + ' .heatmap', {
+                  zoomEnabled: true,
+                  // controlIconsEnabled: true,
+                  fit: true,
+                  center: true,
+                  minZoom: 0.40,
+                  maxZoom: 50,
+                  zoomScaleSensitivity: 0.25,
+                  dblClickZoomEnabled: true,
+                  beforeZoom: hidePopovers,
+                  beforePan: hidePopovers
+              });
+
+            window.zoomHeatmap[heatMapSelector].zoom(0.85);
+            // if ($("#"+heatmap_id).width()>screen.height) window.zoomHeatmap[heatMapSelector].zoom(0.5);
+          }
+
+        }
+
+
+        function initializeSegmentButtons(selector) {
+            // Initialize segment buttons.
+            $(selector + ' .segments-panel button').each(function() {
+                var s = $(this).attr('data-segment');
+
+                // Return if no segment data
+                if (s == null) {
+                    return;
+                }
+
+                $(this).click(function() {
+                    var segments = [];
+                    $(this).toggleClass('active');
+                    $(selector + ' .segments-panel button.active').each(function() {
+                        segments = segments.concat($(this).data('segment').split(' '));
+                    });
+                    $(selector + ' .segments-input').val(JSON.stringify(segments));
+                });
+            });
+
+            // Initialize 'all' buttons.
+            $(selector  + ' .segments-panel .all-button').each(function() {
+                $(this).click(function() {
+                    if ($(this).html() === 'All') {
+                        $(this).html('None');
+                        $(this).parent().find('button').each(function() {
+                            var s = $(this).attr('data-segment');
+
+                            // Return if no segment data
+                            if (s == null) {
+                                return;
+                            }
+
+                            if (!$(this).hasClass('active')) {
+                                $(this).trigger('click');
+                            }
+                        });
+                    } else {
+                        $(this).html('All');
+                        $(this).parent().find('button').each(function() {
+                            var s = $(this).attr('data-segment');
+
+                            // Return if no segment data
+                            if (s == null) {
+                                return;
+                            }
+
+                            if ($(this).hasClass('active')) {
+                                $(this).trigger('click');
+                            }
+                        });
+                    }
+
+                });
+
+                // Update data
+                var segments = [];
+                $(selector + ' .segments-panel button.active').each(function() {
+                    segments.push($(this).data('segment'));
+                });
+                $(selector + ' .segments-panel .segments-input').val(JSON.stringify(segments));
+
+                // Trigger click on initialization
+                $(this).trigger('click');
+            });
+        }
+
+
+        function initializeGoButton(selector, heatmapFunction, generic=false) {
+            $(selector + ' .go-button').click(function() {
+                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+                loadPDBsView(pdb, selector, heatmapFunction, generic)
+            });
+        }
+
+        function loadPDBsView(pdb, selector, heatmapFunction, generic) {
+            if (pdb.length > 0) {
+                $(".heatmap").hide();
+                $(".heatmap-legend").hide();
+                $(".matrix-tab:visible").click();
+
+                //var segments = JSON.parse($(selector + ' .segments-input').val());
+                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
+
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                if (!$(selector + ' .interactions-input').val() == null)
+                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+
+                $.getJSON( '/contactnetwork/distancedata',
+                {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs': pdb,
+                },
+                function( data ) {
+                    // Re-render heatmap
+                    $(".heatmap").show();
+                    $(".heatmap-legend").show();
+                    $("#svgloading").remove()
+
+                    createNGLview("single-group",pdb[0], pdb, false, false, data);
+                    // Re-render flareplot
+                    // TODO MUNK
+                    createFlareplotBox(data, selector + " .flareplot-container");
+                    heatmapFunction(data, selector + ' .heatmap-container');
+                    redraw_heatmap();
+                });
+            }
+        }
+
+        function initializeGoButtonTwoCrystalGroups(selector, heatmapFunction, generic=false) {
+            $(selector + ' .go-button').click(function() {
+                var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
+                var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
+
+                loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic)
+            });
+        }
+
+        function loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic) {
+            if (pdbs1.length > 0 && pdbs2.length > 0) {
+                // var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                $(".heatmap").hide();
+                $(".heatmap-legend").hide();
+                $(".matrix-tab:visible").click();
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
+
+                //var segments = JSON.parse($(selector + ' .segments-input').val());
+                var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
+
+                $.getJSON( '/contactnetwork/distancedatagroups',
+                {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs1': pdbs1,
+                    'pdbs2': pdbs2,
+                },
+                function( data ) {
+                            // Re-render heatmap
+                            $(".heatmap").show();
+                            $(".heatmap-legend").show();
+                            $("#svgloading").remove()
+                            // createSchematicPlot(data3, selector + " .schematic-con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic-container
+                            // createSchematicPlot(data3, selector + " .schematic-non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
+
+
+                            createFlareplotBox(data, selector + " .flareplot-container");
+
+                            // // Re-render flareplot
+                            // createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
+                            createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2, false , data);
+                            heatmapFunction(data, selector + ' .heatmap-container');
+                            redraw_heatmap();
+                        });
+            }
+        }
+
+        function initializeFullscreenButton(selector) {
+            // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
+            $(selector + ' .btn-fullscreen').click(function() {
+                fullScreenElement = $(this).closest(".panel-heading").next().children().first();
+                fullScreenElement.css('background-color','white');
+                toggleFullScreen(fullScreenElement.get(0));
+            });
+        }
+
+        function createTwoGroupFlareplotBox(data1, data2, data3, container, toggle = false) {
+          // prepare two group data for visualization
+          var data = data3;
+
+          // frequency + count holder
+          data["frequency"] = {};
+          data["count"] = {};
+
+          Object.keys(data.interactions).forEach(function(pair) {
+            var f1 = 0, f2 = 0, c1 = 0, c2 = 0;;
+            if (pair in data1.interactions) {
+                c1 = Object.keys(data1.interactions[pair]).length;
+                f1 = c1/data1.pdbs.length;
+            }
+            if (pair in data2.interactions) {
+                c2 = Object.keys(data2.interactions[pair]).length;
+                f2 = c2/data2.pdbs.length;
+            }
+            var f3 = f1 - f2;
+            var c3 = c1 + c2;
+            data["frequency"][pair] = [f1, f2, f3];
+            data["count"][pair] = [c1, c2, c3];
+          });
+
+          createFlareplotBox(data, container, toggle = false);
+        }
+
+        var flareplot = {};
+        var contiguous = false;
+        var interactionsToggleList = [];
+        function createFlareplotBox(data, container, toggle = false) {
+            // clean
+            if (toggle){
+                $(container).children().last().remove();
+            } else {
+                // in case refresh with new parameters => reset
+                contiguous = false;
+                $(container).html("");
+            }
+
+            toggle = true
+
+            // add menu
+            if (!toggle){
+                var newDiv = document.createElement("div");
+                newDiv.setAttribute("class", "flareplot-legend");
+
+                var content = '<div class="controls">'
+//                                  +'<h4>Controls</h4>';
+
+                // only possible with more than 4 segments, otherwise it will become a mess
+                if (data.segments.length > 4)
+                    content += '<p>Contiguous segments:<br/>lines outwards: <input type=checkbox id="flareplot_contiguous"></p>';
+
+                content += '<p>Line colors: <select id="flareplot_color">'
+                        +'<option value="none">None (gray)</option>'
+                        +'<option value="segment">GPCR segment</option>';
+
+                // if single structure - use interaction coloring
+                if (container.indexOf("single-crystal-tab") >= 0) {
+                    content += '<option value="interactions" selected>Interaction Type</option>';
+                // if group(s) of structures - use frequency coloring (gradient)
+                } else {
+                    content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
+                }
+                content += '</select></p>';
+
+
+                // Populate heatmap legend
+                if (container.indexOf("single-crystal-tab") >= 0 ) {
+                    // TODO Optimize/generalize interaction set selection - code duplication
+                    var interactionTypes = new Set(["Ionic", "Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"]);
+
+                    // Add interactions color legend
+                    //content += '<h4>Toggle interactions</h4><ul>';
+                    content += '<ul>';
+
+                    interactionTypes = Array.from(interactionTypes).sort(function (i1, i2) {
+                        return getInteractionStrength(i2) - getInteractionStrength(i1);
+                    });
+
+                    interactionTypes.forEach(function(i) {
+                        var rgb = getInteractionColor(i, false);
+                        content += '<li>'
+                                + '<div class="color-box" style="background-color: ' + rgb + '">' + '<input type="checkbox" data-interaction-type="' + i.toLowerCase() +'"></input>' + '</div><p>' + i + '</p>'
+                                + '</li>';
+                    });
+                    content += '</ul></div>';
+                } else if (container.indexOf("single-crystal-group-tab") >= 0) {
+                    // slider 0 to count
+                    content += '<h4 class="center">Frequency (#Structures)</h4>'
+                        + '<p>Range: <span id="pdbs-range-flare">1 - ' + data.pdbs.length + '</span></p>'
+                        + '<div class="slider-range" data-text-id="pdbs-range-flare" id="pdbs-range-flare-slider"></div>'
+                        + '<div class="temperature-scale">'
+                        + '<span class="gray-to-red"></span>'
+                        + '</div>';
+
+                    $( function() {
+                      $( container+" .slider-range" ).data({ "referenceContainer" : container })
+                      $( container+" .slider-range" ).slider({
+                        range: true,
+                        min: 1,
+                        max: data.pdbs.length,
+                        step: 1,
+                        values: [0,data.pdbs.length],
+                        slide: function( event, ui ) {
+                          $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+                          flareplot[$(this).data("referenceContainer")].updateRange(ui.values[ 0 ], ui.values[ 1 ]);
+                        }
+                      });
+                    } );
+                } else {
+                    content += '<h4 class="center">Frequency</h4>'
+                        + '<p>Group 1 range: <span id="freq-flare-range-1">0 - 1</span></p>'
+                        + '<div class="slider-range" data-text-id="freq-flare-range-1" id="freq-flare-slider-range-1"></div>'
+                        + '<p>Group 2 range: <span id="freq-flare-range-2">0 - 1</span></p>'
+                        + '<div class="slider-range" data-text-id="freq-flare-range-2" id="freq-flare-slider-range-2"></div>'
+                        + '<p>Freq difference range: <span id="freq-flare-range-3">-1 - 1</span></p>'
+                        + '<div class="slider-range-diff" data-text-id="freq-flare-range-3" id="freq-flare-slider-range-3"></div>'
+                        + '<div class="temperature-scale">'
+                        + '<span class="red-to-gray"></span>'
+                        + '<span class="gray-to-blue"></span>'
+                        + '</div>'
+                        + '</div>';
+
+                        $( function() {
+                          $( container+" #freq-flare-slider-range-1" ).data({ "referenceContainer" : container });
+                          $( container+" #freq-flare-slider-range-2" ).data({ "referenceContainer" : container });
+                          $( container+" #freq-flare-slider-range-3" ).data({ "referenceContainer" : container });
+                          $( container+" #freq-flare-slider-range-1" ).slider({
+                            range: true,
+                            min: 0,
+                            max: 1,
+                            step: 0.01,
+                            values: [0,1],
+                            slide: function( event, ui ) {
+                              $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+                              updateTwoGroupSliders($(this)[0].id, ui);
+                            }
+                          });
+                          $( container+" #freq-flare-slider-range-2" ).slider({
+                            range: true,
+                            min: 0,
+                            max: 1,
+                            step: 0.01,
+                            values: [0,1],
+                            slide: function( event, ui ) {
+                              $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+                              updateTwoGroupSliders($(this)[0].id, ui);
+                            }
+                          });
+                          $( container+" #freq-flare-slider-range-3" ).slider({
+                            range: true,
+                            min: -1,
+                            max: 1,
+                            step: 0.01,
+                            values: [-1,1],
+                            slide: function( event, ui ) {
+                              $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+                              updateTwoGroupSliders($(this)[0].id, ui);
+                            }
+                          });
+                        });
+                }
+
+                newDiv.innerHTML = content;
+
+                $(container).append(newDiv);
+
+                $(container+" #flareplot_contiguous").click(function(e){
+                    $(function() {
+                      contiguous = !contiguous;
+                      createFlareplotBox(data, container, true);
+                    });
+                });
+
+
+                $(container+" #flareplot_color").data({ "referenceContainer" : container })
+                $(container+" #flareplot_color").change(function(e){
+                    flareplot[$(this).data("referenceContainer")].updateColors($(this).val(), interactionsToggleList);
+                });
+
+                $(container + ' .flareplot-legend .color-box input[type=checkbox]').each(function() {
+                    $(this).prop('checked', true);
+
+                    // init toggle list
+                    interactionsToggleList.push($(this).data('interaction-type'));
+                    $(this).data({ "referenceContainer" : container })
+
+                    $(this).change(function() {
+                        // toggle interactions in flareplot
+                        interactionsToggleList = [];
+
+                        $(container + ' .flareplot-legend input[type=checkbox]').each(function() {
+                          if ($(this).prop('checked'))
+                              interactionsToggleList.push($(this).data('interaction-type'));
+                        });
+
+                        // toggle interactions in flareplot
+                        flareplot[$(this).data("referenceContainer")].showInteractions(interactionsToggleList);
+                    });
+                });
+            }
+
+            // create flareplot
+            flareplot[container] = createFlareplot(800, parseGPCRdb2flare(data), container, contiguous);
+
+          //             // Destroy old zoom on heatmap
+          //   if (window.zoomHeatmap[container] != null) {
+          //       window.zoomHeatmap[container].destroy();
+          //       delete window.zoomHeatmap[container];
+          //   }
+
+          // window.zoomHeatmap[container] = svgPanZoom(container + ' svg', {
+          //       zoomEnabled: true,
+          //       // controlIconsEnabled: true,
+          //       fit: true,
+          //       center: true,
+          //       minZoom: 0.40,
+          //       maxZoom: 50,
+          //       zoomScaleSensitivity: 0.25,
+          //       dblClickZoomEnabled: true,
+          //       beforeZoom: hidePopovers,
+          //       beforePan: hidePopovers
+          //   });
+          // window.zoomHeatmap[container].zoom(0.85);
+
+            // update coloring and visibility if toggled
+            // if (toggle) {
+            //     var range = $( container+" .slider-range" ).slider("values");
+            //     flareplot[container].updateRange(range[0], range[1]);
+
+            //     flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
+            //     if ($(container + ' .flareplot-legend .color-box input[type=checkbox]').length > 0)
+            //       flareplot[container].showInteractions(interactionsToggleList);
+            //     if (container.indexOf("two-crystal-groups-tab") >= 0)
+            //       updateTwoGroupSliders("skip", []);
+            // } else {
+            //   flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
+            // }
+        }
+
+
+        function updateTwoGroupSliders(origin, ui) {
+            // grab data from all sliders
+            var g1 = $( "#freq-flare-slider-range-1").slider("values");
+            var g2 = $( "#freq-flare-slider-range-2" ).slider("values");
+            var diff = $( "#freq-flare-slider-range-3" ).slider("values");
+
+            // update with current slide values
+            if (origin == "freq-flare-slider-range-1")
+                g1 = ui.values;
+            else if (origin == "freq-flare-slider-range-2")
+                g2 = ui.values;
+            else if (origin == "freq-flare-slider-range-3")
+                diff = ui.values;
+
+            // apply cutoffs
+            flareplot[$( "#freq-flare-slider-range-1").data("referenceContainer")].updateRangeTwoGroups(g1[0], g1[1], g2[0], g2[1], diff[0], diff[1]);
+        }
+
+        var stage = {};
+        var pdb_data = {};
+        var color_schemes = {};
+        var reps = {} // store ngl representations
+        var gpcr_rep = {}
+        var int_labels = []
+        function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false, distance_data = false) {
+            $("#ngl-"+mode).html("");
+            stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
+            color_schemes[mode] = [[],[]];
+            reps[mode] = [{},{}]
+            gpcr_rep[mode] = [];
+            pdb_data[mode] = [];
+            int_labels[mode] = []
+
+//            console.log('data!?',distance_data['ngl_data']);
+
+            var first_structure;
+            var num_set1;
+            var gn_num_set1;
+            var two_structures = false;
+
+            //var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
+            var blue_colors = ['#f0fcfa','#D3E4EA','#B6CDDB', '#99B5CC',    '#7C9EBD',    '#5F86AE', '#426F9F',    '#255790',    '#084081']
+            var red_colors = ['#fbf0fc','#f3dbec','#ebc5df', '#dda8bc',    '#cc7b7f',    '#d3574e', '#be372b',    '#ac1808',    '#811808']
+
+            $.getJSON( "pdb/"+pdb,
+              function( data ) {
+                var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
+                var segments_sets = {}
+                int_labels[mode][0] = {}
+
+                highlight.forEach( function(e){
+                  segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
+                });
+                pdb_data[mode][0] = data;
+
+                var distance_colors = [];
+                max_diff = distance_data['ngl_max_diff']
+                $.each( distance_data['ngl_data'], function( key, value ) {
+                  var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
+                  var frequency = value['avg'] / max_diff;
+                  if ('max_dispersion' in distance_data) {
+                    var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
+                  } else {
+                    var rgb = getGradientColor(frequency, true);
+                  }
+                  // console.log( key + "("+resNo1+")" + ": " + value['avg'],max_diff ,rgb,"rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",rgb2hex(rgb.r, rgb.g, rgb.b));
+                  if (resNo1) {
+                    distance_colors.push([rgb2hex(rgb.r, rgb.g, rgb.b),resNo1+", "]);
+                  }
+                });
+                color_schemes[mode][0]['distances'] = NGL.ColormakerRegistry.addSelectionScheme(distance_colors)
+
+                chain_set1 = pdb_data[mode][0]['chain'];
+                num_set1 = pdb_data[mode][0]['only_gn'];
+                gn_num_set1 = pdb_data[mode][0]['gn_map'];
+
+                var stringBlob = new Blob( [ pdb_data[mode][0]['pdb'] ], { type: 'text/plain'} );
+                stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
+                    first_structure = o
+
+                    // Cleanup
+                    pdb_data[mode][0]['pdb'] = null;
+                    gpcr_rep[mode][0] = {}
+                    // TODO: cartoon for ECL2 is currently not shown (only 3 res, but 4 needed for cartoon)
+                    gpcr_rep[mode][0].custom = o.addRepresentation( "cartoon", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+")",
+                      radiusSize: 1,
+                      radiusScale: 0.6,
+                      color: color_schemes[mode][0]['distances'],
+                      metalness: 0,
+                      colorMode: "hcl",
+                      roughness: 1,
+                      opacity: 1,
+                      depthWrite: true
+                    });
+
+
+                    var links = []
+                    var links_gn = []
+                    var res_int = []
+
+                    // REMOVE default hoverPick mouse action
+                    stage[mode].mouseControls.remove("hoverPick")
+                    // REMOVE default hoverPick mouse action
+                    stage[mode].mouseControls.remove("click")
+
+                    // Add residue labels for GN residues
+                    pdb_data[mode][0]['only_gn'].forEach( function(resNo, index){
+                      var genNo = pdb_data[mode][0]['gn_map'][index]
+                      int_labels[mode][0][resNo] = genNo
+                    })
+
+                    // listen to `hovered` signal to move tooltip around and change its text
+                    stage[mode].signals.clicked.add(function (pickingProxy) {
+                      var label_index = false
+
+                      if (pickingProxy && (pickingProxy.distance || pickingProxy.atom)) {
+                        var mp = pickingProxy.mouse.position
+                        if (pickingProxy.distance){
+                          label_index = pickingProxy.distance.atom1.resno + "-" + pickingProxy.distance.atom2.resno;
+                        } else {
+                          label_index = pickingProxy.atom.resno;
+                        }
+                      }
+
+                      if (label_index==false) {
+                          gpcr_rep[mode][0].custom.setParameters({
+                            color: color_schemes[mode][0]['distances']
+                          });
+                      } else {
+
+                        click_gn = int_labels[mode][0][label_index];
+
+                        var custom_distance_colors = [];
+                        custom_distance_colors.push(["green",label_index+", "]);
+                        $.each( distance_data['ngl_data'][click_gn], function( key, value ) {
+                          var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
+                          if ('max_dispersion' in distance_data) {
+                            var frequency = value / distance_data['max_dispersion'];
+                            var rgb = { r: 255, g: Math.round(255-frequency*255), b: Math.round(255-frequency*255) };
+                          } else {
+                            var frequency = value / distance_data['max_diff'];
+                            var rgb = getGradientColor(frequency, true);
+                          }
+                          if (resNo1) { custom_distance_colors.push([rgb2hex(rgb.r, rgb.g, rgb.b),resNo1+", "]); }
+                        });
+                        color_schemes[mode][0]['custom'] = NGL.ColormakerRegistry.addSelectionScheme(custom_distance_colors)
+
+                          gpcr_rep[mode][0].custom.setParameters({
+                            color: color_schemes[mode][0]['custom']
+                          });
+
+                      }
+
+                    })
+
+                    // listen to `hovered` signal to move tooltip around and change its text
+                    stage[mode].signals.hovered.add(function (pickingProxy) {
+                      var label_index = false
+
+                      if (pickingProxy && (pickingProxy.distance || pickingProxy.atom)) {
+                        var mp = pickingProxy.mouse.position
+                        if (pickingProxy.distance){
+                          label_index = pickingProxy.distance.atom1.resno + "-" + pickingProxy.distance.atom2.resno;
+                          ngl_tooltip.innerText = "INTERACTION:"
+                        } else {
+                          label_index = pickingProxy.atom.resno;
+                          ngl_tooltip.innerText = "RESIDUE:"
+                        }
+                      }
+                      if (label_index && $("#ngl-"+mode+" #ngl_color_hover").prop('checked')) {
+                          click_gn = int_labels[mode][0][label_index];
+
+                          var custom_distance_colors = [];
+                          custom_distance_colors.push(["green",label_index+", "]);
+                          $.each( distance_data['ngl_data'][click_gn], function( key, value ) {
+                            var resNo1 = pdb_data[mode][0]['only_gn'][pdb_data[mode][0]['gn_map'].indexOf(key)];
+                            var frequency = value / distance_data['max_diff'];
+                            var rgb = getGradientColor(frequency, true);
+                            if (resNo1) { custom_distance_colors.push([rgb2hex(rgb.r, rgb.g, rgb.b),resNo1+", "]); }
+                          });
+                          color_schemes[mode][0]['custom'] = NGL.ColormakerRegistry.addSelectionScheme(custom_distance_colors)
+
+                          gpcr_rep[mode][0].custom.setParameters({
+                            color: color_schemes[mode][0]['custom']
+                          });
+                      }
+
+                      if (label_index && (label_index in int_labels[mode][0])) {
+                        ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
+                        ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
+                        ngl_tooltip.style.left = mp.x + 3 + "px"
+                        ngl_tooltip.style.display = "block"
+                      } else {
+                        ngl_tooltip.style.display = "none"
+                      }
+                    })
+
+                    var linkMap = {}
+                    links.forEach(function (link) {
+                      linkMap[link.resID] = link
+                    })
+
+                    var initColourSchemes = function () {
+                      var linkColourScheme = function () {
+                        this.bondColor = function (b) {
+                          var origLink = linkMap[b.atom1.resno + "-" + b.atom2.resno]
+                          if (origLink) {
+                            r = origLink.data.color
+                            return (r["r"] << 16) + (r["g"] << 8) + r["b"]
+                          }
+                          return (8 << 16) + (8 << 8) + 8 // (128 << 16) + (128 << 8) + 128 // grey default
+                        }
+                      }
+                      reps[mode][0].linkColourScheme = NGL.ColormakerRegistry.addScheme(linkColourScheme, "xlink")
+                    }
+                    initColourSchemes()
+
+                    var baseLinkScale = 20
+
+                    reps[mode][0].links = o.addRepresentation("distance", {
+                      atomPair: links.map(function (l) {
+                        return l.atoms
+                      }),
+                      colorScheme: reps[mode][0].linkColourScheme,
+                      useCylinder: true,
+                      radiusSize: 0.04,
+                      labelVisible: false,
+                      linewidth: 2,
+                      visible: false
+                    })
+
+
+                    res_int_gn = Object.assign([], res_int);
+                    res_int_gn = intersect(res_int_gn, pdb_data[mode][0]['only_gn']);
+
+                    // Automatic GPCR positioning
+                    if ("translation" in pdb_data[mode][0]){
+                      var translation = JSON.parse(pdb_data[mode][0]["translation"])
+                      var center_axis = JSON.parse(pdb_data[mode][0]["center_axis"])
+
+                      // calculate rotation and apply
+                      v1 = new NGL.Vector3(0,1,0)
+                      v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+                      var quaternion = new NGL.Quaternion(); // create one and reuse it
+                      quaternion.setFromUnitVectors( v2, v1 )
+                      o.setRotation(quaternion)
+
+                      // calculate translation and apply
+                      var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+                      v.applyMatrix4(o.matrix)
+                      o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+
+                      // calculate H8 position (based on TM1)
+                      var tm1_vector
+                      var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                      o.structure.eachAtom(function (ap) {
+                        tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                        tm1_vector.applyMatrix4(o.matrix)
+                      }, new NGL.Selection(":"+pdb_data[mode][0]['chain']+" and "+ ref_tm1 +" and .CA"))
+
+                      tm1_vector.y = 0 // height position doesn't matter
+                      tm1_vector.normalize()
+
+                      // calculate rotation angle around Y-axis (as the GPCR is now upright)
+                      v3 = new NGL.Vector3(-1, 0, 0)
+                      var m = new NGL.Matrix4()
+                      if (tm1_vector.z < 0)
+                        m.makeRotationY(v3.angleTo(tm1_vector))
+                      else if (tm1_vector.z > 0)
+                        m.makeRotationY(-1*v3.angleTo(tm1_vector))
+
+                      o.setTransform(m)
+                    }
+
+                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)");
+                } );
+
+            });
+
+            var newDiv = document.createElement("div");
+            newDiv.setAttribute("style", "position: absolute; top: 45px; left: 20px; background-color: #DDD; opacity: .8; padding: 10px;")
+            var controls = '<div class="controls">'
+                         + '<h4>Controls</h4>';
+
+            // Toggle for showing two structures simultaneously
+            if (mode == "two-groups" && pdbs_set2)
+              two_structures = true;
+            else
+              two_structures = false;
+
+            if (pdbs){
+                if (two_structures)
+                  controls += '<p>Structure set 1: <select id="ngl_pdb_'+mode+'_ref">';
+                else
+                  controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
+                for (var i = 0; i < pdbs.length; i++){
+                    if (pdbs[i]==pdb)
+                        controls += '<option value="'+pdbs[i]+'" SELECTED>'+pdbs[i]+'</option>';
+                    else
+                        controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
+                }
+                controls += '</select></p>';
+            }
+
+
+            if (two_structures){
+              if (!pdb2)
+                pdb2 = pdbs_set2[0]
+
+              controls += '<p>Structure set 2: <select id="ngl_pdb_'+mode+'_ref2">';
+              for (var i = 0; i < pdbs_set2.length; i++){
+                  if (pdbs_set2[i]==pdb2)
+                      controls += '<option value="'+pdbs_set2[i]+'" SELECTED>'+pdbs_set2[i]+'</option>';
+                  else
+                      controls += '<option value="'+pdbs_set2[i]+'">'+pdbs_set2[i]+'</option>';
+              }
+              controls += '</select></p>';
+            }
+
+            controls += '<p>Color on hover: <input type=checkbox id="ngl_color_hover"></p></div>';
+
+            newDiv.innerHTML = controls;
+
+            $("#ngl-"+mode).append(newDiv);
+
+            if (two_structures) {
+              // structure selection
+              $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                    createNGLview(mode, $(this).val(), pdbs, pdbs_set2, $("#ngl_pdb_"+mode+"_ref2").val(), distance_data);
+              });
+              $("#ngl_pdb_"+mode+"_ref2").change(function(e){
+                    createNGLview(mode, $("#ngl_pdb_"+mode+"_ref2").val(), pdbs, pdbs_set2, $(this).val(), distance_data);
+              });
+
+            } else {
+              // structure selection
+              $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                    createNGLview(mode, $(this).val(), pdbs, pdbs_set2, false, distance_data);
+              });
+            }
+
+            $("#"+mode+"-NGL-link").click(function(e){
+                $(function() {
+                  stage[mode].handleResize();
+                });
+            });
+
+
+            $("#ngl-"+mode+" #ngl_color_hover").change(function(e){
+                hover = $("#ngl-"+mode+" #ngl_color_hover").prop('checked')
+            });
+
+        }
+
+        function redraw_ngl() {
+          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+          var mode = $('.ngl-container:visible').attr('id').replace('ngl-','');
+          if (mode in stage){
+            $(function() {
+              stage[mode].handleResize();
+            });
+          }
+        }
+
+        function intersect(a, b) {
+          var t;
+          if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+          return a.filter(function (e) {
+              return b.indexOf(e) > -1;
+          });
+        }
+
+        $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-crystal-pdb-modal-table');
+        })
+        $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-crystal-group-pdbs-modal-table');
+        })
+        $('#two-crystal-group-pdbs-modal-1-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#two-crystal-group-pdbs-modal-1-table');
+        })
+        $('#two-crystal-group-pdbs-modal-2-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#two-crystal-group-pdbs-modal-2-table');
+        })
+
+
+        function initializePdbChooserTables() {
+          $.get('pdbtabledata', function ( data ) {
+            $('#single-crystal-pdb-modal-table .tableview').html(data);
+            $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
+            $('#two-crystal-group-pdbs-modal-1-table .tableview').html(data);
+            $('#two-crystal-group-pdbs-modal-2-table .tableview').html(data);
+            pdbtabledata = data;
+          });
+        }
+
+
+        function initializeSingleGroupCrystalView() {
+//            initializeSegmentButtons('#single-crystal-group-tab');
+            // initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
+            initializeGoButton('#single-crystal-group-tab', renderHeatmap, true);
+            initializeFullscreenButton('#single-crystal-group-tab');
+        }
+
+        function initializeTwoCrystalGroupsView() {
+//            initializeSegmentButtons('#two-crystal-groups-tab');
+            initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderHeatmap, true);
+            initializeFullscreenButton('#two-crystal-groups-tab');
+        }
+        $(document).ready(function() {
+            // Get PDBs for table build
+            initializePdbChooserTables();
+
+            // Single group of PDB files
+            initializeSingleGroupCrystalView();
+
+            // Two groups of PDB files
+            initializeTwoCrystalGroupsView();
+
+            window.addEventListener("resize", redraw_ngl);
+            window.addEventListener("resize", redraw_heatmap);
+
+            $('#mode_nav').click(function() {
+              setTimeout(redraw_heatmap,200);
+            });
+
+            redraw_heatmap();
+
+            {% if pdbs %}
+                // handle post data (if present) for single group
+                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', renderHeatmap, true);
+            {% endif %}
+
+            {% if pdbs1 and pdbs2 %}
+                // handle post data (if present) for two groups
+                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', renderHeatmap, true);
+            {% endif %}
+
+          });
+
+
+    </script>
+{% endblock %}
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        .no-top-border{
+            border-top: 0px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute;
+          background:white;
+          border: 1px solid #D1C9C2;
+          border-top: 1;
+          width: 400px;
+          margin: 0 auto;
+          padding:  7px 15px;
+          text-align: left;
+          -webkit-border-bottom-right-radius: 6px;
+          -webkit-border-bottom-left-radius: 6px;
+          -moz-border-radius-bottomright: 6px;
+          -moz-border-radius-bottomleft: 6px;
+          border-bottom-right-radius: 6px;
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        @media (min-width: 2200px){
+            #content {
+                width: 100%;
+                padding-left: 100px;
+                padding-right: 100px;
+            }
+        }
+    </style>
+
+    <style type="text/css">
+        
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
+        }
+
+        .modal-footer {
+            border-top: 0px;
+        }
+
+        #single-crystal-pdbs {
+            height: 400px;
+            overflow: scroll;
+        }
+
+        .flareplot {
+            width: 100%;
+        }
+
+        .flareplot-legend {
+          top: -110px;
+
+        }
+
+        .heatmap {
+          /*height: 600px;*/
+        /*  border: 1px lightslategrey solid;*/
+          width: 100%;
+        }
+
+        @media screen and (max-width: 992px) {
+            .go-button {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        .heatmap-container {
+            position: relative;
+        }
+
+        :-webkit-full-screen.heatmap-container {
+          width: 100%;
+          height: 100%;
+          border: 0px;
+        }
+
+        :-webkit-full-screen.heatmap-container .heatmap {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
+        .schematic-legend {
+            position: absolute;
+            right: 25px;
+            top: 45px;
+            padding: 5px;
+            border: 1px dashed;
+            background-color: white;
+        }
+
+        .schematic-legend ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .schematic-legend ul li {
+            padding: 0;
+            margin: 0;
+        }
+
+        .schematic-legend ul li p {
+            padding: 0;
+            margin: 0;
+            margin-left: 20px;
+        }
+
+        .schematic-legend .color-box {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-top: 2px;
+        }
+
+        .schematic-legend input[type=checkbox] {
+            position: relative;
+            bottom: 2px;
+            left: 3px;
+        }
+
+        .schematic-legend .temperature-scale .white-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 255, 255, 1)), color-stop(100%, rgba(255, 0, 0, 1)));
+            /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* ie10+ */
+            background: linear-gradient(270deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000', GradientType=1);
+        }
+
+        .schematic-legend .temperature-scale .red-to-white {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 0, 0, 1)), color-stop(100%, rgba(255, 255, 255, 1)));
+            /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* ie10+ */
+            background: linear-gradient(270deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF', GradientType=1);
+        }
+
+        .schematic-legend .temperature-scale .white-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 255, 255, 1)), color-stop(100%, rgba(0, 0, 255, 1)));
+            /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* ie10+ */
+            background: linear-gradient(270deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF', GradientType=1);
+        }
+
+        .highlighted {
+            stroke: #286090 !important;
+            stroke-width: 3 !important;
+            opacity: 1 !important;
+        }
+
+        .heatmap-legend, .flareplot-legend  {
+            position: absolute;
+            left: 20px;
+            width:200px;
+            bottom: 20px;
+            padding: 5px;
+            border: 1px dashed;
+            background-color: white;
+        }
+
+        .heatmap-legend ul, .flareplot-legend ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .heatmap-legend ul li, .flareplot-legend ul li {
+            padding: 0;
+            margin: 0;
+        }
+
+        .heatmap-legend ul li p, .flareplot-legend ul li p {
+            padding: 0;
+            margin: 0;
+            margin-left: 20px;
+        }
+
+        .heatmap-legend .color-box, .flareplot-legend .color-box {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-top: 2px;
+        }
+
+        .heatmap-legend input[type=checkbox], .flareplot-legend input[type=checkbox] {
+            position: relative;
+            bottom: 2px;
+            left: 3px;
+        }
+
+        .heatmap-legend {
+            display: none;
+        }
+
+        .temperature-scale .gray-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .temperature-scale .red-to-gray {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(220,220,220,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#DCDCDC',GradientType=1 );
+        }
+
+        .temperature-scale .gray-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        .temperature-scale .white-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .temperature-scale .red-to-white {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(255,255,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF',GradientType=1 );
+        }
+
+        .temperature-scale .white-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        .flareplot-container {
+            /*position: absolute;*/
+        }
+
+        :-webkit-full-screen.flareplot-container {
+          width: 100%;
+          height: 100%;
+          border: 0px;
+        }
+
+        :-webkit-full-screen.flareplot-container .heatmap {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
+        #single-crystal-tab .panel .btn-primary:hover, #single-crystal-group-tab .panel .btn-primary:hover, #two-crystal-groups-tab .panel .btn-primary:hover {
+            background-color: #337ab7;
+        }
+
+        #single-crystal-tab .panel .btn-primary.active:hover, #single-crystal-group-tab .panel .btn-primary.active:hover, #two-crystal-groups-tab .panel .btn-primary.active:hover {
+            background-color: #286090;
+        }
+
+                #single-crystal-tab .panel .btn-primary:focus, #single-crystal-group-tab .panel .btn-primary:focus, #two-crystal-groups-tab .panel .btn-primary:focus {
+            background-color: #337ab7;
+        }
+
+        #single-crystal-tab .panel .btn-primary.active:focus, #single-crystal-group-tab .panel .btn-primary.active:focus, #two-crystal-groups-tab .panel .btn-primary.active:focus {
+            background-color: #286090;
+        }
+
+        .svg-download-button {
+            margin-top: 6px;
+        }
+
+        .csv-download-button {
+            margin-top: 6px;
+        }
+    </style>
+
+
+    <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
+
+    <style>
+        /*.flareplot-container div.flareplot{
+            position: relative;
+            left: 35%;
+            margin-left: -400px;
+        }*/
+        #sliderDiv {
+            height: 30px;
+            width: 600px;
+            position: relative;
+            left: 50%;
+            margin-left: -300px;
+            margin-top: 20px;
+        }
+        #regroupDiv {
+            position: relative;
+            left: 50%;
+            margin-left: -50px;
+            margin-top: 20px;
+            width: 100px;
+            height: 30px;
+            background-color: #d7deeb;
+            vertical-align: middle;
+            text-align: center;
+            line-height: 30px;
+            border: 2px solid #8489a3;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #regroupDiv:hover {
+            background-color: #a1a5bd;
+        }
+
+        .hiveplot-container .axis {
+           stroke: #000;
+           stroke-width:1.5px;
+         }
+
+         .hiveplot-container .node {
+           stroke:#000;
+         }
+
+         .hiveplot-container .link {
+           fill: none;
+           stroke-width: 1px;
+           stroke-opacity: 0.5;
+         }
+
+         .hiveplot-container .link.turnedOn {
+           stroke-width: 3px;
+         }
+
+         .hiveplot-container .link.turnedOff {
+           stroke-opacity: 0.2;
+           stroke-width: 0.7px;
+         }
+
+         .hiveplot-container .node.turnedOn {
+           stroke: red;
+           stroke-width: 3px;
+         }
+
+         div#hiveTooltip {
+           background-color: white;
+           .border-radius ( 5px );
+         }
+
+         .popover {
+             max-width: 1200px
+         }
+    </style>
+
+
+
+{% endblock %}

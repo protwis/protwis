@@ -54,9 +54,12 @@ INSTALLED_APPS = (
     'signprot',
     'mutational_landscape',
     'contactnetwork',
+    'seqsign',
+    'angles',
 )
 
 MIDDLEWARE = (
+    'common.middleware.stats.StatsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

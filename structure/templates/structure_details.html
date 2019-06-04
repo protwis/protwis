@@ -6,9 +6,12 @@
 canvas {
     border:2px solid #888888;
 }
+.col-md-3 {
+    color: black;
+}
 </style>
 
- <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
+ <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 <div class="row text-success">
 <div class="text-center">
         <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
@@ -38,7 +41,7 @@ canvas {
         <h4>PDB CODE</h4>
     </div>
     <div class="col-md-9">
-    {{ crystal.pdb_code.index }}
+    <a href="https://www.rcsb.org/structure/{{ crystal.pdb_code.index }}">{{ crystal.pdb_code.index }}</a>
     </div>
 </div>
 
@@ -100,9 +103,9 @@ canvas {
     </div>
     <div> <button id=fullscreen>Full Screen</button></div>
 
-<!--     <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb/{{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test"{{ annotated_resn}}]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+<!--     <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb/{{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test"{{ annotated_resn}}]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
          <a href="pdb/{{pdbname}}">Download PDB file</a>
-         
+
     </div> -->
 </div>
 
@@ -152,7 +155,7 @@ canvas {
             // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
             //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
             stage.loadFile( "pdb/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
-                o.addRepresentation( "cartoon");  // pass schemeId here ,{ color: schemeId } 
+                o.addRepresentation( "cartoon");  // pass schemeId here ,{ color: schemeId }
                 o.centerView();
                 o.addRepresentation("licorice", { sele: "{{ main_ligand}} and hetero " } );
                 // o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 3, aspectRatio: 1.5 } );
@@ -166,6 +169,8 @@ canvas {
                     color: "white", scale: 4.0, labelType: "resname"
                 } );
 
+                // TODO update NGL to enable autoview
+                // stage.autoView()
             } );
             //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
         } );

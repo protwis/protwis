@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.utils.text import slugify
-from django.db import IntegrityError
+from django.db import IntegrityError, connection
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
 from structure.models import Structure
@@ -31,8 +31,28 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
 
+def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=False):
+    # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
 
-def fetch_pdb_info(pdbname,protein,new_xtal=False):
+    if not protein:
+        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+        pdbdata_raw = urlopen(url).read().decode('utf-8')
+        # figure out what protein this is
+        for line in pdbdata_raw.split('\n'):
+            if line.startswith('DBREF'):
+                line = line.split()
+                if len(line)>7:
+                    uniprot = line[7]
+                    try:
+                        p = Protein.objects.get(entry_name=uniprot.lower())
+                        slug = p.family.slug
+                        print(slug,slug.startswith("00"))
+                        if slug.startswith("00"):
+                            print('PROTEIN GPCR')
+                            protein = p
+                    except:
+                        pass
+
     SIFT_exceptions = {'5GLI':[395,403], '5GLH':[395,401]}
     logger = logging.getLogger('build')
     #d = {}
@@ -68,19 +88,36 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     pos_in_wt = list(range(1,len(d['wt_seq'])+1))
 
     # GET PDB FILE TO GET INITIAL VALUES - remove known WT that do not exist
-    pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
-    pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
-    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-    pdbdata_raw = urlopen(url).read().decode('utf-8')
-    with open(pdb_path, 'w') as f:
-        f.write(pdbdata_raw)
-    if new_xtal==False:
+    pdbdata_raw = None
+    try: 
         structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
+        if structure.pdb_data.pdb:
+            pdbdata_raw = structure.pdb_data.pdb
+    except:
+        pass
+    if not pdbdata_raw:
+        pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+        pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
+        if not os.path.isfile(pdb_path):
+            url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+            pdbdata_raw = urlopen(url).read().decode('utf-8')
+            with open(pdb_path, 'w') as f:
+                f.write(pdbdata_raw)
+        else:
+            with open(pdb_path, 'r') as pdb_file:
+                pdbdata_raw = pdb_file.read()
 
-        if 1==1: #update pdbs
-            structure.pdb_data.pdb = pdbdata_raw
+    if new_xtal==False:
+        try:
+            structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
 
-        pdb_file = structure.pdb_data.pdb
+            if 1==1: #update pdbs
+                structure.pdb_data.pdb = pdbdata_raw
+                structure.pdb_data.save()
+
+            pdb_file = structure.pdb_data.pdb
+        except:
+            pdb_file = pdbdata_raw
         # print(pdb_file)
     else:
         pdb_file = pdbdata_raw
@@ -104,7 +141,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
             uniprot = line[7]
             start = line[8]
             end = line[9]
-            # print(line,uniprot,d['construct_crystal']['uniprot'].upper())
+            # print(line,uniprot,d['construct_crystal']['uniprot'].upper()) #show DBREF
             if uniprot == d['construct_crystal']['uniprot'].upper() or (uniprot==pdbname.upper() and uniprot_code==''):
                 uniprot_code = line[6]
                 # print(line)
@@ -190,18 +227,87 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     # COMPND   7  OF THE THIRD INTRACELLULAR LOOP WERE DELETED FROM THE CONSTRUCT.    
     # COMPND   8  THE CONSTRUCT WAS TRUNCATED AFTER RESIDUE 367 AND A HEXAHIS TAG     
     # COMPND   9  ADDED.   
-    if pdbname.upper()=='5A8E':
-        pdb_range = list(range(33,244))+list(range(272,367))
+    # if pdbname.upper()=='5A8E':
+    #     pdb_range = list(range(33,244))+list(range(272,367))
 
     # US28 wastruncated by 10 amino acids (1-10) at the N-terminus and 44 amino acids (311-354) at the C-terminus (US28∆N∆C) (Fig. S5B);
     # http://science.sciencemag.org/content/sci/suppl/2015/03/04/347.6226.1113.DC1/Burg.SM.pdf
     if pdbname.upper()=='4XT1' or pdbname.upper()=='4XT3':
         pdb_range = list(range(11,311))
 
+    # Issue with isoform
+    if pdbname.upper()=='6NIY':
+        pdb_range = list(range(1,475))
+
+    if not ignore_gasper_annotation:
+        ## THIS BLOCK IS DONE BY GASPAR -- IT ALSO REMOVES MISSING RESIDUES, NOT TO BE USED TO WRITE CONSTRUCTS
+        # Misannotated DBREF in PDB file
+        if pdbname.upper()=='3SN6':
+            pdb_range = list(range(30,366))
+        elif pdbname.upper()=='5ZKP':
+            pdb_range = list(range(6,124))+list(range(138,217))+list(range(224,316))
+        elif pdbname.upper()=='5L7D':
+            pdb_range = list(range(58,429))+list(range(446,552))
+        elif pdbname.upper()=='5L7I':
+            pdb_range = list(range(58,429))+list(range(446,553))
+        elif pdbname.upper()=='5WIV':
+            pdb_range = list(range(32,177))+list(range(182,228))+list(range(383,465))
+        elif pdbname.upper()=='5WIU':
+            pdb_range = list(range(34,177))+list(range(182,228))+list(range(383,463))
+        elif pdbname.upper()=='5YC8' or pdbname.upper()=='5ZKC':
+            pdb_range = list(range(16,215))+list(range(380,459))
+        elif pdbname.upper()=='5ZK8' or pdbname.upper()=='5ZK3':
+            pdb_range = list(range(18,215))+list(range(383,459))
+        elif pdbname.upper()=='5V54':
+            pdb_range = list(range(38,192))+list(range(198,240))+list(range(305,389))
+        elif pdbname.upper()=='6D32':
+            pdb_range = list(range(36,402))+list(range(416,526))
+        elif pdbname.upper() in ['6H7N','6H7L','6H7M']:
+            pdb_range = list(range(40,359))
+        elif pdbname.upper() in ['6H7J','6H7O']:
+            pdb_range = list(range(40,358))
+        elif pdbname.upper() in ['2YDO']:
+            pdb_range = list(range(6,214))+list(range(224,325))
+        elif pdbname.upper() in ['3QAK']:
+            pdb_range = list(range(3,149))+list(range(158,209))+list(range(222,309))
+        elif pdbname.upper() in ['4BVN']:
+            pdb_range = list(range(36, 241))+list(range(275,359))
+        elif pdbname.upper() in ['4NTJ']:
+            pdb_range = list(range(16, 88))+list(range(92,133))+list(range(136,163))+list(range(179,224))+list(range(231,313))
+        elif pdbname.upper() in ['4O9R']:
+            pdb_range = list(range(192,345))+list(range(356,434))+list(range(441,497))+list(range(505,552))
+        elif pdbname.upper() in ['4UHR']:
+            pdb_range = list(range(6, 155))+list(range(158,263))+list(range(264,320))
+        elif pdbname.upper() in ['4YAY']:
+            pdb_range = list(range(12,173))+list(range(177,186))+list(range(190,225))+list(range(235,318))
+        elif pdbname.upper() in ['4ZUD']:
+            pdb_range = list(range(12,134))+list(range(141,186))+list(range(189,223))+list(range(235,305))
+        elif pdbname.upper() in ['5A8E']:
+            pdb_range = list(range(36,241))+list(range(275,355))
+        elif pdbname.upper() in ['5GLH']:
+            pdb_range = list(range(88,130))+list(range(135,207))+list(range(217,304))+list(range(311,402))
+        elif pdbname.upper() in ['5VEW','5VEX']:
+            pdb_range = list(range(136,204))+list(range(218,258))+list(range(261,373))+list(range(380,423))
+        elif pdbname.upper()=='5W0P':
+            pdb_range = list(range(1,325))
+        elif pdbname.upper()=='6HLO':
+            pdb_range = list(range(28,227))+list(range(238,279))+list(range(282,325))
+        elif pdbname.upper()=='5UZ7':
+            pdb_range = list(range(136,206))+list(range(213,332))+list(range(337,361))+list(range(366,419))
+        elif pdbname.upper()=='3OE8':
+            pdb_range = list(range(35,230))+list(range(232,306))
+        elif pdbname.upper()=='3OE9':
+            pdb_range = list(range(35,229))+list(range(236,272))+list(range(274,304))
+        elif pdbname.upper()=='3V2W':
+            pdb_range = list(range(47,149))+list(range(156,232))+list(range(245,326))
+        elif pdbname.upper()=='3V2Y':
+            pdb_range = list(range(16,149))+list(range(156,232))+list(range(245,331))
+        elif pdbname.upper()=='6G79':
+            pdb_range = list(range(45,188))+list(range(197,241))+list(range(305,339))+list(range(345,386))
+
     # Uncertain about exact cut -- pdb/article do not compliment eachother.
     if pdbname.upper()=='4XEE' or pdbname.upper()=='4XES':
         pdb_range = list(range(43,269))+list(range(297,385))
-
     if pdb_range:
         dbref_found = True
         for pos in list(range(1,len(d['wt_seq'])+1)):
@@ -228,11 +334,14 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
 
     #http://files.gpcrdb.org/uniprot_mapping.txt
     ## get uniprot to name mapping
-    url = 'http://files.gpcrdb.org/uniprot_mapping.txt'
-    req = urlopen(url)
-    uniprot_mapping = req.read().decode('UTF-8')
-    rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
-    uniprot_mapping = { row[0]:row[1:] for row in rows }
+    uniprot_mapping = cache.get('gpcrdb_uniprot_mapping')
+    if not uniprot_mapping:
+        url = 'http://files.gpcrdb.org/uniprot_mapping.txt'
+        req = urlopen(url)
+        uniprot_mapping = req.read().decode('UTF-8')
+        rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
+        uniprot_mapping = { row[0]:row[1:] for row in rows }
+        cache.set('gpcrdb_uniprot_mapping',uniprot_mapping,60*60*24)
 
     #errors, fix it.
     uniprot_mapping['P08483'] = ['acm3_rat']
@@ -271,7 +380,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
             uniprot_seq = re.sub('[\s+]', '', uniprot_seq)
             # print(uniprot_seq)
     # print(variants_mapping)
-    if len(uniprot_seq)!=len(d['wt_seq']): print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
+    # if len(uniprot_seq)!=len(d['wt_seq']): print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
 
     # Parsing
 
@@ -337,6 +446,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
             raw_u_id = ""
             prev_pos = 0
             prev_receptor = False
+            seg_had_receptor = False
 
             if (chain=="A" or chain=="B") and pdbname.lower()=="4k5y":
                 continue
@@ -359,6 +469,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
                             if u_id in uniprot_mapping:
                                 u_id = uniprot_mapping[u_id][0] 
                                 receptor = True ## this is receptor element
+                                seg_had_receptor = True
                                 if receptor_chain=='' or receptor_chain==chain:
                                     receptor_chain = chain
                                 elif msg_1==0:
@@ -422,6 +533,32 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
                                         if uniprot_pos not in d['xml_not_observed']:
                                             d['xml_not_observed'].append(uniprot_pos)
                                     else:
+                                        uniprot_pos = int(pos)
+                                else:
+                                    receptor = False
+                            if pdbname == '6NIY':
+                                #Special fix for 5UZ7 due to faulty annotation, there is an offset of 34 at the end of the isoforms
+                                if pos and receptor:
+                                    # print(uniprot_pos,d['wt_seq'][uniprot_pos-1-34],uniprot_aa,pos,d['wt_seq'][uniprot_pos-1-18], receptor)
+                                    if uniprot_aa==d['wt_seq'][uniprot_pos-1-18]:
+                                        uniprot_pos = uniprot_pos-18
+                                        pos = uniprot_pos
+                                        # print('match 1')
+                                        # print('found',pos, uniprot_aa)
+                                        # # Assume we are talking about the non-observed residues
+                                        # if uniprot_pos not in d['xml_not_observed']:
+                                        #     d['xml_not_observed'].append(uniprot_pos)
+                                    elif uniprot_pos>192 and uniprot_aa==d['wt_seq'][uniprot_pos-1-34]:
+                                        #these are unmapped at this point, make sure the AA are the same, in case it gets fixed later
+                                        # print('match 2')
+                                        uniprot_pos = uniprot_pos-34
+                                        pos = uniprot_pos
+                                        # print('found',pos, uniprot_aa)
+                                        # Assume we are talking about the non-observed residues
+                                        # if uniprot_pos not in d['xml_not_observed']:
+                                        #     d['xml_not_observed'].append(uniprot_pos)
+                                    else:
+                                        print('no match')
                                         uniprot_pos = int(pos)
                                 else:
                                     receptor = False
@@ -668,12 +805,18 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
                 if insert_info!=False:
                     for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
                         seg_uniprot_ids[0] = elm.find('{http://uniprot.org/uniprot}fullName').text
+            # Custom annotation fixes
+            if pdbname in ['6D32','6D35'] and min_pos==416 and max_pos==525:
+                seg_uniprot_ids = ['Uncharacterized protein']
+            # elif pdbname in ['4LDE'] and min_pos==1029 and max_pos==1342:
+            #     seg_uniprot_ids = ['adrb2_human']
 
-            d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list])
+            # print([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
+            d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
 
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
-            if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations] not in d['xml_segments']:
-                d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations])
+            if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor] not in d['xml_segments']:
+                d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
 
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):
@@ -764,11 +907,15 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
 
     #http://www.rcsb.org/pdb/explore/jmol.do?structureId=4LDO&json=true
     ## modifications for their jmol -- "hacky" way to get it
-    cache_dir = ['rcsb', 'jmol_modifications']
-    url = 'http://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
-    rcsb_mod = fetch_from_web_api(url, pdbname, cache_dir)
-    d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
-    # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
+    try:
+        cache_dir = ['rcsb', 'jmol_modifications']
+        url = 'http://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
+        rcsb_mod = fetch_from_web_api(url, pdbname, cache_dir)
+        d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
+        # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
+    except:
+        print('rscb failed for ',pdbname)
+        rcsb_mod = None
     if rcsb_mod: #success
         d['modifications'] = []
         d['modifications2'] = rcsb_mod

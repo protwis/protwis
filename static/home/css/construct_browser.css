@@ -71,13 +71,22 @@ input.number_range_filter, input.date_range_filter {
     background-color: rgb(142, 68, 173 );
 }
 
-.tag, .signal {
+.tag  {
     background-color: gold;
     background-color: rgb(244, 208, 63 );
     background-color: rgba(244, 208, 63 , 0.6);
 }
-.tagtop, .signaltop {
+
+.tagtop {
     background-color: rgb(244, 208, 63 );
+}
+
+.signal {
+    background-color: #2ECC40;
+    background-color: rgba(46, 204, 64 , 0.6);
+}
+.signaltop {
+    background-color: #2ECC40;
 }
 
 .prot_cleavage {

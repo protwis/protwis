@@ -1,0 +1,613 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+        <style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        #filters{
+
+            font-size: 10px;
+            padding:  7px 15px; 
+        }
+
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        table.dataTable.compact thead th.over_header {
+            border-right: 1px solid;
+            border-left: 0px solid;
+            text-align: center;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead tr.over_header th {
+            border-bottom: 1px solid #ccc;
+        }
+
+        table.dataTable.compact thead th.leftborder {
+            border-left: 1px solid;
+        }
+
+        table.dataTable.compact thead th.rightborder {
+            border-right: 1px solid;
+        }
+
+        table.dataTable.compact thead th.checkbox_tr {
+            text-align: left;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead th {
+            padding: 4px 16px 4px 2px;
+        }
+        .yadcf-filter-wrapper {
+            margin-top: 0px;
+        }
+        input.yadcf-filter  {
+            width: 100px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
+        .yadcf-filter-range-date, .yadcf-filter-range-number {
+            width: 30px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+
+        }
+    </style>
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            // 'use strict';
+
+            // var oTable;
+            var oTable = $('#constructs').DataTable({
+                scrollY:        "80vh",
+                scrollX:        true,
+                scrollCollapse: true,
+                paging:         false,
+                "order": [],
+                  columnDefs: [
+                    { targets: 'no-sort', orderable: false }
+
+                  ],
+                // fixedColumns:   {
+                //     leftColumns: 4,
+                // }
+            });
+
+            var prev_ids = Array()
+            var current_align_ids = Array()
+
+            console.log(oTable);
+            $("#constructs_div").show();
+            assign_to_row();
+            $("#loading_div").hide();
+
+            //Uncheck every row when using back button on browser
+            $('.alt-selected').prop('checked',false)
+            $('.alt').prop('checked',false)
+            $('.select-all').prop('checked',false)
+            //
+
+            yadcf.init(oTable,
+                [
+                    {
+                        column_number : 1,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Link",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '120px',
+                        }
+                    },
+                    {
+                        column_number : 2,
+                        filter_type: "range_date",
+                        date_format: "yyyy-mm-dd",
+                        select_type: 'select2',
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 3,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "UniProt",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '80px',
+                        }
+                    }, 
+                    {
+                        column_number: 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "IUPHAR",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number: 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Rec. family",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    }, 
+                    {
+                        column_number : 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Class",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    }, 
+                    {
+                        column_number : 7,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Species",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 8,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "G protein",
+                        column_data_type: "html",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 9,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "G protein family",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 10,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Transducer",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 11,
+                        filter_type: "text",
+                        select_type: 'select2',
+                        filter_default_label: "Receptor",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
+                    },
+                    {
+                        column_number : 12,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        filter_default_label: "G protein",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 13,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        filter_default_label: "PDB",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                ],
+                {
+                    cumulative_filtering: false
+                }
+            );
+
+            yadcf.exResetAllFilters(oTable);
+
+            // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+            // $.datepicker.setDefaults($.datepicker.regional['']);
+
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
+            });
+
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
+            });
+
+            $("#remove_sel").click(function () { 
+                var oTable = $('#constructs').dataTable();
+                $('input:checkbox:checked').each(function () {
+                    if ( $(this).is(':visible') ) {
+                       id = $(this).attr('id');
+
+                       if (id) {
+                           oTable.fnDeleteRow("#"+id, null, false);
+                       }
+                    }
+                });
+               oTable.fnDraw();
+            });
+
+            $("#remove_non_sel").click(function () { 
+                var oTable = $('#constructs').dataTable();
+                $('input:checkbox:not(:checked)').each(function () {
+                    if ( $(this).is(':visible') ) {
+                       id = $(this).attr('id');
+                       if (id) {
+                           oTable.fnDeleteRow("#"+id, null, false);
+                       }
+                   }
+                });
+                oTable.fnDraw();
+            });
+
+            $('#apply_filter').click(function() {
+                // $("#filters").toggle();
+            });
+
+            $("#OpenFilters").click(function () {
+                // $("#filters").toggle();
+            });
+
+            $('.slider').slider({
+              min: 30,
+              max: 200,
+              value: 70,
+              change: function( event, ui ) {
+                console.log(ui.value);
+                $(".schematic-block").width(ui.value);
+              }
+            });
+
+            $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
+            $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
+
+
+            $('.column_toggle').change(function(evt) {
+                console.log('start toggle');
+                // evt.stopPropagation();
+                // evt.stopImmediatePropagation();
+                // evt.preventDefault();
+                columns = $(this).attr('data-column').split(",");
+                var checked = this.checked;
+                var checked = (this.checked ? false : true);
+                columns.forEach(function(column) {
+                    // console.log('hiding column');
+                    var column = oTable.column( column );
+                    try {
+                        column.visible( checked );
+                    }
+                    catch(err) {
+                        column.visible( checked );
+                    }
+                });
+                // var Table = $('#constructs').dataTable();
+                // Table.fnDraw();
+                console.log('done toggle');
+                oTable.draw();
+                console.log('done draw');
+            } );
+
+            $('#superpose_btn').click(function () {
+                ClearSelection('targets');
+                ClearSelection('reference');
+                if (oTable.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = oTable.rows('.selected').data()[0][14];
+                    // var state1 = table.rows('.selected').data()[0][5];
+
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('reference', 'structure_complex_receptor', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                var checked_data = oTable.rows('.alt_selected').data();
+                var selected_ids = [];
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][14];
+                    // var state2 = checked_data[i][5];
+                    if (typeof div.innerText !== "undefined") {
+                        selected_ids.push(div.innerText.replace(/\s+/g, '')+"_active");
+                    } else {
+                        selected_ids.push(div.textContent.replace(/\s+/g, '')+"_active");
+                    }
+
+                }
+                AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
+                window.location.href = '/structure/superposition_workflow_index';
+            });
+            
+            $('#download_btn').click(function () {
+                var selected_ids = [];
+                 $.each($(".alt_selected"), function(){            
+                    hom_id = $(this).closest('tr').attr('model_id');
+                    selected_ids.push(hom_id);
+                });
+                window.location.href = '/structure/complexmod_download?ids='+selected_ids.join(",");
+            });
+
+            $('#align_btn1').click(function () {
+                var checked_data = oTable.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][14];
+
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure_complex_receptor',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure_complex_receptor', div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                window.location.href = '/structure/selection_convert_model';
+            });
+
+            $('#align_btn2').click(function () {
+                var checked_data = oTable.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][15];
+
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure_complex_signprot',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure_complex_signprot', div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                window.location.href = '/structure/selection_convert_signprot_model';
+            });
+        });
+
+        function ClearSelection(selection_type) {
+            $.ajax({
+                'url': '/common/clearselection',
+                'data': {
+                    selection_type: selection_type
+                },
+                'type': 'GET',
+                'async': false,
+                'success': function (data) {
+                    $("#selection-" + selection_type).html(data);
+                }
+            });
+        }
+
+        function AddToSelection(selection_type, selection_subtype, selection_id) {
+            $.ajax({
+                'url': '/common/addtoselection',
+                'data': {
+                    selection_type: selection_type,
+                    selection_subtype: selection_subtype,
+                    selection_id: selection_id
+                },
+                'type': 'GET',
+                'async': false,
+                'success': function(data) {
+                    $("#selection-" + selection_type).html(data);
+                },
+            });
+        }
+
+        function select_all(e) {
+            var checkedStatus = $(e).prop("checked");
+
+            $('.select-all  ').each(function () {
+                    $(this).prop('checked', checkedStatus);
+            });
+
+            $('.alt').each(function () {
+                    $(this).prop('checked', checkedStatus);
+            });
+        };
+
+        function assign_to_row(){
+          $('tbody tr').click(function(event) {
+            if (event.target.type !== 'checkbox') {
+              $(':checkbox', this).trigger('click');
+            }
+          });
+        }
+
+        function realign() {
+
+            ids = JSON.parse($("#c_ids").val());
+
+            // $('input:checkbox:not(:checked)').each(function () {
+            $('input:checkbox:checked').each(function () {
+                if ( $(this).is(':visible') ) {
+                   id = $(this).attr('value');
+                   if (id) { ids.push(id); }
+                }
+            });
+
+            console.log(ids);
+
+            current_align_ids = ids
+            var url = '/construct/align'; 
+            var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
+              posting.done(function( data ) {
+                $("#align_div").html('').append(data)
+
+                $(function () {$('[data-toggle="tooltip"]').tooltip()})
+
+                $(function(){
+                    $('.ali-scroll-div').scroll(function(){
+                        $('.ali-main-div')
+                            .scrollLeft($('.ali-scroll-div').scrollLeft());
+                    });
+                    $('.ali-main-div').scroll(function(){
+                        $('.ali-scroll-div')
+                            .scrollLeft($('.ali-main-div').scrollLeft());
+                    });
+                });
+
+                $(function () {$('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );});
+              });
+        };
+
+
+    </script> 
+{% endblock %}
+
+{% block content %}
+<h2>GPCR - G Protein Complex Model Browser</h2>
+
+<div class="btn-group">
+    <label class="btn btn-default btn-s" id="align_btn1" href="javascript:void(0)">Align Receptors</label>
+    <label class="btn btn-default btn-s" id="align_btn2" href="javascript:void(0)">Align G-proteins</label>
+    <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
+    <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label> -->
+</div>
+<br /><br />
+<!-- 
+    Show/hide columns:
+<div class="btn-group" data-toggle="buttons">
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="3,4,5,6,7" checked="checked"> Receptor
+  </label>
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="8,9,10" checked="checked"> G Protein
+  </label>
+
+  <label class="btn btn-default btn-xs">
+    <input class="column_toggle" type="checkbox" value="Purification" data-column="11,12,13" checked="checked"> Template
+  </label>
+</div>
+<br><br> -->
+
+    <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
+    <br>Loading...
+    </div>
+</div>
+<div>
+    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
+        <table width="100%" class="display compact" id="constructs">
+            <thead>
+                <tr class='over_header' style='max-height: 20px'>
+                    <th colspan=3 class="over_header">MODEL</th>
+                    <th colspan=5 class="over_header">RECEPTOR</th>
+                    <th colspan=3 class="over_header">G PROTEIN</th>
+                    <th colspan=3 class="over_header">TEMPLATE</th>
+                </tr>
+                <tr>
+                    <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th></th>
+                    <th  class='rightborder'>Date</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th  class='rightborder'></th>
+                    <th></th>
+                    <th></th>
+                    <th  class='rightborder'></th>
+                    <th></th>
+                    <th></th>
+                    <th  class='rightborder'></th>
+                    <th style="display:none;"></th>
+                    <th style="display:none;"></th>
+                </tr>
+
+            </thead>
+            <tbody>
+            {% for model in structure_complex_model %}
+                <tr model_id='{{model.pk}}'>
+                    <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                    <td><a href="complex_models/{{ model.receptor_protein.entry_name }}-{{ model.sign_protein.entry_name }}">{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.entry_name }}</a></td>
+                    <td>{{ model.version|date:"Y-m-d" }}</td>
+                    <td><span><a href="http://www.uniprot.org/uniprot/{{ model.receptor_protein.accession }}">{{ model.receptor_protein.entry_short|safe }}</a></span></td>
+                    <td><span><a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.short|safe }}</span></td>
+                    <td><span>{{ model.receptor_protein.family.parent.short|safe }}</span></td>
+                    <td>{{ model.receptor_protein.family.parent.parent.parent.short }}</td>
+                    <td>{{ model.receptor_protein.species.common_name }}</td>
+                    <td><a href="signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
+                    <td>{{ model.sign_protein.family.name|safe }}</td>
+                    {% if model.prot_signprot_pair %}
+                        <td>{{ model.prot_signprot_pair.transduction }}</td>
+                    {% else %}
+                        <td>no evidence</td>
+                    {% endif %}
+                    <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
+                    <td><a href="/signprot/{{ model.main_template.signprot_complex.protein.entry_name }}">{{ model.main_template.signprot_complex.protein.name|safe }}</a></td>
+                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
+                    <td style="display:none;">{{ model.receptor_protein.entry_name }}</td>
+                    <td style="display:none;">{{ model.sign_protein.entry_name }}</td>          
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+

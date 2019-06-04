@@ -679,7 +679,10 @@ class Command(BaseBuild):
             typefold = ''
             if r['exp_wt_value']!=0 and r['exp_mu_value_raw']!=0: #fix for new format
                 if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
-                    foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
+                    try:
+                        foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
+                    except:
+                        print(r)
                     typefold = r['exp_type']+"_log"
                 elif "%"==r['exp_wt_unit']:
                     # if % then it's a difference case, then lower value is bad. Otherwise it's conc and lower is better
@@ -692,8 +695,8 @@ class Command(BaseBuild):
             elif r['fold_effect']!=0:
                     foldchange = round(r['fold_effect'],3);
                     if foldchange<1: foldchange = -round((1/foldchange),3);
-
-
+            r['fold_effect'] = foldchange
+            
             raw_experiment = self.insert_raw(r)
             # raw_experiment.save()
             bulk = MutationExperiment(
@@ -755,7 +758,7 @@ class Command(BaseBuild):
         MutationExperiment.objects.bulk_create(bulk_m)
         end = time.time()
         diff = round(end - current,2)
-        current_sheet
+        # current_sheet
         diff_2 = round(end - current_sheet,2)
         print("overall",diff_2,"bulk",diff,len(bulk_m),"skipped",str(skipped))
         sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)

@@ -12,9 +12,12 @@
 canvas {
     border:2px solid #888888;
 }
+.col-md-3 {
+    color: black;
+}
 </style>
 
-<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
+<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 <div class="row text-success">
     <div class="text-center">
         {% if model.refined %}
@@ -73,17 +76,49 @@ canvas {
     </div>
 </div>
 
-{% if model.refined %}
-{% else %}
-    <div class="row">
-        <div class="col-md-3 text-right text-info">
-            <h4>VERSION</h4>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>VERSION</h4>
+    </div>
+    <div class="col-md-9">
+        {% if model.refined %}
+            {{ version }}
+        {% else %}
+            {{ version|date:"Y-m-d" }}
+        {% endif %}
+    </div>
+</div>
+
+
+<style>
+.inline {display:inline;}
+.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+</style>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>MODEL</h4>
+    </div>
+    <div class="col-md-9">
+        <div class="btn-group">
+            {% if model.refined %}
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download</a>
+            {% else %}
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download</a>
+            {% endif %}
         </div>
-        <div class="col-md-9">
-        {{ model.version|date:"Y-m-d" }}
+        <div>
+            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+        </div>
+        <div style="float: left; width: 60%;">
+            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+            </div>
         </div>
     </div>
-{% endif %}
+</div>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
@@ -94,7 +129,7 @@ canvas {
             <a href="/protein/{{ model_main_template.protein_conformation.protein.parent.entry_name }}">{{ model_main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model_main_template.pdb_code.index }}">{{ model_main_template.pdb_code.index }}</a>
         {% else %}
             <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-            
+
             <div class="btn-group", style="padding: 0px 0px 5px 5px;">
                 <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
             </div>
@@ -122,6 +157,18 @@ canvas {
         }
     </style>
     <div class="col-md-9">
+        <div style='width: 70%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+                {% for prot, bts in backbone_templates.items %}
+                    {% for bt in bts %}
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
+                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
+                    {% endfor %}
+                {% endfor %}
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
+                        None
+            </div>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -133,7 +180,7 @@ canvas {
             <tbody>
                 <tr>
                     <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
-                    <td class="table-td">{{bb_main}}</td> 
+                    <td class="table-td">{{bb_main}}</td>
                     <td class="table-td">{{bb_alt}}</td>
                     <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
                 </tr>
@@ -147,8 +194,8 @@ canvas {
         </table>
         <br>
         Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br>
-    </div>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+  <!--   </div>
 </div>
 
 <br>
@@ -157,8 +204,8 @@ canvas {
 .graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
 </style>
 
-<div class="inline">
-    <div>
+<div class="inline"> -->
+    <!-- <div>
         <div style="float: left; width: 50%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
             <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
@@ -177,79 +224,70 @@ canvas {
                             <div class="graphcolor" style="background-color:white; width: 12%;">None</div>
                 </div>
             </div>
-            
+
         </div>
-    </div>
-    
-    <div style="padding-top: 0px; float: right; font-size: 10px; white-space: nowrap; width: 50%;">
-        <div class="btn-group">
-            {% if model.refined %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download .pdb</a>
-            {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download .pdb</a>
-            {% endif %}
+    </div> -->
+
+        <div style="padding-top: 0px; float: left; font-size: 10px; white-space: nowrap; width: 100%;">
+            <!-- <div class="btn-group">
+                <a id="download_csv_btn" class="btn btn-primary btn-mini " href="#" onClick="javascript:downloadCSV();">Download .csv</a>
+            </div> -->
+            <!-- <div class="btn-group">
+                <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
+            </div> -->
+            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+                
+                <style>
+                    table.dataTable thead th {padding: 3px 1px 3px 3px;}
+                </style>
+                <table class="display" id="rotamers">
+                    <thead>
+                        <tr>
+                            <th>Segment</th>
+                            <th>Seq.num.</th>
+                            <th>GPCRdb#</th>
+                            <th>Backbone</th>
+                            <th>PDB</th>
+                            <th>Rotamer</th>
+                            <th>PDB</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for rota in rotamers %}
+                        <tr>
+                            <td>{{ rota.residue.protein_segment.slug }}</td>
+                            <td>{{ rota.residue.sequence_number }}</td>
+                            <td>{{ rota.residue.display_generic_number.label }}</td>
+
+                            {% if rota.backbone_template %}
+                                <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                                <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                            {% else %}
+                                <td>-</td>
+                                <td>-</td>
+                            {% endif %}
+                            {% if rota.rotamer_template %}
+                                <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                                <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                            {% else %}
+                                <td>-</td>
+                                <td>-</td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="btn-group">
-            {% if model.refined %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_csv">Download .csv</a>
-            {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_csv">Download .csv</a>
-            {% endif %}
-        </div>
-        <div class="btn-group">
-            <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
-        </div>
-        <div>
-            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
-        </div>
-        <style>
-            table.dataTable thead th {padding: 3px 1px 3px 3px;}
-        </style>
-        <table class="display" id="rotamers">
-            <thead>
-                <tr>
-                    <th class="protein-th">Segment</th>
-                    <th class="protein-th">Seq.num.</th>
-                    <th class="protein-th">GPCRdb#</th>
-                    <th class="pdb-th">Backbone</th>
-                    <th class="pdb-th">Xtal</th>
-                    <th class="pub-th">Rotamer</th>
-                    <th class="pub-th">Xtal</th>
-                </tr>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for rota in rotamers %}
-                <tr>
-                    <td>{{ rota.residue.protein_segment.slug }}</td>
-                    <td>{{ rota.residue.sequence_number }}</td>
-                    <td>{{ rota.residue.generic_number.label }}</td>
-                    {% if rota.backbone_template %}
-                        <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                        <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
-                    {% else %}
-                        <td>-</td>
-                        <td>-</td>
-                    {% endif %}
-                    {% if rota.rotamer_template %}
-                        <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                        <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
-                    {% else %}
-                        <td>-</td>
-                        <td>-</td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
 </div>
 
@@ -279,36 +317,22 @@ canvas {
             }
             color_array.push(["darkorchid","*"])
 
-            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array
-                //[['yellow', '94-96'], ['white', '55-55 or 59-59 or 91-93 or 133-133 or 139-139 or 167-176 or 214-214 or 216-216 or 255-255 or 259-259'], 
-                // ['olive', '256-258'], ['orange', '56-58'], ['teal', '134-138 or 209-213 or 217-221'], ['fuchsia', '90-90'], ['lime', '215-215'], ['*', 'purple']]
-                //[['red', '334-340'], ['blue', '176-185'], ['yellow', '172-174'], ['aqua', '227-233'], ['white', '175-175 or 186-186 or 190-191 or 234-238 or 329-333 or 371-37'], ['maroon', '403-403'], //['purple', '*']]
-            );
-            
-
-
-            //var stringBlob = new Blob( [ "pdb/{{pdbname}}" ], { type: 'text/plain'} );
-            // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
-            // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
-            //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
-            
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
 
             if ("{{state}}"=="refined") {
                 stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId } 
+                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                     o.centerView();
                 } );
             }
             else {
                 stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId } 
+                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                     o.centerView();
                 } );
             }
-
-            
-            //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
         } );
+
         $( "#fullscreen" ).click(function() {
             stage.toggleFullscreen();
         });
@@ -318,6 +342,7 @@ canvas {
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/table2csv.js' %}"> </script>
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
@@ -325,7 +350,7 @@ canvas {
             ClearSelection('reference');
             var table = $('#rotamers').DataTable({
                 'scrollX': true,
-                'scrollY': $(window).height()-600,
+                'scrollY': '40vh',
                 'bScrollCollapse': true,
                 'paging': false,
                 'orderCellsTop': true,
@@ -337,7 +362,7 @@ canvas {
                     "sRowSelect": "single",
                     "aButtons": []
                 },
-                
+
                 initComplete: function () {
                     $('#rotamers').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
@@ -360,10 +385,11 @@ canvas {
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i];
+                    console.log(div.textContent.replace(/\s+/g, ''))
                     if (i==0) {
-                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
+                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '')+"_"+"{{model.state.name}}");
                     } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                     }
                 }
                 window.location.href = '/structure/selection_convert_model';
@@ -377,7 +403,8 @@ canvas {
                 ClearSelection('targets');
                 ClearSelection('reference');
                 var div = document.createElement("div");
-                if ("{{state}}"=="refined") {
+
+                if ("{{state}}"==="refined") {
                     div.innerHTML = "{{model.pdb_code.index}}";
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
@@ -388,12 +415,12 @@ canvas {
                 else {
                     div.innerHTML = "{{model.protein.entry_name}}";
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
+                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, '').replace('[','').replace(']','')+"_"+"{{model.state.name}}");
                     } else {
-                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
+                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, '').replace('[','').replace(']','')+"_"+"{{model.state.name}}");
                     }
                 }
-                
+
                 for (i = 0; i < template_list.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = template_list[i];
@@ -402,11 +429,14 @@ canvas {
                     } else {
                         AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
                     }
-
                 }
                 window.location.href = '/structure/superposition_workflow_index';
             });
         });
+
+        // function downloadCSV() {
+        //   $('#rotamers').table2csv({filename: 'Homology_model_templates.csv', quoteFields: true});
+        // }
     </script>
 
 {% endblock %}

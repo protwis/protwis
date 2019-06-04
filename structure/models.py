@@ -3,6 +3,7 @@ from django.core.cache import cache
 
 from io import StringIO
 from Bio.PDB import PDBIO
+import re
 
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
@@ -19,16 +20,27 @@ class Structure(models.Model):
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
+    contact_representative = models.BooleanField(default=False)
     annotated = models.BooleanField(default=True)
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     sodium = models.BooleanField(default=False)
+    signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.SET_NULL, related_name='signprot_complex')
+    stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.pdb_code.index
 
+    def get_stab_agents_gproteins(self):
+        objs = self.stabilizing_agents.all()
+        elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*G.*", element) and not re.match(".*thase.*|PGS", element)]
+        if len(elements) > 0:
+            return "\n".join(elements)
+        else:
+            return '-'
+
     def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
-        
+
         tmp = []
         for line in self.pdb_data.pdb.split('\n'):
             save_line = False
@@ -48,7 +60,16 @@ class Structure(models.Model):
                 tmp.append(line)
 
         return '\n'.join(tmp)
-                        
+
+    def get_ligand_pdb(self, ligand):
+
+        tmp = []
+        for line in self.pdb_data.pdb.split('\n'):
+            if line.startswith('HET') and line[21] == self.preferred_chain[0]:
+                if line[17:20] != 'HOH' and line[17:20] == ligand:
+                    tmp.append(line)
+        return '\n'.join(tmp)
+
     def get_preferred_chain_pdb(self):
 
         tmp = []
@@ -75,16 +96,40 @@ class Structure(models.Model):
         db_table = 'structure'
 
 
+class StructureComplexProtein(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
+    chain = models.CharField(max_length=1)
+
+    def __repr__(self):
+        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
+
+    def __str__(self):
+        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_complex_protein'
+
+class StructureVectors(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    translation = models.CharField(max_length=100, null=True)
+    center_axis = models.CharField(max_length=100)
+
+    class Meta():
+        db_table = 'structure_vectors'
+
+
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    pdb = models.TextField()
+    pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
-    
+    stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
+
     def __repr__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
-        
+
     def __str__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
@@ -92,7 +137,50 @@ class StructureModel(models.Model):
         db_table = 'structure_model'
 
     def get_cleaned_pdb(self):
-        return self.pdb 
+        return self.pdb_data.pdb
+
+
+class StructureComplexModel(models.Model):
+    receptor_protein = models.ForeignKey('protein.Protein', related_name='+', on_delete=models.CASCADE)
+    sign_protein = models.ForeignKey('protein.Protein', related_name='+', on_delete=models.CASCADE)
+    main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
+    version = models.DateField()
+    prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
+    stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
+
+    def __repr__(self):
+        return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+'-'+str(self.sign_protein.entry_name)+'>'
+
+    def __str__(self):
+        return '<ComplexHomologyModel: '+str(self.receptor_protein.entry_name)+'-'+str(self.sign_protein.entry_name)+'>'
+
+    class Meta():
+        db_table = 'structure_complex_model'
+
+    def get_cleaned_pdb(self):
+        return self.pdb_data.pdb
+
+
+class StatsText(models.Model):
+    stats_text = models.TextField()
+
+    def __repr__(self):
+        if self.stats_text and len(self.stats_text)>0:
+            line = self.stats_text.split('\n')[0]
+        else:
+            line = 'empty object'
+        return '<StatsText: >'.format(line)
+
+    def __str__(self):
+        if self.stats_text and len(self.stats_text)>0:
+            line = self.stats_text.split('\n')[0]
+        else:
+            line = 'empty object'
+        return '<StatsText: >'.format(line)
+
+    class Meta():
+        db_table = 'stats_text'
 
 
 class StructureModelStatsRotamer(models.Model):
@@ -106,6 +194,20 @@ class StructureModelStatsRotamer(models.Model):
 
     class Meta():
         db_table = 'structure_model_stats_rotamer'
+
+
+class StructureComplexModelStatsRotamer(models.Model):
+    homology_model = models.ForeignKey('structure.StructureComplexModel', on_delete=models.CASCADE)
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE)
+    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
+    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
+
+    def __repr__(self):
+        return '<StructureComplexModelStatsRotamer: seqnum '+str(self.residue.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_complex_model_stats_rotamer'
 
 
 class StructureRefinedStatsRotamer(models.Model):
@@ -131,6 +233,18 @@ class StructureModelSeqSim(models.Model):
 
     class Meta():
         db_table = 'structure_model_seqsim'
+
+
+class StructureComplexModelSeqSim(models.Model):
+    homology_model = models.ForeignKey('structure.StructureComplexModel', on_delete=models.CASCADE)
+    template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    similarity = models.IntegerField()
+
+    def __repr__(self):
+        return '<StructureComplexModelSeqSim: {}>'.format(self.homology_model.protein.entry_name)
+
+    class Meta():
+        db_table = 'structure_complex_model_seqsim'
 
 
 class StructureRefinedSeqSim(models.Model):
@@ -200,7 +314,8 @@ class Rotamer(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdbdata = models.ForeignKey('PdbData', on_delete=models.CASCADE)
     missing_atoms = models.BooleanField(default=False)
-
+    # TODO
+    # Values: Angles
     def __str__(self):
         return '{} {}{}'.format(self.structure.pdb_code.index, self.residue.amino_acid, self.residue.sequence_number)
 

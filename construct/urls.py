@@ -7,8 +7,8 @@ from construct import views
 urlpatterns = [
     # url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
     url(r'^$', cache_page(3600*24)(views.ConstructBrowser.as_view()), name='browse'),
-    # url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache version
-    url(r'^experiments[/]?$', cache_page(3600*24)(views.ExperimentBrowser.as_view()), name='browse'), #cache
+    url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache version
+    # url(r'^experiments[/]?$', cache_page(3600*24)(views.ExperimentBrowser.as_view()), name='browse'), #cache
     # url(r'^analysis[/]?$', views.ConstructStatistics.as_view(), name='statistics'),
     url(r'^analysis[/]?$', cache_page(3600*24)(views.ConstructStatistics.as_view()), name='statistics'),
     # url(r'^mutations[/]?$', views.ConstructMutations.as_view(), name='mutations'),

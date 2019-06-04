@@ -1,0 +1,67 @@
+<table width='260px'>
+    <!-- Sequence signature -->
+
+    <!-- Empty row for subheader -->
+    <tr>
+        <td class="ali-td ali-td-header-row ali-td-first-col" colspan='3'></td>
+    </tr>
+
+    <!-- GENERIC NUMBERS -->
+
+    <!-- segment line -->
+    <tr>
+        <td class="ali-td-header-row ali-td-first-col signature-section-header" colspan='3'>SEQUENCE SIGNATURE</td>
+    </tr>
+
+    <!-- numbering scheme lines -->
+    {% for ns in a_pos.numbering_schemes %}
+        <tr>
+            <td class="ali-td-generic-num ali-td-first-col" colspan='3'><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
+        </tr>
+    {% endfor %}
+    <!-- FEATURE CONSENSUS -->
+    <tr>
+        <td class="ali-td-header-row ali-td-first-col" colspan='3'>
+            SIGNATURE CONSENSUS
+        </td>
+    </tr>
+    <!-- Length row -->
+    <tr>
+        <td class="ali-td-header-row ali-td-first-col" colspan='3'>Length</td>
+    </tr>
+
+    <!-- Button collapsing the Residue properties section -->
+    <tr>
+        <td class="ali-td-header-row ali-td-first-col" colspan='3'>
+            <button type="button" class="btn btn-info ali-td" data-toggle="collapse" data-target="#signature,#signature-main">+</button> Distinct conservation (%)
+        </td>
+    </tr>
+
+    <tbody class='collapse' id='signature'>
+
+    <!-- FEATURE SIGNATURE -->
+
+        <!-- feature frequency -->
+        <tr>
+            <td class="ali-td-header-row ali-td-first-col" colspan='3'>
+                RESIDUE PROPERTIES & LENGTH
+            </td>
+        </tr>
+        {% for feature in a_pos.features_combo %}
+            <tr>
+                <td class="ali-td ali-td-first-col">{{ feature.0 }}</td>
+                <td class="ali-td ali-td-first-col feat-{% if feature.1 == '-' and feature.2 == ''%}_{% else %}{{ feature.1 }}{% endif %}">{{ feature.1 }}</td>
+                <td class="ali-td ali-td-first-col">{{ feature.2 }}</td>
+            </tr>
+        {% endfor %}
+
+        <!-- GENERIC NUMBERS -->
+
+        <!-- numbering scheme lines -->
+        {% for ns in a_pos.numbering_schemes %}
+            <tr>
+                <td class="ali-td-generic-num ali-td-first-col" colspan='3'><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -48,7 +48,7 @@ class SegmentSelection(AbsSegmentSelection):
 def render_matrix(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
 
@@ -59,8 +59,9 @@ def render_matrix(request):
     # build the alignment data matrix
     a.build_alignment()
 
+    # NOTE: NOT necessary for similarity matrix
     # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+    # a.calculate_statistics()
 
     # calculate identity and similarity of each row compared to the reference
     a.calculate_similarity_matrix()
@@ -70,7 +71,7 @@ def render_matrix(request):
 def render_csv_matrix(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -83,7 +84,8 @@ def render_csv_matrix(request):
     a.build_alignment()
 
     # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+    # NOTE: NOT necessary for similarity matrix
+    # a.calculate_statistics()
 
     # calculate identity and similarity of each row compared to the reference
     a.calculate_similarity_matrix()

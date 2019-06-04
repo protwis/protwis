@@ -29,20 +29,25 @@
           pos = $( this ).attr('position');
           if (pos>0) {
               test = dynamine_data[entry_name];
-              d = dynamine_data[entry_name]['N-term'];
+              try {
+                d = dynamine_data[entry_name]['N-term'];
+              } catch (e) {
+                  console.log('ERROR:' +  index + ": " + entry_name + ' ' + cut);
+                  return true;
+              }
               length = Object.keys(d).length;
               seq_pos = length-pos+1;
               a = d[seq_pos];
               if (a<0.7) {
                 // disordered / flexible
-                color = 'green';
+                color = '#3D9970'; //green
                 if ($(this).attr('bgcolor')=='lightgrey') color = '#99C799';
               } else if (a>0.8) {
                 // ordered / rigid
-                color = 'blue';
+                color = '#0074D9'; //blue
                 if ($(this).attr('bgcolor')=='lightgrey') color = '#999DFF';
               } else {
-                color = 'red';
+                color = '#FF851B'; //red
                 if ($(this).attr('bgcolor')=='lightgrey') color = '#FFA3A3';
               }
               // console.log( index + ": " + entry_name + ' pos:' + pos + ' seq_pos:' + seq_pos + ' ' +a);
@@ -59,20 +64,26 @@
           pos = $( this ).attr('position');
           if (pos>0) {
               test = dynamine_data[entry_name];
-              d = dynamine_data[entry_name]['C-term'];
+
+              try {
+                d = dynamine_data[entry_name]['C-term'];
+              } catch (e) {
+                  console.log('ERROR:' +  index + ": " + entry_name + ' ' + cut);
+                  return true;
+              }
               length = Object.keys(d).length;
               seq_pos = Object.keys(d)[pos-1];
               a = d[seq_pos];
               if (a<0.7) {
                 // disordered / flexible
-                color = 'green';
+                color = '#3D9970'; //green
                 if ($(this).attr('bgcolor')=='lightgrey') color = '#99C799';
               } else if (a>0.8) {
                 // ordered / rigid
-                color = 'blue';
+                color = '#0074D9'; //blue
                 if ($(this).attr('bgcolor')=='lightgrey') color = '#999DFF';
               } else {
-                color = 'red';
+                color = '#FF851B'; //red
                 if ($(this).attr('bgcolor')=='lightgrey') color = '#FFA3A3';
               }
               // console.log( index + ": " + entry_name + ' pos:' + pos + ' seq_pos:' + seq_pos + ' ' +a);
@@ -159,6 +170,22 @@
 
 <style type="text/css">
 
+.explain {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    left: 5px;
+    top: 5px;
+}
+.explain.flexible {
+    background-color: #3D9970;  /*green*/
+}
+.explain.rigid {
+    background-color: #0074D9; /*blue*/
+}
+.explain.context {
+    background-color: #FF851B; /*red*/
+}
 
 .verticalTableHeader {
     text-align:center;
@@ -295,7 +322,7 @@ table.dataTable {
     </label>
   </div>
   <div class='sub_figures truncation_nterm'>
-  N-terminal truncations sites by class and residue position
+  N-terminal truncations sites by class and residue position (<span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent)
     {% for class, values in truncations_new.nterm.items %}
     <div class="row">
         <div class="col-md-12">
@@ -306,7 +333,7 @@ table.dataTable {
         {% for pos in values.range reversed %}
         <th class="seq_pos"></th>
         {% endfor %}
-        <th>GPCR</th><th>Name</th><th>Species*</th><th>Ina</th><th>Int</th><th>Act</th><th>Pos**</th><th>No.PDBs</th>
+        <th>Receptor</th><th>Uniprot</th><th>Species*</th><th>Ina</th><th>Int</th><th>Act</th><th>Pos**</th><th>No.PDBs</th>
       </tr>
     </thead>
         <tbody>
@@ -318,9 +345,9 @@ table.dataTable {
             {% elif pos in t_pos.1 %}
                     <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='red' align='center' style='border: none;'></td>
             {% elif pos < t_pos.0.0 %}
-                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='blue' align='center' style='border: none;'></td>
+                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
             {% elif pos < t_pos.1.0 %}
-                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='blue' align='center' style='border: none;'></td>
+                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
             {% elif pos <= t_pos.2.0 %}
                     <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
             {% else %}
@@ -344,10 +371,11 @@ table.dataTable {
     {% endfor %}
   * Empty species cell is human<br>
   ** Position is the last kept residue in relation to the start of Transmembrane Helix 1 (TM1)<br>
-  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive
+  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+  <span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent
   </div>
   <div class='sub_figures truncation_cterm'>
-  C-terminal truncations sites by class and residue position
+  C-terminal truncations sites by class and residue position (<span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent)
   {% for class, values in truncations_new.cterm.items %}
   <div class="row">
       <div class="col-md-12">
@@ -359,8 +387,8 @@ table.dataTable {
       <th>Ina</th><th>Int</th><th>Act</th>
       <th>Pos**</th>
       <th>Species*</th>
-      <th>Name</th>
-      <th>GPCR</th>
+      <th>Uniprot</th>
+      <th>Receptor</th>
       {% for pos in values.range  %}
       <th class="seq_pos"></th>
       {% endfor %}
@@ -379,13 +407,13 @@ table.dataTable {
         <td>{{t_pos.8|safe}}</td>
       {% for pos in values.range %}
           {% if pos in t_pos.0 %}
-                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='blue' align='center' style='border: none;'></td>
+                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
           {% elif pos in t_pos.1 %}
                   <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='red' align='center' style='border: none;'></td>
           {% elif pos < t_pos.0.0 %}
-                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='blue' align='center' style='border: none;'></td>
+                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
           {% elif pos < t_pos.1.0 %}
-                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='blue' align='center' style='border: none;'></td>
+                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
           {% elif pos <= t_pos.2.0 %}
                   <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
           {% else %}
@@ -401,7 +429,8 @@ table.dataTable {
   {% endfor %}
   * Empty species cell is human<br>
   ** Position is the last kept residue in relation to the end of Helix 8 (H8)<br>
-  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive
+  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+  <span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent
   </div>
 </div>
 

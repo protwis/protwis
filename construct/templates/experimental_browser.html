@@ -1,5 +1,6 @@
 {% extends "home/base.html" %}
 {% load staticfiles %}
+{% load filters %}
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
@@ -17,7 +18,7 @@
         #filters{
 
             font-size: 10px;
-            padding:  7px 15px; 
+            padding:  7px 15px;
         }
 
         @media (min-width: 1600px){
@@ -99,7 +100,7 @@
             var prev_ids = Array()
             var current_align_ids = Array()
 
-            console.log(oTable);
+            // console.log(oTable);
             $("#constructs_div").show();
             assign_to_row();
             $("#loading_div").hide();
@@ -113,7 +114,7 @@
                         select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
-                        filter_default_label: "Gene",
+                        filter_default_label: "UniProt",
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
@@ -132,14 +133,14 @@
                         select_type_options: {
                             width: '80px',
                         }
-                    }, 
+                    },
                     {
                         column_number: 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
-                        filter_default_label: "Res. family",
+                        filter_default_label: "Rec. family",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -154,7 +155,7 @@
                         select_type_options: {
                             width: '100px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 6,
                         filter_type: "multi_select",
@@ -164,7 +165,7 @@
                         select_type_options: {
                             width: '100px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 7,
                         filter_type: "multi_select",
@@ -277,10 +278,20 @@
                             width: '50px',
                         }
                     },
-                    // {
-                    //     column_number : 19,
-                    //     filter_type: "range_number_slider",
-                    // },
+                    {
+                        column_number : 19,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Ligand Function",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number : 21,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "State",
+                        filter_reset_button_text: false,
+                    },
                 ],
                 {
                     cumulative_filtering: false
@@ -301,7 +312,7 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
-            $("#remove_sel").click(function () { 
+            $("#remove_sel").click(function () {
                 var oTable = $('#constructs').dataTable();
                 $('input:checkbox:checked').each(function () {
                     if ( $(this).is(':visible') ) {
@@ -315,7 +326,7 @@
                oTable.fnDraw();
             });
 
-            $("#remove_non_sel").click(function () { 
+            $("#remove_non_sel").click(function () {
                 var oTable = $('#constructs').dataTable();
                 $('input:checkbox:not(:checked)').each(function () {
                     if ( $(this).is(':visible') ) {
@@ -357,7 +368,7 @@
             // evt.preventDefault();
             columns = $(this).attr('data-column').split(",");
             var checked = this.checked;
-            var checked = (this.checked ? false : true);
+            // var checked = (this.checked ? false : true);
             columns.forEach(function(column) {
                 // console.log('hiding column');
                 var column = oTable.column( column );
@@ -413,7 +424,7 @@
             console.log(ids);
 
             current_align_ids = ids
-            var url = '/construct/align'; 
+            var url = '/construct/align';
             var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
               posting.done(function( data ) {
                 $("#align_div").html('').append(data)
@@ -436,7 +447,7 @@
         };
 
 
-    </script> 
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -453,18 +464,19 @@
     </div>
     Show/hide columns:
 <div class="btn-group" data-toggle="buttons">
-  <label class="btn btn-default btn-xs">
-    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="7,8,9" checked="checked"> Expression
-  </label>
-  <label class="btn btn-default btn-xs">
-    <input class="column_toggle" type="checkbox" value="Solubilzation" data-column="10" checked="checked"> SolubilIzation
+  <label class="btn btn-default btn-xs active">
+    <input class="column_toggle" type="checkbox" value="Expression" data-column="7,8,9" checked="checked"> Expression
   </label>
 
-  <label class="btn btn-default btn-xs">
+  <label class="btn btn-default btn-xs active">
+    <input class="column_toggle" type="checkbox" value="Solubilization" data-column="10" checked="checked"> Solubilization
+  </label>
+
+  <label class="btn btn-default btn-xs active">
     <input class="column_toggle" type="checkbox" value="Purification" data-column="11" checked="checked"> Purification
   </label>
 
-  <label class="btn btn-default btn-xs">
+  <label class="btn btn-default btn-xs active">
     <input class="column_toggle" type="checkbox" value="Crystallization" data-column="12,13,14,15,16,17,18" checked="checked"> Structure determination
   </label>
 </div>
@@ -484,7 +496,7 @@
                     <th colspan=3 class="over_header">EXPRESSION </th>
                     <th colspan=1 class="over_header">SOLUBILIZATION</th>
                     <th colspan=1 class="over_header">PURIFICATION</th>
-                    <th colspan=7 class="over_header">STRUCTURE DETERMINATION</th>
+                    <th colspan=8 class="over_header">STRUCTURE DETERMINATION</th>
                     <th colspan=2></th>
                     <th colspan=2></th>
                 </tr>
@@ -507,8 +519,10 @@
                     <th ></th>
                     <th >pH</th>
                     <th >Temp</th>
+                    <th ></th>
                     <th  class='rightborder'></th>
                     <th >Resolution</th>
+                    <th ></th>
                     <th >Reference</th>
                     <th >Date</th>
                 </tr>
@@ -582,22 +596,26 @@
                     </td>
 
                     <td>
-                        {% if construct.crystallization %}
-                             {% for l in construct.crystallization.ligands.all %}
-
-                                {% if l.ligand.name|length < 40 %}
-                                    {{ l.ligand.name}}
+                            {% for ligand in construct.structure.ligands.all %}
+                                {% if ligand.ligand.name|safe|length > 20 %}
+                                    <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
                                 {% else %}
-                                    {{ l.ligand.name|slice:"0:40"}}..
+                                    {{ ligand.ligand.name|safe }}
                                 {% endif %}
-
-                             {% endfor %}
-                        {% else %}
+                                {% for link in ligand.ligand.properities.web_links.all %}
+                                    <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
+                                {% endfor %}
+                                    <br />
+                                {% empty %}
+                                    N/A
+                            {% endfor %}
+                        </td>
+                        <td>{% for ligand in construct.structure.ligands.all %}{{ ligand.ligand_role.name }}{% empty %}
                             N/A
-                        {% endif %}
-                    </td>
+                            {% endfor %}</td>
                     <td class="text-center">{{ construct.crystal.resolution|floatformat:"1" }}</td>
-                    <!-- 
+                    <td><span>{{ construct.structure.state.name }}</span></td>
+                    <!--
                     <td>{{ construct.contributor.pi_name|safe }}</td>
                     <td>{{ construct.contributor.date|safe }}</td> -->
                     <td>

@@ -60,7 +60,7 @@ def linear_gradient(start_hex="#4682B4", finish_hex="#FFB347", n=10):
 
   return color_dict(RGB_list)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
     # get family
     pf = ProteinFamily.objects.get(slug=slug)
