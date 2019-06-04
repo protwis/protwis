@@ -1,0 +1,222 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/phylo.css' %}"media="screen" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+{% endblock %}
+{% block addon_js %}
+
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script type="text/javascript">
+    
+    phylip_data = '{{ phylip|safe }}';
+
+data_type  = [
+                {
+                    "name": "GPCR_class",
+                    "type": "class",
+                    "print_name": "GPCR Class",
+                    "shape": "rect",
+                    "color": ["#6B5B95", "#92B558", "#E94B3C", "#6F9FD8", "#00A591", "#6C4F3D"]
+                },
+                {
+                    "name": "ligand_type",
+                    "type": "class",
+                    "print_name": "Ligand Type",
+                    "shape": "circle",
+                    "color": ["#feb236", "#d64161", "#ff7b25", "#878f99", "#86af49", "#c1946a", "#b1cbbb", "#4040a1"]
+
+                },
+                {
+                    "name": "selectivity",
+                    "type": "category",
+                    "print_name": "Selectivity",
+                    "shape": "rect",
+                    "color": ["#383F51", "#5DA9E9", "#DDDBF1", "#F93943", "#A37871", "#8A4F7D"]
+                },
+                {
+                    "name": "coverage",
+                    "type": "quantity",
+                    "print_name": "Coverage",
+                    "shape": "rect"
+                }
+            ];
+
+    receptor_data = {{ protein_data|safe }};
+
+    // selectivitydata = {'V1AR': ['Gq/G11 family'], '5HT4R': ['Gs family', 'G12/G13 family'], 'EDNRB': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'DRD1': ['Gs family'], 'OPRM': ['Gi/Go family', 'Gq/G11 family'], 'NPFF1': ['Gi/Go family'], 'OX2R': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'FZD9': ['Gi/Go family'], 'FZD1': ['Gi/Go family', 'Gq/G11 family'], 'CXCR4': ['Gi/Go family'], 'HCAR1': ['Gi/Go family'], 'NMUR1': ['Gq/G11 family'], '5HT7R': ['Gs family'], 'GPR55': ['Gq/G11 family', 'G12/G13 family'], '5HT1D': ['Gi/Go family'], 'HRH1': ['Gq/G11 family'], 'GRM4': ['Gi/Go family'], 'RXFP2': ['Gi/Go family', 'Gs family'], 'S1PR4': ['Gi/Go family', 'G12/G13 family'], 'GPR18': ['Gi/Go family', 'Gq/G11 family'], 'GPR31': ['Gi/Go family'], 'LT4R1': ['Gi/Go family', 'Gq/G11 family'], 'FPR3': ['Gi/Go family'], 'GASR': ['Gq/G11 family'], 'OGR1': ['Gi/Go family', 'Gq/G11 family'], 'S1PR3': ['Gi/Go family', 'Gq/G11 family', 'G12/G13 family'], 'APJ': ['Gi/Go family'], 'ACM4': ['Gi/Go family'], 'RL3R2': ['Gi/Go family'], 'GPR26': ['Gs family'], 'GPR4': ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family'], 'SSR5': ['Gi/Go family', 'Gq/G11 family'], 'MC5R': ['Gs family'], 'CCR7': ['Gi/Go family'], 'GPBAR': ['Gs family'], 'ETBR2': ['Gi/Go family'], 'ACM3': ['Gq/G11 family'], '5HT1A': ['Gi/Go family'], 'OPRD': ['Gi/Go family'], 'ADA1B': ['Gq/G11 family'], 'KISSR': ['Gq/G11 family'], 'NK2R': ['Gq/G11 family', 'Gs family'], 'GRM2': ['Gi/Go family'], 'CLTR1': ['Gi/Go family', 'Gq/G11 family'], 'FPR2': ['Gi/Go family', 'Gq/G11 family'], 'AGTR2': ['Gi/Go family'], 'GRM5': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'CNR2': ['Gi/Go family', 'Gs family'], 'CML1': ['Gi/Go family'], 'NPBW1': ['Gi/Go family'], 'LPAR6': ['Gi/Go family', 'Gs family', 'G12/G13 family'], 'MRGRD': ['Gi/Go family', 'Gq/G11 family'], 'DRD4': ['Gi/Go family'], 'AA2BR': ['Gq/G11 family', 'Gs family'], 'ADA1D': ['Gq/G11 family'], 'NPFF2': ['Gi/Go family'], 'GPR20': ['Gi/Go family'], 'GALR3': ['Gi/Go family'], 'FFAR2': ['Gi/Go family', 'Gq/G11 family'], 'PD2R2': ['Gi/Go family'], 'GIPR': ['Gs family'], 'LPAR4': ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family'], 'FFAR1': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'ACM5': ['Gq/G11 family'], 'TA2R': ['Gq/G11 family'], 'RL3R1': ['Gi/Go family'], 'CCR2': ['Gi/Go family'], 'GHSR': ['Gi/Go family', 'Gq/G11 family', 'G12/G13 family'], 'FZD3': ['Gs family'], 'CALCR': ['Gq/G11 family', 'Gs family'], 'GNRHR': ['Gi/Go family', 'Gq/G11 family'], 'TRFR': ['Gq/G11 family'], 'S1PR5': ['Gi/Go family', 'G12/G13 family'], 'MCHR2': ['Gq/G11 family'], 'MRGX2': ['Gi/Go family', 'Gq/G11 family'], 'GP119': ['Gs family'], 'GRM7': ['Gi/Go family'], 'FZD2': ['Gi/Go family'], 'ADRB2': ['Gi/Go family', 'Gs family'], 'S1PR2': ['Gq/G11 family', 'Gs family', 'G12/G13 family'], 'CLTR2': ['Gi/Go family', 'Gq/G11 family'], 'P2Y11': ['Gq/G11 family', 'Gs family'], 'NPY1R': ['Gi/Go family'], 'SSR1': ['Gi/Go family'], 'VIPR1': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'MTR1B': ['Gi/Go family'], 'ADA2C': ['Gi/Go family', 'Gs family'], 'MTR1A': ['Gi/Go family', 'Gq/G11 family'], 'CCKAR': ['Gq/G11 family', 'Gs family'], 'MRGX3': ['Gq/G11 family'], 'GRPR': ['Gq/G11 family'], 'PD2R': ['Gs family'], 'RXFP1': ['Gi/Go family', 'Gs family'], 'ADRB1': ['Gi/Go family', 'Gs family'], 'NTR1': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], '5HT1F': ['Gi/Go family'], 'CXCR6': ['Gi/Go family'], 'TSHR': ['Gq/G11 family', 'Gs family'], 'FZD7': ['Gi/Go family', 'Gs family'], 'CCR1': ['Gi/Go family'], 'V2R': ['Gs family'], 'GPC6A': ['Gq/G11 family'], 'GLR': ['Gs family'], 'CRFR2': ['Gq/G11 family', 'Gs family'], 'CXCR1': ['Gi/Go family', 'Gq/G11 family'], 'NPY4R': ['Gi/Go family', 'Gq/G11 family'], '5HT1E': ['Gi/Go family'], 'GP101': ['Gs family'], 'S1PR1': ['Gi/Go family'], 'P2RY4': ['Gq/G11 family'], 'GPR78': ['Gs family'], 'NPY2R': ['Gi/Go family', 'Gq/G11 family'], 'CRFR1': ['Gq/G11 family', 'Gs family'], 'GPR34': ['Gi/Go family'], 'NTR2': ['Gq/G11 family'], 'MAS': ['Gi/Go family', 'Gq/G11 family'], 'ADA1A': ['Gq/G11 family', 'G12/G13 family'], 'GPR84': ['Gi/Go family'], 'EDNRA': ['Gq/G11 family'], 'UR2R': ['Gq/G11 family'], 'DRD2': ['Gi/Go family'], 'V1BR': ['Gq/G11 family'], 'PE2R1': ['Gi/Go family', 'Gq/G11 family'], 'SSR4': ['Gi/Go family'], 'ADA2A': ['Gi/Go family', 'Gs family'], 'LPAR2': ['Gi/Go family', 'Gq/G11 family', 'G12/G13 family'], 'GPR33': ['Gi/Go family'], 'CXCR5': ['Gi/Go family'], 'GALR1': ['Gi/Go family'], 'SSR3': ['Gi/Go family', 'Gq/G11 family'], 'GP139': ['Gq/G11 family'], 'OPN5': ['Gi/Go family'], 'MTLR': ['Gq/G11 family', 'G12/G13 family'], 'ADA2B': ['Gi/Go family', 'Gs family'], 'AA3R': ['Gi/Go family'], 'CCR10': ['Gi/Go family'], 'XCR1': ['Gi/Go family'], 'PKR1': ['Gq/G11 family', 'Gs family'], 'MC3R': ['Gs family'], 'PTAFR': ['Gi/Go family', 'Gq/G11 family'], 'FFAR3': ['Gi/Go family'], 'NMBR': ['Gq/G11 family'], 'GRM3': ['Gi/Go family'], 'NPY5R': ['Gi/Go family'], 'PF2R': ['Gq/G11 family', 'Gs family'], 'MSHR': ['Gs family'], 'MC4R': ['Gs family'], 'GPR37': ['Gi/Go family'], 'ADRB3': ['Gi/Go family', 'Gs family'], 'DRD3': ['Gi/Go family'], 'VIPR2': ['Gs family'], 'SSR2': ['Gi/Go family', 'Gq/G11 family'], 'FZD10': ['G12/G13 family'], 'GPR3': ['Gs family'], 'GPER1': ['Gi/Go family', 'Gs family'], 'PE2R3': ['Gi/Go family', 'Gq/G11 family'], 'GPR12': ['Gi/Go family', 'Gs family'], 'CASR': ['Gi/Go family', 'Gq/G11 family', 'G12/G13 family'], 'QRFPR': ['Gi/Go family', 'Gq/G11 family'], 'MRGX1': ['Gq/G11 family'], 'HCAR2': ['Gi/Go family'], 'LT4R2': ['Gi/Go family', 'Gq/G11 family'], 'P2RY6': ['Gq/G11 family', 'G12/G13 family'], 'LPAR1': ['Gi/Go family', 'Gq/G11 family', 'G12/G13 family'], 'GPR6': ['Gi/Go family', 'Gs family'], 'ACTHR': ['Gs family'], 'PI2R': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'FZD6': ['Gi/Go family', 'Gq/G11 family'], 'FSHR': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'BKRB1': ['Gi/Go family', 'Gq/G11 family'], 'GPR39': ['Gq/G11 family', 'Gs family', 'G12/G13 family'], 'CCR9': ['Gi/Go family'], 'OPRX': ['Gi/Go family'], 'TAAR1': ['Gq/G11 family', 'Gs family'], 'NMUR2': ['Gq/G11 family'], 'PE2R4': ['Gi/Go family', 'Gs family'], 'GRM6': ['Gi/Go family'], 'GRM8': ['Gi/Go family'], 'OXYR': ['Gi/Go family', 'Gq/G11 family'], '5HT1B': ['Gi/Go family'], 'HRH4': ['Gi/Go family'], 'P2RY1': ['Gi/Go family', 'Gq/G11 family'], 'GHRHR': ['Gs family'], 'CNR1': ['Gi/Go family', 'Gs family'], 'CXCR2': ['Gi/Go family'], 'PKR2': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'OX1R': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'DRD5': ['Gs family'], 'FZD4': ['G12/G13 family'], 'OPRK': ['Gi/Go family', 'G12/G13 family'], 'GPR27': ['Gq/G11 family'], 'OXGR1': ['Gq/G11 family'], 'C5AR1': ['Gi/Go family', 'Gq/G11 family'], 'CCR8': ['Gi/Go family'], 'AA1R': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'NK3R': ['Gq/G11 family'], 'MRGX4': ['Gq/G11 family'], 'PE2R2': ['Gs family'], 'PACR': ['Gq/G11 family', 'Gs family'], 'SMO': ['Gi/Go family', 'G12/G13 family'], 'OXER1': ['Gi/Go family'], 'LPAR3': ['Gi/Go family', 'Gq/G11 family'], 'P2Y13': ['Gi/Go family'], 'CCR5': ['Gi/Go family'], 'NPBW2': ['Gi/Go family'], 'CCR4': ['Gi/Go family'], 'PSYR': ['Gs family'], '5HT2A': ['Gi/Go family', 'Gq/G11 family'], 'GRM1': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], '5HT2C': ['Gi/Go family', 'Gq/G11 family'], 'GPR22': ['Gi/Go family'], 'PTH1R': ['Gq/G11 family', 'Gs family'], 'SUCR1': ['Gi/Go family', 'Gq/G11 family'], 'NPSR1': ['Gq/G11 family', 'Gs family'], 'BKRB2': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'GP183': ['Gi/Go family'], '5HT2B': ['Gq/G11 family'], 'FPR1': ['Gi/Go family'], 'LSHR': ['Gq/G11 family', 'Gs family'], 'HRH3': ['Gi/Go family'], 'LPAR5': ['Gq/G11 family', 'G12/G13 family'], '5HT5A': ['Gi/Go family', 'Gq/G11 family'], 'P2Y14': ['Gi/Go family'], 'OPN4': ['Gi/Go family', 'Gq/G11 family'], 'MCHR1': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'GALR2': ['Gi/Go family', 'Gq/G11 family', 'G12/G13 family'], 'CCR6': ['Gi/Go family'], 'NK1R': ['Gq/G11 family', 'Gs family'], 'CCR3': ['Gi/Go family'], 'BRS3': ['Gq/G11 family'], 'GLP1R': ['Gs family'], 'CXCR3': ['Gi/Go family'], 'ACM1': ['Gq/G11 family'], '5HT6R': ['Gq/G11 family', 'Gs family'], 'ACM2': ['Gi/Go family', 'Gq/G11 family', 'Gs family'], 'CX3C1': ['Gi/Go family'], 'P2RY2': ['Gi/Go family', 'Gq/G11 family', 'G12/G13 family'], 'GPR17': ['Gi/Go family', 'Gq/G11 family'], 'AA2AR': ['Gq/G11 family', 'Gs family'], 'HCAR3': ['Gi/Go family'], 'HRH2': ['Gq/G11 family', 'Gs family'], 'AGTR1': ['Gi/Go family', 'Gq/G11 family'], 'GPR75': ['Gq/G11 family'], 'FFAR4': ['Gq/G11 family']};
+
+</script>
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="https://d3js.org/d3.v3.js"></script>
+<script src="{% static 'home/js/newick.js' %}"></script>
+<script src="{% static 'home/js/phylo_new.js' %}"></script>
+<script src="{% static 'home/js/phylo_library.js' %}"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js" charset="utf-8"></script>
+
+{% endblock %}
+{% block content %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="btn-toolbar" role="toolbar">
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-sm" data-direction="vertical" data-amount="1"
+                        title="Expand vertical spacing">
+                    <i class="fa fa-arrows-v"></i>
+                </button>
+                <button type="button" class="btn btn-default btn-sm" data-direction="vertical" data-amount="-1"
+                        title="Compress vertical spacing">
+                    <i class="fa  fa-compress fa-rotate-135"></i>
+                </button>
+                <button type="button" class="btn btn-default btn-sm" data-direction="horizontal" data-amount="1"
+                        title="Expand horizonal spacing">
+                    <i class="fa fa-arrows-h"></i>
+                </button>
+                <button type="button" class="btn btn-default btn-sm" data-direction="horizontal" data-amount="-1"
+                        title="Compress horizonal spacing">
+                    <i class="fa  fa-compress fa-rotate-45"></i>
+                </button>
+                <button type="button" class="btn btn-default btn-sm" id="sort_ascending" title="Sort deepest clades to the bototm">
+                    <i class="fa fa-sort-amount-asc"></i>
+                </button>
+                <button type="button" class="btn btn-default btn-sm" id="sort_descending" title="Sort deepsest clades to the top">
+                    <i class="fa fa-sort-amount-desc"></i>
+                </button>
+                <button type="button" class="btn btn-default btn-sm" id="sort_original" title="Restore original order">
+                    <i class="fa fa-sort"></i>
+                </button>
+            </div>
+            <div class="btn-group" data-toggle="buttons">
+                <label class="btn btn-default active btn-sm" id="radial_lay">
+                    <input type="radio" name="options" class="phylotree-layout-mode" data-mode="radial"
+                           autocomplete="off" checked="" title="Layout radially"> Radial
+                </label>
+                <label class="btn btn-default btn-sm" id="linear_lay">
+                    <input type="radio" name="options" class="phylotree-layout-mode" data-mode="linear"
+                           autocomplete="off"  title="Layout left-to-right"> Linear
+                </label>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-sm active" id="toggle_animation" title="Toggle animation">
+                    Animation
+                </button>
+            </div>
+
+            <div class="btn-group" data-toggle="buttons">
+                <label class="btn btn-default active btn-sm">
+                    <input type="radio" class="phylotree-align-toggler" data-align="left" name="options-align"
+                           autocomplete="off" checked="" title="Align tips labels to branches">
+                    <i class="fa fa-align-left"></i>
+
+
+                </label>
+                <label class="btn btn-default btn-sm">
+                    <input type="radio" class="phylotree-align-toggler" data-align="right" name="options-align"
+                           autocomplete="off" title="Align tips labels to the edge of the plot">
+                    <i class="fa fa-align-right"></i>
+
+                </label>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-sm" id="draw_data" title="Draw data">
+                    Draw data
+                </button>
+                <!--<button type="button" class="btn btn-default btn-sm" id="remove_data" title="remove data">-->
+                    <!--remove data-->
+                <!--</button>-->
+            </div>
+
+            <div class="btn-group" id="the_form">
+                    <fieldset name="data_selection" id="data_selection_id">
+                        <!--<input type="checkbox" name="GPCR_class" value="class" /> Class-->
+                        <!--<input type="checkbox" name="ligand_type" value="class" /> Ligand type-->
+                        <!--<input type="checkbox" name="selectivity" value="category" /> Selectivity-->
+                        <!--<input type="checkbox" name="coverage" value="quantity" /> Coverage-->
+                    </fieldset>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class = 'container' id = "main_display"> </div>
+<div class="container-fluid">
+    <div class="btn-group" id="bs-example-navbar-collapse-1">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+            <span></span> Newick <b class="caret"></b></a>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a href="#" data-toggle="modal" data-target="#newick_modal">Input Text</a></li>
+            <li><a href="#"><input type="file" id="newick_file"/></a></li>
+            <li class="divider"></li>
+            <li><a href="#" data-toggle="modal" data-target="#newick_export_modal">Export</a></li>
+        </ul>
+    </div>
+</div>
+
+<div class="modal" id = 'newick_modal'>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Newick string to render</h4>
+      </div>
+      <div class="modal-body" id = 'newick_body'>
+         <textarea id = 'nwk_spec' autofocus = true placeholder = "" style = 'width: 100%; height: 100%' rows = 20 selectionStart = 1 selectionEnd = 1000>(a : 0.1, (b : 0.11, (c : 0.12, d : 0.13) : 0.14) : 0.15)</textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id = 'validate_newick'>Display this tree</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="modal" id = 'newick_export_modal'>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-body" id = 'newick_body'>
+         <textarea id = 'nwk_export_spec' autofocus = true placeholder = "" style = 'width: 100%; height: 100%' rows = 20></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!--<svg id="tree_display"></svg>-->
+
+<div id = 'tree_container' class = 'tree-widget'> </div>
+
+<div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <b> Image</b>
+            <li><a href="javascript:saveSvgAsPng(document.getElementById('my_svg'), 'tree.png', {scale: 3});" >PNG</a></li>
+            <li><a href="javascript:saveSvgAsJpg(document.getElementById('my_svg'), 'tree.jpg', {scale: 3});" >JPG</a></li>
+            <li><a href="javascript:saveSvgAsTiff(document.getElementById('my_svg'), 'tree.tiff', {scale: 3});" >TIFF</a></li>
+            <li><a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree.svg">SVG</a></li>
+            <!--<b> Tree</b>-->
+            <!--<li><a href-lang="text" href="data:,{{ phylip|safe }}" download="newick_file.nwk">Newick</a></li>-->
+        </ul>
+</div>
+
+<div class="legend_box">
+    <div class="class_legend"></div>
+    <div class="category_legend"></div>
+    <div class="quantity_legend"></div>
+
+</div>
+
+
+{% endblock %}
