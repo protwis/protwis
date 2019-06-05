@@ -142,7 +142,9 @@ function check_all(elem, button) {
 }
 
 function check_all_representative() {
-  var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+    group = $(elem).closest('.tableview').attr('group-number');
+    if (group) mode = mode + group;
   $('input', oTable[mode].cells().nodes()).prop('checked',false);
   // $('input[representative="Yes"]', oTable[mode].cells().nodes()).each(function() {
   //       // pdbs.push($(this).attr('id'));

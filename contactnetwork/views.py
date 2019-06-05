@@ -504,7 +504,7 @@ def InteractionBrowserData(request):
                             if coord not in all_pdbs_pairs:
                                 all_pdbs_pairs[coord] = {}
                             all_pdbs_pairs[coord][pair] = p
-        cache.set("all_pdbs_aa_pairs",all_pdbs_pairs,60*60*30) #Cache results
+        cache.set("all_pdbs_aa_pairs",all_pdbs_pairs,60*60*24*7) #Cache results
     else:
         residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs
                 ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name').all()
