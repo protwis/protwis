@@ -197,9 +197,9 @@ def PdbTableData(request):
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
 
     data_dict = OrderedDict()
-    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=6>Structure</th><th colspan=2>Signalling protein</th> \
+    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=8>Structure</th><th colspan=2>Signalling protein</th> \
                                                                        <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></tr> \
-                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
+                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>% of class active<br> state-specific contacts</th><th>% of class inactive<br> state-specific contacts</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
 
     for s in data:
         pdb_id = s.pdb_code.index
@@ -212,6 +212,10 @@ def PdbTableData(request):
         # # r['date'] = s.publication_date
         r['state'] = s.state.name
         r['contact_representative'] = 'Yes' if s.contact_representative else 'No'
+        r['contact_representative_score'] = "{:.0%}".format(s.contact_representative_score)
+
+        r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
+        r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
 
         a_list = []
         for a in s.stabilizing_agents.all():
@@ -261,7 +265,9 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' long='{}'  id='{}'></td> \
                         </tr>\n".format(
                                         r['protein'],
                                         r['protein_long'],
@@ -272,7 +278,9 @@ def PdbTableData(request):
                                         pdb_id,
                                         r['resolution'],
                                         r['state'],
-                                        r['contact_representative'],
+                                        r['active_class_contacts_fraction'],
+                                        r['inactive_class_contacts_fraction'],
+                                        r['contact_representative_score'],
                                         r['7tm_distance'],
                                         r['g_protein'],
                                         r['arrestin'],
@@ -281,6 +289,7 @@ def PdbTableData(request):
                                         r['ligand'],
                                         r['ligand_function'],
                                         r['ligand_type'],
+                                        r['contact_representative'],
                                         r['protein_long'],
                                         pdb_id
                                         )
@@ -313,10 +322,10 @@ def InteractionBrowserData(request):
     try:
         pdbs1 = request.GET.getlist('pdbs1[]')
         pdbs2 = request.GET.getlist('pdbs2[]')
-        mode = 'double'
     except IndexError:
         pdbs1 = []
-
+    if pdbs1 and pdbs2:
+        mode = 'double'
     # PDB files
     try:
         pdbs = request.GET.getlist('pdbs[]')
@@ -330,6 +339,9 @@ def InteractionBrowserData(request):
 
     if pdbs1 and pdbs2:
         pdbs = pdbs1 + pdbs2
+
+    if mode == 'single':
+        pdbs1 = pdbs
 
     pdbs_upper = [pdb.upper() for pdb in pdbs]
     # Segment filters
@@ -551,12 +563,15 @@ def InteractionBrowserData(request):
                 data['interactions'][coord]['pdbs'].append(pdb_name)
             if protein not in data['interactions'][coord]['proteins']:
                 data['interactions'][coord]['proteins'].append(protein)
-            data['interactions'][coord]['secondary'].append([model,res1_aa,res2_aa])
+            data['interactions'][coord]['secondary'].append([model,res1_aa,res2_aa,pdb_name])
 
     data['secondary'] = {}
     secondary_dict = {'set1':0 , 'set2':0, 'aa_pairs':OrderedDict()}
+    secondary_dict_single = {'set':0 , 'aa_pairs':OrderedDict()}
     aa_pairs_dict = {'set1':0 , 'set2':0, 'class':{}}
+    aa_pairs_dict_single = {'set':0, 'class':{}}
     delete_coords = []
+    print(len(data['interactions']),'interactions2')
     for c,v in data['interactions'].items():
         if mode == 'double':
             if len(v["pdbs1"])+len(v["pdbs2"])==0:
@@ -634,11 +649,79 @@ def InteractionBrowserData(request):
                         if data['secondary'][c][i]['aa_pairs'][aa_pair]["set1"] == 0 and data['secondary'][c][i]['aa_pairs'][aa_pair]["set2"] == 0:
                             del data['secondary'][c][i]['aa_pairs'][aa_pair] 
 
-        # Order based on AA counts
-        for i in data['secondary'][c].keys():
-            data['secondary'][c][i]['aa_pairs'] = OrderedDict(sorted(data['secondary'][c][i]['aa_pairs'].items(), key=lambda x: x[1]["set1"]+x[1]["set2"], reverse = True))
+            # Order based on AA counts
+            for i in data['secondary'][c].keys():
+                data['secondary'][c][i]['aa_pairs'] = OrderedDict(sorted(data['secondary'][c][i]['aa_pairs'].items(), key=lambda x: x[1]["set1"]+x[1]["set2"], reverse = True))
             
-        data['secondary'][c] = OrderedDict(sorted(data['secondary'][c].items(), key=lambda x: order.index(x[0])))
+            data['secondary'][c] = OrderedDict(sorted(data['secondary'][c].items(), key=lambda x: order.index(x[0])))
+        elif mode =='single':
+            # continue
+            if len(v["pdbs"])==0:
+                #empty
+                delete_coords.append(c)
+                continue
+            data['secondary'][c] = OrderedDict()
+            current = {}
+            current["set"] = pdbs1.copy()
+            setname = "set"
+            for s in v['secondary']:
+                i = s[0]
+                aa_pair = ''.join(s[1:3])
+                if s[3] in current[setname]:
+                    #remove PDB from current set, to deduce those without an interaction
+                    current[setname].remove(s[3])
+                if i not in data['secondary'][c]:
+                    data['secondary'][c][i] = copy.deepcopy(secondary_dict_single)
+                data['secondary'][c][i][setname] += 1
+                if aa_pair not in data['secondary'][c][i]['aa_pairs']:
+                    data['secondary'][c][i]['aa_pairs'][aa_pair] = copy.deepcopy(aa_pairs_dict_single)
+                    # Count overall occurances in sets
+                    aa1 = s[1]
+                    aa2 = s[2]
+                    gen1 = c.split(",")[0]
+                    gen2 = c.split(",")[1]
+                    pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
+                    pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
+                    pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2))
+                    pdbs_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
+                    data['secondary'][c][i]['aa_pairs'][aa_pair]['pair_set'] = pdbs_with_pair
+
+                    if c+aa_pair in class_pair_lookup:
+                        data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = class_pair_lookup[c+aa_pair]
+                    else:
+                        data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = "-"
+
+                data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
+            
+            i = 'None' ## Remember to also have this name in the "order" dict.
+            data['secondary'][c][i] = copy.deepcopy(secondary_dict_single) 
+            data['secondary'][c][i][setname] += len(current[setname])
+            for aa_pair, pdbs in all_pdbs_pairs[c].items():
+                if aa_pair not in data['secondary'][c][i]['aa_pairs']:
+                    data['secondary'][c][i]['aa_pairs'][aa_pair] = copy.deepcopy(aa_pairs_dict_single)
+                    if c+aa_pair in class_pair_lookup:
+                        data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = class_pair_lookup[c+aa_pair]
+                    else:
+                        data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = "-"
+
+                    aa1 = aa_pair[0]
+                    aa2 = aa_pair[1]
+                    gen1 = c.split(",")[0]
+                    gen2 = c.split(",")[1]
+                    pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
+                    pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
+                    pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2))
+                    pdbs_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
+                    data['secondary'][c][i]['aa_pairs'][aa_pair]['pair_set'] = pdbs_with_pair
+                    
+
+                for pdb in current[setname]:
+                    if pdb in pdbs:
+                        # if pdb without interaction is in pdbs of aa_pair, add one.
+                        data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
+                if data['secondary'][c][i]['aa_pairs'][aa_pair]["set"] == 0:
+                    del data['secondary'][c][i]['aa_pairs'][aa_pair] 
+    # print(delete_coords)
     for d in delete_coords:
         del data['interactions'][d]
 
@@ -649,6 +732,9 @@ def InteractionBrowserData(request):
         data['pdbs2'] = list(data['pdbs2'])
         data['proteins1'] = list(data['proteins1'])
         data['proteins2'] = list(data['proteins2'])
+    else:
+        data['pdbs'] = list(data['pdbs'])
+
     return JsonResponse(data)
 
 def DistanceDataGroups(request):
@@ -1577,3 +1663,11 @@ def ServePDB(request, pdbname):
         data['center_axis'] = sv.center_axis
 
     return JsonResponse(data)
+
+def StateContacts(request):
+    contacts = ConsensusInteraction.objects.filter(state_specific = True).prefetch_related('gn1','gn2','state','protein_class').all()
+    context = {}
+    context['contacts'] = contacts
+    return render(request, 'contactnetwork/state_contacts.html', context)
+
+
