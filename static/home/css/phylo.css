@@ -1,0 +1,265 @@
+/*.node circle {
+    fill: #fff;
+    stroke: black;
+    stroke-width: 0.5px;
+    cursor: pointer;
+}*/
+
+#my_svg{
+    margin: 10px 10px 10px 10px;
+}
+
+.divider{
+    stroke-width: 0.5px;
+    fill: lightgray;
+}
+
+.node, text {
+    font: 7px sans-serif;
+    cursor: pointer;
+
+}
+
+.node, text:hover {
+    font: 10px sans-serif;
+    font-weight: bold;
+    cursor: pointer;
+
+
+}
+
+.link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 1.5px;
+}
+
+.row {
+    margin-top: 10px;
+    margin-right: -15px;
+    margin-left: 15px;
+}
+
+.container-fluid{
+    margin-top: 10px;
+    margin-right: -15px;
+    margin-left: 15px;
+}
+
+.tree-selection-brush .extent {
+    fill-opacity: .05;
+    stroke: #fff;
+    shape-rendering: crispEdges;
+}
+
+.tree-scale-bar text {
+    font: 7px sans-serif;
+}
+
+.tree-scale-bar line,
+.tree-scale-bar path {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+/*.node ellipse, .node rect {
+    fill: steelblue;
+    stroke: black;
+    stroke-width: 0.5px;
+}*/
+
+
+.internal-node circle, .internal-node ellipse, .internal-node rect{
+    fill: #CCC;
+    stroke: black;
+    stroke-width: 0.5px;
+}
+
+.node {
+    font: 10px sans-serif;
+}
+
+.node-selected {
+    fill: #f00 !important;
+}
+
+.node-collapsed circle, .node-collapsed ellipse, .node-collapsed rect{
+    fill: black !important;
+}
+
+.node-tagged {
+    fill: #00f;
+}
+
+.branch {
+    fill: none;
+    stroke: #999;
+    stroke-width: 2px;
+}
+
+.clade {
+    fill: #1f77b4;
+    stroke: #444;
+    stroke-width: 2px;
+    opacity: 0.5;
+}
+
+.branch-selected {
+    stroke: #f00 !important;
+    stroke-width: 3px;
+}
+
+.branch-tagged {
+    stroke: #00f;
+    stroke-dasharray: 10,5;
+    stroke-width: 2px;
+}
+
+.branch-tracer {
+    stroke: #bbb;
+    stroke-dasharray: 3,4;
+    stroke-width: 1px;
+}
+
+
+.branch-multiple {
+    stroke-dasharray: 5, 5, 1, 5;
+    stroke-width: 3px;
+}
+
+.branch:hover {
+    stroke-width: 10px;
+}
+
+.internal-node circle:hover, .internal-node ellipse:hover, .internal-node rect:hover {
+    fill: black;
+    stroke: #CCC;
+}
+
+.tree-widget {
+}
+
+.btn{
+    color: #fff;
+    background-color: #337ab7;
+    border-color: #204d74;
+}
+
+.btn:hover{
+    color: white;
+    background-color: #204d74;
+    border-color: #204d74;
+}
+
+.btn-default.active, .btn-default.active:hover{
+    color: white;
+    background-color: #204d74;
+    border-color: #204d74;
+
+}
+
+.class_band_radial{
+    fill: antiquewhite;
+    stroke: #444444;
+    stroke-dasharray: 1;
+}
+
+.class_band_linear{
+    fill: antiquewhite;
+    stroke: #444444;
+    stroke-dasharray: 1;
+}
+
+#receptor_class_text{
+    font: 15px sans-serif;
+}
+
+div.class_tooltip {
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+div.ligand_tooltip{
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+
+div.coverage_tooltip{
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+div.selectivity_tooltip{
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+
+}
+
+
+#class_legend_box{
+    width: auto;
+    height: auto;
+    margin: 10px 10px 10px 10px;
+    top: 10%;
+    padding: 7px 10px 10px 10px;
+    float: left;
+    fill: black;
+    border: 2px solid dimgrey;
+
+}
+
+#quantity_legend_box{
+    margin: 10px 10px 10px 10px;
+    top: 10%;
+    padding: 7px 10px 10px 10px;
+    float: left;
+    fill: black;
+    border: 2px solid dimgrey;
+
+}
+
+#categorical_legend_box{
+    margin: 10px 10px 10px 10px;
+    top: 10%;
+    padding: 7px 10px 10px 10px;
+    float: left;
+    fill: black;
+    border: 2px solid dimgrey;
+
+}
+
+

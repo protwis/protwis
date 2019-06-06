@@ -9,10 +9,10 @@
                   <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
   			</li>
   			<li class="{% if pdbs %}active{% endif %}">
-                  <a href="#single-group-crystal-tab" data-toggle="tab">Single group of structures</a>
+                  <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
   			</li>
   			<li class="{% if pdbs1 %}active{% endif %}">
-                  <a href="#two-groups-crystal-tab" data-toggle="tab">Two groups of structures</a>
+                  <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
   			</li>
 		  </ul>
 
@@ -29,14 +29,14 @@
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs</h3>
+                                <h3 class="panel-title">Structures</h3>
                             </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
                                 <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                                 <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button><br><br> #}
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select PDB</button> <span class="crystal-count">No structure selected.</span>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select Structure</button><br><br> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span class="crystal-count">No structure selected.</span>
                                 <div class="btn btn-success pull-right go-button"><span>Go</span></div>
                             </div>
                         </div>
@@ -106,7 +106,10 @@
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Interactions</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -126,7 +129,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Flareplot</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -142,7 +148,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Hiveplot</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -158,7 +167,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">2D schematic</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -175,7 +187,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">2D schematic Non</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -195,7 +210,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">NGL</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -211,7 +229,7 @@
             </div>
             <!-- END SINGLE CRYSTAL TAB -->
             <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
-            <div class="tab-pane main_option {% if pdbs %}active{% endif %}" id="single-group-crystal-tab">
+            <div class="tab-pane main_option {% if pdbs %}active{% endif %}" id="single-crystal-group-tab">
                 <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single group of structures interactions</h1>
@@ -222,12 +240,12 @@
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs</h3>
+                                <h3 class="panel-title">Structures</h3>
                             </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                                 <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-group-crystal-pdbs-modal-table">Select PDBs</button>
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
                                 <span class="crystal-count">No</span> structure(s) selected.
                                 <div class="btn btn-success pull-right go-button"><span>Go</span></div>
 
@@ -317,7 +335,10 @@
                            <div class="panel panel-default">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Interactions</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -337,7 +358,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Flareplot</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -353,7 +377,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">2D schematic</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -370,7 +397,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">2D schematic Non</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -390,7 +420,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">NGL</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -405,7 +438,7 @@
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
             <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
-            <div class="tab-pane main_option {% if pdbs2 %}active{% endif %}" id="two-groups-crystal-tab">
+            <div class="tab-pane main_option {% if pdbs2 %}active{% endif %}" id="two-crystal-groups-tab">
                 <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Two groups of structures interactions</h1>
@@ -416,24 +449,24 @@
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs (Set 1)</h3>
+                                <h3 class="panel-title">Structures (Set 1)</h3>
                             </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
                                 <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-1-table">Select PDBs</button> <span class="crystal-count-1">No</span> structure(s) selected.
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures</button> <span class="crystal-count-1">No</span> structure(s) selected.
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs (Set 2)</h3>
+                                <h3 class="panel-title">Structures (Set 2)</h3>
                             </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
                                 <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-groups-crystal-pdbs-modal-2-table">Select PDBs</button> <span class="crystal-count-2">No</span> structure(s) selected.
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures</button> <span class="crystal-count-2">No</span> structure(s) selected.
                                 <div class="btn btn-success pull-right go-button">Go</div>
 
                             </div>
@@ -524,7 +557,10 @@
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Interactions</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -544,7 +580,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">Flareplot</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -560,7 +599,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">2D schematic</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -577,7 +619,10 @@
                          <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title pull-left">2D schematic Non</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
@@ -596,7 +641,10 @@
                      <div class="panel panel-default">
                         <div class="panel-heading">
                             <h3 class="panel-title pull-left">NGL</h3>
-                            <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                             <div class="clearfix"></div>
                         </div>
                         <div class="panel-body">
@@ -639,7 +687,7 @@
     <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
 
     <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
-    <div class="modal fade" id="single-group-crystal-pdbs-modal-table" role="dialog">
+    <div class="modal fade" id="single-crystal-group-pdbs-modal-table" role="dialog">
         <div class="modal-dialog modal-wide">
             <!-- Modal content-->
             <div class="modal-content">
@@ -649,7 +697,7 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
-                        <span id="single-group-crystal-pdbs-modal-text">0 structure(s) selected</span>
+                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
                         <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview"></div>
                       </div>
@@ -663,7 +711,7 @@
     <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
 
     <!-- BEGIN TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
-    <div class="modal fade" id="two-groups-crystal-pdbs-modal-1-table" role="dialog">
+    <div class="modal fade" id="two-crystal-group-pdbs-modal-1-table" role="dialog">
         <div class="modal-dialog modal-wide">
             <!-- Modal content-->
             <div class="modal-content">
@@ -672,7 +720,7 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                        <span id="two-groups-crystal-pdbs-modal-1-text">0 structure(s) selected</span>
+                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
                         <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview group-number-1" group-number="1"></div>
                </div>
@@ -686,7 +734,7 @@
     <!-- END TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
 
     <!-- BEGIN TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
-    <div class="modal fade" id="two-groups-crystal-pdbs-modal-2-table" role="dialog">
+    <div class="modal fade" id="two-crystal-group-pdbs-modal-2-table" role="dialog">
         <div class="modal-dialog modal-wide">
             <!-- Modal content-->
             <div class="modal-content">
@@ -695,7 +743,7 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                        <span id="two-groups-crystal-pdbs-modal-2-text">0 structure(s) selected</span>
+                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
                         <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview group-number-2" group-number="2"></div>
                </div>
@@ -708,6 +756,12 @@
     <!-- END TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
 {% endblock %}
 {% block addon_js %}
+
+  
+    <script type="text/javascript" src="{% static 'home/js/canvas-toBlob.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/FileSaver.min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/contactnetworkDownloadDiagrams.js' %}"> </script>
+
     <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
 
@@ -717,6 +771,36 @@
     <script src="{% static 'home/js/select2.js' %}"> </script>
     <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+    <!-- NGL -->
+    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+
+    <!-- Flareplot -->
+    <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare.js' %}"> </script>
+
+    <!-- 2D schematics -->
+    <script type="text/javascript" src="{% static 'home/js/schematicplot.js' %}"> </script>
+
+    <!-- PDB table -->
+    <script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
+
+    <!-- D3 -->
+    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
+    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
+
+    <!-- Hiveplot -->
+    <script type="text/javascript" src="{% static 'home/js/hiveplot.js' %}"> </script>
+
+
+    <!-- TODO: Solve the conflict between flareplot-main.js and the existing PDB selector -->
+    <script type="text/javascript" src="{% static 'home/js/flareplot-contactbrowser.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/flareplot-selectors.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/flareplot-rangeslider.js' %}"> </script>
+    
     <script>
         window.zoomHeatmap = {};
         window.zoomHiveplot = {};
@@ -1081,7 +1165,7 @@
             }
         }
 
-        function downloadSVG(svgSelector, name) {
+        function downloadSVG2(svgSelector, name) {
           var svgClone = $(svgSelector).clone();
           svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
 
@@ -1136,7 +1220,7 @@
                 });
           } else if (selector=='single-group-table') {
             var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2',  'Number of interactions', 'Number of crystals', 'Frequency'];
-            $('#single-group-crystal-tab .heatmap-container rect[data-frequency]').each(function(e) {
+            $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
               var rect = $(this);
               var genNo1 = rect.data('gen-no-1');
               var genNo2 = rect.data('gen-no-2');
@@ -1151,7 +1235,7 @@
 
           } else if (selector=='two-groups-table') {
             var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
-            $('#two-groups-crystal-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+            $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
               var rect = $(this);
               var genNo1 = rect.data('gen-no-1');
               var genNo2 = rect.data('gen-no-2');
@@ -1313,7 +1397,7 @@
                             column_number : 5,
                             filter_type: "multi_select",
                             select_type: 'select2',
-                            filter_default_label: "Total PDBs",
+                            filter_default_label: "Total Structures",
                             filter_reset_button_text: false,
 
                         },
@@ -2065,7 +2149,7 @@
             g.transform("r225s-1,1");
 
             // Populate heatmap legend
-            var legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
+            var legendHtml = '<h4 class="center">Frequency (#Structures)</h4>'
                 + '<p>Range: <span id="pdbs-range">1 - ' + data.pdbs.length + '</span></p>'
                 + '<div class="slider-range" data-text-id="pdbs-range" id="pdbs-range-slider"></div>'
                 + '<div class="temperature-scale">'
@@ -2741,7 +2825,7 @@
                   // Re-render flareplot
                   createFlareplotBox(data, selector + " .flareplot-container");
 
-                  if (selector == '#single-group-crystal-tab') {
+                  if (selector == '#single-crystal-group-tab') {
                     createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
                     createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
                     createNGLview("single-group",pdb[0], pdb);
@@ -2836,289 +2920,6 @@
         }
 
 
-        function update_text_in_modal() {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-
-          if (mode=='Single group of structures') {
-            var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-            var selected_visible = $('.pdb_selected:checked').length
-            var ModalpdbsCountSelector = '#single-group-crystal-pdbs-modal-text';
-
-            if (total_selected==selected_visible) {
-              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
-            } else {
-              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
-            }
-          } else if (mode=='Two groups of structures') {
-            group = $('.tableview:visible').attr('group-number');
-            if (group) mode = mode + group;
-            //#FIXME
-            var ModalpdbsCountSelector = '#two-groups-crystal-pdbs-modal-'+group+'-text';
-            var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-            var selected_visible = $('.pdb_selected:checked:visible').length
-            if (total_selected==selected_visible) {
-              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
-            } else {
-              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
-            }
-          }
-
-
-        }
-
-        function thisPDB(elem) {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-          var ReceptorName = $(elem).attr('long');
-          var pdbName = $(elem).attr('id');
-          if (mode=='Single structure') {
-            $('.pdb_selected').not(elem).prop("checked",false);
-            var pdbs = [];
-            if ($(elem).prop("checked")) {
-              pdbs.push(pdbName);
-              // Update view
-              $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
-            } else {
-              // Update view
-              $(".crystal-count:visible").html('No structure selected.');
-            }
-            $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
-          } else if (mode=='Single group of structures') {
-            var pdbs = [];
-            $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-                pdbs.push($(this).attr('id'));
-            });
-            var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
-            var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
-            var ModalpdbsCountSelector = '#single-group-crystal-pdbs-modal-text';
-
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            // Update view
-            $(pdbsCountSelector).html(pdbs.length);
-          }  else if (mode=='Two groups of structures') {
-
-            group = $(elem).closest('.tableview').attr('group-number');
-            if (group) mode = mode + group;
-
-            var pdbs = [];
-            $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-                pdbs.push($(this).attr('id'));
-            });
-
-            var pdbsInputSelector = '#two-groups-crystal-tab .crystal-group-'+group+'-pdbs';
-            var pdbsCountSelector = '#two-groups-crystal-tab .crystal-count-'+group;
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            // Update view
-            $(pdbsCountSelector).html(pdbs.length);
-          }
-          update_text_in_modal();
-        }
-
-        function resetselection(elem) {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-
-          $('.check_all:visible').prop('checked',false);
-
-          if (mode=='Single group of structures') {
-            var pdbs = [];
-
-            $('input', oTable[mode].cells().nodes()).prop('checked',false);
-
-            var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
-            var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            $(pdbsCountSelector).html(pdbs.length);
-          }  else if (mode=='Two groups of structures') {
-
-            group = $('.tableview:visible').attr('group-number');
-            if (group) mode = mode + group;
-            var pdbs = [];
-
-            $('input', oTable[mode].cells().nodes()).prop('checked',false);
-
-            var pdbsInputSelector = '#two-groups-crystal-tab .crystal-group-'+group+'-pdbs';
-            var pdbsCountSelector = '#two-groups-crystal-tab .crystal-count-'+group;
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            $(pdbsCountSelector).html(pdbs.length);
-          }
-
-          update_text_in_modal();
-        }
-
-        function check_all(elem) {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-          show_all = $(elem).prop("checked");
-
-
-          if (mode=='Single group of structures') {
-            var pdbs = [];
-
-            // REMOVE EXISITING? Probably not, more logically that filtering adds more
-            // $('input', oTable.cells().nodes()).prop('checked',false);
-
-            if (show_all) {
-              $('.pdb_selected:visible').prop("checked",true);
-            } else {
-              $('.pdb_selected:visible').prop("checked",false);
-            }
-
-            $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-                pdbs.push($(this).attr('id'));
-            });
-
-            var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
-            var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            // Update view
-            $(pdbsCountSelector).html(pdbs.length);
-          }  else if (mode=='Two groups of structures') {
-
-            group = $(elem).closest('.tableview').attr('group-number');
-            if (group) mode = mode + group;
-            var pdbs = [];
-
-            if (show_all) {
-              $('.pdb_selected:visible').prop("checked",true);
-            } else {
-              $('.pdb_selected:visible').prop("checked",false);
-            }
-
-            $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-                pdbs.push($(this).attr('id'));
-            });
-
-            var pdbsInputSelector = '#two-groups-crystal-tab .crystal-group-'+group+'-pdbs';
-            var pdbsCountSelector = '#two-groups-crystal-tab .crystal-count-'+group;
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            // Update view
-            $(pdbsCountSelector).html(pdbs.length);
-          }
-
-          update_text_in_modal();
-        }
-
-        $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
-          {
-              return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
-                  return $('input', td).prop('checked') ? '1' : '0';
-              } );
-          };
-
-        var oTable = [];
-        function showPDBtable(element) {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-          group = $(element+' .tableview').attr('group-number');
-          if (group) mode = mode + group;
-          if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
-              oTable[mode] = $(element+' .tableview table').DataTable({
-                'scrollX': true,
-                // 'paging': true,
-                // 'autoWidth': true,
-
-                scrollY:        '80vh',
-                // scrollCollapse: true,
-                paging:         false,
-                columnDefs: [
-                  { targets: 'no-sort', orderable: false }
-                ],
-                "aaSorting": [],
-                 "columns": [
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                { "orderDataType": "dom-checkbox" }
-                            ]
-              });
-
-              yadcf.init(oTable[mode],
-                [
-                    {
-                        column_number : 0,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Class",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 1,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                          width: '70px'
-                        },
-                        filter_default_label: "PDB",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 2,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Receptor",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        html_data_type: "text",
-                        select_type_options: {
-                          width: '150px'
-                        },
-                        filter_default_label: "Family",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 4,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Species",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 5,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                            minimumResultsForSearch: -1 // remove search box
-                        },
-                        filter_default_label: "State",
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-
-                    },
-                    {
-                        column_number : 6,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Representative",
-                        filter_reset_button_text: false,
-
-                    },
-                ],
-                {
-                    cumulative_filtering: false
-                }
-            );
-
-            yadcf.exResetAllFilters(oTable[mode]);
-
-            oTable[mode].on('draw.dt', function (e, oSettings) {
-                update_text_in_modal();
-            });
-
-          };
-        }
-
         function createTwoGroupFlareplotBox(data1, data2, data3, container, toggle = false) {
           // prepare two group data for visualization
           var data = data3;
@@ -3207,7 +3008,7 @@
                                 + '</li>';
                     });
                     content += '</ul></div>';*/
-                } else if (container.indexOf("single-group-crystal-tab") >= 0) {
+                } else if (container.indexOf("single-crystal-group-tab") >= 0) {
                     // slider 1 to count
                     /*content += '<h4 class="center">Frequency (#PDBs)</h4>'
                         + '<p>Range: <span id="pdbs-range-flare">1 - ' + data.pdbs.length + '</span></p>'
@@ -3334,7 +3135,7 @@
                 flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
                 //if ($(container + ' .flareplot-legend .color-box input[type=checkbox]').length > 0)
                 //  flareplot[container].showInteractions(interactionsToggleList);
-                if (container.indexOf("two-groups-crystal-tab") >= 0)
+                if (container.indexOf("two-crystal-groups-tab") >= 0)
                   updateTwoGroupSliders("skip", []);
 
                 updateGeneralControls()
@@ -3494,31 +3295,39 @@
                     // Add residue labels for GN residues
                     pdb_data[mode][0]['only_gn'].forEach( function(resNo, index){
                       var genNo = pdb_data[mode][0]['gn_map'][index]
-                      int_labels[mode][0][resNo] = genNo
+                      int_labels[mode][0][o.structure.id + "|" + resNo] = genNo
                     })
 
                     // listen to `hovered` signal to move tooltip around and change its text
-                    // TODO: implement this to handle two structures
                     stage[mode].signals.hovered.add(function (pickingProxy) {
                       var label_index = false
+                      var hide = true
 
                       if (pickingProxy && (pickingProxy.distance || pickingProxy.atom)) {
                         var mp = pickingProxy.mouse.position
+
                         if (pickingProxy.distance){
-                          label_index = pickingProxy.distance.atom1.resno + "-" + pickingProxy.distance.atom2.resno;
+                          label_index = pickingProxy.distance.atom1.structure.id + "|" + pickingProxy.distance.atom1.resno + "-" + pickingProxy.distance.atom2.resno;
                           ngl_tooltip.innerText = "INTERACTION:"
                         } else {
-                          label_index = pickingProxy.atom.resno;
+                          label_index = pickingProxy.atom.structure.id + "|" + pickingProxy.atom.resno;
                           ngl_tooltip.innerText = "RESIDUE:"
                         }
-                      }
 
-                      if (label_index && (label_index in int_labels[mode][0])) {
-                        ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
-                        ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
-                        ngl_tooltip.style.left = mp.x + 3 + "px"
-                        ngl_tooltip.style.display = "block"
-                      } else {
+                        if (label_index){
+                          if (label_index in int_labels[mode][0]) {
+                            ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
+                            hide = false
+                          } else if (mode=="two-groups" && (label_index in int_labels[mode][1])) {
+                            ngl_tooltip.innerText += " " +int_labels[mode][1][label_index]
+                            hide = false
+                          }
+                          ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
+                          ngl_tooltip.style.left = mp.x + 3 + "px"
+                          ngl_tooltip.style.display = "block"
+                        }
+                      }
+                      if (hide) {
                         ngl_tooltip.style.display = "none"
                       }
                     })
@@ -3674,12 +3483,18 @@
                               depthWrite: true
                             });
 
+                            // Add residue labels for GN residues
+                            pdb_data[mode][1]['only_gn'].forEach( function(resNo, index){
+                              var genNo = pdb_data[mode][1]['gn_map'][index]
+                              int_labels[mode][1][o.structure.id + "|" + resNo] = genNo
+                            })
+
                             reps[mode][1].structureComponent = o
                             createNGLRepresentations(mode, 1, false)
                             /*
                             // interactions for two groups tab
                             var res_int = []
-                            $('#two-groups-crystal-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+                            $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
                                 var rect = $(this);
                                 var genNo1 = rect.data('gen-no-1');
                                 var genNo2 = rect.data('gen-no-2');
@@ -3935,6 +3750,7 @@
 
                     // create link for "distance" representation
                     links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getInteractionColor(iType)}, "resID":resNo1+"-"+resNo2})
+                    int_labels[mode][structureNumber][o.structure.id + "|" + resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                   }
                 });
             } else if (mode=='single-group') {
@@ -3943,7 +3759,7 @@
               if ($('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider("instance"))
                 [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
 
-              $('#single-group-crystal-tab .heatmap-container rect[data-frequency]').each(function(e) {
+              $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
                   var rect = $(this);
                   var genNo1 = rect.data('gen-no-1');
                   var genNo2 = rect.data('gen-no-2');
@@ -3970,6 +3786,7 @@
                   if (!res_int.includes(resNo2)) res_int.push(resNo2)
 
                   links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getFrequencyColor(frequency)}, "resID":resNo1+"-"+resNo2})
+                  int_labels[mode][structureNumber][o.structure.id + "|" + resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                 });
             } else {
               // get cutoffs from control-tab if sliders are initialized
@@ -3981,7 +3798,7 @@
                   r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
               }
 
-              $('#two-groups-crystal-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+              $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
                   var rect = $(this);
 
                   // Generic numbering
@@ -4019,7 +3836,7 @@
                   }
 
                   links.push({"atoms": [resNo1+":"+pdb_data[mode][structureNumber]['chain']+".CA",resNo2+":"+pdb_data[mode][structureNumber]['chain']+".CA"], "data":{"color":getFrequencyColor(-1*frequency)}, "resID":resNo1+"-"+resNo2})
-                  int_labels[mode][structureNumber][resNo1+"-"+resNo2] = genNo1+" - "+genNo2
+                  int_labels[mode][structureNumber][o.structure.id + "|" + resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                 });
             }
 
@@ -4130,23 +3947,23 @@
         $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
           showPDBtable('#single-crystal-pdb-modal-table');
         })
-        $('#single-group-crystal-pdbs-modal-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#single-group-crystal-pdbs-modal-table');
+        $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-crystal-group-pdbs-modal-table');
         })
-        $('#two-groups-crystal-pdbs-modal-1-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#two-groups-crystal-pdbs-modal-1-table');
+        $('#two-crystal-group-pdbs-modal-1-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#two-crystal-group-pdbs-modal-1-table');
         })
-        $('#two-groups-crystal-pdbs-modal-2-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#two-groups-crystal-pdbs-modal-2-table');
+        $('#two-crystal-group-pdbs-modal-2-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#two-crystal-group-pdbs-modal-2-table');
         })
 
 
         function initializePdbChooserTables() {
           $.get('pdbtabledata', function ( data ) {
             $('#single-crystal-pdb-modal-table .tableview').html(data);
-            $('#single-group-crystal-pdbs-modal-table .tableview').html(data);
-            $('#two-groups-crystal-pdbs-modal-1-table .tableview').html(data);
-            $('#two-groups-crystal-pdbs-modal-2-table .tableview').html(data);
+            $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
+            $('#two-crystal-group-pdbs-modal-1-table .tableview').html(data);
+            $('#two-crystal-group-pdbs-modal-2-table .tableview').html(data);
             pdbtabledata = data;
           });
         }
@@ -4159,17 +3976,17 @@
         }
 
         function initializeSingleGroupCrystalView() {
-//            initializeSegmentButtons('#single-group-crystal-tab');
-            initializeGoButton('#single-group-crystal-tab', renderSingleCrystalGroupHeatmap, true);
-            initializeFullscreenButton('#single-group-crystal-tab');
-            initializeInteractionButtons('#single-group-crystal-tab');
+//            initializeSegmentButtons('#single-crystal-group-tab');
+            initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
+            initializeFullscreenButton('#single-crystal-group-tab');
+            initializeInteractionButtons('#single-crystal-group-tab');
         }
 
         function initializeTwoCrystalGroupsView() {
-//            initializeSegmentButtons('#two-groups-crystal-tab');
-            initializeGoButtonTwoCrystalGroups('#two-groups-crystal-tab', renderTwoCrystalGroupsHeatmap, true);
-            initializeFullscreenButton('#two-groups-crystal-tab');
-            initializeInteractionButtons('#two-groups-crystal-tab');
+//            initializeSegmentButtons('#two-crystal-groups-tab');
+            initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
+            initializeFullscreenButton('#two-crystal-groups-tab');
+            initializeInteractionButtons('#two-crystal-groups-tab');
         }
 
         function updateMatrix() {
@@ -4383,12 +4200,12 @@
 
             {% if pdbs %}
                 // handle post data (if present) for single group
-                loadPDBsView({{ pdbs | safe}}, '#single-group-crystal-tab', renderSingleCrystalGroupHeatmap, true)
+                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true)
             {% endif %}
 
             {% if pdbs1 and pdbs2 %}
                 // handle post data (if present) for two groups
-                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-groups-crystal-tab', renderTwoCrystalGroupsHeatmap, true);
+                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
             {% endif %}
         });
     </script>
@@ -4449,8 +4266,20 @@
             border-bottom: 0px solid #ddd;
         }
 
-        .modal-wide {
-          width: 1200px;
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
         }
 
         .modal-footer {
@@ -4741,19 +4570,19 @@
           border: none;
         }
 
-        #single-crystal-tab .panel .btn-primary:hover, #single-group-crystal-tab .panel .btn-primary:hover, #two-groups-crystal-tab .panel .btn-primary:hover {
+        #single-crystal-tab .panel .btn-primary:hover, #single-crystal-group-tab .panel .btn-primary:hover, #two-crystal-groups-tab .panel .btn-primary:hover {
             background-color: #337ab7;
         }
 
-        #single-crystal-tab .panel .btn-primary.active:hover, #single-group-crystal-tab .panel .btn-primary.active:hover, #two-groups-crystal-tab .panel .btn-primary.active:hover {
+        #single-crystal-tab .panel .btn-primary.active:hover, #single-crystal-group-tab .panel .btn-primary.active:hover, #two-crystal-groups-tab .panel .btn-primary.active:hover {
             background-color: #286090;
         }
 
-                #single-crystal-tab .panel .btn-primary:focus, #single-group-crystal-tab .panel .btn-primary:focus, #two-groups-crystal-tab .panel .btn-primary:focus {
+                #single-crystal-tab .panel .btn-primary:focus, #single-crystal-group-tab .panel .btn-primary:focus, #two-crystal-groups-tab .panel .btn-primary:focus {
             background-color: #337ab7;
         }
 
-        #single-crystal-tab .panel .btn-primary.active:focus, #single-group-crystal-tab .panel .btn-primary.active:focus, #two-groups-crystal-tab .panel .btn-primary.active:focus {
+        #single-crystal-tab .panel .btn-primary.active:focus, #single-crystal-group-tab .panel .btn-primary.active:focus, #two-crystal-groups-tab .panel .btn-primary.active:focus {
             background-color: #286090;
         }
 
@@ -4766,30 +4595,6 @@
         }
     </style>
 
-    <!-- NGL -->
-    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
-
-    <!-- Flareplot -->
-    <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare.js' %}"> </script>
-
-    <!-- 2D schematics -->
-    <script type="text/javascript" src="{% static 'home/js/schematicplot.js' %}"> </script>
-
-    <!-- D3 -->
-    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
-    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
-
-    <!-- Hiveplot -->
-    <script type="text/javascript" src="{% static 'home/js/hiveplot.js' %}"> </script>
-
-
-    <!-- TODO: Solve the conflict between flareplot-main.js and the existing PDB selector -->
-    <script type="text/javascript" src="{% static 'home/js/flareplot-contactbrowser.js' %}"> </script>
-    <script type="text/javascript" src="{% static 'home/js/flareplot-selectors.js' %}"> </script>
-    <script type="text/javascript" src="{% static 'home/js/flareplot-rangeslider.js' %}"> </script>
 
     <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
@@ -4828,31 +4633,31 @@
             background-color: #a1a5bd;
         }
 
-        .hiveplot-container .axis {
+        .hive-axis {
            stroke: #000;
            stroke-width:1.5px;
          }
 
-         .hiveplot-container .node {
+         .hive-node {
            stroke:#000;
          }
 
-         .hiveplot-container .link {
+         .hive-link {
            fill: none;
            stroke-width: 1px;
            stroke-opacity: 0.5;
          }
 
-         .hiveplot-container .link.turnedOn {
+         .hive-link.turnedOn {
            stroke-width: 3px;
          }
 
-         .hiveplot-container .link.turnedOff {
+         .hive-link.turnedOff {
            stroke-opacity: 0.2;
            stroke-width: 0.7px;
          }
 
-         .hiveplot-container .node.turnedOn {
+         .hive-node.turnedOn {
            stroke: red;
            stroke-width: 3px;
          }

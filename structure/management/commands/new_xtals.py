@@ -52,7 +52,7 @@ class Command(BaseBuild):
             uniprot_list = self.uniprots[positions[0]:]
         else:
             uniprot_list = self.uniprots[positions[0]:positions[1]]
-        
+
         q = QueryPDB(self.uniprots, self.yamls)
         for uni in uniprot_list:
             q.new_xtals(uni)
