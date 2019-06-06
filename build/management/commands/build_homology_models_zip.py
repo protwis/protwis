@@ -17,8 +17,6 @@ import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
 
 import Bio.PDB as PDB
-from modeller import *
-from modeller.automodel import *
 from collections import OrderedDict
 import os
 import shlex
@@ -70,6 +68,11 @@ class Command(BaseBuild):
             return s
         
     def handle(self, *args, **options):
+        s = ''
+        for i in range(7,355):
+            s+=str(i)+' '
+        print(s)
+        return 0
 
         self.cached_structures = {}
 
@@ -132,6 +135,8 @@ class Command(BaseBuild):
             StructureModelStatsRotamer.
         '''
         name_list = modelname.split('_')
+        if len(name_list)<3:
+            return 0
         if name_list[3] in ['Inactive','Active','Intermediate']:
             self.complex = False
             self.revise_xtal = False
