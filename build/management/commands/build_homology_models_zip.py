@@ -68,12 +68,6 @@ class Command(BaseBuild):
             return s
         
     def handle(self, *args, **options):
-        s = ''
-        for i in range(7,355):
-            s+=str(i)+' '
-        print(s)
-        return 0
-
         self.cached_structures = {}
 
         self.models_to_do = []
