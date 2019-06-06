@@ -110,7 +110,6 @@ class Command(BaseBuild):
         else:
             self.signprot = options['signprot']
         self.force_main_temp = options['force_main_temp']
-        self.debug = options['debug']
         self.skip_existing = options['skip_existing']
         self.existing_list = []
         if self.skip_existing:
@@ -190,10 +189,15 @@ class Command(BaseBuild):
                                                                                                     processor_id,i,datetime.now() - mod_startTime))
 
     def build_all_complex_models_for_receptor(self, receptor, count, i, processor_id):
-        first_in_subfam = True
         for gprotein_subfam, targets in self.gprotein_targets.items():
+            first_in_subfam = True
             # print(gprotein_subfam, targets)
             for target in targets:
+                ##### Delete this
+                if target not in ['gnao_human']:
+                    continue
+                #####
+                print(target, 'First in this subfamily: ', first_in_subfam)
                 # Only build gnat models with opsins
                 if receptor.family.parent.name!='Opsins' and target in ['gnat1_human','gnat2_human','gnat3_human']:
                     continue
@@ -218,6 +222,7 @@ class Command(BaseBuild):
                         else:
                             mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
                             mod.run(fast_refinement=True)
+
 
     def purge_complex_entries(self):
         if os.path.exists('./structure/complex_models_zip/'):

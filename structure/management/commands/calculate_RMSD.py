@@ -77,8 +77,8 @@ class Validation():
         for f in files:
             count+=1
             pdb = parser.get_structure('struct{}'.format(count), f)[0]
-            assign_gn = as_gn.GenericNumbering(structure=pdb)
-            pdb = assign_gn.assign_generic_numbers()
+            assign_gn = as_gn.GenericNumbering(pdb_file=f, sequence_parser=True)
+            pdb = assign_gn.assign_generic_numbers_with_sequence_parser()
             pdbs.append(pdb)
         chains = []
         for p in pdbs:
@@ -291,6 +291,9 @@ class Validation():
         ''' Calculates RMSD between two atoms lists. The two lists have to have the same length. 
         '''
         superpose = sp.RotamerSuperpose(list1, list2, TM_keys)
+        print(list1)
+        print(list2)
+        print(TM_keys)
         list2 = superpose.run()
         array1, array2 = np.array([0,0,0]), np.array([0,0,0])
         for a1, a2 in zip(list1, list2):

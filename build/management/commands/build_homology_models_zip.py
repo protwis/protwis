@@ -70,6 +70,11 @@ class Command(BaseBuild):
             return s
         
     def handle(self, *args, **options):
+        s = ''
+        for i in range(7,355):
+            s+=str(i)+' '
+        print(s)
+        return 0
 
         self.cached_structures = {}
 
@@ -132,6 +137,8 @@ class Command(BaseBuild):
             StructureModelStatsRotamer.
         '''
         name_list = modelname.split('_')
+        if len(name_list)<3:
+            return 0
         if name_list[3] in ['Inactive','Active','Intermediate']:
             self.complex = False
             self.revise_xtal = False
