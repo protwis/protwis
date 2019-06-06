@@ -59,6 +59,18 @@ function parseGPCRdb2flare(data) {
     "0": "#EEE"
   };
 
+  var segmentRainbowColors2 = {
+    "1": "#736DA7",
+    "2": "#5EB7B7",
+    "3": "#CE9AC6",
+    "4": "#DD7D7E",
+    "5": "#E6AF7C",
+    "6": "#DEDB75",
+    "7": "#80B96F",
+    "8": "#000000",
+    "0": "#EEE"
+  };
+
   function assignColor(segment) {
     var color = "";
     switch (segment) {
@@ -92,6 +104,39 @@ function parseGPCRdb2flare(data) {
     return color;
   }
 
+  function assignRainbowColor(segment) {
+    var color = "";
+    switch (segment) {
+      case "TM1":
+        color = segmentRainbowColors2["1"];
+        break;
+      case "TM2":
+        color = segmentRainbowColors2["2"];
+        break;
+      case "TM3":
+        color = segmentRainbowColors2["3"];
+        break;
+      case "TM4":
+        color = segmentRainbowColors2["4"];
+        break;
+      case "TM5":
+        color = segmentRainbowColors2["5"];
+        break;
+      case "TM6":
+        color = segmentRainbowColors2["6"];
+        break;
+      case "TM7":
+        color = segmentRainbowColors2["7"];
+        break;
+      case "H8":
+        color = segmentRainbowColors2["8"];
+        break;
+      default:
+        color = segmentRainbowColors2["0"];
+    }
+    return color;
+  }
+
   function separatePair(stringPair) {
     var regex = /([0-9x]+),([0-9x]+)/g;
     var m;
@@ -106,6 +151,7 @@ function parseGPCRdb2flare(data) {
     dataFlare.tracks[0].trackProperties.push({
       nodeName: residue,
       color: assignColor(data.segment_map[residue]),
+      rainbow: assignRainbowColor(data.segment_map[residue]),
       size: 1,
       segment: data.segment_map[residue]
     });
@@ -146,6 +192,7 @@ function parseGPCRdb2flare(data) {
           frequency: data.frequency[pair],
           count: data.count[pair],
           segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
+          rainbow: assignRainbowColor(data.segment_map[pairResidues[0]]), // Rainbow coloring
         });
     } else {
         dataFlare.edges.push({
@@ -158,6 +205,7 @@ function parseGPCRdb2flare(data) {
           frequency: interactions["any"]/data.pdbs.length,
           count: interactions["any"],
           segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
+          rainbow: assignRainbowColor(data.segment_map[pairResidues[0]]), // Rainbow coloring
         });
     }
   });

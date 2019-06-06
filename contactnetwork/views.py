@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q, F
+from django.db.models import Q, F, Prefetch
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 from django.db import connection
@@ -15,8 +15,11 @@ import copy
 from contactnetwork.models import *
 from contactnetwork.distances import *
 from structure.models import Structure, StructureVectors
+from structure.templatetags.structure_extras import *
+from construct.models import Construct
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber
+from interaction.models import StructureLigandInteraction
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -168,37 +171,132 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-@cache_page(60*60*24*7)
+# @cache_page(60*60*24*7)
 def PdbTableData(request):
 
-    data = Structure.objects.filter(refined=False).select_related(
+    constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
+    methods = {}
+    for c in constructs:
+        # print(c.name)
+        if c.crystallization and c.crystallization.crystal_method:
+            method = c.crystallization.crystal_method.name
+        else:
+            method = "N/A"
+        methods[c.name] = method
+
+    data = Structure.objects.filter(refined=False).prefetch_related(
+                "pdb_code",
                 "state",
-                "pdb_code__web_resource",
-                "protein_conformation__protein__species",
-                "protein_conformation__protein__source",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents", "construct__crystallization__crystal_method",
-                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
-                "protein_conformation__site_protein_conformation__site")
+                "stabilizing_agents",
+                "structureligandinteraction_set__ligand__properities__ligand_type",
+                "structureligandinteraction_set__ligand_role",
+                "protein_conformation__protein__parent__parent__parent",
+                "protein_conformation__protein__parent__family__parent",
+                "protein_conformation__protein__parent__family__parent__parent__parent",
+                "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
 
     data_dict = OrderedDict()
-    data_table = "<table class='display table' width='100%'><thead><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>Date</th><th><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></thead><tbody>\n"
+    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=8>Structure</th><th colspan=2>Signalling protein</th> \
+                                                                       <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></tr> \
+                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>% of class active<br> state-specific contacts</th><th>% of class inactive<br> state-specific contacts</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
+
     for s in data:
         pdb_id = s.pdb_code.index
         r = {}
         r['protein'] = s.protein_conformation.protein.parent.entry_short()
         r['protein_long'] = s.protein_conformation.protein.parent.short()
         r['protein_family'] = s.protein_conformation.protein.parent.family.parent.short()
-        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.short()
+        r['class'] = s.protein_conformation.protein.parent.family.parent.parent.parent.shorter()
         r['species'] = s.protein_conformation.protein.species.common_name
-        r['date'] = s.publication_date
+        # # r['date'] = s.publication_date
         r['state'] = s.state.name
-        r['representative'] = 'Yes' if s.representative else 'No'
+        r['contact_representative'] = 'Yes' if s.contact_representative else 'No'
+        r['contact_representative_score'] = "{:.0%}".format(s.contact_representative_score)
+
+        r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
+        r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
+
+        a_list = []
+        for a in s.stabilizing_agents.all():
+            a_list.append(a)
+        g_protein = only_gproteins(a_list)
+        arrestin = only_arrestins(a_list)
+        fusion = only_fusions(a_list)
+        antibody = only_antibodies(a_list)
+
+        r['method'] = methods[pdb_id] 
+        r['resolution'] = s.resolution
+        r['7tm_distance'] = s.distance
+        r['g_protein'] = g_protein
+        r['arrestin']  = arrestin
+        r['fusion'] = fusion
+        r['antibody'] = antibody
+
+        r['ligand'] = "-"
+        r['ligand_function'] = "-"
+        r['ligand_type'] = "-"
+
+        for l in s.ligands.all():
+            r['ligand'] = l.ligand.name
+            if len(r['ligand'])>20:
+                r['ligand'] = r['ligand'][:20] + ".."
+            r['ligand_function'] = l.ligand_role.name
+            r['ligand_type'] = l.ligand.properities.ligand_type.name
+        
+
         data_dict[pdb_id] = r
-        data_table += "<tr><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td><span>{}</span></td><td>{}</td><td>{}</td><td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' long='{}'  id='{}'></tr>\n".format(r['class'],pdb_id,r['protein_long'],r['protein_family'],r['species'],r['state'],r['representative'],r['date'],r['protein_long'],pdb_id)
+        data_table += "<tr> \
+                        <td>{}</td> \
+                        <td><span>{}</span></td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' long='{}'  id='{}'></td> \
+                        </tr>\n".format(
+                                        r['protein'],
+                                        r['protein_long'],
+                                        r['protein_family'],
+                                        r['class'],
+                                        r['species'],
+                                        r['method'],
+                                        pdb_id,
+                                        r['resolution'],
+                                        r['state'],
+                                        r['active_class_contacts_fraction'],
+                                        r['inactive_class_contacts_fraction'],
+                                        r['contact_representative_score'],
+                                        r['7tm_distance'],
+                                        r['g_protein'],
+                                        r['arrestin'],
+                                        r['fusion'],
+                                        r['antibody'],
+                                        r['ligand'],
+                                        r['ligand_function'],
+                                        r['ligand_type'],
+                                        r['contact_representative'],
+                                        r['protein_long'],
+                                        pdb_id
+                                        )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
+
+    # return render(request, 'contactnetwork/test.html', {'data_table':data_table})
 
 def InteractionBrowserData(request):
     def gpcrdb_number_comparator(e1, e2):
@@ -224,10 +322,10 @@ def InteractionBrowserData(request):
     try:
         pdbs1 = request.GET.getlist('pdbs1[]')
         pdbs2 = request.GET.getlist('pdbs2[]')
-        mode = 'double'
     except IndexError:
         pdbs1 = []
-
+    if pdbs1 and pdbs2:
+        mode = 'double'
     # PDB files
     try:
         pdbs = request.GET.getlist('pdbs[]')
@@ -241,6 +339,9 @@ def InteractionBrowserData(request):
 
     if pdbs1 and pdbs2:
         pdbs = pdbs1 + pdbs2
+
+    if mode == 'single':
+        pdbs1 = pdbs
 
     pdbs_upper = [pdb.upper() for pdb in pdbs]
     # Segment filters
@@ -403,7 +504,7 @@ def InteractionBrowserData(request):
                             if coord not in all_pdbs_pairs:
                                 all_pdbs_pairs[coord] = {}
                             all_pdbs_pairs[coord][pair] = p
-        cache.set("all_pdbs_aa_pairs",all_pdbs_pairs,60*60*30) #Cache results
+        cache.set("all_pdbs_aa_pairs",all_pdbs_pairs,60*60*24*7) #Cache results
     else:
         residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs
                 ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name').all()
@@ -462,12 +563,15 @@ def InteractionBrowserData(request):
                 data['interactions'][coord]['pdbs'].append(pdb_name)
             if protein not in data['interactions'][coord]['proteins']:
                 data['interactions'][coord]['proteins'].append(protein)
-            data['interactions'][coord]['secondary'].append([model,res1_aa,res2_aa])
+            data['interactions'][coord]['secondary'].append([model,res1_aa,res2_aa,pdb_name])
 
     data['secondary'] = {}
     secondary_dict = {'set1':0 , 'set2':0, 'aa_pairs':OrderedDict()}
+    secondary_dict_single = {'set':0 , 'aa_pairs':OrderedDict()}
     aa_pairs_dict = {'set1':0 , 'set2':0, 'class':{}}
+    aa_pairs_dict_single = {'set':0, 'class':{}}
     delete_coords = []
+    print(len(data['interactions']),'interactions2')
     for c,v in data['interactions'].items():
         if mode == 'double':
             if len(v["pdbs1"])+len(v["pdbs2"])==0:
@@ -545,11 +649,79 @@ def InteractionBrowserData(request):
                         if data['secondary'][c][i]['aa_pairs'][aa_pair]["set1"] == 0 and data['secondary'][c][i]['aa_pairs'][aa_pair]["set2"] == 0:
                             del data['secondary'][c][i]['aa_pairs'][aa_pair] 
 
-        # Order based on AA counts
-        for i in data['secondary'][c].keys():
-            data['secondary'][c][i]['aa_pairs'] = OrderedDict(sorted(data['secondary'][c][i]['aa_pairs'].items(), key=lambda x: x[1]["set1"]+x[1]["set2"], reverse = True))
+            # Order based on AA counts
+            for i in data['secondary'][c].keys():
+                data['secondary'][c][i]['aa_pairs'] = OrderedDict(sorted(data['secondary'][c][i]['aa_pairs'].items(), key=lambda x: x[1]["set1"]+x[1]["set2"], reverse = True))
             
-        data['secondary'][c] = OrderedDict(sorted(data['secondary'][c].items(), key=lambda x: order.index(x[0])))
+            data['secondary'][c] = OrderedDict(sorted(data['secondary'][c].items(), key=lambda x: order.index(x[0])))
+        elif mode =='single':
+            # continue
+            if len(v["pdbs"])==0:
+                #empty
+                delete_coords.append(c)
+                continue
+            data['secondary'][c] = OrderedDict()
+            current = {}
+            current["set"] = pdbs1.copy()
+            setname = "set"
+            for s in v['secondary']:
+                i = s[0]
+                aa_pair = ''.join(s[1:3])
+                if s[3] in current[setname]:
+                    #remove PDB from current set, to deduce those without an interaction
+                    current[setname].remove(s[3])
+                if i not in data['secondary'][c]:
+                    data['secondary'][c][i] = copy.deepcopy(secondary_dict_single)
+                data['secondary'][c][i][setname] += 1
+                if aa_pair not in data['secondary'][c][i]['aa_pairs']:
+                    data['secondary'][c][i]['aa_pairs'][aa_pair] = copy.deepcopy(aa_pairs_dict_single)
+                    # Count overall occurances in sets
+                    aa1 = s[1]
+                    aa2 = s[2]
+                    gen1 = c.split(",")[0]
+                    gen2 = c.split(",")[1]
+                    pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
+                    pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
+                    pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2))
+                    pdbs_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
+                    data['secondary'][c][i]['aa_pairs'][aa_pair]['pair_set'] = pdbs_with_pair
+
+                    if c+aa_pair in class_pair_lookup:
+                        data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = class_pair_lookup[c+aa_pair]
+                    else:
+                        data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = "-"
+
+                data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
+            
+            i = 'None' ## Remember to also have this name in the "order" dict.
+            data['secondary'][c][i] = copy.deepcopy(secondary_dict_single) 
+            data['secondary'][c][i][setname] += len(current[setname])
+            for aa_pair, pdbs in all_pdbs_pairs[c].items():
+                if aa_pair not in data['secondary'][c][i]['aa_pairs']:
+                    data['secondary'][c][i]['aa_pairs'][aa_pair] = copy.deepcopy(aa_pairs_dict_single)
+                    if c+aa_pair in class_pair_lookup:
+                        data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = class_pair_lookup[c+aa_pair]
+                    else:
+                        data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = "-"
+
+                    aa1 = aa_pair[0]
+                    aa2 = aa_pair[1]
+                    gen1 = c.split(",")[0]
+                    gen2 = c.split(",")[1]
+                    pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
+                    pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
+                    pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2))
+                    pdbs_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
+                    data['secondary'][c][i]['aa_pairs'][aa_pair]['pair_set'] = pdbs_with_pair
+                    
+
+                for pdb in current[setname]:
+                    if pdb in pdbs:
+                        # if pdb without interaction is in pdbs of aa_pair, add one.
+                        data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
+                if data['secondary'][c][i]['aa_pairs'][aa_pair]["set"] == 0:
+                    del data['secondary'][c][i]['aa_pairs'][aa_pair] 
+    # print(delete_coords)
     for d in delete_coords:
         del data['interactions'][d]
 
@@ -560,6 +732,9 @@ def InteractionBrowserData(request):
         data['pdbs2'] = list(data['pdbs2'])
         data['proteins1'] = list(data['proteins1'])
         data['proteins2'] = list(data['proteins2'])
+    else:
+        data['pdbs'] = list(data['pdbs'])
+
     return JsonResponse(data)
 
 def DistanceDataGroups(request):
@@ -671,66 +846,76 @@ def DistanceDataGroups(request):
                     data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
 
     print('Start 1')
+    start = time.time()
     dis1 = Distances()
     dis1.load_pdbs(pdbs1)
-    dis1.fetch_and_calculate()
+    dis1.fetch_and_calculate(with_arr = True)
+    print('done fetching set 1',time.time()-start)
+    # dis1.calculate_window(list_of_gns)
+#    dis1.calculate()
 
-    dis1.calculate_window(list_of_gns)
-
+    start = time.time()
     dis2 = Distances()
     dis2.load_pdbs(pdbs2)
-    dis2.fetch_and_calculate()
-    dis2.calculate_window(list_of_gns)
+    dis2.fetch_and_calculate(with_arr = True)
+    # dis2.calculate_window(list_of_gns)
+    #dis2.calculate()
+    print('done fetching set 2',time.time()-start)
 
     diff = OrderedDict()
     from math import sqrt
     from scipy import stats
 
-    for d1 in dis1.stats_window_reduced:
+    # for d1 in dis1.stats_window_reduced:
     # for d1 in dis1.stats_window:
-    # for d1 in dis1.stats:
-        label = d1[0]
-        mean1 = d1[1]
-        dispersion1 = d1[4]
-        try:
-            #see if label is there
-            d2 = dis2.stats_window_key[label]
-            mean2 = d2[1]
-            dispersion2 = d2[4]
-            # mean2 = dis2.stats_key[label][1]
-            mean_diff = mean2-mean1
 
-            var1,var2 = d1[2],d2[2]
-            std1,std2 = sqrt(d1[2]),sqrt(d2[2])
+    start = time.time()
+    total = {}
+    common_labels = list(set(dis1.stats_key.keys()).intersection(dis2.stats_key.keys()))
+    for label in common_labels:
 
-            n1, n2 = d1[3],d2[3]
-            se1, se2 = std1/sqrt(n1), std2/sqrt(n2)
-            sed = sqrt(se1**2.0 + se2**2.0)
-            t_stat = (mean1 - mean2) / sed
+        # Get variables
+        d1, d2 = dis1.stats_key[label],dis2.stats_key[label]
+        # Correct decimal
+        mean1, mean2 = d1[1]/100,d2[1]/100
+        std1,std2 = d1[2]/100,d2[2]/100
+        var1,var2 = std1**2,std2**2
+        n1, n2 = d1[4],d2[4]
 
 
-            t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+        d1[5] = [x / 100 for x in d1[5]]
+        d2[5] = [x / 100 for x in d2[5]]
+        # Make easier readable output
+        individual_pdbs_1 = dict(zip(d1[6], d1[5]))
+        individual_pdbs_2 = dict(zip(d2[6], d2[5]))
 
-            df = n1+n2 - 2
+        mean_diff = mean2-mean1
 
-            p = 1 - stats.t.cdf(t_stat_welch,df=df)
+        # Save values for NGL calcs
+        gn1,gn2 = label.split("_")
+        if gn1 not in total:
+            total[gn1] = {}
+        if gn2 not in total:
+            total[gn2] = {}
+        total[gn1][gn2] = total[gn2][gn1] = round(mean_diff,1)
 
-            # print(label,mean1,mean2,std1,std2,n1,n2,t_stat,t_stat_welch,p)
+        ## T test to assess seperation of data
+        t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+        df = n1+n2 - 2
+        p = 1 - stats.t.cdf(t_stat_welch,df=df)
 
-            diff[label] = [round(mean_diff),[std1,std2],[mean1,mean2],[n1,n2],p]
+        diff[label] = [round(mean_diff,1),[std1,std2],[mean1,mean2],[n1,n2],p,[individual_pdbs_1,individual_pdbs_2]]
 
-
-        except:
-            pass
     diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1][0])))
 
+    print('done diff',time.time()-start)
     compared_stats = {}
 
     # Remove differences that seem statistically irrelevant
     for label,d in diff.items():
-        if d[-1]>0.05:
-            d[0] = 0
+        if d[4]>0.05:
             #print(label,d)
+            d[0] = 0
     print('done')
 
     # Dict to keep track of which residue numbers are in use
@@ -738,6 +923,10 @@ def DistanceDataGroups(request):
     max_diff = 0
     #for d in dis.stats:
     for key,d in diff.items():
+
+        # Ignore low means diff.
+        if d[0]<0.5 and d[0]>-0.5:
+            continue
         res1 = key.split("_")[0]
         res2 = key.split("_")[1]
         res1_seg = res1.split("x")[0]
@@ -763,7 +952,7 @@ def DistanceDataGroups(request):
         #     data['interactions'][coord][pdb_name] = []
 
         if d:
-            if len(data['interactions'])<50000:
+            if len(data['interactions'])<10000:
 
                 data['interactions'][coord] = d
             else:
@@ -780,22 +969,14 @@ def DistanceDataGroups(request):
 
     data['segments'] = list(data['segments'])
     data['pdbs'] = list(pdbs1+pdbs2)
+    data['pdbs1'] = list(pdbs1)
+    data['pdbs2'] = list(pdbs2)
     data['max_diff'] = max_diff
-
-    total = {}
+    print(len(data['interactions']),'len data')
+    #total = {}
+    start = time.time()
     ngl_max_diff = 0
-    for i,gn1 in enumerate(list_of_gns):
-        if gn1 not in total:
-            total[gn1] = {}
-        for gn2 in list_of_gns[i:]:
-            if gn2 not in total:
-                total[gn2] = {}
-            label = "{}_{}".format(gn1,gn2)
-            if label in dis1.stats_window_key:
-                if label in dis2.stats_window_key:
-                    value = round(dis2.stats_window_key[label][1]-dis1.stats_window_key[label][1])
-                    total[gn1][gn2] =  value
-                    total[gn2][gn1] =  value
+    for gn1 in total.keys():
         vals = []
         for gn,val in total[gn1].items():
             if gn[0]!=gn1[0]:
@@ -803,8 +984,9 @@ def DistanceDataGroups(request):
                 vals.append(val)
         total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),1)
         if abs(total[gn1]['avg'])>ngl_max_diff:
-            ngl_max_diff = round(abs(total[gn1]['avg']))
+            ngl_max_diff = round(abs(total[gn1]['avg']),1)
 
+    print('done ngl',time.time()-start)
     data['ngl_data'] = total
     data['ngl_max_diff'] = ngl_max_diff
     print('send json')
@@ -1098,13 +1280,16 @@ def DistanceData(request):
 
     dis = Distances()
     dis.load_pdbs(pdbs)
-    dis.fetch_and_calculate()
-    dis.calculate_window()
+    start = time.time()
+    dis.fetch_and_calculate(with_arr = True)
+    print('done fetching',time.time()-start)
+    # dis.calculate_window()
 
     excluded_segment = ['C-term','N-term']
     segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
     proteins =  Protein.objects.filter(protein__entry_name__in=pdbs_lower).distinct().all()
 
+    start = time.time()
     list_of_gns = []
     if len(proteins)>1:
         a = Alignment()
@@ -1138,10 +1323,12 @@ def DistanceData(request):
                     data['pos_map'][r.sequence_number] = r.amino_acid
                     data['segment_map_full_gn'][r.generic_number.label] = r.protein_segment.slug
 
+    print('done alignment',time.time()-start)
     # Dict to keep track of which residue numbers are in use
     number_dict = set()
     max_dispersion = 0
-    for d in dis.stats_window_reduced:
+    start = time.time()
+    for d in dis.stats:
         # print(d)
         res1 = d[0].split("_")[0]
         res2 = d[0].split("_")[1]
@@ -1168,23 +1355,28 @@ def DistanceData(request):
         # if pdb_name not in data['interactions'][coord]:
         #     data['interactions'][coord][pdb_name] = []
         if len(pdbs) > 1:
-            if d[4]:
-                if len(data['interactions'])<50000:
-                    data['interactions'][coord] = [round(d[1]),round(d[4],3)]
+            if d[3]:
+                # correct data decimal
+                d[5] = [x / 100 for x in d[5]]
+                # Make easier readable output
+                individual_pdbs = dict(zip(d[6], d[5]))
+
+                if len(data['interactions'])<2000:
+                    data['interactions'][coord] = [round(d[1])/100,round(d[3],3),individual_pdbs]
                 else:
                     break
 
-                if d[4]>max_dispersion:
-                    max_dispersion = round(d[4],3)
+                if d[3]>max_dispersion:
+                    max_dispersion = round(d[3],3)
         else:
             if d[1]:
-                if len(data['interactions'])<50000:
-                    data['interactions'][coord] = [round(d[1]),round(d[1],3)]
+                if len(data['interactions'])<2000:
+                    data['interactions'][coord] = [round(d[1])/100,round(d[1],3)/100,d[-1]]
                 else:
                     break
 
-                if d[1]>max_dispersion:
-                    max_dispersion = round(d[1],3)
+                if d[1]>max_dispersion*100:
+                    max_dispersion = round(d[1],3)/100
         # data['sequence_numbers'] = sorted(number_dict)
     if (generic):
         data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
@@ -1196,6 +1388,7 @@ def DistanceData(request):
     data['pdbs'] = list(pdbs)
     data['max_dispersion'] = max_dispersion
 
+    print('done data prep',time.time()-start)
     total = {}
     ngl_max_diff = 0
     for i,gn1 in enumerate(list_of_gns):
@@ -1205,8 +1398,8 @@ def DistanceData(request):
             if gn2 not in total:
                 total[gn2] = {}
             label = "{}_{}".format(gn1,gn2)
-            if label in dis.stats_window_key:
-                value = dis.stats_window_key[label][4]
+            if label in dis.stats_key:
+                value = dis.stats_key[label][3]
                 total[gn1][gn2] =  value
                 total[gn2][gn1] =  value
         vals = []
@@ -1214,9 +1407,9 @@ def DistanceData(request):
             if gn[0]!=gn1[0]:
                 #if not same segment
                 vals.append(val)
-        total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),1)
+        total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),3)**2
         if abs(total[gn1]['avg'])>ngl_max_diff:
-            ngl_max_diff = round(abs(total[gn1]['avg']))
+            ngl_max_diff = round(abs(total[gn1]['avg']),3)
 
     data['ngl_data'] = total
     data['ngl_max_diff'] = ngl_max_diff
@@ -1470,3 +1663,11 @@ def ServePDB(request, pdbname):
         data['center_axis'] = sv.center_axis
 
     return JsonResponse(data)
+
+def StateContacts(request):
+    contacts = ConsensusInteraction.objects.filter(state_specific = True).prefetch_related('gn1','gn2','state','protein_class').all()
+    context = {}
+    context['contacts'] = contacts
+    return render(request, 'contactnetwork/state_contacts.html', context)
+
+
