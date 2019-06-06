@@ -226,7 +226,7 @@ def PdbTableData(request):
         antibody = only_antibodies(a_list)
 
         r['method'] = methods[pdb_id] 
-        r['resolution'] = s.resolution
+        r['resolution'] = "{0:.2g}".format(s.resolution)
         r['7tm_distance'] = s.distance
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin

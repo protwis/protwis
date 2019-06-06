@@ -2911,9 +2911,9 @@
         function initializeFullscreenButton(selector) {
             // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
             $(selector + ' .btn-fullscreen').click(function() {
-//                console.log($(this).parent().next().attr('id'));
+                  // console.log($(this).parent().parent().next().children().first());
 //                console.log($(this).attr('id'));
-                fullScreenElement = $(this).parent().next().children().first();
+                fullScreenElement = $(this).parent().parent().next().children().first();
                 fullScreenElement.css('background-color','white');
                 toggleFullScreen(fullScreenElement.get(0));
             });
