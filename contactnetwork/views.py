@@ -882,13 +882,6 @@ def DistanceDataGroups(request):
         var1,var2 = std1**2,std2**2
         n1, n2 = d1[4],d2[4]
 
-
-        d1[5] = [x / 100 for x in d1[5]]
-        d2[5] = [x / 100 for x in d2[5]]
-        # Make easier readable output
-        individual_pdbs_1 = dict(zip(d1[6], d1[5]))
-        individual_pdbs_2 = dict(zip(d2[6], d2[5]))
-
         mean_diff = mean2-mean1
 
         # Save values for NGL calcs
@@ -898,11 +891,19 @@ def DistanceDataGroups(request):
         if gn2 not in total:
             total[gn2] = {}
         total[gn1][gn2] = total[gn2][gn1] = round(mean_diff,1)
+        # Make easier readable output
+        d1[5] = [x / 100 for x in d1[5]]
+        d2[5] = [x / 100 for x in d2[5]]
+        individual_pdbs_1 = dict(zip(d1[6], d1[5]))
+        individual_pdbs_2 = dict(zip(d2[6], d2[5]))
 
-        ## T test to assess seperation of data
-        t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
-        df = n1+n2 - 2
-        p = 1 - stats.t.cdf(t_stat_welch,df=df)
+        if n1>1 and n2>1 and var1>0 and var2>0:
+            ## T test to assess seperation of data (only if N>1 and there is variance)
+            t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+            df = n1+n2 - 2
+            p = 1 - stats.t.cdf(t_stat_welch,df=df)
+        else:
+            p = 0
 
         diff[label] = [round(mean_diff,1),[std1,std2],[mean1,mean2],[n1,n2],p,[individual_pdbs_1,individual_pdbs_2]]
 
