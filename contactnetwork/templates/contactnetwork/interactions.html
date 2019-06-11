@@ -1656,7 +1656,7 @@
                 contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r270s-1,1");
+                // label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -1684,7 +1684,7 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r180s-1,1");
+                // label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
                 contentGroup.add(line);
@@ -1814,6 +1814,48 @@
                             });
 
                             cells.push(cell);
+
+
+                            var cell = heatmap.rect(j, i, 1, 1);
+
+                            // Create cell for interaction
+                            cell.attr({
+                                'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                                'data-interaction-type': interaction,
+                                'data-res-no-1': seq_i,
+                                'data-res-no-2': seq_j,
+                                'data-aa-1': aa_map[seq_i],
+                                'data-aa-2': aa_map[seq_j],
+                                'data-seg-1': segment_map[seq_i],
+                                'data-seg-2': segment_map[seq_j],
+                                'data-gen-no-1': genStrI,
+                                'data-gen-no-2': genStrJ,
+                                'class': 'heatmap-interaction' + ' ' + getFriendlyInteractionName(interaction).replace(/ /g,"-"),
+                                'id': interactionId
+                            });
+                            contentGroup.add(cell);
+                            cell = $(heatMapSelector + ' rect.heatmap-interaction');
+
+                            // Add tooltip to cell
+                            cell.tooltip({
+                                'container': heatMapSelector,
+                                'placement': 'top',
+                                'delay': 0,
+                                'html': true,
+                                'title': title
+                            });
+
+                            // Add popover to cells
+                            cell.popover({
+                                'container': heatMapSelector,
+                                'placement': 'bottom',
+                                'animation': true,
+                                'html': true,
+                                'title': 'Interactions at ' + aa_map[seq_i] + seq_i + ', ' + aa_map[seq_j] + seq_j,
+                                'content': popoverTable,
+                                'tabindex': '0'
+                            });
+
                         });
                     }
                 }
@@ -1821,7 +1863,7 @@
 
             // Add cover-up triangle
             var bbox = contentGroup.getBBox();
-            contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
+            // contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
 
             // Add bottom line
             var line = heatmap.line(bbox.x, bbox.y, bbox.x2, bbox.y2);
@@ -1835,7 +1877,7 @@
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r225s-1,1");
+            // g.transform("r225s-1,1");
 
 
             // Populate heatmap legend
@@ -2027,7 +2069,7 @@
                 contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r270s-1,1");
+                // label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -2055,7 +2097,7 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r180s-1,1");
+                // label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
                 contentGroup.add(line);
@@ -2134,19 +2176,55 @@
                         });
 
                         contentGroup.add(cell);
+
+                        // DUPLICATE
+                        var cell = heatmap.rect(j, i, 1, 1);
+                        cell.attr({
+                            'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                            'data-num-interactions': nInteractions,
+                            'data-total-possible-interactions': data.pdbs.length,
+                            'data-frequency': frequency,
+                            'data-gen-no-1': seq_i,
+                            'data-gen-no-2': seq_j,
+                            'data-seg-1': segment_map[seq_i],
+                            'data-seg-2': segment_map[seq_j],
+                            'class': 'heatmap-interaction'
+                        });
+
+                        $(heatMapSelector + ' rect.heatmap-interaction').tooltip({
+                            'container': heatMapSelector,
+                            'placement': 'top',
+                            'delay': 75,
+                            'title': title,
+                            'html': true
+                        });
+
+                        // Add popover to cells
+                        $(heatMapSelector + ' rect.heatmap-interaction').popover({
+                            'container': heatMapSelector,
+                            'placement': 'bottom',
+                            'animation': true,
+                            'html': true,
+                            'title': 'Interactions at ' + seq_i + ', ' + seq_j,
+                            'content': popoverTable,
+                            'tabindex': '0'
+                        });
+
+                        contentGroup.add(cell);
+
                     }
                 }
             }
 
             // Add cover-up triangle
-            var bbox = contentGroup.getBBox();
-            contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
+            // var bbox = contentGroup.getBBox();
+            // contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
 
             // Rotate contents
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r225s-1,1");
+            // g.transform("r225s-1,1");
 
             // Populate heatmap legend
             var legendHtml = '<h4 class="center">Frequency (#Structures)</h4>'
@@ -2331,7 +2409,7 @@
                 contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r270s-1,1");
+                // label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -2359,7 +2437,7 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r180s-1,1");
+                // label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
                 contentGroup.add(line);
@@ -2455,21 +2533,59 @@
                             'content': popoverTable,
                             'tabindex': '0'
                         });
+                        contentGroup.add(cell);
 
+
+                        var cell = heatmap.rect(j, i, 1, 1);
+
+                        cell.attr({
+                            'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                            'data-frequency-diff': fDiff,
+                            'data-gen-no-1': seq_i,
+                            'data-gen-no-2': seq_j,
+                            'data-seg-1': segment_map[seq_i],
+                            'data-seg-2': segment_map[seq_j],
+                            'data-group-1-num-ints': n1,
+                            'data-group-2-num-ints': n2,
+                            'data-group-1-num-pdbs': data1.pdbs.length,
+                            'data-group-2-num-pdbs': data2.pdbs.length,
+                            'data-group-1-freq': f1.toFixed(2),
+                            'data-group-2-freq': f2.toFixed(2),
+                            'class': 'heatmap-interaction'
+                        });
+
+                        $(heatMapSelector + ' rect.heatmap-interaction').tooltip({
+                            'container': heatMapSelector,
+                            'placement': 'top',
+                            'delay': 75,
+                            'html': true,
+                            'title': title
+                        });
+
+                        // Add popover to cells
+                        $(heatMapSelector + ' rect.heatmap-interaction').popover({
+                            'container': heatMapSelector,
+                            'placement': 'bottom',
+                            'animation': true,
+                            'html': true,
+                            'title': 'Interactions at ' + seq_i + ', ' + seq_j,
+                            'content': popoverTable,
+                            'tabindex': '0'
+                        });
                         contentGroup.add(cell);
                     }
                 }
             }
 
             // Add cover-up triangle
-            var bbox = contentGroup.getBBox();
-            contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
+            // var bbox = contentGroup.getBBox();
+            // contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
 
             // Rotate contents
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r225s-1,1");
+            // g.transform("r225s-1,1");
 
             // Populate heatmap legend
             var legendHtml = '<h4 class="center">Frequency</h4>'
@@ -3692,6 +3808,9 @@
         var linkMap = {}
         var linkColourScheme = {}
         function createNGLRepresentations(mode, structureNumber, update = false) {
+          if (mode=='single-crystal-tab') {mode='single'}
+          if (mode=='single-crystal-group-tab') {mode='single-group'}
+          if (mode=='two-crystal-groups-tab') {mode='two-groups'}
             var links = []
             var res_int = []
             if (mode in reps && structureNumber in reps[mode] && reps[mode][structureNumber].structureComponent)
@@ -3717,7 +3836,7 @@
               var addedLinks = []
 
               // populate enabled interactions
-              $('#' + currentTab + "-crystal-tab .controls-panel input:checked").each( function (toggle) {
+              $('#' + currentTab + " .controls-panel input:checked").each( function (toggle) {
                 enabledInteractions.push($(this).data('interaction-type'))
               });
 
@@ -3756,8 +3875,8 @@
             } else if (mode=='single-group') {
               // get cutoffs from control-tab
               var [tMin,tMax] = [0, 9999999];
-              if ($('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider("instance"))
-                [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+              if ($('#' + currentTab + ' #pdbs-range-slider').slider("instance"))
+                [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
 
               $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
                   var rect = $(this);
@@ -3792,10 +3911,10 @@
               // get cutoffs from control-tab if sliders are initialized
               var r1, r2, r3;
               r1 = r2 = r3 = [-1000, 1000]
-              if ($('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider("instance")){
-                  r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                  r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                  r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+              if ($('#' + currentTab + ' #freq-slider-range-1').slider("instance")){
+                  r1 = $('#' + currentTab + ' #freq-slider-range-1').slider( "option", "values" );
+                  r2 = $('#' + currentTab + ' #freq-slider-range-2').slider( "option", "values" );
+                  r3 = $('#' + currentTab + ' #freq-slider-range-3').slider( "option", "values" );
               }
 
               $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
@@ -3991,10 +4110,10 @@
 
         function updateMatrix() {
             switch (currentTab) {
-                case "single":
-                    $('#' + currentTab+ '-crystal-tab .controls-panel input[type=checkbox]').each(function() {
+                case "single-crystal-tab":
+                    $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
                         var interactionType = $(this).data('interaction-type');
-                        var rects = $('#' + currentTab + '-crystal-tab .heatmap rect.' + interactionType);
+                        var rects = $('#' + currentTab + ' .heatmap rect.' + interactionType);
                         if ($(this).is(':checked')) {
                             rects.show();
                         } else {
@@ -4002,11 +4121,12 @@
                         }
                     });
                     break;
-                case "single-group":
-                    var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+                case "single-crystal-group-tab":
+                    // var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+                    var [tMin,tMax] = $('#pdbs-range-slider').slider( "option", "values" );
 
                     // Hide all below min treshold
-                    $('#' + currentTab + '-crystal-tab .heatmap rect').each(function() {
+                    $('.tab-pane.main_option.active .heatmap rect').each(function() {
                         var n = $(this).data("num-interactions");
                         if (n < tMin || tMax < n) {
                             $(this).hide();
@@ -4015,13 +4135,16 @@
                         }
                     });
                     break;
-                case "two-groups":
-                    var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                    var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                    var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
-
+                case "two-crystal-groups-tab":
+                    // var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
+                    // var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
+                    // var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+                    var r1 = $('#freq-slider-range-1').slider( "option", "values" );
+                    var r2 = $('#freq-slider-range-2').slider( "option", "values" );
+                    var r3 = $('#freq-slider-range-3').slider( "option", "values" );
                     // Hide all below min or above treshold
-                    $('#' + currentTab + '-crystal-tab .heatmap rect').each(function() {
+                    // $('#' + currentTab + '-crystal-tab .heatmap rect').each(function() {
+                    $('.tab-pane.main_option.active .heatmap rect').each(function() {
                         var f1 = $(this).data("group-1-freq");
                         var f2 = $(this).data("group-2-freq");
                         var f3 = $(this).data("frequency-diff");
@@ -4037,11 +4160,11 @@
 
         // TODO update for other tabs
         function updateFlareplot() {
-            var container = '#' + currentTab+ '-crystal-tab .flareplot-container'
+            var container = '#' + currentTab+ ' .flareplot-container'
             switch (currentTab) {
-                case "single":
+                case "single-crystal-tab":
                 interactionsToggleList = [];
-                $('#' + currentTab+ '-crystal-tab .controls-panel input[type=checkbox]').each(function() {
+                $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
                     // init toggle list
                     if ($(this).is(':checked'))
                         interactionsToggleList.push($(this).data('interaction-type'));
@@ -4051,15 +4174,15 @@
                 if (container in flareplot)
                     flareplot[container].showInteractions(interactionsToggleList);
                 break;
-                case "single-group":
-                    var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+                case "single-crystal-group-tab":
+                    var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
                     if (container in flareplot)
                         flareplot[container].updateRange(tMin, tMax);
                     break;
-                case "two-groups":
-                    var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                    var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                    var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+                case "two-crystal-groups-tab":
+                    var r1 = $('#' + currentTab + ' #freq-slider-range-1').slider( "option", "values" );
+                    var r2 = $('#' + currentTab + ' #freq-slider-range-2').slider( "option", "values" );
+                    var r3 = $('#' + currentTab + ' #freq-slider-range-3').slider( "option", "values" );
                     if (container in flareplot)
                         flareplot[container].updateRangeTwoGroups(r1[0], r1[1], r2[0], r2[1], r3[0], r3[1])
                     break;
@@ -4074,8 +4197,8 @@
         // TODO update for other tabs
         function updateSchematic() {
           switch (currentTab) {
-              case "single":
-                  $('#' + currentTab+ '-crystal-tab .controls-panel input[type=checkbox]').each(function() {
+              case "single-crystal-tab":
+                  $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
                       var interactionType = $(this).data('interaction-type');
                       var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path.' + interactionType);
                       if ($(this).is(':checked')) {
@@ -4085,11 +4208,11 @@
                       }
                   });
                   break;
-              case "single-group":
-                  var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+              case "single-crystal-group-tab":
+                  var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
 
                   // Hide all below min treshold
-                  var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path').each(function() {
+                  var paths = $('#' + currentTab+ ' .' + currentViz + '-container path').each(function() {
                       var n = $(this).data("num-interactions");
                       if (n < tMin || tMax < n) {
                           $(this).hide();
@@ -4098,13 +4221,13 @@
                       }
                   });
                   break;
-              case "two-groups":
-                  var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                  var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                  var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+              case "two-crystal-groups-tab":
+                  var r1 = $('#' + currentTab + '#freq-slider-range-1').slider( "option", "values" );
+                  var r2 = $('#' + currentTab + '#freq-slider-range-2').slider( "option", "values" );
+                  var r3 = $('#' + currentTab + '#freq-slider-range-3').slider( "option", "values" );
 
                   // Hide all below min or above treshold
-                  var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path').each(function() {
+                  var paths = $('#' + currentTab+ ' .' + currentViz + '-container path').each(function() {
                       var f1 = $(this).data("group-1-freq");
                       var f2 = $(this).data("group-2-freq");
                       var f3 = $(this).data("frequency-diff");
@@ -4146,25 +4269,27 @@
 
             // Always invoke NGL update
             createNGLRepresentations(currentTab , 0, currentTab)
-            if (currentTab=="two-groups") createNGLRepresentations(currentTab , 1, currentTab)
+            if (currentTab=="two-crystal-groups-tab") createNGLRepresentations(currentTab , 1, currentTab)
         }
 
         {% if pdbs1 %}
-            var currentTab = "two-groups";
+            var currentTab = "two-crystal-groups-tab";
         {% elif pdbs %}
-          var currentTab = "single-group";
+          var currentTab = "single-crystal-group-tab";
         {% else %}
-          var currentTab = "single";
+          var currentTab = "single-crystal-tab";
         {% endif %}
 
         var currentViz = "matrix";
         function updateCurrentTab(id){
+            alt = $('.main_option:visible').attr('id');
             var now = id.replace("-link", "")
             now = now.replace("-tab", "")
 
             // update settings
             currentTab = now.substr(0,now.lastIndexOf('-'))
             currentViz = now.replace(currentTab+"-", "")
+            currentTab = alt;
             redraw_renders();
         }
 
