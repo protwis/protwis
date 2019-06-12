@@ -38,7 +38,7 @@ class Command(BaseBuild):
 
     help = 'Reads bias data and imports it'
     # source file directory
-    #structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
+    # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
     structure_data_dir = '/protwis/sites/protwis/excel/'
     publication_cache = {}
     ligand_cache = {}
@@ -133,171 +133,125 @@ class Command(BaseBuild):
         temp = []
         print("start")
         for i, r in enumerate(rows, 1):
-            # code to skip rows in excel for faster testing
-            if i < 0:
-                continue
-            if i > 100:
-                break
+            #code to skip rows in excel for faster testing
+            # if i < 0:
+            #     continue
+            # if i > 100:
+            #     break
             print(i)
             d = {}
-            if r[5] != '':  # checks if the ligand field exists
+            if r[4] != '':  # checks if the ligand field exists
                 try:
+                    res = ''
+                    mut = ''
                     d['submitting_group'] = r[0]
-                    d['first_author'] = r[1]
-                    d['reference'] = r[2]
-                    d['ligand_name'] = r[5]
-                    d['ligand_type'] = r[6]
-                    d['ligand_id'] = r[7]
-                    d['receptor'] = r[8].lower().strip()
-                    d['receptor_mutant_aa_no'] = r[9]
-                    d['receptor_wt'] = r[10].strip()
-                    d['receptor_mut_aa'] = r[11]
-                    d['cell_line1'] = r[12]
-                    d['protein1'] = r[13].lower().strip()
-                    d['protein1_assay'] = r[14].strip()
-                    d['protein1_assay_method'] = r[15]
-                    d['cell_line2'] = r[16]
-                    d['protein2'] = r[17].lower().strip()
-                    d['protein2_assay'] = r[18].strip()
-                    d['protein2_assay_method'] = r[19]
-                    d['protein1_ligand_activity'] = r[20]
-                    d['protein1_ligand_mtype'] = r[21]
-                    d['protein1_ligand_equation'] = r[22]
-                    d['protein1_ligand_quantity'] = r[23]
-                    d['protein1_ligand_quantity_unit'] = r[24]
-                    d['protein1_ligand_quality'] = r[25]
-                    d['protein1_efficacy_measure'] = r[26]
-                    d['protein1_efficacy_equation'] = r[27]
-                    d['protein1_quantitaive_efficacy'] = r[28]
-                    d['protein1_quantitaive_efficacy_unit'] = r[29]
-                    d['protein1_reference_name'] = r[30]
-                    d['protein1_reference_type'] = r[31]
-                    d['protein1_reference_id'] = r[32]
-                    d['protein2_ligand_activity'] = r[33]
-                    d['protein2_ligand_mtype'] = r[34]
-                    d['protein2_ligand_equation'] = r[35]
-                    d['protein2_ligand_quantity'] = r[36]
-                    d['protein2_ligand_quantity_unit'] = r[37]
-                    d['protein2_ligand_quality'] = r[38]
-                    d['protein2_efficacy_measure'] = r[39]
-                    d['protein2_efficacy_equation'] = r[40]
-                    d['protein2_quantitaive_efficacy'] = r[41]
-                    d['protein2_quantitaive_efficacy_unit'] = r[42]
-                    d['protein2_reference_name'] = r[43]
-                    d['protein2_reference_type'] = r[44]
-                    d['protein2_reference_id'] = r[45]
-                    d['bias_measure_type'] = r[46]
-                    d['bias_pathway_relation'] = r[47]
-                    d['bias_quantity'] = r[48]
-                    d['bias_quality'] = r[49]
-                    d['bias_ligand_reference'] = r[50]
+                    d['reference'] = r[1]
+
+                    d['ligand_name'] = r[4]
+                    d['ligand_type'] = r[5]
+                    d['ligand_id'] = r[6]
+                    d['bias_reference'] = r[7]
+                    d['bias_ligand_name'] = r[8]
+                    d['bias_ligand_type'] = r[9]
+                    d['bias_ligand_id'] = r[10]
+
+                    d['receptor'] = r[11].lower().strip()
+                    d['receptor_mutant_aa_no'] = r[12]
+                    d['receptor_wt'] = r[13].strip()
+                    d['receptor_mut_aa'] = r[14]
+                    d['cell_line'] = r[15]
+                    d['protein'] = r[16].lower().strip()
+                    d['protein_assay'] = r[17].strip()
+                    d['protein_assay_method'] = r[18]
+                    d['protein_time_resolved'] = r[19]
+
+                    d['protein_ligand_function'] = r[20]
+                    d['protein_mtype'] = r[21]
+                    d['protein_activity_equation'] = r[22]
+                    d['protein_activity_quantity'] = r[23]
+                    d['protein_activity_quantity_unit'] = r[24]
+                    d['protein_activity_quality'] = r[25]
+                    d['protein_efficacy_measure'] = r[26]
+                    d['protein_efficacy_equation'] = r[27]
+                    d['protein_efficacy_quantity'] = r[28]
+                    d['protein_efficacy_quantity_unit'] = r[29]
+                    d['pathway_bias_initial'] = r[30]
+                    d['pathway_bias'] = r[31]
+
                     d['source_file'] = source_file + str(i)
 
                     if not isinstance(d['ligand_id'], str):
                         d['ligand_id'] = int(d['ligand_id'])
+                    if not isinstance(d['bias_ligand_id'], str):
+                        d['bias_ligand_id'] = int(d['bias_ligand_id'])
                     # coverts string to object
-                    if d['protein2_ligand_quantity'] == "":
-                        d['protein2_ligand_quantity'] = None
-                    if d['protein1_ligand_quantity'] == "":
-                        d['protein1_ligand_quantity'] = None
-                    if d['protein1_quantitaive_efficacy'] == "":
-                        d['protein1_quantitaive_efficacy'] = None
-                    if d['protein2_quantitaive_efficacy'] == "":
-                        d['protein2_quantitaive_efficacy'] = None
+                    if d['protein_activity_quantity'] == "":
+                        d['protein_activity_quantity'] = None
+                    if d['protein_efficacy_quantity'] == "":
+                        d['protein_efficacy_quantity'] = None
 
-                    res = ''
-                    mut = ''
-
-                    potency = self.calculate_potency_ratio(d['protein1_ligand_mtype'], d['protein1_ligand_quantity'],
-                                                           d['protein2_ligand_mtype'], d['protein2_ligand_quantity'])
-
+                    if not isinstance(d['pathway_bias'], float):
+                        d['pathway_bias'] = None                    
+                    if not isinstance(d['pathway_bias_initial'], float):
+                        d['pathway_bias_initial'] = None
+                    # fetch publicaition
                     pub = self.fetch_publication(d['reference'])
+                    # fetch main ligand
                     l = self.fetch_ligand(
                         d['ligand_id'], d['ligand_type'], d['ligand_name'], d['source_file'])
-
+                    # fetch reference_ligand
+                    reference_ligand = self.fetch_ligand(
+                        d['bias_ligand_id'], d['bias_ligand_type'], d['bias_ligand_name'], d['source_file'])
+                    # fetch protein
                     protein = self.fetch_protein(
                         d['receptor'], d['source_file'])
-
+                    # fetch protein Residue
                     if d['receptor_wt'] is "":
                         res = None
                     else:
                         res = self.fetch_residue(
                             protein, d['receptor_mutant_aa_no'], d['receptor_wt'])
+                    # fetch protein mutation
                     if d['receptor_mut_aa'] is "":
                         mut = None
                     else:
                         mut = self.fetch_mutation(
                             protein, res, d['receptor_mut_aa'], d['source_file'])
 
-                    if d['protein1_reference_id'] is not "":
-                        ligand1_reference = self.fetch_ligand(d['protein1_reference_id'],
-                                                              d['protein1_reference_type'],
-                                                              d['protein1_reference_name'],
-                                                              d['source_file']
-                                                              )
-                    else:
-                        ligand1_reference = None
-
-                    if d['protein2_reference_id'] is not None:
-                        ligand2_reference = self.fetch_ligand(d['protein2_reference_id'],
-                                                              d['protein2_reference_type'],
-                                                              d['protein2_reference_name'],
-                                                              d['source_file']
-                                                              )
-                    else:
-                        ligand2_reference = None
-
                     experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
-                                                        ligand=l,
                                                         publication=pub,
-                                                        mutation=mut,
-                                                        residue=res,
+                                                        ligand=l,
                                                         receptor=protein,
-                                                        bias_measure_type=d['bias_measure_type'],
-                                                        bias_pathway_relationship=d['bias_pathway_relation'],
-                                                        bias_quantitive_activity=d['bias_quantity'],
-                                                        bias_qualitative_activity=d['bias_quality'],
-                                                        bias_ligand_reference=None,
-                                                        potency_ratio=potency
-
+                                                        mutation=mut,
+                                                        residue=res
                                                         )
                     experiment_entry.save()
+                    print('---bias---', d['bias_reference'], '\n')
                     experiment_assay = ExperimentAssay(biased_experiment=experiment_entry,
-                                                       signalling_protein=d['protein1'],
-                                                       assay_type=d['protein1_assay'],
-                                                       assay_measure=d['protein1_assay_method'],
-                                                       ligand_function=d['protein1_ligand_activity'],
-                                                       quantitive_measure_type=d['protein1_ligand_mtype'],
-                                                       quantitive_activity=d['protein1_ligand_quantity'],
-                                                       quantitive_activity_sign=d['protein1_ligand_equation'],
-                                                       quantitive_unit=d['protein1_ligand_quantity_unit'],
-                                                       qualitative_activity=d['protein1_ligand_quality'],
-                                                       cell_line=d['cell_line1'],
-                                                       quantitive_efficacy=d['protein1_quantitaive_efficacy'],
-                                                       efficacy_measure_type=d['protein1_efficacy_measure'],
-                                                       efficacy_sign=d['protein1_efficacy_equation'],
-                                                       efficacy_unit=d['protein1_quantitaive_efficacy_unit'],
-                                                       ligand_reference=ligand1_reference
+                                                       signalling_protein=d['protein'],
+                                                       cell_line=d['cell_line'],
+                                                       assay_type=d['protein_assay'],
+                                                       assay_measure=d['protein_assay_method'],
+                                                       assay_time_resolved=d['protein_time_resolved'],
+                                                       ligand_function=d['protein_ligand_function'],
+                                                       quantitive_measure_type=d['protein_mtype'],
+                                                       quantitive_activity=d['protein_activity_quantity'],
+                                                       quantitive_activity_sign=d['protein_activity_equation'],
+                                                       quantitive_unit=d['protein_activity_quantity_unit'],
+                                                       qualitative_activity=d['protein_activity_quality'],
+
+                                                       quantitive_efficacy=d['protein_efficacy_quantity'],
+                                                       efficacy_measure_type=d['protein_efficacy_measure'],
+                                                       efficacy_sign=d['protein_efficacy_equation'],
+                                                       efficacy_unit=d['protein_efficacy_quantity_unit'],
+                                                       bias_reference = d['bias_reference'],
+                                                       bias_value=d['pathway_bias'],
+                                                       bias_value_initial=d['pathway_bias_initial'],
+                                                       bias_ligand_reference=reference_ligand
                                                        )
-                    experiment_assay2 = ExperimentAssay(biased_experiment=experiment_entry,
-                                                        signalling_protein=d['protein2'],
-                                                        assay_type=d['protein2_assay'],
-                                                        assay_measure=d['protein2_assay_method'],
-                                                        ligand_function=d['protein2_ligand_activity'],
-                                                        quantitive_measure_type=d['protein2_ligand_mtype'],
-                                                        quantitive_activity=d['protein2_ligand_quantity'],
-                                                        quantitive_activity_sign=d['protein2_ligand_equation'],
-                                                        quantitive_unit=d['protein2_ligand_quantity_unit'],
-                                                        qualitative_activity=d['protein2_ligand_quality'],
-                                                        cell_line=d['cell_line2'],
-                                                        quantitive_efficacy=d['protein2_quantitaive_efficacy'],
-                                                        efficacy_measure_type=d['protein2_efficacy_measure'],
-                                                        efficacy_sign=d['protein2_efficacy_equation'],
-                                                        efficacy_unit=d['protein2_quantitaive_efficacy_unit'],
-                                                        ligand_reference=ligand2_reference
-                                                        )
+
                     experiment_assay.save()
-                    experiment_assay2.save()
+
                 except Exception as msg:
                     print(msg)
                     self.mylog.exception(
@@ -308,16 +262,6 @@ class Command(BaseBuild):
             temp.append(d)
         return temp
 
-    def calculate_potency_ratio(self, pathway1_measure_type, pathway1_measure,
-                                pathway2_measure_type, pathway2_measure):
-        potency = 0.0
-        if (pathway1_measure_type.lower() == "ec50" and pathway2_measure_type.lower() == "ec50"):
-            potency = round(pathway1_measure / pathway2_measure,2)
-        elif (pathway1_measure_type.lower() == "pec50" and pathway2_measure_type.lower() == "pec50"):
-            potency = round(pathway1_measure - pathway2_measure,2)
-        else:
-            potency == None
-        return potency
 
     def fetch_mutation(self, protein, res, amino_acid, source):
         """
@@ -330,19 +274,19 @@ class Command(BaseBuild):
             print("protein is {}, residue = {} and aa is {}".format(
                 {protein}, {res}, {amino_acid}))
             print(protein.pk, res.pk)
-            mut = Mutation.objects.filter(protein=protein,
+            mut=Mutation.objects.filter(protein=protein,
                                           residue=res,
                                           amino_acid=amino_acid)
-            mut = mut.get()
+            mut=mut.get()
 
         except Exception as msg:
-            #print("error message from mutation: " + source, msg)
-            new_mut = Mutation(protein=protein,
+            # print("error message from mutation: " + source, msg)
+            new_mut=Mutation(protein=protein,
                                residue=res,
                                amino_acid=amino_acid)
             new_mut.save()
             print("Mutation created")
-            mut = self.fetch_mutation(protein, res, amino_acid, source)
+            mut=self.fetch_mutation(protein, res, amino_acid, source)
             self.mylog.exception(
                 "Mutation fetching error | module: fetch_mutation. Row # is : ", source)
         return mut
@@ -354,15 +298,15 @@ class Command(BaseBuild):
         required: sequence_number, amino_acid
         """
         try:
-            res = Residue.objects.filter(protein_conformation__protein=protein,
+            res=Residue.objects.filter(protein_conformation__protein=protein,
                                          sequence_number=int(sequence_number),
                                          amino_acid=amino_acid)
-            res = res.get()
+            res=res.get()
         except Exception as msg:
             print("error message from residue: ", msg)
             self.mylog.exception(
                 "residue fetching error | module: fetch_residue. " + source)
-            res = None
+            res=None
         return res
 
     def fetch_protein(self, protein_from_excel, source):
@@ -371,10 +315,10 @@ class Command(BaseBuild):
         requires: protein id, source
         """
         try:
-            protein = Protein.objects.filter(entry_name=protein_from_excel)
-            protein = protein.get()
+            protein=Protein.objects.filter(entry_name=protein_from_excel)
+            protein=protein.get()
         except Exception as msg:
-            protein = None
+            protein=None
             self.mylog.exception(
                 "Protein fetching error | module: fetch_protein. Row # is : ", source)
         return protein
@@ -385,20 +329,20 @@ class Command(BaseBuild):
         requires: ligand id, ligand id type, ligand name
         requires: source_file name
         """
-        l = None
+        l=None
         if str(ligand_id) in self.ligand_cache:
             if ligand_id in self.ligand_cache[str(ligand_id)]:
-                l = self.ligand_cache[str(ligand_id)][ligand_id]
+                l=self.ligand_cache[str(ligand_id)][ligand_id]
         else:
-            self.ligand_cache[str(ligand_id)] = {}
+            self.ligand_cache[str(ligand_id)]={}
 
         if not l:
             try:
-                l = get_or_make_ligand(
+                l=get_or_make_ligand(
                     ligand_id, ligand_type, str(ligand_name))
             except Exception as msg:
-                l = None
-                self.ligand_cache[str(ligand_name), ligand_id] = l
+                l=None
+                self.ligand_cache[str(ligand_name), ligand_id]=l
                 self.mylog.exception("Protein fetching error | module: fetch_ligand. Row # is : ",
                                      ligand_name, ligand_type, ligand_id, source_file)
         return l
@@ -410,35 +354,35 @@ class Command(BaseBuild):
         """
         try:
             float(publication_doi)
-            publication_doi = str(int(publication_doi))
+            publication_doi=str(int(publication_doi))
         except ValueError:
             pass
 
         if publication_doi.isdigit():  # assume pubmed
-            pub_type = 'pubmed'
+            pub_type='pubmed'
         else:  # assume doi
-            pub_type = 'doi'
+            pub_type='doi'
         if publication_doi not in self.publication_cache:
             try:
-                wl = WebLink.objects.get(
+                wl=WebLink.objects.get(
                     index=publication_doi, web_resource__slug=pub_type)
             except WebLink.DoesNotExist:
                 try:
-                    wl = WebLink.objects.create(index=publication_doi,
+                    wl=WebLink.objects.create(index=publication_doi,
                                                 web_resource=WebResource.objects.get(slug=pub_type))
                 except IntegrityError:
-                    wl = WebLink.objects.get(
+                    wl=WebLink.objects.get(
                         index=publication_doi, web_resource__slug=pub_type)
 
             try:
-                pub = Publication.objects.get(web_link=wl)
+                pub=Publication.objects.get(web_link=wl)
             except Publication.DoesNotExist:
-                pub = Publication()
+                pub=Publication()
                 try:
-                    pub.web_link = wl
+                    pub.web_link=wl
                     pub.save()
                 except IntegrityError:
-                    pub = Publication.objects.get(web_link=wl)
+                    pub=Publication.objects.get(web_link=wl)
 
                 if pub_type == 'doi':
                     pub.update_from_doi(doi=publication_doi)
@@ -450,31 +394,31 @@ class Command(BaseBuild):
                     self.mylog.debug(
                         "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
                     # if something off with publication, skip.
-            self.publication_cache[publication_doi] = pub
+            self.publication_cache[publication_doi]=pub
         else:
-            pub = self.publication_cache[publication_doi]
+            pub=self.publication_cache[publication_doi]
 
         return pub
 
     def prepare_all_data(self, filenames):
         if not filenames:
-            filenames = os.listdir(self.structure_data_dir)
+            filenames=os.listdir(self.structure_data_dir)
         for source_file in filenames:
-            #print("source_file " + str(source_file))
-            source_file_path = os.sep.join(
+            # print("source_file " + str(source_file))
+            source_file_path=os.sep.join(
                 [self.structure_data_dir, source_file]).replace('//', '/')
-            #print("source_file_path " + str(source_file_path))
+            # print("source_file_path " + str(source_file_path))
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
                 print('Reading file {}'.format(source_file_path))
                 # read the yaml file
-                rows = []
+                rows=[]
                 if source_file[-4:] == 'xlsx' or source_file[-3:] == 'xls':
                     if "~$" in source_file:
                         # ignore open excel files
                         continue
-                    rows = self.loaddatafromexcel(source_file_path)
-                    rows = self.analyse_rows(rows, source_file)
+                    rows=self.loaddatafromexcel(source_file_path)
+                    rows=self.analyse_rows(rows, source_file)
                 else:
                     self.mylog.debug('unknown format'.source_file)
                     continue

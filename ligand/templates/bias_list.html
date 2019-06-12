@@ -8,221 +8,277 @@
 {% block content %}
 <h2>Biased Ligands Browser</h2>
 <div class="row">
-    <div class="col-md-12 text-center">
-        {% if data %}
-        <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-          <table id="drugdata" class="display table">
-            <thead>
+  <div class="col-md-12 text-center">
+    {% if data %}
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <table id="drugdata" class="display table">
+        <thead>
+          <tr>
+            <th style="background-color:#18df8b;text-align:center">Reference <br>Ligand
+              <!-- <input autocomplete='off' class='filter' name='Ligand' placeholder='Search' data-col='Ligand' /> -->
+            </th>
+            <th style="background-color:#18df8b;text-align:center">Biased <br>Ligand
+              <!-- <input autocomplete='off' class='filter' name='Ligand' placeholder='Search' data-col='Ligand' /> -->
+            </th>
+            <th style="background-color:#18df8b;text-align:center">Receptor UniProt
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#18df8b;text-align:center">Receptor IUPHAR
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#18df8b;text-align:center">Gi/o <br>Log Potency
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#18df8c;text-align:center">Gs <br>Log Potency
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#18df8d;text-align:center">Gq/11 <br>Log Potency
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#18df8e;text-align:center">G12/13 <br>Log Potency
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#18df8a;text-align:center">B-arr <br>Log Potency
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
 
-    <tr>
-      <!-- <th>Link
-       <input style = " visibility: hidden" autocomplete='off' class='filter' name='Link' placeholder='Search' data-col='Link' />
-     </th> -->
-      <th style="background-color:#98df8a;text-align:center">Ligand
-        <!-- <input autocomplete='off' class='filter' name='Ligand' placeholder='Search' data-col='Ligand' /> -->
-      </th>
-      <th style="background-color:#98df8a;text-align:center">Receptor
-        <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-      </th>
-      <th style="background-color:#18df8b;text-align:center">Pathway 1
-        <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-      </th>
-      <th style="background-color:#18df8c;text-align:center">Pathway 2
-        <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-      </th>
-      <th style="background-color:#18df8d;text-align:center">Pathway 3
-        <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-      </th>
-      <th style="background-color:#18df8e;text-align:center">Pathway 4
-        <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-      </th>
-      <th style="background-color:#18df8a;text-align:center">Pathway 5
-        <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-      </th>
+            <th style="background-color:#98df8a;text-align:center">Gi/o Emax
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gs Emax
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gq/11 Emax
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">G12/13 Emax
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">B-arr Emax
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#aec7e8;text-align:center">1st potency
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">2nd potency
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Potency ratio
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Log bias factor <br>(ddLog(Emax/EC50)
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center; word-break:break-all;">Operational model <br>dd(Tau/Ka)
 
-      <th style="background-color:#aec7e8;text-align:center">Potency 1
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Potency 2
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Potency 3
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Potency 4
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Potency 5
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#98df8a;text-align:center"> Emax 1
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#98df8a;text-align:center"> Emax 2
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#98df8a;text-align:center"> Emax 3
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#98df8a;text-align:center"> Emax 4
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#98df8a;text-align:center"> Emax 5
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Bias Activity 1
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Bias Activity 2
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Bias Activity 3
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Bias Activity 4
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#aec7e8;text-align:center">Bias Activity 5
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#98df8a;text-align:center; width: 150px">Article Author <br />
-        <!-- <input autocomplete='off' class='filter' name='Article DOI' placeholder='Search' data-col='Article DOI' /> -->
-      </th>
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">3rd potency
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Potency ratio
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Log bias factor <br>(ddLog(Emax/EC50)
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center;word-break:break-all;">Operational model <br>dd(Tau/Ka)
 
-      <th style="background-color:#ffbb78;text-align:center">Cell Line 1
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Cell Line 2
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Cell Line 3
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Cell Line 4
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Cell Line 5
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Assay type 1
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Assay type 2
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Assay type 3
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Assay type 4
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-      <th style="background-color:#ffbb78;text-align:center">Assay type 5
-        <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-      </th>
-    </tr>
-    <tr>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-    </tr>
-  </thead>
-  <tbody>
-  {%for e in data.items%}
-      <tr>
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">4th potency
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Potency ratio
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Log bias factor <br>(ddLog(Emax/EC50)
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center;word-break:break-all;">Operational model <br>dd(Tau/Ka)
 
-        <td style="text-align:center">{{e.1.ligand}}</td>
-        <td style="text-align:center">{{e.1.receptor}}</td>
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center"> 5th potency
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Potency ratio
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Log bias factor <br>(ddLog(Emax/EC50)
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center;word-break:break-all;">Operational model <br>dd(Tau/Ka)
+              e
+              <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center; width: 150px">Article <br />
+              <!-- <input autocomplete='off' class='filter' name='Article DOI' placeholder='Search' data-col='Article DOI' /> -->
+            </th>
 
-          {% for xe in e.1.assay%}
-          <td style="text-align:center">{{xe.pathway}}</td>
-          {%endfor%}
+            <th style="background-color:#98df8a;text-align:center">Gi/o <br> Cell line
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gs <br> Cell line
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gq/11 <br> Cell line
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">G12/13 <br> Cell line
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">B-arr <br> Cell line
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gi/o <br> Ligand Function
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gs <br> Ligand Function
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gq/11 <br> Ligand Function
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">G12/13 <br> Ligand Function
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">B-arr <br> Ligand Function
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gi/o <br> Assay Type
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gs <br> Assay Type
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">Gq/11 <br> Assay Type
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">G12/13 <br> Assay Type
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+            <th style="background-color:#98df8a;text-align:center">B-arr <br> Assay Type
+              <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
+            </th>
+          </tr>
+          <tr>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+            <th style="text-align:center"> </th>
+          </tr>
+        </thead>
+        <tbody>
+          {%for e in data.items%}
+          <tr>
+            {%for ex in e.1.reference%}
+            {% if  forloop.first %}
+            <td style="text-align:center;">{{ex.reference_ligand}}</td>
+            {% endif %}
+            {%endfor%}
+            <td style="text-align:center;">{{e.1.ligand}}</td>
+            <td style="text-align:center;">{{e.1.receptor.accession}}</td>
+            <td style="text-align:center;">{{e.1.receptor.entry_name}}</td>
 
-          {% for xe in e.1.assay%}
-            {%if xe.quantitive_activity%}
-            <td style="text-align:center">{{xe.quantitive_activity}}</td>
-            {%elif xe.qualitative_activity %}
-            <td style="text-align:center">{{xe.qualitative_activity}}</td>
+
+            <td style="text-align:center;">{{e.1.family.gi.quantitive_activity}}</td>
+            <td style="text-align:center">{{e.1.family.gs.quantitive_activity}}</td>
+            <td style="text-align:center">{{e.1.family.gq.quantitive_activity}}</td>
+            <td style="text-align:center">{{e.1.family.g12.quantitive_activity}}</td>
+            <td style="text-align:center">{{e.1.family.br.quantitive_activity}}</td>
+            <td style="text-align:center">{{e.1.family.gi.quantitive_efficacy}}</td>
+            <td style="text-align:center">{{e.1.family.gs.quantitive_efficacy}}</td>
+            <td style="text-align:center">{{e.1.family.gq.quantitive_efficacy}}</td>
+            <td style="text-align:center">{{e.1.family.g12.quantitive_efficacy}}</td>
+            <td style="text-align:center">{{e.1.family.br.quantitive_efficacy}}</td>
+            {%for ex in e.1.biasdata%}
+            {% if  forloop.first %}
+            <td style="text-align:center">{{ex.1.pathway }}</td>
             {%else%}
-            <td style="text-align:center">No data</td>
-            {%endif%}
+            <td style="text-align:center">{{ex.1.pathway }}</td>
+            <td style="text-align:center">{{ex.1.bias }}</td>
+            <td style="text-align:center">{{ex.1.log_bias_factor }}</td>
+            <td style="text-align:center">{{ex.1.t_factor }}</td>
+            {% endif %}
+            {%endfor%}
+            <td style="
+                  text-align:center;
+                  width: 18%;
+                  word-wrap: break-word;
+                  word-break: break-all;
+                  white-space: normal;">
+              <a href='{{e.1.publication.web_link}}' target='blank'>{{e.1.publication.authors}}</td>
+
+
+                <td style="text-align:center;">{{e.1.family.gi.cell_line}}</td>
+                <td style="text-align:center">{{e.1.family.gs.cell_line}}</td>
+                <td style="text-align:center">{{e.1.family.gq.cell_line}}</td>
+                <td style="text-align:center">{{e.1.family.g12.cell_line}}</td>
+                <td style="text-align:center">{{e.1.family.br.cell_line}}</td>
+                <td style="text-align:center">{{e.1.family.gi.ligand_function}}</td>
+                <td style="text-align:center">{{e.1.family.gs.ligand_function}}</td>
+                <td style="text-align:center">{{e.1.family.gq.ligand_function}}</td>
+                <td style="text-align:center">{{e.1.family.g12.ligand_function}}</td>
+                <td style="text-align:center">{{e.1.family.br.ligand_function}}</td>
+                <td style="text-align:center">{{e.1.family.gi.assay_type}}</td>
+                <td style="text-align:center">{{e.1.family.gs.assay_type}}</td>
+                <td style="text-align:center">{{e.1.family.gq.assay_type}}</td>
+                <td style="text-align:center">{{e.1.family.g12.assay_type}}</td>
+                <td style="text-align:center">{{e.1.family.br.assay_type}}</td>
+
+          </tr>
           {%endfor%}
-
-        {% for xe in e.1.assay%}
-          {%if xe.quantitive_efficacy%}
-          <td style="text-align:center">{{xe.quantitive_efficacy}}</td>
-          {%else%}
-          <td style="text-align:center">No data</td>
-          {%endif%}
-        {%endfor%}
-
-
-          {% for xe in e.1.assay%}
-            {%if xe.bias%}
-            <td style="text-align:center">{{xe.bias}}</td>
-            {%else%}
-            <td style="text-align:center">No data</td>
-            {%endif%}
-          {%endfor%}
-
-        <td style="text-align:center">{{e.1.publication.authors}}</td>
-
-          {% for xe in e.1.assay%}
-
-            {%if xe.cell_line%}
-            <td style="text-align:center">{{xe.cell_line}}</td>
-            {%else%}
-            <td style="text-align:center">No data</td>
-            {%endif%}
-
-          {%endfor%}
-
-
-          {% for xe in e.1.assay%}
-            {%if xe.assay_type%}
-            <td style="text-align:center">{{xe.assay_type}}</td>
-            {%else%}
-            <td style="text-align:center">No data</td>
-            {%endif%}
-          {%endfor%}
-      </tr>
-  {%endfor%}
-</tbody>
-</table>
-        </div>
-    {% else %}
-        <p> Ooops! There is no data to show here yet. </p>
-    {% endif %}
+        </tbody>
+      </table>
     </div>
+    {% else %}
+    <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+  </div>
 </div>
 <br>
 <br>
@@ -235,98 +291,342 @@
 <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
 
 <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
-            var table = $('#drugdata').DataTable({
-                "scrollX": true,
-                // 'scrollY': $(window).height()-300,
-                'bScrollCollapse': true,
-                'paging': true,
-                "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
-                'orderCellsTop': true,
-                'autoWidth': true,
-                'dom': 'T<"clear">lfrtip',
-                'order': [[6, "desc"]], // order by date
-                "aoColumns": [
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"}
-                      ],
-                  'tableTools': {
-                      "sRowSelect": "multi",
-                      "aButtons": []
-                  },
-                  initComplete: function () {
-                      $('#drugdata').dataTable().columnFilter({
-                          'sPlaceHolder': "head:after",
-                          'aoColumns': [
-                              { type: "text" },
-                              { type: "text" },
-                              { type: "select" },
-                              { type: "select" }, 
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" },
-                              { type: "select" }
-                            ]
-                    });
-                }
-
-            });
+  $(document).ready(function() {
+    hideEmptyCols($("#drugdata"))
+    var table = $('#drugdata').DataTable({
+      "scrollX": true,
+      // 'scrollY': $(window).height()-300,
+      'bScrollCollapse': true,
+      'paging': false,
+      // "lengthMenu": [
+      //   [20, 50, 100, -1],
+      //   [20, 50, 100, "All"]
+      // ],
+      'orderCellsTop': true,
+      'autoWidth': true,
+      'dom': 'T<"clear">lfrtip',
+      'order': [
+        [6, "desc"]
+      ], // order by date
+      "aoColumns": [{
+          "sClass": "center"
+        },
+        {
+            "sClass": "center"
+          },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        },
+        {
+          "sClass": "center"
+        }
+      ],
+      'tableTools': {
+        "sRowSelect": "multi",
+        "aButtons": []
+      },
+      initComplete: function() {
+        $('#drugdata').dataTable().columnFilter({
+          'sPlaceHolder': "head:after",
+          'aoColumns': [{
+              type: "text"
+            },
+            {
+              type: "text"
+            },
+            {
+              type: "text"
+            },
+            {
+              type: "text"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "text"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            },
+            {
+              type: "select"
+            }
+          ]
         });
-    </script>
+      }
+
+    });
+  });
+</script>
+
+<script type="text/javascript">
+  function hideEmptyCols(table) {
+    //count # of columns
+    var numCols = $("th", table).length;
+    for (var i = 0; i <= numCols; i++) {
+      var empty = true;
+      //grab all the <td>'s of the column at i
+      $("td:nth-child(" + i + ")", table).each(function(index, el) {
+        //check if the  of this <td> is empty
+        console.log(el)
+        if ($("td", el).prevObject.text() != '') {
+
+          empty = false;
+          return false; //break out of each() early
+        }
+      });
+      if (empty) {
+        $("td:nth-child(" + i + ")", table).hide(); //hide <td>'s
+        $("th:nth-child(" + i + ")", table).hide(); //hide header <th>
+      }
+    }
+  }
+</script>
 {% endblock %}

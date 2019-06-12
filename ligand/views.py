@@ -468,6 +468,101 @@ def process_data(content):
     return rd
 
 
+def change(rd):
+    test = list()
+    send = dict()
+    increment = 0
+
+    for j in rd:
+        temp_dict = dict()
+        temp = dict()
+        doubles = []
+        temp['publication'] = j['main'].publication
+        temp['ligand'] = j['main'].ligand
+        temp['receptor'] = j['main'].receptor
+        if (j['children'][0].signalling_protein == 'β-arrestin' or
+            j['children'][0].signalling_protein == 'β-arrestin-1 (non-visual arrestin-2)' or
+                j['children'][0].signalling_protein == 'β-arrestin-2 (non-visual arrestin-3)'):
+            temp_dict['pathway'] = 'β-arrestin'
+
+        elif (j['children'][0].signalling_protein == 'gi/o-family' or
+              j['children'][0].signalling_protein == 'gαi1' or
+              j['children'][0].signalling_protein == 'gαi2' or
+              j['children'][0].signalling_protein == 'gαi3' or
+              j['children'][0].signalling_protein == 'gαo' or
+              j['children'][0].signalling_protein == 'gαoA' or
+              j['children'][0].signalling_protein == 'gαoB'):
+            temp_dict['pathway'] = 'Gi/o-family'
+
+        elif (j['children'][0].signalling_protein == 'gq-family' or
+                j['children'][0].signalling_protein == 'gαq' or
+                j['children'][0].signalling_protein == 'gαq11' or
+                j['children'][0].signalling_protein == 'gαq14' or
+                j['children'][0].signalling_protein == 'gαq14' or
+                j['children'][0].signalling_protein == 'gαq16' or
+                j['children'][0].signalling_protein == 'gαq14 (gαq16)'):
+            temp_dict['pathway'] = 'Gq-family'
+
+        elif (j['children'][0].signalling_protein == 'g12/13-family' or
+              j['children'][0].signalling_protein == 'gα12' or
+              j['children'][0].signalling_protein == 'gα13'):
+            temp_dict['pathway'] = 'G12/13-family'
+
+        elif (j['children'][0].signalling_protein == 'gs-family' or
+              j['children'][0].signalling_protein == 'gαs' or
+              j['children'][0].signalling_protein == 'gαolf'):
+            temp_dict['pathway'] = 'Gs-family'
+        else:
+            temp_dict['pathway'] = 'No data'
+
+        temp_dict['signalling_protein'] = j['children'][0].signalling_protein
+        temp_dict['cell_line'] = j['children'][0].cell_line
+        temp_dict['assay_type'] = j['children'][0].assay_type
+        temp_dict['assay_measure_method'] = j['children'][0].assay_measure
+        temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
+        temp_dict['qualitative_activity'] = j['children'][0].qualitative_activity
+        temp_dict['quantitive_efficacy'] = j['children'][0].quantitive_efficacy
+        temp_dict['bias'] = 'Not yet'
+        temp_dict['bias_reference'] = j['children'][0].bias_reference
+        temp_dict['bias_value'] = j['children'][0].bias_value
+        temp_dict['bias_value_initial'] = j['children'][0].bias_value_initial
+        temp_dict['reference_ligand'] = j['children'][0].bias_ligand_reference
+        temp_dict['ligand_function'] = j['children'][0].ligand_function
+
+        doubles.append(temp_dict)
+        temp['assay'] = doubles
+
+        send[increment] = temp
+
+        increment = increment + 1
+
+    #    print('---temp---',temp,'\n')
+    #    print('---send---',send[increment],'\n')
+
+    return send
+
+
+def process_references(dictionary):
+    references = list()
+    for item in dictionary.items():
+        if item[1]['assay'][0]['bias_reference'].lower() == 'yes':
+            references.append(item[1])
+            #del item
+
+    for item in dictionary.items():
+        for i in references:
+            if (i['publication'] == item[1]['publication'] and
+                    i['receptor'] == item[1]['receptor']):
+                if (item[1]['assay'][0]['signalling_protein'] == i['assay'][0]['signalling_protein'] and
+                    item[1]['assay'][0]['assay_type'] == i['assay'][0]['assay_type'] and
+                    item[1]['assay'][0]['cell_line'] == i['assay'][0]['cell_line'] and
+                        item[1]['assay'][0]['assay_measure_method'] == i['assay'][0]['assay_measure_method']):
+                    item[1]['reference'] = i['assay']
+
+                else:
+                    continue
+
+
 def process_dublicates(dictionary):
     '''
     Recieve data from "process_data"
@@ -478,100 +573,104 @@ def process_dublicates(dictionary):
     result = []
     context = {}
     send = {}
-    for j in dictionary:
-        name = j['main'].submission_author + \
-            str(j['main'].ligand.pk) + str(j['main'].receptor.pk)
+    for j in dictionary.items():
+        name = str(j[1]['publication']) + \
+            '/' + str(j[1]['ligand']) + '/' + str(j[1]['receptor'])
         temp_obj = list()
+        reference_obj = list()
         if(name in context):
             temp_obj = context[name]['sub']
-            for i in j['children']:
-                sizeofList = len(temp_obj)
-                # print(temp_obj)
-                p = 0
-                temp_obj = temp_obj + j['children']
+            reference_obj = context[name]['reference']
 
+            for i in j[1]['assay']:
+                temp_obj = temp_obj + j[1]['assay']
+            for i in j[1]['reference']:
+                reference_obj = reference_obj + j[1]['reference']
         else:
-            for entry in j['children']:
+            for entry in j[1]['assay']:
                 temp_obj.append(entry)
-        context[name] = j
-        context[name].pop('children')
+
+            for entry in j[1]['reference']:
+                reference_obj.append(entry)
+
+        context[name] = j[1]
+        context[name].pop('assay')
         context[name]['sub'] = temp_obj
+        context[name]['reference'] = reference_obj
         context[name]['experiment'] = parse_children(context[name])
+
         send[name] = parse_children(context[name])
+        send[name]['reference'] = reference_obj
         doubles = send[name]['assay']
         doubles = [dict(t) for t in {tuple(d.items()) for d in doubles}]
+        # potency sorting
         doubles = sorted(
             doubles, key=lambda k: k['quantitive_activity'] if k['quantitive_activity'] else 0,  reverse=True)
 
         send[name]['assay'] = doubles
 
+    # assay_five(send)
+    group_family(send)
+    for i in send.items():
+        test = dict()
+        i[1].pop('assay')
+        # family sorting
+        test = sorted(i[1]['family'].items(), key=lambda x: x[1]['quantitive_activity']
+                      if x[1]['quantitive_activity'] else 0,  reverse=False)
+        i[1]['biasdata'] = test
+        #verify_calc(i[1]['biasdata'], i[1]['reference'])
+        calc_potency(i[1]['biasdata'])
+        calc_bias_factor(i[1]['biasdata'], i[1]['reference'])
+        print('---send---', i,'\n')
+        for j in i[1]['family'].items():
+            if(j[1]['quantitive_activity'] is not None and
+            j[1]['quantitive_efficacy'] is not None):
+                j[1]['quantitive_activity'] = round(math.log10(j[1]['quantitive_activity']),1)
+                j[1]['quantitive_efficacy'] = int(j[1]['quantitive_efficacy'])
     assay_five(send)
-    calc_bias(send)
     return send
 
-
-def calc_bias(send):
-    for i in send.items():
-        temp_dict = dict()
-
-        potency_main = 0
-        for j in enumerate(i[1]['assay']):
-            if(j[1]['quantitive_activity'] != None and j[1]['quantitive_activity'] != 'No data' and
-               j[1]['quantitive_efficacy'] != 'No data' and
-                    j[1]['quantitive_efficacy'] != None):
-                potency_main = j[1]['quantitive_activity']
-                emax_main = j[1]["quantitive_efficacy"]
-            else:
-                continue
-
-        for j in enumerate(i[1]['assay']):
-            bias_dict = 0
-            if(j[1]['quantitive_activity'] != None and j[1]['quantitive_activity'] != 'No data' and
-               j[1]['quantitive_activity'] != potency_main and
-               j[1]['quantitive_efficacy'] != 'No data' and
-                    j[1]['quantitive_efficacy'] != None):
-
-                potency = j[1]['quantitive_activity']
-                emax = j[1]['quantitive_efficacy']
-                bias_dict = math.log(
-                    emax_main / potency_main) - math.log(emax / potency)
-                j[1]['bias'] = bias_dict
-                print('potency---', emax_main, '\n')
-                print('potency_main---', potency_main, '\n')
-            else:
-                j[1]['bias'] = 'No data'
-            # i[1]['assay'].append(temp_dict)
-            print('assay---', j, '\n')
-
+def verify_calc(biasdata, reference):
+    for item in enumerate(biasdata):
+        print('---biasdata---', item,'\n')
+    for item in enumerate(reference):
+        print('---reference---', item,'\n')
 
 def assay_five(send):
+    '''Used to fill empty tempalte spaces '''
     for i in send.items():
         temp_dict = dict()
         bias_dict = 0
 
-        if len(i[1]['assay']) < 5:
-            for j in range(len(i[1]['assay']), 5):
-                temp_dict['pathway'] = 'No data'
-                temp_dict['signalling_protein'] = 'No data'
-                temp_dict['cell_line'] = 'No data'
-                temp_dict['assay_type'] = 'No data'
-                temp_dict['quantitive_activity'] = 'No data'
-                temp_dict['qualitative_activity'] = 'No data'
-                temp_dict['quantitive_efficacy'] = 'No data'
+        if len(i[1]['biasdata']) < 5:
+            temp_dict['pathway'] = ''
+            temp_dict['bias'] = ''
+            temp_dict['cell_line'] = ''
+            temp_dict['assay_type'] = ''
+            temp_dict['log_bias_factor'] = ''
+            temp_dict['t_factor'] = ''
+            temp_dict['ligand_function'] = ''
 
-                i[1]['assay'].append(temp_dict)
+            for j in range(len(i[1]['biasdata']), 5):
+                test = ('No_data', temp_dict)
+
+                i[1]['biasdata'].append(test)
 
 
 def parse_children(context):
+
     temp = dict()
     test = list()
     assay_list = list()
 
     for k in context.items():
-        if k[0] == 'main':
-            temp['publication'] = k[1].publication
-            temp['ligand'] = k[1].ligand
-            temp['receptor'] = k[1].receptor
+
+        if k[0] == 'ligand':
+            temp['ligand'] = k[1]
+        elif k[0] == 'receptor':
+            temp['receptor'] = k[1]
+        elif k[0] == 'publication':
+            temp['publication'] = k[1]
 
         elif k[0] == 'sub':
             counter = 0
@@ -579,62 +678,143 @@ def parse_children(context):
                 temp_dict = dict()
                 # add logic of  families
 
-                if (i.signalling_protein == 'β-arrestin' or
-                    i.signalling_protein == 'β-arrestin-1 (non-visual arrestin-2)' or
-                        i.signalling_protein == 'β-arrestin-2 (non-visual arrestin-3)'):
+                if (i['signalling_protein'] == 'β-arrestin' or
+                    i['signalling_protein'] == 'β-arrestin-1 (non-visual arrestin-2)' or
+                        i['signalling_protein'] == 'β-arrestin-2 (non-visual arrestin-3)'):
                     temp_dict['pathway'] = 'β-arrestin'
 
-                elif (i.signalling_protein == 'gi/o-family' or
-                      i.signalling_protein == 'gαi1' or
-                      i.signalling_protein == 'gαi2' or
-                      i.signalling_protein == 'gαi3' or
-                      i.signalling_protein == 'gαo' or
-                      i.signalling_protein == 'gαoA' or
-                      i.signalling_protein == 'gαoB'):
+                elif (i['signalling_protein'] == 'gi/o-family' or
+                      i['signalling_protein'] == 'gαi1' or
+                      i['signalling_protein'] == 'gαi2' or
+                      i['signalling_protein'] == 'gαi3' or
+                      i['signalling_protein'] == 'gαo' or
+                      i['signalling_protein'] == 'gαoA' or
+                      i['signalling_protein'] == 'gαoB'):
                     temp_dict['pathway'] = 'Gi/o-family'
 
-                elif (i.signalling_protein == 'gq-family' or
-                        i.signalling_protein == 'gαq' or
-                        i.signalling_protein == 'gαq11' or
-                        i.signalling_protein == 'gαq14' or
-                        i.signalling_protein == 'gαq14' or
-                        i.signalling_protein == 'gαq16' or
-                        i.signalling_protein == 'gαq14 (gαq16)'):
+                elif (i['signalling_protein'] == 'gq-family' or
+                        i['signalling_protein'] == 'gαq' or
+                        i['signalling_protein'] == 'gαq11' or
+                        i['signalling_protein'] == 'gαq14' or
+                        i['signalling_protein'] == 'gαq14' or
+                        i['signalling_protein'] == 'gαq16' or
+                        i['signalling_protein'] == 'gαq14 (gαq16)'):
                     temp_dict['pathway'] = 'Gq-family'
 
-                elif (i.signalling_protein == 'g12/13-family' or
-                      i.signalling_protein == 'gα12' or
-                      i.signalling_protein == 'gα13'):
+                elif (i['signalling_protein'] == 'g12/13-family' or
+                      i['signalling_protein'] == 'gα12' or
+                      i['signalling_protein'] == 'gα13'):
                     temp_dict['pathway'] = 'G12/13-family'
 
-                elif (i.signalling_protein == 'gs-family' or
-                      i.signalling_protein == 'gαs' or
-                      i.signalling_protein == 'gαolf'):
-                    temp_dict['pathway'] = 'gs-family'
+                elif (i['signalling_protein'] == 'gs-family' or
+                      i['signalling_protein'] == 'gαs' or
+                      i['signalling_protein'] == 'gαolf'):
+                    temp_dict['pathway'] = 'Gs-family'
+                else:
+                    temp_dict['pathway'] = 'No data'
 
-                temp_dict['signalling_protein'] = i.signalling_protein
-                temp_dict['cell_line'] = i.cell_line
-                temp_dict['assay_type'] = i.assay_type
-                temp_dict['quantitive_activity'] = i.quantitive_activity
-                temp_dict['qualitative_activity'] = i.qualitative_activity
-                temp_dict['quantitive_efficacy'] = i.quantitive_efficacy
+                temp_dict['signalling_protein'] = i['signalling_protein']
+                temp_dict['cell_line'] = i['cell_line']
+                temp_dict['assay_type'] = i['assay_type']
+                temp_dict['quantitive_activity'] = i['quantitive_activity']
+                temp_dict['qualitative_activity'] = i['qualitative_activity']
+                temp_dict['quantitive_efficacy'] = i['quantitive_efficacy']
                 temp_dict['bias'] = 'Not yet'
-
+                temp_dict['t_value'] = i['bias_value']
+                temp_dict['t_coefficient'] = i['bias_value_initial']
+                temp_dict['ligand_function'] = i['ligand_function']
                 assay_list.append(temp_dict)
             temp['assay'] = assay_list
 
-        context = temp
+    context = temp
     return context
+    for i in enumerate(biasdata):
+        print('---biasdata---', biasdata, '\n')
 
-    #print('----', new_l)
+
+def group_family(send):
+
+    for item in send.items():
+
+        context = dict()
+        for i in item[1]['assay']:
+
+            if i['pathway'] == 'β-arrestin':
+                context['br'] = i
+                #item[1]['family']= context
+            elif i['pathway'] == 'Gi/o-family':
+                context['gi'] = i
+                #item[1]['gi']= i
+            elif i['pathway'] == 'Gq-family':
+                context['gq'] = i
+                #item[1]['gq']= i
+            elif i['pathway'] == 'G12/13-family':
+                context['g12'] = i
+                #item[1]['g12']= i
+            elif i['pathway'] == 'Gs-family':
+                context['gs'] = i
+                #item[1]['gs']= i
+            else:
+                continue
+            item[1]['family'] = context
+
+
+def calc_potency(biasdata):
+    most_potent = dict()
+    for i in enumerate(biasdata):
+        if i[0] == 0:
+            most_potent = i[1][1]
+        else:
+            if i[1][1]['quantitive_activity'] is not None and most_potent['quantitive_activity'] is not None:
+                i[1][1]['bias'] = round(
+                    i[1][1]['quantitive_activity'] / most_potent['quantitive_activity'], 1)
+            if i[1][1]['t_value'] is not None and most_potent['t_value'] is not None:
+                i[1][1]['t_factor'] = round(
+                    i[1][1]['t_value'] - most_potent['t_value'], 1)
+
+        #print(ii,'---pre biasdata ---', data,'\n')
+
+
+def calc_bias_factor(biasdata, reference):
+    most_reference = dict()
+    most_potent = dict()
+    for i in enumerate(biasdata):
+        temp_reference = dict()
+        for j in reference:
+            if i[0] == 0:
+                most_potent = i[1][1]
+                if (i[1][1]['assay_type'] == j['assay_type'] and
+                    i[1][1]['cell_line'] == j['cell_line'] and
+                        i[1][1]['signalling_protein'] == j['signalling_protein']):
+                    most_reference = j
+
+            else:
+                if (i[1][1]['assay_type'] == j['assay_type'] and
+                    i[1][1]['cell_line'] == j['cell_line'] and
+                        i[1][1]['signalling_protein'] == j['signalling_protein']):
+                    temp_reference = j
+                if (i[1][1]['quantitive_activity'] is not None and most_potent['quantitive_activity'] is not None and
+                    i[1][1]['quantitive_efficacy'] is not None and most_potent['quantitive_efficacy'] is not None and
+                    j['quantitive_efficacy'] is not None and j['quantitive_efficacy'] is not None):
+                    i[1][1]['log_bias_factor'] = round(((most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - (most_reference['quantitive_efficacy'] / most_reference['quantitive_activity'])) -
+                                                       ((i[1][1]['quantitive_efficacy'] / i[1][1]['quantitive_activity']) - (j['quantitive_efficacy'] / j['quantitive_activity'])), 1)
 
 
 def bias_list(request):
     context = {}
     content = BiasedExperiment.objects.all().prefetch_related(
-        'experiment_data', 'ligand', 'receptor', 'publication')
+        'experiment_data', 'ligand', 'receptor', 'publication', 'experiment_data__bias_ligand_reference')
+    # merge children
     pre_data = process_data(content)
+    # transform to combined dictionary
+    combined = change(pre_data)
+    # combine references
+    process_references(combined)
+
+    # prepare dataset
+    # process_dublicates(combined)
+
     #print("pre_data", pre_data)
-    context.update({'data': process_dublicates(pre_data)})
+    context.update({'data': process_dublicates(combined)})
     #print("context -----", context, '\n')
     return render(request, 'bias_list.html', context)
