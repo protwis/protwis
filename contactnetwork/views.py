@@ -471,16 +471,18 @@ def InteractionBrowserData(request):
         all_pdbs = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', flat=True))
         all_pdbs = [x.lower() for x in all_pdbs]
         residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=all_pdbs,
-                    generic_number__label__in=all_interaction_residues).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name').all()
+                    generic_number__label__in=all_interaction_residues).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__name').all()
         
         r_lookup = {}
         r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
+        segm_lookup = {}
 
         for r in residues:
             if r['generic_number__label'] not in all_interaction_residues:
                 continue
             r_lookup[r['pk']] = r
             r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
+            segm_lookup[r['generic_number__label']] = r['protein_segment__name']
 
         gen_keys = sorted(r_pair_lookup.keys(), key=functools.cmp_to_key(gpcrdb_number_comparator))
         all_pdbs_pairs = {}
@@ -507,14 +509,16 @@ def InteractionBrowserData(request):
         cache.set("all_pdbs_aa_pairs",all_pdbs_pairs,60*60*24*7) #Cache results
     else:
         residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs
-                ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name').all()
+                ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__slug').all()
         r_lookup = {}
         r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
+        segm_lookup = {}
 
         for r in residues:
             r_lookup[r['pk']] = r
             r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
-         
+            segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
+    
     for i in interactions:
         s = i['interacting_pair__referenced_structure__pk']
         pdb_name = s_lookup[s][1]
@@ -540,7 +544,11 @@ def InteractionBrowserData(request):
 
         if mode == 'double':
             if coord not in data['interactions']:
-                data['interactions'][coord] = {'pdbs1':[], 'proteins1': [], 'pdbs2':[], 'proteins2': [], 'secondary1' : [], 'secondary2' : []}
+                data['interactions'][coord] = {'pdbs1':[], 'proteins1': [], 'pdbs2':[], 'proteins2': [], 'secondary1' : [], 'secondary2' : [], 'class_seq_cons' : 0, 'types' : []}
+            
+            if model in i_types:
+                if model not in data['interactions'][coord]['types']:
+                    data['interactions'][coord]['types'].append(model)
             if pdb_name in pdbs1:
                 if model in i_types:
                     if pdb_name not in data['interactions'][coord]['pdbs1']:
@@ -583,10 +591,12 @@ def InteractionBrowserData(request):
             current["set1"] = pdbs1.copy()
             current["set2"] = pdbs2.copy()
             
+            distinct_aa_pairs = set()
             for setname,iset in [['set1','secondary1'],['set2','secondary2']]:
                 for s in v[iset]:
                     i = s[0]
                     aa_pair = ''.join(s[1:3])
+                    distinct_aa_pairs.add(aa_pair)
                     if s[3] in current[setname]:
                         #remove PDB from current set, to deduce those without an interaction
                         current[setname].remove(s[3])
@@ -614,6 +624,13 @@ def InteractionBrowserData(request):
                             data['secondary'][c][i]['aa_pairs'][aa_pair]['class'] = "-"
 
                     data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
+
+            sum_cons = 0
+            for aa_pair in distinct_aa_pairs:
+                if c+aa_pair in class_pair_lookup:
+                    sum_cons += class_pair_lookup[c+aa_pair]
+
+            v['class_seq_cons'] = sum_cons
 
             i = 'None' ## Remember to also have this name in the "order" dict.
             data['secondary'][c][i] = copy.deepcopy(secondary_dict) 
@@ -727,6 +744,7 @@ def InteractionBrowserData(request):
 
     data['pdbs'] = list(data['pdbs'])
     data['proteins'] = list(data['proteins'])
+    data['segm_lookup'] = segm_lookup
     if mode == 'double':
         data['pdbs1'] = list(data['pdbs1'])
         data['pdbs2'] = list(data['pdbs2'])

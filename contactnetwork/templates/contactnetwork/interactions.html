@@ -434,6 +434,32 @@
 
                       </div>
                 </div>
+                <div class="row">
+                      <div class="col-md-12" id="single-group-primary-browser">
+                           <div class="panel panel-default">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Primary Browser</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                <table class="table browser-table display">
+                                  <thead>
+                                    <tr>
+                                      <th>GN1</th>
+                                      <th>GN2</th>
+                                      <th>GPCRs %</th>
+                                      <th>Structures %</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    
+                                  </tbody>
+                                </table>
+                              </div>
+                           </div>
+                      </div>
+                </div>
 
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
@@ -655,6 +681,45 @@
 
                   </div>
 
+                </div>
+
+                <div class="row">
+                      <div class="col-md-12" >
+                           <div class="panel panel-default">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Primary Browser</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                <table class="table browser-table display">
+                                  <thead>
+                                    <tr>
+                                      <th colspan="2">Segment</th>
+                                      <th colspan="2">Generic No</th>
+                                      <th colspan="3"> Frequency (%)</th>
+                                      <th>Type(s)</th>
+                                      <th>Class Seq Cons(%)</th>
+                                    </tr>
+                                    <tr>
+                                      <th></th>
+                                      <th></th>
+                                      <th></th>
+                                      <th></th>
+                                      <th>Grp 1<br></th>
+                                      <th>Grp 2<br></th>
+                                      <th>Diff<br></th>
+                                      <th></th>
+                                      <th></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    
+                                  </tbody>
+                                </table>
+                              </div>
+                           </div>
+                      </div>
                 </div>
 
             </div>
@@ -1904,10 +1969,13 @@
             });
             legendHtml += '</ul>';
 
+            // do not do this
+            legendHtml = '';
+
             // Add controls to generic control panel and show
-            var cp = $(heatMapSelector.split(' ')[0] + ' .controls-panel .panel-body')
-            cp.html(legendHtml);
-            cp.parent().parent().removeClass("hidden");
+            // var cp = $(heatMapSelector.split(' ')[0] + ' .controls-panel .panel-body')
+            // cp.html(legendHtml);
+            // cp.parent().parent().removeClass("hidden");
 
             //$(heatMapSelector + ' .heatmap-legend input[type=checkbox]').each(function() {
             $(heatMapSelector.split(' ')[0] + ' .controls-panel input[type=checkbox]').each(function() {
@@ -2601,9 +2669,9 @@
                 + '</div>'
                 + '</div>';
 
-            var cp = $(heatMapSelector.split(' ')[0] + ' .controls-panel .panel-body')
-            cp.html(legendHtml);
-            cp.parent().parent().removeClass("hidden");
+            // var cp = $(heatMapSelector.split(' ')[0] + ' .controls-panel .panel-body')
+            // cp.html(legendHtml);
+            // cp.parent().parent().removeClass("hidden");
 
 
             $( function() {
@@ -2693,6 +2761,158 @@
             populateTable('two-groups-table');
         }
 
+        function renderBrowser(data) {
+          console.log('GOT DATA');
+          var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+          var table = $(selector + " .browser-table");
+
+          // reset tbody
+          var tbody = table.find('tbody'); 
+          table.prop("onclick", null).off("click");
+          tbody.empty();
+          table.DataTable().clear();
+          table.DataTable().destroy();
+          if (data['proteins2']) {
+            // two groups
+            var proteins_1 = data['proteins1'].length
+            var proteins_2 = data['proteins2'].length
+            var pdbs_1 = data['pdbs1'].length
+            var pdbs_2 = data['pdbs2'].length
+            $.each(data['interactions'], function (i, v) {
+              var gn1 = i.split(",")[0]
+              var gn2 = i.split(",")[1]
+              var pfreq1 = Math.round(100*v['proteins1'].length / proteins_1);
+              var pfreq2 = Math.round(100*v['proteins2'].length / proteins_2);
+              var diff_pfreq = pfreq1-pfreq2;
+              var sfreq1 = Math.round(100*v['pdbs1'].length / pdbs_1);
+              var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
+              var diff_sfreq = sfreq1-sfreq2;
+              var class_seq_cons = v['class_seq_cons'];
+              var types = v['types'];
+              var seg1 = data['segm_lookup'][gn1];
+              var seg2 = data['segm_lookup'][gn2];
+              tr = `
+                    <tr class="clickable-row" id="${i}">
+                      <td>${seg1}</td>
+                      <td>${seg2}</td>
+                      <td>${gn1}</td>
+                      <td>${gn2}</td>
+                      <td>${sfreq1}</td>
+                      <td>${sfreq2}</td>
+                      <td>${diff_sfreq}</td>
+                      <td>${types}</td>
+                      <td>${class_seq_cons}</td>
+                    </tr>`;
+              tbody.append(tr);
+            }); 
+          } else {
+            var proteins = data['proteins'].length
+            var pdbs = data['pdbs'].length
+            $.each(data['interactions'], function (i, v) {
+              var gn1 = i.split(",")[0]
+              var gn2 = i.split(",")[1]
+              var pfreq = Math.round(100*v['proteins'].length / proteins);
+              var sfreq = Math.round(100*v['pdbs'].length / pdbs);
+              tr = `
+                    <tr class="clickable-row" id="${i}">
+                      <td>${gn1}</td>
+                      <td>${gn2}</td>
+                      <td>${pfreq}</td>
+                      <td>${sfreq}</td>
+                    </tr>`;
+              tbody.append(tr);
+            });
+          }
+
+          table.on('click', '.clickable-row', function(event) {
+            if($(this).hasClass('active')){
+              $(this).removeClass('active'); 
+              $(selector + " .secondary-table").find('tbody').empty();
+            } else {
+              $(this).addClass('active').siblings().removeClass('active');
+              renderSecondary($(this).attr('id'))
+            }
+          });
+          oTable[selector] = $(selector+' .browser-table').DataTable({
+                'scrollX': true,
+                // 'paging': true,
+                // 'autoWidth': true,
+
+                scrollY:        '50vh',
+                // scrollCollapse: true,
+                paging:         false,
+              });
+
+          yadcf.init(oTable[selector],
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 7,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Type",
+                            text_data_delimiter: ",",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 8,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+
+                );
+
+        }
+
         function redraw_renders() {
           // Makes sure diagrams fit sizes
 
@@ -2703,6 +2923,7 @@
 
           // Don't go too high
           if (width_svg>screen.height) width_svg = screen.height;
+          width_svg = 500;
           visible_svg.height(width_svg);
 
           // Resize NGL
@@ -2925,33 +3146,58 @@
               if (!$(selector + ' .interactions-input').val() == null)
                   interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
-              $.getJSON( '/contactnetwork/interactiondata',
-              {
-                  'segments': segments,
-                  'generic': generic,
-                  'pdbs': pdb,
-                  'interaction_types': interactionTypes
-              },
-              function( data ) {
-                  // Re-render heatmap
-                  $(".heatmap").show();
-                  $(".heatmap-legend").show();
-                  heatmapFunction(data, selector + ' .heatmap-container');
-                  $("#svgloading").remove()
-                  // Re-render flareplot
-                  createFlareplotBox(data, selector + " .flareplot-container");
+              console.log('get viz info');
+              $.ajax({ 
+                  url: '/contactnetwork/interactiondata', 
+                  dataType: 'json', 
+                  data: {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs': pdb,
+                    'interaction_types': interactionTypes
+                  }, 
+                  async: true, 
+                  success:  function(data){
+                    console.log('gotten visual info')
+                    // Re-render heatmap
+                    $(".heatmap").show();
+                    $(".heatmap-legend").show();
+                    heatmapFunction(data, selector + ' .heatmap-container');
+                    $("#svgloading").remove()
+                    // Re-render flareplot
+                    createFlareplotBox(data, selector + " .flareplot-container");
 
-                  if (selector == '#single-crystal-group-tab') {
-                    createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
-                    createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
-                    createNGLview("single-group",pdb[0], pdb);
-                  } else {
-                    createHiveplotBox(data, selector + " .hiveplot-container");
-                    createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
-                    createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
-                    createNGLview("single",pdb[0]);
+                    if (selector == '#single-crystal-group-tab') {
+                      createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
+                      createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
+                      createNGLview("single-group",pdb[0], pdb);
+                    } else {
+                      createHiveplotBox(data, selector + " .hiveplot-container");
+                      createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
+                      createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
+                      createNGLview("single",pdb[0]);
+                    }
                   }
               });
+              console.log('get browser info');
+              $.ajax({ 
+                  url: '/contactnetwork/browserdata', 
+                  dataType: 'json', 
+                  data: {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs': pdb,
+                    'interaction_types': interactionTypes
+                  }, 
+                  async: true, 
+                  success:  function(data){
+                    // Re-render heatmap
+                    data_browser = data;
+                    renderBrowser(data);
+                    console.log('gotten browser info')
+                  }
+              });
+
           }
         }
 
@@ -2978,6 +3224,29 @@
                 $(".matrix-tab:visible").click();
                 $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
 
+
+
+                console.log('get browser info');
+                $.ajax({ 
+                    url: '/contactnetwork/browserdata', 
+                    dataType: 'json', 
+                    data: {
+                      'segments': segments,
+                      'generic': generic,
+                      'pdbs1': pdbs1,
+                      'pdbs2': pdbs2,
+                      'interaction_types': interactionTypes
+                    }, 
+                    async: true, 
+                    success:  function(data){
+                      // Re-render heatmap
+                      data_browser = data;
+                      renderBrowser(data);
+                      console.log('gotten browser info')
+                    }
+                });
+
+                console.log('get wiz info');
                 $.getJSON( '/contactnetwork/interactiondata',
                 {
                     'segments': segments,
@@ -3020,6 +3289,8 @@
                         });
                     });
                 });
+
+                redraw_renders();
             }
         }
 
