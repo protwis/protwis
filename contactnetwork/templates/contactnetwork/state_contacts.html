@@ -1,0 +1,99 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+  
+<table class="table" id="state_specific" width="100%">
+  <thead>
+    <tr>
+      <th> Class </th>
+      <th> State </th>
+      <th> Generic Number 1 </th>
+      <th> Generic Number 2 </th>
+      <th> Frequency in Class </th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in contacts %}
+    <tr>
+        <td class="text-left">{{c.protein_class.name}}</td>
+        <td class="text-left">{{c.state.name}}</td>
+        <td class="text-left">{{c.gn1.label}}</td>
+        <td class="text-left">{{c.gn2.label}}</td>
+        <td class="text-left">{{c.frequency}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
+{% block addon_js %}
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script>
+      $(document).ready(function() {
+
+            oTable = $('#state_specific').DataTable({
+                    "scrollX": true,
+                    "scrollY":        '70vh',
+                    "paging":         false,
+                    "aaSorting": [],
+                    "bSortCellsTop": true //prevent sort arrows going on bottom row
+                  });
+
+                  yadcf.init(oTable,
+                    [   
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Class",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "State",
+                            filter_match_mode : "exact",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Generic Number 1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Generic Number 2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "range_number",
+                            filter_default_label: ["From", "To"],
+                            filter_reset_button_text: false,
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+                );
+
+            yadcf.exResetAllFilters(oTable);
+    });
+    </script>
+{% endblock %}
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+
+{% endblock %}

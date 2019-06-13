@@ -134,7 +134,12 @@ class Publication(models.Model):
         try:
             self.title = record['TI']
             self.authors = ', '.join(record['AU'])
-            self.year = record['DA'][:4]
+            try:
+                self.year = record['DA'][:4]
+            except:
+                # Sometimes 'DA' field does not exist, use alternative
+                self.year = record['DP'][:4]
+
             record['JT'] = record['JT']
             record['TA'] = record['TA']
             try:

@@ -515,13 +515,6 @@ class DrawSnakePlot(Diagram):
                 elif start==0 and rs[ii][2]=='':
                     res_after.append(ii)
 
-            if name=="ICL1" and len(res_helix)>3:
-                self.drawSnakePlotLoop(1)
-                continue
-
-            if name=="ICL2" and len(res_helix)>3:
-                self.drawSnakePlotLoop(2)
-                continue
 
             # Get positions of two  linking residues from each helix
             x1 = self.TBCoords[i][position][0]
@@ -554,6 +547,13 @@ class DrawSnakePlot(Diagram):
             self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short segment' x="+str(Fx-18)+" y="+str(Fy-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
             self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short segment' x="+str(Fx)+" y="+str(Fy)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
+            if name=="ICL1" and len(res_helix)>3:
+                self.drawSnakePlotLoop(1)
+                continue
+
+            if name=="ICL2" and len(res_helix)>3:
+                self.drawSnakePlotLoop(2)
+                continue
 
             y_indent = y_indent*len(rs)/5 # get an approx need for y_indent for size of loop
 
@@ -813,7 +813,7 @@ class DrawSnakePlot(Diagram):
 
             x = round(startX+row*self.residue_radius*2.4-row_pos*self.residue_radius*0.5+indentY) #move left as you go down a row
             y = round(startY+row_pos*self.residue_radius*1.6+indentX) # Move down with right amount
-            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius,name)
+            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius,name+" long")
 
             if y>self.maxY['intra']: self.maxY['intra'] = y-20
             row_pos += 1
@@ -827,7 +827,7 @@ class DrawSnakePlot(Diagram):
                 if row_length==2: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX+10)+" "+str(prevY+50)+", "+str(x-17)+" "+str(y+13)+" T"+str(x)+" "+str(y)
                 if row_length==3: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX+5)+" "+str(prevY+50)+", "+str(x-20)+" "+str(y+20)+" T"+str(x)+" "+str(y)
                 if row_length==4: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX+5)+" "+str(prevY+50)+", "+str(x-20)+" "+str(y+20)+" T"+str(x)+" "+str(y)
-                output_trace += "<path d='" + points + "' stroke='grey' fill='none' stroke-width='2'  />" #stroke-dasharray='1,2'
+                output_trace += "<path d='" + points + "'  class='"+name+" long' stroke='grey' fill='none' stroke-width='2'  />" #stroke-dasharray='1,2'
 
             #alternate between 4 and 3 res per row
             if row_length>smallrow and row_pos>=row_length:
@@ -850,32 +850,32 @@ class DrawSnakePlot(Diagram):
                 points = "M "+str(self.TBCoords[prevhelix]['intra'][0])+" "+str(self.TBCoords[prevhelix]['intra'][1])+" Q"+str(self.TBCoords[prevhelix]['intra'][0]-30)+" "+str(y)+" "+str(x)+" "+str(y)
                 length_before = self.lengthbezier([self.TBCoords[prevhelix]['intra'][0],self.TBCoords[prevhelix]['intra'][1]],[self.TBCoords[prevhelix]['intra'][0]-30,y],[x,y],0.001)
 
-                self.output += "<path d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
+                self.output += "<path d='" + points + "' class='"+name+" long' stroke='black' fill='none' stroke-width='2' />"
 
                 pos = length_before-10-between_residues*len(res_before)
                 for p2,i2 in list(enumerate(res_before)):
                     where = self.wherebezier([self.TBCoords[prevhelix]['intra'][0],self.TBCoords[prevhelix]['intra'][1]],[self.TBCoords[prevhelix]['intra'][0]-30,y],[x,y],0.001,pos)
                     pos += between_residues
-                    output_residue_in += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
+                    output_residue_in += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name+" long")
 
 
             if p==len(res_helix)-1: #if end, add to next helix
                 points = "M "+str(self.TBCoords[nexthelix]['intra'][0])+" "+str(self.TBCoords[nexthelix]['intra'][1])+" Q"+str(self.TBCoords[nexthelix]['intra'][0]+30)+" "+str(y)+" "+str(x)+" "+str(y)
                 length_after = self.lengthbezier([self.TBCoords[nexthelix]['intra'][0],self.TBCoords[nexthelix]['intra'][1]],[self.TBCoords[nexthelix]['intra'][0]+30,y],[x,y],0.001)
 
-                self.output += "<path d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
+                self.output += "<path d='" + points + "' class='"+name+" long' stroke='black' fill='none' stroke-width='2' />"
 
                 pos = length_after-between_residues-10
                 for p2,i2 in list(enumerate(res_after)):
                     where = self.wherebezier([self.TBCoords[nexthelix]['intra'][0],self.TBCoords[nexthelix]['intra'][1]],[self.TBCoords[nexthelix]['intra'][0]+30,y],[x,y],0.001,pos)
                     pos -= between_residues
-                    output_residue_in += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
+                    output_residue_in += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name+" long")
 
 
         self.output += output_trace+output_residue_in+output_residue_out
 
-        self.output += "<rect class='"+name+" long segment' x="+str(((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)-18)+" y="+str(max_y-13+30)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-        self.output += str("<text  class='"+name+" long segment' x="+str((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)+" y="+str(max_y+30)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+        self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)-18)+" y="+str(max_y-13+30)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+        self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)+" y="+str(max_y+30)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
 class DrawHelixBox(Diagram):

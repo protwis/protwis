@@ -192,6 +192,28 @@ class Alignment:
         segment_lookup = {}
         segment_lookup_positions = {}
         unsorted_segments = OrderedDict()
+
+        ## Check segments and find all ResidueGenericNumber to lessen queries afterwards
+        normal_segments = []
+        segment_positions_lookup = OrderedDict()
+        for s in selected_segments:
+            if hasattr(s, 'item'):
+                selected_segment = s.item
+            else:
+                selected_segment = s
+            # handle residue positions separately
+            if selected_segment.__class__.__name__ == 'ResidueGenericNumberEquivalent':
+                continue
+            normal_segments.append(selected_segment)
+            segment_positions_lookup[selected_segment.slug] = []
+        if normal_segments:
+            # If normal segments, prepare all ResidueGenericNumber for less overhead
+            segment_positions = ResidueGenericNumber.objects.filter(protein_segment__in=normal_segments,
+                scheme=self.default_numbering_scheme).select_related('protein_segment').order_by('label')
+            for segment_residue in segment_positions:
+                segment = segment_residue.protein_segment.slug
+                segment_positions_lookup[segment].append(segment_residue)
+
         for s in selected_segments:
             if hasattr(s, 'item'):
                 selected_segment = s.item
@@ -212,19 +234,14 @@ class Alignment:
 
             # fetch split segments (e.g. ECL2_before and ECL2_after)
             # AJK: point for optimization
-            alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)#.prefetch_related('proteinfamily__protein__residue__generic_number', 'proteinfamily__protein__residue__generic_number__generic_number__scheme')
+            # Remove this part as there are no _before or _after segments anymore
 
-            for segment in alt_segments:
-                segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
-                    scheme=self.default_numbering_scheme).order_by('label')
-
-                # segments
-                unsorted_segments[segment.pk] = []
-                segment_lookup[segment.pk] = segment.slug
-                segment_lookup_positions[segment.pk] = segment_positions
-                for segment_residue in segment_positions:
-                    unsorted_segments[segment.pk].append(segment_residue.label)
-
+            unsorted_segments[selected_segment.pk] = []
+            segment_lookup[selected_segment.pk] = selected_segment.slug
+            segment_lookup_positions[selected_segment.pk] = segment_positions_lookup[selected_segment.slug]
+            for segment_residue in segment_positions_lookup[selected_segment.slug]:
+                unsorted_segments[selected_segment.pk].append(segment_residue.label)
+            
         # Use PK values of segments to sort them before making alignment to ensure logical order
         sorted_segments = sorted(unsorted_segments)
         for s in sorted_segments:
@@ -747,7 +764,7 @@ class Alignment:
         """A placeholder for an instance specific function"""
         return generic_number
 
-    def calculate_statistics(self):
+    def calculate_statistics(self, ignore={}):
         """Calculate consesus sequence and amino acid and feature frequency"""
 
         if not self.stats_done:
@@ -759,12 +776,16 @@ class Alignment:
             # AJK: optimized for speed - split into multiple steps
             for i, p in enumerate(self.unique_proteins):
                 entry_name = p.protein.entry_name
+                # print(entry_name)
                 for j, s in p.alignment.items():
                     if i == 0:
                         self.aa_count[j] = OrderedDict()
                     for p in s:
                         generic_number = p[0]
+                        display_generic_number = p[1]
                         amino_acid = p[2]
+
+                        ignore_list = ignore.get(display_generic_number, [])
 
                         # Indicate gap and collect statistics
                         if amino_acid in self.gaps:
@@ -772,6 +793,11 @@ class Alignment:
 
                         # Skip when unknown amino acid type
                         elif amino_acid == 'X':
+                            continue
+
+                        # skip when position is on the ignore list
+                        if entry_name in ignore_list:
+                            # print(amino_acid)
                             continue
 
                         # Init counters

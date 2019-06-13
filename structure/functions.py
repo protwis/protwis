@@ -555,7 +555,7 @@ class HSExposureCB(AbstractPropertyMap):
     subclasses.
     """
     def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False, 
-                 check_knots=False, receptor=None, signprot=None):
+                 check_knots=False, receptor=None, signprot=None,  restrict_to_chain=[]):
         """
         @param model: model
         @type model: L{Model}
@@ -608,6 +608,12 @@ class HSExposureCB(AbstractPropertyMap):
             possible_knots = PossibleKnots(receptor, signprot)
             knot_resis = possible_knots.get_resnums()
             self.remodel_resis = {}
+        if len(restrict_to_chain)>0:
+            restricted_ppl = []
+            for p in ppl:
+                if p[0].get_parent().get_id() in restrict_to_chain:
+                    restricted_ppl.append(p)
+            ppl = restricted_ppl
 
         for pp1 in ppl:
             for i in range(0, len(pp1)):
@@ -679,10 +685,10 @@ class HSExposureCB(AbstractPropertyMap):
                 if check_knots:
                     for knot in knot_resis:
                         if knot[0][1]==pp1[i].get_id()[1] and knot[0][0]==pp1[i].get_parent().get_id():
-                            print(pp1[i].get_parent().get_id(),pp1[i])
+                            # print(pp1[i].get_parent().get_id(),pp1[i]) #print reference
                             for r in residue_up:
                                 if r.get_parent().get_id()==knot[1][0] and r.get_id()[1] in knot[1][1]:
-                                    print('close: ', r.get_parent().get_id(),r)
+                                    # print('close: ', r.get_parent().get_id(),r) #print res within radius
                                     resi_range = [knot[1][1][0], knot[1][1][-1]]
                                     if knot[1][0] not in self.remodel_resis:
                                         self.remodel_resis[knot[1][0]] = [resi_range]
@@ -780,7 +786,7 @@ class PossibleKnots():
         self.receptor = Protein.objects.get(entry_name=receptor)
         self.signprot = Protein.objects.get(entry_name=signprot)
         self.possible_knots = {'ICL3-H4':[['R','A'],['G.H4.11','G.H4.14','G.H4.15','G.h4s6.01']],
-                               'h1ha-hehf':[['A','A'],['H.HF.03']]}
+                               'h1ha-hehf':[['A','A'],['H.HE.08', 'H.hdhe.05']]}
         self.output = []
 
     def get_resnums(self):
@@ -798,7 +804,7 @@ class PossibleKnots():
                 for r in values[1]:
                     region2 = Residue.objects.get(protein_conformation__protein=self.signprot, display_generic_number__label=r)
                     self.output.append([[chain2,region2.sequence_number],[chain1,region1]])
-        print(self.output)
+        # print(self.output)
         return self.output
 
 
@@ -1064,9 +1070,9 @@ class StructureSeqNumOverwrite():
                 self.wt_pdb_table[i['WT_POS']] = i['PDB_POS']
                 self.pdb_wt_table[i['PDB_POS']] = i['WT_POS']
         else:
-            self.lookup = None
-            self.wt_pdb_table = None
-            self.pdb_wt_table = None
+            self.lookup = OrderedDict()
+            self.wt_pdb_table = OrderedDict()
+            self.pdb_wt_table = OrderedDict()
             
     def seq_num_overwrite(self, overwrite_target):
         ''' Overwrites Residue object sequence numbers in GPCRDB

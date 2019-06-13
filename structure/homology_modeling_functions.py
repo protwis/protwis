@@ -50,8 +50,10 @@ class SignprotFunctions(object):
         d = {}
         for s in subfamilies:
             ordered_prots, non_ordered_prots = [], []
-            prots = [i.entry_name for i in Protein.objects.filter(family__name=s, species__common_name='Human')]
+            prots = [i.entry_name for i in Protein.objects.filter(family__name=s, species__common_name='Human', accession__isnull=False)]
             for p in prots:
+                if p=='gnal_human':
+                    continue
                 if len(SignprotComplex.objects.filter(protein__entry_name=p))>0:
                     ordered_prots.append(p)
                 else:
@@ -61,7 +63,7 @@ class SignprotFunctions(object):
 
     def get_other_subtypes_in_subfam(self, protein):
         this_prot = Protein.objects.get(entry_name=protein)
-        return [i.entry_name for i in Protein.objects.filter(family=this_prot.family, species__common_name='Human').exclude(entry_name=protein)]
+        return [i.entry_name for i in Protein.objects.filter(family=this_prot.family, species__common_name='Human', accession__isnull=False).exclude(entry_name=protein)]
 
 
 class GPCRDBParsingPDB(object):
@@ -193,7 +195,7 @@ class GPCRDBParsingPDB(object):
             @param structure: Structure, Structure object of protein. When using structure, leave filename=None. \n
             @param filename: str, filename of pdb to be parsed. When using filename, leave structure=None).
         '''
-        seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000}
+        # seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000}
         if structure!=None and filename==None:
             io = StringIO(structure.pdb_data.pdb)
         else:
@@ -212,13 +214,11 @@ class GPCRDBParsingPDB(object):
 
         ssno = StructureSeqNumOverwrite(structure)
         ssno.seq_num_overwrite('pdb')
-        print(residues)
-        print(ssno.pdb_wt_table)
         if len(ssno.pdb_wt_table)>0:
             residues = residues.filter(protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']).order_by('sequence_number')
             output = OrderedDict()
             for r in residues:
-                print(r)
+                # print(r, r.display_generic_number.label, r.protein_segment.slug)
                 if r.protein_segment.slug==None:
                     continue
                 if r.protein_segment.slug not in output:
@@ -246,9 +246,6 @@ class GPCRDBParsingPDB(object):
                                 atom.set_bfactor(gn)
                             atom_list.append(atom)
                         output[r.protein_segment.slug][ggn(r.display_generic_number.label).replace('x','.')] = atom_list
-            import pprint
-            pprint.pprint(output)
-            raise AssertionError
             return output
         else:
             assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
@@ -260,7 +257,6 @@ class GPCRDBParsingPDB(object):
             if len(pref_chain)>1:
                 pref_chain = pref_chain[0]
             for residue in pdb_struct[pref_chain]:
-                print(residue, residue['CA'].get_bfactor())
                 try:
                     if -9.1 < residue['CA'].get_bfactor() < 9.1:
                         gn = str(residue['CA'].get_bfactor())
@@ -273,27 +269,27 @@ class GPCRDBParsingPDB(object):
                             raise Exception()
                         #################################################
                         if gn in gn_list:
-                            if int(residue.get_id()[1])>1000:
-                                if structure.pdb_code.index in seq_nums_overwrite_cutoff_dict and int(residue.get_id()[1])>=seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                                    gn_array.append(gn)
-                                    residue_array.append(residue.get_list())
-                                else:
-                                    raise Exception()
-                            else:
-                                gn_array.append(gn)
-                                residue_array.append(residue.get_list())
+                            # if int(residue.get_id()[1])>1000:
+                            #     if structure.pdb_code.index in seq_nums_overwrite_cutoff_dict and int(residue.get_id()[1])>=seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
+                            #         gn_array.append(gn)
+                            #         residue_array.append(residue.get_list())
+                            #     else:
+                            #         raise Exception()
+                            # else:
+                            gn_array.append(gn)
+                            residue_array.append(residue.get_list())
                         else:
                             raise Exception()
                     else:
                         raise Exception()
                 except:
-                    if structure!=None and structure.pdb_code.index in seq_nums_overwrite_cutoff_dict:
-                        if int(residue.get_id()[1])>seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                            gn_array.append(str(int(str(residue.get_id()[1])[1:])))
-                        else:
-                            gn_array.append(str(residue.get_id()[1]))
-                    else:
-                        gn_array.append(str(residue.get_id()[1]))
+                    # if structure!=None and structure.pdb_code.index in seq_nums_overwrite_cutoff_dict:
+                    #     if int(residue.get_id()[1])>seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
+                    #         gn_array.append(str(int(str(residue.get_id()[1])[1:])))
+                    #     else:
+                    #         gn_array.append(str(residue.get_id()[1]))
+                    # else:
+                    gn_array.append(str(residue.get_id()[1]))
                     residue_array.append(residue.get_list())
             output = OrderedDict()
             for num, label in self.segment_coding.items():
@@ -335,7 +331,10 @@ class GPCRDBParsingPDB(object):
                             output[seg_label][found_gn] = res
                     except:
                         if res[0].get_parent().get_resname()=='YCM' or res[0].get_parent().get_resname()=='CSD':
-                            found_res = Residue.objects.get(protein_conformation=parent_prot_conf, sequence_number=gn)
+                            try:
+                                found_res = Residue.objects.get(protein_conformation=parent_prot_conf, sequence_number=gn)
+                            except:
+                                continue
                             if found_res.protein_segment.slug[0] not in ['T','H']:
                                 continue
                             try:

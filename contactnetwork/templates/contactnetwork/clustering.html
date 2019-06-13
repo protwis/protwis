@@ -5,25 +5,25 @@
 
       <div class="tab-content clearfix">
             <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
-            <div class="tab-pane active" id="single-group-crystal-tab">
+            <div class="tab-pane active" id="single-crystal-group-tab">
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs</h3>
+                                <h3 class="panel-title">Structures</h3>
                             </div>
                             <div class="panel-body">
                                 <input class="crystal-pdb" type="hidden" value="[]" />
                                 <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-group-crystal-pdbs-modal">Select PDBs</button> #}
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-group-crystal-pdbs-modal-table">Select PDBs</button>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select Structures</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-1">
                         <div class="btn btn-success btn-lg pull-left go-button">Go</div>
                     </div>
-                    <div class="col-md-1 hidden" id="output-group0">
+                    <div class="col-md-2 hidden" id="output-group0">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Group 1</h3>
@@ -33,7 +33,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-1 hidden" id="output-group1">
+                    <div class="col-md-2 hidden" id="output-group1">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Group 2</h3>
@@ -54,8 +54,10 @@
                       <div class="col-md-12 tab-pane active" id="single-group-tree-tab">
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Structural clustering</h3>
+                                  <h3 class="panel-title pull-left">Distance-based structure clustering</h3>
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download-alt btn-download-alt"></span> <!-- Use this one for figure downloads? -->
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -74,7 +76,7 @@
         </div>
 
     <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
-    <div class="modal fade" id="single-group-crystal-pdbs-modal-table" role="dialog">
+    <div class="modal fade" id="single-crystal-group-pdbs-modal-table" role="dialog">
         <div class="modal-dialog modal-wide">
             <!-- Modal content-->
             <div class="modal-content">
@@ -84,7 +86,7 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
-                        <span id="single-group-crystal-pdbs-modal-text">0 structure(s) selected</span>
+                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
                         <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview"></div>
                       </div>
@@ -112,23 +114,38 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="{% static 'home/js/newick.js' %}"> </script>
     <script src="{% static 'home/js/clusteringtree.js' %}"> </script>
+
+    <!-- PDB table -->
+    <script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
+
+    <!-- D3 -->
+    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
+    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
+
     <script>
+        window.zoomCluster = {};
 
         function downloadSVG(svgSelector, name) {
-          var svgClone = $(svgSelector).clone();
-          svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
+          if ($(svgSelector).length > 0) {
+            var svgClone = $(svgSelector).clone();
+            var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
 
-          var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
-
-          downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+            downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+          }
         }
 
+        var lastData;
         function initializeButtons(selector, treeFunction) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
 
                 // DEBUG input:
-                // pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+                if (pdb.length == 0)
+                  pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+
                 if (pdb.length > 1) {
                     $("#clustering-tree").html("")
                     $("#svgloading").remove();
@@ -138,6 +155,8 @@
                         'pdbs': pdb,
                     },
                     function( data ) {
+                        lastData = data
+
                         // create Tee
                         treeFunction(data);
 
@@ -151,6 +170,27 @@
                         $("#CN-button").addClass("disabled");
                         $("#DN-button").addClass("disabled");
                         firstTreeClick = true;
+
+                        // zoom + pan
+                        // Destroy old zoom on heatmap
+                        var container = "#clustering-tree";
+                        if (window.zoomCluster[container] != null) {
+                          window.zoomCluster[container].destroy();
+                          delete window.zoomCluster[container];
+                        }
+
+                        window.zoomCluster[container] = svgPanZoom(container  + " svg", {
+                            zoomEnabled: true,
+                            // controlIconsEnabled: true,
+                            fit: true,
+                            center: true,
+                            minZoom: 0.75,
+                            maxZoom: 50,
+                            zoomScaleSensitivity: 0.25,
+                            dblClickZoomEnabled: true
+                        });
+
+                        window.zoomCluster[container].zoom(0.95);
                     });
                 } else {
                     toggleAlert()
@@ -186,12 +226,53 @@
             return false;
         }
 
-        function initializeFullscreenButton(selector) {
+        function initializeTopButtons(selector) {
+            // Fullscreen SVG
             $(selector + ' .btn-fullscreen').click(function() {
                 fullScreenElement = $(this).parent().next().children().first();
                 fullScreenElement.css('background-color','white');
                 toggleFullScreen(fullScreenElement.get(0));
             });
+
+            // Distance matrix download
+            $(selector + ' .btn-download-alt').click(function() {
+                // svg download
+                downloadSVG("#clustering-tree svg", "GPCR_structure_clustering.svg")
+            });
+
+            // Distance matrix download
+            $(selector + ' .btn-download').click(function() {
+                // create download table
+                if (lastData != undefined){
+                    var header = lastData['dm_labels']
+                    header.unshift("PDB-code")
+
+                    var data = [];
+                    data.push(header);
+
+                    for (var i = 0; i < lastData["distance_matrix"].length ; i++){
+                      var row = lastData["distance_matrix"][i]
+                      row.unshift(header[i+1])
+                      data.push(row);
+                    }
+
+                    // Convert to CSV
+                    var csv = Papa.unparse(data);
+
+                    // Download file
+                    downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), "GPCR_structure_clustering.csv");
+                }
+            });
+        }
+
+        function downloadURI(uri, name) {
+            var link = document.createElement("a");
+            link.download = name;
+            link.href = uri;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            delete link;
         }
 
         function toggleFullScreen(fullScreenElement) {
@@ -210,220 +291,20 @@
             }
         }
 
-        function update_text_in_modal() {
-          var total_selected = $('.pdb_selected:checked', oTable.cells().nodes()).length
-          var selected_visible = $('.pdb_selected:checked').length
-          var ModalpdbsCountSelector = '#single-group-crystal-pdbs-modal-text';
-
-          if (total_selected==selected_visible) {
-            $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
-          } else {
-            $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
-          }
-        }
-
-        function thisPDB(elem) {
-          var ReceptorName = $(elem).attr('long');
-          var pdbName = $(elem).attr('id');
-          var pdbs = [];
-          $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
-              pdbs.push($(this).attr('id'));
-          });
-          var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
-          var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
-          var ModalpdbsCountSelector = '#single-group-crystal-pdbs-modal-text';
-
-          $(pdbsInputSelector).val(JSON.stringify(pdbs));
-          // Update view
-          $(pdbsCountSelector).html(pdbs.length);
-          update_text_in_modal();
-        }
-
-        function resetselection(elem) {
-          $('.check_all:visible').prop('checked',false);
-          var pdbs = [];
-
-          $('input', oTable.cells().nodes()).prop('checked',false);
-
-          var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
-          var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
-          $(pdbsInputSelector).val(JSON.stringify(pdbs));
-          $(pdbsCountSelector).html(pdbs.length);
-
-          update_text_in_modal();
-        }
-
-        function check_all(elem) {
-          show_all = $(elem).prop("checked");
-            var pdbs = [];
-
-          // REMOVE EXISITING? Probably not, more logically that filtering adds more
-          // $('input', oTable.cells().nodes()).prop('checked',false);
-
-          if (show_all) {
-            $('.pdb_selected:visible').prop("checked",true);
-          } else {
-            $('.pdb_selected:visible').prop("checked",false);
-          }
-
-          $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
-              pdbs.push($(this).attr('id'));
-          });
-
-          var pdbsInputSelector = '#single-group-crystal-tab .crystal-pdb';
-          var pdbsCountSelector = '#single-group-crystal-tab .crystal-count';
-          $(pdbsInputSelector).val(JSON.stringify(pdbs));
-          // Update view
-          $(pdbsCountSelector).html(pdbs.length);
-
-          update_text_in_modal();
-        }
-
-        $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
-          {
-              return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
-                  return $('input', td).prop('checked') ? '1' : '0';
-              } );
-          };
-
-        var oTable;
-        function showPDBtable(element) {
-          var mode = "Single group of structures";
-          group = $(element+' .tableview').attr('group-number');
-          if (group) mode = mode + group;
-          if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
-              oTable = $(element+' .tableview table').DataTable({
-                'scrollX': true,
-                // 'paging': true,
-                // 'autoWidth': true,
-
-                scrollY:        '80vh',
-                // scrollCollapse: true,
-                paging:         false,
-                columnDefs: [
-                  { targets: 'no-sort', orderable: false }
-                ],
-                "aaSorting": [],
-                 "columns": [
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                { "orderDataType": "dom-checkbox" }
-                            ]
-              });
-
-              yadcf.init(oTable,
-                [
-                    {
-                        column_number : 0,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Class",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 1,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                          width: '70px'
-                        },
-                        filter_default_label: "PDB",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 2,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Receptor",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        html_data_type: "text",
-                        select_type_options: {
-                          width: '150px'
-                        },
-                        filter_default_label: "Family",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 4,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Species",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 5,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                            minimumResultsForSearch: -1 // remove search box
-                        },
-                        filter_default_label: "State",
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-
-                    },
-                    {
-                        column_number : 6,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Representative",
-                        filter_reset_button_text: false,
-
-                    },
-                ],
-                {
-                    cumulative_filtering: false
-                }
-            );
-
-            yadcf.exResetAllFilters(oTable);
-
-            oTable.on('draw.dt', function (e, oSettings) {
-                update_text_in_modal();
-            });
-
-          };
-        }
-
-        $('#single-group-crystal-pdbs-modal-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#single-group-crystal-pdbs-modal-table');
+        $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-crystal-group-pdbs-modal-table');
         })
-
-        function initializePdbChooserTables() {
-          $.get('pdbtabledata', function ( data ) {
-            $('#single-group-crystal-pdbs-modal-table .tableview').html(data);
-            pdbtabledata = data;
-          });
-        }
-
-        function initializeSingleGroupCrystalView() {
-            initializeButtons('#single-group-crystal-tab', renderTree);
-            initializeFullscreenButton('#single-group-crystal-tab');
-        }
 
         $(document).ready(function() {
             // Get PDBs for table build
-            initializePdbChooserTables();
+            $.get('pdbtabledata', function ( data ) {
+              $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
+              pdbtabledata = data;
+            });
 
             // Single group of PDB files
-            initializeSingleGroupCrystalView();
+            initializeButtons('#single-crystal-group-tab', renderTree);
+            initializeTopButtons('#single-crystal-group-tab');
         });
     </script>
 {% endblock %}
@@ -441,12 +322,12 @@
         }
 
         .node circle.group0 {
-          fill: #FF0000;
+          fill: #FF0000!important;
           stroke: black;
         }
 
         .node circle.group1 {
-          fill: #0000FF;
+          fill: #0000FF!important;
           stroke: black;
         }
 
@@ -507,6 +388,10 @@
 
         /* END TREE */
 
+        .btn-download, .btn-download-alt, .btn-fullscreen {
+          margin-right: 10px;
+        }
+
         .select2-result-label{
             font-size:x-small;
             font-size: 10px;
@@ -551,8 +436,20 @@
             }
         }
 
-        .modal-wide {
-          width: 1200px;
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
         }
 
         .modal-footer {
@@ -574,14 +471,16 @@
         .svg-download-button {
             margin-top: 6px;
         }
+
+        div.tooltip {
+          padding: 5px;
+          border-radius: 10px;
+          font-size: 1em;
+          background-color: #FFF;
+          border: 1px solid black;
+        }
     </style>
 
-    <!-- D3 -->
-    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
-    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
 
 
 {% endblock %}

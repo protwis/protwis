@@ -20,11 +20,15 @@ class Structure(models.Model):
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
+    contact_representative = models.BooleanField(default=False)
+    contact_representative_score = models.DecimalField(max_digits=5, decimal_places=3, null=True)
+    inactive_class_contacts_fraction = models.DecimalField(max_digits=5, decimal_places=3, null=True)
+    active_class_contacts_fraction = models.DecimalField(max_digits=5, decimal_places=3, null=True)
     annotated = models.BooleanField(default=True)
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     sodium = models.BooleanField(default=False)
-    signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.CASCADE, related_name='signprot_complex')
+    signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.SET_NULL, related_name='signprot_complex')
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -37,6 +41,9 @@ class Structure(models.Model):
             return "\n".join(elements)
         else:
             return '-'
+
+    def get_signprot_gprot_family(self):
+        return str(self.signprot_complex.protein.family)
 
     def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
 
@@ -59,7 +66,7 @@ class Structure(models.Model):
                 tmp.append(line)
 
         return '\n'.join(tmp)
-    
+
     def get_ligand_pdb(self, ligand):
 
         tmp = []
@@ -93,6 +100,29 @@ class Structure(models.Model):
 
     class Meta():
         db_table = 'structure'
+
+
+class StructureComplexProtein(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
+    chain = models.CharField(max_length=1)
+
+    def __repr__(self):
+        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
+
+    def __str__(self):
+        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_complex_protein'
+
+class StructureVectors(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    translation = models.CharField(max_length=100, null=True)
+    center_axis = models.CharField(max_length=100)
+
+    class Meta():
+        db_table = 'structure_vectors'
 
 
 class StructureModel(models.Model):

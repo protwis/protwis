@@ -1,8 +1,9 @@
-from django.db.models import Avg, Variance, Count
+from django.db.models import Avg, Variance, Count, Value, StdDev
 from django.contrib.postgres.aggregates import ArrayAgg
 
 from structure.models import Structure
 from contactnetwork.models import *
+from residue.models import Residue
 
 from collections import OrderedDict
 
@@ -12,15 +13,19 @@ class Distances():
     """A class to do distances"""
     def __init__(self):
         self.structures = []
+        self.pdbs = []
+        self.pconfs = []
         self.generic_numbers = OrderedDict()
         self.segments = OrderedDict()
         self.distances = {}
 
     def load_pdbs(self, pdbs):
         """Load a list of pdbs objects"""
-        structures = Structure.objects.filter(pdb_code__index__in=pdbs).all()
+        structures = Structure.objects.filter(pdb_code__index__in=pdbs).prefetch_related('protein_conformation').all()
         for s in structures:
             self.structures.append(s)
+            self.pdbs.append(s.pdb_code.index)
+            self.pconfs.append(s.protein_conformation)
 
 
     def fetch_agg(self):
@@ -63,37 +68,54 @@ class Distances():
         if with_arr:
             ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                             .values('gns_pair') \
-                            .annotate(mean = Avg('distance'), var = Variance('distance'), c = Count('distance'),arr=ArrayAgg('distance'),arr2=ArrayAgg('structure')).values_list('gns_pair','mean','var','c','arr','arr2').filter(c__gte=int(0.5*len(self.structures))))
+                            .annotate(mean = Avg('distance'), std = StdDev('distance'), c = Count('distance'), dis = Count('distance'),arr=ArrayAgg('distance'),arr2=ArrayAgg('structure__pdb_code__index'),arr3=ArrayAgg('gns_pair')).values_list('gns_pair','mean','std','c','dis','arr','arr2','arr3').filter(c__gte=int(0.8*len(self.structures))))
             for i,d in enumerate(ds):
-                ds[i] += (d[2]/d[1],)
+                ds[i] = list(ds[i])
+                ds[i][3] = d[2]/d[1]
                 ds_with_key[d[0]] = ds[i]
         else:
             ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                             .values('gns_pair') \
-                            .annotate(mean = Avg('distance'), var = Variance('distance'), c = Count('distance')).values_list('gns_pair','mean','var','c').filter(c__gte=int(len(self.structures)*0.5)))
+                            .annotate(mean = Avg('distance'), std = StdDev('distance'), c = Count('distance')).values_list('gns_pair','mean','std','c').filter(c__gte=int(len(self.structures)*0.8)))
             for i,d in enumerate(ds):
                 ds[i] += (d[2]/d[1],)
                 ds_with_key[d[0]] = ds[i]
         # # print(ds.query)
         # print(ds[1])
-        stats_sorted = sorted(ds, key=lambda k: -k[-1])
+        # Assume that dispersion is always 4
+        if len(self.structures)>1:
+            stats_sorted = sorted(ds, key=lambda k: -k[3])
+        else:
+            stats_sorted = sorted(ds, key=lambda k: -k[1])
         #print(ds[1])
 
         self.stats_key = ds_with_key
         self.stats = stats_sorted
 
     def fetch_common_gns_tm(self):
-        ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
-                        .values('gns_pair') \
-                        .annotate(c = Count('distance')).values_list('gns_pair').filter(c__gte=int(len(self.structures))))
-        common_gn = []
-        for i,d in enumerate(ds):
-            res1, res2 = d[0].split("_")
-            if res1 not in common_gn:
-                common_gn.append(res1)
-            if res2 not in common_gn:
-                common_gn.append(res2)
-        common_gn.sort()
+
+        # ds = list(Distance.objects.filter(structure__in=self.structures).exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+        #                 .values('gns_pair') \
+        #                 .annotate(c = Count('distance')).values_list('gns_pair').filter(c__gte=int(len(self.structures)*0.9)))
+        # common_gn = []
+        # for i,d in enumerate(ds):
+        #     res1, res2 = d[0].split("_")
+        #     if res1 not in common_gn:
+        #         common_gn.append(res1)
+        #     if res2 not in common_gn:
+        #         common_gn.append(res2)
+        # common_gn.sort()
+        res = Residue.objects.filter(protein_conformation__in=self.pconfs) \
+                        .exclude(generic_number=None) \
+                        .exclude(generic_number__label__contains='8x') \
+                        .exclude(generic_number__label__contains='12x') \
+                        .exclude(generic_number__label__contains='23x') \
+                        .exclude(generic_number__label__contains='34x') \
+                        .exclude(generic_number__label__contains='45x') \
+                        .values('generic_number__label') \
+                        .annotate(c = Count('generic_number__label')).filter(c__gte=int(len(self.structures)*0.9)).values_list('generic_number__label',flat=True).order_by('c') #.values_list('generic_number__label') #.filter(c__gte=int(len(self.structures)*0.9))
+        
+        common_gn = sorted(res)
 
         return common_gn
 
@@ -101,7 +123,7 @@ class Distances():
 
         lookup = {}
         bins = []
-        n = 4 # Size of windows.
+        n = 1 # Size of windows.
 
         # Get all possible residues
         res = set()
@@ -192,6 +214,9 @@ class Distances():
         pairs_to_remove = set()
         for label, ls in bin_pairs.items():
             for i,l in enumerate(ls):
+                # Only avg over first 3 items
+                if i>3:
+                    continue
                 c = len(l)
                 if c==0:
                     # Sanity check
@@ -200,6 +225,46 @@ class Distances():
                     continue
                 avg = sum(l) / float(len(l))
                 bin_pairs[label][i] = avg
+            means = ls[-3]
+            pdbs = ls[-2]
+            labels = ls[-1]
+            d = {}
+
+            for i,l in enumerate(labels):
+                if l not in d:
+                    d[l] = {}
+                d[l][pdbs[i]] = means[i]/100
+            bin_pairs[label].append(d)
+
+            pdbs_per_line = 8
+            table = "<table class='table'><tr>"
+            # for pdb in self.pdbs[:5]:
+            #     table += "<th>{}</th>".format(pdb)
+            table += "</tr>"
+            for i in set(labels):
+                table += "<tr>" #<th>{}</th>".format(i)
+                avg = sum(d[i].values()) / float(len(d[i]))
+                for ii, pdb in enumerate(self.pdbs):
+                    if ii % pdbs_per_line == 0:
+                        # Make a new line to prevent too big tables.
+                        table += "</tr><tr>"
+                        for pdb in self.pdbs[ii:ii+pdbs_per_line]:
+                            table += "<th>{}</th>".format(pdb)
+                        table += "</tr><tr>"
+
+                    if pdb in d[i]:
+                        fold = d[i][pdb]/avg
+                        if fold>1:
+                            fold = 1/fold
+                        color = '#%02x%02x%02x' % (255, round(255*(fold)), round(255*(fold)))
+                        table += "<td bgcolor='{}'>{}</td>".format(color,d[i][pdb])
+                    else:
+                        table += "<td>N/A</td>"
+
+                table += "</tr>"
+            table += "</table>"
+            bin_pairs[label].append(table)
+            #print(d[l])
 
         for p in pairs_to_remove:
             del bin_pairs[p]
@@ -229,9 +294,12 @@ class Distances():
 
                 stats_window.append(label + value)
                 stats_window_key[label[0]] = label + value
-
-        stats_window = sorted(stats_window, key=lambda k: -k[-1])
-        stats_window_reduced = sorted(stats_window_reduced, key=lambda k: -k[-1])
+        if len(self.structures)>1:
+            stats_window = sorted(stats_window, key=lambda k: -k[3])
+            stats_window_reduced = sorted(stats_window_reduced, key=lambda k: -k[3])
+        else:
+            stats_window = sorted(stats_window, key=lambda k: -k[1])
+            stats_window_reduced = sorted(stats_window_reduced, key=lambda k: -k[1])
         self.stats_window = stats_window
         self.stats_window_reduced = stats_window_reduced
         self.stats_window_key = stats_window_key

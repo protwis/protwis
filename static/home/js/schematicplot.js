@@ -70,7 +70,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     seqStart = i;
     prevSeg = seg;
   }
-
   // Push last segment
   segments.push({
     seg: prevSeg,
@@ -126,7 +125,9 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   const rectHeight = 14;
 
   const paths = svg.append('g');
-  const g = svg
+  const residues = svg.append('g');
+
+  const g = residues
     .selectAll('g')
     .data(isGeneric ? Object.keys(segment_map_full_gn) : Object.keys(segment_map_full))
     .enter()
@@ -135,7 +136,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     .attr('data-aa', d => d)
     .attr('data-segment', d => (isGeneric ? segment_map_full_gn[d] : segment_map_full[d]))
     .attr('transform', (d, i) => {
-      console.log('create',d);
       const col = segmentList.indexOf(isGeneric ? segment_map_full_gn[d] : segment_map_full[d]);
 
       const height = rectHeight + 1;
@@ -221,19 +221,19 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   switch (config.type) {
     case 'singleCrystal':
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystal(getInteractionsSingleCrystal());
       createLegendSingleCrystal();
       break;
     case 'singleCrystalGroup':
       // getInteractionsCrystalGroup();
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystalGroup();
       createLegendSingleCrystalGroup();
       break;
     case 'twoCrystalGroups':
       // getInteractionsCrystalGroup();
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicTwoCrystalGroups();
       createLegendTwoCrystalGroups();
       break;
@@ -331,7 +331,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         }
       })
       .attr('d', (d) => {
-        console.log(d);
         const coord = getCoordPair(d);
         return `M ${coord.sourceX} ${coord.sourceY} L ${coord.targetX} ${coord.targetY}`;
       })

@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.db.models import Count, Q, Prefetch
 
 
 from common.diagrams_gpcr import DrawSnakePlot
@@ -17,7 +18,7 @@ from protein.models import Protein, ProteinConformation, ProteinSegment
 from structure.models import Structure
 from mutation.models import Mutation
 from residue.models import ResiduePositionSet
-from interaction.models import ResidueFragmentInteraction
+from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 
 
 
@@ -2181,7 +2182,7 @@ def fetch_pdb(request, slug):
     except:
         protein = False
     
-    d = fetch_pdb_info(slug,protein)
+    d = fetch_pdb_info(slug,protein, ignore_gasper_annotation=True)
 
 
     #delete before adding new
@@ -2249,8 +2250,9 @@ class ExperimentBrowser(TemplateView):
                 "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
                 "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
-                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
-
+                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor",
+                Prefetch("structure__ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource'))).annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
             #context['constructs'] = cache.get('construct_browser')
             #if context['constructs']==None:
             context['constructs'] = []

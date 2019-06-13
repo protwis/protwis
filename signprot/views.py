@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinSegment, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
-from residue.models import Residue, ResiduePositionSet
+from residue.models import Residue, ResiduePositionSet, ResidueGenericNumberEquivalent
 
 from structure.models import Structure
 from mutation.models import MutationExperiment
@@ -13,15 +13,37 @@ from common.selection import Selection
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from common.diagrams_arrestin import DrawArrestinPlot
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES
 
+from seqsign.sequence_signature import SignatureMatch
+from seqsign.sequence_signature import SequenceSignature
 from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions
+from signprot.interactions import (
+    get_entry_names,
+    get_ignore_info,
+    get_protein_segments,
+    get_generic_numbers,
+    get_signature_features,
+    group_signature_features,
+    get_signature_consensus,
+    prepare_signature_match,
+)
 
 from common import definitions
 from collections import OrderedDict
+from collections import Counter
 from common.views import AbsTargetSelection
 
 import json
-# Create your views here.
+import re
+import time
+import pickle
+from itertools import chain
+
+from django.core.exceptions import ObjectDoesNotExist
+from decimal import Decimal
+
+
 class BrowseSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 1
@@ -55,18 +77,16 @@ class BrowseSelection(AbsTargetSelection):
     except Exception as e:
         pass
 
-@cache_page(60*60*24*2) # 2 days caching
-def GProtein(request):
+#@cache_page(60*60*24*2) # 2 days caching
+def GProtein(request, dataset = "GuideToPharma"):
 
-    name_of_cache = 'gprotein_statistics'
+    name_of_cache = 'gprotein_statistics_{}'.format(dataset)
 
     context = cache.get(name_of_cache)
-
     if context==None:
 
         context = OrderedDict()
         i=0
-
         gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
         slugs = ['001','002','004','005']
         slug_translate = {'001':"ClassA", '002':"ClassB1",'004':"ClassC", '005':"ClassF"}
@@ -75,11 +95,13 @@ def GProtein(request):
             jsondata = {}
             for gp in gproteins:
                 # ps = gp.proteingproteinpair_set.all()
-                ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug)
-
+                ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug, source=dataset).prefetch_related('protein')
+                # print(ps,len(ps))
                 if ps:
                     jsondata[str(gp)] = []
                     for p in ps:
+                        if dataset=="Aska" and p.log_rai_mean<-1:
+                            continue
                         if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
                             selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
                         selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
@@ -96,6 +118,135 @@ def GProtein(request):
     cache.set(name_of_cache, context, 60*60*24*2) #two days timeout on cache
 
     return render(request, 'signprot/gprotein.html', context)
+
+#@cache_page(60*60*24*2) # 2 days caching
+def Couplings(request):
+
+    context = OrderedDict()
+
+    threshold_primary = -0.1
+    threshold_secondary = -1
+
+
+    proteins = Protein.objects.filter(sequence_type__slug='wt',family__slug__startswith='00',species__common_name='Human').all().prefetch_related('family')
+    data = {}
+    class_names = {}
+    for p in proteins:
+        p_class = p.family.slug.split('_')[0]
+        if p_class not in class_names:
+            class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
+        p_class_name = class_names[p_class].strip()
+        data[p.entry_short()] = {'class':p_class_name,'pretty':p.short()[:15],'GuideToPharma':{},'Aska':{}}
+
+    distinct_g_families = []
+    distinct_g_subunit_families = {}
+    distinct_sources = ['GuideToPharma','Aska']
+
+    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein','g_protein_subunit','g_protein')
+    for c in couplings:
+        p = c.protein.entry_short()
+        s = c.source
+        t = c.transduction
+        m = c.log_rai_mean
+        gf = c.g_protein.name
+        # print(gf)
+        gf = gf.replace(" family","")
+
+        if gf not in distinct_g_families:
+            distinct_g_families.append(gf)
+            distinct_g_subunit_families[gf] = []
+
+        if c.g_protein_subunit:
+            g = c.g_protein_subunit.entry_name
+            g = g.replace("_human","")
+            # print("g",g)
+            if g not in distinct_g_subunit_families[gf]:
+                distinct_g_subunit_families[gf].append(g)
+                distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
+
+        if s not in data[p]:
+            data[p][s] = {}
+
+        if gf not in data[p][s]:
+            data[p][s][gf] = {}
+
+        # If transduction in GuideToPharma data
+        if t:
+            data[p][s][gf] = t
+        else:
+            if 'subunits' not in data[p][s][gf]:
+                data[p][s][gf] = {'subunits':{},'best':-2.00}
+            data[p][s][gf]['subunits'][g] = round(Decimal(m),2)
+            if round(Decimal(m),2)== -0.00:
+                data[p][s][gf]['subunits'][g] = 0.00
+            # get the lowest number into 'best'
+            if m>data[p][s][gf]['best']:
+                data[p][s][gf]['best'] = round(Decimal(m),2)
+
+    fd = {} #final data
+
+    distinct_g_families = sorted(distinct_g_families)
+    distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
+    distinct_g_subunit_families = OrderedDict([('Gs',['gnas2','gnal']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gnaq', 'gna14', 'gna15']), ('G12/G13',['gna12', 'gna13'])])
+
+    for p,v in data.items():
+        fd[p] = [v['class'],p,v['pretty']]
+
+        s = 'GuideToPharma'
+        #Merge
+        for gf in distinct_g_families:
+            values = []
+            if 'GuideToPharma' in v and gf in v['GuideToPharma']:
+                values.append(v['GuideToPharma'][gf])
+            if 'Aska' in v and gf in v['Aska']:
+                best = v['Aska'][gf]['best']
+                if best > threshold_primary:
+                    values.append('primary')
+                elif best > threshold_secondary:
+                    values.append('secondary')
+            if 'primary' in values:
+                fd[p].append('primary')
+            elif 'secondary' in values:
+                fd[p].append('secondary')
+            else:
+                fd[p].append('')
+
+        s = 'GuideToPharma'
+        #First loop over GuideToPharma
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                fd[p].append(v[s][gf])
+            else:
+                fd[p].append("")
+
+        s = 'Aska'
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                if v[s][gf]['best']>threshold_primary:
+                    fd[p].append("primary")
+                elif v[s][gf]['best']>threshold_secondary:
+                    fd[p].append("secondary")
+                else:
+                    fd[p].append("No coupling")
+            else:
+                fd[p].append("")
+
+        for gf,sfs in distinct_g_subunit_families.items():
+            for sf in sfs:
+                if gf in v[s]:
+                    if sf in v[s][gf]['subunits']:
+                        fd[p].append(v[s][gf]['subunits'][sf])
+                    else:
+                        fd[p].append("")
+                else:
+                    fd[p].append("")
+
+
+    context['data'] = fd
+    context['distinct_gf'] = distinct_g_families
+    context['distinct_sf'] = distinct_g_subunit_families
+
+    return render(request, 'signprot/browser.html', context)
 
 @cache_page(60*60*24*2)
 def familyDetail(request, slug):
@@ -453,11 +604,8 @@ def signprotdetail(request, slug):
 
     return render(request, 'signprot/signprot_details.html', context)
 
-def InteractionMatrix(request):
-    from django.db.models import F
-    from django.db.models import Q
-    import requests
 
+def interface_dataset():
     dataset = {
         '4x1h' : [
         ['A','N',73,'2.40x40','C','C',347,'G.H5.23', ["water-mediated"]],
@@ -975,6 +1123,17 @@ def InteractionMatrix(request):
         ],
     }
 
+    return dataset
+
+
+def InteractionMatrix(request):
+    from django.db.models import F
+    from django.db.models import Q
+    from signprot.views import interface_dataset
+    import requests
+
+    dataset = interface_dataset()
+
     # generate complex info dataset
     filt = [e.upper() for e in list(dataset)]
     struc = Structure.objects.filter(pdb_code__index__in=filt).prefetch_related('protein_conformation__protein__parent')
@@ -988,10 +1147,15 @@ def InteractionMatrix(request):
         r['class'] = s.protein_conformation.protein.get_protein_class()
         r['family'] = s.protein_conformation.protein.get_protein_family()
         r['conf_id'] = s.protein_conformation.id
+        r['organism'] = s.protein_conformation.protein.species.common_name
         try:
             r['gprot'] = s.get_stab_agents_gproteins()
         except Exception:
             r['gprot'] = ''
+        try:
+            r['gprot_class'] = s.get_signprot_gprot_family()
+        except Exception:
+            r['gprot_class'] = ''
         complex_info.append(r)
 
     data = Protein.objects.filter(
@@ -1033,170 +1197,78 @@ def InteractionMatrix(request):
         for residue_list in dataset[pdb_key]:
             curr_meta = None
             while curr_meta is None:
-                # print(curr_meta)
                 for meta in interactions_metadata:
                     if meta['pdb_id'].upper() == pdb_key.upper():
                         curr_meta = meta
-            gprot = curr_meta['gprot']
-            entry_name = curr_meta['entry_name']
-            pdb_id = curr_meta['pdb_id']
-            residue_list.extend([gprot, entry_name, pdb_id])
-            new_dataset.append(residue_list)
+                break
+            if curr_meta is not None:
+                gprot = curr_meta['gprot']
+                entry_name = curr_meta['entry_name']
+                pdb_id = curr_meta['pdb_id']
+                residue_list.extend([gprot, entry_name, pdb_id])
+                new_dataset.append(residue_list)
 
     context = {
         'interactions': new_dataset,
+        # 'interactions': json.dumps(dataset),
         'non_interactions': json.dumps(list(remaining_residues)),
         'interactions_metadata': json.dumps(interactions_metadata),
         # 'ps': json.dumps(list(proteins)),
-        'gprot': json.dumps(list(gprotein_order))
+        'gprot': json.dumps(list(gprotein_order)),
         }
+
+    request.session['signature'] = None
+    request.session.modified = True
 
     return render(request, 'signprot/matrix.html', context)
 
-def IMSequenceSignature(request):
 
-    import time
+def IMSequenceSignature(request):
+    '''Accept set of proteins + generic numbers and calculate the signature for those'''
     t1 = time.time()
 
-    import re
-    from itertools import chain
+    pos_set_in = get_entry_names(request)
+    ignore_in_alignment = get_ignore_info(request)
+    segments = get_protein_segments(request)
 
-    from protein.models import Protein
-    from protein.models import ProteinSegment
-    from residue.models import ResidueGenericNumberEquivalent
-    from seqsign.sequence_signature import SignatureMatch
-    from seqsign.sequence_signature import SequenceSignature
-
-    from django.core.exceptions import ObjectDoesNotExist
-
-    # example data
-    # pos_set = ["5ht2c_human", "acm4_human", "drd1_human"]
-    # neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"]
-    segments = list(ProteinSegment.objects.filter(proteinfamily='GPCR'))
-
-    # receive data
-    pos_set_in = request.POST.getlist('pos[]')
-    # neg_set = request.POST.getlist('neg[]')
-    # segments = []
-    # for s in request.POST.getlist('seg[]'):
-    #     try:
-    #         gen_object = ResidueGenericNumberEquivalent.objects.filter(label=s, scheme__slug__in=['gpcrdba', 'gpcrdbb', 'gpcrdbc', 'gpcrdbf']).first()
-    #         segments.append(gen_object)
-    #     except ObjectDoesNotExist as e:
-    #         print('For {} a {} '.format(s, e))
-    #         continue
-
-    # get pos/neg set objects
+    # get pos objects
     pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')
-    # neg_set = Protein.objects.filter(entry_name__in=neg_set).select_related('residue_numbering_scheme', 'species')
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-    signature.setup_alignments(segments, pos_set, pos_set)
-    signature.calculate_signature()
-
-
+    signature.setup_alignments(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
+    signature.calculate_signature_onesided()
     # preprocess data for return
-    signature_data = signature.prepare_display_data()
+    signature_data = signature.prepare_display_data_onesided()
 
     # FEATURES AND REGIONS
     feats = [feature for feature in signature_data['a_pos'].features_combo]
-    trans = {
-        'N-term': 'N',
-        'TM1': 1,
-        'ICL1': 12,
-        'TM2': 2,
-        'ECL1': 23,
-        'TM3': 3,
-        'ICL2': 34,
-        'TM4': 4,
-        'ECL2': 45,
-        'TM5': 5,
-        'ICL3': 56,
-        'TM6': 6,
-        'ECL3': 67,
-        'TM7': 7,
-        'ICL4': 78,
-        'H8': 8,
-        'C-term': 'C',
-    }
 
     # GET GENERIC NUMBERS
-    generic_numbers = []
-    for _, segments in signature_data['common_generic_numbers'].items():
-        for elem, num in segments.items():
-            gnl = []
-            for x, dn in num.items():
-                if dn != '':
-                    rexp = r'(?<=<b>)\d{1,}|\.?\d{2,}[\-?\d{2,}]*|x\d{2,}'
-                    gn = re.findall(rexp, dn)
-                else:
-                    gn = ''.join([str(trans[elem]), '.', str(x)])
-                gnl.append(''.join(gn))
-            generic_numbers.append(gnl)
-
+    generic_numbers = get_generic_numbers(signature_data)
 
     # FEATURE FREQUENCIES
-    # define list of features to keep
-    filter_features = []
-    signature_features = []
-    x = 0
-    for i, feature in enumerate(signature_data['a_pos'].feature_stats):
-        # discard unwanted features
-        # if feature in filter_features:
-        for j, segment in enumerate(feature):
-            for k, freq in enumerate(segment):
-                # freq0: score
-                # freq1: level of conservation
-                # freq2: a - b explanation
-                try:
-                    signature_features.append({
-                        'key': int(x),
-                        'feature': str(feats[i][0]),
-                        'feature_code': str(feats[i][1]),
-                        'length': str(feats[i][2]),
-                        'gn': str(generic_numbers[j][k]),
-                        'freq': int(freq[0]),
-                        'cons': int(freq[1]),
-                        # 'expl': str(freq[2]),
-                    })
-                    x += 1
-                except Exception as e:
-                    print(e)
-
+    signature_features = get_signature_features(signature_data, generic_numbers, feats)
+    grouped_features = group_signature_features(signature_features)
 
     # FEATURE CONSENSUS
     generic_numbers_flat = list(chain.from_iterable(generic_numbers))
-    sigcons = []
-    x = 0
-    for segment, cons in signature_data['feats_cons_pos'].items():
-        for pos in cons:
-            # pos0: Code
-            # pos1: Name
-            # pos2: Score
-            # pos3: level of conservation
+    sigcons = get_signature_consensus(signature_data, generic_numbers_flat)
 
-            # res0: Property Abbreviation
-            # res1: Feature Score
-            # res2: Conservation Level
-            try:
-                sigcons.append({
-                    'key': int(x),
-                    'gn': str(generic_numbers_flat[x]),
-                    'code': str(pos[0]),
-                    'feature': str(pos[1]),
-                    'score': int(pos[2]),
-                    'cons': int(pos[3]),
-                    'length': str(pos[4]),
-                })
-                x += 1
-            except Exception as e:
-                    print(e)
+    rec_class = pos_set[0].get_protein_class()
+
+    # dump = {
+    #     'rec_class': rec_class,
+    #     'signature': signature,
+    #     'consensus': signature_data,
+    #     }
+    # with open('signprot/notebooks/interface_pickles/{}.p'.format(rec_class), 'wb+') as out_file:
+    #     pickle.dump(dump, out_file)
 
     # pass back to front
     res = {
         'cons': sigcons,
-        'feat': signature_features,
+        'feat': grouped_features,
     }
 
     request.session['signature'] = signature.prepare_session_data()
@@ -1207,15 +1279,16 @@ def IMSequenceSignature(request):
 
     return JsonResponse(res, safe=False)
 
-def IMSignatureMatch(request):
-    from seqsign.sequence_signature import SignatureMatch
 
+def IMSignatureMatch(request):
+    '''Take the signature stored in the session and query the db'''
     signature_data = request.session.get('signature')
     ss_pos = request.POST.getlist('pos[]')
     cutoff = request.POST.get('cutoff')
 
     pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
     pos_set = [protein for protein in pos_set]
+    pfam = [protein.family.slug[:3] for protein in pos_set]
 
     signature_match = SignatureMatch(
         signature_data['common_positions'],
@@ -1224,26 +1297,12 @@ def IMSignatureMatch(request):
         signature_data['diff_matrix'],
         pos_set,
         pos_set,
-        cutoff = int(cutoff)
+        cutoff = 0
     )
 
-    signature_match.score_protein_class(
-        pos_set[0].family.slug[:3]
-    )
-
-    request.session['signature_match'] = {
-        'scores': signature_match.protein_report,
-        'scores_pos': signature_match.scores_pos,
-        'scores_neg': signature_match.scores_neg,
-        'protein_signatures': signature_match.protein_signatures,
-        'signatures_pos': signature_match.signatures_pos,
-        'signatures_neg': signature_match.signatures_neg,
-        'signature_filtered': signature_match.signature_consensus,
-        'relevant_gn': signature_match.relevant_gn,
-        'relevant_segments': signature_match.relevant_segments,
-        'numbering_schemes': signature_match.schemes,
-    }
-    request.session.modified = True
+    maj_pfam = Counter(pfam).most_common()[0][0]
+    signature_match.score_protein_class(maj_pfam)
+    request.session['signature_match'] = signature_match
 
     signature_match = {
         'scores': signature_match.protein_report,
@@ -1258,7 +1317,17 @@ def IMSignatureMatch(request):
         'numbering_schemes': signature_match.schemes,
     }
 
-    # {'scores': signature_match}
-    # return JsonResponse(signature_match, safe=False)
-    print(signature_match)
-    return JsonResponse('success', safe=False)
+    signature_match = prepare_signature_match(signature_match)
+    return JsonResponse(signature_match, safe=False)
+
+
+def render_IMSigMat(request):
+
+    signature_match = request.session.get('signature_match')
+
+    response = render(
+        request,
+        'signature_match.html',
+        {'scores': signature_match}
+        )
+    return response

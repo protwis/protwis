@@ -37,6 +37,18 @@ class Interaction(models.Model):
     class Meta():
         db_table = 'interaction'
 
+class ConsensusInteraction(models.Model):
+    gn1 = models.ForeignKey('residue.ResidueGenericNumber', on_delete=models.CASCADE, related_name='GN_1')
+    gn2 = models.ForeignKey('residue.ResidueGenericNumber', on_delete=models.CASCADE, related_name='GN_2')
+    protein_class = models.ForeignKey('protein.ProteinFamily', on_delete=models.CASCADE)
+    state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
+    frequency = models.DecimalField(max_digits=5, decimal_places=2)
+    structures = models.ManyToManyField('structure.Structure')
+    proteins = models.ManyToManyField('protein.Protein')
+    state_specific = models.BooleanField(default=False)
+
+    class Meta():
+        unique_together = ('gn1', 'gn2','protein_class','state')
 
 class Distance(models.Model):
     structure = models.ForeignKey('structure.Structure', related_name='distances', on_delete=models.CASCADE, null=True)

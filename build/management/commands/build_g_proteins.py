@@ -4,7 +4,7 @@ from django.db import connection
 from django.db import IntegrityError
 
 
-from common.models import WebResource, WebLink
+from common.models import WebResource, WebLink, Publication
 
 from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
@@ -27,13 +27,67 @@ import math
 import numpy as np
 import logging
 import csv
-import os
+import sys, os
 import csv
 import shlex, subprocess
 import requests, xmltodict
 import yaml
+import xlrd
+from collections import defaultdict
 
 from urllib.request import urlopen
+
+def read_excel(excelpath, sheet=None):
+    workbook = xlrd.open_workbook(excelpath)
+    worksheets = workbook.sheet_names()
+    data = {}
+    for worksheet_name in worksheets:
+        if sheet and worksheet_name != sheet:
+            continue
+        worksheet = workbook.sheet_by_name(worksheet_name)
+        num_rows = worksheet.nrows - 1
+        num_cells = worksheet.ncols - 1
+        curr_row = -1 #skip first, otherwise -1
+        while curr_row < num_rows:
+            curr_row += 1
+            row = worksheet.row(curr_row)
+            curr_cell = -1
+            if worksheet.cell_value(curr_row, 0) == '' and worksheet.cell_value(curr_row, 1) == 'SEM': #if empty reference
+                # If sem row, then add previous first cell, which is the protein name.
+                protein = worksheet.cell_value(curr_row-1, 0)
+                data_type = 'SEM'
+                curr_cell = 0 #skip first empty cell.
+            elif curr_row!=0 and worksheet.cell_value(curr_row, 0) == '': #if empty row
+                continue
+            elif curr_row == 0:
+                # First row -- fetch headers
+                headers = []
+                while curr_cell < num_cells:
+                    curr_cell += 1
+                    cell_value = worksheet.cell_value(curr_row, curr_cell)
+                    if cell_value:
+                        headers.append(cell_value)
+                continue
+            else:
+                # MEAN row
+                protein = worksheet.cell_value(curr_row, 0)
+                data_type = 'mean'
+
+            if protein not in data:
+                data[protein] = {}
+
+            curr_cell = 1 #Skip first two rows which contain protein and type
+            while curr_cell < num_cells:
+                curr_cell += 1
+                cell_value = worksheet.cell_value(curr_row, curr_cell)
+                gprotein = headers[curr_cell-2]
+
+                if gprotein not in data[protein]:
+                    data[protein][gprotein] = {}
+
+                data[protein][gprotein][data_type] = cell_value
+
+    return data
 
 class Command(BaseCommand):
     help = 'Build G proteins'
@@ -49,6 +103,8 @@ class Command(BaseCommand):
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
     ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
+
+    aska_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'LogRAi G-chimera submitted ver.xlsx'])
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
@@ -257,7 +313,6 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
-
         if self.options['wt']:
             self.add_entry()
         elif self.options['build_datafile']:
@@ -267,8 +322,8 @@ class Command(BaseCommand):
             try:
                 self.purge_signprot_complex_data()
                 self.purge_coupling_data()
-                self.purge_cgn_residues()
-                self.purge_other_subunit_residues()
+                # self.purge_cgn_residues()
+                # self.purge_other_subunit_residues()
                 self.purge_cgn_proteins()
                 self.purge_other_subunit_proteins()
 
@@ -296,9 +351,13 @@ class Command(BaseCommand):
                 self.update_protein_conformation(human_and_orths)
                 self.create_barcode()
                 self.add_other_subunits()
+                if os.path.exists(self.aska_file): 
+                    self.add_aska_coupling_data()
 
             except Exception as msg:
-                print(msg)
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
                 self.logger.error(msg)
 
     def add_other_subunits(self):
@@ -345,7 +404,7 @@ class Command(BaseCommand):
             prot, created = Protein.objects.get_or_create(entry_name=up['entry_name'], accession=acc, name=name, sequence=up['sequence'], family=proteinfamily, parent=None, 
                                                           residue_numbering_scheme=None, sequence_type=pst, source=source, species=species)
             state = ProteinState.objects.get(slug='active')
-            prot_conf, created = ProteinConformation.objects.get_or_create(protein=prot, state=state, template_structure=None)
+            prot_conf, created = ProteinConformation.objects.get_or_create(protein=prot, state=state)
 
     def fetch_missing_uniprot_files(self):
         BASE = 'http://www.uniprot.org'
@@ -556,20 +615,25 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('Gprotein_crossclass.csv')]
-
+            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('iuphar_coupling_data.csv')]
+        source = "GuideToPharma"
         for filename in filenames:
             filepath = os.sep.join([self.gprotein_data_path, filename])
 
             self.logger.info('Reading filename' + filename)
 
+            pub_years = defaultdict(int)
+            pub_years_protein = defaultdict(set)
+
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
                 for row in islice(reader, 1, None): # skip first line
 
-                    entry_name = row[0]
-                    primary = row[8]
-                    secondary = row[9]
+                    entry_name = row[3]
+                    primary = row[11]
+                    secondary = row[12]
+                    primary_pubmed = row[15]
+                    secondary_pubmed = row[16]
                     # fetch protein
                     try:
                         p = Protein.objects.get(entry_name=entry_name)
@@ -588,18 +652,39 @@ class Command(BaseCommand):
                         print('no data for ', entry_name)
                         continue
 
-                    # print(primary,secondary)
-
                     try:
                         for gp in primary:
                             if gp in ['','None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
                                 continue
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
                             # print(p, g)
-                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary', source = source)
                             gpair.save()
-                    except:
-                        print("error in primary assignment", p, gp)
+
+                            for pmid in primary_pubmed.split("|"):
+                                try:
+                                    test = int(pmid)
+                                except:
+                                    continue
+                                try:
+                                    pub = Publication.objects.get(web_link__index=pmid,web_link__web_resource__slug='pubmed')
+                                except Publication.DoesNotExist as e:
+                                    pub = Publication()
+                                    try:
+                                        pub.web_link = WebLink.objects.get(index=pmid,
+                                            web_resource__slug='pubmed')
+                                    except WebLink.DoesNotExist:
+                                        wl = WebLink.objects.create(index=pmid,
+                                            web_resource = WebResource.objects.get(slug='pubmed'))
+                                        pub.web_link = wl
+                                pub.update_from_pubmed_data(index=pmid)
+                                pub.save()
+                                pub_years[pub.year] += 1
+                                pub_years_protein[pub.year].add(entry_name)
+                                gpair.references.add(pub)
+
+                    except Exception as e:
+                        print("error in primary assignment", p, gp,e )
 
                     try:
                         for gp in secondary:
@@ -608,12 +693,84 @@ class Command(BaseCommand):
                             if gp in primary: #sip those that were already primary
                                  continue
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
-                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary', source = source)
                             gpair.save()
-                    except:
-                        print("error in secondary assignment", p, gp)
 
+                            for pmid in secondary_pubmed.split("|"):
+                                try:
+                                    test = int(pmid)
+                                except:
+                                    continue
+
+                                try:
+                                    pub = Publication.objects.get(web_link__index=pmid,web_link__web_resource__slug='pubmed')
+                                except Publication.DoesNotExist as e:
+                                    pub = Publication()
+                                    try:
+                                        pub.web_link = WebLink.objects.get(index=pmid,
+                                            web_resource__slug='pubmed')
+                                    except WebLink.DoesNotExist:
+                                        wl = WebLink.objects.create(index=pmid,
+                                            web_resource = WebResource.objects.get(slug='pubmed'))
+                                        pub.web_link = wl
+                                pub.update_from_pubmed_data(index=pmid)
+                                pub.save()
+                                pub_years[pub.year] += 1
+                                pub_years_protein[pub.year].add(entry_name)
+                                gpair.references.add(pub)
+                    except Exception as e:
+                        print("error in secondary assignment", p, gp,e)
+        # for key, value in sorted(pub_years.items()):
+        #     print(key, value,pub_years_protein[key])
         self.logger.info('COMPLETED CREATING G PROTEINS')
+
+    def add_aska_coupling_data(self):
+        self.logger.info('CREATING ASKA COUPLING')
+
+        translation = {'Gs family':'100_001_001', 'Gi/Go family':'100_001_002', 'Gq/G11 family':'100_001_003','G12/G13 family':'100_001_004',}
+
+        # read source files
+        
+        filepath = self.aska_file
+        sheet = "LogRAi mean and SEM"
+
+        self.logger.info('Reading filename' + filepath)
+
+        data = read_excel(filepath,sheet)
+
+        source = 'Aska'
+
+        lookup = {}
+
+        for entry_name, couplings in data.items():
+            # if it has / then pick first, since it gets same protein
+            entry_name = entry_name.split("/")[0]
+            # append _human to entry name
+            # entry_name = "{}_HUMAN".format(entry_name).lower()
+            # Fetch protein
+            try:
+                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                print("protein not found for ", entry_name)
+                continue
+
+            for gprotein, values in couplings.items():
+                if gprotein not in lookup:
+                    gp = Protein.objects.filter(genes__name=gprotein, species__common_name="Human")[0]
+                    lookup[gprotein] = gp
+                else:
+                    gp = lookup[gprotein]
+                # Assume there are there.
+                if gp.family.slug not in lookup:
+                    g = ProteinGProtein.objects.get(slug=gp.family.slug)
+                    lookup[gp.family.slug] = g
+                else:
+                    g = lookup[gp.family.slug]
+                gpair = ProteinGProteinPair(protein=p, g_protein=g,  source = source, log_rai_mean=values['mean'], log_rai_sem=values['SEM'], g_protein_subunit = gp)
+                gpair.save()
+
+        self.logger.info('COMPLETED ADDING ASKA COULPLING DATA')
 
     def purge_cgn_proteins(self):
         try:
@@ -722,7 +879,7 @@ class Command(BaseCommand):
             gp = Protein.objects.get(accession=g)
 
             try:
-                pc, created= ProteinConformation.objects.get_or_create(protein=gp, state=state, template_structure=None)
+                pc, created= ProteinConformation.objects.get_or_create(protein=gp, state=state)
                 self.logger.info('Created protein conformation')
             except:
                 self.logger.error('Failed to create protein conformation')

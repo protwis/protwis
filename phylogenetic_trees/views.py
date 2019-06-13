@@ -69,13 +69,18 @@ class TreeSettings(AbsMiscSelection):
         ('targets', True),
         ('segments', True),
     ])
-    buttons = {
-        'continue': {
-            'label': 'Draw tree',
-            'url': '/phylogenetic_trees/render',
+    buttons = OrderedDict({
+        'continue_new': {
+            'label': 'Draw tree using new code',
+            'url': '/phylogenetic_trees/render_new',
             'color': 'success',
         },
-    }
+        'continue': {
+            'label': 'Draw tree using previous code',
+            'url': '/phylogenetic_trees/render',
+            'color': 'success',
+        }
+    })
     tree_settings = True
 
 
@@ -159,7 +164,7 @@ class Treeclass:
         infile = open('/tmp/%s/infile' %dirname,'w')
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
         if len(a.proteins) < 3:
-            return 'More_prots',None, None, None, None,None,None,None
+            return 'More_prots',None, None, None, None,None,None,None,None
         ####Get additional protein information
         accesions = {}
         for n in a.proteins:
@@ -205,7 +210,7 @@ class Treeclass:
                 os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
             except:
                 kill_phylo() #FIXME, needs better way of handling this!
-                return "too big","too big","too big","too big","too big","too big","too big","too big"
+                return "too big","too big","too big","too big","too big","too big","too big","too big","too big"
 
         ### Write phylip input options
         inp = open('/tmp/%s/temp' %dirname,'w')
@@ -219,7 +224,7 @@ class Treeclass:
             subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
         except:
             kill_phylo() #FIXME, needs better way of handling this!
-            return "too big","too big","too big","too big","too big","too big","too big","too big"
+            return "too big","too big","too big","too big","too big","too big","too big","too big","too big"
         os.rename('/tmp/%s/infile' %dirname, '/tmp/%s/dupa' %dirname)
         os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
         inp = open('/tmp/%s/temp' %dirname,'w')
@@ -266,7 +271,7 @@ class Treeclass:
             open('static/home/images/'+build+'_legend.svg','w').write(str(self.Tree.legend))
             open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
         else:
-            return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
+            return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons, a.proteins
         
     def get_phylogeny(self, dirname):
 
@@ -309,7 +314,7 @@ def modify_tree(request):
 
 def render_tree(request):
     Tree_class=Treeclass()
-    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
     if phylogeny_input == 'too big':
         return render(request, 'phylogenetic_trees/too_big.html')
 
@@ -323,5 +328,44 @@ def render_tree(request):
     
     request.session['Tree']=Tree_class
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
+
+
+def render_tree_new(request):
+    Tree_class=Treeclass()
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
+    if phylogeny_input == 'too big':
+        return render(request, 'phylogenetic_trees/too_big.html')
+
+    if phylogeny_input == 'More_prots':
+        return render(request, 'phylogenetic_trees/warning.html')
+    
+    if ttype == '1':
+        float(total)/4*100
+    else:
+        count = 1900 - 1400/math.sqrt(float(total))
+    
+
+    protein_data = []
+
+    #FIXME remove
+    import random
+    for pc in proteins:
+        v = {}
+        p = pc.protein
+        v['name'] = p.entry_name
+        v['GPCR_class'] = p.family.parent.parent.parent.name
+        v['selectivity'] = ["Gq/G11 family"]
+        v['ligand_type'] = p.family.parent.parent.name
+        v['coverage'] = random.uniform(0, 1)
+        v['receptor_page'] = ''
+        print(v)
+        protein_data.append(v)
+
+
+    request.session['Tree']=Tree_class
+    context = {}
+    context['phylip'] = Tree_class.phylip.replace('\n', '')
+    context['protein_data'] = protein_data
+    return render(request, 'phylogenetic_trees/display.html', context)
 
 

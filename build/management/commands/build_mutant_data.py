@@ -758,7 +758,7 @@ class Command(BaseBuild):
         MutationExperiment.objects.bulk_create(bulk_m)
         end = time.time()
         diff = round(end - current,2)
-        current_sheet
+        # current_sheet
         diff_2 = round(end - current_sheet,2)
         print("overall",diff_2,"bulk",diff,len(bulk_m),"skipped",str(skipped))
         sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
