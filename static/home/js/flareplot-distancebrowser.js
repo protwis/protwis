@@ -7,7 +7,7 @@
  * @param containerSelector
  * @returns {{getNumFrames, setFrame, framesIntersect, framesSum, setTrack, setTree, getTreeNames, getTrackNames, addNodeToggleListener, addNodeHoverListener, addEdgeToggleListener, addEdgeHoverListener, graph}}
  */
-function createFlareplot(width, inputGraph, containerSelector, contiguousOutward = false){
+function createFlareplot(width, inputGraph, containerSelector, contiguousOutward = true){
     var w = width;
     var h = w;
     var outwardShift = 0;
@@ -164,9 +164,8 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             svg = div.append("svg:svg")
                 .attr("viewBox", "0 0 " + w + " " + h )
                 .attr("width", "100%")
-                .attr("height", "500px")
+                // .attr("height", h)
                 .append("svg:g")
-                .attr("id","flareplot_svg")
                 .attr("transform", "translate(" + cx + "," + cy + ")");
 
             //// Find the width of the node-name track. Temporarily add all text, go through them and get max-width
@@ -189,9 +188,9 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 .enter().append("svg:path")
                 .attr("class", function(d) {
                     var ret = "link source-" + d.source.key + " target-" + d.target.key;
-                    // if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
-                    //     ret += " toggled";
-                    // }
+                    if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
+                        ret += " toggled";
+                    }
                     return ret;
                 })
                 .style("stroke-width",function(d){
@@ -200,9 +199,9 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
 
                 .style("stroke",function(d){ return d.color; })
                 .style("fill","none")
-                .attr("d", function(d, i) { return line(splines[i]); });
-                // .on("mouseover", function(d){ fireEdgeHoverListeners(d); })
-                // .on("click", function(d){ fireEdgeToggleListeners(d); });
+                .attr("d", function(d, i) { return line(splines[i]); })
+                .on("mouseover", function(d){ fireEdgeHoverListeners(d); })
+                .on("click", function(d){ fireEdgeToggleListeners(d); });
 
 
             svg.selectAll("g.node")
@@ -217,8 +216,8 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
                 .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
                 .text(function(d) { return d.key; })
-                // .on("mouseover", mouseoverNode)
-                // .on("mouseout", mouseoutNode)
+                .on("mouseover", mouseoverNode)
+                .on("mouseout", mouseoutNode)
                 .on("click", function(d){ toggleNode(d.name); });
 
 
@@ -247,11 +246,11 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                       return "rotate("+x+")" ;
                   })
                   .style("fill", function(d){ return d.color; })
-                  .attr("d", arc);
-                  // .on("click", function(d){
-                  //     //Locate corresponding node
-                  //     toggleSegment(d.segment);
-                  // });
+                  .attr("d", arc)
+                  .on("click", function(d){
+                      //Locate corresponding node
+                      toggleSegment(d.segment);
+                  });
 
               // Draw segment names
               for (key in graph.segments){
@@ -287,10 +286,10 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                       .attr("transform", "rotate("+x+") translate(" + (ry - 13) + ") rotate(90)") // 13 is based on width segment band of 15
                       .text(label)
                       .style("text-anchor", "middle")
-                      .style("fill", segmentColor);
-                      // .on("click", function(d){
-                      //     toggleSegment(d.segment);
-                      // });
+                      .style("fill", segmentColor)
+                      .on("click", function(d){
+                          toggleSegment(d.segment);
+                      });
                   }
               };
               /*svg.selectAll("g.segmentElement")
@@ -370,6 +369,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         graph.segments[c.segment] = {};
                         graph.segments[c.segment]["name"] = c.segment;
                         graph.segments[c.segment]["color"] = c.color;
+                        graph.segments[c.segment]["rainbow"] = c.rainbow;
                         graph.segments[c.segment]["count"] = 1;
                         graph.segments[c.segment]["nodes"] = [name];
                     } else {
@@ -439,6 +439,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         interactions: e.interactions,
                         opacity: e.opacity || graph.defaults.edgeOpacity || 1,
                         segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
+                        rainbow: e.rainbow || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
                         width: e.width || graph.defaults.edgeWidth || 1
                     };
 
@@ -454,6 +455,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             interactions: edge.interactions,
                             opacity: edge.opacity,
                             segment: edge.segment,
+                            rainbow: edge.rainbow,
                             width: edge.width
                         };
                         t.allEdges.push({
@@ -466,6 +468,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             interactions: edge.interactions,
                             opacity: edge.opacity,
                             segment: edge.segment,
+                            rainbow: edge.rainbow,
                             width: edge.width
                         });
                     } else {
@@ -618,7 +621,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
                         ret += " toggled";
                     }
-                    ret += " " + Object.keys(d.interactions).join(" ");
+                    // ret += " " + Object.keys(d.interactions).join(" ");
                     return ret;
                 })
                 //.attr("class", function(d) { return "link source-" + d.source.key + " target-" + d.target.key; })
@@ -651,19 +654,19 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         e.toggled = e.edge.name1 in toggledNodes || e.edge.name2 in toggledNodes;
                         visibleEdges.push(e);
 
-                        return widthScale(count) * graph.edges[i].width*2;
+                        return widthScale(count) * graph.edges[i].width;
                     } else {
                         return 0;
                     }
                 })
-                // .attr("class", function(d) {
-                //     var ret = "link source-" + d.source.key + " target-" + d.target.key;
-                //     if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
-                //         ret += " toggled";
-                //     }
-                //     // ret += " " + Object.keys(d.interactions).join(" ");
-                //     return ret;
-                // })
+                .attr("class", function(d) {
+                    var ret = "link source-" + d.source.key + " target-" + d.target.key;
+                    if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
+                        ret += " toggled";
+                    }
+                    // ret += " " + Object.keys(d.interactions).join(" ");
+                    return ret;
+                })
                 //.attr("class", function(d) { return "link source-" + d.source.key + " target-" + d.target.key; })
                 .style("stroke",function(d){ return d.color; })
                 .attr("d", function(d, i) { return line(splines[i]); });
@@ -800,90 +803,90 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             throw "framesSum must take either two integers (range), or an array (subset) as argument";
         }
 
-        // function toggleNode(nodeName){
-        //     var svgNodeElement = svg.selectAll("g.node#node-"+nodeName).node();
-        //     var toggled = !d3.select(svgNodeElement).classed("toggledNode");
-        //     d3.select(svgNodeElement)
-        //         .classed("toggledNode", function(){return toggled; });
+        function toggleNode(nodeName){
+            var svgNodeElement = svg.selectAll("g.node#node-"+nodeName).node();
+            var toggled = !d3.select(svgNodeElement).classed("toggledNode");
+            d3.select(svgNodeElement)
+                .classed("toggledNode", function(){return toggled; });
 
-        //     var name = nodeName.substring(nodeName.lastIndexOf(".")+1);
-        //     if(!toggled)
-        //         delete toggledNodes[name];
-        //     else
-        //         toggledNodes[name] = "";
+            var name = nodeName.substring(nodeName.lastIndexOf(".")+1);
+            if(!toggled)
+                delete toggledNodes[name];
+            else
+                toggledNodes[name] = "";
 
-        //     // reset checked values
-        //     svg.selectAll("g.node.checked").classed("checked", false);
+            // reset checked values
+            svg.selectAll("g.node.checked").classed("checked", false);
 
-        //     path = svg.selectAll("path.link")
-        //         .classed("toggled", function(d) {
-        //             toggle = d.source.key in toggledNodes || d.target.key in toggledNodes;
-        //             if (toggle) {
-        //               if (d.source.key in toggledNodes){
-        //                 svg.select("#node-" + d.target.key).classed("checked", true);
-        //               } else {
-        //                 svg.select("#node-" + d.source.key).classed("checked", true);
-        //               }
-        //             }
-        //             return toggle;
-        //         });
+            path = svg.selectAll("path.link")
+                .classed("toggled", function(d) {
+                    toggle = d.source.key in toggledNodes || d.target.key in toggledNodes;
+                    if (toggle) {
+                      if (d.source.key in toggledNodes){
+                        svg.select("#node-" + d.target.key).classed("checked", true);
+                      } else {
+                        svg.select("#node-" + d.source.key).classed("checked", true);
+                      }
+                    }
+                    return toggle;
+                });
 
-        //     visibleEdges.forEach(function(e){
-        //         if(e.edge.name1==nodeName || e.edge.name2==nodeName){
-        //             e.toggled = toggled;
-        //         }
-        //     });
+            visibleEdges.forEach(function(e){
+                if(e.edge.name1==nodeName || e.edge.name2==nodeName){
+                    e.toggled = toggled;
+                }
+            });
 
-        //     fireNodeToggleListeners(nodeName);
-        // }
+            fireNodeToggleListeners(nodeName);
+        }
 
-        // function toggleSegment(segment) {
-        //     var nodes = graph.segments[segment]["nodes"].slice();
+        function toggleSegment(segment) {
+            var nodes = graph.segments[segment]["nodes"].slice();
 
-        //     svg.selectAll("g.toggledNode").each(function(node){
-        //         var index = nodes.indexOf(node.key);
-        //         if (index !== -1) {
-        //           nodes.splice(index, 1);
-        //         }
-        //     });
+            svg.selectAll("g.toggledNode").each(function(node){
+                var index = nodes.indexOf(node.key);
+                if (index !== -1) {
+                  nodes.splice(index, 1);
+                }
+            });
 
-        //     // All toggled?
-        //     if (nodes.length == 0) {
-        //       nodes = graph.segments[segment]["nodes"];
-        //     }
+            // All toggled?
+            if (nodes.length == 0) {
+              nodes = graph.segments[segment]["nodes"];
+            }
 
-        //     // disable/enable the ones (left) in nodes
-        //     nodes.forEach(function(node){
-        //           toggleNode(node);
-        //       });
-        // }
+            // disable/enable the ones (left) in nodes
+            nodes.forEach(function(node){
+                  toggleNode(node);
+              });
+        }
 
-        // function toggleContiguousSequences(){
-        //     // select all paths with
-        //     var svgNodeElement = svg.selectAll("g.node#node-"+nodeName).node();
-        //     var toggled = !d3.select(svgNodeElement).classed("toggledNode");
-        //     d3.select(svgNodeElement)
-        //         .classed("toggledNode", function(){return toggled; });
+        function toggleContiguousSequences(){
+            // select all paths with
+            var svgNodeElement = svg.selectAll("g.node#node-"+nodeName).node();
+            var toggled = !d3.select(svgNodeElement).classed("toggledNode");
+            d3.select(svgNodeElement)
+                .classed("toggledNode", function(){return toggled; });
 
-        //     var name = nodeName.substring(nodeName.lastIndexOf(".")+1);
-        //     if(!toggled)
-        //         delete toggledNodes[name];
-        //     else
-        //         toggledNodes[name] = "";
+            var name = nodeName.substring(nodeName.lastIndexOf(".")+1);
+            if(!toggled)
+                delete toggledNodes[name];
+            else
+                toggledNodes[name] = "";
 
-        //     path = svg.selectAll("path.link")
-        //         .classed("toggled", function(d) {
-        //             return ( d.source.key in toggledNodes || d.target.key in toggledNodes)
-        //         });
+            path = svg.selectAll("path.link")
+                .classed("toggled", function(d) {
+                    return ( d.source.key in toggledNodes || d.target.key in toggledNodes)
+                });
 
-        //     visibleEdges.forEach(function(e){
-        //         if(e.edge.name1==nodeName || e.edge.name2==nodeName){
-        //             e.toggled = toggled;
-        //         }
-        //     });
+            visibleEdges.forEach(function(e){
+                if(e.edge.name1==nodeName || e.edge.name2==nodeName){
+                    e.toggled = toggled;
+                }
+            });
 
-        //     fireNodeToggleListeners(nodeName);
-        // }
+            fireNodeToggleListeners(nodeName);
+        }
 
         function mouseoverNode(d) {
             svg.selectAll("path.link.target-" + d.key)
@@ -1133,6 +1136,10 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return getColorStrongestInteraction(Object.keys(d.interactions).filter(value => -1 !== interactions.indexOf(value)), false); });
                 break;
+              case "rainbow":
+                svg.selectAll("path.link")
+                    .style("stroke", function(d){ return d.rainbow; });
+              break;
               case "segment":
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return d.segment; });
@@ -1141,6 +1148,15 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return d.color; });
                 break;
+            }
+
+            if (color=="rainbow"){
+              svg.selectAll("g.trackElement").select("path")
+                  .style("fill", function(d){ return d.rainbow; });
+            } else {
+              // default
+              svg.selectAll("g.trackElement").select("path")
+                  .style("fill", function(d){ return d.color; });
             }
         }
 

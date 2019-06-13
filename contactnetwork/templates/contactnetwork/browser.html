@@ -26,13 +26,13 @@
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs</h3>
+                                <h3 class="panel-title">Structures</h3>
                             </div>
                             <div class="panel-body">
                                 <input class="crystal-pdb" type="hidden" value="[]" />
                                 <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select PDBs</button> #}
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select PDBs</button>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select Structures</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
                             </div>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
-                                <table class="table">
+                                <table class="table primary-table display">
                                   <thead>
                                     <tr>
                                       <th>GN1</th>
@@ -96,6 +96,23 @@
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
+                                <span class="secondary-info"></span>
+
+                                <table class="table secondary-table display">
+                                  <thead>
+                                    <tr>
+                                      <th>Interaction</th>
+                                      <th>% set 1</th>
+                                      <th>AA pairs</th>
+                                      <th>Int. in set</th>
+                                      <th>% in class A</th>
+                                      <th>Pair  % set</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    
+                                  </tbody>
+                                </table>
                             </div>
                          </div>
 
@@ -118,28 +135,28 @@
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs Group 1</h3>
+                                <h3 class="panel-title">Structures Group 1</h3>
                             </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
                                 <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
                                 <h5><span class="crystal-count-1">0</span> structure(s) selected.</h5>
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1">Select PDBs</button> #}
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select PDBs</button>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1">Select Structures</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures</button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">PDBs Group 2</h3>
+                                <h3 class="panel-title">Structures Group 2</h3>
                             </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
                                <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
                                 <h5><span class="crystal-count-2">0</span> structure(s) selected.</h5>
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2">Select PDBs</button> #}
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select PDBs</button>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2">Select Structures</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures</button>
                             </div>
                         </div>
                     </div>
@@ -225,7 +242,7 @@
                                       <th>AA pairs</th>
                                       <th>Int. in set 1</th>
                                       <th>Int. in set 2</th>
-                                      <th>% in class</th>
+                                      <th>% in class A</th>
                                       <th>Pair  % set 1</th>
                                       <th>Pair  % set 2</th>
                                       <th>diff</th>
@@ -352,6 +369,35 @@
     <script src="{% static 'home/js/select2.js' %}"> </script>
     <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <!-- NGL -->
+    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+
+    <!-- Flareplot -->
+    <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare_distances.js' %}"> </script>
+
+    <!-- 2D schematics -->
+    <script type="text/javascript" src="{% static 'home/js/schematicplot.js' %}"> </script>
+
+    <!-- D3 -->
+    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
+    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
+
+    <!-- Hiveplot -->
+    <script type="text/javascript" src="{% static 'home/js/hiveplot.js' %}"> </script>
+
+    <!-- PDB table -->
+    <script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
+
+
+    <!-- TODO: Solve the conflict between flareplot-main.js and the existing PDB selector -->
+    <script type="text/javascript" src="{% static 'home/js/flareplot-distancebrowser.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/flareplot-selectors.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/flareplot-rangeslider.js' %}"> </script>
+
     <script>
 
         // INIT
@@ -540,16 +586,29 @@
         function loadPDBsView(pdb, selector, renderFunction, generic) {
             if (pdb.length > 0) {
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                $(".heatmap").hide();
-                $(".heatmap-legend").hide();
-                $(".matrix-tab:visible").click();
 
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
                 var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
 
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                $('#single-group-primary-tab .panel-body:visible').append('<span class=svgloading>Loading...</span>');
                 // if (!$(selector + ' .interactions-input').val() == null)
                 //     interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+                var table = $(selector + " .primary-table");
+
+                // reset tbody
+                var tbody = table.find('tbody'); 
+                table.prop("onclick", null).off("click");
+                tbody.empty();
+                table.DataTable().clear();
+                table.DataTable().destroy();
+                var table = $(selector + " .secondary-table");
+                var info = $(selector + " .secondary-info");
+
+                info.html("");
+                // reset tbody
+                var tbody = table.find('tbody'); 
+                tbody.empty();
 
                 $.getJSON( '/contactnetwork/browserdata',
                 {
@@ -560,12 +619,13 @@
                 },
                 function( data ) {
                     // Re-render heatmap
-                    $(".heatmap").show();
-                    $(".heatmap-legend").show();
-                    $("#svgloading").remove()
+                    $(".svgloading").remove()
 
                     renderFunction(data, selector + ' .heatmap-container');
+                    data_single = data;
                 });
+            } else {
+              alert('No structures selected!');
             }
         }
 
@@ -581,10 +641,23 @@
         function loadTwoPDBsView(pdbs1, pdbs2, selector, renderFunction, generic) {
             if (pdbs1.length > 0 && pdbs2.length > 0) {
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                $(".heatmap").hide();
-                $(".heatmap-legend").hide();
-                $(".matrix-tab:visible").click();
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
+                $('#two-groups-primary-tab .panel-body:visible').append('<span class=svgloading>Loading...</span>');
+                var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+                var table = $(selector + " .primary-table");
+
+                // reset tbody
+                var tbody = table.find('tbody'); 
+                table.prop("onclick", null).off("click");
+                tbody.empty();
+                table.DataTable().clear();
+                table.DataTable().destroy();
+                var table = $(selector + " .secondary-table");
+                var info = $(selector + " .secondary-info");
+
+                info.html("");
+                // reset tbody
+                var tbody = table.find('tbody'); 
+                tbody.empty();
 
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
                 var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
@@ -599,12 +672,12 @@
                 },
                 function( data ) {
                             // Re-render heatmap
-                            $(".heatmap").show();
-                            $(".heatmap-legend").show();
-                            $("#svgloading").remove()
+                            $(".svgloading").remove()
                             renderFunction(data, selector + ' .heatmap-container');
                             data_groups = data;
                         });
+            } else {
+              alert('No structures selected for both groups!');
             }
         }
 
@@ -619,32 +692,52 @@
           tbody.empty();
           table.DataTable().clear();
           table.DataTable().destroy();
-          var proteins_1 = data['proteins1'].length
-          var proteins_2 = data['proteins2'].length
-          var pdbs_1 = data['pdbs1'].length
-          var pdbs_2 = data['pdbs2'].length
-          $.each(data['interactions'], function (i, v) {
-            var gn1 = i.split(",")[0]
-            var gn2 = i.split(",")[1]
-            var pfreq1 = Math.round(100*v['proteins1'].length / proteins_1);
-            var pfreq2 = Math.round(100*v['proteins2'].length / proteins_2);
-            var diff_pfreq = pfreq1-pfreq2;
-            var sfreq1 = Math.round(100*v['pdbs1'].length / pdbs_1);
-            var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
-            var diff_sfreq = sfreq1-sfreq2;
-            tr = `
-                  <tr class="clickable-row" id="${i}">
-                    <td>${gn1}</td>
-                    <td>${gn2}</td>
-                    <td>${pfreq1}</td>
-                    <td>${pfreq2}</td>
-                    <td>${diff_pfreq}</td>
-                    <td>${sfreq1}</td>
-                    <td>${sfreq2}</td>
-                    <td>${diff_sfreq}</td>
-                  </tr>`;
-            tbody.append(tr);
-          }); 
+          if (data['proteins2']) {
+            // two groups
+            var proteins_1 = data['proteins1'].length
+            var proteins_2 = data['proteins2'].length
+            var pdbs_1 = data['pdbs1'].length
+            var pdbs_2 = data['pdbs2'].length
+            $.each(data['interactions'], function (i, v) {
+              var gn1 = i.split(",")[0]
+              var gn2 = i.split(",")[1]
+              var pfreq1 = Math.round(100*v['proteins1'].length / proteins_1);
+              var pfreq2 = Math.round(100*v['proteins2'].length / proteins_2);
+              var diff_pfreq = pfreq1-pfreq2;
+              var sfreq1 = Math.round(100*v['pdbs1'].length / pdbs_1);
+              var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
+              var diff_sfreq = sfreq1-sfreq2;
+              tr = `
+                    <tr class="clickable-row" id="${i}">
+                      <td>${gn1}</td>
+                      <td>${gn2}</td>
+                      <td>${pfreq1}</td>
+                      <td>${pfreq2}</td>
+                      <td>${diff_pfreq}</td>
+                      <td>${sfreq1}</td>
+                      <td>${sfreq2}</td>
+                      <td>${diff_sfreq}</td>
+                    </tr>`;
+              tbody.append(tr);
+            }); 
+          } else {
+            var proteins = data['proteins'].length
+            var pdbs = data['pdbs'].length
+            $.each(data['interactions'], function (i, v) {
+              var gn1 = i.split(",")[0]
+              var gn2 = i.split(",")[1]
+              var pfreq = Math.round(100*v['proteins'].length / proteins);
+              var sfreq = Math.round(100*v['pdbs'].length / pdbs);
+              tr = `
+                    <tr class="clickable-row" id="${i}">
+                      <td>${gn1}</td>
+                      <td>${gn2}</td>
+                      <td>${pfreq}</td>
+                      <td>${sfreq}</td>
+                    </tr>`;
+              tbody.append(tr);
+            });
+          }
 
           table.on('click', '.clickable-row', function(event) {
             if($(this).hasClass('active')){
@@ -667,9 +760,8 @@
         }
 
         function renderSecondary(id){
-          console.log('hi',id) 
-          data = data_groups;
           var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+          // console.log('hi',id,selector) 
           var table = $(selector + " .secondary-table");
           var info = $(selector + " .secondary-info");
 
@@ -678,48 +770,82 @@
           // reset tbody
           var tbody = table.find('tbody'); 
           tbody.empty();
-          var pdbs_1 = data['pdbs1'].length
-          var pdbs_2 = data['pdbs2'].length
-          $.each(data['secondary'][id], function (i, v) {
-            var sfreq1 = Math.round(100*v['set1'] / pdbs_1);
-            var sfreq2 = Math.round(100*v['set2'] / pdbs_2);
-            var aa_pairs = Object.keys(v['aa_pairs']);
-            aa_pairs = aa_pairs.join("<br>");
-            aa_pair_freq1 = [];
-            aa_pair_freq2 = [];
-            aa_pair_freq1_all = [];
-            aa_pair_freq2_all = [];
-            aa_pair_class_freq = [];
-            $.each(v['aa_pairs'], function (i, v) {
-              aa_pair_freq1.push(Math.round(100*v['set1'] / pdbs_1));
-              aa_pair_freq2.push(Math.round(100*v['set2'] / pdbs_2));
-              aa_pair_freq1_all.push(Math.round(100*v['pair_set1'].length / pdbs_1));
-              aa_pair_freq2_all.push(Math.round(100*v['pair_set2'].length / pdbs_2));
-              aa_pair_class_freq.push(v['class']);
-            });
-            aa_pair_freq_all_diff = aa_pair_freq1_all.map(function(v,i) { return (v - aa_pair_freq2_all[i]); }); 
-            aa_pair_freq1 = aa_pair_freq1.join("<br>");
-            aa_pair_freq2 = aa_pair_freq2.join("<br>");
-            aa_pair_freq1_all = aa_pair_freq1_all.join("<br>");
-            aa_pair_freq2_all = aa_pair_freq2_all.join("<br>");
-            aa_pair_freq_all_diff = aa_pair_freq_all_diff.join("<br>");
-            aa_pair_class_freq = aa_pair_class_freq.join("<br>");
+          if (selector == "#two-crystal-groups-tab") {
+            data = data_groups;
+            var pdbs_1 = data['pdbs1'].length
+            var pdbs_2 = data['pdbs2'].length
+            $.each(data['secondary'][id], function (i, v) {
+              var sfreq1 = Math.round(100*v['set1'] / pdbs_1);
+              var sfreq2 = Math.round(100*v['set2'] / pdbs_2);
+              var aa_pairs = Object.keys(v['aa_pairs']);
+              aa_pairs = aa_pairs.join("<br>");
+              aa_pair_freq1 = [];
+              aa_pair_freq2 = [];
+              aa_pair_freq1_all = [];
+              aa_pair_freq2_all = [];
+              aa_pair_class_freq = [];
+              $.each(v['aa_pairs'], function (i, v) {
+                aa_pair_freq1.push(Math.round(100*v['set1'] / pdbs_1));
+                aa_pair_freq2.push(Math.round(100*v['set2'] / pdbs_2));
+                aa_pair_freq1_all.push(Math.round(100*v['pair_set1'].length / pdbs_1));
+                aa_pair_freq2_all.push(Math.round(100*v['pair_set2'].length / pdbs_2));
+                aa_pair_class_freq.push(v['class']);
+              });
+              aa_pair_freq_all_diff = aa_pair_freq1_all.map(function(v,i) { return (v - aa_pair_freq2_all[i]); }); 
+              aa_pair_freq1 = aa_pair_freq1.join("<br>");
+              aa_pair_freq2 = aa_pair_freq2.join("<br>");
+              aa_pair_freq1_all = aa_pair_freq1_all.join("<br>");
+              aa_pair_freq2_all = aa_pair_freq2_all.join("<br>");
+              aa_pair_freq_all_diff = aa_pair_freq_all_diff.join("<br>");
+              aa_pair_class_freq = aa_pair_class_freq.join("<br>");
 
-            tr = `
-                  <tr>
-                    <td>${i}</td>
-                    <td>${sfreq1}</td>
-                    <td>${sfreq2}</td>
-                    <td>${aa_pairs}</td>
-                    <td>${aa_pair_freq1}</td>
-                    <td>${aa_pair_freq2}</td>
-                    <td>${aa_pair_class_freq}</td>
-                    <td>${aa_pair_freq1_all}</td>
-                    <td>${aa_pair_freq2_all}</td>
-                    <td>${aa_pair_freq_all_diff}</td>
-                  </tr>`;
-            tbody.append(tr);
-          }); 
+              tr = `
+                    <tr>
+                      <td>${i}</td>
+                      <td>${sfreq1}</td>
+                      <td>${sfreq2}</td>
+                      <td>${aa_pairs}</td>
+                      <td>${aa_pair_freq1}</td>
+                      <td>${aa_pair_freq2}</td>
+                      <td>${aa_pair_class_freq}</td>
+                      <td>${aa_pair_freq1_all}</td>
+                      <td>${aa_pair_freq2_all}</td>
+                      <td>${aa_pair_freq_all_diff}</td>
+                    </tr>`;
+              tbody.append(tr);
+            }); 
+          } else {
+            data = data_single;
+            var pdbs = data['pdbs'].length
+            $.each(data['secondary'][id], function (i, v) {
+              var sfreq1 = Math.round(100*v['set'] / pdbs);
+              var aa_pairs = Object.keys(v['aa_pairs']);
+              aa_pairs = aa_pairs.join("<br>");
+              aa_pair_freq1 = [];
+              aa_pair_freq1_all = [];
+              aa_pair_class_freq = [];
+              $.each(v['aa_pairs'], function (i, v) {
+                aa_pair_freq1.push(Math.round(100*v['set'] / pdbs));
+                aa_pair_freq1_all.push(Math.round(100*v['pair_set'].length / pdbs));
+                aa_pair_class_freq.push(v['class']);
+              });
+              aa_pair_freq1 = aa_pair_freq1.join("<br>");
+              aa_pair_freq1_all = aa_pair_freq1_all.join("<br>");
+              aa_pair_class_freq = aa_pair_class_freq.join("<br>");
+
+              tr = `
+                    <tr>
+                      <td>${i}</td>
+                      <td>${sfreq1}</td>
+                      <td>${aa_pairs}</td>
+                      <td>${aa_pair_freq1}</td>
+                      <td>${aa_pair_class_freq}</td>
+                      <td>${aa_pair_freq1_all}</td>
+                    </tr>`;
+              tbody.append(tr);
+            }); 
+          }
+
         }
 
         function initializeFullscreenButton(selector) {
@@ -730,293 +856,6 @@
                 toggleFullScreen(fullScreenElement.get(0));
             });
         }
-
-
-        function update_text_in_modal() {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-
-          if (mode=='Single group of structures') {
-            var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-            var selected_visible = $('.pdb_selected:checked').length
-            var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
-
-            if (total_selected==selected_visible) {
-              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
-            } else {
-              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
-            }
-          } else if (mode=='Two groups of structures') {
-            group = $('.tableview:visible').attr('group-number');
-            if (group) mode = mode + group;
-            //#FIXME
-            var ModalpdbsCountSelector = '#two-crystal-group-pdbs-modal-'+group+'-text';
-            var total_selected = $('.pdb_selected:checked', oTable[mode].cells().nodes()).length
-            var selected_visible = $('.pdb_selected:checked:visible').length
-            if (total_selected==selected_visible) {
-              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected');
-            } else {
-              $(ModalpdbsCountSelector).html(total_selected +' structure(s) selected ('+(total_selected-selected_visible)+' currently filtered)');
-            }
-          }
-
-
-        }
-
-        function thisPDB(elem) {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-          var ReceptorName = $(elem).attr('long');
-          var pdbName = $(elem).attr('id');
-          if (mode=='Single structure') {
-            $('.pdb_selected').not(elem).prop("checked",false);
-            var pdbs = [];
-            if ($(elem).prop("checked")) {
-              pdbs.push(pdbName);
-              // Update view
-              $(".crystal-count:visible").html(ReceptorName + ' - ' + pdbName + ' selected.');
-            } else {
-              // Update view
-              $(".crystal-count:visible").html('No structure selected.');
-            }
-            $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
-          } else if (mode=='Single group of structures') {
-            var pdbs = [];
-            $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-                pdbs.push($(this).attr('id'));
-            });
-            var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-            var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
-            var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
-
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            // Update view
-            $(pdbsCountSelector).html(pdbs.length);
-          }  else if (mode=='Two groups of structures') {
-
-            group = $(elem).closest('.tableview').attr('group-number');
-            if (group) mode = mode + group;
-
-            var pdbs = [];
-            $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-                pdbs.push($(this).attr('id'));
-            });
-
-            var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
-            var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            // Update view
-            $(pdbsCountSelector).html(pdbs.length);
-          }
-          update_text_in_modal();
-        }
-
-        function resetselection(elem) {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-
-          $('.check_all:visible').prop('checked',false);
-
-          if (mode=='Single group of structures') {
-            var pdbs = [];
-
-            $('input', oTable[mode].cells().nodes()).prop('checked',false);
-
-            var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-            var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            $(pdbsCountSelector).html(pdbs.length);
-          }  else if (mode=='Two groups of structures') {
-
-            group = $('.tableview:visible').attr('group-number');
-            if (group) mode = mode + group;
-            var pdbs = [];
-
-            $('input', oTable[mode].cells().nodes()).prop('checked',false);
-
-            var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
-            var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            $(pdbsCountSelector).html(pdbs.length);
-          }
-
-          update_text_in_modal();
-        }
-
-        function check_all(elem) {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-          show_all = $(elem).prop("checked");
-
-
-          if (mode=='Single group of structures') {
-            var pdbs = [];
-
-            // REMOVE EXISITING? Probably not, more logically that filtering adds more
-            // $('input', oTable.cells().nodes()).prop('checked',false);
-
-            if (show_all) {
-              $('.pdb_selected:visible').prop("checked",true);
-            } else {
-              $('.pdb_selected:visible').prop("checked",false);
-            }
-
-            $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-                pdbs.push($(this).attr('id'));
-            });
-
-            var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-            var pdbsCountSelector = '#single-crystal-group-tab .crystal-count';
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            // Update view
-            $(pdbsCountSelector).html(pdbs.length);
-          }  else if (mode=='Two groups of structures') {
-
-            group = $(elem).closest('.tableview').attr('group-number');
-            if (group) mode = mode + group;
-            var pdbs = [];
-
-            if (show_all) {
-              $('.pdb_selected:visible').prop("checked",true);
-            } else {
-              $('.pdb_selected:visible').prop("checked",false);
-            }
-
-            $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-                pdbs.push($(this).attr('id'));
-            });
-
-            var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-'+group+'-pdbs';
-            var pdbsCountSelector = '#two-crystal-groups-tab .crystal-count-'+group;
-            $(pdbsInputSelector).val(JSON.stringify(pdbs));
-            // Update view
-            $(pdbsCountSelector).html(pdbs.length);
-          }
-
-          update_text_in_modal();
-        }
-
-        $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
-          {
-              return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
-                  return $('input', td).prop('checked') ? '1' : '0';
-              } );
-          };
-
-        var oTable = [];
-        function showPDBtable(element) {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-          group = $(element+' .tableview').attr('group-number');
-          if (group) mode = mode + group;
-          if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
-              oTable[mode] = $(element+' .tableview table').DataTable({
-                'scrollX': true,
-                // 'paging': true,
-                // 'autoWidth': true,
-
-                scrollY:        '80vh',
-                // scrollCollapse: true,
-                paging:         false,
-                columnDefs: [
-                  { targets: 'no-sort', orderable: false }
-                ],
-                "aaSorting": [],
-                 "columns": [
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                { "orderDataType": "dom-checkbox" }
-                            ]
-              });
-
-              yadcf.init(oTable[mode],
-                [
-                    {
-                        column_number : 0,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Class",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 1,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                          width: '70px'
-                        },
-                        filter_default_label: "PDB",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 2,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Receptor",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        html_data_type: "text",
-                        select_type_options: {
-                          width: '150px'
-                        },
-                        filter_default_label: "Family",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 4,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Species",
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 5,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                            minimumResultsForSearch: -1 // remove search box
-                        },
-                        filter_default_label: "State",
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-
-                    },
-                    {
-                        column_number : 6,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Representative",
-                        filter_reset_button_text: false,
-
-                    },
-                ],
-                {
-                    cumulative_filtering: false
-                }
-            );
-
-            yadcf.exResetAllFilters(oTable[mode]);
-
-            oTable[mode].on('draw.dt', function (e, oSettings) {
-                update_text_in_modal();
-            });
-
-          };
-        }
-
-        
-
 
         function updateTwoGroupSliders(origin, ui) {
             // grab data from all sliders
@@ -1151,8 +990,20 @@
 
     <style type="text/css">
 
-        .modal-wide {
-          width: 1200px;
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
         }
 
         .modal-footer {
@@ -1467,30 +1318,6 @@
         }
     </style>
 
-    <!-- NGL -->
-    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
-
-    <!-- Flareplot -->
-    <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare_distances.js' %}"> </script>
-
-    <!-- 2D schematics -->
-    <script type="text/javascript" src="{% static 'home/js/schematicplot.js' %}"> </script>
-
-    <!-- D3 -->
-    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
-    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
-    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
-
-    <!-- Hiveplot -->
-    <script type="text/javascript" src="{% static 'home/js/hiveplot.js' %}"> </script>
-
-
-    <!-- TODO: Solve the conflict between flareplot-main.js and the existing PDB selector -->
-    <script type="text/javascript" src="{% static 'home/js/flareplot-distancebrowser.js' %}"> </script>
-    <script type="text/javascript" src="{% static 'home/js/flareplot-selectors.js' %}"> </script>
-    <script type="text/javascript" src="{% static 'home/js/flareplot-rangeslider.js' %}"> </script>
 
     <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
