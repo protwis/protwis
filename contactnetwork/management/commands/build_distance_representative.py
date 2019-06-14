@@ -47,7 +47,7 @@ class Command(BaseCommand):
             number_of_pdbs = len(pdbs)
             if (number_of_pdbs==1):
                 # Do not care when only one PDB for a conformation rep
-                print("REPRESENTATIVE:",pdbs[0])
+                print("REPRESENTATIVE:", pdbs[0])
                 s = Structure.objects.get(pdb_code__index=pdbs[0])
                 s.distance_representative = True
                 s.save()
@@ -60,7 +60,7 @@ class Command(BaseCommand):
                 # Calculate structures with lowest average distance (rank-by-vote fusion)
                 ranking = np.zeros(len(distance_matrix))
                 average = np.zeros(len(distance_matrix))
-                for i in range(0,len(distance_matrix)-1):
+                for i in range(0,len(distance_matrix)):
                     ranking = ranking + scipy.stats.rankdata(distance_matrix[i,:], method='min')
                     average = average + distance_matrix[i,:]
 
@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 if len(lowest)>1:
                     lowest = lowest[np.where(average[lowest]==min(average))[0][0]]
 
-                for i in range(0,len(distance_matrix)-1):
+                for i in range(0,len(distance_matrix)):
                     if i==lowest:
                         print("REPRESENTATIVE:",pdbs[i])
                     s = Structure.objects.get(pdb_code__index=pdbs[i])
