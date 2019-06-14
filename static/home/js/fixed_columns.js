@@ -124,7 +124,7 @@ function check_all(elem, button) {
     }
 }
 
-function check_all_representative() {
+function check_all_representatives() {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
@@ -134,6 +134,18 @@ function check_all_representative() {
     //       console.log(this);
     //   });
     $('input[representative="Yes"]:visible').each(function() {
+        // pdbs.push($(this).attr('id'));
+        $(this).prop("checked", true);
+    });
+    update_text_in_modal();
+}
+
+function check_all_distance_representatives() {
+    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+    group = $('.tableview:visible').attr('group-number');
+    if (group) mode = mode + group;
+    $('input', oTable[mode].cells().nodes()).prop('checked', false);
+    $('input[distance_representative="Yes"]:visible').each(function() {
         // pdbs.push($(this).attr('id'));
         $(this).prop("checked", true);
     });
@@ -222,7 +234,8 @@ function showPDBtable(element) {
         $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
         $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
         $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
-        $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representative();" class="btn btn-xs btn-primary export_pdbs">Representative</button></span>');
+        $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary export_pdbs">Contact Representative</button></span>');
+        $(element + ' .tableview').before(' | <span>Structure with lowest average distance to all other structures of the same receptor in the same activation state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary export_pdbs">Distance Representative</button></span>');
         oTable[mode] = $(element + ' .tableview table').DataTable({
             'scrollX': true,
             // 'paging': true,
