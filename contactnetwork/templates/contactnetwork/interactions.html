@@ -434,6 +434,32 @@
 
                       </div>
                 </div>
+                <div class="row">
+                      <div class="col-md-12" id="single-group-primary-browser">
+                           <div class="panel panel-default">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Primary Browser</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                <table class="table browser-table display">
+                                  <thead>
+                                    <tr>
+                                      <th>GN1</th>
+                                      <th>GN2</th>
+                                      <th>GPCRs %</th>
+                                      <th>Structures %</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    
+                                  </tbody>
+                                </table>
+                              </div>
+                           </div>
+                      </div>
+                </div>
 
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
@@ -655,6 +681,45 @@
 
                   </div>
 
+                </div>
+
+                <div class="row">
+                      <div class="col-md-12" >
+                           <div class="panel panel-default">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Primary Browser</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                <table class="table browser-table display">
+                                  <thead>
+                                    <tr>
+                                      <th colspan="2">Segment</th>
+                                      <th colspan="2">Generic No</th>
+                                      <th colspan="3"> Frequency (%)</th>
+                                      <th>Type(s)</th>
+                                      <th>Class Seq Cons(%)</th>
+                                    </tr>
+                                    <tr>
+                                      <th></th>
+                                      <th></th>
+                                      <th></th>
+                                      <th></th>
+                                      <th>Grp 1<br></th>
+                                      <th>Grp 2<br></th>
+                                      <th>Diff<br></th>
+                                      <th></th>
+                                      <th></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    
+                                  </tbody>
+                                </table>
+                              </div>
+                           </div>
+                      </div>
                 </div>
 
             </div>
@@ -1656,7 +1721,7 @@
                 contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r270s-1,1");
+                // label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -1684,7 +1749,7 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r180s-1,1");
+                // label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
                 contentGroup.add(line);
@@ -1814,6 +1879,48 @@
                             });
 
                             cells.push(cell);
+
+
+                            var cell = heatmap.rect(j, i, 1, 1);
+
+                            // Create cell for interaction
+                            cell.attr({
+                                'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                                'data-interaction-type': interaction,
+                                'data-res-no-1': seq_i,
+                                'data-res-no-2': seq_j,
+                                'data-aa-1': aa_map[seq_i],
+                                'data-aa-2': aa_map[seq_j],
+                                'data-seg-1': segment_map[seq_i],
+                                'data-seg-2': segment_map[seq_j],
+                                'data-gen-no-1': genStrI,
+                                'data-gen-no-2': genStrJ,
+                                'class': 'heatmap-interaction' + ' ' + getFriendlyInteractionName(interaction).replace(/ /g,"-"),
+                                'id': interactionId
+                            });
+                            contentGroup.add(cell);
+                            cell = $(heatMapSelector + ' rect.heatmap-interaction');
+
+                            // Add tooltip to cell
+                            cell.tooltip({
+                                'container': heatMapSelector,
+                                'placement': 'top',
+                                'delay': 0,
+                                'html': true,
+                                'title': title
+                            });
+
+                            // Add popover to cells
+                            cell.popover({
+                                'container': heatMapSelector,
+                                'placement': 'bottom',
+                                'animation': true,
+                                'html': true,
+                                'title': 'Interactions at ' + aa_map[seq_i] + seq_i + ', ' + aa_map[seq_j] + seq_j,
+                                'content': popoverTable,
+                                'tabindex': '0'
+                            });
+
                         });
                     }
                 }
@@ -1821,7 +1928,7 @@
 
             // Add cover-up triangle
             var bbox = contentGroup.getBBox();
-            contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
+            // contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
 
             // Add bottom line
             var line = heatmap.line(bbox.x, bbox.y, bbox.x2, bbox.y2);
@@ -1835,7 +1942,7 @@
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r225s-1,1");
+            // g.transform("r225s-1,1");
 
 
             // Populate heatmap legend
@@ -1862,10 +1969,13 @@
             });
             legendHtml += '</ul>';
 
+            // do not do this
+            legendHtml = '';
+
             // Add controls to generic control panel and show
-            var cp = $(heatMapSelector.split(' ')[0] + ' .controls-panel .panel-body')
-            cp.html(legendHtml);
-            cp.parent().parent().removeClass("hidden");
+            // var cp = $(heatMapSelector.split(' ')[0] + ' .controls-panel .panel-body')
+            // cp.html(legendHtml);
+            // cp.parent().parent().removeClass("hidden");
 
             //$(heatMapSelector + ' .heatmap-legend input[type=checkbox]').each(function() {
             $(heatMapSelector.split(' ')[0] + ' .controls-panel input[type=checkbox]').each(function() {
@@ -2027,7 +2137,7 @@
                 contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r270s-1,1");
+                // label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -2055,7 +2165,7 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r180s-1,1");
+                // label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
                 contentGroup.add(line);
@@ -2134,19 +2244,55 @@
                         });
 
                         contentGroup.add(cell);
+
+                        // DUPLICATE
+                        var cell = heatmap.rect(j, i, 1, 1);
+                        cell.attr({
+                            'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                            'data-num-interactions': nInteractions,
+                            'data-total-possible-interactions': data.pdbs.length,
+                            'data-frequency': frequency,
+                            'data-gen-no-1': seq_i,
+                            'data-gen-no-2': seq_j,
+                            'data-seg-1': segment_map[seq_i],
+                            'data-seg-2': segment_map[seq_j],
+                            'class': 'heatmap-interaction'
+                        });
+
+                        $(heatMapSelector + ' rect.heatmap-interaction').tooltip({
+                            'container': heatMapSelector,
+                            'placement': 'top',
+                            'delay': 75,
+                            'title': title,
+                            'html': true
+                        });
+
+                        // Add popover to cells
+                        $(heatMapSelector + ' rect.heatmap-interaction').popover({
+                            'container': heatMapSelector,
+                            'placement': 'bottom',
+                            'animation': true,
+                            'html': true,
+                            'title': 'Interactions at ' + seq_i + ', ' + seq_j,
+                            'content': popoverTable,
+                            'tabindex': '0'
+                        });
+
+                        contentGroup.add(cell);
+
                     }
                 }
             }
 
             // Add cover-up triangle
-            var bbox = contentGroup.getBBox();
-            contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
+            // var bbox = contentGroup.getBBox();
+            // contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
 
             // Rotate contents
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r225s-1,1");
+            // g.transform("r225s-1,1");
 
             // Populate heatmap legend
             var legendHtml = '<h4 class="center">Frequency (#Structures)</h4>'
@@ -2331,7 +2477,7 @@
                 contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r270s-1,1");
+                // label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -2359,7 +2505,7 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r180s-1,1");
+                // label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
                 contentGroup.add(line);
@@ -2455,21 +2601,59 @@
                             'content': popoverTable,
                             'tabindex': '0'
                         });
+                        contentGroup.add(cell);
 
+
+                        var cell = heatmap.rect(j, i, 1, 1);
+
+                        cell.attr({
+                            'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                            'data-frequency-diff': fDiff,
+                            'data-gen-no-1': seq_i,
+                            'data-gen-no-2': seq_j,
+                            'data-seg-1': segment_map[seq_i],
+                            'data-seg-2': segment_map[seq_j],
+                            'data-group-1-num-ints': n1,
+                            'data-group-2-num-ints': n2,
+                            'data-group-1-num-pdbs': data1.pdbs.length,
+                            'data-group-2-num-pdbs': data2.pdbs.length,
+                            'data-group-1-freq': f1.toFixed(2),
+                            'data-group-2-freq': f2.toFixed(2),
+                            'class': 'heatmap-interaction'
+                        });
+
+                        $(heatMapSelector + ' rect.heatmap-interaction').tooltip({
+                            'container': heatMapSelector,
+                            'placement': 'top',
+                            'delay': 75,
+                            'html': true,
+                            'title': title
+                        });
+
+                        // Add popover to cells
+                        $(heatMapSelector + ' rect.heatmap-interaction').popover({
+                            'container': heatMapSelector,
+                            'placement': 'bottom',
+                            'animation': true,
+                            'html': true,
+                            'title': 'Interactions at ' + seq_i + ', ' + seq_j,
+                            'content': popoverTable,
+                            'tabindex': '0'
+                        });
                         contentGroup.add(cell);
                     }
                 }
             }
 
             // Add cover-up triangle
-            var bbox = contentGroup.getBBox();
-            contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
+            // var bbox = contentGroup.getBBox();
+            // contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
 
             // Rotate contents
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r225s-1,1");
+            // g.transform("r225s-1,1");
 
             // Populate heatmap legend
             var legendHtml = '<h4 class="center">Frequency</h4>'
@@ -2485,9 +2669,9 @@
                 + '</div>'
                 + '</div>';
 
-            var cp = $(heatMapSelector.split(' ')[0] + ' .controls-panel .panel-body')
-            cp.html(legendHtml);
-            cp.parent().parent().removeClass("hidden");
+            // var cp = $(heatMapSelector.split(' ')[0] + ' .controls-panel .panel-body')
+            // cp.html(legendHtml);
+            // cp.parent().parent().removeClass("hidden");
 
 
             $( function() {
@@ -2577,6 +2761,158 @@
             populateTable('two-groups-table');
         }
 
+        function renderBrowser(data) {
+          console.log('GOT DATA');
+          var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+          var table = $(selector + " .browser-table");
+
+          // reset tbody
+          var tbody = table.find('tbody'); 
+          table.prop("onclick", null).off("click");
+          tbody.empty();
+          table.DataTable().clear();
+          table.DataTable().destroy();
+          if (data['proteins2']) {
+            // two groups
+            var proteins_1 = data['proteins1'].length
+            var proteins_2 = data['proteins2'].length
+            var pdbs_1 = data['pdbs1'].length
+            var pdbs_2 = data['pdbs2'].length
+            $.each(data['interactions'], function (i, v) {
+              var gn1 = i.split(",")[0]
+              var gn2 = i.split(",")[1]
+              var pfreq1 = Math.round(100*v['proteins1'].length / proteins_1);
+              var pfreq2 = Math.round(100*v['proteins2'].length / proteins_2);
+              var diff_pfreq = pfreq1-pfreq2;
+              var sfreq1 = Math.round(100*v['pdbs1'].length / pdbs_1);
+              var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
+              var diff_sfreq = sfreq1-sfreq2;
+              var class_seq_cons = v['class_seq_cons'];
+              var types = v['types'];
+              var seg1 = data['segm_lookup'][gn1];
+              var seg2 = data['segm_lookup'][gn2];
+              tr = `
+                    <tr class="clickable-row" id="${i}">
+                      <td>${seg1}</td>
+                      <td>${seg2}</td>
+                      <td>${gn1}</td>
+                      <td>${gn2}</td>
+                      <td>${sfreq1}</td>
+                      <td>${sfreq2}</td>
+                      <td>${diff_sfreq}</td>
+                      <td>${types}</td>
+                      <td>${class_seq_cons}</td>
+                    </tr>`;
+              tbody.append(tr);
+            }); 
+          } else {
+            var proteins = data['proteins'].length
+            var pdbs = data['pdbs'].length
+            $.each(data['interactions'], function (i, v) {
+              var gn1 = i.split(",")[0]
+              var gn2 = i.split(",")[1]
+              var pfreq = Math.round(100*v['proteins'].length / proteins);
+              var sfreq = Math.round(100*v['pdbs'].length / pdbs);
+              tr = `
+                    <tr class="clickable-row" id="${i}">
+                      <td>${gn1}</td>
+                      <td>${gn2}</td>
+                      <td>${pfreq}</td>
+                      <td>${sfreq}</td>
+                    </tr>`;
+              tbody.append(tr);
+            });
+          }
+
+          table.on('click', '.clickable-row', function(event) {
+            if($(this).hasClass('active')){
+              $(this).removeClass('active'); 
+              $(selector + " .secondary-table").find('tbody').empty();
+            } else {
+              $(this).addClass('active').siblings().removeClass('active');
+              renderSecondary($(this).attr('id'))
+            }
+          });
+          oTable[selector] = $(selector+' .browser-table').DataTable({
+                'scrollX': true,
+                // 'paging': true,
+                // 'autoWidth': true,
+
+                scrollY:        '50vh',
+                // scrollCollapse: true,
+                paging:         false,
+              });
+
+          yadcf.init(oTable[selector],
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 7,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Type",
+                            text_data_delimiter: ",",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 8,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+
+                );
+
+        }
+
         function redraw_renders() {
           // Makes sure diagrams fit sizes
 
@@ -2587,6 +2923,7 @@
 
           // Don't go too high
           if (width_svg>screen.height) width_svg = screen.height;
+          width_svg = 500;
           visible_svg.height(width_svg);
 
           // Resize NGL
@@ -2809,33 +3146,58 @@
               if (!$(selector + ' .interactions-input').val() == null)
                   interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
-              $.getJSON( '/contactnetwork/interactiondata',
-              {
-                  'segments': segments,
-                  'generic': generic,
-                  'pdbs': pdb,
-                  'interaction_types': interactionTypes
-              },
-              function( data ) {
-                  // Re-render heatmap
-                  $(".heatmap").show();
-                  $(".heatmap-legend").show();
-                  heatmapFunction(data, selector + ' .heatmap-container');
-                  $("#svgloading").remove()
-                  // Re-render flareplot
-                  createFlareplotBox(data, selector + " .flareplot-container");
+              console.log('get viz info');
+              $.ajax({ 
+                  url: '/contactnetwork/interactiondata', 
+                  dataType: 'json', 
+                  data: {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs': pdb,
+                    'interaction_types': interactionTypes
+                  }, 
+                  async: true, 
+                  success:  function(data){
+                    console.log('gotten visual info')
+                    // Re-render heatmap
+                    $(".heatmap").show();
+                    $(".heatmap-legend").show();
+                    heatmapFunction(data, selector + ' .heatmap-container');
+                    $("#svgloading").remove()
+                    // Re-render flareplot
+                    createFlareplotBox(data, selector + " .flareplot-container");
 
-                  if (selector == '#single-crystal-group-tab') {
-                    createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
-                    createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
-                    createNGLview("single-group",pdb[0], pdb);
-                  } else {
-                    createHiveplotBox(data, selector + " .hiveplot-container");
-                    createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
-                    createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
-                    createNGLview("single",pdb[0]);
+                    if (selector == '#single-crystal-group-tab') {
+                      createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
+                      createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
+                      createNGLview("single-group",pdb[0], pdb);
+                    } else {
+                      createHiveplotBox(data, selector + " .hiveplot-container");
+                      createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
+                      createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
+                      createNGLview("single",pdb[0]);
+                    }
                   }
               });
+              console.log('get browser info');
+              $.ajax({ 
+                  url: '/contactnetwork/browserdata', 
+                  dataType: 'json', 
+                  data: {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs': pdb,
+                    'interaction_types': interactionTypes
+                  }, 
+                  async: true, 
+                  success:  function(data){
+                    // Re-render heatmap
+                    data_browser = data;
+                    renderBrowser(data);
+                    console.log('gotten browser info')
+                  }
+              });
+
           }
         }
 
@@ -2862,6 +3224,29 @@
                 $(".matrix-tab:visible").click();
                 $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
 
+
+
+                console.log('get browser info');
+                $.ajax({ 
+                    url: '/contactnetwork/browserdata', 
+                    dataType: 'json', 
+                    data: {
+                      'segments': segments,
+                      'generic': generic,
+                      'pdbs1': pdbs1,
+                      'pdbs2': pdbs2,
+                      'interaction_types': interactionTypes
+                    }, 
+                    async: true, 
+                    success:  function(data){
+                      // Re-render heatmap
+                      data_browser = data;
+                      renderBrowser(data);
+                      console.log('gotten browser info')
+                    }
+                });
+
+                console.log('get wiz info');
                 $.getJSON( '/contactnetwork/interactiondata',
                 {
                     'segments': segments,
@@ -2904,6 +3289,8 @@
                         });
                     });
                 });
+
+                redraw_renders();
             }
         }
 
@@ -2911,9 +3298,9 @@
         function initializeFullscreenButton(selector) {
             // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
             $(selector + ' .btn-fullscreen').click(function() {
-//                console.log($(this).parent().next().attr('id'));
+                  // console.log($(this).parent().parent().next().children().first());
 //                console.log($(this).attr('id'));
-                fullScreenElement = $(this).parent().next().children().first();
+                fullScreenElement = $(this).parent().parent().next().children().first();
                 fullScreenElement.css('background-color','white');
                 toggleFullScreen(fullScreenElement.get(0));
             });
@@ -3692,6 +4079,9 @@
         var linkMap = {}
         var linkColourScheme = {}
         function createNGLRepresentations(mode, structureNumber, update = false) {
+          if (mode=='single-crystal-tab') {mode='single'}
+          if (mode=='single-crystal-group-tab') {mode='single-group'}
+          if (mode=='two-crystal-groups-tab') {mode='two-groups'}
             var links = []
             var res_int = []
             if (mode in reps && structureNumber in reps[mode] && reps[mode][structureNumber].structureComponent)
@@ -3717,7 +4107,7 @@
               var addedLinks = []
 
               // populate enabled interactions
-              $('#' + currentTab + "-crystal-tab .controls-panel input:checked").each( function (toggle) {
+              $('#' + currentTab + " .controls-panel input:checked").each( function (toggle) {
                 enabledInteractions.push($(this).data('interaction-type'))
               });
 
@@ -3756,8 +4146,8 @@
             } else if (mode=='single-group') {
               // get cutoffs from control-tab
               var [tMin,tMax] = [0, 9999999];
-              if ($('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider("instance"))
-                [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+              if ($('#' + currentTab + ' #pdbs-range-slider').slider("instance"))
+                [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
 
               $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
                   var rect = $(this);
@@ -3792,10 +4182,10 @@
               // get cutoffs from control-tab if sliders are initialized
               var r1, r2, r3;
               r1 = r2 = r3 = [-1000, 1000]
-              if ($('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider("instance")){
-                  r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                  r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                  r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+              if ($('#' + currentTab + ' #freq-slider-range-1').slider("instance")){
+                  r1 = $('#' + currentTab + ' #freq-slider-range-1').slider( "option", "values" );
+                  r2 = $('#' + currentTab + ' #freq-slider-range-2').slider( "option", "values" );
+                  r3 = $('#' + currentTab + ' #freq-slider-range-3').slider( "option", "values" );
               }
 
               $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
@@ -3991,10 +4381,10 @@
 
         function updateMatrix() {
             switch (currentTab) {
-                case "single":
-                    $('#' + currentTab+ '-crystal-tab .controls-panel input[type=checkbox]').each(function() {
+                case "single-crystal-tab":
+                    $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
                         var interactionType = $(this).data('interaction-type');
-                        var rects = $('#' + currentTab + '-crystal-tab .heatmap rect.' + interactionType);
+                        var rects = $('#' + currentTab + ' .heatmap rect.' + interactionType);
                         if ($(this).is(':checked')) {
                             rects.show();
                         } else {
@@ -4002,11 +4392,12 @@
                         }
                     });
                     break;
-                case "single-group":
-                    var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+                case "single-crystal-group-tab":
+                    // var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+                    var [tMin,tMax] = $('#pdbs-range-slider').slider( "option", "values" );
 
                     // Hide all below min treshold
-                    $('#' + currentTab + '-crystal-tab .heatmap rect').each(function() {
+                    $('.tab-pane.main_option.active .heatmap rect').each(function() {
                         var n = $(this).data("num-interactions");
                         if (n < tMin || tMax < n) {
                             $(this).hide();
@@ -4015,13 +4406,16 @@
                         }
                     });
                     break;
-                case "two-groups":
-                    var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                    var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                    var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
-
+                case "two-crystal-groups-tab":
+                    // var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
+                    // var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
+                    // var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+                    var r1 = $('#freq-slider-range-1').slider( "option", "values" );
+                    var r2 = $('#freq-slider-range-2').slider( "option", "values" );
+                    var r3 = $('#freq-slider-range-3').slider( "option", "values" );
                     // Hide all below min or above treshold
-                    $('#' + currentTab + '-crystal-tab .heatmap rect').each(function() {
+                    // $('#' + currentTab + '-crystal-tab .heatmap rect').each(function() {
+                    $('.tab-pane.main_option.active .heatmap rect').each(function() {
                         var f1 = $(this).data("group-1-freq");
                         var f2 = $(this).data("group-2-freq");
                         var f3 = $(this).data("frequency-diff");
@@ -4037,33 +4431,33 @@
 
         // TODO update for other tabs
         function updateFlareplot() {
-            var container = '#' + currentTab+ '-crystal-tab .flareplot-container'
-            switch (currentTab) {
-                case "single":
-                interactionsToggleList = [];
-                $('#' + currentTab+ '-crystal-tab .controls-panel input[type=checkbox]').each(function() {
-                    // init toggle list
-                    if ($(this).is(':checked'))
-                        interactionsToggleList.push($(this).data('interaction-type'));
-                });
+            var container = '#' + currentTab+ ' .flareplot-container'
+            // switch (currentTab) {
+            //     case "single-crystal-tab":
+            //     interactionsToggleList = [];
+            //     $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
+            //         // init toggle list
+            //         if ($(this).is(':checked'))
+            //             interactionsToggleList.push($(this).data('interaction-type'));
+            //     });
 
-                // toggle interactions in flareplot
-                if (container in flareplot)
-                    flareplot[container].showInteractions(interactionsToggleList);
-                break;
-                case "single-group":
-                    var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
-                    if (container in flareplot)
-                        flareplot[container].updateRange(tMin, tMax);
-                    break;
-                case "two-groups":
-                    var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                    var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                    var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
-                    if (container in flareplot)
-                        flareplot[container].updateRangeTwoGroups(r1[0], r1[1], r2[0], r2[1], r3[0], r3[1])
-                    break;
-            }
+            //     // toggle interactions in flareplot
+            //     if (container in flareplot)
+            //         flareplot[container].showInteractions(interactionsToggleList);
+            //     break;
+            //     case "single-crystal-group-tab":
+            //         var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
+            //         if (container in flareplot)
+            //             flareplot[container].updateRange(tMin, tMax);
+            //         break;
+            //     case "two-crystal-groups-tab":
+            //         var r1 = $('#' + currentTab + ' #freq-slider-range-1').slider( "option", "values" );
+            //         var r2 = $('#' + currentTab + ' #freq-slider-range-2').slider( "option", "values" );
+            //         var r3 = $('#' + currentTab + ' #freq-slider-range-3').slider( "option", "values" );
+            //         if (container in flareplot)
+            //             flareplot[container].updateRangeTwoGroups(r1[0], r1[1], r2[0], r2[1], r3[0], r3[1])
+            //         break;
+            // }
         }
 
         // TODO create interaction toggle for Hiveplot
@@ -4074,8 +4468,8 @@
         // TODO update for other tabs
         function updateSchematic() {
           switch (currentTab) {
-              case "single":
-                  $('#' + currentTab+ '-crystal-tab .controls-panel input[type=checkbox]').each(function() {
+              case "single-crystal-tab":
+                  $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
                       var interactionType = $(this).data('interaction-type');
                       var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path.' + interactionType);
                       if ($(this).is(':checked')) {
@@ -4085,11 +4479,11 @@
                       }
                   });
                   break;
-              case "single-group":
-                  var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
+              case "single-crystal-group-tab":
+                  var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
 
                   // Hide all below min treshold
-                  var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path').each(function() {
+                  var paths = $('#' + currentTab+ ' .' + currentViz + '-container path').each(function() {
                       var n = $(this).data("num-interactions");
                       if (n < tMin || tMax < n) {
                           $(this).hide();
@@ -4098,13 +4492,13 @@
                       }
                   });
                   break;
-              case "two-groups":
-                  var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                  var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                  var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+              case "two-crystal-groups-tab":
+                  var r1 = $('#' + currentTab + '#freq-slider-range-1').slider( "option", "values" );
+                  var r2 = $('#' + currentTab + '#freq-slider-range-2').slider( "option", "values" );
+                  var r3 = $('#' + currentTab + '#freq-slider-range-3').slider( "option", "values" );
 
                   // Hide all below min or above treshold
-                  var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path').each(function() {
+                  var paths = $('#' + currentTab+ ' .' + currentViz + '-container path').each(function() {
                       var f1 = $(this).data("group-1-freq");
                       var f2 = $(this).data("group-2-freq");
                       var f3 = $(this).data("frequency-diff");
@@ -4146,25 +4540,27 @@
 
             // Always invoke NGL update
             createNGLRepresentations(currentTab , 0, currentTab)
-            if (currentTab=="two-groups") createNGLRepresentations(currentTab , 1, currentTab)
+            if (currentTab=="two-crystal-groups-tab") createNGLRepresentations(currentTab , 1, currentTab)
         }
 
         {% if pdbs1 %}
-            var currentTab = "two-groups";
+            var currentTab = "two-crystal-groups-tab";
         {% elif pdbs %}
-          var currentTab = "single-group";
+          var currentTab = "single-crystal-group-tab";
         {% else %}
-          var currentTab = "single";
+          var currentTab = "single-crystal-tab";
         {% endif %}
 
         var currentViz = "matrix";
         function updateCurrentTab(id){
+            alt = $('.main_option:visible').attr('id');
             var now = id.replace("-link", "")
             now = now.replace("-tab", "")
 
             // update settings
             currentTab = now.substr(0,now.lastIndexOf('-'))
             currentViz = now.replace(currentTab+"-", "")
+            currentTab = alt;
             redraw_renders();
         }
 

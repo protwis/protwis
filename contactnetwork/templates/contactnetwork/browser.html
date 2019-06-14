@@ -69,7 +69,7 @@
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
-                                <table class="table">
+                                <table class="table primary-table display">
                                   <thead>
                                     <tr>
                                       <th>GN1</th>
@@ -96,6 +96,23 @@
                                 <div class="clearfix"></div>
                             </div>
                             <div class="panel-body">
+                                <span class="secondary-info"></span>
+
+                                <table class="table secondary-table display">
+                                  <thead>
+                                    <tr>
+                                      <th>Interaction</th>
+                                      <th>% set 1</th>
+                                      <th>AA pairs</th>
+                                      <th>Int. in set</th>
+                                      <th>% in class A</th>
+                                      <th>Pair  % set</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    
+                                  </tbody>
+                                </table>
                             </div>
                          </div>
 
@@ -225,7 +242,7 @@
                                       <th>AA pairs</th>
                                       <th>Int. in set 1</th>
                                       <th>Int. in set 2</th>
-                                      <th>% in class</th>
+                                      <th>% in class A</th>
                                       <th>Pair  % set 1</th>
                                       <th>Pair  % set 2</th>
                                       <th>diff</th>
@@ -569,16 +586,29 @@
         function loadPDBsView(pdb, selector, renderFunction, generic) {
             if (pdb.length > 0) {
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                $(".heatmap").hide();
-                $(".heatmap-legend").hide();
-                $(".matrix-tab:visible").click();
 
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
                 var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
 
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                $('#single-group-primary-tab .panel-body:visible').append('<span class=svgloading>Loading...</span>');
                 // if (!$(selector + ' .interactions-input').val() == null)
                 //     interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+                var table = $(selector + " .primary-table");
+
+                // reset tbody
+                var tbody = table.find('tbody'); 
+                table.prop("onclick", null).off("click");
+                tbody.empty();
+                table.DataTable().clear();
+                table.DataTable().destroy();
+                var table = $(selector + " .secondary-table");
+                var info = $(selector + " .secondary-info");
+
+                info.html("");
+                // reset tbody
+                var tbody = table.find('tbody'); 
+                tbody.empty();
 
                 $.getJSON( '/contactnetwork/browserdata',
                 {
@@ -589,12 +619,13 @@
                 },
                 function( data ) {
                     // Re-render heatmap
-                    $(".heatmap").show();
-                    $(".heatmap-legend").show();
-                    $("#svgloading").remove()
+                    $(".svgloading").remove()
 
                     renderFunction(data, selector + ' .heatmap-container');
+                    data_single = data;
                 });
+            } else {
+              alert('No structures selected!');
             }
         }
 
@@ -610,10 +641,23 @@
         function loadTwoPDBsView(pdbs1, pdbs2, selector, renderFunction, generic) {
             if (pdbs1.length > 0 && pdbs2.length > 0) {
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-                $(".heatmap").hide();
-                $(".heatmap-legend").hide();
-                $(".matrix-tab:visible").click();
-                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
+                $('#two-groups-primary-tab .panel-body:visible').append('<span class=svgloading>Loading...</span>');
+                var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+                var table = $(selector + " .primary-table");
+
+                // reset tbody
+                var tbody = table.find('tbody'); 
+                table.prop("onclick", null).off("click");
+                tbody.empty();
+                table.DataTable().clear();
+                table.DataTable().destroy();
+                var table = $(selector + " .secondary-table");
+                var info = $(selector + " .secondary-info");
+
+                info.html("");
+                // reset tbody
+                var tbody = table.find('tbody'); 
+                tbody.empty();
 
                 //var segments = JSON.parse($(selector + ' .segments-input').val());
                 var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
@@ -628,12 +672,12 @@
                 },
                 function( data ) {
                             // Re-render heatmap
-                            $(".heatmap").show();
-                            $(".heatmap-legend").show();
-                            $("#svgloading").remove()
+                            $(".svgloading").remove()
                             renderFunction(data, selector + ' .heatmap-container');
                             data_groups = data;
                         });
+            } else {
+              alert('No structures selected for both groups!');
             }
         }
 
@@ -648,32 +692,52 @@
           tbody.empty();
           table.DataTable().clear();
           table.DataTable().destroy();
-          var proteins_1 = data['proteins1'].length
-          var proteins_2 = data['proteins2'].length
-          var pdbs_1 = data['pdbs1'].length
-          var pdbs_2 = data['pdbs2'].length
-          $.each(data['interactions'], function (i, v) {
-            var gn1 = i.split(",")[0]
-            var gn2 = i.split(",")[1]
-            var pfreq1 = Math.round(100*v['proteins1'].length / proteins_1);
-            var pfreq2 = Math.round(100*v['proteins2'].length / proteins_2);
-            var diff_pfreq = pfreq1-pfreq2;
-            var sfreq1 = Math.round(100*v['pdbs1'].length / pdbs_1);
-            var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
-            var diff_sfreq = sfreq1-sfreq2;
-            tr = `
-                  <tr class="clickable-row" id="${i}">
-                    <td>${gn1}</td>
-                    <td>${gn2}</td>
-                    <td>${pfreq1}</td>
-                    <td>${pfreq2}</td>
-                    <td>${diff_pfreq}</td>
-                    <td>${sfreq1}</td>
-                    <td>${sfreq2}</td>
-                    <td>${diff_sfreq}</td>
-                  </tr>`;
-            tbody.append(tr);
-          }); 
+          if (data['proteins2']) {
+            // two groups
+            var proteins_1 = data['proteins1'].length
+            var proteins_2 = data['proteins2'].length
+            var pdbs_1 = data['pdbs1'].length
+            var pdbs_2 = data['pdbs2'].length
+            $.each(data['interactions'], function (i, v) {
+              var gn1 = i.split(",")[0]
+              var gn2 = i.split(",")[1]
+              var pfreq1 = Math.round(100*v['proteins1'].length / proteins_1);
+              var pfreq2 = Math.round(100*v['proteins2'].length / proteins_2);
+              var diff_pfreq = pfreq1-pfreq2;
+              var sfreq1 = Math.round(100*v['pdbs1'].length / pdbs_1);
+              var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
+              var diff_sfreq = sfreq1-sfreq2;
+              tr = `
+                    <tr class="clickable-row" id="${i}">
+                      <td>${gn1}</td>
+                      <td>${gn2}</td>
+                      <td>${pfreq1}</td>
+                      <td>${pfreq2}</td>
+                      <td>${diff_pfreq}</td>
+                      <td>${sfreq1}</td>
+                      <td>${sfreq2}</td>
+                      <td>${diff_sfreq}</td>
+                    </tr>`;
+              tbody.append(tr);
+            }); 
+          } else {
+            var proteins = data['proteins'].length
+            var pdbs = data['pdbs'].length
+            $.each(data['interactions'], function (i, v) {
+              var gn1 = i.split(",")[0]
+              var gn2 = i.split(",")[1]
+              var pfreq = Math.round(100*v['proteins'].length / proteins);
+              var sfreq = Math.round(100*v['pdbs'].length / pdbs);
+              tr = `
+                    <tr class="clickable-row" id="${i}">
+                      <td>${gn1}</td>
+                      <td>${gn2}</td>
+                      <td>${pfreq}</td>
+                      <td>${sfreq}</td>
+                    </tr>`;
+              tbody.append(tr);
+            });
+          }
 
           table.on('click', '.clickable-row', function(event) {
             if($(this).hasClass('active')){
@@ -696,9 +760,8 @@
         }
 
         function renderSecondary(id){
-          console.log('hi',id) 
-          data = data_groups;
           var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+          // console.log('hi',id,selector) 
           var table = $(selector + " .secondary-table");
           var info = $(selector + " .secondary-info");
 
@@ -707,48 +770,82 @@
           // reset tbody
           var tbody = table.find('tbody'); 
           tbody.empty();
-          var pdbs_1 = data['pdbs1'].length
-          var pdbs_2 = data['pdbs2'].length
-          $.each(data['secondary'][id], function (i, v) {
-            var sfreq1 = Math.round(100*v['set1'] / pdbs_1);
-            var sfreq2 = Math.round(100*v['set2'] / pdbs_2);
-            var aa_pairs = Object.keys(v['aa_pairs']);
-            aa_pairs = aa_pairs.join("<br>");
-            aa_pair_freq1 = [];
-            aa_pair_freq2 = [];
-            aa_pair_freq1_all = [];
-            aa_pair_freq2_all = [];
-            aa_pair_class_freq = [];
-            $.each(v['aa_pairs'], function (i, v) {
-              aa_pair_freq1.push(Math.round(100*v['set1'] / pdbs_1));
-              aa_pair_freq2.push(Math.round(100*v['set2'] / pdbs_2));
-              aa_pair_freq1_all.push(Math.round(100*v['pair_set1'].length / pdbs_1));
-              aa_pair_freq2_all.push(Math.round(100*v['pair_set2'].length / pdbs_2));
-              aa_pair_class_freq.push(v['class']);
-            });
-            aa_pair_freq_all_diff = aa_pair_freq1_all.map(function(v,i) { return (v - aa_pair_freq2_all[i]); }); 
-            aa_pair_freq1 = aa_pair_freq1.join("<br>");
-            aa_pair_freq2 = aa_pair_freq2.join("<br>");
-            aa_pair_freq1_all = aa_pair_freq1_all.join("<br>");
-            aa_pair_freq2_all = aa_pair_freq2_all.join("<br>");
-            aa_pair_freq_all_diff = aa_pair_freq_all_diff.join("<br>");
-            aa_pair_class_freq = aa_pair_class_freq.join("<br>");
+          if (selector == "#two-crystal-groups-tab") {
+            data = data_groups;
+            var pdbs_1 = data['pdbs1'].length
+            var pdbs_2 = data['pdbs2'].length
+            $.each(data['secondary'][id], function (i, v) {
+              var sfreq1 = Math.round(100*v['set1'] / pdbs_1);
+              var sfreq2 = Math.round(100*v['set2'] / pdbs_2);
+              var aa_pairs = Object.keys(v['aa_pairs']);
+              aa_pairs = aa_pairs.join("<br>");
+              aa_pair_freq1 = [];
+              aa_pair_freq2 = [];
+              aa_pair_freq1_all = [];
+              aa_pair_freq2_all = [];
+              aa_pair_class_freq = [];
+              $.each(v['aa_pairs'], function (i, v) {
+                aa_pair_freq1.push(Math.round(100*v['set1'] / pdbs_1));
+                aa_pair_freq2.push(Math.round(100*v['set2'] / pdbs_2));
+                aa_pair_freq1_all.push(Math.round(100*v['pair_set1'].length / pdbs_1));
+                aa_pair_freq2_all.push(Math.round(100*v['pair_set2'].length / pdbs_2));
+                aa_pair_class_freq.push(v['class']);
+              });
+              aa_pair_freq_all_diff = aa_pair_freq1_all.map(function(v,i) { return (v - aa_pair_freq2_all[i]); }); 
+              aa_pair_freq1 = aa_pair_freq1.join("<br>");
+              aa_pair_freq2 = aa_pair_freq2.join("<br>");
+              aa_pair_freq1_all = aa_pair_freq1_all.join("<br>");
+              aa_pair_freq2_all = aa_pair_freq2_all.join("<br>");
+              aa_pair_freq_all_diff = aa_pair_freq_all_diff.join("<br>");
+              aa_pair_class_freq = aa_pair_class_freq.join("<br>");
 
-            tr = `
-                  <tr>
-                    <td>${i}</td>
-                    <td>${sfreq1}</td>
-                    <td>${sfreq2}</td>
-                    <td>${aa_pairs}</td>
-                    <td>${aa_pair_freq1}</td>
-                    <td>${aa_pair_freq2}</td>
-                    <td>${aa_pair_class_freq}</td>
-                    <td>${aa_pair_freq1_all}</td>
-                    <td>${aa_pair_freq2_all}</td>
-                    <td>${aa_pair_freq_all_diff}</td>
-                  </tr>`;
-            tbody.append(tr);
-          }); 
+              tr = `
+                    <tr>
+                      <td>${i}</td>
+                      <td>${sfreq1}</td>
+                      <td>${sfreq2}</td>
+                      <td>${aa_pairs}</td>
+                      <td>${aa_pair_freq1}</td>
+                      <td>${aa_pair_freq2}</td>
+                      <td>${aa_pair_class_freq}</td>
+                      <td>${aa_pair_freq1_all}</td>
+                      <td>${aa_pair_freq2_all}</td>
+                      <td>${aa_pair_freq_all_diff}</td>
+                    </tr>`;
+              tbody.append(tr);
+            }); 
+          } else {
+            data = data_single;
+            var pdbs = data['pdbs'].length
+            $.each(data['secondary'][id], function (i, v) {
+              var sfreq1 = Math.round(100*v['set'] / pdbs);
+              var aa_pairs = Object.keys(v['aa_pairs']);
+              aa_pairs = aa_pairs.join("<br>");
+              aa_pair_freq1 = [];
+              aa_pair_freq1_all = [];
+              aa_pair_class_freq = [];
+              $.each(v['aa_pairs'], function (i, v) {
+                aa_pair_freq1.push(Math.round(100*v['set'] / pdbs));
+                aa_pair_freq1_all.push(Math.round(100*v['pair_set'].length / pdbs));
+                aa_pair_class_freq.push(v['class']);
+              });
+              aa_pair_freq1 = aa_pair_freq1.join("<br>");
+              aa_pair_freq1_all = aa_pair_freq1_all.join("<br>");
+              aa_pair_class_freq = aa_pair_class_freq.join("<br>");
+
+              tr = `
+                    <tr>
+                      <td>${i}</td>
+                      <td>${sfreq1}</td>
+                      <td>${aa_pairs}</td>
+                      <td>${aa_pair_freq1}</td>
+                      <td>${aa_pair_class_freq}</td>
+                      <td>${aa_pair_freq1_all}</td>
+                    </tr>`;
+              tbody.append(tr);
+            }); 
+          }
+
         }
 
         function initializeFullscreenButton(selector) {
