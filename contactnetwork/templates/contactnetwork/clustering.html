@@ -452,14 +452,16 @@
             if (firstD && d3.layout.phylotree.is_leafnode(node)) {
                 if (node.name in treeAnnotations) {
                     var node_label = element.select("text");
+                    var font_size  = parseFloat(node_label.style("font-size"));
+                    var scale = 0.8;
 
                     // add receptor state
                     element.selectAll("circle").remove()
                     var state = treeAnnotations[node.name][0]
                     element.append("circle")
-                        .attr("r", 3)
+                        .attr("r", (font_size*scale)/2)
                         .style("stroke", "#000")
-                        .style("stroke-width", "0.5px")
+                        .style("stroke-width", font_size/20+"px")
                         .style("fill", function(n) {
                           // color based on activity
                           switch(state){
@@ -556,12 +558,15 @@
                           break;
                         case 7: // ligand function
                         default:
+                          displayData = 7 // (re)set in case of erroneous selection
                           option = "Ligand function"
+
                           // node color
                           if (treeAnnotations[node.name][displayData].length > 0){
                               switch(treeAnnotations[node.name][displayData][0]) {
                                   case "agonist":
                                   case "agonist-partial":
+                                  case "partial-agonist":
                                   case "pam":
                                       nodeColor = "#0F0";
                                       break;
@@ -584,8 +589,8 @@
                       nodeColor = [nodeColor]
 
                     // add annotationBlock
-                    var font_size  = parseFloat(node_label.style("font-size"));
-                    var scale = 0.8
+//                    var font_size  = parseFloat(node_label.style("font-size"));
+//                    var scale = 0.8
                     var nodeNameMeasure = label.innerHTML.replace(/(<([^>]+)>)/ig,"");
                     var move_past_label_rect = label.getBBox().width*1.05 + font_size
 
@@ -595,10 +600,10 @@
 
                       // create block
                       var annotation = element.append("rect")
-                      annotation.attr("width", font_size*scale)
+                      annotation.attr("width", font_size*scale*0.9)
                         .style("stroke", "#000")
-                        .style("stroke-width", "0.5px")
-                        .attr("height", font_size*scale)
+                        .style("stroke-width", font_size/20+"px")
+                        .attr("height", font_size*scale*0.9)
                         .attr ("y", -(font_size*scale)/2)
                         .attr("fill", currentColor)
                         .on("mouseover", function(d) { // add tooltip
@@ -649,9 +654,10 @@
                     silhouette_color = "#FFAAAA";
                   }
                 }
-                element.selectAll("circle").style("fill", silhouette_color);
+                element.selectAll("circle").style("fill", silhouette_color)
 
-                // TODO: Add tooltip
+
+                // TODO: Add tooltip with silhouette score
             }
             // color labels
             if (d3.layout.phylotree.is_leafnode(node)) {
@@ -797,7 +803,7 @@
                         });
 
                         // TODO: calculate zoom level as center + fit doesn't work correctly
-                        window.zoomCluster[container].zoom(2.3);
+                        window.zoomCluster[container].zoom(2);
                         // TODO manual center
                         window.zoomCluster[container].center()
 
