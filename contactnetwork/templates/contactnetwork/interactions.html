@@ -98,7 +98,6 @@
                   <li><a href="#single-hiveplot-tab" data-toggle="tab" id="single-hiveplot-tab-link">Hiveplot</a></li>
                   <li><a href="#single-schematic_con-tab" data-toggle="tab" id="single-schematic_con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-schematic_non-tab" data-toggle="tab" id="single-schematic_non-tab-link">2D Schematic (Non)</a></li>
-                  <li><a href="#single-table-tab" data-toggle="tab" id="single-table-tab-link">Browser</a></li>
                 </ul>
                 <div class="row">
                   <div class="col-md-7 tab-content">
@@ -114,15 +113,12 @@
                               </div>
                               <div class="panel-body">
                                   <div class="heatmap-container">
-                                      <div class="heatmap-legend"></div>
                                       <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
                                   </div>
                               </div>
                            </div>
                       </div>
 
-                      <div class="tab-pane" id="single-table-tab">
-                      </div>
 
                       <div class="tab-pane" id="single-flareplot-tab">
 
@@ -175,7 +171,6 @@
                             </div>
                             <div class="panel-body">
                                 <div class="schematic_con-container" style="margin: auto; display: block">
-                                  <div class="schematic-legend"></div>
                                 </div>
                             </div>
                          </div>
@@ -195,7 +190,6 @@
                             </div>
                             <div class="panel-body">
                                 <div class="schematic_non-container" style="margin: auto; display: block">
-                                  <div class="schematic-legend"></div>
                                 </div>
                             </div>
                          </div>
@@ -327,7 +321,6 @@
                   <li><a href="#single-group-flareplot-tab" data-toggle="tab" id="single-group-flareplot-tab-link">Flareplot</a></li>
                   <li><a href="#single-group-schematic_con-tab" data-toggle="tab" id="single-group-schematic_con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-group-schematic_non-tab" data-toggle="tab" id="single-group-schematic_non-tab-link">2D Schematic (Non)</a></li>
-                  <li><a href="#single-group-table-tab" data-toggle="tab" id="single-group-table-tab-link">Browser</a></li>
                 </ul>
                 <div class="row">
                   <div class="col-md-7 tab-content">
@@ -343,14 +336,10 @@
                               </div>
                               <div class="panel-body">
                                   <div class="heatmap-container">
-                                      <div class="heatmap-legend"></div>
                                       <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
                                   </div>
                               </div>
                            </div>
-                      </div>
-
-                      <div class="tab-pane" id="single-group-table-tab">
                       </div>
 
                       <div class="tab-pane" id="single-group-flareplot-tab">
@@ -385,7 +374,6 @@
                             </div>
                             <div class="panel-body">
                                 <div class="schematic_con-container" style="margin: auto; display: block">
-                                  <div class="schematic-legend"></div>
                                 </div>
                             </div>
                          </div>
@@ -405,7 +393,6 @@
                             </div>
                             <div class="panel-body">
                                 <div class="schematic_non-container" style="margin: auto; display: block">
-                                  <div class="schematic-legend"></div>
                                 </div>
                             </div>
                          </div>
@@ -575,7 +562,6 @@
                   <li><a href="#two-groups-flareplot-tab" data-toggle="tab" id="two-groups-flareplot-tab-link">Flareplot</a></li>
                   <li><a href="#two-groups-schematic_con-tab" data-toggle="tab" id="two-groups-schematic_con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#two-groups-schematic_non-tab" data-toggle="tab" id="two-groups-schematic_non-tab-link">2D Schematic (Non)</a></li>
-                  <li><a href="#two-groups-table-tab" data-toggle="tab" id="two-groups-table-tab-link">Browser</a></li>
                 </ul>
                 <div class="row">
                   <div class="tab-content col-md-7 ">
@@ -591,14 +577,10 @@
                               </div>
                               <div class="panel-body">
                                   <div class="heatmap-container">
-                                      <div class="heatmap-legend"></div>
                                       <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"></svg>
                                   </div>
                               </div>
                            </div>
-                      </div>
-
-                      <div class="tab-pane" id="two-groups-table-tab">
                       </div>
 
                       <div class="tab-pane" id="two-groups-flareplot-tab">
@@ -633,7 +615,6 @@
                             </div>
                             <div class="panel-body">
                                 <div class="schematic_con-container" style="margin: auto; display: block">
-                                  <div class="schematic-legend"></div>
                                 </div>
                             </div>
                          </div>
@@ -653,7 +634,6 @@
                             </div>
                             <div class="panel-body">
                                 <div class="schematic_non-container" style="margin: auto; display: block">
-                                  <div class="schematic-legend"></div>
                                 </div>
                             </div>
                          </div>
@@ -692,7 +672,7 @@
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
-                                <table class="table browser-table display">
+                                <table class="table browser-table display" width="100%">
                                   <thead>
                                     <tr>
                                       <th colspan="2">Segment</th>
@@ -1287,303 +1267,6 @@
             downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
         }
 
-        function populateTable(selector) {
-          var table = [];
-              rows = []
-          if (selector=='single-table') {
-              var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
-              $('#single-crystal-tab .heatmap-container rect[data-interaction-type]').each(function(e) {
-                  var rect = $(this);
-                  var resNo1 = rect.data('res-no-1');
-                  var resNo2 = rect.data('res-no-2');
-                  var seg1 = rect.data('seg-1');
-                  var seg2 = rect.data('seg-2');
-                  var genNo1 = rect.data('gen-no-1');
-                  var genNo2 = rect.data('gen-no-2');
-                  var aa1 = rect.data('aa-1');
-                  var aa2 = rect.data('aa-2');
-                  var iType = rect.data('interaction-type');
-                  rows.push('<tr><td>'+resNo1+'</td><td>'+resNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+aa1+'</td><td>'+aa2+'</td><td>'+iType+'</td>')
-                });
-          } else if (selector=='single-group-table') {
-            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2',  'Number of interactions', 'Number of crystals', 'Frequency'];
-            $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
-              var rect = $(this);
-              var genNo1 = rect.data('gen-no-1');
-              var genNo2 = rect.data('gen-no-2');
-              var seg1 = rect.data('seg-1');
-              var seg2 = rect.data('seg-2');
-              var nInteractions = rect.data('num-interactions');
-              var nTotalInteractions = rect.data('total-possible-interactions');
-              var frequency = rect.data('frequency');
-            //data.push([resNo1, resNo2, seg1, seg2, genNo1, genNo2, aa1, aa2, iType]);
-            rows.push('<tr><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+nInteractions+'</td><td>'+nTotalInteractions+'</td><td>'+frequency+'</td>')
-            });
-
-          } else if (selector=='two-groups-table') {
-            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
-            $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
-              var rect = $(this);
-              var genNo1 = rect.data('gen-no-1');
-              var genNo2 = rect.data('gen-no-2');
-              var seg1 = rect.data('seg-1');
-              var seg2 = rect.data('seg-2');
-              var numIntsGroup1 = rect.data('group-1-num-ints');
-              var numIntsGroup2 = rect.data('group-2-num-ints');
-              var numPdbsGroup1 = rect.data('group-1-num-pdbs');
-              var numPdbsGroup2 = rect.data('group-2-num-pdbs');
-              var freqGroup1 = rect.data('group-1-freq');
-              var freqGroup2 = rect.data('group-2-freq');
-              var fDiff = rect.data('frequency-diff').toFixed(2);
-              rows.push('<tr><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+numIntsGroup1+'</td><td>'+numIntsGroup2+'</td><td>'+freqGroup1+'</td><td>'+freqGroup2+'</td><td>'+fDiff+'</td>')
-            });
-
-          }
-          table.push('<table id="'+selector+'" class="table display" width="100%"><thead><tr>');
-          header.forEach(function(h) {
-            table.push('<th></th>'); //'+h+'
-          });
-          table.push('</tr</thead>');
-          table.push('<tbody>');
-          table = table.concat(rows);
-          table.push('</tbody></table>');
-          $("#"+selector+"-tab").html(table.join( "" ));
-
-          $("#"+selector+"-tab-link").click(function(e){
-              setTimeout(renderTable,100,"#"+selector);
-          });
-
-        }
-
-
-        function renderTable(mode) {
-          if ( ! $.fn.DataTable.isDataTable(mode ) ) {
-          oTable[mode] = $(mode).DataTable({
-                'scrollX': true,
-                scrollY:        '80vh',
-                paging:         false,
-                columnDefs: [
-                  { targets: 'no-sort', orderable: false }
-                ],
-                "aaSorting": [],
-              });
-              if (mode=='#single-table') {
-                  yadcf.init(oTable[mode],
-                    [
-                        {
-                            column_number : 0,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Residue #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 1,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Residue #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 2,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Segment #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 3,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Segment #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 4,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "GN #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 5,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "GN #2",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number : 6,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Amino acid #1",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number : 7,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Amino acid #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 8,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Interaction Type",
-                            filter_reset_button_text: false,
-
-                        },
-                    ],
-                    {
-                        cumulative_filtering: false
-                    }
-
-                );
-              } else if (mode=='#single-group-table') {
-                  yadcf.init(oTable[mode],
-                    [
-                        {
-                            column_number : 0,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "GN #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 1,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "GN #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 2,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Segment #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 3,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Segment #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 4,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Number of interactions",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 5,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Total Structures",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number : 6,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Frequency",
-                            filter_reset_button_text: false,
-
-                        },
-                    ],
-                    {
-                        cumulative_filtering: false
-                    }
-
-                );
-              } else if (mode=='#two-groups-table') {
-                  yadcf.init(oTable[mode],
-                    [
-                        {
-                            column_number : 0,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "GN #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 1,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "GN #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 2,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Segment #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 3,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Segment #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 4,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Interactions group 1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 5,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Interactions group 2",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number : 6,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Frequency group 1",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number : 7,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Frequency group 2",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number : 8,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Frequency difference",
-                            filter_reset_button_text: false,
-
-                        },
-                    ],
-                    {
-                        cumulative_filtering: false
-                    }
-
-                );
-              }
-
-            yadcf.exResetAllFilters(oTable[mode]);
-          }
-        }
-
         function downloadSingleCrystalGroupCSV(singleGroupSvgSelector, name) {
             var data = [];
             var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Frequency',  'Number of interactions', 'Number of crystals'];
@@ -1655,7 +1338,7 @@
             }
 
             // Destroy old legend content
-            $(heatMapSelector + ' .heatmap-legend').empty();
+            // $(heatMapSelector + ' .heatmap-legend').empty();
 
             // Destroy all previous contents
             $(heatMapSelector + ' .heatmap').empty();
@@ -2022,15 +1705,15 @@
             // Figure specific control panel //
 
             // Add SVG download button
-            legendHtml = '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary svg-download-button" aria-label="Left Align">' +
-                            '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-                          '</button>';
+            // legendHtml = '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary svg-download-button" aria-label="Left Align">' +
+            //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+            //               '</button>';
 
-            // Add CSV download button
-            legendHtml += '<br /><button onclick="downloadSingleCrystalCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
-              '</button>';
+            // // Add CSV download button
+            // legendHtml += '<br /><button onclick="downloadSingleCrystalCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
+            //   '</button>';
 
-            $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
+            // $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
 
             // Make zoomable
             window.zoomHeatmap[heatMapSelector] = svgPanZoom(heatMapSelector + ' .heatmap', {
@@ -2059,8 +1742,6 @@
                 }
             });
 
-            // Create table view
-            populateTable('single-table');
         }
 
         function renderSingleCrystalGroupHeatmap(data, heatMapSelector) {
@@ -2072,7 +1753,7 @@
             }
 
             // Destroy old legend content
-            $(heatMapSelector + ' .heatmap-legend').empty();
+            // $(heatMapSelector + ' .heatmap-legend').empty();
 
             // Destroy all previous contents
             $(heatMapSelector + ' .heatmap').empty();
@@ -2363,15 +2044,15 @@
             // Figure specific controls
 
             // Add SVG download button
-            legendHtml = '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
-                            '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-                          '</button>';
+            // legendHtml = '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+            //               '</button>';
 
-            // Add CSV download button
-            legendHtml += '<br /><button onclick="downloadSingleCrystalGroupCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
-              '</button>';
+            // // Add CSV download button
+            // legendHtml += '<br /><button onclick="downloadSingleCrystalGroupCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
+            //   '</button>';
 
-            $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
+            // $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
 
 
             // Make zoomable
@@ -2400,8 +2081,6 @@
                     }
                 }
             });
-            // Create table view
-            populateTable('single-group-table');
         }
 
         function renderTwoCrystalGroupsHeatmap(data1, data2, data3, heatMapSelector) {
@@ -2413,7 +2092,7 @@
             }
 
             // Destroy old legend content
-            $(heatMapSelector + ' .heatmap-legend').empty();
+            // $(heatMapSelector + ' .heatmap-legend').empty();
 
             // Destroy all previous contents
             $(heatMapSelector + ' .heatmap').empty();
@@ -2743,16 +2422,16 @@
                     });
             }*/
 
-            // Add SVG download button
-            legendHtml = '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
-                            '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-                          '</button>';
+            // // Add SVG download button
+            // legendHtml = '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+            //                 '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+            //               '</button>';
 
-            // Add CSV download button
-            legendHtml += '<br /><button onclick="downloadTwoCrystalGroupsCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
-              '</button>';
+            // // Add CSV download button
+            // legendHtml += '<br /><button onclick="downloadTwoCrystalGroupsCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
+            //   '</button>';
 
-            $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
+            // $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
 
             // Make zoomable
             window.zoomHeatmap[heatMapSelector] = svgPanZoom(heatMapSelector + ' .heatmap', {
@@ -2780,7 +2459,15 @@
                     }
                 }
             });
-            populateTable('two-groups-table');
+        }
+
+        var filtered_gn_pairs = [];
+        function filter_browser() {
+          filtered_gn_pairs = [];
+          $('.filter_rows').each(function() {
+            filtered_gn_pairs.push($(this).attr('id'))
+          });
+          updateGeneralControls();
         }
 
         function renderBrowser(data) {
@@ -2794,6 +2481,10 @@
           // var tbody = table.find('tbody'); 
           // tbody.empty();
           table.DataTable().destroy();
+          // yadcf.removeFilters(table);
+          table.parent().html('<table class="table browser-table display" width="100%"><thead></thead><tbody></tbody></table>');
+          var table = $(selector + " .browser-table");
+          // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
           var tbody = table.find('tbody'); 
           // table.DataTable().clear();
           if (data['proteins2']) {
@@ -2836,7 +2527,7 @@
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
               tr = `
-                    <tr class="clickable-row" id="${i}">
+                    <tr class="clickable-row filter_rows" id="${i}">
                       <td>${seg1}</td>
                       <td>${seg2}</td>
                       <td>${gn1}</td>
@@ -2888,73 +2579,76 @@
                 paging:         false,
               });
 
-          // yadcf.init(btable,
-          //           [
-          //               {
-          //                   column_number : 0,
-          //                   filter_type: "multi_select",
-          //                   select_type: 'select2',
-          //                   filter_default_label: "Residue #1",
-          //                   filter_reset_button_text: false,
-          //               },
-          //               {
-          //                   column_number : 1,
-          //                   filter_type: "multi_select",
-          //                   select_type: 'select2',
-          //                   filter_default_label: "Residue #2",
-          //                   filter_reset_button_text: false,
-          //               },
-          //               {
-          //                   column_number : 2,
-          //                   filter_type: "multi_select",
-          //                   select_type: 'select2',
-          //                   filter_default_label: "Residue #1",
-          //                   filter_reset_button_text: false,
-          //               },
-          //               {
-          //                   column_number : 3,
-          //                   filter_type: "multi_select",
-          //                   select_type: 'select2',
-          //                   filter_default_label: "Residue #2",
-          //                   filter_reset_button_text: false,
-          //               },
-          //               {
-          //                   column_number : 4,
-          //                   filter_type: "range_number",
-          //                   filter_reset_button_text: false,
-          //               },
-          //               {
-          //                   column_number : 5,
-          //                   filter_type: "range_number",
-          //                   filter_reset_button_text: false,
+          yadcf.init(btable,
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
 
-          //               },
-          //               {
-          //                   column_number : 6,
-          //                   filter_type: "range_number",
-          //                   filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
 
-          //               },
-          //               {
-          //                   column_number : 7,
-          //                   filter_type: "multi_select",
-          //                   select_type: 'select2',
-          //                   filter_default_label: "Type",
-          //                   text_data_delimiter: ",",
-          //                   filter_reset_button_text: false,
-          //               },
-          //               {
-          //                   column_number : 8,
-          //                   filter_type: "range_number",
-          //                   filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 7,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Type",
+                            text_data_delimiter: ",",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 8,
+                            filter_type: "range_number",
+                            filter_reset_button_text: false,
 
-          //               },
-          //           ],
-          //           {
-          //               cumulative_filtering: false
-          //           }
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
 
-          //       );
+                );
+              btable.on('draw.dt', function(e, oSettings) {
+                  filter_browser();
+              });
 
         }
 
@@ -3185,7 +2879,7 @@
           if (pdb.length > 0 && segments.length > 0) {
               var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
               $(".heatmap").hide();
-              $(".heatmap-legend").hide();
+              // $(".heatmap-legend").hide();
               $(".matrix-tab:visible").click();
 
               $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
@@ -3207,7 +2901,7 @@
                     console.log('gotten visual info')
                     // Re-render heatmap
                     $(".heatmap").show();
-                    $(".heatmap-legend").show();
+                    // $(".heatmap-legend").show();
                     heatmapFunction(data, selector + ' .heatmap-container');
                     $("#svgloading").remove()
                     // Re-render flareplot
@@ -3268,7 +2962,7 @@
             if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
-                $(".heatmap-legend").hide();
+                // $(".heatmap-legend").hide();
                 $(".matrix-tab:visible").click();
                 $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
 
@@ -3325,7 +3019,7 @@
                         }, function ( data3 ) {
                             // Re-render heatmap
                             $(".heatmap").show();
-                            $(".heatmap-legend").show();
+                            // $(".heatmap-legend").show();
                             $("#svgloading").remove()
                             heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
                             createSchematicPlot(data3, selector + " .schematic_con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic_container
@@ -4256,7 +3950,12 @@
 
                   var f1 = rect.data('group-1Freq');
                   var f2 = rect.data('group-2Freq');
-                  if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (frequency < r3[0] || r3[1] < frequency) ) return
+
+                  var pair = genNo1 + "," + genNo2;
+                  if ( !(filtered_gn_pairs.includes(pair)) && filtered_gn_pairs.length) {
+                      return
+                  } 
+                  // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (frequency < r3[0] || r3[1] < frequency) ) return
 
                   // Push interacting residues
                   if (!res_int.includes(resNo1)) res_int.push(resNo1)
@@ -4458,22 +4157,15 @@
                     });
                     break;
                 case "two-crystal-groups-tab":
-                    // var r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
-                    // var r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
-                    // var r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
-                    var r1 = $('#freq-slider-range-1').slider( "option", "values" );
-                    var r2 = $('#freq-slider-range-2').slider( "option", "values" );
-                    var r3 = $('#freq-slider-range-3').slider( "option", "values" );
-                    // Hide all below min or above treshold
-                    // $('#' + currentTab + '-crystal-tab .heatmap rect').each(function() {
-                    $('.tab-pane.main_option.active .heatmap rect').each(function() {
-                        var f1 = $(this).data("group-1-freq");
-                        var f2 = $(this).data("group-2-freq");
-                        var f3 = $(this).data("frequency-diff");
-                        if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
-                            $(this).hide();
-                        } else {
+
+                  if (!filtered_gn_pairs.length) break;
+                  
+                    $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
+                        var pair = $(this).data("gen-no-1") + "," + $(this).data("gen-no-2");
+                        if ( filtered_gn_pairs.includes(pair) ) {
                             $(this).show();
+                        } else {
+                            $(this).hide();
                         }
                     });
                     break;
@@ -4483,32 +4175,54 @@
         // TODO update for other tabs
         function updateFlareplot() {
             var container = '#' + currentTab+ ' .flareplot-container'
-            // switch (currentTab) {
-            //     case "single-crystal-tab":
-            //     interactionsToggleList = [];
-            //     $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
-            //         // init toggle list
-            //         if ($(this).is(':checked'))
-            //             interactionsToggleList.push($(this).data('interaction-type'));
-            //     });
 
-            //     // toggle interactions in flareplot
-            //     if (container in flareplot)
-            //         flareplot[container].showInteractions(interactionsToggleList);
-            //     break;
-            //     case "single-crystal-group-tab":
-            //         var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
-            //         if (container in flareplot)
-            //             flareplot[container].updateRange(tMin, tMax);
-            //         break;
-            //     case "two-crystal-groups-tab":
-            //         var r1 = $('#' + currentTab + ' #freq-slider-range-1').slider( "option", "values" );
-            //         var r2 = $('#' + currentTab + ' #freq-slider-range-2').slider( "option", "values" );
-            //         var r3 = $('#' + currentTab + ' #freq-slider-range-3').slider( "option", "values" );
-            //         if (container in flareplot)
-            //             flareplot[container].updateRangeTwoGroups(r1[0], r1[1], r2[0], r2[1], r3[0], r3[1])
-            //         break;
-            // }
+
+            switch (currentTab) {
+                case "single-crystal-tab":
+                // interactionsToggleList = [];
+                // $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
+                //     // init toggle list
+                //     if ($(this).is(':checked'))
+                //         interactionsToggleList.push($(this).data('interaction-type'));
+                // });
+
+                // // toggle interactions in flareplot
+                // if (container in flareplot)
+                //     flareplot[container].showInteractions(interactionsToggleList);
+                break;
+                case "single-crystal-group-tab":
+                    // var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
+                    // if (container in flareplot)
+                    //     flareplot[container].updateRange(tMin, tMax);
+                    break;
+                case "two-crystal-groups-tab":
+
+                  if (!filtered_gn_pairs.length) break;
+
+                    var paths = $(container + ' path').each(function() {
+                      // var f1 = $(this).data("group-1-freq");
+                      // var f2 = $(this).data("group-2-freq");
+                      // var f3 = $(this).data("frequency-diff");
+                      // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+                      //     $(this).hide();
+                      // } else {
+                      //     $(this).show();
+                      // }
+                      if ($(this).attr("class")) {
+                        var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
+                        var gn1 = path_class[1].replace("source-","");
+                        var gn2 = path_class[2].replace("target-","");
+                        var pair = gn1 +","+gn2;
+                        // console.log(pair);
+                        if ( filtered_gn_pairs.includes(pair) ) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                      }
+                  });
+                    break;
+            }
         }
 
         // TODO create interaction toggle for Hiveplot
@@ -4544,21 +4258,38 @@
                   });
                   break;
               case "two-crystal-groups-tab":
-                  var r1 = $('#' + currentTab + '#freq-slider-range-1').slider( "option", "values" );
-                  var r2 = $('#' + currentTab + '#freq-slider-range-2').slider( "option", "values" );
-                  var r3 = $('#' + currentTab + '#freq-slider-range-3').slider( "option", "values" );
+                  // var r1 = $('#' + currentTab + '#freq-slider-range-1').slider( "option", "values" );
+                  // var r2 = $('#' + currentTab + '#freq-slider-range-2').slider( "option", "values" );
+                  // var r3 = $('#' + currentTab + '#freq-slider-range-3').slider( "option", "values" );
 
-                  // Hide all below min or above treshold
+                  if (!filtered_gn_pairs.length) break;
+
+                  // // Hide all below min or above treshold
                   var paths = $('#' + currentTab+ ' .' + currentViz + '-container path').each(function() {
-                      var f1 = $(this).data("group-1-freq");
-                      var f2 = $(this).data("group-2-freq");
-                      var f3 = $(this).data("frequency-diff");
-                      if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
-                          $(this).hide();
-                      } else {
-                          $(this).show();
+                      // var f1 = $(this).data("group-1-freq");
+                      // var f2 = $(this).data("group-2-freq");
+                      // var f3 = $(this).data("frequency-diff");
+                      // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+                      //     $(this).hide();
+                      // } else {
+                      //     $(this).show();
+                      // }
+                      if ($(this).attr("class")) {
+                        path_class = $(this).attr("class").split(' ')[1].replace("edge-","");
+                        // console.log(path_class);
+                        if ( filtered_gn_pairs.includes(path_class) ) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+
                       }
                   });
+                  // $('#' + currentTab+ ' .' + currentViz + '-container path').hide();
+                  // $.each(filtered_gn_pairs,function(i,v) {
+                  //   console.log(v,'#' + currentTab+ ' .' + currentViz + '-container .edge-'+v,$('#' + currentTab+ ' .' + currentViz + '-container .edge-'+v));
+                  //   $('#' + currentTab+ ' .' + currentViz + '-container .edge-'+v).show();
+                  // });
                   break;
               }
         }
