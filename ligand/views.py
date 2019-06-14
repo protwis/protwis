@@ -789,15 +789,15 @@ def calc_bias_factor(biasdata, reference):
                     most_reference = j
 
             else:
-                if (i[1][1]['assay_type'] == j['assay_type'] and
-                    i[1][1]['cell_line'] == j['cell_line'] and
-                        i[1][1]['signalling_protein'] == j['signalling_protein']):
-                    temp_reference = j
+
                 if (i[1][1]['quantitive_activity'] is not None and most_potent['quantitive_activity'] is not None and
                     i[1][1]['quantitive_efficacy'] is not None and most_potent['quantitive_efficacy'] is not None and
                     j['quantitive_efficacy'] is not None and j['quantitive_efficacy'] is not None):
-                    i[1][1]['log_bias_factor'] = round(((most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - (most_reference['quantitive_efficacy'] / most_reference['quantitive_activity'])) -
-                                                       ((i[1][1]['quantitive_efficacy'] / i[1][1]['quantitive_activity']) - (j['quantitive_efficacy'] / j['quantitive_activity'])), 1)
+                    if (i[1][1]['assay_type'] == j['assay_type'] and
+                        i[1][1]['cell_line'] == j['cell_line'] and
+                            i[1][1]['signalling_protein'] == j['signalling_protein']):
+                        temp_reference = j
+                        i[1][1]['log_bias_factor'] = round((math.log10(most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - math.log10(most_reference['quantitive_efficacy'] / most_reference['quantitive_activity']))-(math.log10(i[1][1]['quantitive_efficacy'] / i[1][1]['quantitive_activity']) - math.log10(temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity'])),1)
 
 
 def bias_list(request):
