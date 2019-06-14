@@ -17,7 +17,7 @@ from contactnetwork.distances import *
 from structure.models import Structure, StructureVectors
 from structure.templatetags.structure_extras import *
 from construct.models import Construct
-from protein.models import Protein, ProteinSegment
+from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResidueGenericNumber
 from interaction.models import StructureLigandInteraction
 
@@ -37,6 +37,12 @@ def Clustering(request):
     Show clustering page
     """
     return render(request, 'contactnetwork/clustering.html')
+
+def Clustering2(request):
+    """
+    Show clustering page
+    """
+    return render(request, 'contactnetwork/clustering2.html')
 
 def Interactions(request):
     """
@@ -220,8 +226,11 @@ def PdbTableData(request):
         arrestin = only_arrestins(a_list)
         fusion = only_fusions(a_list)
         antibody = only_antibodies(a_list)
+        if pdb_id in methods:
+            r['method'] = methods[pdb_id]
+        else:
+            r['method'] = "N/A"
 
-        r['method'] = methods[pdb_id] 
         r['resolution'] = s.resolution
         r['7tm_distance'] = s.distance
         r['g_protein'] = g_protein
@@ -239,7 +248,7 @@ def PdbTableData(request):
                 r['ligand'] = r['ligand'][:20] + ".."
             r['ligand_function'] = l.ligand_role.name
             r['ligand_type'] = l.ligand.properities.ligand_type.name
-        
+
 
         data_dict[pdb_id] = r
         data_table += "<tr> \
@@ -447,7 +456,7 @@ def InteractionBrowserData(request):
             'interacting_pair__res1__generic_number__label',
             'interacting_pair__res2__generic_number__label',
         ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct())
-        
+
         all_interaction_pairs = []
         all_interaction_residues = set()
         for i in interactions:
@@ -460,7 +469,7 @@ def InteractionBrowserData(request):
         all_pdbs = [x.lower() for x in all_pdbs]
         residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=all_pdbs,
                     generic_number__label__in=all_interaction_residues).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name').all()
-        
+
         r_lookup = {}
         r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
 
@@ -502,7 +511,7 @@ def InteractionBrowserData(request):
         for r in residues:
             r_lookup[r['pk']] = r
             r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
-         
+
     for i in interactions:
         s = i['interacting_pair__referenced_structure__pk']
         pdb_name = s_lookup[s][1]
@@ -567,7 +576,7 @@ def InteractionBrowserData(request):
             current = {}
             current["set1"] = pdbs1.copy()
             current["set2"] = pdbs2.copy()
-            
+
             for setname,iset in [['set1','secondary1'],['set2','secondary2']]:
                 for s in v[iset]:
                     i = s[0]
@@ -601,7 +610,7 @@ def InteractionBrowserData(request):
                     data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
 
             i = 'None' ## Remember to also have this name in the "order" dict.
-            data['secondary'][c][i] = copy.deepcopy(secondary_dict) 
+            data['secondary'][c][i] = copy.deepcopy(secondary_dict)
             for setname in ['set1','set2']:
                 data['secondary'][c][i][setname] += len(current[setname])
                 for aa_pair, pdbs in all_pdbs_pairs[c].items():
@@ -623,7 +632,7 @@ def InteractionBrowserData(request):
                         pdbs2_with_pair = list(set(pdbs_intersection).intersection(pdbs2))
                         data['secondary'][c][i]['aa_pairs'][aa_pair]['pair_set1'] = pdbs1_with_pair
                         data['secondary'][c][i]['aa_pairs'][aa_pair]['pair_set2'] = pdbs2_with_pair
-                        
+
 
                     for pdb in current[setname]:
                         if pdb in pdbs:
@@ -632,12 +641,12 @@ def InteractionBrowserData(request):
                     if setname == 'set2':
                         # if 2nd run
                         if data['secondary'][c][i]['aa_pairs'][aa_pair]["set1"] == 0 and data['secondary'][c][i]['aa_pairs'][aa_pair]["set2"] == 0:
-                            del data['secondary'][c][i]['aa_pairs'][aa_pair] 
+                            del data['secondary'][c][i]['aa_pairs'][aa_pair]
 
         # Order based on AA counts
         for i in data['secondary'][c].keys():
             data['secondary'][c][i]['aa_pairs'] = OrderedDict(sorted(data['secondary'][c][i]['aa_pairs'].items(), key=lambda x: x[1]["set1"]+x[1]["set2"], reverse = True))
-            
+
         data['secondary'][c] = OrderedDict(sorted(data['secondary'][c].items(), key=lambda x: order.index(x[0])))
     for d in delete_coords:
         del data['interactions'][d]
@@ -965,8 +974,8 @@ def ClusteringData(request):
             store = {
                 "map" : distance_map,
                 "gns" : structure_gn
-
             }
+
             cache.set(cache_key, store, 60*60*24*14)
         pdb_gns[pdb] = structure_gn
         # Filtering indices to map to common_gns
@@ -1011,18 +1020,37 @@ def ClusteringData(request):
     pdb_annotations = {}
 
     # Grab all annotations and all the ligand role when present in aggregates
+    # NOTE: we can probably remove the parent step and go directly via family in the query
     annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
-                    .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__family__parent__name', \
-                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name') \
+                    .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__name','protein_conformation__protein__parent__family__parent__name', \
+                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name', 'protein_conformation__protein__family__slug') \
                     .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True)))
 
+    protein_slugs = set()
     for an in annotations:
         pdb_annotations[an[0]] = list(an[1:])
 
+        # add slug to lists
+        slug = pdb_annotations[an[0]][7]
+        protein_slugs.add(slug)
+
         # Cleanup the aggregates as None values are introduced
-        pdb_annotations[an[0]][6] = list(filter(None.__ne__, pdb_annotations[an[0]][6]))
+        pdb_annotations[an[0]][7] = list(filter(None.__ne__, pdb_annotations[an[0]][8]))
+        pdb_annotations[an[0]][8] = slug
 
     data['annotations'] = pdb_annotations
+
+    # Grab G-protein coupling profile for all receptors covered by the selection
+    # TODO: make general cache(s) for this type of data
+    selectivitydata = {}
+    coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
+
+    for pairing in coupling:
+        if pairing[0] not in selectivitydata:
+            selectivitydata[pairing[0]] = {}
+        selectivitydata[pairing[0]][pairing[1]] = pairing[2]
+
+    data['Gprot_coupling'] = selectivitydata
 
     # hierarchical clustering
     hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward')
