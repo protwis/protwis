@@ -978,6 +978,7 @@ def ClusteringData(request):
 
             cache.set(cache_key, store, 60*60*24*14)
         pdb_gns[pdb] = structure_gn
+
         # Filtering indices to map to common_gns
         gn_indices = np.array([ all_gns.index(residue) for residue in common_gn ])
         pdb_distance_maps[pdb] = distance_map[gn_indices,:][:, gn_indices]
@@ -989,6 +990,9 @@ def ClusteringData(request):
 
     # normalize and store distance map
     for pdb in pdbs:
+        # AK: normalize later
+        #number_pairs = np.count_nonzero(pdb_distance_maps[pdb])
+        #pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"]/number_pairs)
         pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"])
 
         # # numpy way caused error on production server
@@ -1012,8 +1016,8 @@ def ClusteringData(request):
             gn_indices = np.array([ common_gn.index(residue) for residue in common_with_query_gns ])
             # Get distance between cells that have both GNs.
             distance = np.sum(np.absolute(pdb_distance_maps[pdb1][gn_indices,:][:, gn_indices] - pdb_distance_maps[pdb2][gn_indices,:][:, gn_indices]))
-            distance_matrix[i, j] = distance
-            distance_matrix[j, i] = distance
+            distance_matrix[i, j] = distance/len(gn_indices)*len(gn_indices)
+            distance_matrix[j, i] = distance_matrix[i, j]
 
 
     # Collect structure annotations
