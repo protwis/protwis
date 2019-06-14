@@ -211,6 +211,7 @@ def PdbTableData(request):
         r['species'] = s.protein_conformation.protein.species.common_name
         # # r['date'] = s.publication_date
         r['state'] = s.state.name
+        r['distance_representative'] = 'Yes' if s.distance_representative else 'No'
         r['contact_representative'] = 'Yes' if s.contact_representative else 'No'
         r['contact_representative_score'] = "{:.0%}".format(s.contact_representative_score)
 
@@ -271,7 +272,7 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' long='{}'  id='{}'></td> \
+                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' distance_representative='{}' long='{}'  id='{}'></td> \
                         </tr>\n".format(
                                         r['protein'],
                                         r['protein_long'],
@@ -294,6 +295,7 @@ def PdbTableData(request):
                                         r['ligand_function'],
                                         r['ligand_type'],
                                         r['contact_representative'],
+                                        r['distance_representative'],
                                         r['protein_long'],
                                         pdb_id
                                         )
