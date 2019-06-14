@@ -15,8 +15,9 @@
   			</li>
 		  </ul>
 
-        <div class="tab-content clearfix">
-            <!-- BEGIN SINGLE CRYSTAL TAB -->
+      <div class="tab-content clearfix">
+
+        <!-- BEGIN SINGLE CRYSTAL TAB -->
 		    <div class="tab-pane main_option {% if not pdbs1 and not pdbs %}active{% endif %}" id="single-crystal-tab">
                 <div class="row">
                     <div class="col-md-3">
@@ -68,7 +69,7 @@
                   <div class="col-md-5 tab-pane" id="single-NGL-tab">
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
                                 <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 <div class="clearfix"></div>
                             </div>
@@ -133,7 +134,7 @@
                     <div class="col-md-5 tab-pane" id="single-group-NGL-tab">
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
                                 <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 <div class="clearfix"></div>
                             </div>
@@ -212,7 +213,7 @@
                 <div class="col-md-5 tab-pane" id="two-groups-NGL-tab">
                      <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">NGL</h3>
+                            <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
                             <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             <div class="clearfix"></div>
                         </div>
@@ -997,7 +998,7 @@
                 gn_key = $(selector + " .heatmap-table").DataTable().row(this).data()[0]
                 gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                 if (gn > -1) {
-                  ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                  ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
                   //temprepr = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                   reps[mode][key].hover.setSelection(ngl_selection)
 //                  reps[mode][key].structureComponent.autoView(ngl_selection)
@@ -1007,7 +1008,7 @@
                   key = 1
                   gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                   if (gn > -1) {
-                    ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                    ngl_selection = ":" + pdb_data[mode][key]['chain'] + "  and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
                     //temprepr = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                     reps[mode][key].hover.setSelection(ngl_selection)
                   }
@@ -1040,16 +1041,16 @@
                     gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                     repr_dict[mode][gn_key] = {}
                     if (gn > -1) {
-                      ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                      ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
                       repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                       reps[mode][key].structureComponent.autoView(ngl_selection, 1000)
                     }
 
-                    if (mode=="two-groups"){
+                    if (mode=="two-groups") {
                       key = 1
                       gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                       if (gn > -1) {
-                        ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                        ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
                         repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                       }
                     }
