@@ -713,8 +713,7 @@
                                       <th></th>
                                     </tr>
                                   </thead>
-                                  <tbody>
-                                    
+                                  <tbody>                                    
                                   </tbody>
                                 </table>
                               </div>
@@ -747,7 +746,12 @@
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
+        <div class="loading_overlay">
+          <img src="/static/home/images/loading.gif" 
+            id="img-load" />
         </div>
+        </div>
+
     </div>
     <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
 
@@ -771,6 +775,10 @@
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
+        <div class="loading_overlay">
+          <img src="/static/home/images/loading.gif" 
+            id="img-load" />
+        </div>
         </div>
     </div>
     <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
@@ -786,13 +794,17 @@
                 </div>
                 <div class="modal-body">
                         <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
-                        <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview group-number-1" group-number="1"></div>
                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
+        <div class="loading_overlay">
+          <img src="/static/home/images/loading.gif" 
+            id="img-load" />
+        </div>
         </div>
     </div>
 
@@ -809,16 +821,26 @@
                 </div>
                 <div class="modal-body">
                         <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
-                        <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview group-number-2" group-number="2"></div>
                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
+        <div class="loading_overlay">
+          <img src="/static/home/images/loading.gif" 
+            id="img-load" />
+        </div>
         </div>
     </div>
     <!-- END TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
+    <div>
+      <div class="main_loading_overlay">
+        <img src="/static/home/images/loading.gif" 
+          id="img-load" />
+      </div>
+    </div>
 {% endblock %}
 {% block addon_js %}
 
@@ -2762,17 +2784,39 @@
         }
 
         function renderBrowser(data) {
-          console.log('GOT DATA');
           var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+          console.log('GOT DATA',selector);
           var table = $(selector + " .browser-table");
 
           // reset tbody
-          var tbody = table.find('tbody'); 
           table.prop("onclick", null).off("click");
-          tbody.empty();
-          table.DataTable().clear();
+
+          // var tbody = table.find('tbody'); 
+          // tbody.empty();
           table.DataTable().destroy();
+          var tbody = table.find('tbody'); 
+          // table.DataTable().clear();
           if (data['proteins2']) {
+
+            thead =  '<tr> \
+                          <th colspan="2">Segment</th> \
+                          <th colspan="2">Generic No</th> \
+                          <th colspan="3"> Frequency (%)</th> \
+                          <th>Type(s)</th> \
+                          <th>Class Seq Cons(%)</th> \
+                        </tr> \
+                        <tr> \
+                          <th></th> \
+                          <th></th> \
+                          <th></th> \
+                          <th></th> \
+                          <th>Grp 1<br></th> \
+                          <th>Grp 2<br></th> \
+                          <th>Diff<br></th> \
+                          <th></th> \
+                          <th></th> \
+                        </tr>';
+            table.find('thead').html(thead); 
             // two groups
             var proteins_1 = data['proteins1'].length
             var proteins_2 = data['proteins2'].length
@@ -2833,7 +2877,8 @@
               renderSecondary($(this).attr('id'))
             }
           });
-          oTable[selector] = $(selector+' .browser-table').DataTable({
+
+          btable = table.DataTable({
                 'scrollX': true,
                 // 'paging': true,
                 // 'autoWidth': true,
@@ -2843,73 +2888,73 @@
                 paging:         false,
               });
 
-          yadcf.init(oTable[selector],
-                    [
-                        {
-                            column_number : 0,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Residue #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 1,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Residue #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 2,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Residue #1",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 3,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Residue #2",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 4,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 5,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
+          // yadcf.init(btable,
+          //           [
+          //               {
+          //                   column_number : 0,
+          //                   filter_type: "multi_select",
+          //                   select_type: 'select2',
+          //                   filter_default_label: "Residue #1",
+          //                   filter_reset_button_text: false,
+          //               },
+          //               {
+          //                   column_number : 1,
+          //                   filter_type: "multi_select",
+          //                   select_type: 'select2',
+          //                   filter_default_label: "Residue #2",
+          //                   filter_reset_button_text: false,
+          //               },
+          //               {
+          //                   column_number : 2,
+          //                   filter_type: "multi_select",
+          //                   select_type: 'select2',
+          //                   filter_default_label: "Residue #1",
+          //                   filter_reset_button_text: false,
+          //               },
+          //               {
+          //                   column_number : 3,
+          //                   filter_type: "multi_select",
+          //                   select_type: 'select2',
+          //                   filter_default_label: "Residue #2",
+          //                   filter_reset_button_text: false,
+          //               },
+          //               {
+          //                   column_number : 4,
+          //                   filter_type: "range_number",
+          //                   filter_reset_button_text: false,
+          //               },
+          //               {
+          //                   column_number : 5,
+          //                   filter_type: "range_number",
+          //                   filter_reset_button_text: false,
 
-                        },
-                        {
-                            column_number : 6,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
+          //               },
+          //               {
+          //                   column_number : 6,
+          //                   filter_type: "range_number",
+          //                   filter_reset_button_text: false,
 
-                        },
-                        {
-                            column_number : 7,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Type",
-                            text_data_delimiter: ",",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number : 8,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
+          //               },
+          //               {
+          //                   column_number : 7,
+          //                   filter_type: "multi_select",
+          //                   select_type: 'select2',
+          //                   filter_default_label: "Type",
+          //                   text_data_delimiter: ",",
+          //                   filter_reset_button_text: false,
+          //               },
+          //               {
+          //                   column_number : 8,
+          //                   filter_type: "range_number",
+          //                   filter_reset_button_text: false,
 
-                        },
-                    ],
-                    {
-                        cumulative_filtering: false
-                    }
+          //               },
+          //           ],
+          //           {
+          //               cumulative_filtering: false
+          //           }
 
-                );
+          //       );
 
         }
 
@@ -3134,6 +3179,7 @@
         }
 
         function loadPDBsView(pdb, selector, heatmapFunction, generic) {
+          $(".main_loading_overlay").show();
           //var segments = JSON.parse($(selector + ' .segments-input').val());
           var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
           if (pdb.length > 0 && segments.length > 0) {
@@ -3199,6 +3245,7 @@
               });
 
           }
+          $(".main_loading_overlay").hide();
         }
 
 
@@ -3215,6 +3262,7 @@
         }
 
         function loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic) {
+            $(".main_loading_overlay").show();
             //var segments = JSON.parse($(selector + ' .segments-input').val());
             var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
             if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
@@ -3286,12 +3334,14 @@
                             // Re-render flareplot
                             createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
                             createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2);
+                            $(".main_loading_overlay").hide();
+                            redraw_renders();
                         });
                     });
                 });
 
-                redraw_renders();
             }
+          // $(".main_loading_overlay").hide();
         }
 
 
@@ -4356,6 +4406,7 @@
             $('#two-crystal-group-pdbs-modal-2-table .tableview').html(data);
             pdbtabledata = data;
           });
+          $(".main_loading_overlay").hide();
         }
 
 
@@ -5062,6 +5113,38 @@
            background-color: white;
            .border-radius ( 5px );
          }
+
+         .loading_overlay { 
+          /*display:none; */
+          opacity : 0.9;
+          position:absolute; 
+          background:#fff; 
+          z-index: 99999;
+          top:0;
+          left:0;
+          width:100%;
+          height:100%;
+          text-align: center;
+        }
+        .main_loading_overlay { 
+          /*display:none; */
+          opacity : 0.9;
+          position:absolute; 
+          background:#fff; 
+          z-index: 99999;
+          top:50px;
+          left:0;
+          width:100%;
+          height:100%;
+          text-align: center;
+        }
+        #img-load { 
+          margin-left: auto;
+          margin-right: auto;
+          margin-top: 300px;
+          display: block;
+        }
+
     </style>
 
 
