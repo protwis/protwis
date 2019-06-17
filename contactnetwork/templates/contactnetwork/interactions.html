@@ -2988,6 +2988,7 @@
                           <th colspan="3"> Frequency (%)</th> \
                           <th>Type(s)</th> \
                           <th>Class Seq Cons(%)</th> \
+                          <th>Ca distance</th> \
                         </tr> \
                         <tr> \
                           <th></th> \
@@ -2997,6 +2998,7 @@
                           <th>Grp 1<br></th> \
                           <th>Grp 2<br></th> \
                           <th>Diff<br></th> \
+                          <th></th> \
                           <th></th> \
                           <th></th> \
                         </tr>';
@@ -3019,6 +3021,7 @@
               var types = v['types'];
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
+              var distance = v['distance'];
               tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td>${seg1}</td>
@@ -3030,6 +3033,7 @@
                       <td>${diff_sfreq}</td>
                       <td>${types}</td>
                       <td>${class_seq_cons}</td>
+                      <td>${distance}</td>
                     </tr>`;
               tbody.append(tr);
             }); 
@@ -3188,6 +3192,12 @@
                           },
                           {
                               column_number : 8,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 9,
                               filter_type: "range_number",
                               filter_reset_button_text: false,
 

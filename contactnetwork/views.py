@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q, F, Prefetch
+from django.db.models import Q, F, Prefetch, Avg
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 from django.db import connection
@@ -543,6 +543,7 @@ def InteractionBrowserData(request):
                 r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
                 segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
 
+
         for i in interactions:
             s = i['interacting_pair__referenced_structure__pk']
             pdb_name = s_lookup[s][1]
@@ -776,6 +777,39 @@ def InteractionBrowserData(request):
         # print(delete_coords)
         for d in delete_coords:
             del data['interactions'][d]
+
+        del class_pair_lookup 
+        del r_lookup
+        del r_pair_lookup
+
+
+        ## PREPARE ADDITIONAL DATA (INTERACTIONS AND ANGLES)
+        interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
+        print('mode',mode,'pdbs',data['pdbs'],'pdbs1',data['pdbs1'],'pdbs2',data['pdbs2'])
+        if mode == "double":
+            group_1_distances = {}
+            ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']], gns_pair__in=interaction_keys) \
+                                .values('gns_pair') \
+                                .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_1_distances[d[0]] = d[1]/100
+            group_2_distances = {}
+            ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']], gns_pair__in=interaction_keys) \
+                                .values('gns_pair') \
+                                .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_2_distances[d[0]] = d[1]/100
+
+            for coord in data['interactions']:
+                distance_coord = coord.replace(",","_")
+                if distance_coord in group_1_distances and distance_coord in group_2_distances:
+                    distance_diff = round(group_1_distances[distance_coord]-group_2_distances[distance_coord],2)
+                else:
+                    distance_diff = "N/A"
+                data['interactions'][coord]['distance'] = distance_diff
+        
 
         data['pdbs'] = list(data['pdbs'])
         data['proteins'] = list(data['proteins'])
