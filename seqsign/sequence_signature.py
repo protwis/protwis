@@ -1073,10 +1073,28 @@ class SignatureMatch():
             ).filter(
                 protein__in=class_proteins,
                 protein__sequence_type__slug='wt'
-                ).exclude(protein__entry_name__endswith='-consensus')
+                ).exclude(protein__entry_name__endswith='-consensus').prefetch_related('protein','protein__family__parent','protein__species')
+
+        relevant_gns_total = []
+        for segment in  self.relevant_segments:
+            for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
+                relevant_gns_total.append(pos)
+
+        resi = Residue.objects.filter(
+            protein_conformation__in=class_a_pcf,
+            generic_number__label__in=relevant_gns_total
+            ).prefetch_related('generic_number','protein_conformation')
+        resi_dict_all = {}
+        for r in resi:
+            if r.generic_number:
+                pcf = r.protein_conformation.pk
+                if pcf not in resi_dict_all:
+                    resi_dict_all[pcf] = {}
+                resi_dict_all[pcf][r.generic_number.label] = r
+
         for pcf in class_a_pcf:
             p_start = time.time()
-            score, nscore, signature_match = self.score_protein(pcf)
+            score, nscore, signature_match = self.score_protein(pcf, resi_dict_all)
             protein_scores[pcf] = (score, nscore)
             protein_signature_match[pcf] = signature_match
             p_end = time.time()
@@ -1100,10 +1118,28 @@ class SignatureMatch():
             ).filter(
                 protein__in=protein_set,
                 protein__sequence_type__slug='wt'
-                ).exclude(protein__entry_name__endswith='-consensus')
+                ).exclude(protein__entry_name__endswith='-consensus').prefetch_related('protein')
+        
+        relevant_gns_total = []
+        for segment in  self.relevant_segments:
+            for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
+                relevant_gns_total.append(pos)
+
+        resi = Residue.objects.filter(
+            protein_conformation__in=pcfs,
+            generic_number__label__in=relevant_gns_total
+            ).prefetch_related('generic_number','protein_conformation')
+        resi_dict_all = {}
+        for r in resi:
+            if r.generic_number:
+                pcf = r.protein_conformation.pk
+                if pcf not in resi_dict_all:
+                    resi_dict_all[pcf] = {}
+                resi_dict_all[pcf][r.generic_number.label] = r
+
         for pcf in pcfs:
             p_start = time.time()
-            score, nscore, signature_match = self.score_protein(pcf)
+            score, nscore, signature_match = self.score_protein(pcf,resi_dict_all)
             protein_scores[pcf] = (score, nscore)
             protein_signature_match[pcf] = signature_match
             p_end = time.time()
@@ -1118,25 +1154,26 @@ class SignatureMatch():
 
         return (protein_report, protein_signatures, scored_proteins)
 
-    def score_protein(self, pcf):
+    def score_protein(self, pcf,resi_dict_all):
         prot_score = 0.0
         #norm = 0.0
         consensus_match = OrderedDict([(x, []) for x in self.relevant_segments])
 
-        relevant_gns_total = []
-        for segment in  self.relevant_segments:
-            for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
-                relevant_gns_total.append(pos)
-
-        resi = Residue.objects.filter(
-            protein_conformation=pcf,
-            generic_number__label__in=relevant_gns_total
-            ).prefetch_related('generic_number')
-        resi_dict = {}
-        for r in resi:
-            if r.generic_number:
-                resi_dict[r.generic_number.label] = r
-
+        if resi_dict_all == None:
+            relevant_gns_total = []
+            for segment in  self.relevant_segments:
+                for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
+                    relevant_gns_total.append(pos)
+            resi = Residue.objects.filter(
+                protein_conformation=pcf,
+                generic_number__label__in=relevant_gns_total
+                ).prefetch_related('generic_number')
+            resi_dict = {}
+            for r in resi:
+                if r.generic_number:
+                    resi_dict[r.generic_number.label] = r
+        else:
+            resi_dict = resi_dict_all[pcf.pk]
         for segment in self.relevant_segments:
             tmp = []
             # signature_map = self.signature_matrix_filtered[segment].argmax(axis=0)

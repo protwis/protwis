@@ -1285,6 +1285,8 @@ def IMSignatureMatch(request):
     signature_data = request.session.get('signature')
     ss_pos = request.POST.getlist('pos[]')
     cutoff = request.POST.get('cutoff')
+    request.session['ss_pos'] = ss_pos
+    request.session['cutoff'] = cutoff
 
     pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
     pos_set = [protein for protein in pos_set]
@@ -1302,7 +1304,7 @@ def IMSignatureMatch(request):
 
     maj_pfam = Counter(pfam).most_common()[0][0]
     signature_match.score_protein_class(maj_pfam)
-    request.session['signature_match'] = signature_match
+    # request.session['signature_match'] = signature_match
 
     signature_match = {
         'scores': signature_match.protein_report,
@@ -1323,7 +1325,28 @@ def IMSignatureMatch(request):
 
 def render_IMSigMat(request):
 
-    signature_match = request.session.get('signature_match')
+    # signature_match = request.session.get('signature_match')
+    signature_data = request.session.get('signature')
+    ss_pos = request.session.get('ss_pos')
+    cutoff = request.session.get('cutoff')
+
+    pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
+    pos_set = [protein for protein in pos_set]
+    pfam = [protein.family.slug[:3] for protein in pos_set]
+
+    signature_match = SignatureMatch(
+        signature_data['common_positions'],
+        signature_data['numbering_schemes'],
+        signature_data['common_segments'],
+        signature_data['diff_matrix'],
+        pos_set,
+        pos_set,
+        cutoff = 0
+    )
+
+    maj_pfam = Counter(pfam).most_common()[0][0]
+    signature_match.score_protein_class(maj_pfam)
+
 
     response = render(
         request,
