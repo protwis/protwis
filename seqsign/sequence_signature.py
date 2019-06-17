@@ -81,8 +81,62 @@ class SequenceSignature:
                 if ref_matrix[segment][pref_feat][pos] < 0 and ref_matrix[segment][efeat][pos] > 0:
                     pref_feat = efeat
         return pref_feat
+        
+    def setup_alignments(self, segments, protein_set_positive=None, protein_set_negative=None):
+        """Setup (fetch and normalize) the data necessary for calculation of the signature.
 
-    def setup_alignments(self, segments, protein_set_positive=None,
+        Arguments:
+            segments {list} -- List of segments to calculate the signature from
+
+        Keyword Arguments:
+            protein_set_positive {list} -- list of Protein objects - a positive (reference) set (default: {None})
+            protein_set_negative {list} -- list of Protein objects - a negative set (default: {None})
+        """
+
+
+        if protein_set_positive:
+            self.aln_pos.load_proteins(protein_set_positive)
+        if protein_set_negative:
+            self.aln_neg.load_proteins(protein_set_negative)
+
+        # In case positive and negative sets come from different classes
+        # unify the numbering schemes
+        self.common_schemes = self.merge_numbering_schemes()
+        self.aln_pos.numbering_schemes = self.common_schemes
+        self.aln_neg.numbering_schemes = self.common_schemes
+        # now load the segments and generic numbers
+        self.aln_pos.load_segments(segments)
+        self.aln_neg.load_segments(segments)
+
+        self.aln_pos.build_alignment()
+        self.aln_neg.build_alignment()
+
+        self.common_gn = deepcopy(self.aln_pos.generic_numbers)
+        for scheme in self.aln_neg.numbering_schemes:
+            for segment in self.aln_neg.segments:
+                for pos in self.aln_neg.generic_numbers[scheme[0]][segment].items():
+                    if pos[0] not in self.common_gn[scheme[0]][segment].keys():
+                        self.common_gn[scheme[0]][segment][pos[0]] = pos[1]
+                self.common_gn[scheme[0]][segment] = OrderedDict(sorted(
+                    self.common_gn[scheme[0]][segment].items(),
+                    key=lambda x: x[0].split('x')
+                    ))
+        self.common_segments = OrderedDict([
+            (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
+        ])
+        # tweaking alignment
+        self.aln_pos.calculate_statistics()
+        self._update_alignment(self.aln_pos)
+        # tweaking consensus seq
+        self._update_consensus_sequence(self.aln_pos)
+
+        # tweaking negative alignment
+        self.aln_neg.calculate_statistics()
+        self._update_alignment(self.aln_neg)
+        # tweaking consensus seq
+        self._update_consensus_sequence(self.aln_neg)
+
+    def setup_alignments_signprot(self, segments, protein_set_positive=None,
             protein_set_negative=None, ignore_in_alignment=None):
         """Setup (fetch and normalize) the data necessary for calculation of the signature.
 

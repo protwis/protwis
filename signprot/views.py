@@ -1236,7 +1236,7 @@ def IMSequenceSignature(request):
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-    signature.setup_alignments(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
+    signature.setup_alignments_signprot(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
     signature.calculate_signature_onesided()
     # preprocess data for return
     signature_data = signature.prepare_display_data_onesided()
