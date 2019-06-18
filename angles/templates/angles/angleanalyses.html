@@ -877,6 +877,7 @@
           selectVariable += '<option value="psi">Psi dihedral</option>';
           selectVariable += '<option value="tau">Tau angle</option>';
           selectVariable += '<option value="theta">Theta dihedral</option>';
+          selectVariable += '<option value="distance">Distance to core</option>';
           selectVariable += '</select>';
           cp.html(selectVariable)
 
@@ -901,7 +902,8 @@
           "phi" : 8,
           "psi" : 9,
           "theta" : 10,
-          "tau" : 11
+          "tau" : 11,
+          "distance" : 12
         }
 
         var coloringData = {}
@@ -1757,6 +1759,15 @@
                         color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       else
                         color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "distance":
+                      // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
+                      if (colorIndex == 1 || colorIndex == 3)
+                        color_scheme.push([numberToColor4(25, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(10, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(5, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       break;
                   }
                 }
