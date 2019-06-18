@@ -497,7 +497,7 @@ def InteractionBrowserData(request):
             all_pdbs = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', flat=True))
             all_pdbs = [x.lower() for x in all_pdbs]
             residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=all_pdbs,
-                        generic_number__label__in=all_interaction_residues).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__name').all()
+                        generic_number__label__in=all_interaction_residues).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__slug').all()
 
             r_lookup = {}
             r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
