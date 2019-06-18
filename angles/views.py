@@ -55,13 +55,14 @@ def get_angles(request):
         # Grab PDB data
         if len(pdbs)==1 and len(pdbs2)==0:
             pdbs = list(pdbs)
-            query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number")
+            query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number").order_by('residue__generic_number__label')
             # Prep data
             data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.outer_angle, q.hse, q.sasa, q.rsa, q.phi, q.psi, q.theta, q.tau ] for q in query]
             data['headers'] = [{"title" : "Value"}]
         else: # always a grouping or a comparison
             query = Angle.objects.filter(structure__pdb_code__index__in=pdbs).prefetch_related("residue__generic_number") \
                     .values("residue__generic_number__label") \
+                    .order_by('residue__generic_number__label') \
                     .annotate(min_aangle = Min('a_angle'), avg_aangle=Avg('a_angle'), max_aangle = Max('a_angle'), \
                         min_bangle = Min('b_angle'), avg_bangle=Avg('b_angle'), max_bangle = Max('b_angle'), \
                         min_outer = Min('outer_angle'), avg_outer=Avg('outer_angle'), max_outer = Max('outer_angle'), \
