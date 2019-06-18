@@ -478,7 +478,7 @@ def InteractionBrowserData(request):
         all_pdbs_pairs = cache.get("all_pdbs_aa_pairs")
         if not all_pdbs_pairs:
             # To save less, first figure out all possible interaction pairs
-            interactions = list(Interaction.objects.all(
+            pos_interactions = list(Interaction.objects.all(
             ).values_list(
                 'interacting_pair__res1__generic_number__label',
                 'interacting_pair__res2__generic_number__label',
@@ -486,7 +486,7 @@ def InteractionBrowserData(request):
 
             all_interaction_pairs = []
             all_interaction_residues = set()
-            for i in interactions:
+            for i in pos_interactions:
                 all_interaction_pairs.append('{},{}'.format(i[0],i[1]))
                 all_interaction_residues.add(i[0])
                 all_interaction_residues.add(i[1])
