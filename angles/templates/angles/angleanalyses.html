@@ -2002,7 +2002,14 @@
                           row.push(rawdata[i][j])
 
                           // group 2
-                          row.push(rawdata2[residue][j])
+                          if (residue in rawdata2)
+                            row.push(rawdata2[residue][j])
+                          else
+                            if (Array.isArray(rawdata[i][j]))
+                              for (var g=0; g < rawdata[i][j].length; g++)
+                                row.push('-')
+                            else
+                              row.push('-')
                         }
                     }
                     data.push(row.flat())
