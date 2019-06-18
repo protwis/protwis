@@ -20,6 +20,7 @@ from construct.models import Construct
 from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResidueGenericNumber
 from interaction.models import StructureLigandInteraction
+from angles.models import ResidueAngle
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -32,6 +33,7 @@ import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
 import time
 import hashlib
+import operator
 
 def get_hash(data):
     # create unique hash key for alignment combo
@@ -506,7 +508,7 @@ def InteractionBrowserData(request):
                     continue
                 r_lookup[r['pk']] = r
                 r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
-                segm_lookup[r['generic_number__label']] = r['protein_segment__name']
+                segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
 
             gen_keys = sorted(r_pair_lookup.keys(), key=functools.cmp_to_key(gpcrdb_number_comparator))
             all_pdbs_pairs = {}
@@ -784,8 +786,8 @@ def InteractionBrowserData(request):
 
 
         ## PREPARE ADDITIONAL DATA (INTERACTIONS AND ANGLES)
+        print('Prepare distance values for',mode,'mode')
         interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
-        print('mode',mode,'pdbs',data['pdbs'],'pdbs1',data['pdbs1'],'pdbs2',data['pdbs2'])
         if mode == "double":
             group_1_distances = {}
             ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']], gns_pair__in=interaction_keys) \
@@ -807,8 +809,57 @@ def InteractionBrowserData(request):
                 if distance_coord in group_1_distances and distance_coord in group_2_distances:
                     distance_diff = round(group_1_distances[distance_coord]-group_2_distances[distance_coord],2)
                 else:
-                    distance_diff = "N/A"
+                    distance_diff = ""
                 data['interactions'][coord]['distance'] = distance_diff
+
+
+        print('Prepare angles values for',mode,'mode')
+
+        if mode == "double":
+            group_1_angles = {}
+            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]) \
+                                .exclude(residue__generic_number=None) \
+                                .values('residue__generic_number__label') \
+                                .annotate(a_angle = Avg('a_angle'),outer_angle = Avg('outer_angle'),core_distance = Avg('core_distance')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_1_angles[d[0]] = d[1:]
+
+            group_2_angles = {}
+            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]) \
+                                .exclude(residue__generic_number=None) \
+                                .values('residue__generic_number__label') \
+                                .annotate(a_angle = Avg('a_angle'),outer_angle = Avg('outer_angle'),core_distance = Avg('core_distance')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_2_angles[d[0]] = d[1:]
+
+            for coord in data['interactions']:
+                gn1 = coord.split(",")[0]
+                gn2 = coord.split(",")[1]
+
+                gn1_values = ['','','']
+                if gn1 in group_1_angles and gn1 in group_2_angles:
+                    gn1_values = []
+                    for i,v in enumerate(group_1_angles[gn1]):
+                        try:
+                            gn1_values.append(round(v-group_2_angles[gn1][i],1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            gn1_values.append("-")
+
+                gn2_values = ['','','']
+                if gn2 in group_1_angles and gn2 in group_2_angles:
+                    gn2_values = []
+                    for i,v in enumerate(group_1_angles[gn2]):
+                        try:
+                            gn2_values.append(round(v-group_2_angles[gn2][i],1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            gn2_values.append("-")
+                data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
         
 
         data['pdbs'] = list(data['pdbs'])

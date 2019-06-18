@@ -2955,12 +2955,18 @@
 
         var filtered_gn_pairs = [];
         function filter_browser() {
+          old_filtered_gn_pairs = filtered_gn_pairs;
           filtered_gn_pairs = [];
           $('.filter_rows:visible').each(function() {
             filtered_gn_pairs.push($(this).attr('id'))
           });
           console.log('filtered positions!',filtered_gn_pairs);
-          updateGeneralControls();
+          
+          if(old_filtered_gn_pairs.sort().join(',')=== filtered_gn_pairs.sort().join(',')){
+            console.log('no change in filtering');
+          } else {
+            updateGeneralControls();
+          }
         }
 
         function renderBrowser(data) {
@@ -2975,7 +2981,7 @@
           // tbody.empty();
           table.DataTable().destroy();
           // yadcf.removeFilters(table);
-          table.parent().html('<table class="table browser-table display" width="100%"><thead></thead><tbody></tbody></table>');
+          table.parent().html('<table class="table browser-table display table-bordered" width="100%"><thead></thead><tbody></tbody></table>');
           var table = $(selector + " .browser-table");
           // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
           var tbody = table.find('tbody'); 
@@ -2983,16 +2989,17 @@
           if (data['proteins2']) {
 
             thead =  '<tr> \
-                          <th colspan="2">Segment</th> \
-                          <th colspan="2">Generic No</th> \
+                          <th colspan="1">Segment</th> \
+                          <th colspan="1">Generic No</th> \
                           <th colspan="3"> Frequency (%)</th> \
                           <th>Type(s)</th> \
                           <th>Class Seq Cons(%)</th> \
                           <th>Ca distance</th> \
+                          <th colspan="2">Ca distance from 7TM<br>axis</th> \
+                          <th colspan="2">Backbone<br>Rotation</th> \
+                          <th colspan="2">Residue<br>Rotamer</th> \
                         </tr> \
                         <tr> \
-                          <th></th> \
-                          <th></th> \
                           <th></th> \
                           <th></th> \
                           <th>Grp 1<br></th> \
@@ -3000,7 +3007,13 @@
                           <th>Diff<br></th> \
                           <th></th> \
                           <th></th> \
-                          <th></th> \
+                          <th>GN1-GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             // two groups
@@ -3022,18 +3035,24 @@
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
               var distance = v['distance'];
+              var angles_1 = v['angles'][0];
+              var angles_2 = v['angles'][1];
               tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
-                      <td>${seg1}</td>
-                      <td>${seg2}</td>
-                      <td>${gn1}</td>
-                      <td>${gn2}</td>
+                      <td>${seg1}-${seg2}</td>
+                      <td>${gn1}-${gn2}</td>
                       <td>${sfreq1}</td>
                       <td>${sfreq2}</td>
                       <td>${diff_sfreq}</td>
                       <td>${types}</td>
                       <td>${class_seq_cons}</td>
                       <td>${distance}</td>
+                      <td>${angles_1[0]}</td>
+                      <td>${angles_2[0]}</td>
+                      <td>${angles_1[1]}</td>
+                      <td>${angles_2[1]}</td>
+                      <td>${angles_1[2]}</td>
+                      <td>${angles_2[2]}</td>
                     </tr>`;
               tbody.append(tr);
             }); 
@@ -3139,42 +3158,43 @@
                       [
                           {
                               column_number : 0,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Residue #1",
+                              filter_type: "text",
+                              // exclude: true,
+                              filter_delay: 300,
                               filter_reset_button_text: false,
                           },
                           {
                               column_number : 1,
                               filter_type: "multi_select",
                               select_type: 'select2',
-                              filter_default_label: "Residue #2",
+                              filter_default_label: "Res.",
+                              text_data_delimiter: "-",
                               filter_reset_button_text: false,
                           },
                           {
                               column_number : 2,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Residue #1",
+                              filter_type: "range_number",
                               filter_reset_button_text: false,
                           },
                           {
                               column_number : 3,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Residue #2",
+                              filter_type: "range_number",
                               filter_reset_button_text: false,
+
                           },
                           {
                               column_number : 4,
                               filter_type: "range_number",
                               filter_reset_button_text: false,
+
                           },
                           {
                               column_number : 5,
-                              filter_type: "range_number",
+                              filter_type: "multi_select",
+                              select_type: 'select2',
+                              filter_default_label: "Type",
+                              text_data_delimiter: ",",
                               filter_reset_button_text: false,
-
                           },
                           {
                               column_number : 6,
@@ -3184,11 +3204,9 @@
                           },
                           {
                               column_number : 7,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Type",
-                              text_data_delimiter: ",",
+                              filter_type: "range_number",
                               filter_reset_button_text: false,
+
                           },
                           {
                               column_number : 8,
@@ -3198,6 +3216,30 @@
                           },
                           {
                               column_number : 9,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 10,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 11,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 12,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 13,
                               filter_type: "range_number",
                               filter_reset_button_text: false,
 
@@ -5082,6 +5124,14 @@
 
         .no-top-border{
             border-top: 0px;
+        }
+        .yadcf-filter-range {
+            width: 50px;
+        }
+
+        .yadcf-filter {
+            /*display: flex;*/
+            width: 100px;
         }
 
         #filters{
