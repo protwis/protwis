@@ -6,12 +6,8 @@ import string
 import random
 
 from residue.models import ResidueGenericNumberEquivalent
+from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinGProteinPair
 from common.definitions import *
-from signprot.notebooks.helpers.utility import (
-    prepare_coupling_data_container,
-    fill_coupling_data_container,
-    process_coupling_data,
-)
 
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -265,3 +261,136 @@ def prepare_signature_match(signature_match):
     #         out[prot_entry]["cons"] = sig
 
     return out
+
+
+def prepare_coupling_data_container():
+    class_names = {}
+    data = {}
+
+    proteins = (
+        Protein.objects.filter(
+            sequence_type__slug="wt",
+            family__slug__startswith="00",
+            species__common_name="Human",
+        )
+        .all()
+        .prefetch_related("family")
+    )
+
+    for p in proteins:
+        p_class = p.family.slug.split("_")[0]
+        if p_class not in class_names:
+            class_names[p_class] = re.sub(
+                r"\([^)]*\)", "", p.family.parent.parent.parent.name
+            )
+        p_class_name = class_names[p_class].strip()
+
+        data[p.entry_short()] = {
+            "class": p_class_name,
+            "pretty": p.short()[:15],
+            "GuideToPharma": {},
+            "Aska": {},
+            "rec_class": p.get_protein_class(),
+            "rec_obj": p,
+            "rec_pdb": p.entry_short(),
+        }
+
+    return data
+
+
+def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
+    distinct_g_families = []
+    distinct_g_subunit_families = {}
+    distinct_sources = sources
+
+    couplings = ProteinGProteinPair.objects.all().prefetch_related(
+        "protein", "g_protein_subunit", "g_protein"
+    )
+
+    for c in couplings:
+        p = c.protein.entry_short()
+        s = c.source
+        t = c.transduction
+        m = c.log_rai_mean
+        gf = c.g_protein.name
+        # print(gf)
+        gf = gf.replace(" family", "")
+
+        if s not in distinct_sources:
+            continue
+
+        if gf not in distinct_g_families:
+            distinct_g_families.append(gf)
+            distinct_g_subunit_families[gf] = []
+
+        if c.g_protein_subunit:
+            g = c.g_protein_subunit.entry_name
+            g = g.replace("_human", "")
+            # print("g",g)
+            if g not in distinct_g_subunit_families[gf]:
+                distinct_g_subunit_families[gf].append(g)
+                distinct_g_subunit_families[gf] = sorted(
+                    distinct_g_subunit_families[gf]
+                )
+
+        if s not in data[p]:
+            data[p][s] = {}
+
+        if gf not in data[p][s]:
+            data[p][s][gf] = {}
+
+        # If transduction in GuideToPharma data
+        if t:
+            data[p][s][gf] = t
+        else:
+            if "subunits" not in data[p][s][gf]:
+                data[p][s][gf] = {"subunits": {}, "best": -2.00}
+            data[p][s][gf]["subunits"][g] = round(Decimal(m), 2)
+            if round(Decimal(m), 2) == -0.00:
+                data[p][s][gf]["subunits"][g] = 0.00
+            # get the lowest number into 'best'
+            if m > data[p][s][gf]["best"]:
+                data[p][s][gf]["best"] = round(Decimal(m), 2)
+
+    return data
+
+
+def process_coupling_data(data):
+    res = []
+    for entry in data.keys():
+        i = data[entry]
+        e = {}
+
+        c = extract_coupling_bool(i["GuideToPharma"])
+        p = extract_coupling_primary(i["GuideToPharma"])
+
+        e["rec_class"] = i["rec_class"]
+        e["rec_obj"] = i["rec_obj"]
+        e["key"] = entry
+        e["coupling"] = i["GuideToPharma"]
+        e["Gi/Go"] = c["Gi/Go"]
+        e["Gs"] = c["Gs"]
+        e["Gq/G11"] = c["Gq/G11"]
+        e["G12/G13"] = c["G12/G13"]
+        e["gprot"] = p
+
+        res.append(e)
+
+    return res
+
+
+def extract_coupling_bool(gp):
+    c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
+    for key in c:
+        if key in gp:
+            c[key] = True
+    return c
+
+
+def extract_coupling_primary(gp):
+    p = []
+    i = 0
+    for key in gp:
+        if gp[key] == "primary":
+            p.append(key)
+    return p
