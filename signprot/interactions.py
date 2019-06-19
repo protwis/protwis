@@ -362,18 +362,15 @@ def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
 def process_coupling_data(data):
     res = []
     
-    threshold_primary = -0.1
-    threshold_secondary = -1
-
     for entry in data.keys():
         i = data[entry]
         e = {}
 
         c_gtop = extract_coupling_bool(i, "GuideToPharma")
-        p_gtop = extract_coupling_primary(i, "GuideToPharma")
+        p_gtop = extract_coupling_primary(i["GuideToPharma"])
 
         c_aska = extract_coupling_bool(i, "Aska")
-        p_aska = extract_coupling_primary(i, "Aska")
+        p_aska = extract_coupling_primary(c_aska[1])
         
         e['coupling'] = {}
         e["GuideToPharma"] = {}
@@ -384,17 +381,17 @@ def process_coupling_data(data):
         e["key"] = entry
         
         e["coupling"]["GuideToPharma"] = i["GuideToPharma"]
-        e["coupling"]["Aska"] = i["Aska"]
+        e["coupling"]["Aska"] = c_aska[1]
         
         e["GuideToPharma"]["Gi/Go"] = c_gtop["Gi/Go"]
         e["GuideToPharma"]["Gs"] = c_gtop["Gs"]
         e["GuideToPharma"]["Gq/G11"] = c_gtop["Gq/G11"]
         e["GuideToPharma"]["G12/G13"] = c_gtop["G12/G13"]
         
-        e["Aska"]["Gi/Go"] = c_aska["Gi/Go"]
-        e["Aska"]["Gs"] = c_aska["Gs"]
-        e["Aska"]["Gq/G11"] = c_aska["Gq/G11"]
-        e["Aska"]["G12/G13"] = c_aska["G12/G13"]
+        e["Aska"]["Gi/Go"] = c_aska[0]["Gi/Go"]
+        e["Aska"]["Gs"] = c_aska[0]["Gs"]
+        e["Aska"]["Gq/G11"] = c_aska[0]["Gq/G11"]
+        e["Aska"]["G12/G13"] = c_aska[0]["G12/G13"]
         
         e["GuideToPharma"]["gprot"] = p_gtop
         e["Aska"]["gprot"] = p_aska
@@ -405,6 +402,10 @@ def process_coupling_data(data):
 
 
 def extract_coupling_bool(gp, source):
+    distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
+    threshold_primary = -0.1
+    threshold_secondary = -1
+
     if source == 'GuideToPharma':
         gp = gp[source]
         c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
@@ -412,21 +413,26 @@ def extract_coupling_bool(gp, source):
             if key in gp:
                 c[key] = True
         return c
+
     elif source == 'Aska':
         gp = gp[source]
         c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
-        return c
+        c_levels = {}
+
+        for gf in distinct_g_families:
+            if gf in gp:
+                if gp[gf]['best']>threshold_primary:
+                    c[gf] = True
+                    c_levels[gf] = "primary"
+                elif gp[gf]['best']>threshold_secondary:
+                    c[gf] = True
+                    c_levels[gf] = "secondary"
+        return (c, c_levels)
 
 
-def extract_coupling_primary(gp, source):
-    if source == 'GuideToPharma':
-        gp = gp[source]
-        p = []
-        for key in gp:
-            if gp[key] == "primary":
-                p.append(key)
-        return p
-    elif source == 'Aska':
-        gp = gp[source]
-        p = []
-        return p
+def extract_coupling_primary(gp):
+    p = []
+    for key in gp:
+        if gp[key] == "primary":
+            p.append(key)
+    return p
