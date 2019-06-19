@@ -202,14 +202,18 @@ def prepare_signature_match(signature_match):
     for elem in signature_match["scores"].items():
         entry = elem[0].protein.entry_name
         coupling_entry = coupling_data_dict.get(entry)
+        
+        sources = ["GuideToPharma", "Aska"]
 
-        for gprot in gprots:
-            if coupling_entry:
-                ce = coupling_entry
-                cl = ce['coupling'].get(gprot, '')
-                out[entry][gprot] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[gprot] else sign_false
-            else:
-                out[entry][gprot] = sign_false
+        for source in sources:
+            out[entry][source] = {}
+            for gprot in gprots:
+                if coupling_entry:
+                    ce = coupling_entry
+                    cl = ce['coupling'][source].get(gprot, '')
+                    out[entry][source][gprot] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[source][gprot] else sign_false
+                else:
+                    out[entry][source][gprot] = sign_false
 
     # for elem in signature_match['signature_filtered'].items():
     # print(elem)
@@ -357,40 +361,72 @@ def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
 
 def process_coupling_data(data):
     res = []
+    
+    threshold_primary = -0.1
+    threshold_secondary = -1
+
     for entry in data.keys():
         i = data[entry]
         e = {}
 
-        c = extract_coupling_bool(i["GuideToPharma"])
-        p = extract_coupling_primary(i["GuideToPharma"])
+        c_gtop = extract_coupling_bool(i, "GuideToPharma")
+        p_gtop = extract_coupling_primary(i, "GuideToPharma")
+
+        c_aska = extract_coupling_bool(i, "Aska")
+        p_aska = extract_coupling_primary(i, "Aska")
+        
+        e['coupling'] = {}
+        e["GuideToPharma"] = {}
+        e["Aska"] = {}
 
         e["rec_class"] = i["rec_class"]
         e["rec_obj"] = i["rec_obj"]
         e["key"] = entry
-        e["coupling"] = i["GuideToPharma"]
-        e["Gi/Go"] = c["Gi/Go"]
-        e["Gs"] = c["Gs"]
-        e["Gq/G11"] = c["Gq/G11"]
-        e["G12/G13"] = c["G12/G13"]
-        e["gprot"] = p
+        
+        e["coupling"]["GuideToPharma"] = i["GuideToPharma"]
+        e["coupling"]["Aska"] = i["Aska"]
+        
+        e["GuideToPharma"]["Gi/Go"] = c_gtop["Gi/Go"]
+        e["GuideToPharma"]["Gs"] = c_gtop["Gs"]
+        e["GuideToPharma"]["Gq/G11"] = c_gtop["Gq/G11"]
+        e["GuideToPharma"]["G12/G13"] = c_gtop["G12/G13"]
+        
+        e["Aska"]["Gi/Go"] = c_aska["Gi/Go"]
+        e["Aska"]["Gs"] = c_aska["Gs"]
+        e["Aska"]["Gq/G11"] = c_aska["Gq/G11"]
+        e["Aska"]["G12/G13"] = c_aska["G12/G13"]
+        
+        e["GuideToPharma"]["gprot"] = p_gtop
+        e["Aska"]["gprot"] = p_aska
 
         res.append(e)
 
     return res
 
 
-def extract_coupling_bool(gp):
-    c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
-    for key in c:
-        if key in gp:
-            c[key] = True
-    return c
+def extract_coupling_bool(gp, source):
+    if source == 'GuideToPharma':
+        gp = gp[source]
+        c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
+        for key in c:
+            if key in gp:
+                c[key] = True
+        return c
+    elif source == 'Aska':
+        gp = gp[source]
+        c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
+        return c
 
 
-def extract_coupling_primary(gp):
-    p = []
-    i = 0
-    for key in gp:
-        if gp[key] == "primary":
-            p.append(key)
-    return p
+def extract_coupling_primary(gp, source):
+    if source == 'GuideToPharma':
+        gp = gp[source]
+        p = []
+        for key in gp:
+            if gp[key] == "primary":
+                p.append(key)
+        return p
+    elif source == 'Aska':
+        gp = gp[source]
+        p = []
+        return p
