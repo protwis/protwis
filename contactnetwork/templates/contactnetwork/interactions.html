@@ -3058,11 +3058,15 @@
             }); 
           } else if (data['proteins'].length>1) {
             thead =  '<tr> \
-                          <th colspan="2">Segment</th> \
-                          <th colspan="2">Generic No</th> \
+                          <th colspan="1">Segment</th> \
+                          <th colspan="1">Generic No</th> \
                           <th> Frequency (%)</th> \
                           <th>Type(s)</th> \
                           <th>Class Seq Cons(%)</th> \
+                          <th>Ca distance</th> \
+                          <th colspan="2">Ca distance from 7TM<br>axis</th> \
+                          <th colspan="2">Backbone<br>Rotation</th> \
+                          <th colspan="2">Residue<br>Rotamer</th> \
                         </tr> \
                         <tr> \
                           <th></th> \
@@ -3070,8 +3074,13 @@
                           <th></th> \
                           <th></th> \
                           <th></th> \
-                          <th></th> \
-                          <th></th> \
+                          <th>GN1-GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             var proteins = data['proteins'].length
@@ -3085,24 +3094,37 @@
               var class_seq_cons = v['class_seq_cons'];
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
+              var distance = v['distance'];
+              var angles_1 = v['angles'][0];
+              var angles_2 = v['angles'][1];
               tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
-                      <td>${seg1}</td>
-                      <td>${seg2}</td>
-                      <td>${gn1}</td>
-                      <td>${gn2}</td>
+                      <td>${seg1}-${seg2}</td>
+                      <td>${gn1}-${gn2}</td>
                       <td>${sfreq}</td>
                       <td>${types}</td>
                       <td>${class_seq_cons}</td>
+                      <td>${distance}</td>
+                      <td>${angles_1[0]}</td>
+                      <td>${angles_2[0]}</td>
+                      <td>${angles_1[1]}</td>
+                      <td>${angles_2[1]}</td>
+                      <td>${angles_1[2]}</td>
+                      <td>${angles_2[2]}</td>
                     </tr>`;
               tbody.append(tr);
             });
           } else {
             thead =  '<tr> \
-                          <th colspan="2">Segment</th> \
-                          <th colspan="2">Generic No</th> \
+                          <th colspan="1">Segment</th> \
+                          <th colspan="1">Res No</th> \
+                          <th colspan="1">Generic No</th> \
                           <th>Interaction</th> \
                           <th>Class Seq Cons(%)</th> \
+                          <th>Ca distance</th> \
+                          <th colspan="2">Ca distance from 7TM axis</th> \
+                          <th colspan="2">Backbone<br>Rotation</th> \
+                          <th colspan="2">Residue<br>Rotamer</th> \
                         </tr> \
                         <tr> \
                           <th></th> \
@@ -3110,7 +3132,13 @@
                           <th></th> \
                           <th></th> \
                           <th></th> \
-                          <th></th> \
+                          <th>GN1-GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
+                          <th>GN1</th> \
+                          <th>GN2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             $.each(data['interactions'], function (i, v) {
@@ -3119,15 +3147,28 @@
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
               var types = v['types'];
+              var pos1 = v['seq_pos'][0];
+              var pos2 = v['seq_pos'][1];
               var class_seq_cons = v['class_seq_cons'];
+              var seg1 = data['segm_lookup'][gn1];
+              var seg2 = data['segm_lookup'][gn2];
+              var distance = v['distance'];
+              var angles_1 = v['angles'][0];
+              var angles_2 = v['angles'][1];
               tr = `
-                    <tr class="clickable-row filter_rows" id="${i}">
-                      <td>${seg1}</td>
-                      <td>${seg2}</td>
-                      <td>${gn1}</td>
-                      <td>${gn2}</td>
+                    <tr class="clickable-row filter_rows" id="${pos1},${pos2}">
+                      <td>${seg1}-${seg2}</td>
+                      <td><span>${pos1}</span>-<span>${pos2}</span></td>
+                      <td>${gn1}-${gn2}</td>
                       <td>${types}</td>
                       <td>${class_seq_cons}</td>
+                      <td>${distance}</td>
+                      <td>${angles_1[0]}</td>
+                      <td>${angles_2[0]}</td>
+                      <td>${angles_1[1]}</td>
+                      <td>${angles_2[1]}</td>
+                      <td>${angles_1[2]}</td>
+                      <td>${angles_2[2]}</td>
                     </tr>`;
               tbody.append(tr);
             });
@@ -3151,6 +3192,8 @@
                 scrollY:        '50vh',
                 // scrollCollapse: true,
                 paging:         false,
+                "order": [],
+                columnDefs: [ { type: "string", targets: 1 } ]
               });
 
           if (data['proteins2']) {
@@ -3160,7 +3203,7 @@
                               column_number : 0,
                               filter_type: "text",
                               // exclude: true,
-                              filter_delay: 300,
+                              filter_delay: 500,
                               filter_reset_button_text: false,
                           },
                           {
@@ -3255,30 +3298,30 @@
                       [
                           {
                               column_number : 0,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Residue #1",
+                              filter_type: "text",
+                              // exclude: true,
+                              filter_delay: 500,
                               filter_reset_button_text: false,
                           },
                           {
                               column_number : 1,
                               filter_type: "multi_select",
                               select_type: 'select2',
-                              filter_default_label: "Residue #2",
+                              filter_default_label: "Res.",
+                              text_data_delimiter: "-",
                               filter_reset_button_text: false,
                           },
                           {
                               column_number : 2,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Residue #1",
+                              filter_type: "range_number",
                               filter_reset_button_text: false,
                           },
                           {
                               column_number : 3,
                               filter_type: "multi_select",
                               select_type: 'select2',
-                              filter_default_label: "Residue #2",
+                              filter_default_label: "Type",
+                              text_data_delimiter: ",",
                               filter_reset_button_text: false,
                           },
                           {
@@ -3288,14 +3331,41 @@
                           },
                           {
                               column_number : 5,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Type",
-                              text_data_delimiter: ",",
+                              filter_type: "range_number",
                               filter_reset_button_text: false,
                           },
                           {
                               column_number : 6,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 7,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 8,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 9,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 10,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 11,
                               filter_type: "range_number",
                               filter_reset_button_text: false,
 
@@ -3307,38 +3377,67 @@
 
                   );
           } else if (data['proteins'].length==1) {
+                // function myCustomFilterFunction(filterVal, columnVal) {
+                //     var found;
+                //     if (columnVal === '') {
+                //         return true;
+                //     }
+                //     switch (filterVal) {
+                //     case 'happy':
+                //         found = columnVal.search(/:-\]|:\)|Happy|JOY|:D/g);
+                //         break;
+                //     case 'sad':
+                //         found = columnVal.search(/:\(|Sad|:'\(/g);
+                //         break;
+                //     case 'angry':
+                //         found = columnVal.search(/!!!|Arr\.\.\./g);
+                //         break;
+                //     case 'lucky':
+                //         found = columnVal.search(/777|Bingo/g);
+                //         break;
+                //     case 'january':
+                //         found = columnVal.search(/01|Jan/g);
+                //         break;
+                //     default:
+                //         found = 1;
+                //         break;
+                //     }
+             
+                //     if (found !== -1) {
+                //         return true;
+                //     }
+                //     return false;
+                // }
+
             yadcf.init(btable,
                       [
                           {
                               column_number : 0,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Residue #1",
+                              filter_type: "text",
+                              // exclude: true,
+                              filter_delay: 500,
                               filter_reset_button_text: false,
                           },
-                          {
-                              column_number : 1,
+                          {    
+                              column_number: 1,
                               filter_type: "multi_select",
                               select_type: 'select2',
-                              filter_default_label: "Residue #2",
-                              filter_reset_button_text: false,
+                              // column_data_type: "html",
+                              html_data_type: "text",
+                              text_data_delimiter: "-",
+                              filter_default_label: "Res. No.",
+                              filter_reset_button_text: false // hide yadcf reset button
                           },
                           {
                               column_number : 2,
                               filter_type: "multi_select",
                               select_type: 'select2',
-                              filter_default_label: "Residue #1",
+                              filter_default_label: "Res. Gn.",
+                              text_data_delimiter: "-",
                               filter_reset_button_text: false,
                           },
                           {
                               column_number : 3,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Residue #2",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 4,
                               filter_type: "multi_select",
                               select_type: 'select2',
                               filter_default_label: "Type",
@@ -3346,10 +3445,50 @@
                               filter_reset_button_text: false,
                           },
                           {
+                              column_number : 4,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+                          },
+                          {
                               column_number : 5,
                               filter_type: "range_number",
                               filter_reset_button_text: false,
 
+                          },
+                          {
+                              column_number : 6,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 7,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 8,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 9,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 10,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 11,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
                           },
                       ],
                       {
@@ -3603,7 +3742,7 @@
                   url: '/contactnetwork/interactiondata', 
                   dataType: 'json', 
                   data: {
-                    'segments': segments,
+                    // 'segments': segments,
                     'generic': generic,
                     'pdbs': pdb,
                     'interaction_types': interactionTypes
@@ -3639,7 +3778,7 @@
                   url: '/contactnetwork/browserdata', 
                   dataType: 'json', 
                   data: {
-                    'segments': segments,
+                    // 'segments': segments,
                     'generic': generic,
                     'pdbs': pdb,
                     'interaction_types': interactionTypes
@@ -3687,7 +3826,7 @@
                     url: '/contactnetwork/browserdata', 
                     dataType: 'json', 
                     data: {
-                      'segments': segments,
+                      // 'segments': segments,
                       'generic': generic,
                       'pdbs1': pdbs1,
                       'pdbs2': pdbs2,
@@ -4583,6 +4722,12 @@
                   var aa2 = rect.data('aa-2');
                   var iType = rect.data('interaction-type');
 
+
+                  var pair = resNo1 + "," + resNo2;
+                  if ( !(filtered_gn_pairs.includes(pair)) && filtered_gn_pairs.length) {
+                      return
+                  } 
+
                   // Interaction type filtering
                   // if (update && !enabledInteractions.includes(iType)) return
 
@@ -4851,15 +4996,28 @@
         function updateMatrix() {
             switch (currentTab) {
                 case "single-crystal-tab":
-                    $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
-                        var interactionType = $(this).data('interaction-type');
-                        var rects = $('#' + currentTab + ' .heatmap rect.' + interactionType);
-                        if ($(this).is(':checked')) {
-                            rects.show();
+                    // $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
+                    //     var interactionType = $(this).data('interaction-type');
+                    //     var rects = $('#' + currentTab + ' .heatmap rect.' + interactionType);
+                    //     if ($(this).is(':checked')) {
+                    //         rects.show();
+                    //     } else {
+                    //         rects.hide();
+                    //     }
+                    // });
+
+                    if (!filtered_gn_pairs.length) break;
+
+                    // Hide all below min treshold
+                    $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
+                        var pair = $(this).data("res-no-1") + "," + $(this).data("res-no-2");
+                        if ( filtered_gn_pairs.includes(pair) ) {
+                            $(this).show();
                         } else {
-                            rects.hide();
+                            $(this).hide();
                         }
                     });
+
                     break;
                 case "single-crystal-group-tab":
                     // var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
@@ -4910,6 +5068,30 @@
                 // // toggle interactions in flareplot
                 // if (container in flareplot)
                 //     flareplot[container].showInteractions(interactionsToggleList);
+                if (!filtered_gn_pairs.length) break;
+
+                    var paths = $(container + ' path').each(function() {
+                      // var f1 = $(this).data("group-1-freq");
+                      // var f2 = $(this).data("group-2-freq");
+                      // var f3 = $(this).data("frequency-diff");
+                      // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+                      //     $(this).hide();
+                      // } else {
+                      //     $(this).show();
+                      // }
+                      if ($(this).attr("class")) {
+                        var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
+                        var gn1 = path_class[1].replace("source-","");
+                        var gn2 = path_class[2].replace("target-","");
+                        var pair = gn1 +","+gn2;
+                        // console.log(pair);
+                        if ( filtered_gn_pairs.includes(pair) ) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                      }
+                  });
                 break;
                 case "single-crystal-group-tab":
                     // var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );

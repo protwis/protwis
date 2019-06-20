@@ -380,9 +380,9 @@ def InteractionBrowserData(request):
     segment_filter_res1 = Q()
     segment_filter_res2 = Q()
 
-    if segments:
-        segment_filter_res1 |= Q(interacting_pair__res1__protein_segment__slug__in=segments)
-        segment_filter_res2 |= Q(interacting_pair__res2__protein_segment__slug__in=segments)
+    # if segments:
+    #     segment_filter_res1 |= Q(interacting_pair__res1__protein_segment__slug__in=segments)
+    #     segment_filter_res2 |= Q(interacting_pair__res2__protein_segment__slug__in=segments)
 
     i_types_filter = Q()
     if i_types:
@@ -592,7 +592,7 @@ def InteractionBrowserData(request):
                     data['interactions'][coord]['secondary2'].append([model,res1_aa,res2_aa,pdb_name])
             else:
                 if coord not in data['interactions']:
-                    data['interactions'][coord] = {'pdbs':[], 'proteins': [], 'secondary': [], 'class_seq_cons' : 0, 'types' : []}
+                    data['interactions'][coord] = {'pdbs':[], 'proteins': [], 'secondary': [], 'class_seq_cons' : 0, 'types' : [], 'seq_pos':[res1_seq,res2_seq]}
 
                 if model in i_types or not i_types:
                     if model not in data['interactions'][coord]['types']:
@@ -811,7 +811,22 @@ def InteractionBrowserData(request):
                 else:
                     distance_diff = ""
                 data['interactions'][coord]['distance'] = distance_diff
+        else:
+            group_distances = {}
+            ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
+                                .values('gns_pair') \
+                                .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_distances[d[0]] = d[1]/100
 
+            for coord in data['interactions']:
+                distance_coord = coord.replace(",","_")
+                if distance_coord in group_distances:
+                    distance = round(group_distances[distance_coord],2)
+                else:
+                    distance = ""
+                data['interactions'][coord]['distance'] = distance
 
         print('Prepare angles values for',mode,'mode')
 
@@ -856,6 +871,41 @@ def InteractionBrowserData(request):
                     for i,v in enumerate(group_1_angles[gn2]):
                         try:
                             gn2_values.append(round(v-group_2_angles[gn2][i],1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            gn2_values.append("-")
+                data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
+        else:
+            group_angles = {}
+            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
+                                .exclude(residue__generic_number=None) \
+                                .values('residue__generic_number__label') \
+                                .annotate(a_angle = Avg('a_angle'),outer_angle = Avg('outer_angle'),core_distance = Avg('core_distance')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_angles[d[0]] = d[1:]
+
+            for coord in data['interactions']:
+                gn1 = coord.split(",")[0]
+                gn2 = coord.split(",")[1]
+
+                gn1_values = ['','','']
+                if gn1 in group_angles:
+                    gn1_values = []
+                    for i,v in enumerate(group_angles[gn1]):
+                        try:
+                            gn1_values.append(round(v,1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            gn1_values.append("-")
+
+                gn2_values = ['','','']
+                if gn2 in group_angles:
+                    gn2_values = []
+                    for i,v in enumerate(group_angles[gn2]):
+                        try:
+                            gn2_values.append(round(v,1))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn2_values.append("-")
