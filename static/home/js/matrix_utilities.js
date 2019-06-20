@@ -232,25 +232,53 @@ const run_sig_match = function(){
             title: 'Entry Name',
             targets: 3,
           }, {
-            data: 'Gs',
+            data: 'GuideToPharma.Gs',
             title: '   Gs   ',
             targets: 5,
-            className: 'dt-center',
+            className: 'gtop dt-center',
+            visible: true,
           }, {
-            data: 'Gi/Go',
+            data: 'GuideToPharma.Gi/Go',
             title: 'Gi / Go ',
             targets: 6,
-            className: 'dt-center',
+            className: 'gtop dt-center',
+            visible: true,
           }, {
-            data: 'Gq/G11',
+            data: 'GuideToPharma.Gq/G11',
             title: 'Gq / G11',
             targets: 7,
-            className: 'dt-center',
+            className: 'gtop dt-center',
+            visible: true,
           }, {
-            data: 'G12/G13',
+            data: 'GuideToPharma.G12/G13',
             title: 'G12 / G13',
             targets: 8,
-            className: 'dt-center',
+            className: 'gtop dt-center',
+            visible: true,
+          }, {
+            data: 'Aska.Gs',
+            title: '   Gs   ',
+            targets: 9,
+            className: 'aska dt-center',
+            visible: false,
+          }, {
+            data: 'Aska.Gi/Go',
+            title: 'Gi / Go ',
+            targets: 10,
+            className: 'aska dt-center',
+            visible: false,
+          }, {
+            data: 'Aska.Gq/G11',
+            title: 'Gq / G11',
+            targets: 11,
+            className: 'aska dt-center',
+            visible: false,
+          }, {
+            data: 'Aska.G12/G13',
+            title: 'G12 / G13',
+            targets: 12,
+            className: 'aska dt-center',
+            visible: false,
           },
         ],
         order: [[ 4, "desc" ]],
@@ -264,6 +292,44 @@ const run_sig_match = function(){
           //   action: function () {
           //     sigmatch_table.rows().select();
           //   }
+          // },
+          // {
+          //     extend: 'columnToggle',
+          //     text: 'Toggle GuideToPharma / Asuka Inoue',
+          //     columns: '.primary'
+          // },
+          {
+              text: 'Toggle <b>GuideToPharma</b> / Asuka Inoue',
+              className: 'toggle-source',
+              action: function () {
+                let gtopText = "<span>Toggle <b>GuideToPharma</b> / Asuka Inoue</span>"
+                let askaText = "<span>Toggle GuideToPharma / <b>Asuka Inoue</b></span>"
+                let currText = $('.dt-button.toggle-source').html()
+
+                if (currText == gtopText) {
+                  $('.dt-button.toggle-source').html(askaText)
+                } else if (currText == askaText) {
+                  $('.dt-button.toggle-source').html(gtopText)
+                }
+
+                var columns = sigmatch_table.columns('.gtop');
+                columns.visible(!columns.visible()[0])
+
+                columns = sigmatch_table.columns('.aska');
+                columns.visible(!columns.visible()[0])
+              }
+          },
+          // {
+          //     extend: 'columnVisibility',
+          //     text: 'Show GuideToPharma',
+          //     visibility: true,
+          //     columns: '.secondary'
+          // },
+          // {
+          //     extend: 'columnVisibility',
+          //     text: 'Hide secondary',
+          //     visibility: false,
+          //     columns: '.secondary'
           // },
           {
             text: 'Deselect',
