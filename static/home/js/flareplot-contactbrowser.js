@@ -62,11 +62,13 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             bRes = b.key;
                         } else {
                             if (aRes[0].length==3) {
+                              // Make bulges fit "numerically" correct
                               aRes = parseInt(aRes[0])/10;
                             } else {
                               aRes = parseInt(aRes[0]);
                             }
                             if (bRes[0].length==3) {
+                              // Make bulges fit "numerically" correct
                               bRes = parseInt(bRes[0])/10;
                             } else {
                               bRes = parseInt(bRes[0]);
