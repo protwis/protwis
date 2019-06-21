@@ -4626,6 +4626,8 @@
                         controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
                 }
                 controls += '</select></p>';
+                if (two_structures)
+                  controls += '<p>Hide: <input type=checkbox id="hide_pdb1"></p>';
             }
             controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
 
@@ -4642,6 +4644,8 @@
                       controls += '<option value="'+pdbs_set2[i]+'">'+pdbs_set2[i]+'</option>';
               }
               controls += '</select></p>';
+                if (two_structures)
+                  controls += '<p>Hide: <input type=checkbox id="hide_pdb2"></p>';
               controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
             }
 
@@ -4701,6 +4705,16 @@
             });
 
             $("#ngl-"+mode+" #toggle_interactions").change(function(e){
+                updateStructureRepresentations(mode);
+            });
+
+
+            $("#ngl-"+mode+" #hide_pdb1").change(function(e){
+                updateStructureRepresentations(mode);
+            });
+
+
+            $("#ngl-"+mode+" #hide_pdb2").change(function(e){
                 updateStructureRepresentations(mode);
             });
 
@@ -4951,6 +4965,15 @@
             structures = 2;
 
           for (var key = 0; key < structures; key++) {
+
+            hide_structure = $("#ngl-"+mode+" #hide_pdb"+(key+1)).prop('checked');
+            var o = reps[mode][key].structureComponent;
+            if (hide_structure) {
+              o.setVisibility(false);
+              break;
+            } else {
+              o.setVisibility(true);
+            }
             // toggle edges
             reps[mode][key].links.setVisibility(!$("#ngl-"+mode+" #toggle_interactions").prop('checked'));
 
