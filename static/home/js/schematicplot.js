@@ -781,18 +781,18 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     legendHtml += '</ul>';
     */
 
-    // Add SVG download button
-    legendHtml +=
-      `<button onclick="downloadSVG('${containerSelector}schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
-      '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-      '</button>';
+    // // Add SVG download button
+    // legendHtml +=
+    //   `<button onclick="downloadSVG('${containerSelector}schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
+    //   '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+    //   '</button>';
 
-    // Add CSV download button
-    legendHtml +=
-      `<br /><button onclick="downloadSingleCrystalCSV('${containerSelector}schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
-      '</button>';
+    // // Add CSV download button
+    // legendHtml +=
+    //   `<br /><button onclick="downloadSingleCrystalCSV('${containerSelector}schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
+    //   '</button>';
 
-    $(`${containerSelector} .schematic-legend`).html(legendHtml);
+    // $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     /*$(`${containerSelector} .schematic-legend input[type=checkbox]`).each(function () {
       $(this).prop('checked', true);
@@ -837,18 +837,18 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           + '<span class="white-to-red"></span>'
           + '</div>';*/
 
-    // Add SVG download button
-    legendHtml +=
-      `<button onclick="downloadSVG('${containerSelector} .schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
-      '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-      '</button>';
+    // // Add SVG download button
+    // legendHtml +=
+    //   `<button onclick="downloadSVG('${containerSelector} .schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
+    //   '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+    //   '</button>';
 
-    // Add CSV download button
-    legendHtml +=
-      `<br /><button onclick="downloadSingleCrystalGroupCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
-      '</button>';
+    // // Add CSV download button
+    // legendHtml +=
+    //   `<br /><button onclick="downloadSingleCrystalGroupCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
+    //   '</button>';
 
-    $(`${containerSelector} .schematic-legend`).html(legendHtml);
+    // $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     /*
     // Changed from separate min/max sliders to one range slider - to REMOVE if OK
@@ -935,18 +935,18 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     let legendHtml = ""
 
-    // Add SVG download button
-    legendHtml +=
-      `<button onclick="downloadSVG('${containerSelector} .schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
-      '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-      '</button>';
+    // // Add SVG download button
+    // legendHtml +=
+    //   `<button onclick="downloadSVG('${containerSelector} .schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
+    //   '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+    //   '</button>';
 
-    // Add CSV download button
-    legendHtml +=
-      `<br /><button onclick="downloadTwoCrystalGroupsCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
-      '</button>';
+    // // Add CSV download button
+    // legendHtml +=
+    //   `<br /><button onclick="downloadTwoCrystalGroupsCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
+    //   '</button>';
 
-    $(`${containerSelector} .schematic-legend`).html(legendHtml);
+    // $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     // Changed from separate min/max sliders to one range slider - to REMOVE if OK
     /*

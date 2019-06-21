@@ -1134,7 +1134,8 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 break;
               case "interactions":
                 svg.selectAll("path.link")
-                    .style("stroke", function(d){ return getColorStrongestInteraction(Object.keys(d.interactions).filter(value => -1 !== interactions.indexOf(value)), false); });
+                    // .style("stroke", function(d){ console.log('get color!',d.interactions,Object.keys(d.interactions),interactions); return getColorStrongestInteraction(Object.keys(d.interactions).filter(value => -1 !== interactions.indexOf(value)), false); });
+                    .style("stroke", function(d){ return getColorStrongestInteraction(Object.keys(d.interactions), false); });
                 break;
               case "rainbow":
                 svg.selectAll("path.link")

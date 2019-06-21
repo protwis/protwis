@@ -764,7 +764,7 @@ class Alignment:
         """A placeholder for an instance specific function"""
         return generic_number
 
-    def calculate_statistics(self):
+    def calculate_statistics(self, ignore={}):
         """Calculate consesus sequence and amino acid and feature frequency"""
 
         if not self.stats_done:
@@ -776,12 +776,16 @@ class Alignment:
             # AJK: optimized for speed - split into multiple steps
             for i, p in enumerate(self.unique_proteins):
                 entry_name = p.protein.entry_name
+                # print(entry_name)
                 for j, s in p.alignment.items():
                     if i == 0:
                         self.aa_count[j] = OrderedDict()
                     for p in s:
                         generic_number = p[0]
+                        display_generic_number = p[1]
                         amino_acid = p[2]
+
+                        ignore_list = ignore.get(display_generic_number, [])
 
                         # Indicate gap and collect statistics
                         if amino_acid in self.gaps:
@@ -789,6 +793,11 @@ class Alignment:
 
                         # Skip when unknown amino acid type
                         elif amino_acid == 'X':
+                            continue
+
+                        # skip when position is on the ignore list
+                        if entry_name in ignore_list:
+                            # print(amino_acid)
                             continue
 
                         # Init counters
