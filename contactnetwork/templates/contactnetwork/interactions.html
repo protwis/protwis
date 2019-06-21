@@ -4587,8 +4587,8 @@
 
             var newDiv = document.createElement("div");
             newDiv.setAttribute("style", "position: absolute; top: 45px; left: 20px; background-color: #DDD; opacity: .8; padding: 10px;")
-            var controls = '<div class="controls">'
-                         + '<h4>Controls</h4>';
+            var controls = '<div class="controls"><span class="pull-right ngl_controls_toggle"><span class="glyphicon glyphicon-download btn-download png"></span></span>'
+                         + '<span class="ngl_control"><h4>Controls</h4>';
 
             // Toggle for showing two structures simultaneously
             if (mode == "two-groups" && pdbs_set2)
@@ -4638,10 +4638,15 @@
                               +'<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
 //                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                               +'</div>';
-
+            controls += '</span>';
             newDiv.innerHTML = controls;
 
             $("#ngl-"+mode).append(newDiv);
+            $("#ngl-"+mode+" .ngl_control").hide();
+
+            $("#ngl-"+mode+" .ngl_controls_toggle").click(function() {
+              $("#ngl-"+mode+" .ngl_control").toggle();
+            });
 
             if (two_structures) {
               // structure selection
