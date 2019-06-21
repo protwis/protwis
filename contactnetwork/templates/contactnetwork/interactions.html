@@ -4587,7 +4587,7 @@
 
             var newDiv = document.createElement("div");
             newDiv.setAttribute("style", "position: absolute; top: 45px; left: 20px; background-color: #DDD; opacity: .8; padding: 10px;")
-            var controls = '<div class="controls"><span class="pull-right ngl_controls_toggle"><span class="glyphicon glyphicon-download btn-download png"></span></span>'
+            var controls = '<div class="controls"><span class="pull-right ngl_controls_toggle"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span>'
                          + '<span class="ngl_control"><h4>Controls</h4>';
 
             // Toggle for showing two structures simultaneously
@@ -4643,7 +4643,7 @@
 
             $("#ngl-"+mode).append(newDiv);
             $("#ngl-"+mode+" .ngl_control").hide();
-
+            $('.ngl_controls_toggle').css( 'cursor', 'pointer' );
             $("#ngl-"+mode+" .ngl_controls_toggle").click(function() {
               $("#ngl-"+mode+" .ngl_control").toggle();
             });
