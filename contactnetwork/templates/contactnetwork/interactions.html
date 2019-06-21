@@ -920,6 +920,7 @@
         })
         document.body.appendChild(ngl_tooltip)
 
+        var is_fullscreen = false;
         function toggleFullScreen(fullScreenElement) {
             if (!document.mozFullScreen && !document.webkitFullScreen) {
                 if (fullScreenElement.mozRequestFullScreen) {
@@ -3518,13 +3519,12 @@
 
         function redraw_renders() {
           // Makes sure diagrams fit sizes
-
+          console.log('redraw renders');
           var visible_svg = $('svg:visible');
           var svg_class = visible_svg.attr("class");
-
-          if( window.innerHeight == screen.height) {
+          if( window.innerHeight == screen.height || is_fullscreen) {
               // browser is fullscreen
-              console.log('dont redraw in full screen',visible_svg,svg_class);
+              console.log('dont redraw in full screen', is_fullscreen);
 
               if (svg_class=='flareplot') {
                 $("svg.flareplot").css('height',screen.height);
@@ -4961,6 +4961,7 @@
 
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
+          console.log('updateStructureRepresentations');
           var structures = 1;
           if (mode=="two-groups")
             structures = 2;
@@ -5265,8 +5266,9 @@
               }
         }
 
-        function updateGeneralControls(){
+        function updateGeneralControls(ignore_ngl = false){
             // update current vizualization
+            console.log('ignore_ngl',ignore_ngl);
             switch(currentViz.toLowerCase()) {
               case "matrix":
                 updateMatrix()
@@ -5292,8 +5294,11 @@
             }
 
             // Always invoke NGL update
-            createNGLRepresentations(currentTab , 0, currentTab)
-            if (currentTab=="two-crystal-groups-tab") createNGLRepresentations(currentTab , 1, currentTab)
+            if (!ignore_ngl) {
+              // Do not update when simply changing viz tabs.
+              createNGLRepresentations(currentTab , 0, currentTab)
+              if (currentTab=="two-crystal-groups-tab") createNGLRepresentations(currentTab , 1, currentTab)
+            }
         }
 
         {% if pdbs1 %}
@@ -5328,7 +5333,7 @@
               // update filtered
               // invoke representation update based on general controls
               console.log('switch 2')
-              updateGeneralControls()
+              updateGeneralControls(true)
             });
 
             $('#mode_nav a').on('shown.bs.tab', function (e) {
@@ -5349,6 +5354,30 @@
             window.addEventListener("resize", redraw_ngl);
 
             window.addEventListener("resize", redraw_renders);
+
+            if (document.addEventListener)
+            {
+                document.addEventListener('webkitfullscreenchange', exitHandler, false);
+                document.addEventListener('mozfullscreenchange', exitHandler, false);
+                document.addEventListener('fullscreenchange', exitHandler, false);
+                document.addEventListener('MSFullscreenChange', exitHandler, false);
+            }
+
+            function exitHandler()
+            { 
+                console.log('check fullscreen',document.webkitIsFullScreen,document.mozFullScreen,document.msFullscreenElement);
+                if (document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement )
+                { 
+                    console.log('is fullscreen',document.webkitIsFullScreen,document.mozFullScreen,document.msFullscreenElement);
+                    is_fullscreen = true ;
+                    redraw_renders();
+                } else {
+                    console.log('not fullscreen')
+                    is_fullscreen = false ;
+                    redraw_renders();
+                }
+            }
+
             redraw_renders();
 
             {% if pdbs %}
