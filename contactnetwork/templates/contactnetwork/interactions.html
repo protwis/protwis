@@ -3931,12 +3931,13 @@
                 fullScreenElement.css('background-color','white');
                 console.log('who to fullscreen?',fullScreenElement.attr('id'));
                 toggleFullScreen(fullScreenElement.get(0));
-                if (fullScreenElement.attr('id').startsWith('DataTable')) {
-                  top_height = $('div.dataTables_scrollHead:visible').outerHeight();
-                  bottom_height =  $('div.dataTables_info:visible').outerHeight();
-                  scrollbody_height = screen.height-top_height-bottom_height;
-                  console.log('increase table height',screen.height,top_height,bottom_height);
-                  $('div.dataTables_scrollBody:visible').height( scrollbody_height+'px' );
+                if (fullScreenElement.attr('id')) {
+                  if (fullScreenElement.attr('id').startsWith('DataTable')) {
+                    top_height = $('div.dataTables_scrollHead:visible').outerHeight();
+                    bottom_height =  $('div.dataTables_info:visible').outerHeight();
+                    scrollbody_height = screen.height-top_height-bottom_height;
+                    $('div.dataTables_scrollBody:visible').height( scrollbody_height+'px' );
+                  }
                 }
             });
         }
