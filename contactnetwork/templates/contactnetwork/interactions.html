@@ -203,7 +203,7 @@
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
+                                <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
                                 <span class="pull-right">
                                   <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
@@ -222,8 +222,11 @@
                       <div class="col-md-12" id="single-primary-browser">
                            <div class="panel panel-default">
                               <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Primary Browser</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <h3 class="panel-title pull-left">Contact Browser</h3>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -431,7 +434,7 @@
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
+                                <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
                                 <span class="pull-right">
                                   <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
@@ -450,8 +453,11 @@
                       <div class="col-md-12" id="single-group-primary-browser">
                            <div class="panel panel-default">
                               <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Primary Browser</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <h3 class="panel-title pull-left">Contact Browser</h3>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -671,7 +677,7 @@
 
                      <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">NGL</h3>
+                            <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
                             <span class="pull-right">
                                   <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
@@ -692,8 +698,11 @@
                       <div class="col-md-12" >
                            <div class="panel panel-default">
                               <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Primary Browser</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <h3 class="panel-title pull-left">Contact Browser</h3>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -1004,10 +1013,14 @@
             return getGradientColor(-1*frequency, rgb);
         }
 
-        function getFlareGradientColor(fDiff, rgb = true) {
+        function getFlareGradientColor(fDiff, rgb = true, hide_zero = true) {
             var color;
             var shift = 80;
             var basal = 255 - shift;
+            if (hide_zero && fDiff == 0){
+              // to hide zero, make paths completely white.
+              return rgb2hex(255, 255, 255);
+            }
 
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
@@ -3509,6 +3522,22 @@
           var visible_svg = $('svg:visible');
           var svg_class = visible_svg.attr("class");
 
+          if( window.innerHeight == screen.height) {
+              // browser is fullscreen
+              console.log('dont redraw in full screen',visible_svg,svg_class);
+
+              if (svg_class=='flareplot') {
+                $("svg.flareplot").css('height',screen.height);
+              } else {
+                visible_svg.css('height',screen.height);
+              }
+
+              return
+          }
+
+
+          $('div.dataTables_scrollBody:visible').height('50vh');
+
           var width_svg = visible_svg.width();
 
           // Don't go too high
@@ -3771,6 +3800,7 @@
                       createNGLview("single",pdb[0]);
                     }
                     $(".main_loading_overlay").hide();
+                    redraw_renders();
                   }
               });
               console.log('get browser info');
@@ -3899,7 +3929,15 @@
 //                console.log($(this).attr('id'));
                 fullScreenElement = $(this).parent().parent().next().children().first();
                 fullScreenElement.css('background-color','white');
+                console.log('who to fullscreen?',fullScreenElement.attr('id'));
                 toggleFullScreen(fullScreenElement.get(0));
+                if (fullScreenElement.attr('id').startsWith('DataTable')) {
+                  top_height = $('div.dataTables_scrollHead:visible').outerHeight();
+                  bottom_height =  $('div.dataTables_info:visible').outerHeight();
+                  scrollbody_height = screen.height-top_height-bottom_height;
+                  console.log('increase table height',screen.height,top_height,bottom_height);
+                  $('div.dataTables_scrollBody:visible').height( scrollbody_height+'px' );
+                }
             });
         }
 
@@ -3954,7 +3992,7 @@
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
-                    content += '<p>Contiguous segments:<br/>lines outward: <input type=checkbox id="flareplot_contiguous" checked></p>';
+                    content += '<p>Consecutive segment contacts<br> on outside: <input type=checkbox id="flareplot_contiguous" checked></p>';
 
                 content += '<p>Line colors: <select id="flareplot_color">'
                         +'<option value="none">None (gray)</option>'
@@ -3964,10 +4002,15 @@
                 // if single structure - use interaction coloring
                 if (container.indexOf("single-crystal-tab") >= 0) {
                     content += '<option value="interactions" selected>Interaction Type</option>';
+                // if single group of structures - use frequency coloring (gradient)
+                } else if (container.indexOf("single-crystal-group-tab") >= 0) {
+                    content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
                 // if group(s) of structures - use frequency coloring (gradient)
                 } else {
-                    content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
-                }
+                    content += '<option value="frequency" selected>Frequency difference Gr1 - Gr2</option>';
+                    content += '<option value="frequency_1">Frequency group 1</option>';
+                    content += '<option value="frequency_2">Frequency group 2</option>';
+                } 
                 content += '</select></p>';
 
 
@@ -4077,6 +4120,7 @@
                     $(function() {
                       contiguous = !contiguous;
                       createFlareplotBox(data, container, true);
+                      redraw_renders();
                     });
                 });
 
@@ -4113,14 +4157,14 @@
 
             // update coloring and visibility if toggled
             if (toggle) {
-                var range = $( container+" .slider-range" ).slider("values");
-                flareplot[container].updateRange(range[0], range[1]);
+                // var range = $( container+" .slider-range" ).slider("values");
+                // flareplot[container].updateRange(range[0], range[1]);
 
                 flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
                 //if ($(container + ' .flareplot-legend .color-box input[type=checkbox]').length > 0)
                 //  flareplot[container].showInteractions(interactionsToggleList);
-                if (container.indexOf("two-crystal-groups-tab") >= 0)
-                  updateTwoGroupSliders("skip", []);
+                // if (container.indexOf("two-crystal-groups-tab") >= 0)
+                //   updateTwoGroupSliders("skip", []);
 
                 updateGeneralControls()
             } else {
@@ -5281,6 +5325,7 @@
             window.addEventListener("resize", redraw_ngl);
 
             window.addEventListener("resize", redraw_renders);
+            redraw_renders();
 
             {% if pdbs %}
                 // handle post data (if present) for single group

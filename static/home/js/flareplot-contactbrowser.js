@@ -164,7 +164,8 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             svg = div.append("svg:svg")
                 .attr("viewBox", "0 0 " + w + " " + h )
                 .attr("width", "100%")
-                // .attr("height", h)
+                .attr("style", "height: 500px")
+                .attr("class", "flareplot")
                 .append("svg:g")
                 .attr("transform", "translate(" + cx + "," + cy + ")");
 
@@ -1131,6 +1132,14 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
               case "frequency":
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ if (Array.isArray(d.frequency)){ return getFlareGradientColor( d.frequency[2], false);} else { return getFlareGradientColor( -1*d.frequency, false);} });
+                break;
+              case "frequency_1":
+                svg.selectAll("path.link")
+                    .style("stroke", function(d){ if (Array.isArray(d.frequency)){ return getFlareGradientColor( d.frequency[0], false);} else { return getFlareGradientColor( -1*d.frequency, false);} });
+                break;
+              case "frequency_2":
+                svg.selectAll("path.link")
+                    .style("stroke", function(d){ if (Array.isArray(d.frequency)){ return getFlareGradientColor( d.frequency[1], false);} else { return getFlareGradientColor( -1*d.frequency, false);} });
                 break;
               case "interactions":
                 svg.selectAll("path.link")
