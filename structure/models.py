@@ -20,6 +20,7 @@ class Structure(models.Model):
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
+    distance_representative = models.BooleanField(default=True)
     contact_representative = models.BooleanField(default=False)
     contact_representative_score = models.DecimalField(max_digits=5, decimal_places=3, null=True)
     inactive_class_contacts_fraction = models.DecimalField(max_digits=5, decimal_places=3, null=True)
@@ -41,6 +42,9 @@ class Structure(models.Model):
             return "\n".join(elements)
         else:
             return '-'
+
+    def get_signprot_gprot_family(self):
+        return str(self.signprot_complex.protein.family)
 
     def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
 
