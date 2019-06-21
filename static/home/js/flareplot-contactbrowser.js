@@ -61,8 +61,16 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             aRes = a.key;
                             bRes = b.key;
                         } else {
-                            aRes = parseInt(aRes[0]);
-                            bRes = parseInt(bRes[0]);
+                            if (aRes[0].length==3) {
+                              aRes = parseInt(aRes[0])/10;
+                            } else {
+                              aRes = parseInt(aRes[0]);
+                            }
+                            if (bRes[0].length==3) {
+                              bRes = parseInt(bRes[0])/10;
+                            } else {
+                              bRes = parseInt(bRes[0]);
+                            }
                         }
                     }
                     return d3.ascending(aRes, bRes);
@@ -212,9 +220,10 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 .attr("id", function(d) { return "node-" + d.key; })
                 .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
                 .append("text")
-                .attr("dx", function(d) { return d.x < 180 ? 8 : -8; })
+                .attr("dx", function(d) { return d.x < 180 ? 8 : -30; })
                 .attr("dy", ".31em")
-                .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+                .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "start"; })
+                .attr("text-align", function(d) { return d.x < 180 ? "right" : "left"; })
                 .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
                 .text(function(d) { return d.key; })
                 .on("mouseover", mouseoverNode)
