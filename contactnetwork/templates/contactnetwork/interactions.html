@@ -5080,7 +5080,8 @@
                     // Hide all below min treshold
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("res-no-1") + "," + $(this).data("res-no-2");
-                        if ( filtered_gn_pairs.includes(pair) ) {
+                        var pair_reverse = $(this).data("res-no-2") + "," + $(this).data("res-no-1");
+                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -5097,7 +5098,8 @@
                     // Hide all below min treshold
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("gen-no-1") + "," + $(this).data("gen-no-2");
-                        if ( filtered_gn_pairs.includes(pair) ) {
+                        var pair_reverse = $(this).data("gen-no-2") + "," + $(this).data("gen-no-1");
+                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -5110,7 +5112,9 @@
 
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("gen-no-1") + "," + $(this).data("gen-no-2");
-                        if ( filtered_gn_pairs.includes(pair) ) {
+                        var pair_reverse = $(this).data("gen-no-2") + "," + $(this).data("gen-no-1");
+                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
+                            console.log("show",pair);
                             $(this).show();
                         } else {
                             $(this).hide();
