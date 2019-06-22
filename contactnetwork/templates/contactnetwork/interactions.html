@@ -215,7 +215,7 @@
                   </div>
                 </div>
                 <div class="row">
-                      <div class="col-md-12" id="single-primary-browser">
+                      <div class="col-md-12 contact-browser" id="single-primary-browser">
                            <div class="panel panel-default">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Contact Browser</h3>
@@ -440,7 +440,7 @@
                       </div>
                 </div>
                 <div class="row">
-                      <div class="col-md-12" id="single-group-primary-browser">
+                      <div class="col-md-12 contact-browser" id="single-group-primary-browser">
                            <div class="panel panel-default">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Contact Browser</h3>
@@ -676,7 +676,7 @@
                 </div>
 
                 <div class="row">
-                      <div class="col-md-12" >
+                      <div class="col-md-12  contact-browser" >
                            <div class="panel panel-default">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Contact Browser</h3>
@@ -2976,7 +2976,7 @@
           // tbody.empty();
           table.DataTable().destroy();
           // yadcf.removeFilters(table);
-          table.parent().html('<table class="table browser-table display table-bordered" width="100%"><thead></thead><tbody></tbody></table>');
+          table.parent().html('<table class="browser-table compact cell-border" width="2000px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody></tbody></table>');
           var table = $(selector + " .browser-table");
           // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
           var tbody = table.find('tbody'); 
@@ -2990,25 +2990,34 @@
                           <th>Type(s)</th> \
                           <th>Class Seq Cons(%)</th> \
                           <th>Ca distance</th> \
-                          <th colspan="2">Ca distance from 7TM<br>axis</th> \
-                          <th colspan="2">Backbone<br>Rotation</th> \
-                          <th colspan="2">Residue<br>Rotamer</th> \
+                          <th colspan="2">Ca distance from<br> 7TM axis</th> \
+                          <th colspan="2">Backbone Rotation</th> \
+                          <th colspan="2">Residue Rotamer</th> \
+                          <th colspan="2">Tau angle</th> \
+                          <th colspan="2">Phi dihedral</th> \
+                          <th colspan="2">Psi dihedral</th> \
                         </tr> \
                         <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
                           <th></th> \
-                          <th></th> \
-                          <th>Grp 1<br></th> \
-                          <th>Grp 2<br></th> \
-                          <th>Diff<br></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th>GN1-GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
+                          <th class="narrow_col">AA pairs</th> \
+                          <th class="narrow_col">Res1-Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             // two groups
@@ -3026,7 +3035,7 @@
               var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
               var diff_sfreq = sfreq1-sfreq2;
               var class_seq_cons = v['class_seq_cons'];
-              var types = v['types'];
+              var types = v['types'].join(",<br>");
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
               var distance = v['distance'];
@@ -3034,20 +3043,26 @@
               var angles_2 = v['angles'][1];
               tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
-                      <td>${seg1}-${seg2}</td>
-                      <td>${gn1}-${gn2}</td>
-                      <td>${sfreq1}</td>
-                      <td>${sfreq2}</td>
-                      <td>${diff_sfreq}</td>
+                      <td class="dt-center">${seg1}-${seg2}</td>
+                      <td class="dt-center">${gn1}-${gn2}</td>
+                      <td class="narrow_col">${sfreq1}</td>
+                      <td class="narrow_col">${sfreq2}</td>
+                      <td class="narrow_col">${diff_sfreq}</td>
                       <td>${types}</td>
-                      <td>${class_seq_cons}</td>
-                      <td>${distance}</td>
-                      <td>${angles_1[0]}</td>
-                      <td>${angles_2[0]}</td>
-                      <td>${angles_1[1]}</td>
-                      <td>${angles_2[1]}</td>
-                      <td>${angles_1[2]}</td>
-                      <td>${angles_2[2]}</td>
+                      <td class="narrow_col">${class_seq_cons}</td>
+                      <td class="narrow_col">${distance}</td>
+                      <td class="narrow_col">${angles_1[0]}</td>
+                      <td class="narrow_col">${angles_2[0]}</td>
+                      <td class="narrow_col">${angles_1[1]}</td>
+                      <td class="narrow_col">${angles_2[1]}</td>
+                      <td class="narrow_col">${angles_1[2]}</td>
+                      <td class="narrow_col">${angles_2[2]}</td>
+                      <td class="narrow_col">${angles_1[3]}</td>
+                      <td class="narrow_col">${angles_2[3]}</td>
+                      <td class="narrow_col">${angles_1[4]}</td>
+                      <td class="narrow_col">${angles_2[4]}</td>
+                      <td class="narrow_col">${angles_1[5]}</td>
+                      <td class="narrow_col">${angles_2[5]}</td>
                     </tr>`;
               tbody.append(tr);
             }); 
@@ -3062,20 +3077,29 @@
                           <th colspan="2">Ca distance from 7TM<br>axis</th> \
                           <th colspan="2">Backbone<br>Rotation</th> \
                           <th colspan="2">Residue<br>Rotamer</th> \
+                          <th colspan="2">Tau angle</th> \
+                          <th colspan="2">Phi dihedral</th> \
+                          <th colspan="2">Psi dihedral</th> \
                         </tr> \
                         <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="narrow_col"></th> \
                           <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th>GN1-GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
+                          <th class="narrow_col">AA pairs</th> \
+                          <th class="narrow_col">Res1-Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             var proteins = data['proteins'].length
@@ -3085,7 +3109,7 @@
               var gn2 = i.split(",")[1]
               var pfreq = Math.round(100*v['proteins'].length / proteins);
               var sfreq = Math.round(100*v['pdbs'].length / pdbs);
-              var types = v['types'];
+              var types = v['types'].join(",<br>");
               var class_seq_cons = v['class_seq_cons'];
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
@@ -3094,18 +3118,24 @@
               var angles_2 = v['angles'][1];
               tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
-                      <td>${seg1}-${seg2}</td>
-                      <td>${gn1}-${gn2}</td>
-                      <td>${sfreq}</td>
+                      <td class="dt-center">${seg1}-${seg2}</td>
+                      <td class="dt-center">${gn1}-${gn2}</td>
+                      <td class="narrow_col">${sfreq}</td>
                       <td>${types}</td>
-                      <td>${class_seq_cons}</td>
-                      <td>${distance}</td>
-                      <td>${angles_1[0]}</td>
-                      <td>${angles_2[0]}</td>
-                      <td>${angles_1[1]}</td>
-                      <td>${angles_2[1]}</td>
-                      <td>${angles_1[2]}</td>
-                      <td>${angles_2[2]}</td>
+                      <td class="narrow_col">${class_seq_cons}</td>
+                      <td class="narrow_col">${distance}</td>
+                      <td class="narrow_col">${angles_1[0]}</td>
+                      <td class="narrow_col">${angles_2[0]}</td>
+                      <td class="narrow_col">${angles_1[1]}</td>
+                      <td class="narrow_col">${angles_2[1]}</td>
+                      <td class="narrow_col">${angles_1[2]}</td>
+                      <td class="narrow_col">${angles_2[2]}</td>
+                      <td class="narrow_col">${angles_1[3]}</td>
+                      <td class="narrow_col">${angles_2[3]}</td>
+                      <td class="narrow_col">${angles_1[4]}</td>
+                      <td class="narrow_col">${angles_2[4]}</td>
+                      <td class="narrow_col">${angles_1[5]}</td>
+                      <td class="narrow_col">${angles_2[5]}</td>
                     </tr>`;
               tbody.append(tr);
             });
@@ -3120,20 +3150,29 @@
                           <th colspan="2">Ca distance from 7TM axis</th> \
                           <th colspan="2">Backbone<br>Rotation</th> \
                           <th colspan="2">Residue<br>Rotamer</th> \
+                          <th colspan="2">Tau angle</th> \
+                          <th colspan="2">Phi dihedral</th> \
+                          <th colspan="2">Psi dihedral</th> \
                         </tr> \
                         <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
                           <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th>GN1-GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
+                          <th class="narrow_col">AA pairs</th> \
+                          <th class="narrow_col">Res1-Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             $.each(data['interactions'], function (i, v) {
@@ -3141,7 +3180,7 @@
               var gn2 = i.split(",")[1]
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
-              var types = v['types'];
+              var types = v['types'].join(",<br>");
               var pos1 = v['seq_pos'][0];
               var pos2 = v['seq_pos'][1];
               var class_seq_cons = v['class_seq_cons'];
@@ -3152,18 +3191,24 @@
               var angles_2 = v['angles'][1];
               tr = `
                     <tr class="clickable-row filter_rows" id="${pos1},${pos2}">
-                      <td>${seg1}-${seg2}</td>
-                      <td><span>${pos1}</span>-<span>${pos2}</span></td>
-                      <td>${gn1}-${gn2}</td>
+                      <td class="dt-center">${seg1}-${seg2}</td>
+                      <td class="dt-center"><span>${pos1}</span>-<span>${pos2}</span></td>
+                      <td class="dt-center">${gn1}-${gn2}</td>
                       <td>${types}</td>
-                      <td>${class_seq_cons}</td>
-                      <td>${distance}</td>
-                      <td>${angles_1[0]}</td>
-                      <td>${angles_2[0]}</td>
-                      <td>${angles_1[1]}</td>
-                      <td>${angles_2[1]}</td>
-                      <td>${angles_1[2]}</td>
-                      <td>${angles_2[2]}</td>
+                      <td class="narrow_col">${class_seq_cons}</td>
+                      <td class="narrow_col">${distance}</td>
+                      <td class="narrow_col">${angles_1[0]}</td>
+                      <td class="narrow_col">${angles_2[0]}</td>
+                      <td class="narrow_col">${angles_1[1]}</td>
+                      <td class="narrow_col">${angles_2[1]}</td>
+                      <td class="narrow_col">${angles_1[2]}</td>
+                      <td class="narrow_col">${angles_2[2]}</td>
+                      <td class="narrow_col">${angles_1[3]}</td>
+                      <td class="narrow_col">${angles_2[3]}</td>
+                      <td class="narrow_col">${angles_1[4]}</td>
+                      <td class="narrow_col">${angles_2[4]}</td>
+                      <td class="narrow_col">${angles_1[5]}</td>
+                      <td class="narrow_col">${angles_2[5]}</td>
                     </tr>`;
               tbody.append(tr);
             });
@@ -3205,6 +3250,9 @@
                               column_number : 1,
                               filter_type: "multi_select",
                               select_type: 'select2',
+                              select_type_options: {
+                                  width: '60px'
+                              },
                               filter_default_label: "Res.",
                               text_data_delimiter: "-",
                               filter_reset_button_text: false,
@@ -3282,6 +3330,42 @@
                               filter_reset_button_text: false,
 
                           },
+                          {
+                              column_number : 14,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 15,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 16,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 17,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 18,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 19,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
                       ],
                       {
                           cumulative_filtering: false
@@ -3365,6 +3449,42 @@
                               filter_reset_button_text: false,
 
                           },
+                          {
+                              column_number : 12,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 13,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 14,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 15,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 16,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 17,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
                       ],
                       {
                           cumulative_filtering: false
@@ -3418,6 +3538,9 @@
                               filter_type: "multi_select",
                               select_type: 'select2',
                               // column_data_type: "html",
+                              select_type_options: {
+                                  width: '60px'
+                              },
                               html_data_type: "text",
                               text_data_delimiter: "-",
                               filter_default_label: "Res. No.",
@@ -3427,6 +3550,9 @@
                               column_number : 2,
                               filter_type: "multi_select",
                               select_type: 'select2',
+                              select_type_options: {
+                                  width: '60px'
+                              },
                               filter_default_label: "Res. Gn.",
                               text_data_delimiter: "-",
                               filter_reset_button_text: false,
@@ -3435,8 +3561,11 @@
                               column_number : 3,
                               filter_type: "multi_select",
                               select_type: 'select2',
+                              select_type_options: {
+                                  width: '60px'
+                              },
                               filter_default_label: "Type",
-                              text_data_delimiter: ",",
+                              text_data_delimiter: ",<br>",
                               filter_reset_button_text: false,
                           },
                           {
@@ -3484,6 +3613,42 @@
                               column_number : 11,
                               filter_type: "range_number",
                               filter_reset_button_text: false,
+                          },
+                          {
+                              column_number : 12,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 13,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 14,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 15,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 16,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 17,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
                           },
                       ],
                       {
@@ -5396,12 +5561,34 @@
             border-top: 0px;
         }
         .yadcf-filter-range {
-            width: 50px;
+            width: 30px;
         }
 
         .yadcf-filter {
             /*display: flex;*/
             width: 100px;
+        }
+
+        .browser-table td.narrow_col {
+            text-align: right;
+            padding-right: 30px !important;
+        }
+
+        .browser-table th.dt-center .select2-container {
+          margin: 0 auto;
+        }
+
+        .browser-table th.narrow_col {
+            width:75px;
+        }
+
+        .contact-browser div.dataTables_wrapper {
+          margin: 0 auto;
+          width: 2030px;
+        }
+
+        .contact-browser div.dataTables_scrollHeadInner {
+          margin: 0 auto;
         }
 
         #filters{
