@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q, F, Prefetch, Avg, Variance
+from django.db.models import Q, F, Prefetch, Avg, StdDev
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 from django.db import connection
@@ -819,9 +819,14 @@ def InteractionBrowserData(request):
                 data['interactions'][coord]['distance'] = distance_diff
         else:
             group_distances = {}
-            ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
-                                .values('gns_pair') \
-                                .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+            if (len(data['pdbs'])==1):
+                ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
+                                    .values('gns_pair') \
+                                    .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+            else:
+                ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
+                                    .values('gns_pair') \
+                                    .annotate(mean = StdDev('distance')).values_list('gns_pair','mean'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
                 group_distances[d[0]] = d[1]/100
@@ -871,7 +876,7 @@ def InteractionBrowserData(request):
                             gn1_values.append(round(v-group_2_angles[gn1][i],1))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn1_values.append("-")
+                            gn1_values.append("")
 
                 gn2_values = ['','','','','','']
                 if gn2 in group_1_angles and gn2 in group_2_angles:
@@ -881,7 +886,7 @@ def InteractionBrowserData(request):
                             gn2_values.append(round(v-group_2_angles[gn2][i],1))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn2_values.append("-")
+                            gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
         else:
             group_angles = {}
@@ -894,12 +899,12 @@ def InteractionBrowserData(request):
                                           tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi')) \
                                 .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
             else:
-                # A group, get variance
+                # A group, get StdDev
                 ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Variance('a_angle'),outer_angle = Variance('outer_angle'),core_distance = Variance('core_distance'), \
-                                          tau = Variance('tau'), phi = Variance('phi'), psi = Variance('psi')) \
+                                .annotate(a_angle = StdDev('a_angle'),outer_angle = StdDev('outer_angle'),core_distance = StdDev('core_distance'), \
+                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi')) \
                                 .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
@@ -917,7 +922,7 @@ def InteractionBrowserData(request):
                             gn1_values.append("{:.1f}".format(v))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn1_values.append("-")
+                            gn1_values.append("")
 
                 gn2_values = ['','','','','','']
                 if gn2 in group_angles:
@@ -927,7 +932,7 @@ def InteractionBrowserData(request):
                             gn2_values.append("{:.1f}".format(v))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn2_values.append("-")
+                            gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
         
 
