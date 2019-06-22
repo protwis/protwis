@@ -88,14 +88,69 @@
                     <div class="col-md-1">
                     </div>
                 </div>
-                <ul class="nav nav-tabs">
+
+                <div class="row" style='height:500px'>
+                  <div class="col-md-4">
+                     <div class="panel panel-default" id="single_1">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Select plot</h3>
+                            <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                          </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="plot-container none">
+                            </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-md-4">
+                     <div class="panel panel-default" id="single_2">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Select plot</h3>
+                          <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                          </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="plot-container none">
+                            </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-md-4">
+                     <div class="panel panel-default" id="single_3">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Select plot</h3>
+                            <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                          </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="plot-container none">
+                            </div>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+
+                <ul class="nav nav-tabs hidden">
                   <li class="active"><a href="#single-matrix-tab" data-toggle="tab" class='matrix-tab' id="single-matrix-tab-link">Matrix</a></li>
                   <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
                   <li><a href="#single-hiveplot-tab" data-toggle="tab" id="single-hiveplot-tab-link">Hiveplot</a></li>
                   <li><a href="#single-schematic_con-tab" data-toggle="tab" id="single-schematic_con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-schematic_non-tab" data-toggle="tab" id="single-schematic_non-tab-link">2D Schematic (Non)</a></li>
                 </ul>
-                <div class="row">
+                <div class="row hidden">
                   <div class="col-md-7 tab-content">
                       <div class="tab-pane active" id="single-matrix-tab">
                            <div class="panel panel-default no-top-border">
@@ -676,7 +731,7 @@
                 </div>
 
                 <div class="row">
-                      <div class="col-md-12  contact-browser" >
+                      <div class="col-md-12  contact-browser"  id="two-groups-primary-browser">
                            <div class="panel panel-default">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Contact Browser</h3>
@@ -1371,6 +1426,7 @@
             $(heatMapSelector + ' .heatmap').empty();
             var heatmap = Snap(heatMapSelector + ' .heatmap');
             var heatmap_id = $(heatMapSelector + ' .heatmap').attr("id");
+            console.log('ID is',heatmap_id,'from',heatMapSelector);
 
             if (data.length == 3) {
               data1 = data[0];
@@ -3926,6 +3982,55 @@
             });
         }
 
+        function generate_display_options() {
+
+          options = [ ['heatmap','Matrix of interactions'], ['flareplot','Flare Plot'], ['ngl','3D view'], ['schematic_non','Schematic (Non-consecutive)'], ['schematic_con','Schematic (Consecutive)'],];
+
+          dropdown_html = '<div class="dropdown" style="display: inline;"> \
+                          <button class="btn btn-xs btn-primary dropdown-toggle" type="button" data-toggle="dropdown"> \
+                          Select plot \
+                          <span class="caret"></span></button><ul class="dropdown-menu">';
+          options.forEach(function(opt) {
+            dropdown_html += '<li><a class="plot_selection" href="#" plot_type="'+opt[0]+'">'+opt[1]+'</a></li>'
+          });
+          dropdown_html += '</ul></div>';
+          $('.plot-select').each( function (e) {
+            $(this).html(dropdown_html);
+          });
+          $('.plot_selection').click(function() {
+              var mode = $('.contact-browser:visible').attr('id').replace("-primary-browser","");
+              plot_type = $(this).attr('plot_type');
+              plot_div = $(this).closest('.panel');
+              plot_id = plot_div.attr('id');
+              // Delete whatever is already there
+              plot_div.find('.plot-container').html('');
+              console.log("SET UP PLOT",plot_type,plot_div,plot_id,mode);
+              switch (plot_type) {
+                case "ngl":
+                    var pdb = JSON.parse($('.main_option:visible .crystal-pdb').val());
+                    plot_div.find('.plot-container').removeClass('none');
+                    plot_div.find('.plot-container').addClass('ngl-container');
+                    plot_div.find('.plot-container').attr('id','ngl-'+plot_id);
+                    plot_div.find('.plot-container').attr('style','margin: auto; width: 100%; height: 500px; overflow: hidden;');
+                    createNGLview(plot_id,pdb[0]);
+                    break;
+                case "heatmap":
+                    plot_div.find('.plot-container').removeClass('none');
+                    plot_div.find('.plot-container').addClass('heatmap-container');
+                    plot_div.find('.plot-container').attr('id',plot_id);
+                    plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-'+plot_id+'" style="height: 500px;"></svg>');
+
+                    renderHeatmap(raw_data, '#'+plot_id);
+                    break;
+                case "flareplot":
+                    plot_div.find('.plot-container').removeClass('none');
+                    plot_div.find('.plot-container').addClass('flareplot-container');
+                    plot_div.find('.plot-container').attr('id','flareplot-'+plot_id);
+                    createFlareplotBox(raw_data, '#flareplot-'+plot_id);
+              }
+          });
+        }
+        var raw_data = ''
         function loadPDBsView(pdb, selector, heatmapFunction, generic) {
           $(".main_loading_overlay").show();
           //var segments = JSON.parse($(selector + ' .segments-input').val());
@@ -3952,6 +4057,7 @@
                   }, 
                   async: true, 
                   success:  function(data){
+                    raw_data = data;
                     console.log('gotten visual info')
                     // Re-render heatmap
                     $(".heatmap").show();
@@ -3992,6 +4098,7 @@
                     // Re-render heatmap
                     data_browser = data;
                     renderBrowser(data);
+                    generate_display_options();
                     console.log('gotten browser info')
                   }
               });
@@ -4766,8 +4873,8 @@
 
                             reps[mode][1].ball_int_gn = o.addRepresentation("ball+stick", {
                               sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
-                              color: "element",
-                              colorValue: "#dda8bc",
+                              color: "element",</span>
+                              colorValue: "#dda8b</span>c",
                               visible: false
                             })*/
 
@@ -5616,6 +5723,10 @@
 
         .contact-browser div.dataTables_scrollHeadInner {
           margin: 0 auto;
+        }
+
+        .plot-container {
+          height: 500px;
         }
 
         #filters{
