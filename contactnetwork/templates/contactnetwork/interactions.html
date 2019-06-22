@@ -3214,15 +3214,43 @@
             });
           }
 
-          table.on('click', '.clickable-row', function(event) {
-            if($(this).hasClass('active')){
-              $(this).removeClass('active'); 
-              $(selector + " .secondary-table").find('tbody').empty();
-            } else {
-              $(this).addClass('active').siblings().removeClass('active');
-              renderSecondary($(this).attr('id'))
-            }
+          // table.on('click', '.clickable-row', function(event) {
+          //   if($(this).hasClass('active')){
+          //     $(this).removeClass('active'); 
+          //     $(selector + " .secondary-table").find('tbody').empty();
+          //   } else {
+          //     $(this).addClass('active').siblings().removeClass('active');
+          //     renderSecondary($(this).attr('id'))
+          //   }
+          // });
+
+          // Create grey scale of values.
+          var cols = []
+          var trs = table.find("tbody tr")
+          var maxmin_data =$.each(trs , function(index, tr){
+            $.each($(tr).find("td").not(":first"), function(index, td){
+              cols[index] = cols[index] || [];
+              cols[index].push($(td).text())
+            })
           });
+          cols.forEach(function(col, index){
+            var max = Math.max.apply(null, col);
+            var min = Math.min.apply(null, col);
+            if (!(isNaN(max) || isNaN(min))) {
+              trs.find('td:eq('+(index+1)+')').each(function(i, td){
+                value = parseFloat($(td).text());
+                if (!(isNaN(value))) {
+                  scale = 1-(value-min)/(max-min);
+                  frequency = 0.5-(scale/-2.1)*.5;
+                  frequency = 0.5-scale*.5;
+                  // console.log(value,min,max,scale,frequency);
+                  var rgb = { r: 255-frequency*255, g: 255-frequency*255, b: 255-frequency*255 };
+                  var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+                  $(td).attr('bgcolor',hex);
+                }
+              })
+            }
+          })
 
           btable = table.DataTable({
                 'scrollX': true,
@@ -5265,7 +5293,6 @@
                         var pair = $(this).data("gen-no-1") + "," + $(this).data("gen-no-2");
                         var pair_reverse = $(this).data("gen-no-2") + "," + $(this).data("gen-no-1");
                         if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
-                            console.log("show",pair);
                             $(this).show();
                         } else {
                             $(this).hide();
