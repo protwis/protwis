@@ -948,13 +948,14 @@ window.zoomHeatmap = {};
           var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
           console.log('GOT DATA',selector);
           var table = $(selector + " .browser-table");
-
           // reset tbody
           table.prop("onclick", null).off("click");
 
           // var tbody = table.find('tbody'); 
           // tbody.empty();
-          table.DataTable().destroy();
+          if ($.fn.DataTable.isDataTable(selector + " .browser-table")) {
+            table.DataTable().destroy();
+          }
           // yadcf.removeFilters(table);
           table.parent().html('<table class="browser-table compact cell-border" width="2000px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody></tbody></table>');
           var table = $(selector + " .browser-table");
