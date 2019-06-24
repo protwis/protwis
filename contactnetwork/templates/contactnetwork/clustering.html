@@ -58,7 +58,7 @@
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                   <span class="pull-right glyphicon glyphicon-download btn-download"></span>
                                   <span class="pull-right glyphicon glyphicon-download-alt btn-download-alt"></span> <!-- Use this one for figure downloads? -->
-                                  <span class="pull-right glyphicon glyphicon-camera btn-camera"></span> <!-- Use this one for PNG figure downloads? -->
+                                  <span class="pull-right glyphicon glyphicon-picture btn-camera"></span> <!-- Use this one for PNG figure downloads? -->
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -236,7 +236,7 @@
             .radial(true)
             .node_span ('equal')
             .size([800, 800])
-            .separation (function (a,b) {return 1;});
+            //.separation (function (a,b) {return 1;});
 
 
             // DRAW
@@ -598,8 +598,9 @@
 
                     var labelName
                     if (displayName == 1) {
-                      labelName = treeAnnotations[node.name][2].replace("receptor", "")
                       // fix italics and subscript annotations
+                      labelName = treeAnnotations[node.name][2].replace(new RegExp(" receptor$"), "")
+
                       labelName = labelName.replace("<sub>", '<tspan baseline-shift = "sub">')
                       labelName = labelName.replace("</sub>", '</tspan>')
                       labelName = labelName.replace("<i>", '<tspan font-style = "italic">')
@@ -741,7 +742,6 @@
   //                    var scale = 0.8
                       /*var nodeNameMeasure = label.innerHTML.replace(/(<([^>]+)>)/ig,"");
                       var move_past_label_rect = label.getBBox().width*1.05 + font_size*/
-                      console.log("MAX " + maxLeafnode)
                       var move_past_label_rect = maxLeafnode;
 
                       // add blocks
