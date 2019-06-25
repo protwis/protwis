@@ -32,11 +32,6 @@ AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
 
 class Command(BaseBuild):
 	def add_arguments(self, parser):
-		parser.add_argument('--filename', action='append', dest='filename',
-							help='Filename to import. Can be used multiple times')
-		parser.add_argument('--wt', default=False, type=str, help='Add wild type protein sequence to data')
-		parser.add_argument('--xtal', default=False, type=str, help='Add xtal to data')
-		parser.add_argument('--build_datafile', default=False, action='store_true', help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
 		parser.add_argument('--purge', default=False, action='store_true', help='Purge G protein structures from database')
 
 	def handle(self, *args, **options):
@@ -175,6 +170,7 @@ class Command(BaseBuild):
 					bulked_residues.append(res_obj)
 				Residue.objects.bulk_create(bulked_residues)
 				self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} is finished'.format(sc))
-			except:
+			except Exception as msg:
 				print('Protein, ProteinConformation and Residue build for alpha subunit of {} has failed'.format(sc))
+				print(msg)
 				self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} has failed'.format(sc))

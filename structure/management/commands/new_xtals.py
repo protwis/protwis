@@ -52,7 +52,7 @@ class Command(BaseBuild):
             uniprot_list = self.uniprots[positions[0]:]
         else:
             uniprot_list = self.uniprots[positions[0]:positions[1]]
-
+        uniprot_list = ['smo_human']
         q = QueryPDB(self.uniprots, self.yamls)
         for uni in uniprot_list:
             q.new_xtals(uni)
@@ -92,6 +92,7 @@ class QueryPDB():
         ''' List GPCR crystal structures missing from GPCRdb and the yaml files. Adds missing structures to DB.
         '''
         structs = self.pdb_request_by_uniprot(uniprot)
+        structs = ['6OT0']
         try:
             protein = Protein.objects.get(accession=uniprot)
         except:
