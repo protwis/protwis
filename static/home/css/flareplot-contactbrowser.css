@@ -1,4 +1,4 @@
-.select2-result-label{
+        .select2-result-label{
             font-size:x-small;
             font-size: 10px;
         }
@@ -15,16 +15,16 @@
             width: 100px;
         }
 
-        .browser-table td.narrow_col {
+        .contact-browser td.narrow_col {
             text-align: right;
             padding-right: 30px !important;
         }
 
-        .browser-table th.dt-center .select2-container {
+        .contact-browser th.dt-center .select2-container {
           margin: 0 auto;
         }
 
-        .browser-table th.narrow_col {
+        .contact-browser th.narrow_col {
             width:75px;
         }
 
@@ -35,6 +35,11 @@
 
         .contact-browser div.dataTables_scrollHeadInner {
           margin: 0 auto;
+        }
+
+        .contact-browser .yadcf-filter-range {
+            min-width: 41px;
+            padding-left: 2px;
         }
 
         .plot-container {
@@ -76,7 +81,7 @@
             }
         }
 
-.nav-tabs {
+        .nav-tabs {
             border-bottom: 0px solid #ddd;
         }
         .nav>li>a {

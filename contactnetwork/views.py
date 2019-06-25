@@ -847,8 +847,8 @@ def InteractionBrowserData(request):
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
                                 .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
                 group_1_angles[d[0]] = d[1:]
@@ -858,8 +858,8 @@ def InteractionBrowserData(request):
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
                                 .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
                 group_2_angles[d[0]] = d[1:]
@@ -868,7 +868,7 @@ def InteractionBrowserData(request):
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
 
-                gn1_values = ['','','','','','']
+                gn1_values = [''] * 9
                 if gn1 in group_1_angles and gn1 in group_2_angles:
                     gn1_values = []
                     for i,v in enumerate(group_1_angles[gn1]):
@@ -878,7 +878,7 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn1_values.append("")
 
-                gn2_values = ['','','','','','']
+                gn2_values = [''] * 9
                 if gn2 in group_1_angles and gn2 in group_2_angles:
                     gn2_values = []
                     for i,v in enumerate(group_1_angles[gn2]):
@@ -895,17 +895,17 @@ def InteractionBrowserData(request):
                 ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'),outer_angle = Avg('outer_angle'),core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
+                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
             else:
                 # A group, get StdDev
                 ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = StdDev('a_angle'),outer_angle = StdDev('outer_angle'),core_distance = StdDev('core_distance'), \
-                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
+                                .annotate(a_angle = StdDev('a_angle'), outer_angle = StdDev('outer_angle'), core_distance = StdDev('core_distance'), \
+                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi'), sasa = StdDev('sasa'), rsa = StdDev('sasa'), theta = StdDev('theta'), hse = StdDev('hse')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
                 group_angles[d[0]] = d[1:]
@@ -914,7 +914,7 @@ def InteractionBrowserData(request):
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
 
-                gn1_values = ['','','','','','']
+                gn1_values = [''] * 9
                 if gn1 in group_angles:
                     gn1_values = []
                     for i,v in enumerate(group_angles[gn1]):
@@ -924,7 +924,7 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn1_values.append("")
 
-                gn2_values = ['','','','','','']
+                gn2_values = [''] * 9
                 if gn2 in group_angles:
                     gn2_values = []
                     for i,v in enumerate(group_angles[gn2]):

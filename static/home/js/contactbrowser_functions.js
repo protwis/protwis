@@ -947,36 +947,42 @@ window.zoomHeatmap = {};
         function renderBrowser(data) {
           var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
           console.log('GOT DATA',selector);
-          var table = $(selector + " .browser-table");
-          // reset tbody
-          table.prop("onclick", null).off("click");
-
-          // var tbody = table.find('tbody'); 
-          // tbody.empty();
-          if ($.fn.DataTable.isDataTable(selector + " .browser-table")) {
+          var table = $(selector + " .browser-table-1");
+          if ($.fn.DataTable.isDataTable(selector + " .browser-table-1")) {
             table.DataTable().destroy();
           }
-          // yadcf.removeFilters(table);
-          table.parent().html('<table class="browser-table compact cell-border" width="2000px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody></tbody></table>');
-          var table = $(selector + " .browser-table");
+          table.parent().html('<table class="browser-table-1 compact cell-border" style3="max-width: 2000px !important; width: 2000px !important" width2="2500px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody></tbody></table>');
+          var table = $(selector + " .browser-table-1");
           // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
-          var tbody = table.find('tbody'); 
-          // table.DataTable().clear();
+          var tbody = table.find('tbody');
           if (data['proteins2']) {
 
+                          // <th colspan="2">Ca distance from<br> 7TM axis</th> \
+                          // <th colspan="2">Backbone Rotation</th> \
+                          // <th colspan="2">Residue Rotamer</th> \
+                          // <th colspan="2">Tau angle</th> \
+                          // <th colspan="2">Phi dihedral</th> \
+                          // <th colspan="2">Psi dihedral</th> \
             thead =  '<tr> \
-                          <th colspan="1">Segment</th> \
-                          <th colspan="1">Generic No</th> \
-                          <th colspan="3"> Frequency (%)</th> \
-                          <th>Type(s)</th> \
-                          <th>Class Seq Cons(%)</th> \
-                          <th>Ca distance</th> \
-                          <th colspan="2">Ca distance from<br> 7TM axis</th> \
-                          <th colspan="2">Backbone Rotation</th> \
-                          <th colspan="2">Residue Rotamer</th> \
-                          <th colspan="2">Tau angle</th> \
-                          <th colspan="2">Phi dihedral</th> \
-                          <th colspan="2">Psi dihedral</th> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="3" rowspan="2"> Frequency (%)</th> \
+                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
+                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="2" rowspan="2">Position presence %</th> \
+                          <th colspan="4">Secondary structure</th> \
+                          <th rowspan="2">Class Seq Cons(%)</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="2">Distance</th> \
+                          <th colspan="2">Rotation (Ca angle)</th> \
+                          <th colspan="2">Rotamer</th> \
+                          <th colspan="2">SASA</th> \
+                          <th colspan="2">RSA</th> \
+                          <th colspan="2">Consensus SS</th> \
+                          <th colspan="2">Frequency %</th> \
                         </tr> \
                         <tr> \
                           <th class="dt-center"></th> \
@@ -985,20 +991,24 @@ window.zoomHeatmap = {};
                           <th class="narrow_col">Set 2<br></th> \
                           <th class="narrow_col">Diff<br></th> \
                           <th></th> \
+                          <th class="narrow_col">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">AA pairs</th> \
-                          <th class="narrow_col">Res1-Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             // two groups
@@ -1022,6 +1032,16 @@ window.zoomHeatmap = {};
               var distance = v['distance'];
               var angles_1 = v['angles'][0];
               var angles_2 = v['angles'][1];
+              // 0 'core_distance',
+              // 1 'a_angle',
+              // 2 'outer_angle',
+              // 3 'tau',
+              // 4 'phi',
+              // 5 'psi', 
+              // 6 'sasa',
+              // 7 'rsa',
+              // 8 'theta',
+              // 9 'hse'
               tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
@@ -1030,20 +1050,24 @@ window.zoomHeatmap = {};
                       <td class="narrow_col">${sfreq2}</td>
                       <td class="narrow_col">${diff_sfreq}</td>
                       <td>${types}</td>
-                      <td class="narrow_col">${class_seq_cons}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col">${angles_1[0]}</td>
-                      <td class="narrow_col">${angles_2[0]}</td>
-                      <td class="narrow_col">${angles_1[1]}</td>
-                      <td class="narrow_col">${angles_2[1]}</td>
-                      <td class="narrow_col">${angles_1[2]}</td>
-                      <td class="narrow_col">${angles_2[2]}</td>
-                      <td class="narrow_col">${angles_1[3]}</td>
-                      <td class="narrow_col">${angles_2[3]}</td>
-                      <td class="narrow_col">${angles_1[4]}</td>
-                      <td class="narrow_col">${angles_2[4]}</td>
-                      <td class="narrow_col">${angles_1[5]}</td>
-                      <td class="narrow_col">${angles_2[5]}</td>
+                      <td class="narrow_col core_distance">${angles_1[0]}</td>
+                      <td class="narrow_col core_distance">${angles_2[0]}</td>
+                      <td class="narrow_col a_angle">${angles_1[1]}</td>
+                      <td class="narrow_col a_angle">${angles_2[1]}</td>
+                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
+                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
+                      <td class="narrow_col sasa">${angles_1[6]}</td>
+                      <td class="narrow_col sasa">${angles_2[6]}</td>
+                      <td class="narrow_col rsa">${angles_1[7]}</td>
+                      <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
               tbody.append(tr);
             }); 
@@ -1233,6 +1257,14 @@ window.zoomHeatmap = {};
             }
           })
 
+          list_narrow_cols = [];
+          if (data['proteins2']) {
+            var start_column = 6;
+            var end_column = 6+17;
+            list_narrow_cols = Array(end_column - start_column + 1).fill().map((_, idx) => start_column + idx)
+            list_narrow_cols = [2,3,4].concat(list_narrow_cols);
+          }
+
           btable = table.DataTable({
                 'scrollX': true,
                 // 'paging': true,
@@ -1242,10 +1274,26 @@ window.zoomHeatmap = {};
                 // scrollCollapse: true,
                 paging:         false,
                 "order": [],
-                columnDefs: [ { type: "string", targets: 1 } ]
+                columnDefs: [ { type: "string", targets: 1 },
+                              { "width": "40px", "targets": list_narrow_cols } ]
               });
 
           if (data['proteins2']) {
+
+            from_to = { filter_type: "range_number", filter_reset_button_text: false};
+            repeat_number = 18 // 8 sets of pos1,pos2 -- double the columns
+
+            var start_column = 6
+            repeated_from_to = []
+            for (i = start_column; i < start_column+repeat_number; i++) { 
+              // var column_info = from_to.slice(0);
+              var column_info = Object.assign({}, from_to);
+              column_info['column_number'] = i;
+              repeated_from_to.push(column_info);
+            }
+            console.log(repeated_from_to);
+            
+
             yadcf.init(btable,
                       [
                           {
@@ -1288,94 +1336,9 @@ window.zoomHeatmap = {};
                               filter_type: "multi_select",
                               select_type: 'select2',
                               filter_default_label: "Type",
-                              text_data_delimiter: ",",
+                              text_data_delimiter: ",<br>",
                               filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 6,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 7,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 8,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 9,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 10,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 11,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 12,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 13,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 14,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 15,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 16,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 17,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 18,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 19,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                      ],
+                          }].concat(repeated_from_to),
                       {
                           cumulative_filtering: false
                       }
@@ -1409,7 +1372,7 @@ window.zoomHeatmap = {};
                               filter_type: "multi_select",
                               select_type: 'select2',
                               filter_default_label: "Type",
-                              text_data_delimiter: ",",
+                              text_data_delimiter: ",<br>",
                               filter_reset_button_text: false,
                           },
                           {
@@ -1669,6 +1632,7 @@ window.zoomHeatmap = {};
           btable.on('draw.dt', function(e, oSettings) {
               filter_browser();
           });
+          btable.columns.adjust().draw();
 
         }
 
@@ -1692,6 +1656,16 @@ window.zoomHeatmap = {};
 
 
           $('div.dataTables_scrollBody:visible').height('50vh');
+
+          // Make sure browser-tables are not too wide.
+          browser_table_div_width = $('.contact-browser:visible').width();
+          if (browser_table_div_width>2060) {
+            browser_table_width = 2030;
+          } else {
+            browser_table_width =  browser_table_div_width-30;
+          }
+          $('.contact-browser .dataTables_wrapper').width(browser_table_width);
+          console.log(browser_table_div_width,browser_table_width);
 
           var width_svg = visible_svg.width();
 
