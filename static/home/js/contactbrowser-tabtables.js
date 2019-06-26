@@ -140,7 +140,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             filter_default_label: "Type",
-                            text_data_delimiter: ",<br>",
+                            text_data_delimiter: "|",
                             filter_reset_button_text: false,
                         }
                     ].concat(repeated_from_to), {
@@ -175,7 +175,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             filter_default_label: "Type",
-                            text_data_delimiter: ",<br>",
+                            text_data_delimiter: "|",
                             filter_reset_button_text: false,
                         },
                         {
@@ -338,7 +338,7 @@ function renderDataTablesYadcf(element) {
                                 width: '60px'
                             },
                             filter_default_label: "Type",
-                            text_data_delimiter: ",<br>",
+                            text_data_delimiter: "|",
                             filter_reset_button_text: false,
                         },
                         {
@@ -519,7 +519,7 @@ function renderDataTablesYadcf(element) {
                             width: '60px'
                         },
                         filter_default_label: "Type",
-                        text_data_delimiter: ",<br>",
+                        text_data_delimiter: "|",
                         filter_reset_button_text: false,
                     }]).concat(repeated_from_to_3), {
                         cumulative_filtering: false
@@ -546,6 +546,7 @@ function renderDataTablesYadcf(element) {
     console.timeEnd("renderDataTablesYadcf");
 }
 
+const types_to_short = {'ionic':'Ion','aromatic':'Aro','polar':'Pol','hydrophobic':'Hyd','van-der-waals':'vDw'}
 function renderBrowser(data) {
     console.time("RenderBrowser");
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
@@ -628,7 +629,8 @@ function renderBrowser(data) {
             var sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
             var diff_sfreq = sfreq1 - sfreq2;
             var class_seq_cons = v['class_seq_cons'];
-            var types = v['types'].join(",<br>");
+            // var types = v['types'].join(",<br>");
+            const types = v['types'].map((t) => types_to_short[t]).join('|');
             var seg1 = data['segm_lookup'][gn1];
             var seg2 = data['segm_lookup'][gn2];
             var distance = v['distance'];
@@ -716,7 +718,7 @@ function renderBrowser(data) {
             var gn2 = i.split(",")[1]
             var pfreq = Math.round(100 * v['proteins'].length / proteins);
             var sfreq = Math.round(100 * v['pdbs'].length / pdbs);
-            var types = v['types'].join(",<br>");
+            const types = v['types'].map((t) => types_to_short[t]).join('|');
             var class_seq_cons = v['class_seq_cons'];
             var seg1 = data['segm_lookup'][gn1];
             var seg2 = data['segm_lookup'][gn2];
@@ -787,7 +789,7 @@ function renderBrowser(data) {
             var gn2 = i.split(",")[1]
             var seg1 = data['segm_lookup'][gn1];
             var seg2 = data['segm_lookup'][gn2];
-            var types = v['types'].join(",<br>");
+            const types = v['types'].map((t) => types_to_short[t]).join('|');
             var pos1 = v['seq_pos'][0];
             var pos2 = v['seq_pos'][1];
             var class_seq_cons = v['class_seq_cons'];
@@ -949,7 +951,7 @@ function renderBrowser_2(data) {
             var sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
             var diff_sfreq = sfreq1 - sfreq2;
             var class_seq_cons = v['class_seq_cons'];
-            var types = v2['types'].join(",<br>");
+            const types = v2['types'].map((t) => types_to_short[t]).join('|');
             var distance = v['distance'];
             var angles_1 = v2['angles'][0];
             var angles_2 = v2['angles'][1];
