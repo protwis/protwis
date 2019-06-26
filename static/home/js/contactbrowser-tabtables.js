@@ -1053,7 +1053,7 @@ function gray_scale_table(table) {
         var min = Math.min.apply(null, col);
         maxmin.push([max, min]);
     });
-    console.timeLog('Greyscale', 'Done Max Min', maxmin);
+    // console.timeLog('Greyscale', 'Done Max Min', maxmin);
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             c_maxmin = maxmin[j];
