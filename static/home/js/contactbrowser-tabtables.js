@@ -440,7 +440,7 @@ function renderDataTablesYadcf(element) {
             // Specify which columns are to be fixed to 40px
             list_narrow_cols = [];
             if (analys_mode == "#two-crystal-groups") {
-                list_narrow_cols = make_list_narrow_cols([2, 3, 4], 6, 6 + 17);
+                list_narrow_cols = make_list_narrow_cols([3, 4], 6, 6 + 17);
             }
 
             gray_scale_table(table);
@@ -487,7 +487,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '60px'
+                                width: '80px'
                             },
                             filter_default_label: "Pos",
                             text_data_delimiter: "-",
