@@ -77,8 +77,12 @@ function renderDataTablesYadcf(element) {
             btable = table.DataTable({
                 'scrollX': true,
                 scrollY: '50vh',
+                // "sDom": 't', // To disable the pages on the button..
                 paging: true,
-                pageLength: 100,
+                pageLength: 200,
+                "bLengthChange": false,
+                "bPaginate": false,
+                "bInfo": false,
                 "order": [],
                 columnDefs: [{
                         type: "string",
@@ -444,8 +448,12 @@ function renderDataTablesYadcf(element) {
             btable = table.DataTable({
                 'scrollX': true,
                 scrollY: '50vh',
+                // "sDom": 't', // To disable the pages on the button..
+                "bLengthChange": false,
+                "bPaginate": false,
+                "bInfo": false,
                 paging: true,
-                pageLength: 100,
+                pageLength: 200,
                 "order": [],
                 columnDefs: [{
                         type: "string",
