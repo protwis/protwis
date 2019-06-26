@@ -32,7 +32,7 @@ class WebLink(models.Model):
     # And now generating the working url is just a piece of cake
     def __str__(self):
         return Template(str(self.web_resource)).substitute(index=self.index)
-    
+
     class Meta():
         db_table = 'web_link'
         unique_together = ('web_resource', 'index')
@@ -60,17 +60,17 @@ class Publication(models.Model):
         logger = logging.getLogger('build')
         # should entrez be tried as a backup?
         try_entrez_on_fail = False
-        
+
         # check whether this data is cached
         cache_dir = ['crossref', 'doi']
         url = 'http://api.crossref.org/works/$index'
         pub = fetch_from_web_api(url, doi, cache_dir)
-                
+
         if pub:
             # update record
             try:
                 self.title = pub['message']['title'][0]
-                try: 
+                try:
                     self.year = pub['message']['created']['date-parts'][0][0]
                 except:
                     self.year = pub['message']['deposited']['date-parts'][0][0]
@@ -79,7 +79,7 @@ class Publication(models.Model):
                 authors = ['{} {}'.format(x['family'], ''.join([y[:1] for y in x['given'].split()]))
                     for x in pub['message']['author']]
                 self.authors = ', '.join(authors)
-            
+
                 # get volume and pages if available
                 reference = {}
                 fields = ['volume', 'page']
@@ -144,7 +144,7 @@ class Publication(models.Model):
                 j = PublicationJournal(slug=record['TA'], name=record['JT'])
                 j.save()
                 self.journal = j
-            
+
             self.reference = ""
             if 'VI' in record:
                 self.reference += record['VI']
@@ -198,4 +198,3 @@ class ReleaseStatisticsType(models.Model):
 
     class Meta():
         db_table = 'release_statistics_type'
-

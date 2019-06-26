@@ -11,11 +11,10 @@
   #content {
     width: 100%;
   }
-
   .yadcf-filter-range-date,
   .yadcf-filter-range-number {
     width: 30px;
-    /*font-family: sans-serif;*/
+    /*font-family: sans-serif;*/d
     font-size: 100%;
     /*font-weight: bold;*/
   }
@@ -23,6 +22,11 @@
 {% endblock %}
 {% block content %}
 <h2>Biased Ligands Browser</h2>
+
+<form action="#" method="get">
+ <input type="text" value="8" name="mytextbox" size="1"/>
+ <input type="submit" class="btn" value="Click" name="mybtn">
+</form>
 
 {% if data %}
 <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
@@ -231,11 +235,7 @@
     <tbody>
       {%for e in data.items%}
       <tr>
-        {%for ex in e.1.reference%}
-        {% if  forloop.first %}
-        <td style="text-align:center;">{{ex.reference_ligand}}</td>
-        {% endif %}
-        {%endfor%}
+        <td style="text-align:center;">{{e.1.reference_ligand}}</td>
         <td style="text-align:center;"> <a href='/ligand/{{e.1.ligand}}' target='blank'>{{e.1.ligand}}</td>
         <td style="text-align:center;">{{e.1.receptor.accession}}</td>
         <td style="text-align:center;">{{e.1.receptor.entry_name}}</td>
@@ -251,20 +251,15 @@
         <td style="text-align:center">{{e.1.family.gq.quantitive_efficacy}}</td>
         <td style="text-align:center">{{e.1.family.g12.quantitive_efficacy}}</td>
         <td style="text-align:center">{{e.1.family.br.quantitive_efficacy}}</td>
-        {%for ex in e.1.biasdata%}
+        {% for ex in e.1.biasdata%}
+
         {% if  forloop.first %}
-        <td style="  text-align:center;
-          width: 18%;
-          word-wrap: break-word;
-          word-break: break-all;">{{ex.1.pathway }}</td>
+        <td style="text-align:center">{{ex.signalling_protein }}</td>
         {%else%}
-        <td style="  text-align:center;
-          width: 18%;
-          word-wrap: break-word;
-          word-break: break-all;">{{ex.1.pathway }}</td>
-        <td style="text-align:center">{{ex.1.potency }}</td>
-        <td style="text-align:center">{{ex.1.log_bias_factor }}</td>
-        <td style="text-align:center">{{ex.1.t_factor }}</td>
+        <td style="text-align:center">{{ex.signalling_protein }}</td>
+        <td style="text-align:center">{{ex.potency }}</td>
+        <td style="text-align:center">{{ex.log_bias_factor }}</td>
+        <td style="text-align:center">{{ex.t_factor }}</td>
         {% endif %}
         {%endfor%}
         <td style="
@@ -326,7 +321,7 @@
   $(document).ready(function() {
 
 
-    // hideEmptyCols($("#drugdata"))
+    hideEmptyCols($("#drugdata"))
 
     oTable = $('#drugdata').DataTable({
 
@@ -347,6 +342,7 @@
           }
         }
       }],
+
       scrollX: true,
       scrollY: '70vh',
       // scrollCollapse: true,
@@ -520,10 +516,6 @@
           select_type: 'select2',
           filter_default_label: "1st potency",
           filter_reset_button_text: false,
-          html_data_type: "text",
-          select_type_options: {
-            width: '150px',
-          }
         },
 
 
@@ -533,10 +525,6 @@
           select_type: 'select2',
           filter_default_label: "2nd potency",
           filter_reset_button_text: false,
-          html_data_type: "text",
-          select_type_options: {
-            width: '150px',
-          }
         },
 
 
@@ -570,10 +558,6 @@
           select_type: 'select2',
           filter_default_label: "3rd potency",
           filter_reset_button_text: false,
-          html_data_type: "text",
-          select_type_options: {
-            width: '150px',
-          }
         },
 
         {
@@ -603,10 +587,6 @@
           select_type: 'select2',
           filter_default_label: "4th potency",
           filter_reset_button_text: false,
-          html_data_type: "text",
-          select_type_options: {
-            width: '150px',
-          }
         },
 
         {
@@ -636,10 +616,6 @@
           select_type: 'select2',
           filter_default_label: "5th potency",
           filter_reset_button_text: false,
-          html_data_type: "text",
-          select_type_options: {
-            width: '150px',
-          }
         },
 
         {
