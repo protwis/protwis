@@ -879,6 +879,7 @@
                       console.log('gotten browser info',browser_visible);
                       renderDataTablesYadcf(browser_visible);
                       $(".main_loading_overlay").hide();
+                      redraw_renders();
                     }
                 });
 
