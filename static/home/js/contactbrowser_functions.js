@@ -366,806 +366,104 @@
             }
         }
 
-        function downloadSVG2(svgSelector, name) {
-          var svgClone = $(svgSelector).clone();
-          svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
+        // function downloadSVG2(svgSelector, name) {
+        //   var svgClone = $(svgSelector).clone();
+        //   svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
 
-          var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
+        //   var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
 
-          downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
-        }
+        //   downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+        // }
 
-        function downloadSingleCrystalCSV(singleCrystalSvgSelector, name) {
-            var data = [];
-            var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
-            data.push(header);
+        // function downloadSingleCrystalCSV(singleCrystalSvgSelector, name) {
+        //     var data = [];
+        //     var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
+        //     data.push(header);
 
-            $(singleCrystalSvgSelector + ' rect[data-interaction-type]').each(function(e) {
-              var rect = $(this);
-              var resNo1 = rect.data('res-no-1');
-              var resNo2 = rect.data('res-no-2');
-              var seg1 = rect.data('seg-1');
-              var seg2 = rect.data('seg-2');
-              var genNo1 = rect.data('gen-no-1');
-              var genNo2 = rect.data('gen-no-2');
-              var aa1 = rect.data('aa-1');
-              var aa2 = rect.data('aa-2');
-              var iType = rect.data('interaction-type');
-              data.push([resNo1, resNo2, seg1, seg2, genNo1, genNo2, aa1, aa2, iType]);
-            });
+        //     $(singleCrystalSvgSelector + ' rect[data-interaction-type]').each(function(e) {
+        //       var rect = $(this);
+        //       var resNo1 = rect.data('res-no-1');
+        //       var resNo2 = rect.data('res-no-2');
+        //       var seg1 = rect.data('seg-1');
+        //       var seg2 = rect.data('seg-2');
+        //       var genNo1 = rect.data('gen-no-1');
+        //       var genNo2 = rect.data('gen-no-2');
+        //       var aa1 = rect.data('aa-1');
+        //       var aa2 = rect.data('aa-2');
+        //       var iType = rect.data('interaction-type');
+        //       data.push([resNo1, resNo2, seg1, seg2, genNo1, genNo2, aa1, aa2, iType]);
+        //     });
 
-            // Convert to CSV
-            var csv = Papa.unparse(data);
+        //     // Convert to CSV
+        //     var csv = Papa.unparse(data);
 
-            // Download file
-            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
-        }
+        //     // Download file
+        //     downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        // }
 
-        function downloadSingleCrystalGroupCSV(singleGroupSvgSelector, name) {
-            var data = [];
-            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Frequency',  'Number of interactions', 'Number of crystals'];
-            data.push(header);
+        // function downloadSingleCrystalGroupCSV(singleGroupSvgSelector, name) {
+        //     var data = [];
+        //     var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Frequency',  'Number of interactions', 'Number of crystals'];
+        //     data.push(header);
 
-            $(singleGroupSvgSelector + ' rect[data-frequency]').each(function(e) {
-              var rect = $(this);
-              var genNo1 = rect.data('gen-no-1');
-              var genNo2 = rect.data('gen-no-2');
-              var seg1 = rect.data('seg-1');
-              var seg2 = rect.data('seg-2');
-              var nInteractions = rect.data('num-interactions');
-              var nTotalInteractions = rect.data('total-possible-interactions');
-              var frequency = rect.data('frequency');
-              data.push([genNo1, genNo2, seg1, seg2, nInteractions, nTotalInteractions, frequency]);
-            });
+        //     $(singleGroupSvgSelector + ' rect[data-frequency]').each(function(e) {
+        //       var rect = $(this);
+        //       var genNo1 = rect.data('gen-no-1');
+        //       var genNo2 = rect.data('gen-no-2');
+        //       var seg1 = rect.data('seg-1');
+        //       var seg2 = rect.data('seg-2');
+        //       var nInteractions = rect.data('num-interactions');
+        //       var nTotalInteractions = rect.data('total-possible-interactions');
+        //       var frequency = rect.data('frequency');
+        //       data.push([genNo1, genNo2, seg1, seg2, nInteractions, nTotalInteractions, frequency]);
+        //     });
 
-            // Convert to CSV
-            var csv = Papa.unparse(data);
+        //     // Convert to CSV
+        //     var csv = Papa.unparse(data);
 
-            // Download file
-            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
-        }
+        //     // Download file
+        //     downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        // }
 
-        function downloadTwoCrystalGroupsCSV(twoGroupsSvgSelector, name) {
-            var data = [];
-            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Crystals group 1', 'Crystals group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
-            data.push(header);
+        // function downloadTwoCrystalGroupsCSV(twoGroupsSvgSelector, name) {
+        //     var data = [];
+        //     var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Crystals group 1', 'Crystals group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
+        //     data.push(header);
 
-            $(twoGroupsSvgSelector + ' rect[data-frequency-diff]').each(function(e) {
-              var rect = $(this);
-              var genNo1 = rect.data('gen-no-1');
-              var genNo2 = rect.data('gen-no-2');
-              var seg1 = rect.data('seg-1');
-              var seg2 = rect.data('seg-2');
-              var numIntsGroup1 = rect.data('group-1-num-ints');
-              var numIntsGroup2 = rect.data('group-2-num-ints');
-              var numPdbsGroup1 = rect.data('group-1-num-pdbs');
-              var numPdbsGroup2 = rect.data('group-2-num-pdbs');
-              var freqGroup1 = rect.data('group-1-freq');
-              var freqGroup2 = rect.data('group-2-freq');
-              var fDiff = rect.data('frequency-diff').toFixed(2);
-              data.push([genNo1, genNo2, seg1, seg2, numIntsGroup1, numIntsGroup2, numPdbsGroup1, numPdbsGroup2, freqGroup1, freqGroup2, fDiff]);
-            });
+        //     $(twoGroupsSvgSelector + ' rect[data-frequency-diff]').each(function(e) {
+        //       var rect = $(this);
+        //       var genNo1 = rect.data('gen-no-1');
+        //       var genNo2 = rect.data('gen-no-2');
+        //       var seg1 = rect.data('seg-1');
+        //       var seg2 = rect.data('seg-2');
+        //       var numIntsGroup1 = rect.data('group-1-num-ints');
+        //       var numIntsGroup2 = rect.data('group-2-num-ints');
+        //       var numPdbsGroup1 = rect.data('group-1-num-pdbs');
+        //       var numPdbsGroup2 = rect.data('group-2-num-pdbs');
+        //       var freqGroup1 = rect.data('group-1-freq');
+        //       var freqGroup2 = rect.data('group-2-freq');
+        //       var fDiff = rect.data('frequency-diff').toFixed(2);
+        //       data.push([genNo1, genNo2, seg1, seg2, numIntsGroup1, numIntsGroup2, numPdbsGroup1, numPdbsGroup2, freqGroup1, freqGroup2, fDiff]);
+        //     });
 
-            // Convert to CSV
-            var csv = Papa.unparse(data);
+        //     // Convert to CSV
+        //     var csv = Papa.unparse(data);
 
-            // Download file
-            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
-        }
+        //     // Download file
+        //     downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        // }
 
-        function downloadURI(uri, name) {
-            var link = document.createElement("a");
-            link.download = name;
-            link.href = uri;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            delete link;
-        }
+        // function downloadURI(uri, name) {
+        //     var link = document.createElement("a");
+        //     link.download = name;
+        //     link.href = uri;
+        //     document.body.appendChild(link);
+        //     link.click();
+        //     document.body.removeChild(link);
+        //     delete link;
+        // }
 
         
-
-
-        var filtered_gn_pairs = [];
-        function filter_browser() {
-          old_filtered_gn_pairs = filtered_gn_pairs;
-          filtered_gn_pairs = [];
-          $('.filter_rows:visible').each(function() {
-            filtered_gn_pairs.push($(this).attr('id'))
-          });
-          console.log('filtered positions!',filtered_gn_pairs);
-          
-          if(old_filtered_gn_pairs.sort().join(',')=== filtered_gn_pairs.sort().join(',')){
-            console.log('no change in filtering');
-          } else {
-            updateGeneralControls();
-          }
-        }
-
-        function renderBrowser(data) {
-          var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
-          console.log('GOT DATA',selector);
-          var table = $(selector + " .browser-table-1");
-          if ($.fn.DataTable.isDataTable(selector + " .browser-table-1")) {
-            table.DataTable().destroy();
-          }
-          table.parent().html('<table class="browser-table-1 compact cell-border" style3="max-width: 2000px !important; width: 2000px !important" width2="2500px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody></tbody></table>');
-          var table = $(selector + " .browser-table-1");
-          // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
-          var tbody = table.find('tbody');
-          if (data['proteins2']) {
-
-                          // <th colspan="2">Ca distance from<br> 7TM axis</th> \
-                          // <th colspan="2">Backbone Rotation</th> \
-                          // <th colspan="2">Residue Rotamer</th> \
-                          // <th colspan="2">Tau angle</th> \
-                          // <th colspan="2">Phi dihedral</th> \
-                          // <th colspan="2">Psi dihedral</th> \
-            thead =  '<tr> \
-                          <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
-                          <th colspan="3" rowspan="2"> Frequency (%)</th> \
-                          <th rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
-                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
-                          <th colspan="6">Sidechain differences</th> \
-                          <th colspan="2" rowspan="2">Position presence %</th> \
-                          <th colspan="4">Secondary structure</th> \
-                          <th rowspan="2">Class Seq Cons(%)</th> \
-                        </tr> \
-                        <tr> \
-                          <th colspan="2">Distance</th> \
-                          <th colspan="2">Rotation (Ca angle)</th> \
-                          <th colspan="2">Rotamer</th> \
-                          <th colspan="2">SASA</th> \
-                          <th colspan="2">RSA</th> \
-                          <th colspan="2">Consensus SS</th> \
-                          <th colspan="2">Frequency %</th> \
-                        </tr> \
-                        <tr> \
-                          <th class="dt-center"></th> \
-                          <th class="dt-center"></th> \
-                          <th class="narrow_col">Set 1<br></th> \
-                          <th class="narrow_col">Set 2<br></th> \
-                          <th class="narrow_col">Diff<br></th> \
-                          <th></th> \
-                          <th class="narrow_col">Pos1-Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">AA pairs</th> \
-                        </tr>';
-            table.find('thead').html(thead); 
-            // two groups
-            var proteins_1 = data['proteins1'].length
-            var proteins_2 = data['proteins2'].length
-            var pdbs_1 = data['pdbs1'].length
-            var pdbs_2 = data['pdbs2'].length
-            $.each(data['interactions'], function (i, v) {
-              var gn1 = i.split(",")[0]
-              var gn2 = i.split(",")[1]
-              var pfreq1 = Math.round(100*v['proteins1'].length / proteins_1);
-              var pfreq2 = Math.round(100*v['proteins2'].length / proteins_2);
-              var diff_pfreq = pfreq1-pfreq2;
-              var sfreq1 = Math.round(100*v['pdbs1'].length / pdbs_1);
-              var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
-              var diff_sfreq = sfreq1-sfreq2;
-              var class_seq_cons = v['class_seq_cons'];
-              var types = v['types'].join(",<br>");
-              var seg1 = data['segm_lookup'][gn1];
-              var seg2 = data['segm_lookup'][gn2];
-              var distance = v['distance'];
-              var angles_1 = v['angles'][0];
-              var angles_2 = v['angles'][1];
-              // 0 'core_distance',
-              // 1 'a_angle',
-              // 2 'outer_angle',
-              // 3 'tau',
-              // 4 'phi',
-              // 5 'psi', 
-              // 6 'sasa',
-              // 7 'rsa',
-              // 8 'theta',
-              // 9 'hse'
-              tr = `
-                    <tr class="clickable-row filter_rows" id="${i}">
-                      <td class="dt-center">${seg1}-${seg2}</td>
-                      <td class="dt-center">${gn1}-${gn2}</td>
-                      <td class="narrow_col">${sfreq1}</td>
-                      <td class="narrow_col">${sfreq2}</td>
-                      <td class="narrow_col">${diff_sfreq}</td>
-                      <td>${types}</td>
-                      <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col core_distance">${angles_1[0]}</td>
-                      <td class="narrow_col core_distance">${angles_2[0]}</td>
-                      <td class="narrow_col a_angle">${angles_1[1]}</td>
-                      <td class="narrow_col a_angle">${angles_2[1]}</td>
-                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
-                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
-                      <td class="narrow_col sasa">${angles_1[6]}</td>
-                      <td class="narrow_col sasa">${angles_2[6]}</td>
-                      <td class="narrow_col rsa">${angles_1[7]}</td>
-                      <td class="narrow_col rsa">${angles_2[7]}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col">${class_seq_cons}</td>
-                    </tr>`;
-              tbody.append(tr);
-            }); 
-          } else if (data['proteins'].length>1) {
-            thead =  '<tr> \
-                          <th colspan="1">Segment</th> \
-                          <th colspan="1">Generic No</th> \
-                          <th> Frequency (%)</th> \
-                          <th>Type(s)</th> \
-                          <th>Class Seq Cons(%)</th> \
-                          <th>Ca distance</th> \
-                          <th colspan="2">Ca distance from 7TM<br>axis</th> \
-                          <th colspan="2">Backbone<br>Rotation</th> \
-                          <th colspan="2">Residue<br>Rotamer</th> \
-                          <th colspan="2">Tau angle</th> \
-                          <th colspan="2">Phi dihedral</th> \
-                          <th colspan="2">Psi dihedral</th> \
-                        </tr> \
-                        <tr> \
-                          <th class="dt-center"></th> \
-                          <th class="dt-center"></th> \
-                          <th class="narrow_col"></th> \
-                          <th></th> \
-                          <th class="narrow_col">AA pairs</th> \
-                          <th class="narrow_col">Res1-Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                        </tr>';
-            table.find('thead').html(thead); 
-            var proteins = data['proteins'].length
-            var pdbs = data['pdbs'].length
-            $.each(data['interactions'], function (i, v) {
-              var gn1 = i.split(",")[0]
-              var gn2 = i.split(",")[1]
-              var pfreq = Math.round(100*v['proteins'].length / proteins);
-              var sfreq = Math.round(100*v['pdbs'].length / pdbs);
-              var types = v['types'].join(",<br>");
-              var class_seq_cons = v['class_seq_cons'];
-              var seg1 = data['segm_lookup'][gn1];
-              var seg2 = data['segm_lookup'][gn2];
-              var distance = v['distance'];
-              var angles_1 = v['angles'][0];
-              var angles_2 = v['angles'][1];
-              tr = `
-                    <tr class="clickable-row filter_rows" id="${i}">
-                      <td class="dt-center">${seg1}-${seg2}</td>
-                      <td class="dt-center">${gn1}-${gn2}</td>
-                      <td class="narrow_col">${sfreq}</td>
-                      <td>${types}</td>
-                      <td class="narrow_col">${class_seq_cons}</td>
-                      <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col">${angles_1[0]}</td>
-                      <td class="narrow_col">${angles_2[0]}</td>
-                      <td class="narrow_col">${angles_1[1]}</td>
-                      <td class="narrow_col">${angles_2[1]}</td>
-                      <td class="narrow_col">${angles_1[2]}</td>
-                      <td class="narrow_col">${angles_2[2]}</td>
-                      <td class="narrow_col">${angles_1[3]}</td>
-                      <td class="narrow_col">${angles_2[3]}</td>
-                      <td class="narrow_col">${angles_1[4]}</td>
-                      <td class="narrow_col">${angles_2[4]}</td>
-                      <td class="narrow_col">${angles_1[5]}</td>
-                      <td class="narrow_col">${angles_2[5]}</td>
-                    </tr>`;
-              tbody.append(tr);
-            });
-          } else {
-            thead =  '<tr> \
-                          <th colspan="1">Segment</th> \
-                          <th colspan="1">Res No</th> \
-                          <th colspan="1">Generic No</th> \
-                          <th>Interaction</th> \
-                          <th>Class Seq Cons(%)</th> \
-                          <th>Ca distance</th> \
-                          <th colspan="2">Ca distance from 7TM axis</th> \
-                          <th colspan="2">Backbone<br>Rotation</th> \
-                          <th colspan="2">Residue<br>Rotamer</th> \
-                          <th colspan="2">Tau angle</th> \
-                          <th colspan="2">Phi dihedral</th> \
-                          <th colspan="2">Psi dihedral</th> \
-                        </tr> \
-                        <tr> \
-                          <th class="dt-center"></th> \
-                          <th class="dt-center"></th> \
-                          <th class="dt-center"></th> \
-                          <th></th> \
-                          <th class="narrow_col">AA pairs</th> \
-                          <th class="narrow_col">Res1-Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                        </tr>';
-            table.find('thead').html(thead); 
-            $.each(data['interactions'], function (i, v) {
-              var gn1 = i.split(",")[0]
-              var gn2 = i.split(",")[1]
-              var seg1 = data['segm_lookup'][gn1];
-              var seg2 = data['segm_lookup'][gn2];
-              var types = v['types'].join(",<br>");
-              var pos1 = v['seq_pos'][0];
-              var pos2 = v['seq_pos'][1];
-              var class_seq_cons = v['class_seq_cons'];
-              var seg1 = data['segm_lookup'][gn1];
-              var seg2 = data['segm_lookup'][gn2];
-              var distance = v['distance'];
-              var angles_1 = v['angles'][0];
-              var angles_2 = v['angles'][1];
-              tr = `
-                    <tr class="clickable-row filter_rows" id="${pos1},${pos2}">
-                      <td class="dt-center">${seg1}-${seg2}</td>
-                      <td class="dt-center"><span>${pos1}</span>-<span>${pos2}</span></td>
-                      <td class="dt-center">${gn1}-${gn2}</td>
-                      <td>${types}</td>
-                      <td class="narrow_col">${class_seq_cons}</td>
-                      <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col">${angles_1[0]}</td>
-                      <td class="narrow_col">${angles_2[0]}</td>
-                      <td class="narrow_col">${angles_1[1]}</td>
-                      <td class="narrow_col">${angles_2[1]}</td>
-                      <td class="narrow_col">${angles_1[2]}</td>
-                      <td class="narrow_col">${angles_2[2]}</td>
-                      <td class="narrow_col">${angles_1[3]}</td>
-                      <td class="narrow_col">${angles_2[3]}</td>
-                      <td class="narrow_col">${angles_1[4]}</td>
-                      <td class="narrow_col">${angles_2[4]}</td>
-                      <td class="narrow_col">${angles_1[5]}</td>
-                      <td class="narrow_col">${angles_2[5]}</td>
-                    </tr>`;
-              tbody.append(tr);
-            });
-          }
-
-          // table.on('click', '.clickable-row', function(event) {
-          //   if($(this).hasClass('active')){
-          //     $(this).removeClass('active'); 
-          //     $(selector + " .secondary-table").find('tbody').empty();
-          //   } else {
-          //     $(this).addClass('active').siblings().removeClass('active');
-          //     renderSecondary($(this).attr('id'))
-          //   }
-          // });
-
-          // Create grey scale of values.
-          var cols = []
-          var trs = table.find("tbody tr")
-          var maxmin_data =$.each(trs , function(index, tr){
-            $.each($(tr).find("td").not(":first"), function(index, td){
-              cols[index] = cols[index] || [];
-              cols[index].push($(td).text())
-            })
-          });
-          cols.forEach(function(col, index){
-            var max = Math.max.apply(null, col);
-            var min = Math.min.apply(null, col);
-            if (!(isNaN(max) || isNaN(min))) {
-              trs.find('td:eq('+(index+1)+')').each(function(i, td){
-                value = parseFloat($(td).text());
-                if (!(isNaN(value))) {
-                  scale = 1-(value-min)/(max-min);
-                  frequency = 0.5-(scale/-2.1)*.5;
-                  frequency = 0.5-scale*.5;
-                  var rgb = { r: 255-frequency*255, g: 255-frequency*255, b: 255-frequency*255 };
-                  var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-                  $(td).attr('bgcolor',hex);
-                }
-              })
-            }
-          })
-
-          // Specify which columns are to be fixed to 40px
-          list_narrow_cols = [];
-          if (data['proteins2']) {
-            var start_column = 6;
-            var end_column = 6+17;
-            list_narrow_cols = Array(end_column - start_column + 1).fill().map((_, idx) => start_column + idx)
-            list_narrow_cols = [2,3,4].concat(list_narrow_cols);
-          }
-
-          btable = table.DataTable({
-                'scrollX': true,
-                scrollY:        '50vh',
-                paging:         false,
-                "order": [],
-                columnDefs: [ { type: "string", targets: 1 },
-                              { "width": "40px", "targets": list_narrow_cols } ]
-              });
-
-          if (data['proteins2']) {
-
-            from_to = { filter_type: "range_number", filter_reset_button_text: false};
-            repeat_number = 18 // 8 sets of pos1,pos2 -- double the columns
-
-            var start_column = 6
-            repeated_from_to = []
-            for (i = start_column; i < start_column+repeat_number; i++) { 
-              // var column_info = from_to.slice(0);
-              var column_info = Object.assign({}, from_to);
-              column_info['column_number'] = i;
-              repeated_from_to.push(column_info);
-            }
-
-            yadcf.init(btable,
-                      [
-                          {
-                              column_number : 0,
-                              filter_type: "text",
-                              // exclude: true,
-                              filter_delay: 500,
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 1,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              select_type_options: {
-                                  width: '60px'
-                              },
-                              filter_default_label: "Res.",
-                              text_data_delimiter: "-",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 2,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 3,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 4,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 5,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Type",
-                              text_data_delimiter: ",<br>",
-                              filter_reset_button_text: false,
-                          }].concat(repeated_from_to),
-                      {
-                          cumulative_filtering: false
-                      }
-
-                  );
-          } else if (data['proteins'].length>1) {
-            yadcf.init(btable,
-                      [
-                          {
-                              column_number : 0,
-                              filter_type: "text",
-                              // exclude: true,
-                              filter_delay: 500,
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 1,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Res.",
-                              text_data_delimiter: "-",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 2,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 3,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              filter_default_label: "Type",
-                              text_data_delimiter: ",<br>",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 4,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 5,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 6,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 7,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 8,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 9,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 10,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 11,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 12,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 13,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 14,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 15,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 16,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 17,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                      ],
-                      {
-                          cumulative_filtering: false
-                      }
-
-                  );
-          } else if (data['proteins'].length==1) {
-                // function myCustomFilterFunction(filterVal, columnVal) {
-                //     var found;
-                //     if (columnVal === '') {
-                //         return true;
-                //     }
-                //     switch (filterVal) {
-                //     case 'happy':
-                //         found = columnVal.search(/:-\]|:\)|Happy|JOY|:D/g);
-                //         break;
-                //     case 'sad':
-                //         found = columnVal.search(/:\(|Sad|:'\(/g);
-                //         break;
-                //     case 'angry':
-                //         found = columnVal.search(/!!!|Arr\.\.\./g);
-                //         break;
-                //     case 'lucky':
-                //         found = columnVal.search(/777|Bingo/g);
-                //         break;
-                //     case 'january':
-                //         found = columnVal.search(/01|Jan/g);
-                //         break;
-                //     default:
-                //         found = 1;
-                //         break;
-                //     }
-             
-                //     if (found !== -1) {
-                //         return true;
-                //     }
-                //     return false;
-                // }
-
-            yadcf.init(btable,
-                      [
-                          {
-                              column_number : 0,
-                              filter_type: "text",
-                              // exclude: true,
-                              filter_delay: 500,
-                              filter_reset_button_text: false,
-                          },
-                          {    
-                              column_number: 1,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              // column_data_type: "html",
-                              select_type_options: {
-                                  width: '60px'
-                              },
-                              html_data_type: "text",
-                              text_data_delimiter: "-",
-                              filter_default_label: "Res. No.",
-                              filter_reset_button_text: false // hide yadcf reset button
-                          },
-                          {
-                              column_number : 2,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              select_type_options: {
-                                  width: '60px'
-                              },
-                              filter_default_label: "Res. Gn.",
-                              text_data_delimiter: "-",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 3,
-                              filter_type: "multi_select",
-                              select_type: 'select2',
-                              select_type_options: {
-                                  width: '60px'
-                              },
-                              filter_default_label: "Type",
-                              text_data_delimiter: ",<br>",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 4,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 5,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 6,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 7,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 8,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 9,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 10,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 11,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-                          },
-                          {
-                              column_number : 12,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 13,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 14,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 15,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 16,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                          {
-                              column_number : 17,
-                              filter_type: "range_number",
-                              filter_reset_button_text: false,
-
-                          },
-                      ],
-                      {
-                          cumulative_filtering: false
-                      }
-
-                  );
-          }
-          btable.on('draw.dt', function(e, oSettings) {
-              filter_browser();
-          });
-          btable.columns.adjust().draw();
-        }
 
         function redraw_renders() {
           // Makes sure diagrams fit sizes
@@ -1576,55 +874,59 @@
                       // Re-render heatmap
                       data_browser = data;
                       renderBrowser(data);
-                      console.log('gotten browser info')
+                      renderBrowser_2(data);
+                      browser_visible = $(".nav-browsers li.active a").attr('id');
+                      console.log('gotten browser info',browser_visible);
+                      renderDataTablesYadcf(browser_visible);
+                      $(".main_loading_overlay").hide();
                     }
                 });
 
-                console.log('get wiz info');
-                $.getJSON( '/contactnetwork/interactiondata',
-                {
-                    'segments': segments,
-                    'generic': generic,
-                    'pdbs': pdbs1,
-                    'interaction_types': interactionTypes
-                },
-                function( data1 ) {
-                    $("#svgloading").remove();
-                    $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (33%)</span>');
-                    $.getJSON( '/contactnetwork/interactiondata',
-                    {
-                        'segments': segments,
-                        'generic': generic,
-                        'pdbs': pdbs2,
-                        'interaction_types': interactionTypes
-                    },
-                    function( data2 ) {
-                        $("#svgloading").remove();
-                        $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
-                        // NOTE: this call seems redundant, shouldn't we already have all the data we need from the previous two calls
-                        $.getJSON( '/contactnetwork/interactiondata',
-                        {
-                            'segments': segments,
-                            'generic': generic,
-                            'pdbs': pdbs1.concat(pdbs2),
-                            'interaction_types': interactionTypes
-                        }, function ( data3 ) {
-                            // Re-render heatmap
-                            $(".heatmap").show();
-                            // $(".heatmap-legend").show();
-                            $("#svgloading").remove()
-                            heatmapFunction([data1, data2, data3], selector + ' .heatmap-container');
-                            createSchematicPlot(data3, selector + " .schematic_con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic_container
-                            createSchematicPlot(data3, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
+                // console.log('get wiz info');
+                // $.getJSON( '/contactnetwork/interactiondata',
+                // {
+                //     'segments': segments,
+                //     'generic': generic,
+                //     'pdbs': pdbs1,
+                //     'interaction_types': interactionTypes
+                // },
+                // function( data1 ) {
+                //     $("#svgloading").remove();
+                //     $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (33%)</span>');
+                //     $.getJSON( '/contactnetwork/interactiondata',
+                //     {
+                //         'segments': segments,
+                //         'generic': generic,
+                //         'pdbs': pdbs2,
+                //         'interaction_types': interactionTypes
+                //     },
+                //     function( data2 ) {
+                //         $("#svgloading").remove();
+                //         $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
+                //         // NOTE: this call seems redundant, shouldn't we already have all the data we need from the previous two calls
+                //         $.getJSON( '/contactnetwork/interactiondata',
+                //         {
+                //             'segments': segments,
+                //             'generic': generic,
+                //             'pdbs': pdbs1.concat(pdbs2),
+                //             'interaction_types': interactionTypes
+                //         }, function ( data3 ) {
+                //             // Re-render heatmap
+                //             $(".heatmap").show();
+                //             // $(".heatmap-legend").show();
+                //             $("#svgloading").remove()
+                //             heatmapFunction([data1, data2, data3], selector + ' .heatmap-container');
+                //             createSchematicPlot(data3, selector + " .schematic_con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic_container
+                //             createSchematicPlot(data3, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
 
-                            // Re-render flareplot
-                            createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
-                            createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2);
-                            $(".main_loading_overlay").hide();
-                            redraw_renders();
-                        });
-                    });
-                });
+                //             // Re-render flareplot
+                //             createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
+                //             createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2);
+                //             $(".main_loading_overlay").hide();
+                //             redraw_renders();
+                //         });
+                //     });
+                // });
 
             }
           // $(".main_loading_overlay").hide();

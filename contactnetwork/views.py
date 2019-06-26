@@ -401,6 +401,7 @@ def InteractionBrowserData(request):
     if data==None:
         cache_key = 'amino_acid_pair_conservation_{}'.format('001')
         class_pair_lookup = cache.get(cache_key)
+        # class_pair_lookup=None
         if class_pair_lookup==None or len(class_pair_lookup)==0:
             # Class pair conservation
             sum_proteins = Protein.objects.filter(family__slug__startswith='001',sequence_type__slug='wt',species__common_name='Human').count()
@@ -424,9 +425,10 @@ def InteractionBrowserData(request):
                     v2 = r_pair_lookup[gen2]
                     coord = '{},{}'.format(gen1,gen2)
                     for aa1 in v1.keys():
+                        p1 = v1[aa1]
+                        class_pair_lookup[gen1+aa1] = round(100*len(p1)/sum_proteins)
                         for aa2 in v2.keys():
                             pair = '{}{}'.format(aa1,aa2)
-                            p1 = v1[aa1]
                             p2 = v2[aa2]
                             p = p1.intersection(p2)
                             if p:
@@ -786,9 +788,9 @@ def InteractionBrowserData(request):
         for d in delete_coords:
             del data['interactions'][d]
 
-        del class_pair_lookup 
+        # del class_pair_lookup 
         del r_lookup
-        del r_pair_lookup
+        # del r_pair_lookup
 
 
         ## PREPARE ADDITIONAL DATA (INTERACTIONS AND ANGLES)
@@ -935,6 +937,241 @@ def InteractionBrowserData(request):
                             gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
         
+        # Tab 2 data generation
+        # Get the relevant interactions
+        data['tab2'] = {}
+        # del class_pair_lookup 
+        # del r_pair_lookup
+        if mode == "double": 
+
+            set_id = 'set1'
+            aa_pair_data = data['tab2']
+            interactions = list(Interaction.objects.filter(
+                    interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]
+                ).filter(
+                    interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
+                ).filter(
+                    segment_filter_res1 & segment_filter_res2 & i_types_filter
+                ).exclude(
+                    interacting_pair__res1__generic_number=None,
+                    interacting_pair__res2__generic_number=None
+                ).annotate(
+                    gn1=F('interacting_pair__res1__generic_number__label'),
+                    gn2=F('interacting_pair__res2__generic_number__label'),
+                    aa1=F('interacting_pair__res1__amino_acid'),
+                    aa2=F('interacting_pair__res2__amino_acid'),
+                ).values(
+                    'gn1',
+                    'gn2',
+                    'aa1',
+                    'aa2',
+                ).distinct().annotate(
+                    i_types=ArrayAgg('interaction_type'),
+                    structures=ArrayAgg('interacting_pair__referenced_structure__pdb_code__index'),
+                    structuresC=Count('interacting_pair__referenced_structure',distinct=True)
+                ))
+            for i in interactions:
+                key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
+                if key not in aa_pair_data:
+                    aa_pair_data[key] = {'set1':{'interaction_freq':0}, 'set2':{'interaction_freq':0}, 'types':[]}
+                aa_pair_data[key]['types'] += i['i_types']
+                d = aa_pair_data[key][set_id]
+                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs1']),1)
+                d['structures'] = i['structures']
+
+
+            set_id = 'set2'
+            interactions = list(Interaction.objects.filter(
+                    interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]
+                ).filter(
+                    interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
+                ).filter(
+                    segment_filter_res1 & segment_filter_res2 & i_types_filter
+                ).exclude(
+                    interacting_pair__res1__generic_number=None,
+                    interacting_pair__res2__generic_number=None
+                ).annotate(
+                    gn1=F('interacting_pair__res1__generic_number__label'),
+                    gn2=F('interacting_pair__res2__generic_number__label'),
+                    aa1=F('interacting_pair__res1__amino_acid'),
+                    aa2=F('interacting_pair__res2__amino_acid'),
+                ).values(
+                    'gn1',
+                    'gn2',
+                    'aa1',
+                    'aa2',
+                ).distinct().annotate(
+                    i_types=ArrayAgg('interaction_type'),
+                    structures=ArrayAgg('interacting_pair__referenced_structure__pdb_code__index'),
+                    structuresC=Count('interacting_pair__referenced_structure',distinct=True)
+                ))
+            for i in interactions:
+                key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
+                if key not in aa_pair_data:
+                    aa_pair_data[key] = {'set1':{'interaction_freq':0}, 'set2':{'interaction_freq':0}, 'types':[]}
+                aa_pair_data[key]['types'] += i['i_types']
+                d = aa_pair_data[key][set_id]
+                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs2']),1)
+                d['structures'] = list(set(i['structures']))
+
+            ## Fill in remaining data
+            pdbs1 = data['pdbs1']
+            pdbs2 = data['pdbs2']
+
+            for key,d in aa_pair_data.items():
+
+                gen1 = key.split(',')[0]
+                gen2 = key.split(',')[1][:-2]
+                d['pos_key'] = '{},{}'.format(gen1,gen2)
+                aa1 = key[-2]
+                aa2 = key[-1]
+                d['aa1'] = aa1
+                d['aa2'] = aa2
+
+                d['types'] = list(set(d['types']))
+
+                order = ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals','None']
+                d['types'] = sorted(d['types'], key=lambda x: order.index(x))
+
+                if key in class_pair_lookup:
+                    d['class'] = class_pair_lookup[key]
+                else:
+                    d['class'] = ""
+
+                #Find the individual keys for AA format 1x50,2x50A
+                key_aa1 = gen1+aa1
+                if key_aa1 in class_pair_lookup:
+                    d['class_aa1'] = class_pair_lookup[key_aa1]
+                else:
+                    d['class_aa1'] = ""
+
+                key_aa2 = gen2+aa2
+                if key_aa2 in class_pair_lookup:
+                    d['class_aa2'] = class_pair_lookup[key_aa2]
+                else:
+                    d['class_aa2'] = ""
+
+
+                pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
+                pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
+
+                # SET 1
+                pdbs1_with_aa1 = list(set(pdbs_with_aa1).intersection(pdbs1))
+                pdbs1_with_aa2 = list(set(pdbs_with_aa2).intersection(pdbs1))
+                # SET 2
+                pdbs2_with_aa1 = list(set(pdbs_with_aa1).intersection(pdbs2))
+                pdbs2_with_aa2 = list(set(pdbs_with_aa2).intersection(pdbs2))
+
+
+                pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2))
+                pdbs1_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
+                pdbs2_with_pair = list(set(pdbs_intersection).intersection(pdbs2))
+
+                d['set1']['occurance'] = {'aa1':pdbs1_with_aa1,'aa2':pdbs1_with_aa2,'pair':pdbs1_with_pair}
+                d['set2']['occurance'] = {'aa1':pdbs2_with_aa1,'aa2':pdbs2_with_aa2,'pair':pdbs2_with_pair}
+
+        del class_pair_lookup 
+        del r_pair_lookup
+        print('calculate angles per gen/aa')
+        if mode == "double":
+            group_1_angles = {}
+            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]) \
+                                .exclude(residue__generic_number=None) \
+                                .values('residue__generic_number__label','residue__amino_acid') \
+                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
+                                .values_list('residue__generic_number__label','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_1_angles[",".join(list(d[0:2]))] = d[2:]
+
+            group_2_angles = {}
+            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]) \
+                                .exclude(residue__generic_number=None) \
+                                .values('residue__generic_number__label','residue__amino_acid') \
+                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
+                                .values_list('residue__generic_number__label','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_2_angles[",".join(list(d[0:2]))] = d[2:]
+
+            for key, d in data['tab2'].items():
+                gen1 = key.split(',')[0]
+                gen2 = key.split(',')[1][:-2]
+                aa1 = key[-2]
+                aa2 = key[-1]
+
+                gn1 = '{},{}'.format(gen1,aa1)
+                gn2 = '{},{}'.format(gen2,aa2)
+
+                gn1_values = [''] * 9
+                if gn1 in group_1_angles and gn1 in group_2_angles:
+                    gn1_values = []
+                    for i,v in enumerate(group_1_angles[gn1]):
+                        try:
+                            gn1_values.append(round(v-group_2_angles[gn1][i],1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            gn1_values.append("")
+
+                gn2_values = [''] * 9
+                if gn2 in group_1_angles and gn2 in group_2_angles:
+                    gn2_values = []
+                    for i,v in enumerate(group_1_angles[gn2]):
+                        try:
+                            gn2_values.append(round(v-group_2_angles[gn2][i],1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            gn2_values.append("")
+                d['angles'] = [gn1_values,gn2_values]
+        else:
+            group_angles = {}
+            if (len(data['pdbs'])==1):
+                # Get absolute numbers for a single structure
+                ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
+                                .exclude(residue__generic_number=None) \
+                                .values('residue__generic_number__label','residue__amino_acid') \
+                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
+                                .values_list('residue__generic_number__label','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+            else:
+                # A group, get StdDev
+                ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
+                                .exclude(residue__generic_number=None) \
+                                .values('residue__generic_number__label','residue__amino_acid') \
+                                .annotate(a_angle = StdDev('a_angle'), outer_angle = StdDev('outer_angle'), core_distance = StdDev('core_distance'), \
+                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi'), sasa = StdDev('sasa'), rsa = StdDev('sasa'), theta = StdDev('theta'), hse = StdDev('hse')) \
+                                .values_list('residue__generic_number__label','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_angles[",".join(list(d[0:2]))] = d[2:]
+
+            # for coord in data['interactions']:
+            #     gn1 = coord.split(",")[0]
+            #     gn2 = coord.split(",")[1]
+
+            #     gn1_values = [''] * 9
+            #     if gn1 in group_angles:
+            #         gn1_values = []
+            #         for i,v in enumerate(group_angles[gn1]):
+            #             try:
+            #                 gn1_values.append("{:.1f}".format(v))
+            #             except:
+            #                 # Fails if there is a None (like gly doesnt have outer angle?)
+            #                 gn1_values.append("")
+
+            #     gn2_values = [''] * 9
+            #     if gn2 in group_angles:
+            #         gn2_values = []
+            #         for i,v in enumerate(group_angles[gn2]):
+            #             try:
+            #                 gn2_values.append("{:.1f}".format(v))
+            #             except:
+            #                 # Fails if there is a None (like gly doesnt have outer angle?)
+            #                 gn2_values.append("")
+            #     data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
+            # print(aa_pair_data)
 
         data['pdbs'] = list(data['pdbs'])
         data['proteins'] = list(data['proteins'])
