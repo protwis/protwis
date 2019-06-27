@@ -763,7 +763,7 @@
         }
         var raw_data = ''
         function loadPDBsView(pdb, selector, heatmapFunction, generic) {
-          $(".main_loading_overlay").show();
+          // $(".main_loading_overlay").show();
           //var segments = JSON.parse($(selector + ' .segments-input').val());
           var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
           if (pdb.length > 0 && segments.length > 0) {
@@ -776,44 +776,44 @@
               if (!$(selector + ' .interactions-input').val() == null)
                   interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
-              console.log('get viz info');
-              $.ajax({ 
-                  url: '/contactnetwork/interactiondata', 
-                  dataType: 'json', 
-                  data: {
-                    // 'segments': segments,
-                    'generic': generic,
-                    'pdbs': pdb,
-                    'interaction_types': interactionTypes
-                  }, 
-                  async: true, 
-                  success:  function(data){
-                    raw_data = data;
-                    console.log('gotten visual info')
-                    // Re-render heatmap
-                    $(".heatmap").show();
-                    // $(".heatmap-legend").show();
-                    console.log('start heatmap');
-                    heatmapFunction(data, selector + ' .heatmap-container');
-                    console.log('finish heatmap');
-                    $("#svgloading").remove()
-                    // Re-render flareplot
-                    createFlareplotBox(data, selector + " .flareplot-container");
+              // console.log('get viz info');
+              // $.ajax({ 
+              //     url: '/contactnetwork/interactiondata', 
+              //     dataType: 'json', 
+              //     data: {
+              //       // 'segments': segments,
+              //       'generic': generic,
+              //       'pdbs': pdb,
+              //       'interaction_types': interactionTypes
+              //     }, 
+              //     async: true, 
+              //     success:  function(data){
+              //       raw_data = data;
+              //       console.log('gotten visual info')
+              //       // Re-render heatmap
+              //       $(".heatmap").show();
+              //       // $(".heatmap-legend").show();
+              //       console.log('start heatmap');
+              //       heatmapFunction(data, selector + ' .heatmap-container');
+              //       console.log('finish heatmap');
+              //       $("#svgloading").remove()
+              //       // Re-render flareplot
+              //       createFlareplotBox(data, selector + " .flareplot-container");
 
-                    if (selector == '#single-crystal-group-tab') {
-                      createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
-                      createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
-                      createNGLview("single-group",pdb[0], pdb);
-                    } else {
-                      createHiveplotBox(data, selector + " .hiveplot-container");
-                      createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
-                      createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
-                      createNGLview("single",pdb[0]);
-                    }
-                    $(".main_loading_overlay").hide();
-                    redraw_renders();
-                  }
-              });
+              //       if (selector == '#single-crystal-group-tab') {
+              //         createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
+              //         createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
+              //         createNGLview("single-group",pdb[0], pdb);
+              //       } else {
+              //         createHiveplotBox(data, selector + " .hiveplot-container");
+              //         createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
+              //         createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
+              //         createNGLview("single",pdb[0]);
+              //       }
+              //       $(".main_loading_overlay").hide();
+              //       redraw_renders();
+              //     }
+              // });
               console.log('get browser info');
               $.ajax({ 
                   url: '/contactnetwork/browserdata', 
@@ -830,7 +830,10 @@
                     data_browser = data;
                     renderBrowser(data);
                     generate_display_options();
+                    browser_visible = $(".nav-browsers li.active a").attr('id');
+                    renderDataTablesYadcf(browser_visible);
                     console.log('gotten browser info')
+                    $(".main_loading_overlay").hide();
                   }
               });
 

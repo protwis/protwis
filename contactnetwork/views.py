@@ -906,7 +906,7 @@ def InteractionBrowserData(request):
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
                                 .annotate(a_angle = StdDev('a_angle'), outer_angle = StdDev('outer_angle'), core_distance = StdDev('core_distance'), \
-                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi'), sasa = StdDev('sasa'), rsa = StdDev('sasa'), theta = StdDev('theta'), hse = StdDev('hse')) \
+                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi'), sasa = StdDev('sasa'), rsa = StdDev('rsa'), theta = StdDev('theta'), hse = StdDev('hse')) \
                                 .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
@@ -1141,7 +1141,7 @@ def InteractionBrowserData(request):
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label','residue__amino_acid') \
                                 .annotate(a_angle = StdDev('a_angle'), outer_angle = StdDev('outer_angle'), core_distance = StdDev('core_distance'), \
-                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi'), sasa = StdDev('sasa'), rsa = StdDev('sasa'), theta = StdDev('theta'), hse = StdDev('hse')) \
+                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi'), sasa = StdDev('sasa'), rsa = StdDev('rsa'), theta = StdDev('theta'), hse = StdDev('hse')) \
                                 .values_list('residue__generic_number__label','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])

@@ -81,10 +81,11 @@
             }
         }
 
-        .nav-tabs {
+        #content .nav-tabs {
             border-bottom: 0px solid #ddd;
         }
-        .nav>li>a {
+
+        #content .nav>li>a {
             padding-top: 5px;
             padding-bottom: 5px;
         }

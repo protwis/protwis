@@ -4,8 +4,8 @@ function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
 
-    if ($.fn.DataTable.isDataTable(".browser-table-1")) {
-        var table = $(".browser-table-1").DataTable();
+    if ($.fn.DataTable.isDataTable(".browser-table-1:visible")) {
+        var table = $(".browser-table-1:visible").DataTable();
         table.rows({
             filter: 'applied'
         }).data().each(function(i) {
@@ -63,7 +63,7 @@ function renderDataTablesYadcf(element) {
         return
     }
 
-    $(".main_loading_overlay").show(0);
+    // $(".main_loading_overlay").show(0);
     switch (tab_number) {
         case "1":
             // statements_1
@@ -152,6 +152,7 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
+                repeated_from_to = make_range_number_cols(4, 18);
                 yadcf.init(btable,
                     [{
                             column_number: 0,
@@ -180,90 +181,8 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "Type",
                             text_data_delimiter: "|",
                             filter_reset_button_text: false,
-                        },
-                        {
-                            column_number: 4,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number: 5,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number: 6,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 7,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 8,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 9,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 10,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 11,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 12,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 13,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 14,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 15,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 16,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 17,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                    ], {
+                        }
+                    ].concat(repeated_from_to), {
                         cumulative_filtering: false
                     }
 
@@ -300,6 +219,9 @@ function renderDataTablesYadcf(element) {
                 //     }
                 //     return false;
                 // }
+
+
+                repeated_from_to = make_range_number_cols(4, 16);
 
                 yadcf.init(btable,
                     [{
@@ -343,90 +265,8 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "Type",
                             text_data_delimiter: "|",
                             filter_reset_button_text: false,
-                        },
-                        {
-                            column_number: 4,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number: 5,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 6,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 7,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 8,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 9,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 10,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 11,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number: 12,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 13,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 14,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 15,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 16,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                        {
-                            column_number: 17,
-                            filter_type: "range_number",
-                            filter_reset_button_text: false,
-
-                        },
-                    ], {
+                        }
+                    ].concat(repeated_from_to), {
                         cumulative_filtering: false
                     }
 
@@ -680,38 +520,49 @@ function renderBrowser(data) {
         });
     } else if (data['proteins'].length > 1) {
         thead = '<tr> \
-                          <th colspan="1">Segment</th> \
-                          <th colspan="1">Generic No</th> \
-                          <th> Frequency (%)</th> \
-                          <th>Type(s)</th> \
-                          <th>Class Seq Cons(%)</th> \
-                          <th>Ca distance</th> \
-                          <th colspan="2">Ca distance from 7TM<br>axis</th> \
-                          <th colspan="2">Backbone<br>Rotation</th> \
-                          <th colspan="2">Residue<br>Rotamer</th> \
-                          <th colspan="2">Tau angle</th> \
-                          <th colspan="2">Phi dihedral</th> \
-                          <th colspan="2">Psi dihedral</th> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2"> Frequency (%)</th> \
+                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
+                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="2" rowspan="2">Position presence %</th> \
+                          <th colspan="4">Secondary structure</th> \
+                          <th rowspan="2">Class Seq Cons(%)</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="2">Distance</th> \
+                          <th colspan="2">Rotation (Ca angle)</th> \
+                          <th colspan="2">Rotamer</th> \
+                          <th colspan="2">SASA</th> \
+                          <th colspan="2">RSA</th> \
+                          <th colspan="2">Consensus SS</th> \
+                          <th colspan="2">Frequency %</th> \
                         </tr> \
                         <tr> \
                           <th class="dt-center"></th> \
                           <th class="dt-center">Pos1-Pos2</th> \
-                          <th class="narrow_col"></th> \
+                          <th class="narrow_col">Set<br></th> \
                           <th></th> \
+                          <th class="narrow_col">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">AA pairs</th> \
-                          <th class="narrow_col">Res1-Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
-                          <th class="narrow_col">Res1</th> \
-                          <th class="narrow_col">Res2</th> \
                         </tr>';
         table.find('thead').html(thead);
         var proteins = data['proteins'].length
@@ -719,35 +570,49 @@ function renderBrowser(data) {
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
-            var pfreq = Math.round(100 * v['proteins'].length / proteins);
-            var sfreq = Math.round(100 * v['pdbs'].length / pdbs);
-            const types = v['types'].map((t) => types_to_short[t]).join('|');
+            var sfreq1 = Math.round(100 * v['pdbs'].length / pdbs);
             var class_seq_cons = v['class_seq_cons'];
+            // var types = v['types'].join(",<br>");
+            const types = v['types'].map((t) => types_to_short[t]).join('|');
             var seg1 = data['segm_lookup'][gn1];
             var seg2 = data['segm_lookup'][gn2];
             var distance = v['distance'];
             var angles_1 = v['angles'][0];
             var angles_2 = v['angles'][1];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi', 
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
             tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center">${gn1}-${gn2}</td>
-                      <td class="narrow_col">${sfreq}</td>
+                      <td class="narrow_col">${sfreq1}</td>
                       <td>${types}</td>
-                      <td class="narrow_col">${class_seq_cons}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col">${angles_1[0]}</td>
-                      <td class="narrow_col">${angles_2[0]}</td>
-                      <td class="narrow_col">${angles_1[1]}</td>
-                      <td class="narrow_col">${angles_2[1]}</td>
-                      <td class="narrow_col">${angles_1[2]}</td>
-                      <td class="narrow_col">${angles_2[2]}</td>
-                      <td class="narrow_col">${angles_1[3]}</td>
-                      <td class="narrow_col">${angles_2[3]}</td>
-                      <td class="narrow_col">${angles_1[4]}</td>
-                      <td class="narrow_col">${angles_2[4]}</td>
-                      <td class="narrow_col">${angles_1[5]}</td>
-                      <td class="narrow_col">${angles_2[5]}</td>
+                      <td class="narrow_col core_distance">${angles_1[0]}</td>
+                      <td class="narrow_col core_distance">${angles_2[0]}</td>
+                      <td class="narrow_col a_angle">${angles_1[1]}</td>
+                      <td class="narrow_col a_angle">${angles_2[1]}</td>
+                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
+                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
+                      <td class="narrow_col sasa">${angles_1[6]}</td>
+                      <td class="narrow_col sasa">${angles_2[6]}</td>
+                      <td class="narrow_col rsa">${angles_1[7]}</td>
+                      <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
             tbody.append(tr);
         });
@@ -786,12 +651,54 @@ function renderBrowser(data) {
                           <th class="narrow_col">Res1</th> \
                           <th class="narrow_col">Res2</th> \
                         </tr>';
+
+        thead = '<tr> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Positions GN</th> \
+                          <th rowspan="2">Interaction</th> \
+                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
+                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="4">Secondary structure</th> \
+                          <th rowspan="2">Class Seq Cons(%)</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="2">Distance</th> \
+                          <th colspan="2">Rotation (Ca angle)</th> \
+                          <th colspan="2">Rotamer</th> \
+                          <th colspan="2">SASA</th> \
+                          <th colspan="2">RSA</th> \
+                          <th colspan="2">Consensus SS</th> \
+                          <th colspan="2">Frequency %</th> \
+                        </tr> \
+                        <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1-Pos2</th> \
+                          <th></th> \
+                          <th class="narrow_col">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">AA pairs</th> \
+                        </tr>';
         table.find('thead').html(thead);
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
-            var seg1 = data['segm_lookup'][gn1];
-            var seg2 = data['segm_lookup'][gn2];
+            // var types = v['types'].join(",<br>");
             const types = v['types'].map((t) => types_to_short[t]).join('|');
             var pos1 = v['seq_pos'][0];
             var pos2 = v['seq_pos'][1];
@@ -807,23 +714,25 @@ function renderBrowser(data) {
                       <td class="dt-center"><span>${pos1}</span>-<span>${pos2}</span></td>
                       <td class="dt-center">${gn1}-${gn2}</td>
                       <td>${types}</td>
-                      <td class="narrow_col">${class_seq_cons}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col">${angles_1[0]}</td>
-                      <td class="narrow_col">${angles_2[0]}</td>
-                      <td class="narrow_col">${angles_1[1]}</td>
-                      <td class="narrow_col">${angles_2[1]}</td>
-                      <td class="narrow_col">${angles_1[2]}</td>
-                      <td class="narrow_col">${angles_2[2]}</td>
-                      <td class="narrow_col">${angles_1[3]}</td>
-                      <td class="narrow_col">${angles_2[3]}</td>
-                      <td class="narrow_col">${angles_1[4]}</td>
-                      <td class="narrow_col">${angles_2[4]}</td>
-                      <td class="narrow_col">${angles_1[5]}</td>
-                      <td class="narrow_col">${angles_2[5]}</td>
+                      <td class="narrow_col core_distance">${angles_1[0]}</td>
+                      <td class="narrow_col core_distance">${angles_2[0]}</td>
+                      <td class="narrow_col a_angle">${angles_1[1]}</td>
+                      <td class="narrow_col a_angle">${angles_2[1]}</td>
+                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
+                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
+                      <td class="narrow_col sasa">${angles_1[6]}</td>
+                      <td class="narrow_col sasa">${angles_2[6]}</td>
+                      <td class="narrow_col rsa">${angles_1[7]}</td>
+                      <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
             tbody.append(tr);
-        });
+          });
     }
 
     // table.on('click', '.clickable-row', function(event) {
