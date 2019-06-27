@@ -56,6 +56,7 @@ INSTALLED_APPS = (
     'contactnetwork',
     'seqsign',
     'angles',
+    'hotspots',
 )
 
 MIDDLEWARE = (

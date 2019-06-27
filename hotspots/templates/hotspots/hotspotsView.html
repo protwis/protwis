@@ -1,0 +1,915 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+	<ul class="nav navtabs" id="move_nav">
+		<li class="active"><a href="#3D-tab" data-toggle="tab">3D</a></li>
+		<li class="active"><a href="#2D-tab" data-toggle="tab">2D</a></li>
+	</ul>
+      <div class="tab-content clearfix">
+	<div class="tab-pane main_option active" id="3D-tab">
+                <div class="row">
+                  <div class="col-md-4 tab-pane" class="NGL-tab">
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-1" style="margin: auto; width:100%; height:400px;">
+                                </div>
+                            </div>
+                         </div>
+                  </div>
+                  <div class="col-md-4 tab-pane" class="NGL-tab">
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-2" style="margin: auto; width:100%; height:400px;">
+                                </div>
+                            </div>
+                         </div>
+                  </div>
+                  <div class="col-md-4 tab-pane" class="NGL-tab">
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-3" style="margin: auto; width:100%; height:400px;">
+                                </div>
+                            </div>
+                         </div>
+                  </div>
+                </div>
+		<div class="tab-pane main_option active" id="2D-tab">
+                	<div class="row">
+                  </div>
+                </div>
+	</div>
+        <div class="tab-content clearfix">
+	      <div class="row">
+                  <div class="tab-pane" class="matrix-tab">
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">HEATMAP/MATRIX</h3>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="heatmap-container" style="margin: auto; width:100%; height:800px;">
+                                </div>
+                            </div>
+                         </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+
+{% endblock %}
+{% block addon_js %}
+    <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <!-- PDB table -->
+    <script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
+
+    <!-- NGL -->
+    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+
+    <script>
+        // create NGL tooltip
+        var ngl_tooltip = document.createElement("div")
+        Object.assign(ngl_tooltip.style, {
+          display: "none",
+          position: "fixed",
+          zIndex: 10,
+          pointerEvents: "none",
+          backgroundColor: "rgba( 0, 0, 0, 0.6 )",
+          color: "lightgrey",
+          padding: "8px",
+          fontFamily: "sans-serif"
+        })
+        document.body.appendChild(ngl_tooltip)
+
+        function toggleFullScreen(fullScreenElement) {
+            if (!document.mozFullScreen && !document.webkitFullScreen) {
+                if (fullScreenElement.mozRequestFullScreen) {
+                    fullScreenElement.mozRequestFullScreen();
+                } else {
+                    fullScreenElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+                }
+            } else {
+                if (document.mozCancelFullScreen) {
+                  document.mozCancelFullScreen();
+                } else {
+                  document.webkitCancelFullScreen();
+                }
+            }
+        }
+
+        function hidePopovers() {
+            $('.popover').each(function(){
+                $(this).remove();
+            });
+        }
+
+        function getAminoAcidOneLetterCode(threeLetterCode) {
+            switch (threeLetterCode.toUpperCase()) {
+                case 'ALA':
+                    return 'A';
+                case 'ARG':
+                    return 'R';
+                case 'ASN':
+                    return 'N';
+                case 'ASP':
+                    return 'D';
+                case 'CYS':
+                    return 'C';
+                case 'GLN':
+                    return 'Q';
+                case 'GLU':
+                    return 'E';
+                case 'GLY':
+                    return 'G';
+                case 'HIS':
+                    return 'H';
+                case 'ILE':
+                    return 'I';
+                case 'LEU':
+                    return 'L';
+                case 'LYS':
+                    return 'K';
+                case 'MET':
+                    return 'M';
+                case 'PHE':
+                    return 'F';
+                case 'PRO':
+                    return 'P';
+                case 'SER':
+                    return 'S';
+                case 'THR':
+                    return 'T';
+                case 'TRP':
+                    return 'W';
+                case 'TYR':
+                    return 'Y';
+                case 'VAL':
+                    return 'V';
+                default:
+                    return null;
+            }
+        }
+
+        function redraw_renders() {
+          // Makes sure diagrams fit sizes
+
+          var visible_svg = $('svg:visible');
+          var svg_class = visible_svg.attr("class");
+
+          var width_svg = visible_svg.width();
+
+          // Don't go too high
+          if (width_svg>screen.height) width_svg = screen.height;
+          visible_svg.height(width_svg);
+
+          // Resize NGL
+          var ngl = $('.ngl-container:visible');
+          var width_ngl = ngl.width();
+
+          // Don't go too high
+          if (width_ngl>screen.height) width_ngl = screen.height;
+          ngl.height(width_svg);
+        }
+
+        function initializeFullscreenButton(selector) {
+            $(selector + ' .btn-fullscreen').click(function() {
+                fullScreenElement = $(this).parent().next().children().first();
+                fullScreenElement.css('background-color','white');
+                toggleFullScreen(fullScreenElement.get(0));
+            });
+        }
+
+        var stage = {};
+        var pdb_data = {};
+        var color_schemes = {};
+        var reps = {} // store ngl representations
+        var gpcr_rep = {}
+        var selectColoring = {} // store coloring settings
+        var int_labels = []
+        function createNGLview(mode, pdb, pdbs = false) {
+            $("#ngl-"+mode).html("");
+            stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
+            color_schemes[mode] = [[],[]];
+            reps[mode] = [{},{}]
+            gpcr_rep[mode] = [];
+            pdb_data[mode] = [];
+            int_labels[mode] = []
+
+            var first_structure;
+            var num_set1;
+            var gn_num_set1;
+            var two_structures = false;
+
+            var blue_colors = ['#f0fcfa','#D3E4EA','#B6CDDB', '#99B5CC',    '#7C9EBD',    '#5F86AE', '#426F9F',    '#255790',    '#084081']
+            var red_colors = ['#fbf0fc','#f3dbec','#ebc5df', '#dda8bc',    '#cc7b7f',    '#d3574e', '#be372b',    '#ac1808',    '#811808']
+
+            $.getJSON( "/contactnetwork/pdb/"+pdb,
+              function( data ) {
+                var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
+                var segments_sets = {}
+                int_labels[mode][0] = {}
+
+                highlight.forEach( function(e){
+                  segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
+                });
+
+                pdb_data[mode][0] = data;
+                color_schemes[mode][0]['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
+                        [blue_colors[1], segments_sets[highlight[0]]],
+                        [blue_colors[2], segments_sets[highlight[1]]],
+                        [blue_colors[3], segments_sets[highlight[2]]],
+                        [blue_colors[4], segments_sets[highlight[3]]],
+                        [blue_colors[5], segments_sets[highlight[4]]],
+                        [blue_colors[6], segments_sets[highlight[5]]],
+                        [blue_colors[7], segments_sets[highlight[6]]],
+                        [blue_colors[8], segments_sets[highlight[7]]],
+                        [ "white", "*" ]
+                        ])
+
+                color_schemes[mode][0]['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
+                          ["#ccc", segments_sets[highlight[0]]],
+                          ["#bbb", segments_sets[highlight[1]]],
+                          ["#aaa", segments_sets[highlight[2]]],
+                          ["#888", segments_sets[highlight[3]]],
+                          ["#666", segments_sets[highlight[4]]],
+                          ["#444", segments_sets[highlight[5]]],
+                          ["#333", segments_sets[highlight[6]]],
+                          ["#111", segments_sets[highlight[7]]],
+                          [ "white", "*" ]
+                          ])
+
+
+                chain_set1 = pdb_data[mode][0]['chain'];
+                num_set1 = pdb_data[mode][0]['only_gn'];
+                gn_num_set1 = pdb_data[mode][0]['gn_map'];
+
+                var stringBlob = new Blob( [ pdb_data[mode][0]['pdb'] ], { type: 'text/plain'} );
+                stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
+                    first_structure = o
+
+                    // Cleanup
+                    pdb_data[mode][0]['pdb'] = null;
+
+                    // TODO: cartoon for ECL2 is currently not shown (only 3 res, but 4 needed for cartoon) - show ribbon for ICL/ECLs?
+                    gpcr_rep[mode][0] = o.addRepresentation( "cartoon", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+")",
+                      radiusSize: 1,
+                      radiusScale: 0.6,
+                      color: color_schemes[mode][0]['blue'],
+                      metalness: 0,
+                      colorMode: "hcl",
+                      roughness: 1,
+                      opacity: 1,
+                      side: "front",
+                      depthWrite: true
+                    });
+
+                    // REMOVE default hoverPick mouse action
+                    stage[mode].mouseControls.remove("hoverPick")
+
+                    // Add residue labels for GN residues
+                    pdb_data[mode][0]['only_gn'].forEach( function(resNo, index){
+                      var genNo = pdb_data[mode][0]['gn_map'][index]
+                      int_labels[mode][0][resNo] = genNo
+                    })
+
+                    // listen to `hovered` signal to move tooltip around and change its text
+                    // TODO: implement this to handle two structures
+                    stage[mode].signals.hovered.add(function (pickingProxy) {
+                      var label_index = false
+
+                      if (pickingProxy && pickingProxy.atom) {
+                        label_index = pickingProxy.atom.resno;
+                        ngl_tooltip.innerText = "RESIDUE:"
+                      }
+
+                      if (label_index && (label_index in int_labels[mode][0])) {
+                        ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
+                        ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
+                        ngl_tooltip.style.left = mp.x + 3 + "px"
+                        ngl_tooltip.style.display = "block"
+                      } else {
+                        ngl_tooltip.style.display = "none"
+                      }
+                    })
+
+                    reps[mode][0].structureComponent = o
+                    createNGLRepresentations(mode, 0, false)
+
+                    // Automatic GPCR positioning
+                    if ("translation" in pdb_data[mode][0]){
+                      var translation = JSON.parse(pdb_data[mode][0]["translation"])
+                      var center_axis = JSON.parse(pdb_data[mode][0]["center_axis"])
+
+                      // calculate rotation and apply
+                      v1 = new NGL.Vector3(0,1,0)
+                      v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+                      var quaternion = new NGL.Quaternion(); // create one and reuse it
+                      quaternion.setFromUnitVectors( v2, v1 )
+                      o.setRotation(quaternion)
+
+                      // calculate translation and apply
+                      var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+                      v.applyMatrix4(o.matrix)
+                      o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+
+                      // calculate H8 position (based on TM1)
+                      var tm1_vector
+                      var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                      o.structure.eachAtom(function (ap) {
+                        tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                        tm1_vector.applyMatrix4(o.matrix)
+                      }, new NGL.Selection(":"+pdb_data[mode][0]['chain']+" and "+ ref_tm1 +" and .CA"))
+
+                      tm1_vector.y = 0 // height position doesn't matter
+                      tm1_vector.normalize()
+
+                      // calculate rotation angle around Y-axis (as the GPCR is now upright)
+                      v3 = new NGL.Vector3(-1, 0, 0)
+                      var m = new NGL.Matrix4()
+                      if (tm1_vector.z < 0)
+                        m.makeRotationY(v3.angleTo(tm1_vector))
+                      else if (tm1_vector.z > 0)
+                        m.makeRotationY(-1*v3.angleTo(tm1_vector))
+
+                      o.setTransform(m)
+                    }
+
+//                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)")
+
+                    var view = new NGL.Matrix4()
+                    view.set(144.5, 12.5, 8.8, 0, -13.1, 144.3, 10.0, 0, -7.9, -10.8, 144.7, 0, 4, -0.4, -1.1, 1)
+                    stage[mode].viewerControls.orient(view)
+                } );
+
+            })
+
+            var newDiv = document.createElement("div");
+            newDiv.setAttribute("style", "position: absolute; top: 45px; left: 20px; background-color: #DDD; opacity: .8; padding: 10px;")
+            var controls = '<div class="controls">'
+                         + '<h4>Controls</h4>';
+
+            if (pdbs){
+                controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
+                for (var i = 0; i < pdbs.length; i++){
+                    if (pdbs[i]==pdb)
+                        controls += '<option value="'+pdbs[i]+'" SELECTED>'+pdbs[i]+'</option>';
+                    else
+                        controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
+                }
+                controls += '</select></p>';
+            }
+
+            controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
+            controls += '</select></p>'
+            newDiv.innerHTML = controls;
+
+            $("#ngl-"+mode).append(newDiv);
+
+            selectColoring[mode] = "diff"
+            $('#ngl_coloring_'+mode).change(function(e) {
+                selectColoring[mode] = $(this).val()
+                updateStructureRepresentations(mode)
+              });
+
+            // structure selection
+            $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                  createNGLview(mode, $(this).val(), pdbs, pdbs_set2);
+            });
+
+            $("#ngl-"+mode+" #ngl_color").change(function(e){
+                gpcr_rep[mode][0].setParameters({
+                  color: color_schemes[mode][0][$(this).val()]
+                });
+            });
+
+
+            $("#"+mode+"-NGL-tab-link").click(function(e){
+                $(function() {
+                  stage[mode].handleResize();
+                });
+            });
+
+            $("#ngl-"+mode+" #ngl_only_gns").change(function(e){
+                updateStructureRepresentations(mode);
+            });
+        }
+
+        var linkColourScheme = {}
+        function createNGLRepresentations(mode, structureNumber, update = false) {
+            var res_int = []
+            if (mode in reps && structureNumber in reps[mode] && reps[mode][structureNumber].structureComponent)
+              var o = reps[mode][structureNumber].structureComponent;
+            else
+              return  // NGL not initialized
+
+            // initialize linkMap + colorScheme
+            if (!(mode in linkColourScheme)) linkColourScheme[mode] = {}
+
+            var gnOnly = !update || $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
+
+            // Empty? Update selection with a fake residue -> hide everything
+            if (res_int.length == 0) res_int.push("9999999")
+
+            if (update){
+                reps[mode][structureNumber].int_res.setSelection(":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and (.CA)")
+                reps[mode][structureNumber].ball_int.setSelection(":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached")
+            } else {
+                // selection representation
+                reps[mode][structureNumber].hover = o.addRepresentation("ball+stick", {sele: ":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and (.CA)"});
+
+                reps[mode][structureNumber].int_res = o.addRepresentation( "spacefill", {
+                  sele: ":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
+                  color: (structureNumber==0 ? "#084081" : "#811808"),
+                  // colorScale: ["#44f", "#444"],
+                  radiusScale: .2,
+                  name: "res",
+                  visible: true
+                });
+
+                reps[mode][structureNumber].ball_int = o.addRepresentation("ball+stick", {
+                  sele: ":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                  color: "element",
+                  colorValue: (structureNumber==0 ? "#99B5CC" : "#DDA8BC"),
+                  visible: false
+                  })
+            }
+
+            // update show/hide when updating representations
+             updateStructureRepresentations(mode)
+        }
+
+        // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
+        function updateStructureRepresentations(mode) {
+          var structures = 1;
+ 
+          if (gpcr_rep[mode] != undefined && gpcr_rep[mode][0] != undefined){
+            for (var key = 0; key < structures; key++) {
+              var color_scheme = []
+
+              if (coloringData[mode] != undefined){
+                // find selected coloring option
+                var colorIndex = 0
+
+                var colorType = $(tabMap[mode] + " .variable_selector").val()
+                for (gn_key in coloringData[mode]){
+                  // select residue
+                  gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
+                  ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+
+                  // add color
+                  // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
+                  switch(colorType){
+                    case "outer_angle":
+                    case "bb_angle":
+                    case "sc_angle":
+                      if (colorIndex == 1 || colorIndex == 3)
+                        color_scheme.push([numberToColor4(140, coloringData[mode][gn_key][colorIndex]-40, false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(90, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+		    default:
+                      break;
+                  }
+                }
+
+                color_scheme.push([ "white", "*" ]);
+                diff_coloring = NGL.ColormakerRegistry.addSelectionScheme(color_scheme)
+                gpcr_rep[mode][key].setParameters({
+                    color: diff_coloring
+                });
+              }
+
+              // Update cartoon using selection
+              checked = $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
+              sele = ":"+pdb_data[mode][key]['chain'];
+              int_sele = sele
+              if (checked)
+                sele = ":"+pdb_data[mode][key]['chain']+" and ("+pdb_data[mode][key]['only_gn'].join(", ")+")";
+
+              gpcr_rep[mode][key].setSelection(sele);
+            }
+          }
+        }
+
+        function rgb2hex(r,g,b) {
+
+            if (r.length == 1)
+                r = '0' + r;
+
+            if (g.length == 1)
+                g = '0' + g;
+
+            if (b.length == 1)
+                b = '0' + b;
+
+            return '#' + r + g + b;
+        }
+
+        function numberToColor(max, value, neg_and_pos = false) {
+            if (neg_and_pos) {
+              value = value + max
+              max = max*2
+            }
+
+            if (value > max)
+              value = max
+
+            var hexc = 255/max;
+
+            if(value<(max/3)){
+                return rgb2hex("00","00",Math.floor((max-value)*hexc).toString(16));
+            } else if (value < ((2*max)/3)) {
+                return rgb2hex(Math.floor(value*hexc).toString(16),Math.floor((max-Math.abs(value-max/2))*hexc).toString(16),Math.floor((max-value)*hexc).toString(16));
+            } else {
+                return rgb2hex(Math.floor(value*hexc).toString(16),"00","00");
+            }
+        }
+
+        function numberToColor5(max,value, neg_and_pos = false) {
+            return numberToColor3(max, value*-1, neg_and_pos)
+        }
+
+        function numberToColor4(max,value, neg_and_pos = false) {
+            if (neg_and_pos) {
+              value = value + max
+              max = max*2
+            }
+
+            if (value > max)
+              value = max
+            if (value < 0)
+              value = 0
+
+            //return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:255, green:128, blue: 83}, {red:0, green:0, blue: 255})
+            //return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:7, green:74, blue: 33})
+            return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:117, green:177, blue: 212}, {red:16, green:55, blue: 117})
+        }
+
+        function numberToColor3(max,value, neg_and_pos = false) {
+            if (neg_and_pos) {
+              value = value + max
+              max = max*2
+            }
+
+            if (value > max)
+              value = max
+            if (value < 0)
+              value = 0
+
+            return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+        }
+
+        function numberToColor2(max,value, neg_and_pos = false) {
+            if (neg_and_pos) {
+              value = value + max
+              max = max*2
+            }
+
+            if (value > max)
+              value = max
+            if (value < 0)
+              value = 0
+
+            return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+        }
+
+        function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
+            var color1 = rgbColor1;
+            var color2 = rgbColor2;
+            var fade = fadeFraction;
+
+            // Do we have 3 colors for the gradient? Need to adjust the params.
+            if (rgbColor3) {
+              fade = fade * 2;
+
+              // Find which interval to use and adjust the fade percentage
+              if (fade >= 1) {
+                fade -= 1;
+                color1 = rgbColor2;
+                color2 = rgbColor3;
+              }
+            }
+
+            var diffRed = color2.red - color1.red;
+            var diffGreen = color2.green - color1.green;
+            var diffBlue = color2.blue - color1.blue;
+
+            var gradient = {
+              red: parseInt(Math.floor(color1.red + (diffRed * fade)), 10),
+              green: parseInt(Math.floor(color1.green + (diffGreen * fade)), 10),
+              blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
+            };
+
+            //return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
+            return rgb2hex(gradient.red.toString(16),gradient.green.toString(16),gradient.blue.toString(16));
+        }
+
+        function redraw_ngl() {
+          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+          var mode = $('.ngl-container:visible').attr('id').replace('ngl-','');
+          if (mode in stage){
+            $(function() {
+              stage[mode].handleResize();
+            });
+          }
+        }
+
+        function intersect(a, b) {
+          var t;
+          if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+          return a.filter(function (e) {
+              return b.indexOf(e) > -1;
+          });
+        }
+
+        function swap(dict){
+          var ret = {};
+          for(var key in dict){
+            ret[dict[key]] = key;
+          }
+          return ret;
+        }
+
+
+        $(document).ready(function() {
+            // TODO: adjust for 3 NGL viewers
+            //initializeFullscreenButton('#single-crystal-group-tab');
+
+            window.addEventListener("resize", redraw_ngl);
+
+            window.addEventListener("resize", redraw_renders);
+        });
+    </script>
+
+{% endblock %}
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <style type="text/css">
+
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        .no-top-border{
+            border-top: 0px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute;
+          background:white;
+          border: 1px solid #D1C9C2;
+          border-top: 1;
+          width: 400px;
+          margin: 0 auto;
+          padding:  7px 15px;
+          text-align: left;
+          -webkit-border-bottom-right-radius: 6px;
+          -webkit-border-bottom-left-radius: 6px;
+          -moz-border-radius-bottomright: 6px;
+          -moz-border-radius-bottomleft: 6px;
+          border-bottom-right-radius: 6px;
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        @media (min-width: 2200px){
+            #content {
+                width: 100%;
+                padding-left: 100px;
+                padding-right: 100px;
+            }
+        }
+
+        .nav-tabs {
+            border-bottom: 0px solid #ddd;
+        }
+
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
+        }
+
+        .modal-footer {
+            border-top: 0px;
+        }
+
+        #single-crystal-pdbs {
+            height: 400px;
+            overflow: scroll;
+        }
+
+        .heatmap {
+          height: 800px;
+        /*  border: 1px lightslategrey solid;*/
+          width: 100%;
+        }
+
+        @media screen and (max-width: 992px) {
+            .go-button {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        .heatmap-container {
+            position: relative;
+        }
+
+        :-webkit-full-screen.heatmap-container {
+          width: 100%;
+          height: 100%;
+          border: 0px;
+        }
+
+        :-webkit-full-screen.heatmap-container .heatmap {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
+        .highlighted {
+            stroke: #286090 !important;
+            stroke-width: 3 !important;
+            opacity: 1 !important;
+        }
+
+        .temperature-scale .gray-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .temperature-scale .red-to-gray {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(220,220,220,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#DCDCDC',GradientType=1 );
+        }
+
+        .temperature-scale .gray-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        .temperature-scale .white-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .temperature-scale .red-to-white {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(255,255,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF',GradientType=1 );
+        }
+
+        .temperature-scale .white-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        #single-crystal-tab .panel .btn-primary:hover, #single-crystal-group-tab .panel .btn-primary:hover, #two-crystal-groups-tab .panel .btn-primary:hover {
+            background-color: #337ab7;
+        }
+
+
+        .svg-download-button {
+            margin-top: 6px;
+        }
+
+        .csv-download-button {
+            margin-top: 6px;
+        }
+
+        .btn-download, .btn-download-alt, .btn-fullscreen {
+          margin-right: 10px;
+        }
+
+        #sliderDiv {
+            height: 30px;
+            width: 600px;
+            position: relative;
+            left: 50%;
+            margin-left: -300px;
+            margin-top: 20px;
+        }
+        #regroupDiv {
+            position: relative;
+            left: 50%;
+            margin-left: -50px;
+            margin-top: 20px;
+            width: 100px;
+            height: 30px;
+            background-color: #d7deeb;
+            vertical-align: middle;
+            text-align: center;
+            line-height: 30px;
+            border: 2px solid #8489a3;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #regroupDiv:hover {
+            background-color: #a1a5bd;
+        }
+
+        tr.table-selected {
+            color: #F00;
+            font-weight: bolder;
+        }
+    </style>
+
+{% endblock %}
