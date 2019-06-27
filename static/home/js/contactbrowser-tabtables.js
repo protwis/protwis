@@ -74,6 +74,7 @@ function renderDataTablesYadcf(element) {
             }
 
             console.log("do tab", tab_number)
+            console.time("Render DataTable "+tab_number)
             btable = table.DataTable({
                 'scrollX': true,
                 scrollY: '50vh',
@@ -94,6 +95,8 @@ function renderDataTablesYadcf(element) {
                     }
                 ]
             });
+
+            console.timeEnd("Render DataTable "+tab_number);
 
             if (analys_mode == "#two-crystal-groups") {
 
@@ -838,6 +841,7 @@ function renderBrowser(data) {
 }
 
 function renderBrowser_2(data) {
+    console.time("RenderBrowser2");
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
     var table = $(selector + " .browser-table-2");
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-2")) {
@@ -847,7 +851,6 @@ function renderBrowser_2(data) {
     var table = $(selector + " .browser-table-2");
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
-    console.time("RenderBrowser2");
     var proteins_1 = data['proteins1'].length
     var proteins_2 = data['proteins2'].length
     var pdbs_1 = data['pdbs1'].length
@@ -935,6 +938,7 @@ function renderBrowser_2(data) {
         var proteins_2 = data['proteins2'].length
         var pdbs_1 = data['pdbs1'].length
         var pdbs_2 = data['pdbs2'].length
+        tr_list = ''
         $.each(data['tab2'], function(i, v2) {
 
 
@@ -987,7 +991,8 @@ function renderBrowser_2(data) {
             // 7 'rsa',
             // 8 'theta',
             // 9 'hse'
-            tr = `
+            tr = ''
+            tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center">${gn1}-${gn2}</td>
@@ -1036,8 +1041,10 @@ function renderBrowser_2(data) {
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
                     </tr>`;
-            tbody.append(tr);
+            // tbody.append(tr);
         });
+        // insert natively for speed increase on Chrome
+        tbody[0].innerHTML = tr_list;
     } else if (data['proteins'].length > 1) {
 
     } else {

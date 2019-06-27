@@ -466,8 +466,9 @@
         
 
         function redraw_renders() {
+
           // Makes sure diagrams fit sizes
-          console.log('redraw renders');
+          console.time('redraw renders');
           var visible_svg = $('svg:visible');
           var svg_class = visible_svg.attr("class");
           if( window.innerHeight == screen.height || is_fullscreen) {
@@ -479,7 +480,8 @@
               } else {
                 visible_svg.css('height',screen.height);
               }
-
+                
+              console.timeEnd('redraw renders');
               return
           }
 
@@ -494,7 +496,7 @@
             browser_table_width =  browser_table_div_width-30;
           }
           $('.contact-browser .dataTables_wrapper').width(browser_table_width);
-          console.log(browser_table_div_width,browser_table_width);
+          // console.log(browser_table_div_width,browser_table_width);
 
           var width_svg = visible_svg.width();
 
@@ -511,7 +513,7 @@
           if (width_ngl>screen.height) width_ngl = screen.height;
           ngl.height(width_svg);
 
-          console.log('redraw',svg_class,width_svg,screen.height);
+          // console.log('redraw',svg_class,width_svg,screen.height);
 
           if (svg_class=='heatmap') {
             // If heatmap being resized, reset zoom
@@ -564,6 +566,7 @@
               window.zoomHiveplot[container].zoom(0.85);
             }
           }
+          console.timeEnd('redraw renders');
 
         }
 
@@ -846,6 +849,7 @@
         }
 
         function loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic) {
+            console.time('Get loadTwoPDBsView Data');
             $(".main_loading_overlay").show();
             //var segments = JSON.parse($(selector + ' .segments-input').val());
             var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
@@ -856,9 +860,6 @@
                 $(".matrix-tab:visible").click();
                 $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
 
-
-
-                console.log('get browser info');
                 $.ajax({ 
                     url: '/contactnetwork/browserdata', 
                     dataType: 'json', 
@@ -871,12 +872,12 @@
                     }, 
                     async: true, 
                     success:  function(data){
+                        console.timeEnd('Get loadTwoPDBsView Data');
                       // Re-render heatmap
                       data_browser = data;
                       renderBrowser(data);
                       renderBrowser_2(data);
                       browser_visible = $(".nav-browsers li.active a").attr('id');
-                      console.log('gotten browser info',browser_visible);
                       renderDataTablesYadcf(browser_visible);
                       $(".main_loading_overlay").hide();
                       redraw_renders();

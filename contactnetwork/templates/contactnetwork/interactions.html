@@ -3,51 +3,48 @@
 
 {% block content %}
 
-
-      <ul class="nav nav-tabs" id='mode_nav'>
-  			<li class="{% if not pdbs1 and not pdbs %}active{% endif %}">
-                  <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
-  			</li>
-  			<li class="{% if pdbs %}active{% endif %}">
-                  <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
-  			</li>
-  			<li class="{% if pdbs1 %}active{% endif %}">
-                  <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
-  			</li>
-		  </ul>
-
-        <div class="tab-content clearfix">
-            <!-- BEGIN SINGLE CRYSTAL TAB -->
-		    <div class="tab-pane main_option {% if not pdbs1 and not pdbs %}active{% endif %}" id="single-crystal-tab">
-                <!-- <div class="row">
+<ul class="nav nav-tabs" id='mode_nav'>
+    <li class="{% if not pdbs1 and not pdbs %}active{% endif %}">
+        <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
+    </li>
+    <li class="{% if pdbs %}active{% endif %}">
+        <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
+    </li>
+    <li class="{% if pdbs1 %}active{% endif %}">
+        <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
+    </li>
+</ul>
+<div class="tab-content clearfix">
+    <!-- BEGIN SINGLE CRYSTAL TAB -->
+    <div class="tab-pane main_option {% if not pdbs1 and not pdbs %}active{% endif %}" id="single-crystal-tab">
+        <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single structure interactions</h1>
                         <p>Display interaction heatmap for a single structure. Choose a PDB and options below.</p>
                     </div>
                 </div> -->
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <input type="hidden" class="interactions-input" value="[]" />
-                                <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
-                                <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span class="crystal-count">No structure selected.</span>
-                                <div class="btn btn-success pull-right go-button"><span>Go</span></div>
-                            </div>
-                        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <input type="hidden" class="interactions-input" value="[]" />
+                        <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
+                        <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span class="crystal-count">No structure selected.</span>
+                        <div class="btn btn-success pull-right go-button"><span>Go</span></div>
                     </div>
-                    <div class="col-md-3 hidden">
-                        <div class="panel panel-default controls-panel">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Controls</h3>
-                            </div>
-                            <div class="panel-body">
-
-                            </div>
-                        </div>
+                </div>
+            </div>
+            <div class="col-md-3 hidden">
+                <div class="panel panel-default controls-panel">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Controls</h3>
                     </div>
-<!--                    <div class="col-md-5">
+                    <div class="panel-body">
+                    </div>
+                </div>
+            </div>
+            <!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -85,236 +82,232 @@
                             </div>
                         </div>
                     </div>-->
-                    <div class="col-md-1">
-                    </div>
-                </div>
-
-                <div class="row" style='height:500px'>
-                  <div class="col-md-4">
-                     <div class="panel panel-default" id="single_1">
-                        <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Select plot</h3>
-                            <span class="pull-right">
-                            <span class="plot-select"></span>
-                            <span class="glyphicon glyphicon-download btn-download png"></span>
-                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                          </span>
-                            <div class="clearfix"></div>
-                        </div>
-                        <div class="panel-body">
-                            <div class="plot-container none">
-                            </div>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="col-md-4">
-                     <div class="panel panel-default" id="single_2">
-                        <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Select plot</h3>
-                          <span class="pull-right">
-                            <span class="plot-select"></span>
-                            <span class="glyphicon glyphicon-download btn-download png"></span>
-                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                          </span>
-                            <div class="clearfix"></div>
-                        </div>
-                        <div class="panel-body">
-                            <div class="plot-container none">
-                            </div>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="col-md-4">
-                     <div class="panel panel-default" id="single_3">
-                        <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Select plot</h3>
-                            <span class="pull-right">
-                            <span class="plot-select"></span>
-                            <span class="glyphicon glyphicon-download btn-download png"></span>
-                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                          </span>
-                            <div class="clearfix"></div>
-                        </div>
-                        <div class="panel-body">
-                            <div class="plot-container none">
-                            </div>
-                        </div>
-                     </div>
-                  </div>
-                </div>
-
-                <ul class="nav nav-tabs hidden nav-viz">
-                  <li class="active"><a href="#single-matrix-tab" data-toggle="tab" class='matrix-tab' id="single-matrix-tab-link">Matrix</a></li>
-                  <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
-                  <li><a href="#single-hiveplot-tab" data-toggle="tab" id="single-hiveplot-tab-link">Hiveplot</a></li>
-                  <li><a href="#single-schematic_con-tab" data-toggle="tab" id="single-schematic_con-tab-link">2D Schematic (Con)</a></li>
-                  <li><a href="#single-schematic_non-tab" data-toggle="tab" id="single-schematic_non-tab-link">2D Schematic (Non)</a></li>
-                </ul>
-                <div class="row hidden">
-                  <div class="col-md-7 tab-content">
-                      <div class="tab-pane active" id="single-matrix-tab">
-                           <div class="panel panel-default no-top-border">
-                              <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Interactions</h3>
-                                  <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                  <div class="clearfix"></div>
-                              </div>
-                              <div class="panel-body">
-                                  <div class="heatmap-container">
-                                      <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"  id="heatmap_single"></svg>
-                                  </div>
-                              </div>
-                           </div>
-                      </div>
-
-
-                      <div class="tab-pane" id="single-flareplot-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">Flareplot</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="flareplot-container">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-                      <div class="tab-pane" id="single-hiveplot-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">Hiveplot</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="hiveplot-container">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-                      <div class="tab-pane" id="single-schematic_con-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">2D schematic</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="schematic_con-container" style="margin: auto; display: block">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-                      <div class="tab-pane" id="single-schematic_non-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">2D schematic Non</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="schematic_non-container" style="margin: auto; display: block">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-
-                    </div>
-
-                  <div class="col-md-5 tab-pane" id="single-NGL-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
-                                </div>
-                            </div>
-                         </div>
-
-                  </div>
-                </div>
-
-
-                <div class="row">
-                      <div class="col-md-12 contact-browser" id="single-primary-browser">
-                           <div class="panel panel-default">
-                              <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Contact Browser</h3>
-                                  <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                  <div class="clearfix"></div>
-                              </div>
-                              <div class="panel-body">
-                                <table class="table browser-table display">
-                                </table>
-                              </div>
-                           </div>
-                      </div>
-                </div>
-
-
+            <div class="col-md-1">
             </div>
-            <!-- END SINGLE CRYSTAL TAB -->
-            <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
-            <div class="tab-pane main_option {% if pdbs %}active{% endif %}" id="single-crystal-group-tab">
-                <!-- <div class="row">
+        </div>
+        <div class="row" style='height:500px'>
+            <div class="col-md-4">
+                <div class="panel panel-default" id="single_1">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        </span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="plot-container none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="panel panel-default" id="single_2">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        </span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="plot-container none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="panel panel-default" id="single_3">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        </span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="plot-container none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <ul class="nav nav-tabs hidden nav-viz">
+            <li class="active"><a href="#single-matrix-tab" data-toggle="tab" class='matrix-tab' id="single-matrix-tab-link">Matrix</a></li>
+            <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
+            <li><a href="#single-hiveplot-tab" data-toggle="tab" id="single-hiveplot-tab-link">Hiveplot</a></li>
+            <li><a href="#single-schematic_con-tab" data-toggle="tab" id="single-schematic_con-tab-link">2D Schematic (Con)</a></li>
+            <li><a href="#single-schematic_non-tab" data-toggle="tab" id="single-schematic_non-tab-link">2D Schematic (Non)</a></li>
+        </ul>
+        <div class="row hidden">
+            <div class="col-md-7 tab-content">
+                <div class="tab-pane active" id="single-matrix-tab">
+                    <div class="panel panel-default no-top-border">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Interactions</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="heatmap-container">
+                                <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap_single"></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="single-flareplot-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Flareplot</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="flareplot-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="single-hiveplot-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Hiveplot</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="hiveplot-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="single-schematic_con-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">2D schematic</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="schematic_con-container" style="margin: auto; display: block">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="single-schematic_non-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">2D schematic Non</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="schematic_non-container" style="margin: auto; display: block">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5 tab-pane" id="single-NGL-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
+                        <span class="pull-right">
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        </span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:1000px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <ul class="nav nav-tabs nav-browsers">
+            <li class="active"><a href="#single-crystal-browser-1-tab" data-toggle="tab" id="single-crystal-browser-1-tab-link">Contact position pairs</a></li>
+            <li><a href="#single-crystal-browser-2-tab" data-toggle="tab" id="single-crystal-browser-2-tab-link">Contact AA sequence conservation</a></li>
+            <li><a href="#single-crystal-browser-3-tab" data-toggle="tab" id="single-crystal-browser-3-tab-link">Contact hubs and micro-switch residues</a></li>
+            <li><a href="#single-crystal-browser-4-tab" data-toggle="tab" id="single-crystal-browser-4-tab-link">Helix types, bulges and constrictions</a></li>
+            <li><a href="#single-crystal-browser-5-tab" data-toggle="tab" id="single-crystal-browser-5-tab-link">Backbone movement (Ca-7TM axis)</a></li>
+        </ul>
+        <div class="row">
+            <div class="tab-content col-md-12 ">
+                <div class="contact-browser tab-pane active" id="single-crystal-browser-1-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Contact position pairs</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-1 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-browser tab-pane" id="single-crystal-browser-2-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Contact AA sequence conservation</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-2 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL TAB -->
+    <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
+    <div class="tab-pane main_option {% if pdbs %}active{% endif %}" id="single-crystal-group-tab">
+        <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single group of structures interactions</h1>
                         <p>Display similarity heatmap for a group of structures. Choose PDBs and options below.</p>
                     </div>
                 </div> -->
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
-                                <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
-                                <span class="crystal-count">No</span> structure(s) selected.
-                                <div class="btn btn-success pull-right go-button"><span>Go</span></div>
-
-                            </div>
-                        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
+                        <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
+                        <span class="crystal-count">No</span> structure(s) selected.
+                        <div class="btn btn-success pull-right go-button"><span>Go</span></div>
                     </div>
-<!--                    <div class="col-md-5">
+                </div>
+            </div>
+            <!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -352,191 +345,193 @@
                             </div>
                         </div>
                     </div> -->
-                    <div class="col-md-3">
-                        <div class="panel panel-default interactions-panel">
-                            <div class="panel-body">
-                                <input type="hidden" class="interactions-input" value="[]" />
-                                Interaction types:
-                                <div class="btn-group buttons-helices">
-                                  <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="polar">Polar</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="aromatic">Arom.</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="hydrophobic">Hydro.</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="van-der-waals">VDW</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 hidden">
-                        <div class="panel panel-default controls-panel">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Controls</h3>
-                            </div>
-                            <div class="panel-body">
-
-                            </div>
+            <div class="col-md-3">
+                <div class="panel panel-default interactions-panel">
+                    <div class="panel-body">
+                        <input type="hidden" class="interactions-input" value="[]" />
+                        Interaction types:
+                        <div class="btn-group buttons-helices">
+                            <button type="button" class="btn btn-primary all-button">All</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="polar">Polar</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="aromatic">Arom.</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="hydrophobic">Hydro.</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="van-der-waals">VDW</button>
                         </div>
                     </div>
                 </div>
-
-
-                <ul class="nav nav-tabs hidden nav-viz">
-                  <li class="active"><a href="#single-group-matrix-tab" data-toggle="tab" class='matrix-tab' id="single-group-matrix-tab-link">Matrix</a></li>
-                  <li><a href="#single-group-flareplot-tab" data-toggle="tab" id="single-group-flareplot-tab-link">Flareplot</a></li>
-                  <li><a href="#single-group-schematic_con-tab" data-toggle="tab" id="single-group-schematic_con-tab-link">2D Schematic (Con)</a></li>
-                  <li><a href="#single-group-schematic_non-tab" data-toggle="tab" id="single-group-schematic_non-tab-link">2D Schematic (Non)</a></li>
-                </ul>
-                <div class="row hidden">
-                  <div class="col-md-7 tab-content">
-                      <div class="tab-pane active" id="single-group-matrix-tab">
-                           <div class="panel panel-default">
-                              <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Interactions</h3>
-                                  <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                  <div class="clearfix"></div>
-                              </div>
-                              <div class="panel-body">
-                                  <div class="heatmap-container">
-                                      <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap_single_group"></svg>
-                                  </div>
-                              </div>
-                           </div>
-                      </div>
-
-                      <div class="tab-pane" id="single-group-flareplot-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">Flareplot</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="flareplot-container">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-                      <div class="tab-pane" id="single-group-schematic_con-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">2D schematic</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="schematic_con-container" style="margin: auto; display: block">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-                      <div class="tab-pane" id="single-group-schematic_non-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">2D schematic Non</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="schematic_non-container" style="margin: auto; display: block">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-
-
-                    </div>
-                    <div class="col-md-5 tab-pane" id="single-group-NGL-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="ngl-container" id="ngl-single-group" style="margin: auto; width:100%; height:1000px;">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-                </div>
-                <div class="row">
-                      <div class="col-md-12 contact-browser" id="single-group-primary-browser">
-                           <div class="panel panel-default">
-                              <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Contact Browser</h3>
-                                  <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                  <div class="clearfix"></div>
-                              </div>
-                              <div class="panel-body">
-                                <table class="table browser-table display">
-                                </table>
-                              </div>
-                           </div>
-                      </div>
-                </div>
-
             </div>
-            <!-- END SINGLE CRYSTAL GROUP TAB -->
-            <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
-            <div class="tab-pane main_option {% if pdbs2 %}active{% endif %}" id="two-crystal-groups-tab">
-                <!-- <div class="row">
+            <div class="col-md-3 hidden">
+                <div class="panel panel-default controls-panel">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Controls</h3>
+                    </div>
+                    <div class="panel-body">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <ul class="nav nav-tabs hidden nav-viz">
+            <li class="active"><a href="#single-group-matrix-tab" data-toggle="tab" class='matrix-tab' id="single-group-matrix-tab-link">Matrix</a></li>
+            <li><a href="#single-group-flareplot-tab" data-toggle="tab" id="single-group-flareplot-tab-link">Flareplot</a></li>
+            <li><a href="#single-group-schematic_con-tab" data-toggle="tab" id="single-group-schematic_con-tab-link">2D Schematic (Con)</a></li>
+            <li><a href="#single-group-schematic_non-tab" data-toggle="tab" id="single-group-schematic_non-tab-link">2D Schematic (Non)</a></li>
+        </ul>
+        <div class="row hidden">
+            <div class="col-md-7 tab-content">
+                <div class="tab-pane active" id="single-group-matrix-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Interactions</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="heatmap-container">
+                                <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap_single_group"></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="single-group-flareplot-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Flareplot</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="flareplot-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="single-group-schematic_con-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">2D schematic</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="schematic_con-container" style="margin: auto; display: block">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="single-group-schematic_non-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">2D schematic Non</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="schematic_non-container" style="margin: auto; display: block">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5 tab-pane" id="single-group-NGL-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
+                        <span class="pull-right">
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        </span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="ngl-container" id="ngl-single-group" style="margin: auto; width:100%; height:1000px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <ul class="nav nav-tabs nav-browsers">
+            <li class="active"><a href="#single-group-browser-1-tab" data-toggle="tab" id="single-group-browser-1-tab-link">Contact position pairs</a></li>
+            <li><a href="#single-group-browser-2-tab" data-toggle="tab" id="single-group-browser-2-tab-link">Contact AA sequence conservation</a></li>
+            <li><a href="#single-group-browser-3-tab" data-toggle="tab" id="single-group-browser-3-tab-link">Contact hubs and micro-switch residues</a></li>
+            <li><a href="#single-group-browser-4-tab" data-toggle="tab" id="single-group-browser-4-tab-link">Helix types, bulges and constrictions</a></li>
+            <li><a href="#single-group-browser-5-tab" data-toggle="tab" id="single-group-browser-5-tab-link">Backbone movement (Ca-7TM axis)</a></li>
+        </ul>
+        <div class="row">
+            <div class="tab-content col-md-12 ">
+                <div class="contact-browser tab-pane active" id="single-group-browser-1-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Contact position pairs</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-1 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-browser tab-pane" id="single-group-browser-2-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Contact AA sequence conservation</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-2 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL GROUP TAB -->
+    <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
+    <div class="tab-pane main_option {% if pdbs2 %}active{% endif %}" id="two-crystal-groups-tab">
+        <!-- <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Two groups of structures interactions</h1>
                         <p>Display similarity/dissimilarity heatmap for two groups of structures. Choose PDBs and options below.</p>
                     </div>
                 </div> -->
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
-                                <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures (Set 1)</button> <span class="crystal-count-1">No</span> structure(s) selected.
-                            </div>
-                        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
+                        <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures (Set 1)</button> <span class="crystal-count-1">No</span> structure(s) selected.
                     </div>
-                    <div class="col-md-3">
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
-                                <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures (Set 2)</button> <span class="crystal-count-2">No</span> structure(s) selected.
-                                <div class="btn btn-success pull-right go-button">Go</div>
-
-                            </div>
-                        </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
+                        <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures (Set 2)</button> <span class="crystal-count-2">No</span> structure(s) selected.
+                        <div class="btn btn-success pull-right go-button">Go</div>
                     </div>
-<!--                    <div class="col-md-5">
+                </div>
+            </div>
+            <!--                    <div class="col-md-5">
                         <div class="panel panel-default segments-panel">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Segments</h3>
@@ -574,190 +569,166 @@
                             </div>
                         </div>
                     </div> -->
-                    <div class="col-md-3">
-                        <div class="panel panel-default interactions-panel">
-                            <div class="panel-body">
-                                <input type="hidden" class="interactions-input" value="[]" />
-                                Interactions Types:
-                                <div class="btn-group buttons-helices">
-                                  <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="polar">Polar</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="aromatic">Arom.</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="hydrophobic">Hydro.</button>
-                                  <button type="button" class="btn btn-primary" data-interaction-type="van-der-waals">VDW</button>
-                                </div>
-                            </div>
+            <div class="col-md-3">
+                <div class="panel panel-default interactions-panel">
+                    <div class="panel-body">
+                        <input type="hidden" class="interactions-input" value="[]" />
+                        Interactions Types:
+                        <div class="btn-group buttons-helices">
+                            <button type="button" class="btn btn-primary all-button">All</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="polar">Polar</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="aromatic">Arom.</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="hydrophobic">Hydro.</button>
+                            <button type="button" class="btn btn-primary" data-interaction-type="van-der-waals">VDW</button>
                         </div>
                     </div>
-                    <div class="col-md-3 hidden">
-                        <div class="panel panel-default controls-panel">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Controls</h3>
-                            </div>
-                            <div class="panel-body">
-
-                            </div>
-                        </div>
+                </div>
+            </div>
+            <div class="col-md-3 hidden">
+                <div class="panel panel-default controls-panel">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Controls</h3>
                     </div>
-                    <div class="col-md-offset-3 col-md-1">
+                    <div class="panel-body">
                     </div>
                 </div>
-
-
-                <ul class="nav nav-tabs hidden nav-viz">
-                  <li class="active"><a href="#two-groups-matrix-tab" data-toggle="tab" class='matrix-tab' id="two-groups-matrix-tab-link">Matrix</a></li>
-                  <li><a href="#two-groups-flareplot-tab" data-toggle="tab" id="two-groups-flareplot-tab-link">Flareplot</a></li>
-                  <li><a href="#two-groups-schematic_con-tab" data-toggle="tab" id="two-groups-schematic_con-tab-link">2D Schematic (Con)</a></li>
-                  <li><a href="#two-groups-schematic_non-tab" data-toggle="tab" id="two-groups-schematic_non-tab-link">2D Schematic (Non)</a></li>
-                </ul>
-                <div class="row hidden">
-                  <div class="tab-content col-md-7 ">
-                      <div class="tab-pane active" id="two-groups-matrix-tab">
-                           <div class="panel panel-default no-top-border">
-                              <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Interactions</h3>
-                                  <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                  <div class="clearfix"></div>
-                              </div>
-                              <div class="panel-body">
-                                  <div class="heatmap-container">
-                                      <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin"  id="heatmap_groups"></svg>
-                                  </div>
-                              </div>
-                           </div>
-                      </div>
-
-                      <div class="tab-pane" id="two-groups-flareplot-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">Flareplot</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="flareplot-container">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-                      <div class="tab-pane" id="two-groups-schematic_con-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">2D schematic</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="schematic_con-container" style="margin: auto; display: block">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-                      <div class="tab-pane" id="two-groups-schematic_non-tab">
-
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">2D schematic Non</h3>
-                                <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="schematic_non-container" style="margin: auto; display: block">
-                                </div>
-                            </div>
-                         </div>
-
-                      </div>
-
-
-                </div>
-                <div class="col-md-5 tab-pane" id="two-groups-NGL-tab">
-
-                     <div class="panel panel-default">
+            </div>
+            <div class="col-md-offset-3 col-md-1">
+            </div>
+        </div>
+        <ul class="nav nav-tabs hidden nav-viz">
+            <li class="active"><a href="#two-groups-matrix-tab" data-toggle="tab" class='matrix-tab' id="two-groups-matrix-tab-link">Matrix</a></li>
+            <li><a href="#two-groups-flareplot-tab" data-toggle="tab" id="two-groups-flareplot-tab-link">Flareplot</a></li>
+            <li><a href="#two-groups-schematic_con-tab" data-toggle="tab" id="two-groups-schematic_con-tab-link">2D Schematic (Con)</a></li>
+            <li><a href="#two-groups-schematic_non-tab" data-toggle="tab" id="two-groups-schematic_non-tab-link">2D Schematic (Non)</a></li>
+        </ul>
+        <div class="row hidden">
+            <div class="tab-content col-md-7 ">
+                <div class="tab-pane active" id="two-groups-matrix-tab">
+                    <div class="panel panel-default no-top-border">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
+                            <h3 class="panel-title pull-left">Interactions</h3>
                             <span class="pull-right">
-                                  <span class="glyphicon glyphicon-download btn-download png"></span>
-                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                </span>
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
                             <div class="clearfix"></div>
                         </div>
                         <div class="panel-body">
-                            <div class="ngl-container" id="ngl-two-groups" style="margin: auto; width:100%; height:1000px;">
+                            <div class="heatmap-container">
+                                <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap_groups"></svg>
                             </div>
                         </div>
-                     </div>
-
-                  </div>
-
+                    </div>
                 </div>
-
-                <ul class="nav nav-tabs nav-browsers">
-                  <li class="active"><a href="#two-groups-browser-1-tab" data-toggle="tab" id="two-groups-browser-1-tab-link">Contact position pairs</a></li>
-                  <li><a href="#two-groups-browser-2-tab" data-toggle="tab" id="two-groups-browser-2-tab-link">Contact AA sequence conservation</a></li>
-                  <li><a href="#two-groups-browser-3-tab" data-toggle="tab" id="two-groups-browser-3-tab-link">Contact hubs and micro-switch residues</a></li>
-                  <li><a href="#two-groups-browser-4-tab" data-toggle="tab" id="two-groups-browser-4-tab-link">Helix types, bulges and constrictions</a></li>
-                  <li><a href="#two-groups-browser-5-tab" data-toggle="tab" id="two-groups-browser-5-tab-link">Backbone movement (Ca-7TM axis)</a></li>
-                </ul>
-                <div class="row">
-                  <div class="tab-content col-md-12 ">
-
-                      <div class="contact-browser tab-pane active"  id="two-groups-browser-1-tab">
-                           <div class="panel panel-default">
-                              <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Contact position pairs</h3>
-                                  <span class="pull-right">
-                                    <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                  </span>
-                                  <div class="clearfix"></div>
-                              </div>
-                              <div class="panel-body">
-                                <table class="table browser-table-1 display" width="100%"></table>
-                              </div>
-                           </div>
-                      </div>
-
-                      <div class="contact-browser tab-pane"  id="two-groups-browser-2-tab">
-                           <div class="panel panel-default">
-                              <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Contact AA sequence conservation</h3>
-                                  <span class="pull-right">
-                                    <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                  </span>
-                                  <div class="clearfix"></div>
-                              </div>
-                              <div class="panel-body">
-                                <table class="table browser-table-2 display" width="100%"></table>
-                              </div>
-                           </div>
-                      </div>
+                <div class="tab-pane" id="two-groups-flareplot-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Flareplot</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="flareplot-container">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
+                <div class="tab-pane" id="two-groups-schematic_con-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">2D schematic</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="schematic_con-container" style="margin: auto; display: block">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="two-groups-schematic_non-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">2D schematic Non</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span>
+                                <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="schematic_non-container" style="margin: auto; display: block">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- END TWO CRYSTAL GROUPS TAB -->
+            <div class="col-md-5 tab-pane" id="two-groups-NGL-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
+                        <span class="pull-right">
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        </span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="ngl-container" id="ngl-two-groups" style="margin: auto; width:100%; height:1000px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-
-
+        <ul class="nav nav-tabs nav-browsers">
+            <li class="active"><a href="#two-groups-browser-1-tab" data-toggle="tab" id="two-groups-browser-1-tab-link">Contact position pairs</a></li>
+            <li><a href="#two-groups-browser-2-tab" data-toggle="tab" id="two-groups-browser-2-tab-link">Contact AA sequence conservation</a></li>
+            <li><a href="#two-groups-browser-3-tab" data-toggle="tab" id="two-groups-browser-3-tab-link">Contact hubs and micro-switch residues</a></li>
+            <li><a href="#two-groups-browser-4-tab" data-toggle="tab" id="two-groups-browser-4-tab-link">Helix types, bulges and constrictions</a></li>
+            <li><a href="#two-groups-browser-5-tab" data-toggle="tab" id="two-groups-browser-5-tab-link">Backbone movement (Ca-7TM axis)</a></li>
+        </ul>
+        <div class="row">
+            <div class="tab-content col-md-12 ">
+                <div class="contact-browser tab-pane active" id="two-groups-browser-1-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Contact position pairs</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-1 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-browser tab-pane" id="two-groups-browser-2-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Contact AA sequence conservation</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-2 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END TWO CRYSTAL GROUPS TAB -->
+    </div>
     <!-- BEGIN SINGLE CRYSTAL PDB CHOOSER MODAL -->
     <div class="modal fade" id="single-crystal-pdb-modal-table" role="dialog">
         <div class="modal-dialog modal-wide">
@@ -768,24 +739,21 @@
                     <h4 class="modal-title">Select a group of structures from table</h4>
                 </div>
                 <div class="modal-body">
-                      <div class="col-md-12">
+                    <div class="col-md-12">
                         <div class="tableview"></div>
-                        </div>
-                      <div class="clearfix"></div>
-               </div>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
-        <div class="loading_overlay">
-          <img src="/static/home/images/loading.gif" 
-            id="img-load" />
+            <div class="loading_overlay">
+                <img src="/static/home/images/loading.gif" id="img-load" />
+            </div>
         </div>
-        </div>
-
     </div>
     <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
-
     <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
     <div class="modal fade" id="single-crystal-group-pdbs-modal-table" role="dialog">
         <div class="modal-dialog modal-wide">
@@ -796,24 +764,22 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                      <div class="col-md-12">
+                    <div class="col-md-12">
                         <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
                         <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                         <div class="tableview"></div>
-                      </div>
-               </div>
+                    </div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
-        <div class="loading_overlay">
-          <img src="/static/home/images/loading.gif" 
-            id="img-load" />
-        </div>
+            <div class="loading_overlay">
+                <img src="/static/home/images/loading.gif" id="img-load" />
+            </div>
         </div>
     </div>
     <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
-
     <!-- BEGIN TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
     <div class="modal fade" id="two-crystal-group-pdbs-modal-1-table" role="dialog">
         <div class="modal-dialog modal-wide">
@@ -824,23 +790,20 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
-                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
-                        <div class="tableview group-number-1" group-number="1"></div>
-               </div>
+                    <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
+                    <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                    <div class="tableview group-number-1" group-number="1"></div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
-        <div class="loading_overlay">
-          <img src="/static/home/images/loading.gif" 
-            id="img-load" />
-        </div>
+            <div class="loading_overlay">
+                <img src="/static/home/images/loading.gif" id="img-load" />
+            </div>
         </div>
     </div>
-
     <!-- END TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
-
     <!-- BEGIN TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
     <div class="modal fade" id="two-crystal-group-pdbs-modal-2-table" role="dialog">
         <div class="modal-dialog modal-wide">
@@ -851,26 +814,24 @@
                     <h4 class="modal-title">Select a group of structures</h4>
                 </div>
                 <div class="modal-body">
-                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
-                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
-                        <div class="tableview group-number-2" group-number="2"></div>
-               </div>
+                    <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
+                    <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                    <div class="tableview group-number-2" group-number="2"></div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
-        <div class="loading_overlay">
-          <img src="/static/home/images/loading.gif" 
-            id="img-load" />
-        </div>
+            <div class="loading_overlay">
+                <img src="/static/home/images/loading.gif" id="img-load" />
+            </div>
         </div>
     </div>
     <!-- END TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
     <div>
-      <div class="main_loading_overlay">
-        <img src="/static/home/images/loading.gif" 
-          id="img-load" />
-      </div>
+        <div class="main_loading_overlay">
+            <img src="/static/home/images/loading.gif" id="img-load" />
+        </div>
     </div>
 {% endblock %}
 {% block addon_js %}
