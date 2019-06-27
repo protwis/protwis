@@ -86,13 +86,16 @@
                                           </button>
                                           <ul class="dropdown-menu dataouter" role="menu">
                                             <li><a href="#">No data</a></li>
-                                            <li><a href="#">Receptor activation state</a></li>
-                                            <li><a href="#">Ligand function</a></li>
+                                            <h6 class="dropdown-header">Classification</h6>
                                             <li><a href="#">GPCR class</a></li>
                                             <li><a href="#">Ligand type</a></li>
                                             <li><a href="#">Receptor family</a></li>
+                                            <h6 class="dropdown-header">Structure</h6>
+                                            <li><a href="#">Receptor activation state</a></li>
+                                            <li><a href="#">Ligand function</a></li>
                                             <li><a href="#">Experimental method</a></li>
-                                            <li><a href="#">G-protein coupling</a></li>
+                                            <h6 class="dropdown-header">Coupling</h6>
+                                            <li><a href="#">All G-protein coupling</a></li>
                                             <li><a href="#">Primary G-protein coupling</a></li>
                                             <li><a href="#">Secondary G-protein coupling</a></li>
                                           </ul>
@@ -103,13 +106,16 @@
                                           </button>
                                           <ul class="dropdown-menu datainner" role="menu">
                                             <li><a href="#">No data</a></li>
-                                            <li><a href="#">Receptor activation state</a></li>
-                                            <li><a href="#">Ligand function</a></li>
+                                            <h6 class="dropdown-header">Classification</h6>
                                             <li><a href="#">GPCR class</a></li>
                                             <li><a href="#">Ligand type</a></li>
                                             <li><a href="#">Receptor family</a></li>
+                                            <h6 class="dropdown-header">Structure</h6>
+                                            <li><a href="#">Receptor activation state</a></li>
+                                            <li><a href="#">Ligand function</a></li>
                                             <li><a href="#">Experimental method</a></li>
-                                            <li><a href="#">G-protein coupling</a></li>
+                                            <h6 class="dropdown-header">Coupling</h6>
+                                            <li><a href="#">All G-protein coupling</a></li>
                                             <li><a href="#">Primary G-protein coupling</a></li>
                                             <li><a href="#">Secondary G-protein coupling</a></li>
                                           </ul>
@@ -184,6 +190,7 @@
         window.zoomCluster = {};
 
         var phylotree;
+        var doBranchColoring = false;
         var treeAnnotations = [];
         var couplingAnnotations = [];
         var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Experimental method", "Ligand function", "G-protein coupling", "Primary G-protein coupling", "Secondary G-protein coupling"]
@@ -227,8 +234,6 @@
             colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
             colorClasses[9] = colorClasses[8]
             colorClasses[10] = colorClasses[8]
-            console.log(dataClasses)
-            console.log(colorClasses)
 
             // G-protein coupling
             couplingAnnotations = data["Gprot_coupling"];
@@ -275,7 +280,8 @@
               'brush': false, // brush
               'reroot': true, // rerooting
               'hide': false, // hiding a subtree
-              'zoom': false // zooming
+              'zoom': false, // zooming
+              'inner_spacing': 5 // extra spacing between splits in tree (own custom option)
             })
             .radial(true)
             .node_span ('equal')
@@ -293,6 +299,30 @@
             maximumLeafSize()
             phylotree.layout(true)
 
+            // set consensus values for each node
+            phylotree.get_nodes().forEach(function(node){
+              pdbs = connectedPDBs(node);
+
+              // loop over dataclasses and assign conserved if present
+              node['colorClasses'] = JSON.parse(JSON.stringify(treeAnnotations[pdbs[0]]));
+              for (i = 1; i < pdbs.length; i++) {
+                var pdb = pdbs[i]
+                for (j = 0; j < node['colorClasses'].length; j++) {
+                  if (Array.isArray(node['colorClasses'][j])) {
+                      node['colorClasses'][j] = node['colorClasses'][j].filter(x => treeAnnotations[pdbs[i]][j].includes(x));
+                  } else {
+                      if (node['colorClasses'][j] != treeAnnotations[pdbs[i]][j]) {
+                        node['colorClasses'][j] = "-"
+                      }
+                  }
+                }
+              }
+            });
+
+            if (doBranchColoring){
+              d3.layout.phylotree.trigger_refresh(phylotree);
+            }
+
             // Button Toggles
             $("#layout").on("click", function(e) {
               phylotree.radial($(this).prop("checked")).placenodes().update();
@@ -300,6 +330,7 @@
 
             $("#colored-edges").on("click", function(e) {
               // refresh layout
+              doBranchColoring = $("#colored-edges").prop("checked")
               d3.layout.phylotree.trigger_refresh(phylotree);
             });
 
@@ -459,7 +490,7 @@
                 return 3
               case "Experimental method":
                 return 6
-              case "G-protein coupling":
+              case "All G-protein coupling":
                 return 8
               case "Primary G-protein coupling":
                 return 9
@@ -561,7 +592,8 @@
 
                     // Add inner markers
                     element.selectAll("circle").remove()
-                    if (displayDataInner >= 0){
+                    var firstColor = "#CCC";
+                    if (displayDataInner >= 0) {
                       if (!Array.isArray(treeAnnotations[node.name][displayDataInner]))
                         treeAnnotations[node.name][displayDataInner] = [treeAnnotations[node.name][displayDataInner]]
 
@@ -570,21 +602,47 @@
                         var currentData = treeAnnotations[node.name][displayDataInner][i]
                         var classIndex = dataClasses[displayDataInner].indexOf(currentData)
                         var currentColor = colorClasses[displayDataInner][classIndex]
+                        if (i==0){
+                          firstColor = currentColor
+                        }
 
                         var annotation = element.append("circle")
                         annotation.attr("r", (font_size*scale)/2)
                           .style("stroke", "#000")
                           .style("stroke-width", font_size/20+"px")
-                          .style("fill", currentColor);
+                          .style("fill", currentColor)
+                          .on("mouseover", function(d) { // add tooltip
+                              class_tooltip.transition()
+                                .style("opacity", .9);
+                              class_tooltip.html("<b>" + typeClasses[displayDataInner] + ":</b> " + $(d3.event.target).data("datalabel"))
+                                .style("left", (d3.event.pageX) + "px")
+                                .style("top", (d3.event.pageY - 28) + "px");
+                            })
+                          .on("mouseout", function() {
+                              class_tooltip.transition().duration(100)
+                                  .style("opacity", 0);
+                          });
+
+                          annotation.attr("data-datalabel", currentData)
 
                         // Shift circles according to placement label
                         if (phylotree.radial ()) {
                             var shifter_rect = phylotree.shift_tip(node)[0];
-                            var setX = shifter_rect > 0 ? shifter_rect -  font_size*scale/1.8: shifter_rect + font_size*scale/1.8;
+                            var setX = shifter_rect > 0 ? shifter_rect -  font_size*scale/1.8  - i*(font_size*scale): shifter_rect + font_size*scale/1.8 + i*(font_size*scale);
                             annotation.attr("transform", "rotate (" + node.text_angle + ")")
                                 .attr ("cx", setX)
                         }
                       }
+
+                      // Color branch-tracer
+                      var tracer = element.select("line")[0][0];
+                      tracer.setAttribute("stroke-dasharray", "3,4");
+                      tracer.setAttribute("stroke-width", 1.5);
+                      tracer.className.baseVal = ""
+                      if (doBranchColoring) {
+                        tracer.setAttribute("stroke", firstColor);
+                      } else
+                        tracer.setAttribute("stroke", "#CCC");
                     }
 
                     var labelName
@@ -633,7 +691,6 @@
                                 .style("left", (d3.event.pageX) + "px")
                                 .style("top", (d3.event.pageY - 28) + "px");
                             })
-
                           .on("mouseout", function() {
                               class_tooltip.transition().duration(100)
                                   .style("opacity", 0);
@@ -669,11 +726,22 @@
                   } else {
                     silhouette_color = "#FFAAAA";
                   }
+
                 }
                 element.selectAll("circle").style("fill", silhouette_color)
 
-
-                // TODO: Add tooltip with silhouette score
+                // Add tooltip
+                element.selectAll("circle").on("mouseover", function(d) { // add tooltip
+                    class_tooltip.transition()
+                      .style("opacity", .9);
+                    class_tooltip.html("<b>Silhouette score:</b> " + score)
+                      .style("left", (d3.event.pageX) + "px")
+                      .style("top", (d3.event.pageY - 28) + "px");
+                  })
+                .on("mouseout", function() {
+                    class_tooltip.transition().duration(100)
+                        .style("opacity", 0);
+                });
             }
             // color labels
             if (d3.layout.phylotree.is_leafnode(node)) {
@@ -689,8 +757,6 @@
         }
 
         function branchStyler(element, node){
-            var useColor = $("#colored-edges").prop("checked")
-
             if ( 'group0' in node.target && node.target['group0'] && 'group1' in node.target && node.target['group1']) {
               element.style("stroke", "purple");
               element.style("stroke-width", 3)
@@ -701,14 +767,19 @@
               element.style("stroke", "blue");
               element.style("stroke-width", 3)
             } else {
-              if (useColor){
+              element.style("stroke-width", 1.5)
+              element.style("stroke", "#CCC");
+              if (doBranchColoring && displayDataInner >= 0 && 'colorClasses' in node.target){
                 // color according to shared feature
-                console.log(node)
-                console.log(node.target)
-
-              } else {
-                element.style("stroke", "#CCC");
-                element.style("stroke-width", 1.5)
+                if (node.target['colorClasses'][displayDataInner] != "-" && node.target['colorClasses'][displayDataInner].length > 0 ) {
+                    if (Array.isArray(node.target['colorClasses'][displayDataInner])) {
+                      var select = dataClasses[displayDataInner].indexOf(node.target['colorClasses'][displayDataInner][0])
+                      element.style("stroke", colorClasses[displayDataInner][select]);
+                    } else {
+                      var select = dataClasses[displayDataInner].indexOf(node.target['colorClasses'][displayDataInner])
+                      element.style("stroke", colorClasses[displayDataInner][select]);
+                    }
+                }
               }
             }
         }
