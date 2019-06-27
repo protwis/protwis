@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q, F, Prefetch, Avg
+from django.db.models import Q, F, Prefetch, Avg, StdDev
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 from django.db import connection
@@ -212,9 +212,9 @@ def PdbTableData(request):
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
 
     data_dict = OrderedDict()
-    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=8>Structure</th><th colspan=2>Signalling protein</th> \
+    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \
                                                                        <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></tr> \
-                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>% of class active<br> state-specific contacts</th><th>% of class inactive<br> state-specific contacts</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
+                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
 
     for s in data:
         pdb_id = s.pdb_code.index
@@ -228,10 +228,13 @@ def PdbTableData(request):
         r['state'] = s.state.name
         r['distance_representative'] = 'Yes' if s.distance_representative else 'No'
         r['contact_representative'] = 'Yes' if s.contact_representative else 'No'
+        r['class_consensus_based_representative'] = 'Yes' if s.class_contact_representative else 'No'
+
         r['contact_representative_score'] = "{:.0%}".format(s.contact_representative_score)
 
         r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
         r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
+        r['diff_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction-s.active_class_contacts_fraction)
 
         a_list = []
         for a in s.stabilizing_agents.all():
@@ -287,7 +290,8 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' distance_representative='{}' long='{}'  id='{}'></td> \
+                        <td>{}</td> \
+                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' distance_representative='{}' class_consensus_based_representative='{}' long='{}'  id='{}'></td> \
                         </tr>\n".format(
                                         r['protein'],
                                         r['protein_long'],
@@ -298,8 +302,9 @@ def PdbTableData(request):
                                         pdb_id,
                                         r['resolution'],
                                         r['state'],
-                                        r['active_class_contacts_fraction'],
                                         r['inactive_class_contacts_fraction'],
+                                        r['active_class_contacts_fraction'],
+                                        r['diff_class_contacts_fraction'],
                                         r['contact_representative_score'],
                                         r['7tm_distance'],
                                         r['g_protein'],
@@ -311,6 +316,7 @@ def PdbTableData(request):
                                         r['ligand_type'],
                                         r['contact_representative'],
                                         r['distance_representative'],
+                                        r['class_consensus_based_representative'],
                                         r['protein_long'],
                                         pdb_id
                                         )
@@ -813,9 +819,14 @@ def InteractionBrowserData(request):
                 data['interactions'][coord]['distance'] = distance_diff
         else:
             group_distances = {}
-            ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
-                                .values('gns_pair') \
-                                .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+            if (len(data['pdbs'])==1):
+                ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
+                                    .values('gns_pair') \
+                                    .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+            else:
+                ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
+                                    .values('gns_pair') \
+                                    .annotate(mean = StdDev('distance')).values_list('gns_pair','mean'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
                 group_distances[d[0]] = d[1]/100
@@ -835,8 +846,9 @@ def InteractionBrowserData(request):
             ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'),outer_angle = Avg('outer_angle'),core_distance = Avg('core_distance')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle'))
+                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
                 group_1_angles[d[0]] = d[1:]
@@ -845,8 +857,9 @@ def InteractionBrowserData(request):
             ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'),outer_angle = Avg('outer_angle'),core_distance = Avg('core_distance')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle'))
+                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
                 group_2_angles[d[0]] = d[1:]
@@ -855,7 +868,7 @@ def InteractionBrowserData(request):
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
 
-                gn1_values = ['','','']
+                gn1_values = ['','','','','','']
                 if gn1 in group_1_angles and gn1 in group_2_angles:
                     gn1_values = []
                     for i,v in enumerate(group_1_angles[gn1]):
@@ -863,9 +876,9 @@ def InteractionBrowserData(request):
                             gn1_values.append(round(v-group_2_angles[gn1][i],1))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn1_values.append("-")
+                            gn1_values.append("")
 
-                gn2_values = ['','','']
+                gn2_values = ['','','','','','']
                 if gn2 in group_1_angles and gn2 in group_2_angles:
                     gn2_values = []
                     for i,v in enumerate(group_1_angles[gn2]):
@@ -873,15 +886,26 @@ def InteractionBrowserData(request):
                             gn2_values.append(round(v-group_2_angles[gn2][i],1))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn2_values.append("-")
+                            gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
         else:
             group_angles = {}
-            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
+            if (len(data['pdbs'])==1):
+                # Get absolute numbers for a single structure
+                ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'),outer_angle = Avg('outer_angle'),core_distance = Avg('core_distance')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle'))
+                                .annotate(a_angle = Avg('a_angle'),outer_angle = Avg('outer_angle'),core_distance = Avg('core_distance'), \
+                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
+            else:
+                # A group, get StdDev
+                ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
+                                .exclude(residue__generic_number=None) \
+                                .values('residue__generic_number__label') \
+                                .annotate(a_angle = StdDev('a_angle'),outer_angle = StdDev('outer_angle'),core_distance = StdDev('core_distance'), \
+                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi')) \
+                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
                 group_angles[d[0]] = d[1:]
@@ -890,25 +914,25 @@ def InteractionBrowserData(request):
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
 
-                gn1_values = ['','','']
+                gn1_values = ['','','','','','']
                 if gn1 in group_angles:
                     gn1_values = []
                     for i,v in enumerate(group_angles[gn1]):
                         try:
-                            gn1_values.append(round(v,1))
+                            gn1_values.append("{:.1f}".format(v))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn1_values.append("-")
+                            gn1_values.append("")
 
-                gn2_values = ['','','']
+                gn2_values = ['','','','','','']
                 if gn2 in group_angles:
                     gn2_values = []
                     for i,v in enumerate(group_angles[gn2]):
                         try:
-                            gn2_values.append(round(v,1))
+                            gn2_values.append("{:.1f}".format(v))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn2_values.append("-")
+                            gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
 
 

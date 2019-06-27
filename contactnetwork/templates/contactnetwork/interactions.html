@@ -28,14 +28,10 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Structures</h3>
-                            </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
                                 <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                                 <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
-                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select Structure</button><br><br> #}
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span class="crystal-count">No structure selected.</span>
                                 <div class="btn btn-success pull-right go-button"><span>Go</span></div>
                             </div>
@@ -92,14 +88,69 @@
                     <div class="col-md-1">
                     </div>
                 </div>
-                <ul class="nav nav-tabs">
+
+                <div class="row" style='height:500px'>
+                  <div class="col-md-4">
+                     <div class="panel panel-default" id="single_1">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Select plot</h3>
+                            <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                          </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="plot-container none">
+                            </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-md-4">
+                     <div class="panel panel-default" id="single_2">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Select plot</h3>
+                          <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                          </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="plot-container none">
+                            </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-md-4">
+                     <div class="panel panel-default" id="single_3">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Select plot</h3>
+                            <span class="pull-right">
+                            <span class="plot-select"></span>
+                            <span class="glyphicon glyphicon-download btn-download png"></span>
+                            <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                          </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="plot-container none">
+                            </div>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+
+                <ul class="nav nav-tabs hidden">
                   <li class="active"><a href="#single-matrix-tab" data-toggle="tab" class='matrix-tab' id="single-matrix-tab-link">Matrix</a></li>
                   <li><a href="#single-flareplot-tab" data-toggle="tab" id="single-flareplot-tab-link">Flareplot</a></li>
                   <li><a href="#single-hiveplot-tab" data-toggle="tab" id="single-hiveplot-tab-link">Hiveplot</a></li>
                   <li><a href="#single-schematic_con-tab" data-toggle="tab" id="single-schematic_con-tab-link">2D Schematic (Con)</a></li>
                   <li><a href="#single-schematic_non-tab" data-toggle="tab" id="single-schematic_non-tab-link">2D Schematic (Non)</a></li>
                 </ul>
-                <div class="row">
+                <div class="row hidden">
                   <div class="col-md-7 tab-content">
                       <div class="tab-pane active" id="single-matrix-tab">
                            <div class="panel panel-default no-top-border">
@@ -203,7 +254,7 @@
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
+                                <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
                                 <span class="pull-right">
                                   <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
@@ -219,11 +270,14 @@
                   </div>
                 </div>
                 <div class="row">
-                      <div class="col-md-12" id="single-primary-browser">
+                      <div class="col-md-12 contact-browser" id="single-primary-browser">
                            <div class="panel panel-default">
                               <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Primary Browser</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <h3 class="panel-title pull-left">Contact Browser</h3>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -258,9 +312,6 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Structures</h3>
-                            </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                                 <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
@@ -311,12 +362,9 @@
                     </div> -->
                     <div class="col-md-3">
                         <div class="panel panel-default interactions-panel">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Interactions</h3>
-                            </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
-                                Types:
+                                Interaction types:
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
                                   <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
@@ -431,7 +479,7 @@
 
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
+                                <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
                                 <span class="pull-right">
                                   <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
@@ -447,11 +495,14 @@
                       </div>
                 </div>
                 <div class="row">
-                      <div class="col-md-12" id="single-group-primary-browser">
+                      <div class="col-md-12 contact-browser" id="single-group-primary-browser">
                            <div class="panel panel-default">
                               <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Primary Browser</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <h3 class="panel-title pull-left">Contact Browser</h3>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -486,25 +537,19 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Structures (Set 1)</h3>
-                            </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
                                 <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures</button> <span class="crystal-count-1">No</span> structure(s) selected.
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures (Set 1)</button> <span class="crystal-count-1">No</span> structure(s) selected.
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Structures (Set 2)</h3>
-                            </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
                                 <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures</button> <span class="crystal-count-2">No</span> structure(s) selected.
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures (Set 2)</button> <span class="crystal-count-2">No</span> structure(s) selected.
                                 <div class="btn btn-success pull-right go-button">Go</div>
 
                             </div>
@@ -550,12 +595,9 @@
                     </div> -->
                     <div class="col-md-3">
                         <div class="panel panel-default interactions-panel">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Interactions</h3>
-                            </div>
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
-                                Types:
+                                Interactions Types:
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
                                   <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
@@ -671,7 +713,7 @@
 
                      <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">NGL</h3>
+                            <h3 class="panel-title pull-left">3D view (<a href='http://dx.doi.org/10.1093/bioinformatics/bty419' target=_blank>NGL</a>)</h3>
                             <span class="pull-right">
                                   <span class="glyphicon glyphicon-download btn-download png"></span>
                                   <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
@@ -689,11 +731,14 @@
                 </div>
 
                 <div class="row">
-                      <div class="col-md-12" >
+                      <div class="col-md-12  contact-browser"  id="two-groups-primary-browser">
                            <div class="panel panel-default">
                               <div class="panel-heading">
-                                  <h3 class="panel-title pull-left">Primary Browser</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <h3 class="panel-title pull-left">Contact Browser</h3>
+                                  <span class="pull-right">
+                                  <span class="glyphicon glyphicon-download btn-download png"></span>
+                                  <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                </span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -911,6 +956,7 @@
         })
         document.body.appendChild(ngl_tooltip)
 
+        var is_fullscreen = false;
         function toggleFullScreen(fullScreenElement) {
             if (!document.mozFullScreen && !document.webkitFullScreen) {
                 if (fullScreenElement.mozRequestFullScreen) {
@@ -1004,10 +1050,14 @@
             return getGradientColor(-1*frequency, rgb);
         }
 
-        function getFlareGradientColor(fDiff, rgb = true) {
+        function getFlareGradientColor(fDiff, rgb = true, hide_zero = true) {
             var color;
             var shift = 80;
             var basal = 255 - shift;
+            if (hide_zero && fDiff == 0){
+              // to hide zero, make paths completely white.
+              return rgb2hex(255, 255, 255);
+            }
 
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
@@ -1376,6 +1426,7 @@
             $(heatMapSelector + ' .heatmap').empty();
             var heatmap = Snap(heatMapSelector + ' .heatmap');
             var heatmap_id = $(heatMapSelector + ' .heatmap').attr("id");
+            console.log('ID is',heatmap_id,'from',heatMapSelector);
 
             if (data.length == 3) {
               data1 = data[0];
@@ -2981,7 +3032,7 @@
           // tbody.empty();
           table.DataTable().destroy();
           // yadcf.removeFilters(table);
-          table.parent().html('<table class="table browser-table display table-bordered" width="100%"><thead></thead><tbody></tbody></table>');
+          table.parent().html('<table class="browser-table compact cell-border" width="2000px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody></tbody></table>');
           var table = $(selector + " .browser-table");
           // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
           var tbody = table.find('tbody'); 
@@ -2995,25 +3046,34 @@
                           <th>Type(s)</th> \
                           <th>Class Seq Cons(%)</th> \
                           <th>Ca distance</th> \
-                          <th colspan="2">Ca distance from 7TM<br>axis</th> \
-                          <th colspan="2">Backbone<br>Rotation</th> \
-                          <th colspan="2">Residue<br>Rotamer</th> \
+                          <th colspan="2">Ca distance from<br> 7TM axis</th> \
+                          <th colspan="2">Backbone Rotation</th> \
+                          <th colspan="2">Residue Rotamer</th> \
+                          <th colspan="2">Tau angle</th> \
+                          <th colspan="2">Phi dihedral</th> \
+                          <th colspan="2">Psi dihedral</th> \
                         </tr> \
                         <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
                           <th></th> \
-                          <th></th> \
-                          <th>Grp 1<br></th> \
-                          <th>Grp 2<br></th> \
-                          <th>Diff<br></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th>GN1-GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
+                          <th class="narrow_col">AA pairs</th> \
+                          <th class="narrow_col">Res1-Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             // two groups
@@ -3031,7 +3091,7 @@
               var sfreq2 = Math.round(100*v['pdbs2'].length / pdbs_2);
               var diff_sfreq = sfreq1-sfreq2;
               var class_seq_cons = v['class_seq_cons'];
-              var types = v['types'];
+              var types = v['types'].join(",<br>");
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
               var distance = v['distance'];
@@ -3039,20 +3099,26 @@
               var angles_2 = v['angles'][1];
               tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
-                      <td>${seg1}-${seg2}</td>
-                      <td>${gn1}-${gn2}</td>
-                      <td>${sfreq1}</td>
-                      <td>${sfreq2}</td>
-                      <td>${diff_sfreq}</td>
+                      <td class="dt-center">${seg1}-${seg2}</td>
+                      <td class="dt-center">${gn1}-${gn2}</td>
+                      <td class="narrow_col">${sfreq1}</td>
+                      <td class="narrow_col">${sfreq2}</td>
+                      <td class="narrow_col">${diff_sfreq}</td>
                       <td>${types}</td>
-                      <td>${class_seq_cons}</td>
-                      <td>${distance}</td>
-                      <td>${angles_1[0]}</td>
-                      <td>${angles_2[0]}</td>
-                      <td>${angles_1[1]}</td>
-                      <td>${angles_2[1]}</td>
-                      <td>${angles_1[2]}</td>
-                      <td>${angles_2[2]}</td>
+                      <td class="narrow_col">${class_seq_cons}</td>
+                      <td class="narrow_col">${distance}</td>
+                      <td class="narrow_col">${angles_1[0]}</td>
+                      <td class="narrow_col">${angles_2[0]}</td>
+                      <td class="narrow_col">${angles_1[1]}</td>
+                      <td class="narrow_col">${angles_2[1]}</td>
+                      <td class="narrow_col">${angles_1[2]}</td>
+                      <td class="narrow_col">${angles_2[2]}</td>
+                      <td class="narrow_col">${angles_1[3]}</td>
+                      <td class="narrow_col">${angles_2[3]}</td>
+                      <td class="narrow_col">${angles_1[4]}</td>
+                      <td class="narrow_col">${angles_2[4]}</td>
+                      <td class="narrow_col">${angles_1[5]}</td>
+                      <td class="narrow_col">${angles_2[5]}</td>
                     </tr>`;
               tbody.append(tr);
             }); 
@@ -3067,20 +3133,29 @@
                           <th colspan="2">Ca distance from 7TM<br>axis</th> \
                           <th colspan="2">Backbone<br>Rotation</th> \
                           <th colspan="2">Residue<br>Rotamer</th> \
+                          <th colspan="2">Tau angle</th> \
+                          <th colspan="2">Phi dihedral</th> \
+                          <th colspan="2">Psi dihedral</th> \
                         </tr> \
                         <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="narrow_col"></th> \
                           <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th>GN1-GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
+                          <th class="narrow_col">AA pairs</th> \
+                          <th class="narrow_col">Res1-Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             var proteins = data['proteins'].length
@@ -3090,7 +3165,7 @@
               var gn2 = i.split(",")[1]
               var pfreq = Math.round(100*v['proteins'].length / proteins);
               var sfreq = Math.round(100*v['pdbs'].length / pdbs);
-              var types = v['types'];
+              var types = v['types'].join(",<br>");
               var class_seq_cons = v['class_seq_cons'];
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
@@ -3099,18 +3174,24 @@
               var angles_2 = v['angles'][1];
               tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
-                      <td>${seg1}-${seg2}</td>
-                      <td>${gn1}-${gn2}</td>
-                      <td>${sfreq}</td>
+                      <td class="dt-center">${seg1}-${seg2}</td>
+                      <td class="dt-center">${gn1}-${gn2}</td>
+                      <td class="narrow_col">${sfreq}</td>
                       <td>${types}</td>
-                      <td>${class_seq_cons}</td>
-                      <td>${distance}</td>
-                      <td>${angles_1[0]}</td>
-                      <td>${angles_2[0]}</td>
-                      <td>${angles_1[1]}</td>
-                      <td>${angles_2[1]}</td>
-                      <td>${angles_1[2]}</td>
-                      <td>${angles_2[2]}</td>
+                      <td class="narrow_col">${class_seq_cons}</td>
+                      <td class="narrow_col">${distance}</td>
+                      <td class="narrow_col">${angles_1[0]}</td>
+                      <td class="narrow_col">${angles_2[0]}</td>
+                      <td class="narrow_col">${angles_1[1]}</td>
+                      <td class="narrow_col">${angles_2[1]}</td>
+                      <td class="narrow_col">${angles_1[2]}</td>
+                      <td class="narrow_col">${angles_2[2]}</td>
+                      <td class="narrow_col">${angles_1[3]}</td>
+                      <td class="narrow_col">${angles_2[3]}</td>
+                      <td class="narrow_col">${angles_1[4]}</td>
+                      <td class="narrow_col">${angles_2[4]}</td>
+                      <td class="narrow_col">${angles_1[5]}</td>
+                      <td class="narrow_col">${angles_2[5]}</td>
                     </tr>`;
               tbody.append(tr);
             });
@@ -3125,20 +3206,29 @@
                           <th colspan="2">Ca distance from 7TM axis</th> \
                           <th colspan="2">Backbone<br>Rotation</th> \
                           <th colspan="2">Residue<br>Rotamer</th> \
+                          <th colspan="2">Tau angle</th> \
+                          <th colspan="2">Phi dihedral</th> \
+                          <th colspan="2">Psi dihedral</th> \
                         </tr> \
                         <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
                           <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th></th> \
-                          <th>GN1-GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
-                          <th>GN1</th> \
-                          <th>GN2</th> \
+                          <th class="narrow_col">AA pairs</th> \
+                          <th class="narrow_col">Res1-Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
+                          <th class="narrow_col">Res1</th> \
+                          <th class="narrow_col">Res2</th> \
                         </tr>';
             table.find('thead').html(thead); 
             $.each(data['interactions'], function (i, v) {
@@ -3146,7 +3236,7 @@
               var gn2 = i.split(",")[1]
               var seg1 = data['segm_lookup'][gn1];
               var seg2 = data['segm_lookup'][gn2];
-              var types = v['types'];
+              var types = v['types'].join(",<br>");
               var pos1 = v['seq_pos'][0];
               var pos2 = v['seq_pos'][1];
               var class_seq_cons = v['class_seq_cons'];
@@ -3157,32 +3247,66 @@
               var angles_2 = v['angles'][1];
               tr = `
                     <tr class="clickable-row filter_rows" id="${pos1},${pos2}">
-                      <td>${seg1}-${seg2}</td>
-                      <td><span>${pos1}</span>-<span>${pos2}</span></td>
-                      <td>${gn1}-${gn2}</td>
+                      <td class="dt-center">${seg1}-${seg2}</td>
+                      <td class="dt-center"><span>${pos1}</span>-<span>${pos2}</span></td>
+                      <td class="dt-center">${gn1}-${gn2}</td>
                       <td>${types}</td>
-                      <td>${class_seq_cons}</td>
-                      <td>${distance}</td>
-                      <td>${angles_1[0]}</td>
-                      <td>${angles_2[0]}</td>
-                      <td>${angles_1[1]}</td>
-                      <td>${angles_2[1]}</td>
-                      <td>${angles_1[2]}</td>
-                      <td>${angles_2[2]}</td>
+                      <td class="narrow_col">${class_seq_cons}</td>
+                      <td class="narrow_col">${distance}</td>
+                      <td class="narrow_col">${angles_1[0]}</td>
+                      <td class="narrow_col">${angles_2[0]}</td>
+                      <td class="narrow_col">${angles_1[1]}</td>
+                      <td class="narrow_col">${angles_2[1]}</td>
+                      <td class="narrow_col">${angles_1[2]}</td>
+                      <td class="narrow_col">${angles_2[2]}</td>
+                      <td class="narrow_col">${angles_1[3]}</td>
+                      <td class="narrow_col">${angles_2[3]}</td>
+                      <td class="narrow_col">${angles_1[4]}</td>
+                      <td class="narrow_col">${angles_2[4]}</td>
+                      <td class="narrow_col">${angles_1[5]}</td>
+                      <td class="narrow_col">${angles_2[5]}</td>
                     </tr>`;
               tbody.append(tr);
             });
           }
 
-          table.on('click', '.clickable-row', function(event) {
-            if($(this).hasClass('active')){
-              $(this).removeClass('active'); 
-              $(selector + " .secondary-table").find('tbody').empty();
-            } else {
-              $(this).addClass('active').siblings().removeClass('active');
-              renderSecondary($(this).attr('id'))
-            }
+          // table.on('click', '.clickable-row', function(event) {
+          //   if($(this).hasClass('active')){
+          //     $(this).removeClass('active'); 
+          //     $(selector + " .secondary-table").find('tbody').empty();
+          //   } else {
+          //     $(this).addClass('active').siblings().removeClass('active');
+          //     renderSecondary($(this).attr('id'))
+          //   }
+          // });
+
+          // Create grey scale of values.
+          var cols = []
+          var trs = table.find("tbody tr")
+          var maxmin_data =$.each(trs , function(index, tr){
+            $.each($(tr).find("td").not(":first"), function(index, td){
+              cols[index] = cols[index] || [];
+              cols[index].push($(td).text())
+            })
           });
+          cols.forEach(function(col, index){
+            var max = Math.max.apply(null, col);
+            var min = Math.min.apply(null, col);
+            if (!(isNaN(max) || isNaN(min))) {
+              trs.find('td:eq('+(index+1)+')').each(function(i, td){
+                value = parseFloat($(td).text());
+                if (!(isNaN(value))) {
+                  scale = 1-(value-min)/(max-min);
+                  frequency = 0.5-(scale/-2.1)*.5;
+                  frequency = 0.5-scale*.5;
+                  // console.log(value,min,max,scale,frequency);
+                  var rgb = { r: 255-frequency*255, g: 255-frequency*255, b: 255-frequency*255 };
+                  var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+                  $(td).attr('bgcolor',hex);
+                }
+              })
+            }
+          })
 
           btable = table.DataTable({
                 'scrollX': true,
@@ -3210,6 +3334,9 @@
                               column_number : 1,
                               filter_type: "multi_select",
                               select_type: 'select2',
+                              select_type_options: {
+                                  width: '60px'
+                              },
                               filter_default_label: "Res.",
                               text_data_delimiter: "-",
                               filter_reset_button_text: false,
@@ -3287,6 +3414,42 @@
                               filter_reset_button_text: false,
 
                           },
+                          {
+                              column_number : 14,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 15,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 16,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 17,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 18,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 19,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
                       ],
                       {
                           cumulative_filtering: false
@@ -3370,6 +3533,42 @@
                               filter_reset_button_text: false,
 
                           },
+                          {
+                              column_number : 12,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 13,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 14,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 15,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 16,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 17,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
                       ],
                       {
                           cumulative_filtering: false
@@ -3423,6 +3622,9 @@
                               filter_type: "multi_select",
                               select_type: 'select2',
                               // column_data_type: "html",
+                              select_type_options: {
+                                  width: '60px'
+                              },
                               html_data_type: "text",
                               text_data_delimiter: "-",
                               filter_default_label: "Res. No.",
@@ -3432,6 +3634,9 @@
                               column_number : 2,
                               filter_type: "multi_select",
                               select_type: 'select2',
+                              select_type_options: {
+                                  width: '60px'
+                              },
                               filter_default_label: "Res. Gn.",
                               text_data_delimiter: "-",
                               filter_reset_button_text: false,
@@ -3440,8 +3645,11 @@
                               column_number : 3,
                               filter_type: "multi_select",
                               select_type: 'select2',
+                              select_type_options: {
+                                  width: '60px'
+                              },
                               filter_default_label: "Type",
-                              text_data_delimiter: ",",
+                              text_data_delimiter: ",<br>",
                               filter_reset_button_text: false,
                           },
                           {
@@ -3490,6 +3698,42 @@
                               filter_type: "range_number",
                               filter_reset_button_text: false,
                           },
+                          {
+                              column_number : 12,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 13,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 14,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 15,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 16,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
+                          {
+                              column_number : 17,
+                              filter_type: "range_number",
+                              filter_reset_button_text: false,
+
+                          },
                       ],
                       {
                           cumulative_filtering: false
@@ -3505,9 +3749,24 @@
 
         function redraw_renders() {
           // Makes sure diagrams fit sizes
-
+          console.log('redraw renders');
           var visible_svg = $('svg:visible');
           var svg_class = visible_svg.attr("class");
+          if( window.innerHeight == screen.height || is_fullscreen) {
+              // browser is fullscreen
+              console.log('dont redraw in full screen', is_fullscreen);
+
+              if (svg_class=='flareplot') {
+                $("svg.flareplot").css('height',screen.height);
+              } else {
+                visible_svg.css('height',screen.height);
+              }
+
+              return
+          }
+
+
+          $('div.dataTables_scrollBody:visible').height('50vh');
 
           var width_svg = visible_svg.width();
 
@@ -3723,6 +3982,55 @@
             });
         }
 
+        function generate_display_options() {
+
+          options = [ ['heatmap','Matrix of interactions'], ['flareplot','Flare Plot'], ['ngl','3D view'], ['schematic_non','Schematic (Non-consecutive)'], ['schematic_con','Schematic (Consecutive)'],];
+
+          dropdown_html = '<div class="dropdown" style="display: inline;"> \
+                          <button class="btn btn-xs btn-primary dropdown-toggle" type="button" data-toggle="dropdown"> \
+                          Select plot \
+                          <span class="caret"></span></button><ul class="dropdown-menu">';
+          options.forEach(function(opt) {
+            dropdown_html += '<li><a class="plot_selection" href="#" plot_type="'+opt[0]+'">'+opt[1]+'</a></li>'
+          });
+          dropdown_html += '</ul></div>';
+          $('.plot-select').each( function (e) {
+            $(this).html(dropdown_html);
+          });
+          $('.plot_selection').click(function() {
+              var mode = $('.contact-browser:visible').attr('id').replace("-primary-browser","");
+              plot_type = $(this).attr('plot_type');
+              plot_div = $(this).closest('.panel');
+              plot_id = plot_div.attr('id');
+              // Delete whatever is already there
+              plot_div.find('.plot-container').html('');
+              console.log("SET UP PLOT",plot_type,plot_div,plot_id,mode);
+              switch (plot_type) {
+                case "ngl":
+                    var pdb = JSON.parse($('.main_option:visible .crystal-pdb').val());
+                    plot_div.find('.plot-container').removeClass('none');
+                    plot_div.find('.plot-container').addClass('ngl-container');
+                    plot_div.find('.plot-container').attr('id','ngl-'+plot_id);
+                    plot_div.find('.plot-container').attr('style','margin: auto; width: 100%; height: 500px; overflow: hidden;');
+                    createNGLview(plot_id,pdb[0]);
+                    break;
+                case "heatmap":
+                    plot_div.find('.plot-container').removeClass('none');
+                    plot_div.find('.plot-container').addClass('heatmap-container');
+                    plot_div.find('.plot-container').attr('id',plot_id);
+                    plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-'+plot_id+'" style="height: 500px;"></svg>');
+
+                    renderHeatmap(raw_data, '#'+plot_id);
+                    break;
+                case "flareplot":
+                    plot_div.find('.plot-container').removeClass('none');
+                    plot_div.find('.plot-container').addClass('flareplot-container');
+                    plot_div.find('.plot-container').attr('id','flareplot-'+plot_id);
+                    createFlareplotBox(raw_data, '#flareplot-'+plot_id);
+              }
+          });
+        }
+        var raw_data = ''
         function loadPDBsView(pdb, selector, heatmapFunction, generic) {
           $(".main_loading_overlay").show();
           //var segments = JSON.parse($(selector + ' .segments-input').val());
@@ -3749,6 +4057,7 @@
                   }, 
                   async: true, 
                   success:  function(data){
+                    raw_data = data;
                     console.log('gotten visual info')
                     // Re-render heatmap
                     $(".heatmap").show();
@@ -3771,6 +4080,7 @@
                       createNGLview("single",pdb[0]);
                     }
                     $(".main_loading_overlay").hide();
+                    redraw_renders();
                   }
               });
               console.log('get browser info');
@@ -3788,6 +4098,7 @@
                     // Re-render heatmap
                     data_browser = data;
                     renderBrowser(data);
+                    generate_display_options();
                     console.log('gotten browser info')
                   }
               });
@@ -3899,7 +4210,16 @@
 //                console.log($(this).attr('id'));
                 fullScreenElement = $(this).parent().parent().next().children().first();
                 fullScreenElement.css('background-color','white');
+                console.log('who to fullscreen?',fullScreenElement.attr('id'));
                 toggleFullScreen(fullScreenElement.get(0));
+                if (fullScreenElement.attr('id')) {
+                  if (fullScreenElement.attr('id').startsWith('DataTable')) {
+                    top_height = $('div.dataTables_scrollHead:visible').outerHeight();
+                    bottom_height =  $('div.dataTables_info:visible').outerHeight();
+                    scrollbody_height = screen.height-top_height-bottom_height;
+                    $('div.dataTables_scrollBody:visible').height( scrollbody_height+'px' );
+                  }
+                }
             });
         }
 
@@ -3954,7 +4274,7 @@
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
-                    content += '<p>Contiguous segments:<br/>lines outward: <input type=checkbox id="flareplot_contiguous" checked></p>';
+                    content += '<p>Consecutive segment contacts<br> on outside: <input type=checkbox id="flareplot_contiguous" checked></p>';
 
                 content += '<p>Line colors: <select id="flareplot_color">'
                         +'<option value="none">None (gray)</option>'
@@ -3964,10 +4284,15 @@
                 // if single structure - use interaction coloring
                 if (container.indexOf("single-crystal-tab") >= 0) {
                     content += '<option value="interactions" selected>Interaction Type</option>';
+                // if single group of structures - use frequency coloring (gradient)
+                } else if (container.indexOf("single-crystal-group-tab") >= 0) {
+                    content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
                 // if group(s) of structures - use frequency coloring (gradient)
                 } else {
-                    content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
-                }
+                    content += '<option value="frequency" selected>Frequency difference Gr1 - Gr2</option>';
+                    content += '<option value="frequency_1">Frequency group 1</option>';
+                    content += '<option value="frequency_2">Frequency group 2</option>';
+                } 
                 content += '</select></p>';
 
 
@@ -4077,6 +4402,7 @@
                     $(function() {
                       contiguous = !contiguous;
                       createFlareplotBox(data, container, true);
+                      redraw_renders();
                     });
                 });
 
@@ -4109,18 +4435,18 @@
             }
 
             // create flareplot
-            flareplot[container] = createFlareplot(800, parseGPCRdb2flare(data), container, contiguous);
+            flareplot[container] = createFlareplot(1000, parseGPCRdb2flare(data), container, contiguous);
 
             // update coloring and visibility if toggled
             if (toggle) {
-                var range = $( container+" .slider-range" ).slider("values");
-                flareplot[container].updateRange(range[0], range[1]);
+                // var range = $( container+" .slider-range" ).slider("values");
+                // flareplot[container].updateRange(range[0], range[1]);
 
                 flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
                 //if ($(container + ' .flareplot-legend .color-box input[type=checkbox]').length > 0)
                 //  flareplot[container].showInteractions(interactionsToggleList);
-                if (container.indexOf("two-crystal-groups-tab") >= 0)
-                  updateTwoGroupSliders("skip", []);
+                // if (container.indexOf("two-crystal-groups-tab") >= 0)
+                //   updateTwoGroupSliders("skip", []);
 
                 updateGeneralControls()
             } else {
@@ -4547,8 +4873,8 @@
 
                             reps[mode][1].ball_int_gn = o.addRepresentation("ball+stick", {
                               sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
-                              color: "element",
-                              colorValue: "#dda8bc",
+                              color: "element",</span>
+                              colorValue: "#dda8b</span>c",
                               visible: false
                             })*/
 
@@ -4561,8 +4887,8 @@
 
             var newDiv = document.createElement("div");
             newDiv.setAttribute("style", "position: absolute; top: 45px; left: 20px; background-color: #DDD; opacity: .8; padding: 10px;")
-            var controls = '<div class="controls">'
-                         + '<h4>Controls</h4>';
+            var controls = '<div class="controls"><span class="pull-right ngl_controls_toggle"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span>'
+                         + '<span class="ngl_control"><h4>Controls</h4>';
 
             // Toggle for showing two structures simultaneously
             if (mode == "two-groups" && pdbs_set2)
@@ -4582,6 +4908,8 @@
                         controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
                 }
                 controls += '</select></p>';
+                if (two_structures)
+                  controls += '<p>Hide: <input type=checkbox id="hide_pdb1"></p>';
             }
             controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
 
@@ -4598,6 +4926,8 @@
                       controls += '<option value="'+pdbs_set2[i]+'">'+pdbs_set2[i]+'</option>';
               }
               controls += '</select></p>';
+                if (two_structures)
+                  controls += '<p>Hide: <input type=checkbox id="hide_pdb2"></p>';
               controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
             }
 
@@ -4608,10 +4938,15 @@
                               +'<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
 //                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
                               +'</div>';
-
+            controls += '</span>';
             newDiv.innerHTML = controls;
 
             $("#ngl-"+mode).append(newDiv);
+            $("#ngl-"+mode+" .ngl_control").hide();
+            $('.ngl_controls_toggle').css( 'cursor', 'pointer' );
+            $("#ngl-"+mode+" .ngl_controls_toggle").click(function() {
+              $("#ngl-"+mode+" .ngl_control").toggle();
+            });
 
             if (two_structures) {
               // structure selection
@@ -4657,6 +4992,16 @@
             });
 
             $("#ngl-"+mode+" #toggle_interactions").change(function(e){
+                updateStructureRepresentations(mode);
+            });
+
+
+            $("#ngl-"+mode+" #hide_pdb1").change(function(e){
+                updateStructureRepresentations(mode);
+            });
+
+
+            $("#ngl-"+mode+" #hide_pdb2").change(function(e){
                 updateStructureRepresentations(mode);
             });
 
@@ -4902,11 +5247,21 @@
 
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
+          console.log('updateStructureRepresentations');
           var structures = 1;
           if (mode=="two-groups")
             structures = 2;
 
           for (var key = 0; key < structures; key++) {
+
+            hide_structure = $("#ngl-"+mode+" #hide_pdb"+(key+1)).prop('checked');
+            var o = reps[mode][key].structureComponent;
+            if (hide_structure) {
+              o.setVisibility(false);
+              break;
+            } else {
+              o.setVisibility(true);
+            }
             // toggle edges
             reps[mode][key].links.setVisibility(!$("#ngl-"+mode+" #toggle_interactions").prop('checked'));
 
@@ -5011,7 +5366,8 @@
                     // Hide all below min treshold
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("res-no-1") + "," + $(this).data("res-no-2");
-                        if ( filtered_gn_pairs.includes(pair) ) {
+                        var pair_reverse = $(this).data("res-no-2") + "," + $(this).data("res-no-1");
+                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -5028,7 +5384,8 @@
                     // Hide all below min treshold
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("gen-no-1") + "," + $(this).data("gen-no-2");
-                        if ( filtered_gn_pairs.includes(pair) ) {
+                        var pair_reverse = $(this).data("gen-no-2") + "," + $(this).data("gen-no-1");
+                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -5041,7 +5398,8 @@
 
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("gen-no-1") + "," + $(this).data("gen-no-2");
-                        if ( filtered_gn_pairs.includes(pair) ) {
+                        var pair_reverse = $(this).data("gen-no-2") + "," + $(this).data("gen-no-1");
+                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -5197,8 +5555,9 @@
               }
         }
 
-        function updateGeneralControls(){
+        function updateGeneralControls(ignore_ngl = false){
             // update current vizualization
+            console.log('ignore_ngl',ignore_ngl);
             switch(currentViz.toLowerCase()) {
               case "matrix":
                 updateMatrix()
@@ -5224,8 +5583,11 @@
             }
 
             // Always invoke NGL update
-            createNGLRepresentations(currentTab , 0, currentTab)
-            if (currentTab=="two-crystal-groups-tab") createNGLRepresentations(currentTab , 1, currentTab)
+            if (!ignore_ngl) {
+              // Do not update when simply changing viz tabs.
+              createNGLRepresentations(currentTab , 0, currentTab)
+              if (currentTab=="two-crystal-groups-tab") createNGLRepresentations(currentTab , 1, currentTab)
+            }
         }
 
         {% if pdbs1 %}
@@ -5260,7 +5622,7 @@
               // update filtered
               // invoke representation update based on general controls
               console.log('switch 2')
-              updateGeneralControls()
+              updateGeneralControls(true)
             });
 
             $('#mode_nav a').on('shown.bs.tab', function (e) {
@@ -5281,6 +5643,31 @@
             window.addEventListener("resize", redraw_ngl);
 
             window.addEventListener("resize", redraw_renders);
+
+            if (document.addEventListener)
+            {
+                document.addEventListener('webkitfullscreenchange', exitHandler, false);
+                document.addEventListener('mozfullscreenchange', exitHandler, false);
+                document.addEventListener('fullscreenchange', exitHandler, false);
+                document.addEventListener('MSFullscreenChange', exitHandler, false);
+            }
+
+            function exitHandler()
+            { 
+                console.log('check fullscreen',document.webkitIsFullScreen,document.mozFullScreen,document.msFullscreenElement);
+                if (document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement )
+                { 
+                    console.log('is fullscreen',document.webkitIsFullScreen,document.mozFullScreen,document.msFullscreenElement);
+                    is_fullscreen = true ;
+                    redraw_renders();
+                } else {
+                    console.log('not fullscreen')
+                    is_fullscreen = false ;
+                    redraw_renders();
+                }
+            }
+
+            redraw_renders();
 
             {% if pdbs %}
                 // handle post data (if present) for single group
@@ -5308,12 +5695,38 @@
             border-top: 0px;
         }
         .yadcf-filter-range {
-            width: 50px;
+            width: 30px;
         }
 
         .yadcf-filter {
             /*display: flex;*/
             width: 100px;
+        }
+
+        .browser-table td.narrow_col {
+            text-align: right;
+            padding-right: 30px !important;
+        }
+
+        .browser-table th.dt-center .select2-container {
+          margin: 0 auto;
+        }
+
+        .browser-table th.narrow_col {
+            width:75px;
+        }
+
+        .contact-browser div.dataTables_wrapper {
+          margin: 0 auto;
+          width: 2030px;
+        }
+
+        .contact-browser div.dataTables_scrollHeadInner {
+          margin: 0 auto;
+        }
+
+        .plot-container {
+          height: 500px;
         }
 
         #filters{
@@ -5356,6 +5769,10 @@
 
         .nav-tabs {
             border-bottom: 0px solid #ddd;
+        }
+        .nav>li>a {
+            padding-top: 5px;
+            padding-bottom: 5px;
         }
 
         @media (min-width: 1200px) {
