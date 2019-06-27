@@ -1063,7 +1063,8 @@ function gray_scale_table(table) {
         var min = Math.min.apply(null, col);
         maxmin.push([max, min]);
     });
-    // console.timeLog('Greyscale', 'Done Max Min', maxmin);
+    console.time('Greyscale cells');
+    var cell_count = 0;
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             c_maxmin = maxmin[j];
@@ -1072,16 +1073,19 @@ function gray_scale_table(table) {
                 // console.log(`[${i},${j}] = ${cell.innerText} ${c_maxmin}`);
                 scale = 1 - (value - c_maxmin[1]) / (c_maxmin[0] - c_maxmin[1]);
                 frequency = 0.5 - scale * .5;
-                color_255 = 255 - frequency * 255;
+                color_255 = Math.round(255 - frequency * 255);
                 var rgb = {
                     r: color_255,
                     g: color_255,
                     b: color_255
                 };
                 var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-                $(cell).attr('bgcolor', hex);
+                cell.setAttribute("bgcolor",hex);
+                cell_count++;
             }
         }
     }
+    console.timeEnd('Greyscale cells');
+    console.log(cell_count,'cells greyscaled');
     console.timeEnd('Greyscale', table.attr('id'));
 }
