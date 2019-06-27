@@ -3,96 +3,132 @@
 
 {% block content %}
 
-	<ul class="nav navtabs" id="move_nav">
-		<li class="active"><a href="#3D-tab" data-toggle="tab">3D</a></li>
-		<li class="active"><a href="#2D-tab" data-toggle="tab">2D</a></li>
-	</ul>
-      <div class="tab-content clearfix">
+<ul class="nav nav-tabs" id="move_nav">
+	<li class="active"><a href="#3D-tab" data-toggle="tab">3D</a></li>
+	<li class=""><a href="#2D-tab" data-toggle="tab">2D</a></li>
+</ul>
+<div class="tab-content clearfix">
 	<div class="tab-pane main_option active" id="3D-tab">
-                <div class="row">
-                  <div class="col-md-4 tab-pane" class="NGL-tab">
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="ngl-container" id="ngl-1" style="margin: auto; width:100%; height:400px;">
-                                </div>
-                            </div>
-                         </div>
-                  </div>
-                  <div class="col-md-4 tab-pane" class="NGL-tab">
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="ngl-container" id="ngl-2" style="margin: auto; width:100%; height:400px;">
-                                </div>
-                            </div>
-                         </div>
-                  </div>
-                  <div class="col-md-4 tab-pane" class="NGL-tab">
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
-                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="ngl-container" id="ngl-3" style="margin: auto; width:100%; height:400px;">
-                                </div>
-                            </div>
-                         </div>
-                  </div>
-                </div>
-		<div class="tab-pane main_option active" id="2D-tab">
-                	<div class="row">
-                  </div>
-                </div>
+		<div class="row">
+			<div class="col-md-4 tab-pane" class="NGL-tab">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title pull-left">3D view 1</h3>
+						<span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+						<div class="clearfix"></div>
+					</div>
+					<div class="panel-body">
+						<div class="ngl-container" id="ngl-1" style="margin: auto; width:100%; height:400px;">
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4 tab-pane" class="NGL-tab">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title pull-left">3D view 2</h3>
+						<span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+						<div class="clearfix"></div>
+					</div>
+					<div class="panel-body">
+						<div class="ngl-container" id="ngl-2" style="margin: auto; width:100%; height:400px;">
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4 tab-pane" class="NGL-tab">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title pull-left">3D view 3</h3>
+						<span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+						<div class="clearfix"></div>
+					</div>
+					<div class="panel-body">
+						<div class="ngl-container" id="ngl-3" style="margin: auto; width:100%; height:400px;">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
-        <div class="tab-content clearfix">
-	      <div class="row">
-                  <div class="tab-pane" class="matrix-tab">
-                         <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title pull-left">HEATMAP/MATRIX</h3>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="heatmap-container" style="margin: auto; width:100%; height:800px;">
-                                </div>
-                            </div>
-                         </div>
-                  </div>
-                </div>
-            </div>
-        </div>
+	<div class="tab-pane main_option" id="2D-tab">
+		<div class="row">
+			<div class="col-md-4 tab-pane" class="SNAKE-tab">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title pull-left">Snakeplot 1</h3>
+						<div class="clearfix"></div>
+					</div>
+					<div class="panel-body">
+						<div class="snake-container" id="ngl-3" style="margin: auto; width:100%; height:400px;">
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4 tab-pane" class="SNAKE-tab">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title pull-left">Snakeplot 2</h3>
+						<div class="clearfix"></div>
+					</div>
+					<div class="panel-body">
+						<div class="snake-container" id="ngl-3" style="margin: auto; width:100%; height:400px;">
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4 tab-pane" class="SNAKE-tab">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title pull-left">Snakeplot 3</h3>
+						<div class="clearfix"></div>
+					</div>
+					<div class="panel-body">
+						<div class="snake-container" id="ngl-3" style="margin: auto; width:100%; height:400px;">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tab-content clearfix">
+		<div class="row">
+			<div class="tab-pane" class="matrix-tab">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title pull-left">HEATMAP/MATRIX</h3>
+						<div class="clearfix"></div>
+					</div>
+					<div class="panel-body">
+						<div class="heatmap-container" style="margin: auto; width:100%; height:800px;">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 
 {% endblock %}
 {% block addon_js %}
-    <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
-    <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
+<script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
+<script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
 
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/selection.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-    <script src="{% static 'home/js/select2.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
-    <!-- PDB table -->
-    <script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
+<!-- PDB table -->
+<script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
 
-    <!-- NGL -->
-    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+<!-- NGL -->
+<script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
 
-    <script>
-        // create NGL tooltip
+<script>
+	// create NGL tooltip
         var ngl_tooltip = document.createElement("div")
         Object.assign(ngl_tooltip.style, {
           display: "none",
@@ -309,6 +345,7 @@
                       }
 
                       if (label_index && (label_index in int_labels[mode][0])) {
+												var mp = pickingProxy.mouse.position
                         ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
                         ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
                         ngl_tooltip.style.left = mp.x + 3 + "px"
@@ -359,8 +396,6 @@
 
                       o.setTransform(m)
                     }
-
-//                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)")
 
                     var view = new NGL.Matrix4()
                     view.set(144.5, 12.5, 8.8, 0, -13.1, 144.3, 10.0, 0, -7.9, -10.8, 144.7, 0, 4, -0.4, -1.1, 1)
@@ -467,11 +502,13 @@
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
           var structures = 1;
- 
+
           if (gpcr_rep[mode] != undefined && gpcr_rep[mode][0] != undefined){
             for (var key = 0; key < structures; key++) {
               var color_scheme = []
+							var coloringData = []
 
+							// TODO: currently not working - example code for gradient coloring using external data
               if (coloringData[mode] != undefined){
                 // find selected coloring option
                 var colorIndex = 0
@@ -489,13 +526,13 @@
                     case "bb_angle":
                     case "sc_angle":
                       if (colorIndex == 1 || colorIndex == 3)
-                        color_scheme.push([numberToColor4(140, coloringData[mode][gn_key][colorIndex]-40, false) , ngl_selection])
+                        color_scheme.push([numberToColor2(140, coloringData[mode][gn_key][colorIndex]-40, false) , ngl_selection])
                       else if (colorIndex == 2 || colorIndex == 4)
-                        color_scheme.push([numberToColor5(90, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                        color_scheme.push([numberToColor2(90, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       else
-                        color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                        color_scheme.push([numberToColor2(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       break;
-		    default:
+		    					  default:
                       break;
                   }
                 }
@@ -517,74 +554,6 @@
               gpcr_rep[mode][key].setSelection(sele);
             }
           }
-        }
-
-        function rgb2hex(r,g,b) {
-
-            if (r.length == 1)
-                r = '0' + r;
-
-            if (g.length == 1)
-                g = '0' + g;
-
-            if (b.length == 1)
-                b = '0' + b;
-
-            return '#' + r + g + b;
-        }
-
-        function numberToColor(max, value, neg_and_pos = false) {
-            if (neg_and_pos) {
-              value = value + max
-              max = max*2
-            }
-
-            if (value > max)
-              value = max
-
-            var hexc = 255/max;
-
-            if(value<(max/3)){
-                return rgb2hex("00","00",Math.floor((max-value)*hexc).toString(16));
-            } else if (value < ((2*max)/3)) {
-                return rgb2hex(Math.floor(value*hexc).toString(16),Math.floor((max-Math.abs(value-max/2))*hexc).toString(16),Math.floor((max-value)*hexc).toString(16));
-            } else {
-                return rgb2hex(Math.floor(value*hexc).toString(16),"00","00");
-            }
-        }
-
-        function numberToColor5(max,value, neg_and_pos = false) {
-            return numberToColor3(max, value*-1, neg_and_pos)
-        }
-
-        function numberToColor4(max,value, neg_and_pos = false) {
-            if (neg_and_pos) {
-              value = value + max
-              max = max*2
-            }
-
-            if (value > max)
-              value = max
-            if (value < 0)
-              value = 0
-
-            //return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:255, green:128, blue: 83}, {red:0, green:0, blue: 255})
-            //return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:7, green:74, blue: 33})
-            return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:117, green:177, blue: 212}, {red:16, green:55, blue: 117})
-        }
-
-        function numberToColor3(max,value, neg_and_pos = false) {
-            if (neg_and_pos) {
-              value = value + max
-              max = max*2
-            }
-
-            if (value > max)
-              value = max
-            if (value < 0)
-              value = 0
-
-            return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
         }
 
         function numberToColor2(max,value, neg_and_pos = false) {
@@ -663,6 +632,9 @@
             // TODO: adjust for 3 NGL viewers
             //initializeFullscreenButton('#single-crystal-group-tab');
 
+						// Example NGL viewers
+						createNGLview(1,"2rh1",["2rh1"])
+
             window.addEventListener("resize", redraw_ngl);
 
             window.addEventListener("resize", redraw_renders);
@@ -671,245 +643,288 @@
 
 {% endblock %}
 {% block addon_css %}
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-    <style type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<style type="text/css">
+	.select2-result-label {
+		font-size: x-small;
+		font-size: 10px;
+	}
 
-        .select2-result-label{
-            font-size:x-small;
-            font-size: 10px;
-        }
+	.no-top-border {
+		border-top: 0px;
+	}
 
-        .no-top-border{
-            border-top: 0px;
-        }
+	#filters {
+		float: left;
+		display: none;
+		position: absolute;
+		background: white;
+		border: 1px solid #D1C9C2;
+		border-top: 1;
+		width: 400px;
+		margin: 0 auto;
+		padding: 7px 15px;
+		text-align: left;
+		-webkit-border-bottom-right-radius: 6px;
+		-webkit-border-bottom-left-radius: 6px;
+		-moz-border-radius-bottomright: 6px;
+		-moz-border-radius-bottomleft: 6px;
+		border-bottom-right-radius: 6px;
+		border-bottom-left-radius: 6px;
+		z-index: 1;
+		font-size: 10px;
+	}
 
-        #filters{
-            float:left;
-          display:none;
-          position:absolute;
-          background:white;
-          border: 1px solid #D1C9C2;
-          border-top: 1;
-          width: 400px;
-          margin: 0 auto;
-          padding:  7px 15px;
-          text-align: left;
-          -webkit-border-bottom-right-radius: 6px;
-          -webkit-border-bottom-left-radius: 6px;
-          -moz-border-radius-bottomright: 6px;
-          -moz-border-radius-bottomleft: 6px;
-          border-bottom-right-radius: 6px;
-          border-bottom-left-radius: 6px;
-          z-index: 1;
-            font-size: 10px;
-        }
+	@media (min-width: 1800px) {
+		#content {
+			width: 1770px;
+		}
+	}
 
-        @media (min-width: 1800px){
-            #content {
-                width: 1770px;
-            }
-        }
+	@media (min-width: 2200px) {
+		#content {
+			width: 100%;
+			padding-left: 100px;
+			padding-right: 100px;
+		}
+	}
 
-        @media (min-width: 2200px){
-            #content {
-                width: 100%;
-                padding-left: 100px;
-                padding-right: 100px;
-            }
-        }
+	.nav-tabs {
+		border-bottom: 0px solid #ddd;
+	}
 
-        .nav-tabs {
-            border-bottom: 0px solid #ddd;
-        }
+	@media (min-width: 1200px) {
+		.modal-wide {
+			width: 1200px;
+		}
+	}
 
-        @media (min-width: 1200px) {
-          .modal-wide {
-            width: 1200px;
-          }
-        }
-        @media (min-width: 1800px) {
-          .modal-wide {
-            width: 1800px;
-          }
-        }
-        @media (min-width: 2400px) {
-          .modal-wide {
-            width: 2400px;
-          }
-        }
+	@media (min-width: 1800px) {
+		.modal-wide {
+			width: 1800px;
+		}
+	}
 
-        .modal-footer {
-            border-top: 0px;
-        }
+	@media (min-width: 2400px) {
+		.modal-wide {
+			width: 2400px;
+		}
+	}
 
-        #single-crystal-pdbs {
-            height: 400px;
-            overflow: scroll;
-        }
+	.modal-footer {
+		border-top: 0px;
+	}
 
-        .heatmap {
-          height: 800px;
-        /*  border: 1px lightslategrey solid;*/
-          width: 100%;
-        }
+	#single-crystal-pdbs {
+		height: 400px;
+		overflow: scroll;
+	}
 
-        @media screen and (max-width: 992px) {
-            .go-button {
-                width: 100%;
-                margin-bottom: 15px;
-            }
-        }
+	.heatmap {
+		height: 800px;
+		/*  border: 1px lightslategrey solid;*/
+		width: 100%;
+	}
 
-        .heatmap-container {
-            position: relative;
-        }
+	@media screen and (max-width: 992px) {
+		.go-button {
+			width: 100%;
+			margin-bottom: 15px;
+		}
+	}
 
-        :-webkit-full-screen.heatmap-container {
-          width: 100%;
-          height: 100%;
-          border: 0px;
-        }
+	.heatmap-container {
+		position: relative;
+	}
 
-        :-webkit-full-screen.heatmap-container .heatmap {
-          width: 100%;
-          height: 100%;
-          border: none;
-        }
+	:-webkit-full-screen.heatmap-container {
+		width: 100%;
+		height: 100%;
+		border: 0px;
+	}
 
-        .highlighted {
-            stroke: #286090 !important;
-            stroke-width: 3 !important;
-            opacity: 1 !important;
-        }
+	:-webkit-full-screen.heatmap-container .heatmap {
+		width: 100%;
+		height: 100%;
+		border: none;
+	}
 
-        .temperature-scale .gray-to-red {
-            height: 10px;
-            width: 100%;
-            display: inline-block;
-            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
-            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
-            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
-            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
-            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
-            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
-            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#FF0000',GradientType=1 );
-        }
+	.highlighted {
+		stroke: #286090 !important;
+		stroke-width: 3 !important;
+		opacity: 1 !important;
+	}
 
-        .temperature-scale .red-to-gray {
-            height: 10px;
-            width: 50%;
-            display: inline-block;
-            background: -moz-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
-            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(220,220,220,1))); /* safari4+,chrome */
-            background: -webkit-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
-            background: -o-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
-            background: -ms-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
-            background: linear-gradient(270deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
-            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#DCDCDC',GradientType=1 );
-        }
+	.temperature-scale .gray-to-red {
+		height: 10px;
+		width: 100%;
+		display: inline-block;
+		background: -moz-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* ff3.6+ */
+		background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220, 220, 220, 1)), color-stop(100%, rgba(255, 0, 0, 1)));
+		/* safari4+,chrome */
+		background: -webkit-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* safari5.1+,chrome10+ */
+		background: -o-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* opera 11.10+ */
+		background: -ms-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* ie10+ */
+		background: linear-gradient(270deg, rgba(255, 0, 0, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* w3c */
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#DCDCDC', endColorstr='#FF0000', GradientType=1);
+	}
 
-        .temperature-scale .gray-to-blue {
-            height: 10px;
-            width: 50%;
-            display: inline-block;
-            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
-            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
-            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
-            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
-            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
-            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
-            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#0000FF',GradientType=1 );
-        }
+	.temperature-scale .red-to-gray {
+		height: 10px;
+		width: 50%;
+		display: inline-block;
+		background: -moz-linear-gradient(180deg, rgba(220, 220, 220, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* ff3.6+ */
+		background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 0, 0, 1)), color-stop(100%, rgba(220, 220, 220, 1)));
+		/* safari4+,chrome */
+		background: -webkit-linear-gradient(180deg, rgba(220, 220, 220, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* safari5.1+,chrome10+ */
+		background: -o-linear-gradient(180deg, rgba(220, 220, 220, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* opera 11.10+ */
+		background: -ms-linear-gradient(180deg, rgba(220, 220, 220, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* ie10+ */
+		background: linear-gradient(270deg, rgba(220, 220, 220, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* w3c */
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FF0000', endColorstr='#DCDCDC', GradientType=1);
+	}
 
-        .temperature-scale .white-to-red {
-            height: 10px;
-            width: 100%;
-            display: inline-block;
-            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
-            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
-            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
-            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
-            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
-            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
-            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000',GradientType=1 );
-        }
+	.temperature-scale .gray-to-blue {
+		height: 10px;
+		width: 50%;
+		display: inline-block;
+		background: -moz-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* ff3.6+ */
+		background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220, 220, 220, 1)), color-stop(100%, rgba(0, 0, 255, 1)));
+		/* safari4+,chrome */
+		background: -webkit-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* safari5.1+,chrome10+ */
+		background: -o-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* opera 11.10+ */
+		background: -ms-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* ie10+ */
+		background: linear-gradient(270deg, rgba(0, 0, 255, 1) 0%, rgba(220, 220, 220, 1) 100%);
+		/* w3c */
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#DCDCDC', endColorstr='#0000FF', GradientType=1);
+	}
 
-        .temperature-scale .red-to-white {
-            height: 10px;
-            width: 50%;
-            display: inline-block;
-            background: -moz-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
-            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(255,255,255,1))); /* safari4+,chrome */
-            background: -webkit-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
-            background: -o-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
-            background: -ms-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
-            background: linear-gradient(270deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
-            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF',GradientType=1 );
-        }
+	.temperature-scale .white-to-red {
+		height: 10px;
+		width: 100%;
+		display: inline-block;
+		background: -moz-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* ff3.6+ */
+		background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 255, 255, 1)), color-stop(100%, rgba(255, 0, 0, 1)));
+		/* safari4+,chrome */
+		background: -webkit-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* safari5.1+,chrome10+ */
+		background: -o-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* opera 11.10+ */
+		background: -ms-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* ie10+ */
+		background: linear-gradient(270deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* w3c */
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFFFFF', endColorstr='#FF0000', GradientType=1);
+	}
 
-        .temperature-scale .white-to-blue {
-            height: 10px;
-            width: 50%;
-            display: inline-block;
-            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
-            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
-            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
-            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
-            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
-            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
-            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF',GradientType=1 );
-        }
+	.temperature-scale .red-to-white {
+		height: 10px;
+		width: 50%;
+		display: inline-block;
+		background: -moz-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* ff3.6+ */
+		background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 0, 0, 1)), color-stop(100%, rgba(255, 255, 255, 1)));
+		/* safari4+,chrome */
+		background: -webkit-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* safari5.1+,chrome10+ */
+		background: -o-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* opera 11.10+ */
+		background: -ms-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* ie10+ */
+		background: linear-gradient(270deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+		/* w3c */
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FF0000', endColorstr='#FFFFFF', GradientType=1);
+	}
 
-        #single-crystal-tab .panel .btn-primary:hover, #single-crystal-group-tab .panel .btn-primary:hover, #two-crystal-groups-tab .panel .btn-primary:hover {
-            background-color: #337ab7;
-        }
+	.temperature-scale .white-to-blue {
+		height: 10px;
+		width: 50%;
+		display: inline-block;
+		background: -moz-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* ff3.6+ */
+		background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 255, 255, 1)), color-stop(100%, rgba(0, 0, 255, 1)));
+		/* safari4+,chrome */
+		background: -webkit-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* safari5.1+,chrome10+ */
+		background: -o-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* opera 11.10+ */
+		background: -ms-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* ie10+ */
+		background: linear-gradient(270deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+		/* w3c */
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFFFFF', endColorstr='#0000FF', GradientType=1);
+	}
+
+	#single-crystal-tab .panel .btn-primary:hover,
+	#single-crystal-group-tab .panel .btn-primary:hover,
+	#two-crystal-groups-tab .panel .btn-primary:hover {
+		background-color: #337ab7;
+	}
 
 
-        .svg-download-button {
-            margin-top: 6px;
-        }
+	.svg-download-button {
+		margin-top: 6px;
+	}
 
-        .csv-download-button {
-            margin-top: 6px;
-        }
+	.csv-download-button {
+		margin-top: 6px;
+	}
 
-        .btn-download, .btn-download-alt, .btn-fullscreen {
-          margin-right: 10px;
-        }
+	.btn-download,
+	.btn-download-alt,
+	.btn-fullscreen {
+		margin-right: 10px;
+	}
 
-        #sliderDiv {
-            height: 30px;
-            width: 600px;
-            position: relative;
-            left: 50%;
-            margin-left: -300px;
-            margin-top: 20px;
-        }
-        #regroupDiv {
-            position: relative;
-            left: 50%;
-            margin-left: -50px;
-            margin-top: 20px;
-            width: 100px;
-            height: 30px;
-            background-color: #d7deeb;
-            vertical-align: middle;
-            text-align: center;
-            line-height: 30px;
-            border: 2px solid #8489a3;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        #regroupDiv:hover {
-            background-color: #a1a5bd;
-        }
+	#sliderDiv {
+		height: 30px;
+		width: 600px;
+		position: relative;
+		left: 50%;
+		margin-left: -300px;
+		margin-top: 20px;
+	}
 
-        tr.table-selected {
-            color: #F00;
-            font-weight: bolder;
-        }
-    </style>
+	#regroupDiv {
+		position: relative;
+		left: 50%;
+		margin-left: -50px;
+		margin-top: 20px;
+		width: 100px;
+		height: 30px;
+		background-color: #d7deeb;
+		vertical-align: middle;
+		text-align: center;
+		line-height: 30px;
+		border: 2px solid #8489a3;
+		cursor: pointer;
+		border-radius: 5px;
+	}
+
+	#regroupDiv:hover {
+		background-color: #a1a5bd;
+	}
+
+	tr.table-selected {
+		color: #F00;
+		font-weight: bolder;
+	}
+</style>
 
 {% endblock %}
