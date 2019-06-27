@@ -186,28 +186,72 @@
         var phylotree;
         var treeAnnotations = [];
         var couplingAnnotations = [];
-        var dataClasses = [0,0];
+        var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Experimental method", "Ligand function", "G-protein coupling", "Primary G-protein coupling", "Secondary G-protein coupling"]
+        var dataClasses, colorClasses;
         function renderTree(data) {
+            dataClasses = [["active", "inactive", "intermediate"],0,0];
+            colorClasses = [["#0F0", "#F00", "#F80"], 0, 0];
             var tree = data["tree"]; // contains tree in Newick format
 
             // data annotations
             treeAnnotations = data["annotations"];
 
-            // G-protein coupling
-            couplingAnnotations = data["Gprot_coupling"];
-
             // Annotations: 0 state, 1 name, 2 fullname, 3 family, 4 ligand type, 5 class, 6 method, 7 ligand function, 8 g-protein coupling
-            for (var i = 2; i < 7; i++){
+            for (var i = 3; i < 7; i++){
                 dataClasses[i] = new Set()
                 for (key in treeAnnotations)
                   dataClasses[i].add(treeAnnotations[key][i])
                 dataClasses[i] = Array.from(dataClasses[i]).sort();
             }
-            dataClasses[7] = 0
+            dataClasses[7] = ["agonist", "agonist-partial", "partial-agonist", "pam", "antagonist", "inverse-agonist", "nam"]
             dataClasses[8] = ['Gs family', 'Gi/Go family', 'Gq/G11 family', 'G12/G13 family']
             dataClasses[9] = dataClasses[8]
             dataClasses[10] = dataClasses[8]
 
+            for (var i = colorClasses.length; i <= 8; i++) {
+                colorClasses[i] = []
+                if (i != 7) {
+                  var class_colors;
+                  if (dataClasses[i].length > 10) {
+                    class_colors = d3.scale.category20()
+                        .domain(dataClasses[i])
+                  } else {
+                    class_colors = d3.scale.category10()
+                        .domain(dataClasses[i])
+                  }
+                  for (var j = 0; j < dataClasses[i].length; j++) {
+                    colorClasses[i].push(class_colors(dataClasses[i][j]))
+                  }
+                }
+            }
+            colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
+            colorClasses[9] = colorClasses[8]
+            colorClasses[10] = colorClasses[8]
+            console.log(dataClasses)
+            console.log(colorClasses)
+
+            // G-protein coupling
+            couplingAnnotations = data["Gprot_coupling"];
+
+            // Annotate and order coupling data
+            for (name in treeAnnotations){
+              var slug = treeAnnotations[name][8]
+              treeAnnotations[name][8] = []
+              treeAnnotations[name][9] = []
+              treeAnnotations[name][10] = []
+              var gproteins = dataClasses[8]
+              for (g = 0; g < gproteins.length; g++) {
+                if (slug in couplingAnnotations){
+                  if ("primary" in couplingAnnotations[slug] && couplingAnnotations[slug]["primary"].includes(gproteins[g])) {
+                    treeAnnotations[name][8].push(gproteins[g])
+                    treeAnnotations[name][9].push(gproteins[g])
+                  } else if ("secondary" in couplingAnnotations[slug] && couplingAnnotations[slug]["secondary"].includes(gproteins[g])){
+                    treeAnnotations[name][8].push(gproteins[g])
+                    treeAnnotations[name][10].push(gproteins[g])
+                  }
+                }
+              }
+            }
 
             /*var r = 1200 / 2;
             var spacing = 240;
@@ -286,17 +330,17 @@
             });
         }
 
-        var maxLeafnode = -1
+        var maxLeafNodeLenght = -1
         function maximumLeafSize(refresh = true) {
           // set to 0
-          maxLeafnode = 0;
+          maxLeafNodeLenght = 0;
 
           // Find longest label
           d3.select("#clustering-tree").selectAll("text")[0].forEach(
             function(node_label){
               labelSize = node_label.getBBox().width*1.05
-              if (labelSize > maxLeafnode){
-                maxLeafnode = labelSize
+              if (labelSize > maxLeafNodeLenght){
+                maxLeafNodeLenght = labelSize
               }
             });
 
@@ -382,46 +426,11 @@
           maximumLeafSize();
         }
 
-
         var displayData = 7
         function toggleDataOuter(event){
           var dataName = event.target.innerText
 
-          // Annotations: 0 state, 1 name, 2 fullname, 3 family, 4 ligand type, 5 class, 6 method, 7 ligand function
-          switch(dataName){
-              case "No data":
-                displayData = -1;
-                break;
-              case "Receptor activation state":
-                displayData = 0;
-                break;
-              case "GPCR class":
-                displayData = 5
-                break;
-              case "Ligand type":
-                displayData = 4
-                break;
-              case "Receptor family":
-                displayData = 3
-                break;
-              case "Experimental method":
-                displayData = 6
-                break;
-              case "G-protein coupling":
-                displayData = 8
-                break;
-              case "Primary G-protein coupling":
-                displayData = 9
-                break;
-              case "Secondary G-protein coupling":
-                displayData = 10
-                break;
-              case "Ligand function":
-              default:
-                displayData = 7
-                break;
-          }
-
+          displayData = menuItem(dataName)
           // refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
         }
@@ -429,45 +438,38 @@
         var displayDataInner = 0
         function toggleDataInner(event){
           var dataName = event.target.innerText
-//          console.log(dataName)
-
-          // Annotations: 0 state, 1 name, 2 fullname, 3 family, 4 ligand type, 5 class, 6 method, 7 ligand function
-          switch(dataName){
-              case "No data":
-                displayDataInner  = -1;
-                break;
-              case "Receptor activation state":
-                displayDataInner  = 0;
-                break;
-              case "GPCR class":
-                displayDataInner  = 5
-                break;
-              case "Ligand type":
-                displayDataInner  = 4
-                break;
-              case "Receptor family":
-                displayDataInner  = 3
-                break;
-              case "Experimental method":
-                displayDataInner  = 6
-                break;
-              case "G-protein coupling":
-                displayDataInner  = 8
-                break;
-              case "Primary G-protein coupling":
-                displayDataInner  = 9
-                break;
-              case "Secondary G-protein coupling":
-                displayDataInner  = 10
-                break;
-              case "Ligand function":
-              default:
-                displayDataInner  = 7
-                break;
-          }
+          displayDataInner = menuItem(dataName)
 
           // refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
+        }
+
+        function menuItem(dataName){
+          // Annotations: 0 state, 1 name, 2 fullname, 3 family, 4 ligand type, 5 class, 6 method, 7 ligand function
+          switch(dataName){
+              case "No data":
+                return -1;
+              case "Receptor activation state":
+                return 0;
+              case "GPCR class":
+                return 5
+              case "Ligand type":
+                return 4
+              case "Receptor family":
+                return 3
+              case "Experimental method":
+                return 6
+              case "G-protein coupling":
+                return 8
+              case "Primary G-protein coupling":
+                return 9
+              case "Secondary G-protein coupling":
+                return 10
+              case "Ligand function":
+                return 7
+              default:
+                return -1
+          }
         }
 
         function connectedPDBs(node){
@@ -557,28 +559,23 @@
                     var font_size  = parseFloat(node_label.style("font-size"));
                     var scale = 0.8;
 
-                    // add receptor state
+                    // Add inner markers
                     element.selectAll("circle").remove()
                     if (displayDataInner >= 0){
-                      if (displayDataInner == 0) {
-                        var state = treeAnnotations[node.name][0]
+                      if (!Array.isArray(treeAnnotations[node.name][displayDataInner]))
+                        treeAnnotations[node.name][displayDataInner] = [treeAnnotations[node.name][displayDataInner]]
+
+                      for (var i = 0; i < treeAnnotations[node.name][displayDataInner].length; i++) {
+                        var currentType = typeClasses[displayDataInner]
+                        var currentData = treeAnnotations[node.name][displayDataInner][i]
+                        var classIndex = dataClasses[displayDataInner].indexOf(currentData)
+                        var currentColor = colorClasses[displayDataInner][classIndex]
+
                         var annotation = element.append("circle")
                         annotation.attr("r", (font_size*scale)/2)
-                            .style("stroke", "#000")
-                            .style("stroke-width", font_size/20+"px")
-                            .style("fill", function(n) {
-                              // color based on activity
-                              switch(state){
-                                  case "active":
-                                      return "#0F0";
-                                  case "inactive":
-                                      return "#F00";
-                                  case "intermediate":
-                                      return "#F80";
-                                  default:
-                                      return "#888";
-                              }
-                            });
+                          .style("stroke", "#000")
+                          .style("stroke-width", font_size/20+"px")
+                          .style("fill", currentColor);
 
                         // Shift circles according to placement label
                         if (phylotree.radial ()) {
@@ -586,13 +583,7 @@
                             var setX = shifter_rect > 0 ? shifter_rect -  font_size*scale/1.8: shifter_rect + font_size*scale/1.8;
                             annotation.attr("transform", "rotate (" + node.text_angle + ")")
                                 .attr ("cx", setX)
-                        } else {
-                            /*var x_shift_rect = phylotree.shift_tip(node)[0] + maxLeafnode + i*(font_size*scale+2);
-                            annotation.attr("transform", null).attr("x", function (d, i) { return  x_shift_rect;})
-                            annotation.attr ("cx", x_shift_rect)*/
                         }
-                      } else {
-                        // TODO color circles
                       }
                     }
 
@@ -614,139 +605,18 @@
                     if (label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
                         label.innerHTML = " (" + node.name + ") " + labelName
 
-                    // data toggle
-                    // TODO: this function is currently ugly -> clean and tidy
+                    // Add outer markers
                     element.selectAll("rect").remove() // remove old data
                     if (displayData >= 0){
-                      // Optionally shift the tip alignment?
-//                      tree.shift_tip(node)
 
-                      //phylotree.align_tips(true);
-                      // Annotations: 0 state, 1 name, 2 fullname, 3 family, 4 ligand type, 5 class, 6 method, 7 ligand function
+                      if (!Array.isArray(treeAnnotations[node.name][displayData]))
+                        treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
-                      // MAYBE TODO: custom GPCRdb coloring scales?
-                      var class_colors = d3.scale.category10()
-                          .domain(dataClasses[displayData])
-                      if (dataClasses[displayData].length > 10)
-                        class_colors = d3.scale.category20()
-                            .domain(dataClasses[displayData])
-
-                      var nodeColor = "#888"
-                      var nodeData = []
-                      var option = ""
-                      switch(displayData){
-                          case 0:
-                            option = "Receptor activation state"
-
-                            // node color
-                            // color based on activity
-                            switch(treeAnnotations[node.name][displayData]){
-                                case "active":
-                                    nodeColor = "#0F0";
-                                    break;
-                                case "inactive":
-                                    nodeColor = "#F00";
-                                    break;
-                                case "intermediate":
-                                    nodeColor = "#F80";
-                                    break;
-                                default:
-                                    nodeColor = "#888";
-                                    break;
-                            }
-                            break;
-                          case 3: // Receptor family
-                            option  = "Receptor family"
-                            break;
-                          case 4: // Ligand type
-                            option  = "Ligand type"
-                            break;
-                          case 5: // GPCR class
-                            option  = "GPCR class"
-                            break;
-                          case 6: // Experimental method
-                            option  = "Experimental method"
-                            break;
-                          case 8: // G-protein coupling preferences
-                          case 9: // primary G-protein coupling preferences
-                          case 10: // Secondary G-protein coupling preferences
-                            if (displayData == 8)
-                              option = "G-protein coupling"
-                            else if (displayData == 9)
-                              option = "Primary G-protein coupling"
-                            else if (displayData == 10)
-                              option = "Secondary G-protein coupling"
-
-                            // collect coupling data
-                            var slug = treeAnnotations[node.name][8]
-                            var coupling = []
-                            if (slug in couplingAnnotations) {
-                              if ("primary" in couplingAnnotations[slug] && displayData <= 9)
-                                coupling = coupling.concat(couplingAnnotations[slug]["primary"])
-                              if ("secondary" in couplingAnnotations[slug]  && (displayData == 8 || displayData == 10))
-                                coupling = coupling.concat(couplingAnnotations[slug]["secondary"])
-                            }
-
-                            // create nodeData
-                            nodeColor = []
-                            if (coupling.length > 0){
-                              var gproteins = dataClasses[8]
-                              for (g = 0; g < gproteins.length; g++){
-                                if (coupling.includes(gproteins[g])) {
-                                    nodeData.push(gproteins[g])
-                                    nodeColor.push(class_colors(gproteins[g]))
-                                }
-                              }
-                            }
-
-                            // write back in correct order
-                            if (!(node.name in coupling))
-                              coupling[node.name] = {}
-                            coupling[node.name][displayData] = nodeData // to maintain correct order
-
-                            break;
-                          case 7: // ligand function
-                          default:
-                            displayData = 7 // (re)set in case of erroneous selection
-                            option = "Ligand function"
-
-                            // node color
-                            if (treeAnnotations[node.name][displayData].length > 0){
-                                switch(treeAnnotations[node.name][displayData][0]) {
-                                    case "agonist":
-                                    case "agonist-partial":
-                                    case "partial-agonist":
-                                    case "pam":
-                                        nodeColor = "#0F0";
-                                        break;
-                                    case "antagonist":
-                                    case "inverse-agonist":
-                                    case "nam":
-                                        nodeColor = "#F00";
-                                        break;
-                                    default:
-                                        nodeColor = "#888";
-                                        break;
-                                }
-                            }
-                      }
-
-                      if (displayData > 0 && displayData < 7)
-                        nodeColor = class_colors(treeAnnotations[node.name][displayData])
-
-                      if (!Array.isArray(nodeColor))
-                        nodeColor = [nodeColor]
-
-                      // add annotationBlock
-  //                    var font_size  = parseFloat(node_label.style("font-size"));
-  //                    var scale = 0.8
-                      /*var nodeNameMeasure = label.innerHTML.replace(/(<([^>]+)>)/ig,"");
-                      var move_past_label_rect = label.getBBox().width*1.05 + font_size*/
-                      var move_past_label_rect = maxLeafnode;
-
-                      // add blocks
-                      for (var i = 0; i < nodeColor.length; i++) {
-                        var currentColor = nodeColor[i]
+                      for (var i = 0; i < treeAnnotations[node.name][displayData].length; i++) {
+                        var currentType = typeClasses[displayData]
+                        var currentData = treeAnnotations[node.name][displayData][i]
+                        var classIndex = dataClasses[displayData].indexOf(currentData)
+                        var currentColor = colorClasses[displayData][classIndex]
 
                         // create block
                         var annotation = element.append("rect")
@@ -759,7 +629,7 @@
                           .on("mouseover", function(d) { // add tooltip
                               class_tooltip.transition()
                                 .style("opacity", .9);
-                              class_tooltip.html("<b>" + option + ":</b> " + $(d3.event.target).data("datalabel"))
+                              class_tooltip.html("<b>" + currentType + ":</b> " + $(d3.event.target).data("datalabel"))
                                 .style("left", (d3.event.pageX) + "px")
                                 .style("top", (d3.event.pageY - 28) + "px");
                             })
@@ -771,20 +641,15 @@
 
                           // label
                           var toollabel = ""
-                          if (displayData >= 8)
-                            annotation.attr("data-datalabel", nodeData[i])
-                          else if (Array.isArray(treeAnnotations[node.name][displayData]))
-                            annotation.attr("data-datalabel", treeAnnotations[node.name][displayData][i])
-                          else
-                            annotation.attr("data-datalabel", treeAnnotations[node.name][displayData])
+                          annotation.attr("data-datalabel", currentData)
 
                         if (phylotree.radial ()) {
                             var shifter_rect = phylotree.shift_tip(node)[0];
-                            var setX = shifter_rect > 0 ? shifter_rect + move_past_label_rect + i*(font_size*scale+2) : shifter_rect - move_past_label_rect - font_size*scale*0.9 - i*(font_size*scale+2);
+                            var setX = shifter_rect > 0 ? shifter_rect + maxLeafNodeLenght + i*(font_size*scale+2) : shifter_rect - maxLeafNodeLenght - font_size*scale*0.9 - i*(font_size*scale+2);
                             annotation.attr("transform", "rotate (" + node.text_angle + ")")
                                 .attr ("x", setX)
                         } else {
-                            var x_shift_rect = phylotree.shift_tip(node)[0] + move_past_label_rect + i*(font_size*scale+2);
+                            var x_shift_rect = phylotree.shift_tip(node)[0] + maxLeafNodeLenght + i*(font_size*scale+2);
                             annotation.attr("transform", null).attr("x", function (d, i) { return  x_shift_rect + font_size * i;})
                         }
                       }
@@ -824,7 +689,6 @@
         }
 
         function branchStyler(element, node){
-            // TODO implement toggle
             var useColor = $("#colored-edges").prop("checked")
 
             if ( 'group0' in node.target && node.target['group0'] && 'group1' in node.target && node.target['group1']) {
@@ -838,9 +702,10 @@
               element.style("stroke-width", 3)
             } else {
               if (useColor){
-                  // color according to shared feature
+                // color according to shared feature
                 console.log(node)
                 console.log(node.target)
+
               } else {
                 element.style("stroke", "#CCC");
                 element.style("stroke-width", 1.5)
@@ -910,6 +775,7 @@
         function downloadPNG(pngSelector, name) {
           var SVGElem = document.getElementById(pngSelector);
           var oDOM = SVGElem.cloneNode(true);
+
           // Key: strip xmlns tags otherwise this will result in a double definition
           oDOM.removeAttribute("xmlns");
           saveSvgAsPng(oDOM, name, {scale: 3});
