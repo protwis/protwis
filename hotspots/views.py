@@ -70,7 +70,8 @@ def getHotspots(request):
     # STRUCTURE: Ligand contacts per position per protein (consider also per subfamily/ligand type/class)
     ligand_interactions = ResidueFragmentInteraction.objects.filter(\
                 structure_ligand_pair__structure__protein_conformation__protein__parent__in=class_proteins)\
-                .exclude(interaction_type__type='hidden')\
+                .exclude(structure_ligand_pair__annotated=False)\
+                .exclude(rotamer__residue__generic_number=None)\
                 .exclude(rotamer__residue__generic_number=None)\
                 .values("rotamer__residue__protein_conformation__protein__parent__entry_name", "rotamer__residue__generic_number__label")\
                 .annotate(unique_contacts=Count("rotamer__structure", distinct=True))\
