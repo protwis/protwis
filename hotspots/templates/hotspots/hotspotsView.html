@@ -247,6 +247,7 @@
         var gpcr_rep = {}
         var selectColoring = {} // store coloring settings
         var int_labels = []
+        var basecolor = {1:'red',2:'blue',3:'blue'}
         function createNGLview(mode, pdb, pdbs = false) {
             $("#ngl-"+mode).html("");
             stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
@@ -298,6 +299,22 @@
                           ["#111", segments_sets[highlight[7]]],
                           [ "white", "*" ]
                           ])
+                
+                color_schemes[mode][0]['red'] = NGL.ColormakerRegistry.addSelectionScheme([
+                        [red_colors[1], segments_sets[highlight[0]]],
+                        [red_colors[2], segments_sets[highlight[1]]],
+                        [red_colors[3], segments_sets[highlight[2]]],
+                        [red_colors[4], segments_sets[highlight[3]]],
+                        [red_colors[5], segments_sets[highlight[4]]],
+                        [red_colors[6], segments_sets[highlight[5]]],
+                        [red_colors[7], segments_sets[highlight[6]]],
+                        [red_colors[8], segments_sets[highlight[7]]],
+                        [ "white", "*" ]
+                        ])
+                
+                
+                pdb_data[mode][0] = data;
+
 
 
                 chain_set1 = pdb_data[mode][0]['chain'];
@@ -316,7 +333,7 @@
                       sele: ":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+")",
                       radiusSize: 1,
                       radiusScale: 0.6,
-                      color: color_schemes[mode][0]['blue'],
+                      color: color_schemes[mode][0][basecolor[mode]],
                       metalness: 0,
                       colorMode: "hcl",
                       roughness: 1,
@@ -634,6 +651,8 @@
 
 						// Example NGL viewers
 						createNGLview(1,"2rh1",["2rh1"])
+						createNGLview(2,"2rh1",["2rh1"])
+						createNGLview(3,"2rh1",["2rh1"])
 
             window.addEventListener("resize", redraw_ngl);
 
