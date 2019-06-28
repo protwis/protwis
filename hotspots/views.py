@@ -11,6 +11,9 @@ from protein.models import Protein, ProteinSegment
 from residue.models import Residue
 from structure.models import Structure
 
+from collections import OrderedDict
+import functools
+
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 def hotspotsView(request):
@@ -19,8 +22,26 @@ def hotspotsView(request):
     """
     return render(request, 'hotspots/hotspotsView.html')
 
-
+# @cache_page(60*60*24*7)
 def getHotspots(request):
+    def gpcrdb_number_comparator(e1, e2):
+        t1 = e1.split('x')
+        t2 = e2.split('x')
+
+        if e1 == e2:
+            return 0
+
+        if t1[0] == t2[0]:
+            if t1[1] < t2[1]:
+                return -1
+            else:
+                return 1
+
+        if t1[0] < t2[0]:
+            return -1
+        else:
+            return 1
+
     data = {'error': 0}
 
     # DEBUG: for now only Class A
@@ -34,8 +55,8 @@ def getHotspots(request):
     protein_dictionary = {}
     for p in class_proteins:
         protein_dictionary[p.entry_name] = {}
-        protein_dictionary[p.entry_name]["receptor_family"] = p.family.parent.name
-        protein_dictionary[p.entry_name]["ligand_type"] = p.family.parent.parent.name
+        protein_dictionary[p.entry_name]["receptor_family"] = p.family.parent.short()
+        protein_dictionary[p.entry_name]["ligand_type"] = p.family.parent.parent.short()
 
     # SEQUENCE: number of same amino acids per position in class
     residues = Residue.objects.filter(protein_conformation__protein__in = class_proteins)\
@@ -95,6 +116,7 @@ def getHotspots(request):
 
     # start parsing the data
     residue_matrix = {}
+    generic_numbers = set()
     for i, p in enumerate(aln.unique_proteins):
         entry_name = p.protein.entry_name
 
@@ -102,6 +124,7 @@ def getHotspots(request):
         for j, s in p.alignment.items():
             for p in s:
                 generic_number = p[0]
+                generic_numbers.add(generic_number)
                 display_generic_number = p[1]
                 amino_acid = p[2]
 
@@ -120,8 +143,9 @@ def getHotspots(request):
                 if entry_name in contact_count and generic_number in contact_count[entry_name]:
                     con_count = contact_count[entry_name][generic_number]
 
-                residue_matrix[entry_name][generic_number] = [amino_acid, display_generic_number, seq_count, mut_count, con_count]
+                residue_matrix[entry_name][generic_number] = [amino_acid, display_generic_number, ['#f0fcfa',seq_count], ['#fbf0fc',mut_count], ['#ccc',con_count]]
 
+    data['sorted_gns'] = sorted(generic_numbers, key=functools.cmp_to_key(gpcrdb_number_comparator))
     data["residue_matrix"] = residue_matrix
 
     return JsonResponse(data)
