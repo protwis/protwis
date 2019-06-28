@@ -134,6 +134,12 @@ $(document).ready(function() {
     createNGLview(2, "2rh1", ["2rh1"])
     createNGLview(3, "2rh1", ["2rh1"])
 
+		// link viewers together - setup
+		stage[1].mouseObserver.signals.dragged.add(function( event ){
+			stage[2].viewerControls.orient(stage[1].viewerControls.getOrientation());
+			stage[3].viewerControls.orient(stage[1].viewerControls.getOrientation());
+		})
+
 });
 </script>
 {% endblock %}
