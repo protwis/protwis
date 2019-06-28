@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^contactnetwork/', include('contactnetwork.urls')),
     url(r'^seqsign/', include('seqsign.urls')),
     url(r'^angles/', include('angles.urls')),
+    url(r'^hotspots/', include('hotspots.urls')),
 ]
 
 handler404 = views.error404

@@ -936,7 +936,7 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
-        
+      
         # Tab 2 data generation
         # Get the relevant interactions
         data['tab2'] = {}
@@ -1487,7 +1487,7 @@ def ClusteringData(request):
     data['annotations'] = pdb_annotations
 
     # Grab G-protein coupling profile for all receptors covered by the selection
-    # TODO: make general cache(s) for this type of data
+    # TODO: make general cache(s) for these kinds of data
     selectivitydata = {}
     coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
 
