@@ -7,9 +7,11 @@ from django.views.generic import TemplateView, View
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationExperiment
-from protein.models import Protein
+from protein.models import Protein, ProteinSegment
 from residue.models import Residue
 from structure.models import Structure
+
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 def hotspotsView(request):
     """
@@ -25,15 +27,22 @@ def getHotspots(request):
     gpcr_class = "001"
 
     # Obtain all proteins
-    class_proteins = Protein.objects.filter(family__slug__startswith=gpcr_class, sequence_type__slug='wt', species__common_name='Human')
+    class_proteins = Protein.objects.filter(family__slug__startswith=gpcr_class, sequence_type__slug='wt', species__common_name='Human')\
+                            .prefetch_related('family__parent','family__parent__parent')
     class_count = class_proteins.count()
+
+    protein_dictionary = {}
+    for p in class_proteins:
+        protein_dictionary[p.entry_name] = {}
+        protein_dictionary[p.entry_name]["receptor_family"] = p.family.parent.name
+        protein_dictionary[p.entry_name]["ligand_type"] = p.family.parent.parent.name
 
     # SEQUENCE: number of same amino acids per position in class
     residues = Residue.objects.filter(protein_conformation__protein__in = class_proteins)\
                     .exclude(generic_number=None)\
                     .values('generic_number__label','amino_acid')\
                     .annotate(number_occurrences=Count("protein_conformation"))\
-                    .order_by('generic_number__label')
+                    .order_by('generic_number__label') # Necessary otherwise the key is used -> messing up the count
 
     seq_conservation = {}
     for entry in list(residues):
@@ -41,7 +50,7 @@ def getHotspots(request):
             seq_conservation[entry["generic_number__label"]] = {}
         seq_conservation[entry["generic_number__label"]][entry["amino_acid"]] = entry["number_occurrences"]
 
-    data["seq_conservation"] = seq_conservation
+    #data["seq_conservation"] = seq_conservation
 
     # MUTATION: obtain ligand mutations >5 fold effect
     receptor_mutations = MutationExperiment.objects.filter(Q(foldchange__gte = 5) | Q(foldchange__lte = -5), protein__in = class_proteins)\
@@ -56,7 +65,7 @@ def getHotspots(request):
             mutation_count[entry["protein__entry_name"]] = {}
         mutation_count[entry["protein__entry_name"]][entry["residue__generic_number__label"]] = entry["unique_mutations"]
 
-    data["mutation_count"] = mutation_count
+    #data["mutation_count"] = mutation_count
 
     # STRUCTURE: Ligand contacts per position per protein (consider also per subfamily/ligand type/class)
     ligand_interactions = ResidueFragmentInteraction.objects.filter(\
@@ -73,6 +82,45 @@ def getHotspots(request):
             contact_count[entry["rotamer__residue__protein_conformation__protein__parent__entry_name"]] = {}
         contact_count[entry["rotamer__residue__protein_conformation__protein__parent__entry_name"]][entry["rotamer__residue__generic_number__label"]] = entry["unique_contacts"]
 
-    data["contact_count"] = contact_count
+    #data["contact_count"] = contact_count
+
+    # MISSING: alignment per entry
+    aln = Alignment()
+    aln.load_proteins(class_proteins)
+
+    # refine later
+    aln.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+    aln.build_alignment()
+
+    # start parsing the data
+    residue_matrix = {}
+    for i, p in enumerate(aln.unique_proteins):
+        entry_name = p.protein.entry_name
+
+        residue_matrix[entry_name] = protein_dictionary[entry_name]
+        for j, s in p.alignment.items():
+            for p in s:
+                generic_number = p[0]
+                display_generic_number = p[1]
+                amino_acid = p[2]
+
+                # TODO: handle gaps
+
+                # OTPIMIZE THIS by zipping efficiently
+                seq_count = 0
+                if generic_number in seq_conservation and amino_acid in seq_conservation[generic_number]:
+                    seq_count = seq_conservation[generic_number][amino_acid]
+
+                mut_count = 0
+                if entry_name in mutation_count and generic_number in mutation_count[entry_name]:
+                    mut_count = mutation_count[entry_name][generic_number]
+
+                con_count = 0
+                if entry_name in contact_count and generic_number in contact_count[entry_name]:
+                    con_count = contact_count[entry_name][generic_number]
+
+                residue_matrix[entry_name][generic_number] = [amino_acid, display_generic_number, seq_count, mut_count, con_count]
+
+    data["residue_matrix"] = residue_matrix
 
     return JsonResponse(data)
