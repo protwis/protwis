@@ -102,7 +102,7 @@
                                         </div>
                                         <div class="btn-group">
                                           <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                            Innter markers<span class="caret"></span>
+                                            Inner markers<span class="caret"></span>
                                           </button>
                                           <ul class="dropdown-menu datainner" role="menu">
                                             <li><a href="#">No data</a></li>
@@ -122,6 +122,10 @@
                                         </div>
                                       </div>
                                       <svg id="clustering-tree"></svg>
+                                      <div class="legend_box">
+                                        <div class="outer_legend"></div>
+                                        <div class="inner_legend"></div>
+                                      </div>
                                   </div>
                               </div>
                            </div>
@@ -266,10 +270,10 @@
             phylotree = d3.layout.phylotree()
             .svg(d3.select("#clustering-tree"))
             .options({
-              'left-right-spacing': 'fit-to-size', // fit to given size left-to-right
-              'top-bottom-spacing': 'fit-to-size', // fit to given size top-to-bottom
-              //'left-right-spacing': 'fixed-step',
-              //'top-bottom-spacing': 'fixed-step',
+              //'left-right-spacing': 'fit-to-size', // fit to given size left-to-right
+              //'top-bottom-spacing': 'fit-to-size', // fit to given size top-to-bottom
+              'left-right-spacing': 'fixed-step',
+              'top-bottom-spacing': 'fixed-step',
               'left-offset': 200,
               'restricted-selectable': 'none', // disable normal selection
               'selectable': false,  // make nodes and branches not selectable
@@ -286,7 +290,7 @@
             .radial(true)
             .node_span ('equal')
             .size([800, 800])
-            //.separation (function (a,b) {return 1;});
+            .separation (function (a,b) {return 0.1;});
 
 
             // DRAW
@@ -322,6 +326,10 @@
             if (doBranchColoring){
               d3.layout.phylotree.trigger_refresh(phylotree);
             }
+
+            // add legends
+            refreshOuterLegend()
+            refreshInnerLegend()
 
             // Button Toggles
             $("#layout").on("click", function(e) {
@@ -462,14 +470,89 @@
           var dataName = event.target.innerText
 
           displayData = menuItem(dataName)
+
+          // Refresh legend
+          refreshOuterLegend()
+
           // refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
+        }
+
+        function refreshOuterLegend(){
+          refreshLegend(".outer_legend", displayData)
+        }
+
+        function refreshInnerLegend(){
+          refreshLegend(".inner_legend", displayDataInner)
+        }
+
+        function refreshLegend(div_class, selectData){
+          d3.select(div_class).html("");
+          if (selectData >= 0) {
+            var svg_legend_receptor_class = d3.select(div_class).append("svg")
+                .attr("height", (dataClasses[selectData].length+1)*20+"px")
+                .attr("id", "class_legend_box");
+
+            // add specific title to legend
+            svg_legend_receptor_class.append("text")
+                .attr("x", 0)
+                .attr("y", 7)
+                .attr("dy", ".35em")
+                .text(typeClasses[selectData])
+                .attr("fill", "black")
+                .style("font-size", 14)
+                .style("font-weight", "bold");
+
+            //// Vertical Legend ////
+            var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
+                .data(dataClasses[selectData])
+                .enter().append('g')
+                .attr("class", "class_legend_group")
+                .attr("transform", function (d, i) {
+                    return "translate(0," + i * 20 + ")"
+                });
+
+            if (div_class==".inner_legend"){
+              class_legend.append("circle")
+              .attr("cx", 7)
+              .attr("cy", 25)
+              .attr("r", 5)
+              .style("stroke", "#000")
+              .style("stroke-width", "1px")
+              .style("fill", function (d) {
+                  return colorClasses[selectData][dataClasses[selectData].indexOf(d)]
+              });
+            } else {
+              class_legend.append("rect")
+              .attr("x", 2)
+              .attr("y", 20)
+              .attr("width", 10)
+              .attr("height", 10)
+              .style("stroke", "#000")
+              .style("stroke-width", "1px")
+              .style("fill", function (d) {
+                  return colorClasses[selectData][dataClasses[selectData].indexOf(d)]
+              });
+            }
+
+            class_legend.append('text')
+                .attr("x", 20)
+                .attr("y", 30)
+                .text(function (d) {
+                    return (d)
+                })
+                .style("text-anchor", "start")
+                .style("font-size", 13);
+          }
         }
 
         var displayDataInner = 0
         function toggleDataInner(event){
           var dataName = event.target.innerText
           displayDataInner = menuItem(dataName)
+
+          // Refresh legend
+          refreshInnerLegend()
 
           // refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
