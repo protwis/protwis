@@ -62,8 +62,7 @@
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
-                                  <div class="tree-container">
-                                      <div class="tree-legend"></div>
+                                  <div class="tree-container" id="tree-container">
                                       <div class="tree-menu">
                                         <form>
                                           <label>Radial layout</label>
@@ -121,10 +120,12 @@
                                           </ul>
                                         </div>
                                       </div>
-                                      <svg id="clustering-tree"></svg>
-                                      <div class="legend_box">
-                                        <div class="outer_legend"></div>
-                                        <div class="inner_legend"></div>
+                                      <div>
+                                        <svg id="clustering-tree"></svg>
+                                        <div class="legend_box">
+                                          <div class="outer_legend"></div>
+                                          <div class="inner_legend"></div>
+                                        </div>
                                       </div>
                                   </div>
                               </div>
@@ -270,11 +271,11 @@
             phylotree = d3.layout.phylotree()
             .svg(d3.select("#clustering-tree"))
             .options({
-              //'left-right-spacing': 'fit-to-size', // fit to given size left-to-right
-              //'top-bottom-spacing': 'fit-to-size', // fit to given size top-to-bottom
-              'left-right-spacing': 'fixed-step',
-              'top-bottom-spacing': 'fixed-step',
-              'left-offset': 200,
+              'left-right-spacing': 'fit-to-size', // fit to given size left-to-right
+              'top-bottom-spacing': 'fit-to-size', // fit to given size top-to-bottom
+              //'left-right-spacing': 'fixed-step',
+              //'top-bottom-spacing': 'fixed-step',
+              //'left-offset': 200,
               'restricted-selectable': 'none', // disable normal selection
               'selectable': false,  // make nodes and branches not selectable
               'collapsible': false, // turn off the menu on internal nodes
@@ -289,7 +290,7 @@
             })
             .radial(true)
             .node_span ('equal')
-            .size([800, 800])
+            .size([document.getElementById('tree-container').offsetWidth*0.9, document.getElementById('tree-container').offsetWidth*0.9])
             .separation (function (a,b) {return 0.1;});
 
 
@@ -990,10 +991,10 @@
                             dblClickZoomEnabled: true
                         });
 
-/*                        // TODO: calculate zoom level as center + fit doesn't work correctly
-                        window.zoomCluster[container].zoom(2);
-                        // TODO manual center
-                        window.zoomCluster[container].center()*/
+                        // Calculate zoom level as center + fit doesn't work correctly
+                        window.zoomCluster[container].zoom(1.5);
+                        // Manual center
+                        window.zoomCluster[container].center()
 
                     });
                 } else {
