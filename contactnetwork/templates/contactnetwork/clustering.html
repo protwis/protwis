@@ -752,6 +752,7 @@
                     if (displayName == 1) {
                       // fix italics and subscript annotations
                       labelName = treeAnnotations[node.name][2].replace(new RegExp(" receptor$"), "")
+                      labelName = labelName.replace("-adrenoceptor", '')
 
                       labelName = labelName.replace("<sub>", '<tspan baseline-shift = "sub">')
                       labelName = labelName.replace("</sub>", '</tspan>')
