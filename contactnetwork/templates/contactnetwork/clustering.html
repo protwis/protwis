@@ -64,63 +64,6 @@
                               </div>
                               <div class="panel-body">
                                   <div class="tree-container" id="tree-container">
-                                      <div class="tree-menu">
-                                        <form>
-                                          <label>Radial layout</label>
-                                          <input type="checkbox" id="layout" checked/>
-                                          <label>Color edges</label>
-                                          <input type="checkbox" id="colored-edges"/>
-                                        </form>
-                                        <div class="btn-group">
-                                          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                            Receptor names <span class="caret"></span>
-                                          </button>
-                                          <ul class="dropdown-menu names" role="menu">
-                                            <li><a href="#">UniProt names</a></li>
-                                            <li><a href="#">IUPHAR names</a></li>
-                                          </ul>
-                                        </div>
-                                        <div class="btn-group">
-                                          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                            Outer markers<span class="caret"></span>
-                                          </button>
-                                          <ul class="dropdown-menu dataouter" role="menu">
-                                            <li><a href="#">No data</a></li>
-                                            <h6 class="dropdown-header">Classification</h6>
-                                            <li><a href="#">GPCR class</a></li>
-                                            <li><a href="#">Ligand type</a></li>
-                                            <li><a href="#">Receptor family</a></li>
-                                            <h6 class="dropdown-header">Structure</h6>
-                                            <li><a href="#">Receptor activation state</a></li>
-                                            <li><a href="#">Ligand function</a></li>
-                                            <li><a href="#">Experimental method</a></li>
-                                            <h6 class="dropdown-header">Coupling</h6>
-                                            <li><a href="#">All G-protein coupling</a></li>
-                                            <li><a href="#">Primary G-protein coupling</a></li>
-                                            <li><a href="#">Secondary G-protein coupling</a></li>
-                                          </ul>
-                                        </div>
-                                        <div class="btn-group">
-                                          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                            Inner markers<span class="caret"></span>
-                                          </button>
-                                          <ul class="dropdown-menu datainner" role="menu">
-                                            <li><a href="#">No data</a></li>
-                                            <h6 class="dropdown-header">Classification</h6>
-                                            <li><a href="#">GPCR class</a></li>
-                                            <li><a href="#">Ligand type</a></li>
-                                            <li><a href="#">Receptor family</a></li>
-                                            <h6 class="dropdown-header">Structure</h6>
-                                            <li><a href="#">Receptor activation state</a></li>
-                                            <li><a href="#">Ligand function</a></li>
-                                            <li><a href="#">Experimental method</a></li>
-                                            <h6 class="dropdown-header">Coupling</h6>
-                                            <li><a href="#">All G-protein coupling</a></li>
-                                            <li><a href="#">Primary G-protein coupling</a></li>
-                                            <li><a href="#">Secondary G-protein coupling</a></li>
-                                          </ul>
-                                        </div>
-                                      </div>
                                       <div>
                                         <svg id="clustering-tree"></svg>
                                         <div class="legend_box">
@@ -134,7 +77,67 @@
                       </div>
                     </div>
                 </div>
-
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="tree-menu">
+                      <form>
+                        <label>Radial layout</label>
+                        <input type="checkbox" id="layout" checked/>
+                        <label>Color edges</label>
+                        <input type="checkbox" id="colored-edges"/>
+                      </form>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                          Receptor names <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu names" role="menu">
+                          <li class="active"><a href="#">UniProt names</a></li>
+                          <li><a href="#">IUPHAR names</a></li>
+                        </ul>
+                      </div>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                          Outer markers<span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu dataouter" role="menu">
+                          <li><a href="#">No data</a></li>
+                          <h6 class="dropdown-header">Classification</h6>
+                          <li><a href="#">GPCR class</a></li>
+                          <li><a href="#">Ligand type</a></li>
+                          <li><a href="#">Receptor family</a></li>
+                          <h6 class="dropdown-header">Structure</h6>
+                          <li><a href="#">Receptor activation state</a></li>
+                          <li class="active"><a href="#">Ligand function</a></li>
+                          <li><a href="#">Experimental method</a></li>
+                          <h6 class="dropdown-header">Coupling</h6>
+                          <li><a href="#">All G-protein coupling</a></li>
+                          <li><a href="#">Primary G-protein coupling</a></li>
+                          <li><a href="#">Secondary G-protein coupling</a></li>
+                        </ul>
+                      </div>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                          Inner markers<span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu datainner" role="menu">
+                          <li><a href="#">No data</a></li>
+                          <h6 class="dropdown-header">Classification</h6>
+                          <li><a href="#">GPCR class</a></li>
+                          <li><a href="#">Ligand type</a></li>
+                          <li><a href="#">Receptor family</a></li>
+                          <h6 class="dropdown-header">Structure</h6>
+                          <li class="active"><a href="#">Receptor activation state</a></li>
+                          <li><a href="#">Ligand function</a></li>
+                          <li><a href="#">Experimental method</a></li>
+                          <h6 class="dropdown-header">Coupling</h6>
+                          <li><a href="#">All G-protein coupling</a></li>
+                          <li><a href="#">Primary G-protein coupling</a></li>
+                          <li><a href="#">Secondary G-protein coupling</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
         </div>
@@ -291,7 +294,7 @@
             })
             .radial(true)
             .node_span ('equal')
-            .size([document.getElementById('tree-container').offsetWidth*0.9, document.getElementById('tree-container').offsetWidth*0.9])
+            .size([document.getElementById('tree-container').offsetWidth*0.75, document.getElementById('tree-container').offsetWidth*0.9])
             .separation (function (a,b) {return 0.1;});
 
 
@@ -462,6 +465,11 @@
                 displayName = 0
           }
 
+          // update active label on menu items
+          event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
+            e.classList.remove( "active" ) );
+          event.target.parentNode.classList.add("active")
+
           // refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
           maximumLeafSize();
@@ -475,6 +483,11 @@
 
           // Refresh legend
           refreshOuterLegend()
+
+          // update active label on menu items
+          event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
+            e.classList.remove( "active" ) );
+          event.target.parentNode.classList.add("active")
 
           // refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
@@ -555,6 +568,11 @@
 
           // Refresh legend
           refreshInnerLegend()
+
+          // update active label on menu items
+          event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
+            e.classList.remove( "active" ) );
+          event.target.parentNode.classList.add("active")
 
           // refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
