@@ -788,7 +788,7 @@ def InteractionBrowserData(request):
         for d in delete_coords:
             del data['interactions'][d]
 
-        # del class_pair_lookup 
+        # del class_pair_lookup
         del r_lookup
         # del r_pair_lookup
 
@@ -936,13 +936,13 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
-      
+
         # Tab 2 data generation
         # Get the relevant interactions
         data['tab2'] = {}
-        # del class_pair_lookup 
+        # del class_pair_lookup
         # del r_pair_lookup
-        if mode == "double": 
+        if mode == "double":
 
             set_id = 'set1'
             aa_pair_data = data['tab2']
@@ -1070,7 +1070,7 @@ def InteractionBrowserData(request):
                 d['set1']['occurance'] = {'aa1':pdbs1_with_aa1,'aa2':pdbs1_with_aa2,'pair':pdbs1_with_pair}
                 d['set2']['occurance'] = {'aa1':pdbs2_with_aa1,'aa2':pdbs2_with_aa2,'pair':pdbs2_with_pair}
 
-        del class_pair_lookup 
+        del class_pair_lookup
         del r_pair_lookup
         print('calculate angles per gen/aa')
         if mode == "double":
@@ -1448,9 +1448,12 @@ def DistanceDataGroups(request):
 def ClusteringData(request):
     # PDB files
     try:
-        pdbs = request.GET.getlist('pdbs[]')
+        pdbs = request.GET.get('pdbs').split(',')
     except IndexError:
         pdbs = []
+
+    if len(pdbs) == 0:
+        quit()
 
     pdbs = [pdb.upper() for pdb in pdbs]
 

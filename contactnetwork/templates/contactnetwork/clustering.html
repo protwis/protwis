@@ -939,20 +939,24 @@
         var lastData;
         function initializeButtons(selector, treeFunction) {
             $(selector + ' .go-button').click(function() {
-                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+                var pdbs = JSON.parse($(selector + ' .crystal-pdb').val());
 
                 // DEBUG input:
-                if (pdb.length == 0)
-                  pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+                if (pdbs.length == 0)
+                  pdbs = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
 
-                if (pdb.length > 1) {
+                if (pdbs.length > 1) {
                     $("#clustering-tree").html("")
                     $("#svgloading").remove();
                     $(selector + ' .tree-container').append('<span id="svgloading">Loading...</span>');
                     $.getJSON( '/contactnetwork/clusteringdata',
                     {
-                        'pdbs': pdb,
+                        'pdbs': pdbs.join(","),
                     },
+                    /*$.post('/contactnetwork/clusteringdata',
+                    {
+                        'pdbs': pdbs,
+                    },*/
                     function( data ) {
                         lastData = data
 
