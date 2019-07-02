@@ -74,7 +74,7 @@ function renderDataTablesYadcf(element) {
             }
 
             console.log("do tab", tab_number)
-            console.time("Render DataTable "+tab_number)
+            console.time("Render DataTable " + tab_number)
             btable = table.DataTable({
                 'scrollX': true,
                 scrollY: '50vh',
@@ -96,7 +96,7 @@ function renderDataTablesYadcf(element) {
                 ]
             });
 
-            console.timeEnd("Render DataTable "+tab_number);
+            console.timeEnd("Render DataTable " + tab_number);
 
             if (analys_mode == "#two-crystal-groups") {
 
@@ -379,6 +379,111 @@ function renderDataTablesYadcf(element) {
             // });
             btable.columns.adjust().draw();
             break;
+
+        case "3":
+            // statements_1
+            console.log("do tab", tab_number)
+            // Specify which columns are to be fixed to 40px
+            list_narrow_cols = [];
+            if (analys_mode == "#two-crystal-groups") {
+                list_narrow_cols = make_list_narrow_cols([2], 5, 7);
+            }
+
+            gray_scale_table(table);
+
+            btable = table.DataTable({
+                'scrollX': true,
+                scrollY: '50vh',
+                // "sDom": 't', // To disable the pages on the button..
+                "bLengthChange": false,
+                "bPaginate": false,
+                "bInfo": false,
+                paging: true,
+                pageLength: 200,
+                "order": [],
+                columnDefs: [{
+                        type: "string",
+                        targets: 1
+                    },
+                    {
+                        "width": "40px",
+                        "targets": list_narrow_cols
+                    }
+                ]
+            });
+
+
+            if (analys_mode == "#two-crystal-groups") {
+
+
+                repeated_from_to_1 = make_range_number_cols(2, 7);
+                repeated_from_to_2 = make_range_number_cols(11, 3);
+                repeated_from_to_3 = make_range_number_cols(15, 5);
+
+                yadcf.init(btable,
+                    [{
+                            column_number: 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Seg",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Pos",
+                            filter_reset_button_text: false,
+                        }
+                    ].concat(repeated_from_to_1).concat([{
+                        column_number: 9,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }, {
+                        column_number: 10,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_2).concat([{
+                        column_number: 14,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_3), {
+                        cumulative_filtering: false
+                    }
+
+                );
+            } else if (analys_mode == "#single-crystal-group") {
+
+            } else if (analys_mode == "#single-crystal") {
+
+            }
+            // btable.on('draw.dt', function(e, oSettings) {
+            //     filter_browser();
+            // });
+            btable.columns.adjust().draw();
+            break;
         default:
             // statements_def
             break;
@@ -389,7 +494,8 @@ function renderDataTablesYadcf(element) {
     console.timeEnd("renderDataTablesYadcf");
 }
 
-const types_to_short = {'ionic':'Ion','aromatic':'Aro','polar':'Pol','hydrophobic':'Hyd','van-der-waals':'vDw'}
+const types_to_short = { 'ionic': 'Ion', 'aromatic': 'Aro', 'polar': 'Pol', 'hydrophobic': 'Hyd', 'van-der-waals': 'vDw' }
+
 function renderBrowser(data) {
     console.time("RenderBrowser");
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
@@ -732,7 +838,7 @@ function renderBrowser(data) {
                       <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
             tbody.append(tr);
-          });
+        });
     }
 
     // table.on('click', '.clickable-row', function(event) {
@@ -765,13 +871,6 @@ function renderBrowser_2(data) {
     var pdbs_1 = data['pdbs1'].length
     var pdbs_2 = data['pdbs2'].length
     if (data['proteins2']) {
-
-        // <th colspan="2">Ca distance from<br> 7TM axis</th> \
-        // <th colspan="2">Backbone Rotation</th> \
-        // <th colspan="2">Residue Rotamer</th> \
-        // <th colspan="2">Tau angle</th> \
-        // <th colspan="2">Phi dihedral</th> \
-        // <th colspan="2">Psi dihedral</th> \
         thead = '<tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
@@ -890,16 +989,7 @@ function renderBrowser_2(data) {
             var occurance_aa1_diff = set1_occurance_aa1 - set2_occurance_aa1;
             var occurance_aa2_diff = set1_occurance_aa2 - set2_occurance_aa2;
             var occurance_pair_diff = set1_occurance_pair - set2_occurance_pair;
-            // 0 'core_distance',
-            // 1 'a_angle',
-            // 2 'outer_angle',
-            // 3 'tau',
-            // 4 'phi',
-            // 5 'psi', 
-            // 6 'sasa',
-            // 7 'rsa',
-            // 8 'theta',
-            // 9 'hse'
+
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
@@ -963,6 +1053,191 @@ function renderBrowser_2(data) {
     console.timeEnd("RenderBrowser2");
 }
 
+function renderBrowser_3(data) {
+    console.time("RenderBrowser3");
+    var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+    var table = $(selector + " .browser-table-3");
+    if ($.fn.DataTable.isDataTable(selector + " .browser-table-3")) {
+        table.DataTable().destroy();
+    }
+    table.parent().html('<table class="browser-table-3 compact cell-border" style3="max-width: 2000px !important; width: 2000px !important" width2="2500px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody class="hidden"></tbody></table>');
+    var table = $(selector + " .browser-table-3");
+    // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
+    var tbody = table.find('tbody');
+    var proteins_1 = data['proteins1'].length
+    var proteins_2 = data['proteins2'].length
+    var pdbs_1 = data['pdbs1'].length
+    var pdbs_2 = data['pdbs2'].length
+    if (data['proteins2']) {
+        thead = '<tr> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="3" rowspan="2">Avg no contact pairs</th> \
+                          <th colspan="3" rowspan="1">No distinct or shared contacts</th> \
+                          <th colspan="1" rowspan="2">Avg freq difference of all set1-2 contacts</th> \
+                          <th colspan="5" rowspan="1">Seq consensus</th> \
+                          <th colspan="2" rowspan="1">Class seq consensus</th> \
+                          <th colspan="3">Backbone movement (Ca-7TM axis)</th> \
+                          <th colspan="2">Sidechain differences</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="2">Distinct</th> \
+                          <th colspan="1">Shared</th> \
+                          <th colspan="2">AA</th> \
+                          <th colspan="3">Conservation (%)</th> \
+                          <th colspan="1">AA</th> \
+                          <th colspan="1">Cons (%)</th> \
+                          <th colspan="1">Distance*</th> \
+                          <th colspan="1">Rotation</th> \
+                          <th colspan="1">Rotamer</th> \
+                          <th colspan="1">SASA</th> \
+                        </tr> \
+                        <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center">Pos</th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Set 1&2<br></th> \
+                          <th class="narrow_col">Set1-2</th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                        </tr>';
+        table.find('thead').html(thead);
+        // two groups
+        var proteins_1 = data['proteins1'].length
+        var proteins_2 = data['proteins2'].length
+        var pdbs_1 = data['pdbs1'].length
+        var pdbs_2 = data['pdbs2'].length
+        tr_list = ''
+        $.each(data['tab3'], function(i, v) {
+
+            // console.log(i,v);
+            var seg = data['segm_lookup'][i];
+
+            var avg_set1 = Math.round(10 * v['set1_count'].length / pdbs_1) / 10;
+            var avg_set2 = Math.round(10 * v['set2_count'].length / pdbs_2) / 10;
+            var avg_diff = Math.round(10 * (avg_set1 - avg_set2)) / 10;
+
+            var unique_set1 = v['set1'].filter(function(obj) { return v['set2'].indexOf(obj) == -1; });
+            var unique_set2 = v['set2'].filter(function(obj) { return v['set1'].indexOf(obj) == -1; });
+            var common = v['set1'].filter(value => -1 !== v['set2'].indexOf(value))
+
+            var avg_freq_diff_sets = Math.round(10 * v['avg_freq_diff_sets']) / 10;
+
+            var set1_seq_cons_aa = v['set1_seq_cons'][0];
+            var set2_seq_cons_aa = v['set2_seq_cons'][0];
+            var set1_seq_cons_freq = Math.round(100 * v['set1_seq_cons'][1] / pdbs_1);
+            var set2_seq_cons_freq = Math.round(100 * v['set2_seq_cons'][2] / pdbs_2);
+            var diff_seq_cons_freq = Math.round((set1_seq_cons_freq - set2_seq_cons_freq));
+
+            var class_cons_aa = v['class_cons'][0];
+            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+
+
+            var angles = v['angles'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi', 
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}" data_gns='${JSON.stringify({'set1':unique_set1, 'set2':unique_set2, 'common':common})}'>
+                      <td class="dt-center">${seg}</td>
+                      <td class="dt-center">${i}</td>
+
+                      <td class="narrow_col">${avg_set1}</td>
+                      <td class="narrow_col">${avg_set2}</td>
+                      <td class="narrow_col">${avg_diff}</td>
+
+                      <td class="narrow_col">${unique_set1.length}</td>
+                      <td class="narrow_col">${unique_set2.length}</td>
+                      <td class="narrow_col">${common.length}</td>
+
+                      <td class="narrow_col">${avg_freq_diff_sets}</td>
+
+                      <td class="narrow_col">${set1_seq_cons_aa}</td>
+                      <td class="narrow_col">${set2_seq_cons_aa}</td>
+                      <td class="narrow_col">${set1_seq_cons_freq}</td>
+                      <td class="narrow_col">${set2_seq_cons_freq}</td>
+                      <td class="narrow_col">${diff_seq_cons_freq}</td>
+
+                      <td class="narrow_col">${class_cons_aa}</td>
+                      <td class="narrow_col">${class_cons_freq}</td>
+
+                      <td class="narrow_col">${angles[0]}</td>
+                      <td class="narrow_col">${angles[1]}</td>
+
+                      <td class="narrow_col">${angles[2]}</td>
+                      <td class="narrow_col">${angles[6]}</td>
+                    </tr>`;
+            // tbody.append(tr);
+        });
+        // insert natively for speed increase on Chrome
+        tbody[0].innerHTML = tr_list;
+    } else if (data['proteins'].length > 1) {
+
+    } else {
+
+    }
+
+    $(selector + " .browser-table-3" + " .clickable-row").click(function() {
+        var $this = $(this);
+        var set_values = JSON.parse($this.attr('data_gns'));
+        console.log("Handler for .click() called.", set_values);
+        var column = $(this).children("td").eq(6);
+        //if not already initialized
+
+        $('.popover').each(function() {
+            $(this).hide();
+        });
+
+        if (!column.data('bs.popover')) {
+
+            set1 = set_values['set1'].join("<br>");
+            set2 = set_values['set2'].join("<br>");
+            common = set_values['common'].join("<br>");
+
+            table = `<table>
+                        <thead><tr><th style='width:60px'>Set 1</th><th style='width:60px'>Set 2</th><th style='width:60px'>Common</th></tr></thead>
+                        <tbody><tr><td>${set1}</td><td>${set2}</td><td>${common}</td></tr></tbody></table>`;
+            // Copy table to data-content
+            // new_content = $(this).attr("data-content").replace("#TABLE#", table);
+            column.attr("data-content", table);
+
+            column.popover({
+                'container': selector + ' .dataTables_scrollBody',
+                'placement': 'bottom',
+                'animation': true,
+                'html': true,
+                'tabindex': '0'
+            }).popover('show');
+        } else {
+            column.popover('show');
+        }
+    });
+
+    console.timeEnd("RenderBrowser3");
+}
+
 function gray_scale_table(table) {
     console.time('Greyscale');
     // Create grey scale of values.
@@ -996,12 +1271,12 @@ function gray_scale_table(table) {
                     b: color_255
                 };
                 var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-                cell.setAttribute("bgcolor",hex);
+                cell.setAttribute("bgcolor", hex);
                 cell_count++;
             }
         }
     }
     console.timeEnd('Greyscale cells');
-    console.log(cell_count,'cells greyscaled');
+    console.log(cell_count, 'cells greyscaled');
     console.timeEnd('Greyscale', table.attr('id'));
 }
