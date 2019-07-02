@@ -20,8 +20,9 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-1">
-                        <div class="btn btn-success btn-lg pull-left go-button">Go</div>
+                    <div class="col-md-2">
+                        <div class="btn btn-success btn-lg pull-left go-button">Go (distance pairs)</div>
+                        <div class="btn btn-success btn-lg pull-left go-button">Go (distance to core)</div>
                     </div>
                     <div class="col-md-2 hidden" id="output-group0">
                         <div class="panel panel-default">
@@ -286,7 +287,7 @@
               'reroot': true, // rerooting
               'hide': false, // hiding a subtree
               'zoom': false, // zooming
-              'inner_spacing': 5 // extra spacing between splits in tree (own custom option)
+              'inner_spacing': (newCluster ? 1 : 5) // extra spacing between splits in tree (own custom option)
             })
             .radial(true)
             .node_span ('equal')
@@ -937,6 +938,7 @@
         }
 
         var lastData;
+        var newCluster = false;
         function initializeButtons(selector, treeFunction) {
             $(selector + ' .go-button').click(function() {
                 var pdbs = JSON.parse($(selector + ' .crystal-pdb').val());
@@ -949,9 +951,11 @@
                     $("#clustering-tree").html("")
                     $("#svgloading").remove();
                     $(selector + ' .tree-container').append('<span id="svgloading">Loading...</span>');
+                    newCluster = (this.innerHTML=="Go (distance to core)")
                     $.getJSON( '/contactnetwork/clusteringdata',
                     {
                         'pdbs': pdbs.join(","),
+                        'new_cluster': newCluster
                     },
                     /*$.post('/contactnetwork/clusteringdata',
                     {
