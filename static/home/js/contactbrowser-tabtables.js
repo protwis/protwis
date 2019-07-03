@@ -484,6 +484,86 @@ function renderDataTablesYadcf(element) {
             // });
             btable.columns.adjust().draw();
             break;
+        case "4":
+            // statements_1
+            console.log("do tab", tab_number)
+            // Specify which columns are to be fixed to 40px
+            
+            break;
+        case "5":
+            // statements_1
+            console.log("do tab", tab_number)
+            // Specify which columns are to be fixed to 40px
+            list_narrow_cols = [];
+            // if (analys_mode == "#two-crystal-groups") {
+            //     list_narrow_cols = make_list_narrow_cols([2], 5, 7);
+            // }
+
+            gray_scale_table(table);
+
+            btable = table.DataTable({
+                'scrollX': true,
+                scrollY: '50vh',
+                // "sDom": 't', // To disable the pages on the button..
+                "bLengthChange": false,
+                "bPaginate": false,
+                "bInfo": false,
+                paging: true,
+                pageLength: 200,
+                "order": [],
+                columnDefs: [{
+                        type: "string",
+                        targets: 1
+                    },
+                    {
+                        "width": "40px",
+                        "targets": list_narrow_cols
+                    }
+                ]
+            });
+
+
+            if (analys_mode == "#two-crystal-groups") {
+
+
+                repeated_from_to = make_range_number_cols(2, 3);
+
+                yadcf.init(btable,
+                    [{
+                            column_number: 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Seg",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Pos",
+                            filter_reset_button_text: false,
+                        }
+                    ].concat(repeated_from_to), {
+                        cumulative_filtering: false
+                    }
+
+                );
+            } else if (analys_mode == "#single-crystal-group") {
+
+            } else if (analys_mode == "#single-crystal") {
+
+            }
+            // btable.on('draw.dt', function(e, oSettings) {
+            //     filter_browser();
+            // });
+            btable.columns.adjust().draw();
+            break;
         default:
             // statements_def
             break;
@@ -1202,27 +1282,21 @@ function renderBrowser_3(data) {
     $(selector + " .browser-table-3" + " .clickable-row").click(function() {
         var $this = $(this);
         var set_values = JSON.parse($this.attr('data_gns'));
-        console.log("Handler for .click() called.", set_values);
         var column = $(this).children("td").eq(6);
-        //if not already initialized
 
         $('.popover').each(function() {
             $(this).hide();
         });
 
+        //if not already initialized
         if (!column.data('bs.popover')) {
-
             set1 = set_values['set1'].join("<br>");
             set2 = set_values['set2'].join("<br>");
             common = set_values['common'].join("<br>");
-
             table = `<table>
                         <thead><tr><th style='width:60px'>Set 1</th><th style='width:60px'>Set 2</th><th style='width:60px'>Common</th></tr></thead>
                         <tbody><tr><td>${set1}</td><td>${set2}</td><td>${common}</td></tr></tbody></table>`;
-            // Copy table to data-content
-            // new_content = $(this).attr("data-content").replace("#TABLE#", table);
             column.attr("data-content", table);
-
             column.popover({
                 'container': selector + ' .dataTables_scrollBody',
                 'placement': 'bottom',
@@ -1236,6 +1310,105 @@ function renderBrowser_3(data) {
     });
 
     console.timeEnd("RenderBrowser3");
+}
+
+function renderBrowser_4(data) {
+    console.time("RenderBrowser4");
+    var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+    var table = $(selector + " .browser-table-4");
+    if ($.fn.DataTable.isDataTable(selector + " .browser-table-4")) {
+        table.DataTable().destroy();
+    }
+    table.parent().html('<table class="browser-table-4 compact cell-border" style3="max-width: 2000px !important; width: 2000px !important" width2="2500px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody class="hidden"></tbody></table>');
+    var table = $(selector + " .browser-table-4");
+    // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
+    var tbody = table.find('tbody');
+    var proteins_1 = data['proteins1'].length
+    var proteins_2 = data['proteins2'].length
+    var pdbs_1 = data['pdbs1'].length
+    var pdbs_2 = data['pdbs2'].length
+    if (data['proteins2']) {
+       
+    } else if (data['proteins'].length > 1) {
+
+    } else {
+
+    }
+
+    console.timeEnd("RenderBrowser4");
+}
+
+function renderBrowser_5(data) {
+    console.time("RenderBrowser5");
+    var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
+    var table = $(selector + " .browser-table-5");
+    if ($.fn.DataTable.isDataTable(selector + " .browser-table-5")) {
+        table.DataTable().destroy();
+    }
+    table.parent().html('<table class="browser-table-5 compact cell-border"><thead></thead><tbody class="hidden"></tbody></table>');
+    var table = $(selector + " .browser-table-5");
+    // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
+    var tbody = table.find('tbody');
+    var proteins_1 = data['proteins1'].length
+    var proteins_2 = data['proteins2'].length
+    var pdbs_1 = data['pdbs1'].length
+    var pdbs_2 = data['pdbs2'].length
+    if (data['proteins2']) {
+       thead = '<tr> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="2">Backbone movement (Ca-7TM axis)</th> \
+                          <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="1">Distance*</th> \
+                          <th colspan="1">Rotation</th> \
+                        </tr> \
+                        <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                        </tr>';
+        table.find('thead').html(thead);
+        tr_list = ''
+        $.each(data['tab3'], function(i, v) {
+
+            // console.log(i,v);
+            var seg = data['segm_lookup'][i];
+            var angles = v['angles'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi', 
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                      <td class="dt-center">${seg}</td>
+                      <td class="dt-center">${i}</td>
+                      <td class="narrow_col">${angles[0]}</td>
+                      <td class="narrow_col">${angles[1]}</td>
+                      <td class="narrow_col">${angles[9]}</td>
+                    </tr>`;
+            // tbody.append(tr);
+        });
+        // insert natively for speed increase on Chrome
+        tbody[0].innerHTML = tr_list;
+    } else if (data['proteins'].length > 1) {
+
+    } else {
+
+    }
+
+    console.timeEnd("RenderBrowser5");
 }
 
 function gray_scale_table(table) {

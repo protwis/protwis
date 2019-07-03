@@ -881,6 +881,8 @@
                       renderBrowser(data);
                       renderBrowser_2(data);
                       renderBrowser_3(data);
+                      renderBrowser_4(data);
+                      renderBrowser_5(data);
                       browser_visible = $(".nav-browsers li.active a").attr('id');
                       renderDataTablesYadcf(browser_visible);
                       $(".main_loading_overlay").hide();
