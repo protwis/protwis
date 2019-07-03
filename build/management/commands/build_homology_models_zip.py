@@ -259,7 +259,7 @@ class Command(BaseBuild):
             res_prot = r_prot
             bulk_residues = []
             r_residues, s_residues, b_residues, g_residues = {}, {}, {}, {}
-
+            
             for r in Residue.objects.filter(protein_conformation__protein=res_prot).all():
                 r_residues[r.sequence_number] = r
                 residues = r_residues
