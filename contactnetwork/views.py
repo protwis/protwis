@@ -520,12 +520,14 @@ def InteractionBrowserData(request):
             r_lookup = {}
             r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
             segm_lookup = {}
+            r_presence_lookup = defaultdict(lambda: [])
 
             for r in residues:
                 if r['generic_number__label'] not in all_interaction_residues:
                     continue
                 r_lookup[r['pk']] = r
                 r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
+                r_presence_lookup[r['generic_number__label']].append(r['protein_conformation__protein__entry_name'])
                 segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
 
             gen_keys = sorted(r_pair_lookup.keys(), key=functools.cmp_to_key(gpcrdb_number_comparator))
@@ -557,11 +559,13 @@ def InteractionBrowserData(request):
             r_lookup = {}
             r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
             segm_lookup = {}
+            r_presence_lookup = defaultdict(lambda: [])
 
             for r in residues:
                 r_lookup[r['pk']] = r
                 r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
                 segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
+                r_presence_lookup[r['generic_number__label']].append(r['protein_conformation__protein__entry_name'])
 
 
         print('Start going through interactions',time.time()-start_time)
@@ -591,11 +595,11 @@ def InteractionBrowserData(request):
 
             if mode == 'double':
                 if res1 not in data['tab3']:
-                    data['tab3'][res1] = {'set1':set(),'set2':set(), 'set1_count':set(), 'set2_count':set()}
+                    data['tab3'][res1] = {'set1':set(),'set2':set(), 'set1_count':set(), 'set2_count':set(), 'set1_aa': set(), 'set2_aa': set()}
                 if res2 not in data['tab3']:
-                    data['tab3'][res2] = {'set1':set(),'set2':set(), 'set1_count':set(), 'set2_count':set()}
+                    data['tab3'][res2] = {'set1':set(),'set2':set(), 'set1_count':set(), 'set2_count':set(), 'set1_aa': set(), 'set2_aa': set()}
                 if coord not in data['interactions']:
-                    data['interactions'][coord] = {'pdbs1':[], 'proteins1': [], 'pdbs2':[], 'proteins2': [], 'secondary1' : [], 'secondary2' : [], 'class_seq_cons' : 0, 'types' : []}
+                    data['interactions'][coord] = {'pdbs1':[], 'proteins1': [], 'pdbs2':[], 'proteins2': [], 'secondary1' : [], 'secondary2' : [], 'class_seq_cons' : [0,0], 'types' : []}
 
                 if model in i_types:
                     if model not in data['interactions'][coord]['types']:
@@ -609,6 +613,8 @@ def InteractionBrowserData(request):
                     data['interactions'][coord]['secondary1'].append([model,res1_aa,res2_aa,pdb_name])
                     data['tab3'][res1]['set1'].add(res2)
                     data['tab3'][res2]['set1'].add(res1)
+                    data['tab3'][res1]['set1_aa'].add(res1_aa)
+                    data['tab3'][res2]['set1_aa'].add(res2_aa)
                     data['tab3'][res1]['set1_count'].add('{},{}'.format(pdb_name,res2))
                     data['tab3'][res2]['set1_count'].add('{},{}'.format(pdb_name,res1))
                 if pdb_name in pdbs2:
@@ -620,15 +626,32 @@ def InteractionBrowserData(request):
                     data['interactions'][coord]['secondary2'].append([model,res1_aa,res2_aa,pdb_name])
                     data['tab3'][res1]['set2'].add(res2)
                     data['tab3'][res2]['set2'].add(res1)
+                    data['tab3'][res1]['set2_aa'].add(res1_aa)
+                    data['tab3'][res2]['set2_aa'].add(res2_aa)
                     data['tab3'][res1]['set2_count'].add('{},{}'.format(pdb_name,res2))
                     data['tab3'][res2]['set2_count'].add('{},{}'.format(pdb_name,res1))
+                ## Presence lookup
+                pdbs_with_res1 = r_presence_lookup[res1]
+                pdbs_with_res2 = r_presence_lookup[res2]
+
+                pdbs1_with_res1 = list(set(pdbs_with_res1).intersection(pdbs1))
+                pdbs2_with_res1 = list(set(pdbs_with_res1).intersection(pdbs2))
+
+                pdbs1_with_res2 = list(set(pdbs_with_res2).intersection(pdbs1))
+                pdbs2_with_res2 = list(set(pdbs_with_res2).intersection(pdbs2))
+
+                data['interactions'][coord]['pos1_presence'] = round(100*(len(pdbs1_with_res1) / len(pdbs1))-(100*len(pdbs2_with_res1) / len(pdbs2)))
+                data['interactions'][coord]['pos2_presence'] = round(100*(len(pdbs1_with_res2) / len(pdbs1))-(100*len(pdbs2_with_res2) / len(pdbs2)))
+
             else:
                 if res1 not in data['tab3']:
-                    data['tab3'][res1] = {'unique':set(),'count':set()}
+                    data['tab3'][res1] = {'unique':set(),'count':set(),'set_aa':set()}
                 if res2 not in data['tab3']:
-                    data['tab3'][res2] = {'unique':set(),'count':set()}
+                    data['tab3'][res2] = {'unique':set(),'count':set(),'set_aa':set()}
                 data['tab3'][res1]['unique'].add(res2)
                 data['tab3'][res2]['unique'].add(res1)
+                data['tab3'][res1]['set2_aa'].add(res1_aa)
+                data['tab3'][res2]['set2_aa'].add(res2_aa)
                 data['tab3'][res1]['count'].add('{},{}'.format(pdb_name,res2))
                 data['tab3'][res2]['count'].add('{},{}'.format(pdb_name,res1))
                 if coord not in data['interactions']:
@@ -642,6 +665,15 @@ def InteractionBrowserData(request):
                 if protein not in data['interactions'][coord]['proteins']:
                     data['interactions'][coord]['proteins'].append(protein)
                 data['interactions'][coord]['secondary'].append([model,res1_aa,res2_aa,pdb_name])
+                ## Presence lookup
+                pdbs_with_res1 = r_presence_lookup[res1]
+                pdbs_with_res2 = r_presence_lookup[res2]
+
+                pdbs1_with_res1 = list(set(pdbs_with_res1).intersection(pdbs1))
+                pdbs1_with_res2 = list(set(pdbs_with_res2).intersection(pdbs1))
+
+                data['interactions'][coord]['pos1_presence'] = round(100*len(pdbs1_with_res1) / len(pdbs1))
+                data['interactions'][coord]['pos2_presence'] = round(100*len(pdbs1_with_res2) / len(pdbs1))
 
 
         print('Do Secondary data',time.time()-start_time)
@@ -663,8 +695,8 @@ def InteractionBrowserData(request):
                 current["set1"] = pdbs1.copy()
                 current["set2"] = pdbs2.copy()
 
-                distinct_aa_pairs = set()
                 for setname,iset in [['set1','secondary1'],['set2','secondary2']]:
+                    distinct_aa_pairs = set()
                     for s in v[iset]:
                         i = s[0]
                         aa_pair = ''.join(s[1:3])
@@ -697,12 +729,13 @@ def InteractionBrowserData(request):
 
                         data['secondary'][c][i]['aa_pairs'][aa_pair][setname] += 1
 
-                sum_cons = 0
-                for aa_pair in distinct_aa_pairs:
-                    if c+aa_pair in class_pair_lookup:
-                        sum_cons += class_pair_lookup[c+aa_pair]
+                    sum_cons = 0
+                    for aa_pair in distinct_aa_pairs:
+                        if c+aa_pair in class_pair_lookup:
+                            sum_cons += class_pair_lookup[c+aa_pair]
 
-                v['class_seq_cons'] = sum_cons
+                    i = 0 if setname=='set1' else 1
+                    v['class_seq_cons'][i] = sum_cons
 
                 i = 'None' ## Remember to also have this name in the "order" dict.
                 data['secondary'][c][i] = copy.deepcopy(secondary_dict)
@@ -1108,7 +1141,57 @@ def InteractionBrowserData(request):
 
                 d['set1']['occurance'] = {'aa1':pdbs1_with_aa1,'aa2':pdbs1_with_aa2,'pair':pdbs1_with_pair}
                 d['set2']['occurance'] = {'aa1':pdbs2_with_aa1,'aa2':pdbs2_with_aa2,'pair':pdbs2_with_pair}
+        else:
+            # Single set! TODO
+            aa_pair_data = data['tab2']
 
+        print('Prepare distance values for aa/gen for',mode,'mode',time.time()-start_time)
+        interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
+        if mode == "double":
+            group_1_distances = {}
+            ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']], gns_pair__in=interaction_keys) \
+                                .values('gns_pair','res1__amino_acid','res2__amino_acid') \
+                                .annotate(mean = Avg('distance')).values_list('gns_pair','res1__amino_acid','res2__amino_acid','mean'))
+            for i,d in enumerate(ds):
+                # ds[i] = list(ds[i])
+                group_1_distances['{}{}{}'.format(d[0],d[1],d[2]).replace("_",",")] = d[3]/100
+            group_2_distances = {}
+            ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']], gns_pair__in=interaction_keys) \
+                                .values('gns_pair','res2__amino_acid') \
+                                .annotate(mean = Avg('distance')).values_list('gns_pair','res1__amino_acid','res2__amino_acid','mean'))
+            for i,d in enumerate(ds):
+                # ds[i] = list(ds[i])
+                group_2_distances['{}{}{}'.format(d[0],d[1],d[2]).replace("_",",")] = d[3]/100
+
+            print('got distance values for',mode,'mode',time.time()-start_time)
+            for key, d in data['tab2'].items():
+                if key in group_1_distances and key in group_2_distances:
+                    distance_diff = round(group_1_distances[key]-group_2_distances[key],2)
+                else:
+                    distance_diff = ""  
+                d['distance'] = distance_diff
+            print('Done merging distance values for',mode,'mode',time.time()-start_time)
+        else:
+            group_distances = {}
+            if (len(data['pdbs'])==1):
+                ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
+                                    .values('gns_pair') \
+                                    .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+            else:
+                ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
+                                    .values('gns_pair') \
+                                    .annotate(mean = StdDev('distance')).values_list('gns_pair','mean'))
+            for i,d in enumerate(ds):
+                ds[i] = list(ds[i])
+                group_distances[d[0]] = d[1]/100
+
+            for coord in data['interactions']:
+                distance_coord = coord.replace(",","_")
+                if distance_coord in group_distances:
+                    distance = round(group_distances[distance_coord],2)
+                else:
+                    distance = ""
+                data['interactions'][coord]['distance'] = distance
         # del class_pair_lookup 
         # del r_pair_lookup
         print('calculate angles per gen/aa',time.time()-start_time)
@@ -1224,81 +1307,84 @@ def InteractionBrowserData(request):
             for key, values in d.items():
                 if type(values) is set:
                     data['tab3'][res1][key] = list(values)
+            if mode == "double":
+                set_1_avg_freq = 0
+                set_2_avg_freq = 0
+                for s in ['1','2']:
+                    # Need to figure all the individual frequencies by looking in main dictionary
+                    count = len(d['set{}'.format(s)])
+                    running_sum = 0
+                    for res2 in d['set{}'.format(s)]:
+                        pair = '{},{}'.format(res1,res2)
+                        pair_reverse = '{},{}'.format(res2,res1)
+                        if pair in data['interactions']:
+                            len_pdbs = len(data['interactions'][pair]['pdbs{}'.format(s)])
+                        if pair_reverse in data['interactions']:
+                            len_pdbs = len(data['interactions'][pair_reverse]['pdbs{}'.format(s)])
+                        running_sum += len_pdbs/len(data['pdbs{}'.format(s)])
+                    if count:
+                        avg_freq = running_sum/count
+                        if s == '1':
+                            set_1_avg_freq = avg_freq
+                        else:
+                            set_2_avg_freq = avg_freq
 
-            set_1_avg_freq = 0
-            set_2_avg_freq = 0
-            for s in ['1','2']:
-                # Need to figure all the individual frequencies by looking in main dictionary
-                count = len(d['set{}'.format(s)])
-                running_sum = 0
-                for res2 in d['set{}'.format(s)]:
-                    pair = '{},{}'.format(res1,res2)
-                    pair_reverse = '{},{}'.format(res2,res1)
-                    if pair in data['interactions']:
-                        len_pdbs = len(data['interactions'][pair]['pdbs{}'.format(s)])
-                    if pair_reverse in data['interactions']:
-                        len_pdbs = len(data['interactions'][pair_reverse]['pdbs{}'.format(s)])
-                    running_sum += len_pdbs/len(data['pdbs{}'.format(s)])
-                if count:
-                    avg_freq = running_sum/count
-                    if s == '1':
-                        set_1_avg_freq = avg_freq
-                    else:
-                        set_2_avg_freq = avg_freq
-
-            absolute_diff = abs(set_1_avg_freq-set_2_avg_freq)
-            # print(res1,set_1_avg_freq,set_2_avg_freq,absolute_diff)
-            data['tab3'][res1]['avg_freq_diff_sets'] = absolute_diff
+                absolute_diff = abs(set_1_avg_freq-set_2_avg_freq)
+                # print(res1,set_1_avg_freq,set_2_avg_freq,absolute_diff)
+                data['tab3'][res1]['avg_freq_diff_sets'] = absolute_diff
 
 
-            # Figure out most frequent AA and % in set
-            cons_aa_set1 = ['','']
-            cons_aa_set2 = ['','']
+                # Figure out most frequent AA and % in set
+                cons_aa_set1 = ['','']
+                cons_aa_set2 = ['','']
 
-            aa_at_pos = r_pair_lookup[res1]
+                aa_at_pos = r_pair_lookup[res1]
 
-            temp_score_dict = []
-            for aa, pdbs in aa_at_pos.items():
+                temp_score_dict = []
+                for aa, pdbs in aa_at_pos.items():
 
-                pdbs1_with_aa = list(set(pdbs).intersection(pdbs1))
-                pdbs2_with_aa = list(set(pdbs).intersection(pdbs2))
-                temp_score_dict.append([aa,len(pdbs1_with_aa),len(pdbs2_with_aa)])
+                    pdbs1_with_aa = list(set(pdbs).intersection(pdbs1))
+                    pdbs2_with_aa = list(set(pdbs).intersection(pdbs2))
+                    temp_score_dict.append([aa,len(pdbs1_with_aa),len(pdbs2_with_aa)])
 
-            most_freq_set1 = sorted(temp_score_dict.copy(), key = lambda x: -x[1])
-            most_freq_set2 = sorted(temp_score_dict.copy(), key = lambda x: -x[2])
-            data['tab3'][res1]['set1_seq_cons'] = most_freq_set1[0]
-            data['tab3'][res1]['set2_seq_cons'] = most_freq_set2[0]
+                most_freq_set1 = sorted(temp_score_dict.copy(), key = lambda x: -x[1])
+                most_freq_set2 = sorted(temp_score_dict.copy(), key = lambda x: -x[2])
+                data['tab3'][res1]['set1_seq_cons'] = most_freq_set1[0]
+                data['tab3'][res1]['set2_seq_cons'] = most_freq_set2[0]
 
-            if res1 in class_pair_lookup:
-                # print(res1,class_pair_lookup[res1])
-                data['tab3'][res1]['class_cons'] = class_pair_lookup[res1]
+                if res1 in class_pair_lookup:
+                    # print(res1,class_pair_lookup[res1])
+                    data['tab3'][res1]['class_cons'] = class_pair_lookup[res1]
+                else:
+                    data['tab3'][res1]['class_cons'] = ['','']
+                    print('no res1',res1,'in class lookup')
+
+                if res1 in group_1_angles:
+                    data['tab3'][res1]['angles_set1'] = [ '%.2f' % elem if isinstance(elem, float) else '' for elem in group_1_angles[res1] ]
+                else:
+                    data['tab3'][res1]['angles_set1'] = [''] * 9
+                if res1 in group_2_angles:
+                    data['tab3'][res1]['angles_set2'] = [ '%.2f' % elem if isinstance(elem, float) else '' for elem in group_2_angles[res1] ]
+                else:
+                    data['tab3'][res1]['angles_set2'] = [''] * 9
+
+                # Get angle data for res1
+                if res1 in group_1_angles and res1 in group_2_angles:
+                    res1_values = []
+                    for i,v in enumerate(group_1_angles[res1]):
+                        try:
+                            res1_values.append(round(v-group_2_angles[res1][i],1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            res1_values.append("")
+                    # print(res1,res1_values)
+                else:
+                    print(res1,'not in both group angles')
+                    res1_values = [''] * 9
+                data['tab3'][res1]['angles'] = res1_values
             else:
-                data['tab3'][res1]['class_cons'] = ['','']
-                print('no res1',res1,'in class lookup')
-
-            if res1 in group_1_angles:
-                data['tab3'][res1]['angles_set1'] = group_1_angles[res1]
-            else:
-                data['tab3'][res1]['angles_set1'] = [''] * 9
-            if res1 in group_2_angles:
-                data['tab3'][res1]['angles_set2'] = group_2_angles[res1]
-            else:
-                data['tab3'][res1]['angles_set2'] = [''] * 9
-
-            # Get angle data for res1
-            if res1 in group_1_angles and res1 in group_2_angles:
-                res1_values = []
-                for i,v in enumerate(group_1_angles[res1]):
-                    try:
-                        res1_values.append(round(v-group_2_angles[res1][i],1))
-                    except:
-                        # Fails if there is a None (like gly doesnt have outer angle?)
-                        res1_values.append("")
-                # print(res1,res1_values)
-            else:
-                print(res1,'not in both group angles')
-                res1_values = [''] * 9
-            data['tab3'][res1]['angles'] = res1_values
+                #TODO SINGLE SET
+                print('todo single set tab3')
 
 
         data['pdbs'] = list(data['pdbs'])

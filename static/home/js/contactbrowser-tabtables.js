@@ -70,7 +70,7 @@ function renderDataTablesYadcf(element) {
             // Specify which columns are to be fixed to 40px
             list_narrow_cols = [];
             if (analys_mode == "#two-crystal-groups") {
-                list_narrow_cols = make_list_narrow_cols([2, 3, 4], 6, 6 + 17);
+                list_narrow_cols = make_list_narrow_cols([2, 3, 4], 6, 6 + 19);
             }
 
             console.log("do tab", tab_number)
@@ -100,7 +100,7 @@ function renderDataTablesYadcf(element) {
 
             if (analys_mode == "#two-crystal-groups") {
 
-                repeated_from_to = make_range_number_cols(6, 18);
+                repeated_from_to = make_range_number_cols(6, 20);
 
                 yadcf.init(btable,
                     [{
@@ -112,13 +112,8 @@ function renderDataTablesYadcf(element) {
                         },
                         {
                             column_number: 1,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            select_type_options: {
-                                width: '60px'
-                            },
+                            filter_type: "text",
                             filter_default_label: "Pos",
-                            text_data_delimiter: "-",
                             filter_reset_button_text: false,
                         },
                         {
@@ -488,7 +483,101 @@ function renderDataTablesYadcf(element) {
             // statements_1
             console.log("do tab", tab_number)
             // Specify which columns are to be fixed to 40px
-            
+            list_narrow_cols = [];
+            // if (analys_mode == "#two-crystal-groups") {
+            //     list_narrow_cols = make_list_narrow_cols([2], 5, 7);
+            // }
+
+            gray_scale_table(table);
+
+            btable = table.DataTable({
+                'scrollX': true,
+                scrollY: '50vh',
+                // "sDom": 't', // To disable the pages on the button..
+                "bLengthChange": false,
+                "bPaginate": false,
+                "bInfo": false,
+                paging: true,
+                pageLength: 200,
+                "order": [],
+                columnDefs: [{
+                        type: "string",
+                        targets: 1
+                    },
+                    {
+                        "width": "40px",
+                        "targets": list_narrow_cols
+                    }
+                ]
+            });
+
+            if (analys_mode == "#two-crystal-groups") {
+                repeated_from_to_1 = make_range_number_cols(2, 20);
+                repeated_from_to_2 = make_range_number_cols(24, 3);
+                repeated_from_to_3 = make_range_number_cols(28, 1);
+
+                yadcf.init(btable,
+                    [{
+                            column_number: 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Seg",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Pos",
+                            filter_reset_button_text: false,
+                        }
+                    ].concat(repeated_from_to_1).concat([{
+                        column_number: 22,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }, {
+                        column_number: 23,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_2).concat([{
+                        column_number: 27,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_3), {
+                        cumulative_filtering: false
+                    }
+
+                );
+            } else if (analys_mode == "#single-crystal-group") {
+
+            } else if (analys_mode == "#single-crystal") {
+
+            }
+            // btable.on('draw.dt', function(e, oSettings) {
+            //     filter_browser();
+            // });
+            btable.columns.adjust().draw();
             break;
         case "5":
             // statements_1
@@ -602,7 +691,7 @@ function renderBrowser(data) {
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="4">Secondary structure</th> \
-                          <th rowspan="2">Class Seq Cons(%)</th> \
+                          <th rowspan="2" colspan="3">Sum of conservation of contact AA pairs in class (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Distance</th> \
@@ -637,7 +726,9 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">AA pairs</th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
                         </tr>';
         table.find('thead').html(thead);
         // two groups
@@ -655,6 +746,9 @@ function renderBrowser(data) {
             var sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
             var diff_sfreq = sfreq1 - sfreq2;
             var class_seq_cons = v['class_seq_cons'];
+
+            var class_seq_cons_diff = class_seq_cons[0]-class_seq_cons[1];
+
             // var types = v['types'].join(",<br>");
             const types = v['types'].map((t) => types_to_short[t]).join('|');
             var seg1 = data['segm_lookup'][gn1];
@@ -662,6 +756,9 @@ function renderBrowser(data) {
             var distance = v['distance'];
             var angles_1 = v['angles'][0];
             var angles_2 = v['angles'][1];
+
+            var pos1_presence = v['pos1_presence'];
+            var pos2_presence = v['pos2_presence'];
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -691,13 +788,15 @@ function renderBrowser(data) {
                       <td class="narrow_col sasa">${angles_2[6]}</td>
                       <td class="narrow_col rsa">${angles_1[7]}</td>
                       <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col">${pos1_presence}</td>
+                      <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col">${class_seq_cons}</td>
+                      <td class="narrow_col">${class_seq_cons[0]}</td>
+                      <td class="narrow_col">${class_seq_cons[1]}</td>
+                      <td class="narrow_col">${class_seq_cons_diff}</td>
                     </tr>`;
             tbody.append(tr);
         });
@@ -762,6 +861,8 @@ function renderBrowser(data) {
             var distance = v['distance'];
             var angles_1 = v['angles'][0];
             var angles_2 = v['angles'][1];
+            var pos1_presence = v['pos1_presence'];
+            var pos2_presence = v['pos2_presence'];
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -789,8 +890,8 @@ function renderBrowser(data) {
                       <td class="narrow_col sasa">${angles_2[6]}</td>
                       <td class="narrow_col rsa">${angles_1[7]}</td>
                       <td class="narrow_col rsa">${angles_2[7]}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${pos1_presence}</td>
+                      <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
@@ -1042,6 +1143,7 @@ function renderBrowser_2(data) {
             var class_seq_cons = v['class_seq_cons'];
             const types = v2['types'].map((t) => types_to_short[t]).join('|');
             var distance = v['distance'];
+            var distance_2 = v2['distance'];
             var angles_1 = v2['angles'][0];
             var angles_2 = v2['angles'][1];
 
@@ -1066,6 +1168,10 @@ function renderBrowser_2(data) {
             var occurance_aa1_diff = set1_occurance_aa1 - set2_occurance_aa1;
             var occurance_aa2_diff = set1_occurance_aa2 - set2_occurance_aa2;
             var occurance_pair_diff = set1_occurance_pair - set2_occurance_pair;
+
+
+            var pos1_presence = v['pos1_presence'];
+            var pos2_presence = v['pos2_presence'];
 
             tr = ''
             tr_list += `
@@ -1099,7 +1205,7 @@ function renderBrowser_2(data) {
                       <td class="narrow_col">${v2['class']}</td>
 
                       <td>${types}</td>
-                      <td class="narrow_col">${distance}</td>
+                      <td class="narrow_col">${distance_2}</td>
                       <td class="narrow_col core_distance">${angles_1[0]}</td>
                       <td class="narrow_col core_distance">${angles_2[0]}</td>
                       <td class="narrow_col a_angle">${angles_1[1]}</td>
@@ -1110,8 +1216,8 @@ function renderBrowser_2(data) {
                       <td class="narrow_col sasa">${angles_2[6]}</td>
                       <td class="narrow_col rsa">${angles_1[7]}</td>
                       <td class="narrow_col rsa">${angles_2[7]}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${pos1_presence}</td>
+                      <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
@@ -1337,7 +1443,7 @@ function renderBrowser_4(data) {
                         </tr> \
                         <tr> \
                           <th colspan="2">Consensus SS</th> \
-                          <th colspan="3">Frequncy (%)</th> \
+                          <th colspan="3">Frequency (%)</th> \
                           <th colspan="3">Tau (N-Ca-C)</th> \
                           <th colspan="3">Phi (N(+1)-C-Ca-N)</th> \
                           <th colspan="3">Psi (C-Ca-N-C(-1))</th> \
@@ -1383,8 +1489,9 @@ function renderBrowser_4(data) {
         tr_list = ''
         $.each(data['tab3'], function(i, v) {
 
-            console.log(i,v);
             var seg = data['segm_lookup'][i];
+            if (seg=='ECL1' || seg=='ECL2') return true;
+
             var angles1 = v['angles_set1'];
             var angles2 = v['angles_set2'];
             var angles_diff = v['angles'];
