@@ -3,7 +3,7 @@
 protwis/settings_local.py
 env
 /data
-
+*.sh
 .DS_Store
 .idea/
 static/home/js/node_modules
