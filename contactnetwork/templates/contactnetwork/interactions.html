@@ -984,7 +984,7 @@
 {% endblock %}
 {% block addon_js %}
 
-  
+
     <script type="text/javascript" src="{% static 'home/js/canvas-toBlob.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/FileSaver.min.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactnetworkDownloadDiagrams.js' %}"> </script>
@@ -1031,7 +1031,7 @@
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-ngl.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-heatmap.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-tabtables.js' %}"> </script>
-    
+
     <script>
 
 
@@ -1043,7 +1043,7 @@
           var currentTab = "single-crystal-tab";
         {% endif %}
 
-        
+
 
         $(document).ready(function() {
             // Get PDBs for table build
@@ -1066,7 +1066,7 @@
               // Check if datatables is rendered, otherwise do so.
               $(".main_loading_overlay").show(0);
               console.log('switch browser',e.currentTarget.id);
-              
+
               setTimeout("renderDataTablesYadcf('"+e.currentTarget.id+"');", 100);
               // $(".main_loading_overlay").hide();
             });
@@ -1100,10 +1100,10 @@
             }
 
             function exitHandler()
-            { 
+            {
                 console.log('check fullscreen',document.webkitIsFullScreen,document.mozFullScreen,document.msFullscreenElement);
                 if (document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement )
-                { 
+                {
                     console.log('is fullscreen',document.webkitIsFullScreen,document.mozFullScreen,document.msFullscreenElement);
                     is_fullscreen = true ;
                     redraw_renders();
@@ -1118,12 +1118,12 @@
 
             {% if pdbs %}
                 // handle post data (if present) for single group
-                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true)
+                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', renderHeatmap, true)
             {% endif %}
 
             {% if pdbs1 and pdbs2 %}
                 // handle post data (if present) for two groups
-                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
+                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', renderHeatmap, true);
             {% endif %}
         });
     </script>

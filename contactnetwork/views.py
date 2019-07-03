@@ -822,7 +822,7 @@ def InteractionBrowserData(request):
         for d in delete_coords:
             del data['interactions'][d]
 
-        # del class_pair_lookup 
+        # del class_pair_lookup
         del r_lookup
         # del r_pair_lookup
 
@@ -975,13 +975,13 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
-      
+
         # Tab 2 data generation
         # Get the relevant interactions
         data['tab2'] = {}
-        # del class_pair_lookup 
+        # del class_pair_lookup
         # del r_pair_lookup
-        if mode == "double": 
+        if mode == "double":
 
             set_id = 'set1'
             aa_pair_data = data['tab2']
@@ -1564,12 +1564,44 @@ def DistanceDataGroups(request):
     return JsonResponse(data)
 
 
+def coreMatrix(pdbs):
+    # select all TM7 distances to core
+    ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs)\
+                        .exclude(residue__generic_number=None) \
+                        .exclude(core_distance=None) \
+                        .values('structure__pdb_code__index', 'residue__generic_number__label', 'core_distance'))
+
+    # create dictionary of all structures and all distances
+    core_distances = {}
+    for i,d in enumerate(ds):
+        if not d['structure__pdb_code__index'] in core_distances:
+            core_distances[d['structure__pdb_code__index']] = {}
+        core_distances[d['structure__pdb_code__index']][d['residue__generic_number__label']] = d['core_distance']
+
+    distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
+    for i, pdb1 in enumerate(pdbs):
+        for j in range(i+1, len(pdbs)):
+            pdb2 = pdbs[j]
+
+            # Get common GNs between two PDBs
+            common_between_pdbs = sorted(list(set(dict.keys(core_distances[pdb1])).intersection(core_distances[pdb2])))
+            # Get distance between cells that have both GNs.
+            distance = np.sum([ np.abs(core_distances[pdb1][key] - core_distances[pdb2][key]) for key in common_between_pdbs])
+            # normalize
+            distance_matrix[i, j] = pow(distance,2)/(len(common_between_pdbs)*len(common_between_pdbs))
+            distance_matrix[j, i] = distance_matrix[i, j]
+
+    return distance_matrix
+
 def ClusteringData(request):
     # PDB files
     try:
-        pdbs = request.GET.getlist('pdbs[]')
+        pdbs = request.GET.get('pdbs').split(',')
     except IndexError:
         pdbs = []
+
+    if len(pdbs) == 0:
+        quit()
 
     pdbs = [pdb.upper() for pdb in pdbs]
 
@@ -1577,9 +1609,15 @@ def ClusteringData(request):
     data = {}
 
     # load all
-    dis = Distances()
-    dis.load_pdbs(pdbs)
-    distance_matrix = dis.get_distance_matrix()
+    if 'new_cluster' in request.GET and request.GET.get('new_cluster')=="true":
+        distance_matrix = coreMatrix(pdbs)
+    else:
+        dis = Distances()
+        dis.load_pdbs(pdbs)
+        distance_matrix = dis.get_distance_matrix()
+
+        # pdbs have been reordered -> map back to be consistent with the distance matrix
+        pdbs = dis.pdbs
 
     # Collect structure annotations
     pdb_annotations = {}
