@@ -522,10 +522,7 @@ function renderDataTablesYadcf(element) {
                 ]
             });
 
-
             if (analys_mode == "#two-crystal-groups") {
-
-
                 repeated_from_to = make_range_number_cols(2, 3);
 
                 yadcf.init(btable,
@@ -1323,11 +1320,140 @@ function renderBrowser_4(data) {
     var table = $(selector + " .browser-table-4");
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
-    var proteins_1 = data['proteins1'].length
-    var proteins_2 = data['proteins2'].length
-    var pdbs_1 = data['pdbs1'].length
-    var pdbs_2 = data['pdbs2'].length
     if (data['proteins2']) {
+        console.log('render 4');
+        var proteins_1 = data['proteins1'].length
+        var proteins_2 = data['proteins2'].length
+        var pdbs_1 = data['pdbs1'].length
+        var pdbs_2 = data['pdbs2'].length
+        thead = '<tr> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="5" rowspan="1">Secondary structure</th> \
+                          <th colspan="9" rowspan="1">Residue angles</th> \
+                          <th colspan="6" rowspan="1">Helix turn angle</th> \
+                          <th colspan="5" rowspan="1">Seq consensus</th> \
+                          <th colspan="2" rowspan="1">Class seq consensus</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="2">Consensus SS</th> \
+                          <th colspan="3">Frequncy (%)</th> \
+                          <th colspan="3">Tau (N-Ca-C)</th> \
+                          <th colspan="3">Phi (N(+1)-C-Ca-N)</th> \
+                          <th colspan="3">Psi (C-Ca-N-C(-1))</th> \
+                          <th colspan="3">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="3">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="2">AA</th> \
+                          <th colspan="3">Conservation (%)</th> \
+                          <th colspan="1">AA</th> \
+                          <th colspan="1">Cons (%)</th> \
+                        </tr> \
+                        <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Set 1<br></th> \
+                          <th class="narrow_col">Set 2<br></th> \
+                          <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                        </tr>';
+        table.find('thead').html(thead);
+        tr_list = ''
+        $.each(data['tab3'], function(i, v) {
+
+            console.log(i,v);
+            var seg = data['segm_lookup'][i];
+            var angles1 = v['angles_set1'];
+            var angles2 = v['angles_set2'];
+            var angles_diff = v['angles'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi', 
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
+            var set1_seq_cons_aa = v['set1_seq_cons'][0];
+            var set2_seq_cons_aa = v['set2_seq_cons'][0];
+            var set1_seq_cons_freq = Math.round(100 * v['set1_seq_cons'][1] / pdbs_1);
+            var set2_seq_cons_freq = Math.round(100 * v['set2_seq_cons'][2] / pdbs_2);
+            var diff_seq_cons_freq = Math.round((set1_seq_cons_freq - set2_seq_cons_freq));
+
+            var class_cons_aa = v['class_cons'][0];
+            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                      <td class="dt-center">${seg}</td>
+                      <td class="dt-center">${i}</td>
+
+                      <td class="narrow_col"></td>
+                      <td class="narrow_col"></td>
+                      <td class="narrow_col"></td>
+                      <td class="narrow_col"></td>
+                      <td class="narrow_col"></td>
+
+                      <td class="narrow_col">${angles1[3]}</td>
+                      <td class="narrow_col">${angles2[3]}</td>
+                      <td class="narrow_col">${angles_diff[3]}</td>
+
+                      <td class="narrow_col">${angles1[4]}</td>
+                      <td class="narrow_col">${angles2[4]}</td>
+                      <td class="narrow_col">${angles_diff[4]}</td>
+
+                      <td class="narrow_col">${angles1[5]}</td>
+                      <td class="narrow_col">${angles2[5]}</td>
+                      <td class="narrow_col">${angles_diff[5]}</td>
+
+                      <td class="narrow_col">${angles1[8]}</td>
+                      <td class="narrow_col">${angles2[8]}</td>
+                      <td class="narrow_col">${angles_diff[8]}</td>
+                      
+                      <td class="narrow_col"></td>
+                      <td class="narrow_col"></td>
+                      <td class="narrow_col"></td>
+
+                      <td class="narrow_col">${set1_seq_cons_aa}</td>
+                      <td class="narrow_col">${set2_seq_cons_aa}</td>
+                      <td class="narrow_col">${set1_seq_cons_freq}</td>
+                      <td class="narrow_col">${set2_seq_cons_freq}</td>
+                      <td class="narrow_col">${diff_seq_cons_freq}</td>
+
+                      <td class="narrow_col">${class_cons_aa}</td>
+                      <td class="narrow_col">${class_cons_freq}</td>
+
+                    </tr>`;
+            // tbody.append(tr);
+        });
+        // insert natively for speed increase on Chrome
+        tbody[0].innerHTML = tr_list;
+
        
     } else if (data['proteins'].length > 1) {
 

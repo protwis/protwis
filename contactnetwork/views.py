@@ -1276,6 +1276,15 @@ def InteractionBrowserData(request):
                 data['tab3'][res1]['class_cons'] = ['','']
                 print('no res1',res1,'in class lookup')
 
+            if res1 in group_1_angles:
+                data['tab3'][res1]['angles_set1'] = group_1_angles[res1]
+            else:
+                data['tab3'][res1]['angles_set1'] = [''] * 9
+            if res1 in group_2_angles:
+                data['tab3'][res1]['angles_set2'] = group_2_angles[res1]
+            else:
+                data['tab3'][res1]['angles_set2'] = [''] * 9
+
             # Get angle data for res1
             if res1 in group_1_angles and res1 in group_2_angles:
                 res1_values = []
@@ -1285,9 +1294,10 @@ def InteractionBrowserData(request):
                     except:
                         # Fails if there is a None (like gly doesnt have outer angle?)
                         res1_values.append("")
-                print(res1,res1_values)
+                # print(res1,res1_values)
             else:
                 print(res1,'not in both group angles')
+                res1_values = [''] * 9
             data['tab3'][res1]['angles'] = res1_values
 
 
