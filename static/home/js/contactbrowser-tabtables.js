@@ -364,7 +364,7 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
-                
+
                 repeated_from_to_1 = make_range_number_cols(2, 2);
                 repeated_from_to_2 = make_range_number_cols(6, 6);
                 repeated_from_to_3 = make_range_number_cols(13, 17);
@@ -463,7 +463,8 @@ function renderDataTablesYadcf(element) {
                             },
                             filter_default_label: "AA",
                             filter_reset_button_text: false,
-                    }].concat(repeated_from_to_1).concat([{
+                        }
+                    ].concat(repeated_from_to_1).concat([{
                         column_number: 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
@@ -842,7 +843,7 @@ function renderDataTablesYadcf(element) {
 
             );
             if (analys_mode == "#two-crystal-groups") {
-                
+
             } else if (analys_mode == "#single-crystal-group") {
 
             } else if (analys_mode == "#single-crystal") {
@@ -950,7 +951,7 @@ function renderBrowser(data) {
             var diff_sfreq = sfreq1 - sfreq2;
             var class_seq_cons = v['class_seq_cons'];
 
-            var class_seq_cons_diff = class_seq_cons[0]-class_seq_cons[1];
+            var class_seq_cons_diff = class_seq_cons[0] - class_seq_cons[1];
 
             // var types = v['types'].join(",<br>");
             const types = v['types'].map((t) => types_to_short[t]).join('|');
@@ -1935,7 +1936,7 @@ function renderBrowser_4(data) {
         $.each(data['tab3'], function(i, v) {
 
             var seg = data['segm_lookup'][i];
-            if (seg=='ECL1' || seg=='ECL2') return true;
+            if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles1 = v['angles_set1'];
             var angles2 = v['angles_set2'];
@@ -2006,7 +2007,7 @@ function renderBrowser_4(data) {
         // insert natively for speed increase on Chrome
         tbody[0].innerHTML = tr_list;
 
-       
+
     } else if (data['proteins'].length > 1) {
         var proteins = data['proteins'].length
         var pdbs = data['pdbs'].length
@@ -2052,7 +2053,7 @@ function renderBrowser_4(data) {
         $.each(data['tab3'], function(i, v) {
 
             var seg = data['segm_lookup'][i];
-            if (seg=='ECL1' || seg=='ECL2') return true;
+            if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles = v['angles_set'];
             // 0 'core_distance',
@@ -2142,7 +2143,7 @@ function renderBrowser_4(data) {
         $.each(data['tab3'], function(i, v) {
 
             var seg = data['segm_lookup'][i];
-            if (seg=='ECL1' || seg=='ECL2') return true;
+            if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles = v['angles_set'];
             // 0 'core_distance',
@@ -2204,7 +2205,7 @@ function renderBrowser_5(data) {
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
 
-   thead = '<tr> \
+    thead = '<tr> \
                       <th colspan="1" rowspan="2">Segment</th> \
                       <th colspan="1" rowspan="2">Positions</th> \
                       <th colspan="2">Backbone movement (Ca-7TM axis)</th> \
