@@ -4,18 +4,19 @@
         // create NGL tooltip
         var ngl_tooltip = document.createElement("div")
         Object.assign(ngl_tooltip.style, {
-          display: "none",
-          position: "fixed",
-          zIndex: 10,
-          pointerEvents: "none",
-          backgroundColor: "rgba( 0, 0, 0, 0.6 )",
-          color: "lightgrey",
-          padding: "8px",
-          fontFamily: "sans-serif"
+            display: "none",
+            position: "fixed",
+            zIndex: 10,
+            pointerEvents: "none",
+            backgroundColor: "rgba( 0, 0, 0, 0.6 )",
+            color: "lightgrey",
+            padding: "8px",
+            fontFamily: "sans-serif"
         })
         document.body.appendChild(ngl_tooltip)
 
         var is_fullscreen = false;
+
         function toggleFullScreen(fullScreenElement) {
             if (!document.mozFullScreen && !document.webkitFullScreen) {
                 if (fullScreenElement.mozRequestFullScreen) {
@@ -25,15 +26,15 @@
                 }
             } else {
                 if (document.mozCancelFullScreen) {
-                  document.mozCancelFullScreen();
+                    document.mozCancelFullScreen();
                 } else {
-                  document.webkitCancelFullScreen();
+                    document.webkitCancelFullScreen();
                 }
             }
         }
 
         function hidePopovers() {
-            $('.popover').each(function(){
+            $('.popover').each(function() {
                 $(this).remove();
             });
         }
@@ -49,12 +50,24 @@
             q = v * (1 - f * s);
             t = v * (1 - (1 - f) * s);
             switch (i % 6) {
-                case 0: r = v, g = t, b = p; break;
-                case 1: r = q, g = v, b = p; break;
-                case 2: r = p, g = v, b = t; break;
-                case 3: r = p, g = q, b = v; break;
-                case 4: r = t, g = p, b = v; break;
-                case 5: r = v, g = p, b = q; break;
+                case 0:
+                    r = v, g = t, b = p;
+                    break;
+                case 1:
+                    r = q, g = v, b = p;
+                    break;
+                case 2:
+                    r = p, g = v, b = t;
+                    break;
+                case 3:
+                    r = p, g = q, b = v;
+                    break;
+                case 4:
+                    r = t, g = p, b = v;
+                    break;
+                case 5:
+                    r = v, g = p, b = q;
+                    break;
             }
             return {
                 r: Math.round(r * 255),
@@ -63,7 +76,7 @@
             };
         }
 
-        function rgb2hex(r,g,b) {
+        function rgb2hex(r, g, b) {
             r = Math.round(r).toString(16);
             g = Math.round(g).toString(16);
             b = Math.round(b).toString(16);
@@ -100,30 +113,30 @@
         function getColorStrongestInteraction(interactions, rgb = true) {
             var maxStrength = 0;
             for (var i = 0; i < interactions.length; i++)
-              maxStrength = Math.max(maxStrength, getInteractionStrength(interactions[i].replace(/-/g, ' ')));
+                maxStrength = Math.max(maxStrength, getInteractionStrength(interactions[i].replace(/-/g, ' ')));
 
             return getInteractionColor(maxStrength, rgb);
         }
 
         function getFrequencyColor(frequency, rgb = true) {
-            return getGradientColor(-1*frequency, rgb);
+            return getGradientColor(-1 * frequency, rgb);
         }
 
         function getFlareGradientColor(fDiff, rgb = true, hide_zero = true) {
             var color;
             var shift = 80;
             var basal = 255 - shift;
-            if (hide_zero && fDiff == 0){
-              // to hide zero, make paths completely white.
-              return rgb2hex(255, 255, 255);
+            if (hide_zero && fDiff == 0) {
+                // to hide zero, make paths completely white.
+                return rgb2hex(255, 255, 255);
             }
 
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
-                color = { r: basal + (fDiff * -1*shift), g: basal-basal*(-fDiff), b: basal-basal*(-fDiff) };
+                color = { r: basal + (fDiff * -1 * shift), g: basal - basal * (-fDiff), b: basal - basal * (-fDiff) };
             else
                 // If fDiff is close to 1 we want a blue color
-                color = { r: basal-basal*fDiff, g: basal-basal*fDiff, b: basal + (fDiff * shift)};
+                color = { r: basal - basal * fDiff, g: basal - basal * fDiff, b: basal + (fDiff * shift) };
 
             if (rgb)
                 return color;
@@ -131,14 +144,14 @@
                 return rgb2hex(color.r, color.g, color.b);
         }
 
-        function getGradientColor(fDiff, rgb = true){
-          var color;
+        function getGradientColor(fDiff, rgb = true) {
+            var color;
             if (fDiff <= 0)
                 // If fDiff is close to -1, we want a red color
-                color = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
+                color = { r: 255, g: 255 - 255 * (-fDiff), b: 255 - 255 * (-fDiff) };
             else
                 // If fDiff is close to 1 we want a blue color
-                color = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
+                color = { r: 255 - 255 * fDiff, g: 255 - 255 * fDiff, b: 255 };
 
             if (rgb)
                 return color;
@@ -179,9 +192,9 @@
 
             var interactions = new Set();
             for (var key in obj) {
-              Object.keys(obj[key]).forEach(function(k,index) {
-                        interactions.add(obj[key][k]);
-              });
+                Object.keys(obj[key]).forEach(function(k, index) {
+                    interactions.add(obj[key][k]);
+                });
                 // if (Object.prototype.hasOwnProperty.call(obj, key)) {
                 //     for (var k in obj[key])
                 //         interactions.add(obj[key][k]);
@@ -190,8 +203,8 @@
 
             // Sort according to strength - now done by backend
             interactions = Array.from(interactions);
-            interactions.sort(function (i1, i2) {
-                return  getInteractionStrength(i1) - getInteractionStrength(i2);
+            interactions.sort(function(i1, i2) {
+                return getInteractionStrength(i1) - getInteractionStrength(i2);
             });
 
             return interactions;
@@ -203,41 +216,53 @@
 
             value = interaction
             if (isNaN(value))
-              value = value.toLowerCase()
+                value = value.toLowerCase()
 
             switch (value) {
                 case 'ionic':
                 case 5:
-                    r = 197; g = 66; b = 244;
+                    r = 197;
+                    g = 66;
+                    b = 244;
                     break;
                 case 'polar':
                 case 4:
                     //r = 254; g = 0; b = 16;
-                    r = 255; g = 98; b = 108;
+                    r = 255;
+                    g = 98;
+                    b = 108;
                     break;
                 case 'aromatic':
                 case 3:
                     //r = 94; g = 241; b = 242;
-                    r = 255; g = 166; b = 98;
+                    r = 255;
+                    g = 166;
+                    b = 98;
                     break;
                 case 'hydrophobic':
                 case 2:
                     //r = 0; g = 117; b = 220;
-                    r = 5; g = 200; b = 90;
+                    r = 5;
+                    g = 200;
+                    b = 90;
                     break;
                 case 'van-der-waals':
                 case 1:
                     //r = 89; g = 252; b = 197;
-                    r = 100; g = 100; b = 100;
+                    r = 100;
+                    g = 100;
+                    b = 100;
                     break;
                 default:
-                    r = 0; g = 0; b = 0;
+                    r = 0;
+                    g = 0;
+                    b = 0;
             }
 
             if (rgb)
-              return { r: r, g: g, b: b };
+                return { r: r, g: g, b: b };
             else
-              return rgb2hex(r, g, b);
+                return rgb2hex(r, g, b);
         }
 
         function getFriendlyInteractionName(interaction) {
@@ -286,7 +311,9 @@
             switch (segmentName) {
                 case 'N-term':
                 case 'C-term':
-                    r = 190; g = 190; b = 190;
+                    r = 190;
+                    g = 190;
+                    b = 190;
                     //r = 255; g = 150; b = 150;
                     break;
                 case 'TM1':
@@ -297,23 +324,31 @@
                 case 'TM6':
                 case 'TM7':
                 case 'H8':
-                    r = 230; g = 230; b = 230;
+                    r = 230;
+                    g = 230;
+                    b = 230;
                     //r = 150; g = 255; b = 150;
                     break;
                 case 'ECL1':
                 case 'ECL2':
                 case 'ECL3':
-                    r = 190; g = 190; b = 190;
+                    r = 190;
+                    g = 190;
+                    b = 190;
                     //r = 150; g = 150; b = 255;
                     break;
                 case 'ICL1':
                 case 'ICL2':
                 case 'ICL3':
-                    r = 190; g = 190; b = 190;
+                    r = 190;
+                    g = 190;
+                    b = 190;
                     //r = 150; g = 150; b = 255;
                     break;
                 default:
-                    r = 0; g = 0; b = 0;
+                    r = 0;
+                    g = 0;
+                    b = 0;
             }
 
             return { r: r, g: g, b: b };
@@ -463,110 +498,110 @@
         //     delete link;
         // }
 
-        
+
 
         function redraw_renders() {
 
-          // Makes sure diagrams fit sizes
-          console.time('redraw renders');
-          var visible_svg = $('svg:visible');
-          var svg_class = visible_svg.attr("class");
-          if( window.innerHeight == screen.height || is_fullscreen) {
-              // browser is fullscreen
-              console.log('dont redraw in full screen', is_fullscreen);
+            // Makes sure diagrams fit sizes
+            console.time('redraw renders');
+            var visible_svg = $('svg:visible');
+            var svg_class = visible_svg.attr("class");
+            if (window.innerHeight == screen.height || is_fullscreen) {
+                // browser is fullscreen
+                console.log('dont redraw in full screen', is_fullscreen);
 
-              if (svg_class=='flareplot') {
-                $("svg.flareplot").css('height',screen.height);
-              } else {
-                visible_svg.css('height',screen.height);
-              }
-                
-              console.timeEnd('redraw renders');
-              return
-          }
+                if (svg_class == 'flareplot') {
+                    $("svg.flareplot").css('height', screen.height);
+                } else {
+                    visible_svg.css('height', screen.height);
+                }
 
-
-          $('div.dataTables_scrollBody:visible').height('50vh');
-
-          // Make sure browser-tables are not too wide.
-          browser_table_div_width = $('.contact-browser:visible').width();
-          if (browser_table_div_width>2060) {
-            browser_table_width = 2030;
-          } else {
-            browser_table_width =  browser_table_div_width-30;
-          }
-          $('.contact-browser .dataTables_wrapper').width(browser_table_width);
-          // console.log(browser_table_div_width,browser_table_width);
-
-          var width_svg = visible_svg.width();
-
-          // Don't go too high
-          if (width_svg>screen.height) width_svg = screen.height;
-          width_svg = 500;
-          visible_svg.height(width_svg);
-
-          // Resize NGL
-          var ngl = $('.ngl-container:visible');
-          var width_ngl = ngl.width();
-
-          // Don't go too high
-          if (width_ngl>screen.height) width_ngl = screen.height;
-          ngl.height(width_svg);
-
-          // console.log('redraw',svg_class,width_svg,screen.height);
-
-          if (svg_class=='heatmap') {
-            // If heatmap being resized, reset zoom
-
-              // Destroy old zoom on heatmap
-            var heatMapSelector = "#" + $('.main_option:visible').attr('id');
-            heatMapSelector = heatMapSelector+ ' .heatmap-container';
-            if (window.zoomHeatmap[heatMapSelector] != null) {
-              window.zoomHeatmap[heatMapSelector].destroy();
-              delete window.zoomHeatmap[heatMapSelector];
-
-              window.zoomHeatmap[heatMapSelector] = svgPanZoom(heatMapSelector + ' .heatmap', {
-                    zoomEnabled: true,
-                    // controlIconsEnabled: true,
-                    fit: true,
-                    center: true,
-                    minZoom: 0.40,
-                    maxZoom: 50,
-                    zoomScaleSensitivity: 0.25,
-                    dblClickZoomEnabled: true,
-                    beforeZoom: hidePopovers,
-                    beforePan: hidePopovers
-                });
-
-              window.zoomHeatmap[heatMapSelector].zoom(0.85);
+                console.timeEnd('redraw renders');
+                return
             }
-          }
 
-          if (svg_class=='hiveplot') {
-            // If heatmap being resized, reset zoom
 
-              // Destroy old zoom on heatmap
-            var container = "#" + $('.main_option:visible').attr('id');
-            container = container+ ' .hiveplot-container';
-            if (window.zoomHiveplot[container] != null) {
-              window.zoomHiveplot[container].destroy();
-              delete window.zoomHiveplot[container];
+            $('div.dataTables_scrollBody:visible').height('50vh');
 
-              window.zoomHiveplot[container] = svgPanZoom(container + ' .hiveplot', {
-                  zoomEnabled: true,
-                  // controlIconsEnabled: true,
-                  fit: true,
-                  center: true,
-                  minZoom: 0.75,
-                  maxZoom: 50,
-                  zoomScaleSensitivity: 0.25,
-                  dblClickZoomEnabled: true
-              });
-
-              window.zoomHiveplot[container].zoom(0.85);
+            // Make sure browser-tables are not too wide.
+            browser_table_div_width = $('.contact-browser:visible').width();
+            if (browser_table_div_width > 2060) {
+                browser_table_width = 2030;
+            } else {
+                browser_table_width = browser_table_div_width - 30;
             }
-          }
-          console.timeEnd('redraw renders');
+            $('.contact-browser .dataTables_wrapper').width(browser_table_width);
+            // console.log(browser_table_div_width,browser_table_width);
+
+            var width_svg = visible_svg.width();
+
+            // Don't go too high
+            if (width_svg > screen.height) width_svg = screen.height;
+            width_svg = 500;
+            visible_svg.height(width_svg);
+
+            // Resize NGL
+            var ngl = $('.ngl-container:visible');
+            var width_ngl = ngl.width();
+
+            // Don't go too high
+            if (width_ngl > screen.height) width_ngl = screen.height;
+            ngl.height(width_svg);
+
+            // console.log('redraw',svg_class,width_svg,screen.height);
+
+            if (svg_class == 'heatmap') {
+                // If heatmap being resized, reset zoom
+
+                // Destroy old zoom on heatmap
+                var heatMapSelector = "#" + $('.main_option:visible').attr('id');
+                heatMapSelector = heatMapSelector + ' .heatmap-container';
+                if (window.zoomHeatmap[heatMapSelector] != null) {
+                    window.zoomHeatmap[heatMapSelector].destroy();
+                    delete window.zoomHeatmap[heatMapSelector];
+
+                    window.zoomHeatmap[heatMapSelector] = svgPanZoom(heatMapSelector + ' .heatmap', {
+                        zoomEnabled: true,
+                        // controlIconsEnabled: true,
+                        fit: true,
+                        center: true,
+                        minZoom: 0.40,
+                        maxZoom: 50,
+                        zoomScaleSensitivity: 0.25,
+                        dblClickZoomEnabled: true,
+                        beforeZoom: hidePopovers,
+                        beforePan: hidePopovers
+                    });
+
+                    window.zoomHeatmap[heatMapSelector].zoom(0.85);
+                }
+            }
+
+            if (svg_class == 'hiveplot') {
+                // If heatmap being resized, reset zoom
+
+                // Destroy old zoom on heatmap
+                var container = "#" + $('.main_option:visible').attr('id');
+                container = container + ' .hiveplot-container';
+                if (window.zoomHiveplot[container] != null) {
+                    window.zoomHiveplot[container].destroy();
+                    delete window.zoomHiveplot[container];
+
+                    window.zoomHiveplot[container] = svgPanZoom(container + ' .hiveplot', {
+                        zoomEnabled: true,
+                        // controlIconsEnabled: true,
+                        fit: true,
+                        center: true,
+                        minZoom: 0.75,
+                        maxZoom: 50,
+                        zoomScaleSensitivity: 0.25,
+                        dblClickZoomEnabled: true
+                    });
+
+                    window.zoomHiveplot[container].zoom(0.85);
+                }
+            }
+            console.timeEnd('redraw renders');
 
         }
 
@@ -591,7 +626,7 @@
             });
 
             // Initialize 'all' buttons.
-            $(selector  + ' .segments-panel .all-button').each(function() {
+            $(selector + ' .segments-panel .all-button').each(function() {
                 $(this).click(function() {
                     if ($(this).html() === 'All') {
                         $(this).html('None');
@@ -658,7 +693,7 @@
             });
 
             // Initialize 'all' buttons.
-            $(selector  + ' .interactions-panel .all-button').each(function() {
+            $(selector + ' .interactions-panel .all-button').each(function() {
                 $(this).click(function() {
                     if ($(this).html() === 'All') {
                         $(this).html('None');
@@ -704,7 +739,7 @@
         }
 
 
-        function initializeGoButton(selector, heatmapFunction, generic=false) {
+        function initializeGoButton(selector, heatmapFunction, generic = false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 //pdb = ["4BVN"]
@@ -715,136 +750,144 @@
 
         function generate_display_options() {
 
-          options = [ ['heatmap','Matrix of interactions'], ['flareplot','Flare Plot'], ['ngl','3D view'], ['schematic_non','Schematic (Non-consecutive)'], ['schematic_con','Schematic (Consecutive)'],];
+            options = [
+                ['heatmap', 'Matrix of interactions'],
+                ['flareplot', 'Flare Plot'],
+                ['ngl', '3D view'],
+                ['schematic_non', 'Schematic (Non-consecutive)'],
+                ['schematic_con', 'Schematic (Consecutive)'],
+            ];
 
-          dropdown_html = '<div class="dropdown" style="display: inline;"> \
+            dropdown_html = '<div class="dropdown" style="display: inline;"> \
                           <button class="btn btn-xs btn-primary dropdown-toggle" type="button" data-toggle="dropdown"> \
                           Select plot \
                           <span class="caret"></span></button><ul class="dropdown-menu">';
-          options.forEach(function(opt) {
-            dropdown_html += '<li><a class="plot_selection" href="#" plot_type="'+opt[0]+'">'+opt[1]+'</a></li>'
-          });
-          dropdown_html += '</ul></div>';
-          $('.plot-select').each( function (e) {
-            $(this).html(dropdown_html);
-          });
-          $('.plot_selection').click(function() {
-              var mode = $('.contact-browser:visible').attr('id').replace("-primary-browser","");
-              plot_type = $(this).attr('plot_type');
-              plot_div = $(this).closest('.panel');
-              plot_id = plot_div.attr('id');
-              // Delete whatever is already there
-              plot_div.find('.plot-container').html('');
-              console.log("SET UP PLOT",plot_type,plot_div,plot_id,mode);
-              switch (plot_type) {
-                case "ngl":
-                    var pdb = JSON.parse($('.main_option:visible .crystal-pdb').val());
-                    plot_div.find('.plot-container').removeClass('none');
-                    plot_div.find('.plot-container').addClass('ngl-container');
-                    plot_div.find('.plot-container').attr('id','ngl-'+plot_id);
-                    plot_div.find('.plot-container').attr('style','margin: auto; width: 100%; height: 500px; overflow: hidden;');
-                    createNGLview(plot_id,pdb[0]);
-                    break;
-                case "heatmap":
-                    plot_div.find('.plot-container').removeClass('none');
-                    plot_div.find('.plot-container').addClass('heatmap-container');
-                    plot_div.find('.plot-container').attr('id',plot_id);
-                    plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-'+plot_id+'" style="height: 500px;"></svg>');
+            options.forEach(function(opt) {
+                dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
+            });
+            dropdown_html += '</ul></div>';
+            $('.plot-select').each(function(e) {
+                $(this).html(dropdown_html);
+            });
+            $('.plot_selection').click(function() {
+                var mode = $('.contact-browser:visible').attr('id').replace("-primary-browser", "");
+                plot_type = $(this).attr('plot_type');
+                plot_div = $(this).closest('.panel');
+                plot_id = plot_div.attr('id');
+                // Delete whatever is already there
+                plot_div.find('.plot-container').html('');
+                console.log("SET UP PLOT", plot_type, plot_div, plot_id, mode);
+                switch (plot_type) {
+                    case "ngl":
+                        var pdb = JSON.parse($('.main_option:visible .crystal-pdb').val());
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('ngl-container');
+                        plot_div.find('.plot-container').attr('id', 'ngl-' + plot_id);
+                        plot_div.find('.plot-container').attr('style', 'margin: auto; width: 100%; height: 500px; overflow: hidden;');
+                        createNGLview(plot_id, pdb[0]);
+                        break;
+                    case "heatmap":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('heatmap-container');
+                        plot_div.find('.plot-container').attr('id', plot_id);
+                        plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-' + plot_id + '" style="height: 500px;"></svg>');
 
-                    renderHeatmap(raw_data, '#'+plot_id);
-                    break;
-                case "flareplot":
-                    plot_div.find('.plot-container').removeClass('none');
-                    plot_div.find('.plot-container').addClass('flareplot-container');
-                    plot_div.find('.plot-container').attr('id','flareplot-'+plot_id);
-                    createFlareplotBox(raw_data, '#flareplot-'+plot_id);
-              }
-          });
+                        renderHeatmap(raw_data, '#' + plot_id);
+                        break;
+                    case "flareplot":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('flareplot-container');
+                        plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
+                        createFlareplotBox(raw_data, '#flareplot-' + plot_id);
+                }
+            });
         }
         var raw_data = ''
+
         function loadPDBsView(pdb, selector, heatmapFunction, generic) {
-          console.time('Get loadPDBsView Data');
-          // $(".main_loading_overlay").show();
-          //var segments = JSON.parse($(selector + ' .segments-input').val());
-          var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
-          if (pdb.length > 0 && segments.length > 0) {
-              var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
-              $(".heatmap").hide();
-              // $(".heatmap-legend").hide();
-              $(".matrix-tab:visible").click();
+            console.time('Get loadPDBsView Data');
+            $(".main_loading_overlay").show();
+            // $(".main_loading_overlay").show();
+            //var segments = JSON.parse($(selector + ' .segments-input').val());
+            var segments = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8', 'ICL1', 'ECL1', 'ICL2', 'ECL2', 'ICL3', 'ECL3', 'N-term', 'C-term'];
+            if (pdb.length > 0 && segments.length > 0) {
+                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                $(".heatmap").hide();
+                // $(".heatmap-legend").hide();
+                $(".matrix-tab:visible").click();
 
-              $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
-              if (!$(selector + ' .interactions-input').val() == null)
-                  interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+                $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+                if (!$(selector + ' .interactions-input').val() == null)
+                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
-              // console.log('get viz info');
-              // $.ajax({ 
-              //     url: '/contactnetwork/interactiondata', 
-              //     dataType: 'json', 
-              //     data: {
-              //       // 'segments': segments,
-              //       'generic': generic,
-              //       'pdbs': pdb,
-              //       'interaction_types': interactionTypes
-              //     }, 
-              //     async: true, 
-              //     success:  function(data){
-              //       raw_data = data;
-              //       console.log('gotten visual info')
-              //       // Re-render heatmap
-              //       $(".heatmap").show();
-              //       // $(".heatmap-legend").show();
-              //       console.log('start heatmap');
-              //       heatmapFunction(data, selector + ' .heatmap-container');
-              //       console.log('finish heatmap');
-              //       $("#svgloading").remove()
-              //       // Re-render flareplot
-              //       createFlareplotBox(data, selector + " .flareplot-container");
+                // console.log('get viz info');
+                // $.ajax({ 
+                //     url: '/contactnetwork/interactiondata', 
+                //     dataType: 'json', 
+                //     data: {
+                //       // 'segments': segments,
+                //       'generic': generic,
+                //       'pdbs': pdb,
+                //       'interaction_types': interactionTypes
+                //     }, 
+                //     async: true, 
+                //     success:  function(data){
+                //       raw_data = data;
+                //       console.log('gotten visual info')
+                //       // Re-render heatmap
+                //       $(".heatmap").show();
+                //       // $(".heatmap-legend").show();
+                //       console.log('start heatmap');
+                //       heatmapFunction(data, selector + ' .heatmap-container');
+                //       console.log('finish heatmap');
+                //       $("#svgloading").remove()
+                //       // Re-render flareplot
+                //       createFlareplotBox(data, selector + " .flareplot-container");
 
-              //       if (selector == '#single-crystal-group-tab') {
-              //         createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
-              //         createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
-              //         createNGLview("single-group",pdb[0], pdb);
-              //       } else {
-              //         createHiveplotBox(data, selector + " .hiveplot-container");
-              //         createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
-              //         createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
-              //         createNGLview("single",pdb[0]);
-              //       }
-              //       $(".main_loading_overlay").hide();
-              //       redraw_renders();
-              //     }
-              // });
-              $.ajax({ 
-                  url: '/contactnetwork/browserdata', 
-                  dataType: 'json', 
-                  data: {
-                    // 'segments': segments,
-                    'generic': generic,
-                    'pdbs': pdb,
-                    'interaction_types': interactionTypes
-                  }, 
-                  async: true, 
-                  success:  function(data){
-                    console.timeEnd('Get loadPDBsView Data');
-                    // Re-render heatmap
-                    data_browser = data;
-                    renderBrowser(data);
-                    renderBrowser_2(data);
-                    renderBrowser_4(data);
-                    renderBrowser_5(data);
-                    generate_display_options();
-                    browser_visible = $(".nav-browsers:visible li.active a").attr('id');
-                    renderDataTablesYadcf(browser_visible);
-                    $(".main_loading_overlay").hide();
-                  }
-              });
+                //       if (selector == '#single-crystal-group-tab') {
+                //         createSchematicPlot(data, selector + " .schematic_con-container", {type: 'singleCrystalGroup'}); //.schematic_container
+                //         createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'singleCrystalGroup'});
+                //         createNGLview("single-group",pdb[0], pdb);
+                //       } else {
+                //         createHiveplotBox(data, selector + " .hiveplot-container");
+                //         createSchematicPlot(data, selector + " .schematic_con-container"); //.schematic_container
+                //         createSchematicPlot(data, selector + " .schematic_non-container", {isContiguousPlot: false});
+                //         createNGLview("single",pdb[0]);
+                //       }
+                //       $(".main_loading_overlay").hide();
+                //       redraw_renders();
+                //     }
+                // });
+                $.ajax({
+                    url: '/contactnetwork/browserdata',
+                    dataType: 'json',
+                    data: {
+                        // 'segments': segments,
+                        'generic': generic,
+                        'pdbs': pdb,
+                        'interaction_types': interactionTypes
+                    },
+                    async: true,
+                    success: function(data) {
+                        console.timeEnd('Get loadPDBsView Data');
+                        // Re-render heatmap
+                        data_browser = data;
+                        renderBrowser(data);
+                        renderBrowser_2(data);
+                        renderBrowser_4(data);
+                        renderBrowser_5(data);
+                        generate_display_options();
+                        browser_visible = $(".nav-browsers:visible li.active a").attr('id');
+                        renderDataTablesYadcf(browser_visible);
+                        $(".main_loading_overlay").hide();
+                    }
+                });
 
-          }
+            }
         }
 
 
-        function initializeGoButtonTwoCrystalGroups(selector, heatmapFunction, generic=false) {
+        function initializeGoButtonTwoCrystalGroups(selector, heatmapFunction, generic = false) {
             $(selector + ' .go-button').click(function() {
                 var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
@@ -858,7 +901,7 @@
             console.time('Get loadTwoPDBsView Data');
             $(".main_loading_overlay").show();
             //var segments = JSON.parse($(selector + ' .segments-input').val());
-            var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
+            var segments = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8', 'ICL1', 'ECL1', 'ICL2', 'ECL2', 'ICL3', 'ECL3', 'N-term', 'C-term'];
             if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
@@ -866,30 +909,30 @@
                 $(".matrix-tab:visible").click();
                 $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
 
-                $.ajax({ 
-                    url: '/contactnetwork/browserdata', 
-                    dataType: 'json', 
-                    data: {
-                      // 'segments': segments,
-                      'generic': generic,
-                      'pdbs1': pdbs1,
-                      'pdbs2': pdbs2,
-                      'interaction_types': interactionTypes
-                    }, 
-                    async: true, 
-                    success:  function(data){
+                $.ajax({
+                    url: '/contactnetwork/browserdata',
+                    dataType: 'json',
+                    data: {
+                        // 'segments': segments,
+                        'generic': generic,
+                        'pdbs1': pdbs1,
+                        'pdbs2': pdbs2,
+                        'interaction_types': interactionTypes
+                    },
+                    async: true,
+                    success: function(data) {
                         console.timeEnd('Get loadTwoPDBsView Data');
-                      // Re-render heatmap
-                      data_browser = data;
-                      renderBrowser(data);
-                      renderBrowser_2(data);
-                      renderBrowser_3(data);
-                      renderBrowser_4(data);
-                      renderBrowser_5(data);
-                      browser_visible = $(".nav-browsers:visible li.active a").attr('id');
-                      renderDataTablesYadcf(browser_visible);
-                      $(".main_loading_overlay").hide();
-                      redraw_renders();
+                        // Re-render heatmap
+                        data_browser = data;
+                        renderBrowser(data);
+                        renderBrowser_2(data);
+                        renderBrowser_3(data);
+                        renderBrowser_4(data);
+                        renderBrowser_5(data);
+                        browser_visible = $(".nav-browsers:visible li.active a").attr('id');
+                        renderDataTablesYadcf(browser_visible);
+                        $(".main_loading_overlay").hide();
+                        redraw_renders();
                     }
                 });
 
@@ -940,64 +983,68 @@
                 // });
 
             }
-          // $(".main_loading_overlay").hide();
+            // $(".main_loading_overlay").hide();
         }
 
 
         function initializeFullscreenButton(selector) {
             // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
             $(selector + ' .btn-fullscreen').click(function() {
-                  // console.log($(this).parent().parent().next().children().first());
-//                console.log($(this).attr('id'));
+                // console.log($(this).parent().parent().next().children().first());
+                //                console.log($(this).attr('id'));
                 fullScreenElement = $(this).parent().parent().next().children().first();
-                fullScreenElement.css('background-color','white');
-                console.log('who to fullscreen?',fullScreenElement.attr('id'));
+                fullScreenElement.css('background-color', 'white');
+                console.log('who to fullscreen?', fullScreenElement.attr('id'));
                 toggleFullScreen(fullScreenElement.get(0));
                 if (fullScreenElement.attr('id')) {
-                  if (fullScreenElement.attr('id').startsWith('DataTable')) {
-                    top_height = $('div.dataTables_scrollHead:visible').outerHeight();
-                    bottom_height =  $('div.dataTables_info:visible').outerHeight();
-                    scrollbody_height = screen.height-top_height-bottom_height;
-                    $('div.dataTables_scrollBody:visible').height( scrollbody_height+'px' );
-                  }
+                    if (fullScreenElement.attr('id').startsWith('DataTable')) {
+                        top_height = $('div.dataTables_scrollHead:visible').outerHeight();
+                        bottom_height = $('div.dataTables_info:visible').outerHeight();
+                        scrollbody_height = screen.height - top_height - bottom_height;
+                        $('div.dataTables_scrollBody:visible').height(scrollbody_height + 'px');
+                    }
                 }
             });
         }
 
 
         function createTwoGroupFlareplotBox(data1, data2, data3, container, toggle = false) {
-          // prepare two group data for visualization
-          var data = data3;
+            // prepare two group data for visualization
+            var data = data3;
 
-          // frequency + count holder
-          data["frequency"] = {};
-          data["count"] = {};
+            // frequency + count holder
+            data["frequency"] = {};
+            data["count"] = {};
 
-          Object.keys(data.interactions).forEach(function(pair) {
-            var f1 = 0, f2 = 0, c1 = 0, c2 = 0;;
-            if (pair in data1.interactions) {
-                c1 = Object.keys(data1.interactions[pair]).length;
-                f1 = c1/data1.pdbs.length;
-            }
-            if (pair in data2.interactions) {
-                c2 = Object.keys(data2.interactions[pair]).length;
-                f2 = c2/data2.pdbs.length;
-            }
-            var f3 = f1 - f2;
-            var c3 = c1 + c2;
-            data["frequency"][pair] = [f1, f2, f3];
-            data["count"][pair] = [c1, c2, c3];
-          });
+            Object.keys(data.interactions).forEach(function(pair) {
+                var f1 = 0,
+                    f2 = 0,
+                    c1 = 0,
+                    c2 = 0;;
+                if (pair in data1.interactions) {
+                    c1 = Object.keys(data1.interactions[pair]).length;
+                    f1 = c1 / data1.pdbs.length;
+                }
+                if (pair in data2.interactions) {
+                    c2 = Object.keys(data2.interactions[pair]).length;
+                    f2 = c2 / data2.pdbs.length;
+                }
+                var f3 = f1 - f2;
+                var c3 = c1 + c2;
+                data["frequency"][pair] = [f1, f2, f3];
+                data["count"][pair] = [c1, c2, c3];
+            });
 
-          createFlareplotBox(data, container, toggle = false);
+            createFlareplotBox(data, container, toggle = false);
         }
 
         var flareplot = {};
         var contiguous = true;
         var interactionsToggleList = [];
+
         function createFlareplotBox(data, container, toggle = false) {
             // clean
-            if (toggle){
+            if (toggle) {
                 $(container).children().last().remove();
             } else {
                 // in case refresh with new parameters => reset
@@ -1006,39 +1053,39 @@
             }
 
             // add menu
-            if (!toggle){
+            if (!toggle) {
                 var newDiv = document.createElement("div");
                 newDiv.setAttribute("class", "flareplot-legend");
 
                 var content = '<div class="controls">'
-//                                  +'<h4>Controls</h4>';
+                //                                  +'<h4>Controls</h4>';
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
                     content += '<p>Consecutive segment contacts<br> on outside: <input type=checkbox id="flareplot_contiguous" checked></p>';
 
-                content += '<p>Line colors: <select id="flareplot_color">'
-                        +'<option value="none">None (gray)</option>'
-                        +'<option value="rainbow">GPCR rainbow</option>'
-                        +'<option value="segment">GPCR segment</option>';
+                content += '<p>Line colors: <select id="flareplot_color">' +
+                    '<option value="none">None (gray)</option>' +
+                    '<option value="rainbow">GPCR rainbow</option>' +
+                    '<option value="segment">GPCR segment</option>';
 
                 // if single structure - use interaction coloring
                 if (container.indexOf("single-crystal-tab") >= 0) {
                     content += '<option value="interactions" selected>Interaction Type</option>';
-                // if single group of structures - use frequency coloring (gradient)
+                    // if single group of structures - use frequency coloring (gradient)
                 } else if (container.indexOf("single-crystal-group-tab") >= 0) {
                     content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
-                // if group(s) of structures - use frequency coloring (gradient)
+                    // if group(s) of structures - use frequency coloring (gradient)
                 } else {
                     content += '<option value="frequency" selected>Frequency difference Gr1 - Gr2</option>';
                     content += '<option value="frequency_1">Frequency group 1</option>';
                     content += '<option value="frequency_2">Frequency group 2</option>';
-                } 
+                }
                 content += '</select></p>';
 
 
                 // Populate heatmap legend
-                if (container.indexOf("single-crystal-tab") >= 0 ) {
+                if (container.indexOf("single-crystal-tab") >= 0) {
                     /*
                     // TODO Optimize/generalize interaction set selection - code duplication
                     var interactionTypes = new Set(["Ionic", "Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"]);
@@ -1139,17 +1186,17 @@
 
                 $(container).append(newDiv);
 
-                $(container+" #flareplot_contiguous").click(function(e){
+                $(container + " #flareplot_contiguous").click(function(e) {
                     $(function() {
-                      contiguous = !contiguous;
-                      createFlareplotBox(data, container, true);
-                      redraw_renders();
+                        contiguous = !contiguous;
+                        createFlareplotBox(data, container, true);
+                        redraw_renders();
                     });
                 });
 
 
-                $(container+" #flareplot_color").data({ "referenceContainer" : container })
-                $(container+" #flareplot_color").change(function(e){
+                $(container + " #flareplot_color").data({ "referenceContainer": container })
+                $(container + " #flareplot_color").change(function(e) {
                     flareplot[$(this).data("referenceContainer")].updateColors($(this).val(), interactionsToggleList);
                 });
 
@@ -1158,15 +1205,15 @@
 
                     // init toggle list
                     interactionsToggleList.push($(this).data('interaction-type'));
-                    $(this).data({ "referenceContainer" : container })
+                    $(this).data({ "referenceContainer": container })
 
                     $(this).change(function() {
                         // toggle interactions in flareplot
                         interactionsToggleList = [];
 
                         $(container + ' .flareplot-legend input[type=checkbox]').each(function() {
-                          if ($(this).prop('checked'))
-                              interactionsToggleList.push($(this).data('interaction-type'));
+                            if ($(this).prop('checked'))
+                                interactionsToggleList.push($(this).data('interaction-type'));
                         });
 
                         // toggle interactions in flareplot
@@ -1183,7 +1230,7 @@
                 // var range = $( container+" .slider-range" ).slider("values");
                 // flareplot[container].updateRange(range[0], range[1]);
 
-                flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
+                flareplot[container].updateColors($(container + " #flareplot_color").val(), interactionsToggleList);
                 //if ($(container + ' .flareplot-legend .color-box input[type=checkbox]').length > 0)
                 //  flareplot[container].showInteractions(interactionsToggleList);
                 // if (container.indexOf("two-crystal-groups-tab") >= 0)
@@ -1191,7 +1238,7 @@
 
                 updateGeneralControls()
             } else {
-              flareplot[container].updateColors($(container+" #flareplot_color").val(), interactionsToggleList);
+                flareplot[container].updateColors($(container + " #flareplot_color").val(), interactionsToggleList);
             }
         }
 
@@ -1217,108 +1264,108 @@
             });
 
             // remove display value on element
-            $("#single-hiveplot-tab").css("display","")
+            $("#single-hiveplot-tab").css("display", "")
         }
 
 
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
-          console.log('updateStructureRepresentations');
-          var structures = 1;
-          if (mode=="two-groups")
-            structures = 2;
+            console.log('updateStructureRepresentations');
+            var structures = 1;
+            if (mode == "two-groups")
+                structures = 2;
 
-          for (var key = 0; key < structures; key++) {
+            for (var key = 0; key < structures; key++) {
 
-            hide_structure = $("#ngl-"+mode+" #hide_pdb"+(key+1)).prop('checked');
-            var o = reps[mode][key].structureComponent;
-            if (hide_structure) {
-              o.setVisibility(false);
-              break;
-            } else {
-              o.setVisibility(true);
+                hide_structure = $("#ngl-" + mode + " #hide_pdb" + (key + 1)).prop('checked');
+                var o = reps[mode][key].structureComponent;
+                if (hide_structure) {
+                    o.setVisibility(false);
+                    break;
+                } else {
+                    o.setVisibility(true);
+                }
+                // toggle edges
+                reps[mode][key].links.setVisibility(!$("#ngl-" + mode + " #toggle_interactions").prop('checked'));
+
+                // toggle CA spheres
+                reps[mode][key].int_res.setVisibility($("#ngl-" + mode + " #highlight_res").prop('checked'));
+
+                // toggle interacting toggle_sidechains
+                reps[mode][key].ball_int.setVisibility($("#ngl-" + mode + " #toggle_sidechains_int").prop('checked'));
+
+                // Update cartoon using selection
+                checked = $("#ngl-" + mode + " #ngl_only_gns").prop('checked');
+                sele = ":" + pdb_data[mode][key]['chain'];
+                int_sele = sele
+                if (checked)
+                    sele = ":" + pdb_data[mode][key]['chain'] + " and (" + pdb_data[mode][key]['only_gn'].join(", ") + ")";
+                int_sele =
+
+                    gpcr_rep[mode][key].setSelection(sele);
             }
-            // toggle edges
-            reps[mode][key].links.setVisibility(!$("#ngl-"+mode+" #toggle_interactions").prop('checked'));
-
-            // toggle CA spheres
-            reps[mode][key].int_res.setVisibility($("#ngl-"+mode+" #highlight_res").prop('checked'));
-
-            // toggle interacting toggle_sidechains
-            reps[mode][key].ball_int.setVisibility($("#ngl-"+mode+" #toggle_sidechains_int").prop('checked'));
-
-            // Update cartoon using selection
-            checked = $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
-            sele = ":"+pdb_data[mode][key]['chain'];
-            int_sele = sele
-            if (checked)
-              sele = ":"+pdb_data[mode][key]['chain']+" and ("+pdb_data[mode][key]['only_gn'].join(", ")+")";
-              int_sele =
-
-            gpcr_rep[mode][key].setSelection(sele);
-          }
         }
 
 
         function redraw_ngl() {
-          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-          var mode = $('.ngl-container:visible').attr('id').replace('ngl-','');
-          if (mode in stage){
-            $(function() {
-              stage[mode].handleResize();
-            });
-          }
+            var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+            var mode = $('.ngl-container:visible').attr('id').replace('ngl-', '');
+            if (mode in stage) {
+                $(function() {
+                    stage[mode].handleResize();
+                });
+            }
         }
 
         function intersect(a, b) {
-          var t;
-          if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
-          return a.filter(function (e) {
-              return b.indexOf(e) > -1;
-          });
+            var t;
+            if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+            return a.filter(function(e) {
+                return b.indexOf(e) > -1;
+            });
         }
 
-        $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#single-crystal-pdb-modal-table');
+        $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function(e) {
+            showPDBtable('#single-crystal-pdb-modal-table');
         })
-        $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#single-crystal-group-pdbs-modal-table');
+        $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function(e) {
+            showPDBtable('#single-crystal-group-pdbs-modal-table');
         })
-        $('#two-crystal-group-pdbs-modal-1-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#two-crystal-group-pdbs-modal-1-table');
+        $('#two-crystal-group-pdbs-modal-1-table').on('shown.bs.modal', function(e) {
+            showPDBtable('#two-crystal-group-pdbs-modal-1-table');
         })
-        $('#two-crystal-group-pdbs-modal-2-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#two-crystal-group-pdbs-modal-2-table');
+        $('#two-crystal-group-pdbs-modal-2-table').on('shown.bs.modal', function(e) {
+            showPDBtable('#two-crystal-group-pdbs-modal-2-table');
         })
 
 
         function initializePdbChooserTables() {
-          $.get('pdbtabledata', function ( data ) {
-            $('#single-crystal-pdb-modal-table .tableview').html(data);
-            $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
-            $('#two-crystal-group-pdbs-modal-1-table .tableview').html(data);
-            $('#two-crystal-group-pdbs-modal-2-table .tableview').html(data);
-            pdbtabledata = data;
-          });
-          $(".main_loading_overlay").hide();
+            $.get('pdbtabledata', function(data) {
+                $('#single-crystal-pdb-modal-table .tableview').html(data);
+                $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
+                $('#two-crystal-group-pdbs-modal-1-table .tableview').html(data);
+                $('#two-crystal-group-pdbs-modal-2-table .tableview').html(data);
+                pdbtabledata = data;
+            });
+            $(".main_loading_overlay").hide();
         }
 
 
         function initalizeSingleCrystalView() {
-//            initializeSegmentButtons('#single-crystal-tab');
+            //            initializeSegmentButtons('#single-crystal-tab');
             initializeGoButton('#single-crystal-tab', renderHeatmap);
             initializeFullscreenButton('#single-crystal-tab');
         }
 
         function initializeSingleGroupCrystalView() {
-//            initializeSegmentButtons('#single-crystal-group-tab');
+            //            initializeSegmentButtons('#single-crystal-group-tab');
             initializeGoButton('#single-crystal-group-tab', renderHeatmap, true);
             initializeFullscreenButton('#single-crystal-group-tab');
             initializeInteractionButtons('#single-crystal-group-tab');
         }
 
         function initializeTwoCrystalGroupsView() {
-//            initializeSegmentButtons('#two-crystal-groups-tab');
+            //            initializeSegmentButtons('#two-crystal-groups-tab');
             initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderHeatmap, true);
             initializeFullscreenButton('#two-crystal-groups-tab');
             initializeInteractionButtons('#two-crystal-groups-tab');
@@ -1343,7 +1390,7 @@
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("res-no-1") + "," + $(this).data("res-no-2");
                         var pair_reverse = $(this).data("res-no-2") + "," + $(this).data("res-no-1");
-                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
+                        if (filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -1353,7 +1400,7 @@
                     break;
                 case "single-crystal-group-tab":
                     // var [tMin,tMax] = $('#' + currentTab + '-crystal-tab #pdbs-range-slider').slider( "option", "values" );
-                    var [tMin,tMax] = $('#pdbs-range-slider').slider( "option", "values" );
+                    var [tMin, tMax] = $('#pdbs-range-slider').slider("option", "values");
 
                     if (!filtered_gn_pairs.length) break;
 
@@ -1361,7 +1408,7 @@
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("gen-no-1") + "," + $(this).data("gen-no-2");
                         var pair_reverse = $(this).data("gen-no-2") + "," + $(this).data("gen-no-1");
-                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
+                        if (filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -1370,12 +1417,12 @@
                     break;
                 case "two-crystal-groups-tab":
 
-                  if (!filtered_gn_pairs.length) break;
+                    if (!filtered_gn_pairs.length) break;
 
                     $('.tab-pane.main_option.active .heatmap .heatmap-interaction').each(function() {
                         var pair = $(this).data("gen-no-1") + "," + $(this).data("gen-no-2");
                         var pair_reverse = $(this).data("gen-no-2") + "," + $(this).data("gen-no-1");
-                        if ( filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
+                        if (filtered_gn_pairs.includes(pair) || filtered_gn_pairs.includes(pair_reverse)) {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -1387,46 +1434,46 @@
 
         // TODO update for other tabs
         function updateFlareplot() {
-            var container = '#' + currentTab+ ' .flareplot-container'
+            var container = '#' + currentTab + ' .flareplot-container'
 
 
             switch (currentTab) {
                 case "single-crystal-tab":
-                // interactionsToggleList = [];
-                // $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
-                //     // init toggle list
-                //     if ($(this).is(':checked'))
-                //         interactionsToggleList.push($(this).data('interaction-type'));
-                // });
+                    // interactionsToggleList = [];
+                    // $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
+                    //     // init toggle list
+                    //     if ($(this).is(':checked'))
+                    //         interactionsToggleList.push($(this).data('interaction-type'));
+                    // });
 
-                // // toggle interactions in flareplot
-                // if (container in flareplot)
-                //     flareplot[container].showInteractions(interactionsToggleList);
-                if (!filtered_gn_pairs.length) break;
+                    // // toggle interactions in flareplot
+                    // if (container in flareplot)
+                    //     flareplot[container].showInteractions(interactionsToggleList);
+                    if (!filtered_gn_pairs.length) break;
 
                     var paths = $(container + ' path').each(function() {
-                      // var f1 = $(this).data("group-1-freq");
-                      // var f2 = $(this).data("group-2-freq");
-                      // var f3 = $(this).data("frequency-diff");
-                      // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
-                      //     $(this).hide();
-                      // } else {
-                      //     $(this).show();
-                      // }
-                      if ($(this).attr("class")) {
-                        var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
-                        var gn1 = path_class[1].replace("source-","");
-                        var gn2 = path_class[2].replace("target-","");
-                        var pair = gn1 +","+gn2;
-                        // console.log(pair);
-                        if ( filtered_gn_pairs.includes(pair) ) {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
+                        // var f1 = $(this).data("group-1-freq");
+                        // var f2 = $(this).data("group-2-freq");
+                        // var f3 = $(this).data("frequency-diff");
+                        // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+                        //     $(this).hide();
+                        // } else {
+                        //     $(this).show();
+                        // }
+                        if ($(this).attr("class")) {
+                            var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
+                            var gn1 = path_class[1].replace("source-", "");
+                            var gn2 = path_class[2].replace("target-", "");
+                            var pair = gn1 + "," + gn2;
+                            // console.log(pair);
+                            if (filtered_gn_pairs.includes(pair)) {
+                                $(this).show();
+                            } else {
+                                $(this).hide();
+                            }
                         }
-                      }
-                  });
-                break;
+                    });
+                    break;
                 case "single-crystal-group-tab":
                     // var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
                     // if (container in flareplot)
@@ -1434,147 +1481,148 @@
                     break;
                 case "two-crystal-groups-tab":
 
-                  if (!filtered_gn_pairs.length) break;
+                    if (!filtered_gn_pairs.length) break;
 
                     var paths = $(container + ' path').each(function() {
-                      // var f1 = $(this).data("group-1-freq");
-                      // var f2 = $(this).data("group-2-freq");
-                      // var f3 = $(this).data("frequency-diff");
-                      // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
-                      //     $(this).hide();
-                      // } else {
-                      //     $(this).show();
-                      // }
-                      if ($(this).attr("class")) {
-                        var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
-                        var gn1 = path_class[1].replace("source-","");
-                        var gn2 = path_class[2].replace("target-","");
-                        var pair = gn1 +","+gn2;
-                        // console.log(pair);
-                        if ( filtered_gn_pairs.includes(pair) ) {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
+                        // var f1 = $(this).data("group-1-freq");
+                        // var f2 = $(this).data("group-2-freq");
+                        // var f3 = $(this).data("frequency-diff");
+                        // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+                        //     $(this).hide();
+                        // } else {
+                        //     $(this).show();
+                        // }
+                        if ($(this).attr("class")) {
+                            var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
+                            var gn1 = path_class[1].replace("source-", "");
+                            var gn2 = path_class[2].replace("target-", "");
+                            var pair = gn1 + "," + gn2;
+                            // console.log(pair);
+                            if (filtered_gn_pairs.includes(pair)) {
+                                $(this).show();
+                            } else {
+                                $(this).hide();
+                            }
                         }
-                      }
-                  });
+                    });
                     break;
             }
         }
 
         // TODO create interaction toggle for Hiveplot
         function updateHiveplot() {
-          // PLACEHOLDER
+            // PLACEHOLDER
         }
 
         // TODO update for other tabs
         function updateSchematic() {
-          switch (currentTab) {
-              case "single-crystal-tab":
-                  $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
-                      var interactionType = $(this).data('interaction-type');
-                      var paths = $('#' + currentTab+ '-crystal-tab  .' + currentViz + '-container path.' + interactionType);
-                      if ($(this).is(':checked')) {
-                          paths.show();
-                      } else {
-                          paths.hide();
-                      }
-                  });
-                  break;
-              case "single-crystal-group-tab":
-                  var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
-
-                  // Hide all below min treshold
-                  var paths = $('#' + currentTab+ ' .' + currentViz + '-container path').each(function() {
-                      var n = $(this).data("num-interactions");
-                      if (n < tMin || tMax < n) {
-                          $(this).hide();
-                      } else {
-                          $(this).show();
-                      }
-                  });
-                  break;
-              case "two-crystal-groups-tab":
-                  // var r1 = $('#' + currentTab + '#freq-slider-range-1').slider( "option", "values" );
-                  // var r2 = $('#' + currentTab + '#freq-slider-range-2').slider( "option", "values" );
-                  // var r3 = $('#' + currentTab + '#freq-slider-range-3').slider( "option", "values" );
-
-                  if (!filtered_gn_pairs.length) break;
-
-                  // // Hide all below min or above treshold
-                  var paths = $('#' + currentTab+ ' .' + currentViz + '-container path').each(function() {
-                      // var f1 = $(this).data("group-1-freq");
-                      // var f2 = $(this).data("group-2-freq");
-                      // var f3 = $(this).data("frequency-diff");
-                      // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
-                      //     $(this).hide();
-                      // } else {
-                      //     $(this).show();
-                      // }
-                      if ($(this).attr("class")) {
-                        path_class = $(this).attr("class").split(' ')[1].replace("edge-","");
-                        // console.log(path_class);
-                        if ( filtered_gn_pairs.includes(path_class) ) {
-                            $(this).show();
+            switch (currentTab) {
+                case "single-crystal-tab":
+                    $('#' + currentTab + ' .controls-panel input[type=checkbox]').each(function() {
+                        var interactionType = $(this).data('interaction-type');
+                        var paths = $('#' + currentTab + '-crystal-tab  .' + currentViz + '-container path.' + interactionType);
+                        if ($(this).is(':checked')) {
+                            paths.show();
                         } else {
-                            $(this).hide();
+                            paths.hide();
                         }
+                    });
+                    break;
+                case "single-crystal-group-tab":
+                    var [tMin, tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider("option", "values");
 
-                      }
-                  });
-                  // $('#' + currentTab+ ' .' + currentViz + '-container path').hide();
-                  // $.each(filtered_gn_pairs,function(i,v) {
-                  //   console.log(v,'#' + currentTab+ ' .' + currentViz + '-container .edge-'+v,$('#' + currentTab+ ' .' + currentViz + '-container .edge-'+v));
-                  //   $('#' + currentTab+ ' .' + currentViz + '-container .edge-'+v).show();
-                  // });
-                  break;
-              }
+                    // Hide all below min treshold
+                    var paths = $('#' + currentTab + ' .' + currentViz + '-container path').each(function() {
+                        var n = $(this).data("num-interactions");
+                        if (n < tMin || tMax < n) {
+                            $(this).hide();
+                        } else {
+                            $(this).show();
+                        }
+                    });
+                    break;
+                case "two-crystal-groups-tab":
+                    // var r1 = $('#' + currentTab + '#freq-slider-range-1').slider( "option", "values" );
+                    // var r2 = $('#' + currentTab + '#freq-slider-range-2').slider( "option", "values" );
+                    // var r3 = $('#' + currentTab + '#freq-slider-range-3').slider( "option", "values" );
+
+                    if (!filtered_gn_pairs.length) break;
+
+                    // // Hide all below min or above treshold
+                    var paths = $('#' + currentTab + ' .' + currentViz + '-container path').each(function() {
+                        // var f1 = $(this).data("group-1-freq");
+                        // var f2 = $(this).data("group-2-freq");
+                        // var f3 = $(this).data("frequency-diff");
+                        // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+                        //     $(this).hide();
+                        // } else {
+                        //     $(this).show();
+                        // }
+                        if ($(this).attr("class")) {
+                            path_class = $(this).attr("class").split(' ')[1].replace("edge-", "");
+                            // console.log(path_class);
+                            if (filtered_gn_pairs.includes(path_class)) {
+                                $(this).show();
+                            } else {
+                                $(this).hide();
+                            }
+
+                        }
+                    });
+                    // $('#' + currentTab+ ' .' + currentViz + '-container path').hide();
+                    // $.each(filtered_gn_pairs,function(i,v) {
+                    //   console.log(v,'#' + currentTab+ ' .' + currentViz + '-container .edge-'+v,$('#' + currentTab+ ' .' + currentViz + '-container .edge-'+v));
+                    //   $('#' + currentTab+ ' .' + currentViz + '-container .edge-'+v).show();
+                    // });
+                    break;
+            }
         }
 
-        function updateGeneralControls(ignore_ngl = false){
+        function updateGeneralControls(ignore_ngl = false) {
             // update current vizualization
-            console.log('ignore_ngl',ignore_ngl);
-            switch(currentViz.toLowerCase()) {
-              case "matrix":
-                updateMatrix()
-                break;
-              case "flareplot":
-                updateFlareplot()
-                break;
-              case "hiveplot":
-                updateHiveplot()
-                break;
-              case "schematic_con":
-              case "schematic_non":
-                updateSchematic()
-                break;
-              case "table":
-                // do nothing
-                break;
-              case "ngl":
-                // DEPRECATED: do nothing
-                break;
-              default:
-                console.log("Error: missing representation update for " + currentViz)
+            console.log('ignore_ngl', ignore_ngl);
+            switch (currentViz.toLowerCase()) {
+                case "matrix":
+                    updateMatrix()
+                    break;
+                case "flareplot":
+                    updateFlareplot()
+                    break;
+                case "hiveplot":
+                    updateHiveplot()
+                    break;
+                case "schematic_con":
+                case "schematic_non":
+                    updateSchematic()
+                    break;
+                case "table":
+                    // do nothing
+                    break;
+                case "ngl":
+                    // DEPRECATED: do nothing
+                    break;
+                default:
+                    console.log("Error: missing representation update for " + currentViz)
             }
 
             // Always invoke NGL update
             if (!ignore_ngl) {
-              // Do not update when simply changing viz tabs.
-              createNGLRepresentations(currentTab , 0, currentTab)
-              if (currentTab=="two-crystal-groups-tab") createNGLRepresentations(currentTab , 1, currentTab)
+                // Do not update when simply changing viz tabs.
+                createNGLRepresentations(currentTab, 0, currentTab)
+                if (currentTab == "two-crystal-groups-tab") createNGLRepresentations(currentTab, 1, currentTab)
             }
         }
 
         var currentViz = "matrix";
-        function updateCurrentTab(id){
+
+        function updateCurrentTab(id) {
             alt = $('.main_option:visible').attr('id');
             var now = id.replace("-link", "")
             now = now.replace("-tab", "")
 
             // update settings
-            currentTab = now.substr(0,now.lastIndexOf('-'))
-            currentViz = now.replace(currentTab+"-", "")
+            currentTab = now.substr(0, now.lastIndexOf('-'))
+            currentViz = now.replace(currentTab + "-", "")
             currentTab = alt;
             redraw_renders();
         }
