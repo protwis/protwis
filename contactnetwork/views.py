@@ -650,8 +650,8 @@ def InteractionBrowserData(request):
                     data['tab3'][res2] = {'unique':set(),'count':set(),'set_aa':set()}
                 data['tab3'][res1]['unique'].add(res2)
                 data['tab3'][res2]['unique'].add(res1)
-                data['tab3'][res1]['set2_aa'].add(res1_aa)
-                data['tab3'][res2]['set2_aa'].add(res2_aa)
+                data['tab3'][res1]['set_aa'].add(res1_aa)
+                data['tab3'][res2]['set_aa'].add(res2_aa)
                 data['tab3'][res1]['count'].add('{},{}'.format(pdb_name,res2))
                 data['tab3'][res2]['count'].add('{},{}'.format(pdb_name,res1))
                 if coord not in data['interactions']:
@@ -941,7 +941,7 @@ def InteractionBrowserData(request):
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
 
-                gn1_values = [''] * 9
+                gn1_values = [''] * 10
                 if gn1 in group_1_angles and gn1 in group_2_angles:
                     gn1_values = []
                     for i,v in enumerate(group_1_angles[gn1]):
@@ -951,7 +951,7 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn1_values.append("")
 
-                gn2_values = [''] * 9
+                gn2_values = [''] * 10
                 if gn2 in group_1_angles and gn2 in group_2_angles:
                     gn2_values = []
                     for i,v in enumerate(group_1_angles[gn2]):
@@ -988,7 +988,7 @@ def InteractionBrowserData(request):
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
 
-                gn1_values = [''] * 9
+                gn1_values = [''] * 10
                 if gn1 in group_angles:
                     gn1_values = []
                     for i,v in enumerate(group_angles[gn1]):
@@ -998,7 +998,7 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn1_values.append("")
 
-                gn2_values = [''] * 9
+                gn2_values = [''] * 10
                 if gn2 in group_angles:
                     gn2_values = []
                     for i,v in enumerate(group_angles[gn2]):
@@ -1008,6 +1008,10 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn2_values.append("")
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
+                data['tab3'][gn1]['angles_set'] = gn1_values
+                data['tab3'][gn2]['angles_set'] = gn2_values
+                data['tab3'][gn1]['angles'] = gn1_values
+                data['tab3'][gn2]['angles'] = gn2_values
 
         # Tab 2 data generation
         # Get the relevant interactions
@@ -1089,7 +1093,6 @@ def InteractionBrowserData(request):
             ## Fill in remaining data
             pdbs1 = data['pdbs1']
             pdbs2 = data['pdbs2']
-
             for key,d in aa_pair_data.items():
 
                 gen1 = key.split(',')[0]
@@ -1144,6 +1147,85 @@ def InteractionBrowserData(request):
         else:
             # Single set! TODO
             aa_pair_data = data['tab2']
+            interactions = list(Interaction.objects.filter(
+                    interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]
+                ).filter(
+                    interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
+                ).filter(
+                    segment_filter_res1 & segment_filter_res2 & i_types_filter
+                ).exclude(
+                    interacting_pair__res1__generic_number=None,
+                    interacting_pair__res2__generic_number=None
+                ).annotate(
+                    gn1=F('interacting_pair__res1__generic_number__label'),
+                    gn2=F('interacting_pair__res2__generic_number__label'),
+                    aa1=F('interacting_pair__res1__amino_acid'),
+                    aa2=F('interacting_pair__res2__amino_acid'),
+                ).values(
+                    'gn1',
+                    'gn2',
+                    'aa1',
+                    'aa2',
+                ).distinct().annotate(
+                    i_types=ArrayAgg('interaction_type'),
+                    structures=ArrayAgg('interacting_pair__referenced_structure__pdb_code__index'),
+                    structuresC=Count('interacting_pair__referenced_structure',distinct=True)
+                ))
+            for i in interactions:
+                key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
+                if key not in aa_pair_data:
+                    aa_pair_data[key] = {'set':{'interaction_freq':0}, 'types':[]}
+                aa_pair_data[key]['types'] += i['i_types']
+                d = aa_pair_data[key]['set']
+                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs']),1)
+                d['structures'] = i['structures']
+
+            ## Fill in remaining data
+            pdbs1 = data['pdbs']
+
+            for key,d in aa_pair_data.items():
+                gen1 = key.split(',')[0]
+                gen2 = key.split(',')[1][:-2]
+                d['pos_key'] = '{},{}'.format(gen1,gen2)
+                aa1 = key[-2]
+                aa2 = key[-1]
+                d['aa1'] = aa1
+                d['aa2'] = aa2
+
+                d['types'] = list(set(d['types']))
+
+                order = ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals','None']
+                d['types'] = sorted(d['types'], key=lambda x: order.index(x))
+
+                if key in class_pair_lookup:
+                    d['class'] = class_pair_lookup[key]
+                else:
+                    d['class'] = ""
+
+                #Find the individual keys for AA format 1x50,2x50A
+                key_aa1 = gen1+aa1
+                if key_aa1 in class_pair_lookup:
+                    d['class_aa1'] = class_pair_lookup[key_aa1]
+                else:
+                    d['class_aa1'] = ""
+
+                key_aa2 = gen2+aa2
+                if key_aa2 in class_pair_lookup:
+                    d['class_aa2'] = class_pair_lookup[key_aa2]
+                else:
+                    d['class_aa2'] = ""
+
+
+                pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
+                pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
+
+                # SET 1
+                pdbs1_with_aa1 = list(set(pdbs_with_aa1).intersection(pdbs1))
+                pdbs1_with_aa2 = list(set(pdbs_with_aa2).intersection(pdbs1))
+                pdbs_intersection = list(set(pdbs_with_aa1).intersection(pdbs_with_aa2))
+                pdbs1_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
+
+                d['set']['occurance'] = {'aa1':pdbs1_with_aa1,'aa2':pdbs1_with_aa2,'pair':pdbs1_with_pair}
 
         print('Prepare distance values for aa/gen for',mode,'mode',time.time()-start_time)
         interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
@@ -1175,23 +1257,22 @@ def InteractionBrowserData(request):
             group_distances = {}
             if (len(data['pdbs'])==1):
                 ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
-                                    .values('gns_pair') \
-                                    .annotate(mean = Avg('distance')).values_list('gns_pair','mean'))
+                                    .values('gns_pair','res1__amino_acid','res2__amino_acid') \
+                                    .annotate(mean = Avg('distance')).values_list('gns_pair','res1__amino_acid','res2__amino_acid','mean'))
             else:
                 ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']], gns_pair__in=interaction_keys) \
-                                    .values('gns_pair') \
-                                    .annotate(mean = StdDev('distance')).values_list('gns_pair','mean'))
+                                    .values('gns_pair','res1__amino_acid','res2__amino_acid') \
+                                    .annotate(mean = StdDev('distance')).values_list('gns_pair','res1__amino_acid','res2__amino_acid','mean'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
-                group_distances[d[0]] = d[1]/100
+                group_distances['{}{}{}'.format(d[0],d[1],d[2]).replace("_",",")] = d[3]/100
 
-            for coord in data['interactions']:
-                distance_coord = coord.replace(",","_")
-                if distance_coord in group_distances:
-                    distance = round(group_distances[distance_coord],2)
+            for key, d in data['tab2'].items():
+                if key in group_distances:
+                    distance_diff = round(group_distances[key],2)
                 else:
-                    distance = ""
-                data['interactions'][coord]['distance'] = distance
+                    distance_diff = ""  
+                d['distance'] = distance_diff
         # del class_pair_lookup 
         # del r_pair_lookup
         print('calculate angles per gen/aa',time.time()-start_time)
@@ -1227,7 +1308,7 @@ def InteractionBrowserData(request):
                 gn1 = '{},{}'.format(gen1,aa1)
                 gn2 = '{},{}'.format(gen2,aa2)
 
-                gn1_values = [''] * 9
+                gn1_values = [''] * 10
                 if gn1 in group_1_angles_aa and gn1 in group_2_angles_aa:
                     gn1_values = []
                     for i,v in enumerate(group_1_angles_aa[gn1]):
@@ -1237,7 +1318,7 @@ def InteractionBrowserData(request):
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn1_values.append("")
 
-                gn2_values = [''] * 9
+                gn2_values = [''] * 10
                 if gn2 in group_1_angles_aa and gn2 in group_2_angles_aa:
                     gn2_values = []
                     for i,v in enumerate(group_1_angles_aa[gn2]):
@@ -1251,7 +1332,7 @@ def InteractionBrowserData(request):
             del group_1_angles_aa
             del group_2_angles_aa
         else:
-            group_angles = {}
+            group_angles_aa = {}
             if (len(data['pdbs'])==1):
                 # Get absolute numbers for a single structure
                 ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
@@ -1270,33 +1351,39 @@ def InteractionBrowserData(request):
                                 .values_list('residue__generic_number__label','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
-                group_angles[",".join(list(d[0:2]))] = d[2:]
+                group_angles_aa[",".join(list(d[0:2]))] = d[2:]
 
-            # for coord in data['interactions']:
-            #     gn1 = coord.split(",")[0]
-            #     gn2 = coord.split(",")[1]
+            for key, d in data['tab2'].items():
+                gen1 = key.split(',')[0]
+                gen2 = key.split(',')[1][:-2]
+                aa1 = key[-2]
+                aa2 = key[-1]
 
-            #     gn1_values = [''] * 9
-            #     if gn1 in group_angles:
-            #         gn1_values = []
-            #         for i,v in enumerate(group_angles[gn1]):
-            #             try:
-            #                 gn1_values.append("{:.1f}".format(v))
-            #             except:
-            #                 # Fails if there is a None (like gly doesnt have outer angle?)
-            #                 gn1_values.append("")
+                gn1 = '{},{}'.format(gen1,aa1)
+                gn2 = '{},{}'.format(gen2,aa2)
 
-            #     gn2_values = [''] * 9
-            #     if gn2 in group_angles:
-            #         gn2_values = []
-            #         for i,v in enumerate(group_angles[gn2]):
-            #             try:
-            #                 gn2_values.append("{:.1f}".format(v))
-            #             except:
-            #                 # Fails if there is a None (like gly doesnt have outer angle?)
-            #                 gn2_values.append("")
-            #     data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
-            # print(aa_pair_data)
+                gn1_values = [''] * 10
+                if gn1 in group_angles_aa:
+                    gn1_values = []
+                    for i,v in enumerate(group_angles_aa[gn1]):
+                        try:
+                            gn1_values.append(round(v,1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            gn1_values.append("")
+
+                gn2_values = [''] * 10
+                if gn2 in group_angles_aa:
+                    gn2_values = []
+                    for i,v in enumerate(group_angles_aa[gn2]):
+                        try:
+                            gn2_values.append(round(v,1))
+                        except:
+                            # Fails if there is a None (like gly doesnt have outer angle?)
+                            gn2_values.append("")
+                d['angles'] = [gn1_values,gn2_values]
+
+
 
         #print(data['tab3'])
         print('calculate tab3',time.time()-start_time)
@@ -1352,21 +1439,14 @@ def InteractionBrowserData(request):
                 data['tab3'][res1]['set1_seq_cons'] = most_freq_set1[0]
                 data['tab3'][res1]['set2_seq_cons'] = most_freq_set2[0]
 
-                if res1 in class_pair_lookup:
-                    # print(res1,class_pair_lookup[res1])
-                    data['tab3'][res1]['class_cons'] = class_pair_lookup[res1]
-                else:
-                    data['tab3'][res1]['class_cons'] = ['','']
-                    print('no res1',res1,'in class lookup')
-
                 if res1 in group_1_angles:
                     data['tab3'][res1]['angles_set1'] = [ '%.2f' % elem if isinstance(elem, float) else '' for elem in group_1_angles[res1] ]
                 else:
-                    data['tab3'][res1]['angles_set1'] = [''] * 9
+                    data['tab3'][res1]['angles_set1'] = [''] * 10
                 if res1 in group_2_angles:
                     data['tab3'][res1]['angles_set2'] = [ '%.2f' % elem if isinstance(elem, float) else '' for elem in group_2_angles[res1] ]
                 else:
-                    data['tab3'][res1]['angles_set2'] = [''] * 9
+                    data['tab3'][res1]['angles_set2'] = [''] * 10
 
                 # Get angle data for res1
                 if res1 in group_1_angles and res1 in group_2_angles:
@@ -1377,14 +1457,30 @@ def InteractionBrowserData(request):
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             res1_values.append("")
-                    # print(res1,res1_values)
                 else:
                     print(res1,'not in both group angles')
-                    res1_values = [''] * 9
+                    res1_values = [''] * 10
                 data['tab3'][res1]['angles'] = res1_values
             else:
                 #TODO SINGLE SET
-                print('todo single set tab3')
+                aa_at_pos = r_pair_lookup[res1]
+                temp_score_dict = []
+                for aa, pdbs in aa_at_pos.items():
+
+                    pdbs1_with_aa = list(set(pdbs).intersection(pdbs1))
+                    temp_score_dict.append([aa,len(pdbs1_with_aa)])
+
+                most_freq_set = sorted(temp_score_dict.copy(), key = lambda x: -x[1])
+                data['tab3'][res1]['set_seq_cons'] = most_freq_set[0]
+
+            # Common for all modes
+            if res1 in class_pair_lookup:
+                # print(res1,class_pair_lookup[res1])
+                data['tab3'][res1]['class_cons'] = class_pair_lookup[res1]
+            else:
+                data['tab3'][res1]['class_cons'] = ['','']
+                print('no res1',res1,'in class lookup')
+
 
 
         data['pdbs'] = list(data['pdbs'])

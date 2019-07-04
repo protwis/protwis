@@ -763,6 +763,7 @@
         }
         var raw_data = ''
         function loadPDBsView(pdb, selector, heatmapFunction, generic) {
+          console.time('Get loadPDBsView Data');
           // $(".main_loading_overlay").show();
           //var segments = JSON.parse($(selector + ' .segments-input').val());
           var segments = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8','ICL1','ECL1','ICL2','ECL2','ICL3','ECL3','N-term','C-term'];
@@ -814,7 +815,6 @@
               //       redraw_renders();
               //     }
               // });
-              console.log('get browser info');
               $.ajax({ 
                   url: '/contactnetwork/browserdata', 
                   dataType: 'json', 
@@ -826,13 +826,16 @@
                   }, 
                   async: true, 
                   success:  function(data){
+                    console.timeEnd('Get loadPDBsView Data');
                     // Re-render heatmap
                     data_browser = data;
                     renderBrowser(data);
+                    renderBrowser_2(data);
+                    renderBrowser_4(data);
+                    renderBrowser_5(data);
                     generate_display_options();
-                    browser_visible = $(".nav-browsers li.active a").attr('id');
+                    browser_visible = $(".nav-browsers:visible li.active a").attr('id');
                     renderDataTablesYadcf(browser_visible);
-                    console.log('gotten browser info')
                     $(".main_loading_overlay").hide();
                   }
               });
@@ -883,7 +886,7 @@
                       renderBrowser_3(data);
                       renderBrowser_4(data);
                       renderBrowser_5(data);
-                      browser_visible = $(".nav-browsers li.active a").attr('id');
+                      browser_visible = $(".nav-browsers:visible li.active a").attr('id');
                       renderDataTablesYadcf(browser_visible);
                       $(".main_loading_overlay").hide();
                       redraw_renders();

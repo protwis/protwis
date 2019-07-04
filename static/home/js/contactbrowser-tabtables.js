@@ -12,7 +12,7 @@ function filter_browser() {
             filtered_gn_pairs.push(i['DT_RowId'])
         })
     }
-    console.log('filtered positions!', filtered_gn_pairs);
+    console.log('filtered positions! ', filtered_gn_pairs.length);
 
     if (old_filtered_gn_pairs.sort().join(',') === filtered_gn_pairs.sort().join(',')) {
         console.log('no change in filtering');
@@ -73,7 +73,6 @@ function renderDataTablesYadcf(element) {
                 list_narrow_cols = make_list_narrow_cols([2, 3, 4], 6, 6 + 19);
             }
 
-            console.log("do tab", tab_number)
             console.time("Render DataTable " + tab_number)
             btable = table.DataTable({
                 'scrollX': true,
@@ -365,9 +364,120 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
+                
+                repeated_from_to_1 = make_range_number_cols(2, 2);
+                repeated_from_to_2 = make_range_number_cols(6, 6);
+                repeated_from_to_3 = make_range_number_cols(13, 17);
 
+                yadcf.init(btable,
+                    [{
+                            column_number: 0,
+                            filter_type: "text",
+                            // exclude: true,
+                            filter_delay: 500,
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Pos",
+                            text_data_delimiter: "-",
+                            filter_reset_button_text: false,
+                        }
+                    ].concat(repeated_from_to_1).concat([{
+                        column_number: 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }, {
+                        column_number: 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_2).concat([{
+                        column_number: 12,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "Type",
+                        text_data_delimiter: "|",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_3), {
+                        cumulative_filtering: false
+                    }
+
+                );
             } else if (analys_mode == "#single-crystal") {
 
+                repeated_from_to_1 = make_range_number_cols(4, 3);
+                repeated_from_to_2 = make_range_number_cols(8, 15);
+
+                yadcf.init(btable,
+                    [{
+                            column_number: 0,
+                            filter_type: "text",
+                            // exclude: true,
+                            filter_delay: 500,
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Pos",
+                            text_data_delimiter: "-",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '60px'
+                            },
+                            filter_default_label: "AA",
+                            filter_reset_button_text: false,
+                        }, {
+                            column_number: 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '60px'
+                            },
+                            filter_default_label: "AA",
+                            filter_reset_button_text: false,
+                    }].concat(repeated_from_to_1).concat([{
+                        column_number: 7,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "Type",
+                        text_data_delimiter: "|",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_2), {
+                        cumulative_filtering: false
+                    }
+
+                );
             }
             // btable.on('draw.dt', function(e, oSettings) {
             //     filter_browser();
@@ -570,9 +680,102 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
+                repeated_from_to_1 = make_range_number_cols(3, 6);
+                repeated_from_to_2 = make_range_number_cols(10, 1);
+                repeated_from_to_3 = make_range_number_cols(12, 1);
 
+                yadcf.init(btable,
+                    [{
+                            column_number: 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Seg",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Pos",
+                            filter_reset_button_text: false,
+                        }
+                    ].concat(repeated_from_to_1).concat([{
+                        column_number: 9,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_2).concat([{
+                        column_number: 11,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_3), {
+                        cumulative_filtering: false
+                    }
+
+                );
             } else if (analys_mode == "#single-crystal") {
+                repeated_from_to_1 = make_range_number_cols(3, 5);
+                repeated_from_to_2 = make_range_number_cols(10, 1);
 
+                yadcf.init(btable,
+                    [{
+                            column_number: 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Seg",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '80px'
+                            },
+                            filter_default_label: "Pos",
+                            filter_reset_button_text: false,
+                        }
+                    ].concat(repeated_from_to_1).concat([{
+                        column_number: 8,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }, {
+                        column_number: 9,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '60px'
+                        },
+                        filter_default_label: "AA",
+                        filter_reset_button_text: false,
+                    }]).concat(repeated_from_to_2), {
+                        cumulative_filtering: false
+                    }
+
+                );
             }
             // btable.on('draw.dt', function(e, oSettings) {
             //     filter_browser();
@@ -610,36 +813,36 @@ function renderDataTablesYadcf(element) {
                     }
                 ]
             });
+            repeated_from_to = make_range_number_cols(2, 3);
 
-            if (analys_mode == "#two-crystal-groups") {
-                repeated_from_to = make_range_number_cols(2, 3);
-
-                yadcf.init(btable,
-                    [{
-                            column_number: 0,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            select_type_options: {
-                                width: '80px'
-                            },
-                            filter_default_label: "Seg",
-                            filter_reset_button_text: false,
+            yadcf.init(btable,
+                [{
+                        column_number: 0,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '80px'
                         },
-                        {
-                            column_number: 1,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            select_type_options: {
-                                width: '80px'
-                            },
-                            filter_default_label: "Pos",
-                            filter_reset_button_text: false,
-                        }
-                    ].concat(repeated_from_to), {
-                        cumulative_filtering: false
+                        filter_default_label: "Seg",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 1,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '80px'
+                        },
+                        filter_default_label: "Pos",
+                        filter_reset_button_text: false,
                     }
+                ].concat(repeated_from_to), {
+                    cumulative_filtering: false
+                }
 
-                );
+            );
+            if (analys_mode == "#two-crystal-groups") {
+                
             } else if (analys_mode == "#single-crystal-group") {
 
             } else if (analys_mode == "#single-crystal") {
@@ -1044,11 +1247,11 @@ function renderBrowser_2(data) {
     var table = $(selector + " .browser-table-2");
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
-    var proteins_1 = data['proteins1'].length
-    var proteins_2 = data['proteins2'].length
-    var pdbs_1 = data['pdbs1'].length
-    var pdbs_2 = data['pdbs2'].length
     if (data['proteins2']) {
+        var proteins_1 = data['proteins1'].length
+        var proteins_2 = data['proteins2'].length
+        var pdbs_1 = data['pdbs1'].length
+        var pdbs_2 = data['pdbs2'].length
         thead = '<tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
@@ -1228,9 +1431,252 @@ function renderBrowser_2(data) {
         // insert natively for speed increase on Chrome
         tbody[0].innerHTML = tr_list;
     } else if (data['proteins'].length > 1) {
+        thead = '<tr> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Pos pair contact frequency (%)</th> \
+                          <th colspan="1" rowspan="2">AA pair contact frequency (%)</th> \
+                          <th colspan="2" rowspan="2">Amino acids</th> \
+                          <th colspan="3" rowspan="1">AA occurrence in set (%)</th> \
+                          <th colspan="3" rowspan="2">Conservation in class (%)</th> \
+                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
+                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="2" rowspan="2">Position presence %</th> \
+                          <th colspan="4">Secondary structure</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="1">AA1</th> \
+                          <th colspan="1">AA2</th> \
+                          <th colspan="1">AA Pair</th> \
+                          <th colspan="2">Distance</th> \
+                          <th colspan="2">Rotation (Ca angle)</th> \
+                          <th colspan="2">Rotamer</th> \
+                          <th colspan="2">SASA</th> \
+                          <th colspan="2">RSA</th> \
+                          <th colspan="2">Consensus SS</th> \
+                          <th colspan="2">Frequency %</th> \
+                        </tr> \
+                        <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center">Pos1-Pos2</th> \
+                          <th class="narrow_col"><br></th> \
+                          <th class="narrow_col"><br></th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col"><br></th> \
+                          <th class="narrow_col"><br></th> \
+                          <th class="narrow_col"><br></th> \
+                          <th class="narrow_col">AA1<br></th> \
+                          <th class="narrow_col">AA2<br></th> \
+                          <th class="narrow_col">Pair<br></th> \
+                          <th></th> \
+                          <th class="narrow_col">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                        </tr>';
+        table.find('thead').html(thead);
+        // two groups
+        var proteins = data['proteins'].length
+        var pdbs = data['pdbs'].length
+        tr_list = ''
+        $.each(data['tab2'], function(i, v2) {
 
+
+            // GENERAL THINGS
+            var v = data['interactions'][v2['pos_key']]
+            var gn1 = v2['pos_key'].split(",")[0]
+            var gn2 = v2['pos_key'].split(",")[1]
+            var seg1 = data['segm_lookup'][gn1];
+            var seg2 = data['segm_lookup'][gn2];
+            // var pfreq1 = Math.round(100 * v['proteins1'].length / proteins_1);
+            // var pfreq2 = Math.round(100 * v['proteins2'].length / proteins_2);
+            // var diff_pfreq = pfreq1 - pfreq2;
+            var sfreq = Math.round(100 * v['pdbs'].length / pdbs);
+            var class_seq_cons = v['class_seq_cons'];
+            const types = v2['types'].map((t) => types_to_short[t]).join('|');
+            var distance = v['distance'];
+            var distance_2 = v2['distance'];
+            var angles_1 = v2['angles'][0];
+            var angles_2 = v2['angles'][1];
+
+            // TAB-2 THINGS
+            var aafreq = v2['set']['interaction_freq'];
+            var aa1 = v2['aa1'];
+            var aa2 = v2['aa2'];
+
+            var set1_occurance_aa1 = Math.round(100 * v2['set']['occurance']['aa1'].length / pdbs);
+            var set1_occurance_aa2 = Math.round(100 * v2['set']['occurance']['aa2'].length / pdbs);
+            var set1_occurance_pair = Math.round(100 * v2['set']['occurance']['pair'].length / pdbs);
+
+            var pos1_presence = v['pos1_presence'];
+            var pos2_presence = v['pos2_presence'];
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                      <td class="dt-center">${seg1}-${seg2}</td>
+                      <td class="dt-center">${gn1}-${gn2}</td>
+                      <td class="narrow_col">${sfreq}</td>
+                      <td class="narrow_col">${aafreq}</td>
+
+                      <td class="narrow_col">${aa1}</td>
+                      <td class="narrow_col">${aa2}</td>
+
+                      <td class="narrow_col">${set1_occurance_aa1}</td>
+                      <td class="narrow_col">${set1_occurance_aa2}</td>
+                      <td class="narrow_col">${set1_occurance_pair}</td>
+
+                      <td class="narrow_col">${v2['class_aa1']}</td>
+                      <td class="narrow_col">${v2['class_aa2']}</td>
+                      <td class="narrow_col">${v2['class']}</td>
+
+                      <td>${types}</td>
+                      <td class="narrow_col">${distance_2}</td>
+                      <td class="narrow_col core_distance">${angles_1[0]}</td>
+                      <td class="narrow_col core_distance">${angles_2[0]}</td>
+                      <td class="narrow_col a_angle">${angles_1[1]}</td>
+                      <td class="narrow_col a_angle">${angles_2[1]}</td>
+                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
+                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
+                      <td class="narrow_col sasa">${angles_1[6]}</td>
+                      <td class="narrow_col sasa">${angles_2[6]}</td>
+                      <td class="narrow_col rsa">${angles_1[7]}</td>
+                      <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col">${pos1_presence}</td>
+                      <td class="narrow_col">${pos2_presence}</td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                    </tr>`;
+            tbody.append(tr);
+        });
+        // insert natively for speed increase
+        tbody[0].innerHTML = tr_list;
     } else {
+        thead = '<tr> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="2" rowspan="2">Amino acids</th> \
+                          <th colspan="3" rowspan="2">Conservation in class (%)</th> \
+                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
+                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="4">Secondary structure</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="2">Distance</th> \
+                          <th colspan="2">Rotation (Ca angle)</th> \
+                          <th colspan="2">Rotamer</th> \
+                          <th colspan="2">SASA</th> \
+                          <th colspan="2">RSA</th> \
+                          <th colspan="2">Consensus SS</th> \
+                          <th colspan="2">Frequency %</th> \
+                        </tr> \
+                        <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">AA1<br></th> \
+                          <th class="narrow_col">AA2<br></th> \
+                          <th class="narrow_col">Pair<br></th> \
+                          <th></th> \
+                          <th class="narrow_col">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                        </tr>';
+        table.find('thead').html(thead);
+        // two groups
+        var proteins = data['proteins'].length
+        var pdbs = data['pdbs'].length
+        tr_list = ''
+        $.each(data['tab2'], function(i, v2) {
 
+
+            // GENERAL THINGS
+            var v = data['interactions'][v2['pos_key']]
+            var gn1 = v2['pos_key'].split(",")[0]
+            var gn2 = v2['pos_key'].split(",")[1]
+            var seg1 = data['segm_lookup'][gn1];
+            var seg2 = data['segm_lookup'][gn2];
+            // var pfreq1 = Math.round(100 * v['proteins1'].length / proteins_1);
+            // var pfreq2 = Math.round(100 * v['proteins2'].length / proteins_2);
+            // var diff_pfreq = pfreq1 - pfreq2;
+            var class_seq_cons = v['class_seq_cons'];
+            const types = v2['types'].map((t) => types_to_short[t]).join('|');
+            var distance = v['distance'];
+            var distance_2 = v2['distance'];
+            var angles_1 = v2['angles'][0];
+            var angles_2 = v2['angles'][1];
+
+            // TAB-2 THINGS
+            var aa1 = v2['aa1'];
+            var aa2 = v2['aa2'];
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                      <td class="dt-center">${seg1}-${seg2}</td>
+                      <td class="dt-center">${gn1}-${gn2}</td>
+
+                      <td class="narrow_col">${aa1}</td>
+                      <td class="narrow_col">${aa2}</td>
+
+                      <td class="narrow_col">${v2['class_aa1']}</td>
+                      <td class="narrow_col">${v2['class_aa2']}</td>
+                      <td class="narrow_col">${v2['class']}</td>
+
+                      <td>${types}</td>
+                      <td class="narrow_col">${distance_2}</td>
+                      <td class="narrow_col core_distance">${angles_1[0]}</td>
+                      <td class="narrow_col core_distance">${angles_2[0]}</td>
+                      <td class="narrow_col a_angle">${angles_1[1]}</td>
+                      <td class="narrow_col a_angle">${angles_2[1]}</td>
+                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
+                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
+                      <td class="narrow_col sasa">${angles_1[6]}</td>
+                      <td class="narrow_col sasa">${angles_2[6]}</td>
+                      <td class="narrow_col rsa">${angles_1[7]}</td>
+                      <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                      <td class="narrow_col"> </td>
+                    </tr>`;
+            tbody.append(tr);
+        });
+        // insert natively for speed increase
+        tbody[0].innerHTML = tr_list;
     }
 
     console.timeEnd("RenderBrowser2");
@@ -1427,7 +1873,6 @@ function renderBrowser_4(data) {
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
     if (data['proteins2']) {
-        console.log('render 4');
         var proteins_1 = data['proteins1'].length
         var proteins_2 = data['proteins2'].length
         var pdbs_1 = data['pdbs1'].length
@@ -1563,8 +2008,184 @@ function renderBrowser_4(data) {
 
        
     } else if (data['proteins'].length > 1) {
+        var proteins = data['proteins'].length
+        var pdbs = data['pdbs'].length
+        thead = '<tr> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="2" rowspan="1">Secondary structure</th> \
+                          <th colspan="3" rowspan="1">Residue angles</th> \
+                          <th colspan="2" rowspan="1">Helix turn angle</th> \
+                          <th colspan="2" rowspan="1">Seq consensus</th> \
+                          <th colspan="2" rowspan="1">Class seq consensus</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="1">Consensus SS</th> \
+                          <th colspan="1">Frequency (%)</th> \
+                          <th colspan="1">Tau (N-Ca-C)</th> \
+                          <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
+                          <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
+                          <th colspan="1">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="1">AA</th> \
+                          <th colspan="1">Conservation (%)</th> \
+                          <th colspan="1">AA</th> \
+                          <th colspan="1">Cons (%)</th> \
+                        </tr> \
+                        <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                        </tr>';
+        table.find('thead').html(thead);
+        tr_list = ''
+        $.each(data['tab3'], function(i, v) {
+
+            var seg = data['segm_lookup'][i];
+            if (seg=='ECL1' || seg=='ECL2') return true;
+
+            var angles = v['angles_set'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi', 
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
+            var set_seq_cons_aa = v['set_seq_cons'][0];
+            var set_seq_cons_freq = Math.round(100 * v['set_seq_cons'][1] / pdbs);
+
+            var class_cons_aa = v['class_cons'][0];
+            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                      <td class="dt-center">${seg}</td>
+                      <td class="dt-center">${i}</td>
+
+                      <td class="narrow_col"></td>
+                      <td class="narrow_col"></td>
+
+                      <td class="narrow_col">${angles[3]}</td>
+
+                      <td class="narrow_col">${angles[4]}</td>
+
+                      <td class="narrow_col">${angles[5]}</td>
+
+                      <td class="narrow_col">${angles[8]}</td>
+                      
+                      <td class="narrow_col"></td>
+
+                      <td class="narrow_col">${set_seq_cons_aa}</td>
+                      <td class="narrow_col">${set_seq_cons_freq}</td>
+
+                      <td class="narrow_col">${class_cons_aa}</td>
+                      <td class="narrow_col">${class_cons_freq}</td>
+
+                    </tr>`;
+        });
+        // insert natively for speed increase on Chrome
+        tbody[0].innerHTML = tr_list;
 
     } else {
+        var proteins = data['proteins'].length
+        var pdbs = data['pdbs'].length
+        thead = '<tr> \
+                          <th colspan="1" rowspan="2">Segment</th> \
+                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="1">Secondary structure</th> \
+                          <th colspan="3" rowspan="1">Residue angles</th> \
+                          <th colspan="2" rowspan="1">Helix turn angle</th> \
+                          <th colspan="1" rowspan="1">Seq</th> \
+                          <th colspan="2" rowspan="1">Class seq consensus</th> \
+                        </tr> \
+                        <tr> \
+                          <th colspan="1">Consensus SS</th> \
+                          <th colspan="1">Tau (N-Ca-C)</th> \
+                          <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
+                          <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
+                          <th colspan="1">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="1">AA</th> \
+                          <th colspan="1">AA</th> \
+                          <th colspan="1">Cons (%)</th> \
+                        </tr> \
+                        <tr> \
+                          <th class="dt-center"></th> \
+                          <th class="dt-center"></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                        </tr>';
+        table.find('thead').html(thead);
+        tr_list = ''
+        $.each(data['tab3'], function(i, v) {
+
+            var seg = data['segm_lookup'][i];
+            if (seg=='ECL1' || seg=='ECL2') return true;
+
+            var angles = v['angles_set'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi', 
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
+            var set_seq_cons_aa = v['set_seq_cons'][0];
+            var class_cons_aa = v['class_cons'][0];
+            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                      <td class="dt-center">${seg}</td>
+                      <td class="dt-center">${i}</td>
+
+                      <td class="narrow_col"></td>
+
+                      <td class="narrow_col">${angles[3]}</td>
+
+                      <td class="narrow_col">${angles[4]}</td>
+
+                      <td class="narrow_col">${angles[5]}</td>
+
+                      <td class="narrow_col">${angles[8]}</td>
+                      
+                      <td class="narrow_col"></td>
+
+                      <td class="narrow_col">${set_seq_cons_aa}</td>
+
+                      <td class="narrow_col">${class_cons_aa}</td>
+                      <td class="narrow_col">${class_cons_freq}</td>
+
+                    </tr>`;
+        });
+        // insert natively for speed increase on Chrome
+        tbody[0].innerHTML = tr_list;
 
     }
 
@@ -1582,64 +2203,56 @@ function renderBrowser_5(data) {
     var table = $(selector + " .browser-table-5");
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
-    var proteins_1 = data['proteins1'].length
-    var proteins_2 = data['proteins2'].length
-    var pdbs_1 = data['pdbs1'].length
-    var pdbs_2 = data['pdbs2'].length
-    if (data['proteins2']) {
-       thead = '<tr> \
-                          <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
-                          <th colspan="2">Backbone movement (Ca-7TM axis)</th> \
-                          <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
-                        </tr> \
-                        <tr> \
-                          <th colspan="1">Distance*</th> \
-                          <th colspan="1">Rotation</th> \
-                        </tr> \
-                        <tr> \
-                          <th class="dt-center"></th> \
-                          <th class="dt-center"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                        </tr>';
-        table.find('thead').html(thead);
-        tr_list = ''
-        $.each(data['tab3'], function(i, v) {
 
-            // console.log(i,v);
-            var seg = data['segm_lookup'][i];
-            var angles = v['angles'];
-            // 0 'core_distance',
-            // 1 'a_angle',
-            // 2 'outer_angle',
-            // 3 'tau',
-            // 4 'phi',
-            // 5 'psi', 
-            // 6 'sasa',
-            // 7 'rsa',
-            // 8 'theta',
-            // 9 'hse'
+   thead = '<tr> \
+                      <th colspan="1" rowspan="2">Segment</th> \
+                      <th colspan="1" rowspan="2">Positions</th> \
+                      <th colspan="2">Backbone movement (Ca-7TM axis)</th> \
+                      <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                    </tr> \
+                    <tr> \
+                      <th colspan="1">Distance*</th> \
+                      <th colspan="1">Rotation</th> \
+                    </tr> \
+                    <tr> \
+                      <th class="dt-center"></th> \
+                      <th class="dt-center"></th> \
+                      <th class="narrow_col"></th> \
+                      <th class="narrow_col"></th> \
+                      <th class="narrow_col"></th> \
+                    </tr>';
+    table.find('thead').html(thead);
+    tr_list = ''
+    $.each(data['tab3'], function(i, v) {
 
-            tr = ''
-            tr_list += `
-                    <tr class="clickable-row filter_rows" id="${i}">
-                      <td class="dt-center">${seg}</td>
-                      <td class="dt-center">${i}</td>
-                      <td class="narrow_col">${angles[0]}</td>
-                      <td class="narrow_col">${angles[1]}</td>
-                      <td class="narrow_col">${angles[9]}</td>
-                    </tr>`;
-            // tbody.append(tr);
-        });
-        // insert natively for speed increase on Chrome
-        tbody[0].innerHTML = tr_list;
-    } else if (data['proteins'].length > 1) {
+        // console.log(i,v);
+        var seg = data['segm_lookup'][i];
+        var angles = v['angles'];
+        // 0 'core_distance',
+        // 1 'a_angle',
+        // 2 'outer_angle',
+        // 3 'tau',
+        // 4 'phi',
+        // 5 'psi', 
+        // 6 'sasa',
+        // 7 'rsa',
+        // 8 'theta',
+        // 9 'hse'
 
-    } else {
+        tr = ''
+        tr_list += `
+                <tr class="clickable-row filter_rows" id="${i}">
+                  <td class="dt-center">${seg}</td>
+                  <td class="dt-center">${i}</td>
+                  <td class="narrow_col">${angles[0]}</td>
+                  <td class="narrow_col">${angles[1]}</td>
+                  <td class="narrow_col">${angles[9]}</td>
+                </tr>`;
+        // tbody.append(tr);
+    });
+    // insert natively for speed increase on Chrome
+    tbody[0].innerHTML = tr_list;
 
-    }
 
     console.timeEnd("RenderBrowser5");
 }
@@ -1660,7 +2273,7 @@ function gray_scale_table(table) {
         var min = Math.min.apply(null, col);
         maxmin.push([max, min]);
     });
-    console.time('Greyscale cells');
+    // console.time('Greyscale cells');
     var cell_count = 0;
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
@@ -1682,7 +2295,7 @@ function gray_scale_table(table) {
             }
         }
     }
-    console.timeEnd('Greyscale cells');
+    // console.timeEnd('Greyscale cells');
     console.log(cell_count, 'cells greyscaled');
-    console.timeEnd('Greyscale', table.attr('id'));
+    console.timeEnd('Greyscale');
 }

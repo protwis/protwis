@@ -283,6 +283,34 @@
                         </div>
                     </div>
                 </div>
+                <div class="contact-browser tab-pane" id="single-crystal-browser-4-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Helix types, bulges and constrictions</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-4 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-browser tab-pane" id="single-crystal-browser-5-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Backbone movement (Ca-7TM axis)</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-5 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -549,6 +577,34 @@
                         </div>
                         <div class="panel-body">
                             <table class="table browser-table-2 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-browser tab-pane" id="single-group-browser-4-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Helix types, bulges and constrictions</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-4 display" width="100%"></table>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-browser tab-pane" id="single-group-browser-5-tab">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">Backbone movement (Ca-7TM axis)</h3>
+                            <span class="pull-right">
+                                <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table browser-table-5 display" width="100%"></table>
                         </div>
                     </div>
                 </div>
@@ -1055,17 +1111,16 @@
               updateCurrentTab(e.currentTarget.id)
               // update filtered
               // invoke representation update based on general controls
-              console.log('switch 2')
+              // console.log('switch 2')
               updateGeneralControls(true)
             });
 
 
             // Create tab/figure switch catcher
             $('.nav-browsers a').on('shown.bs.tab', function (e) {
-              console.log('show');
               // Check if datatables is rendered, otherwise do so.
               $(".main_loading_overlay").show(0);
-              console.log('switch browser',e.currentTarget.id);
+              // console.log('switch browser',e.currentTarget.id);
 
               setTimeout("renderDataTablesYadcf('"+e.currentTarget.id+"');", 100);
               // $(".main_loading_overlay").hide();
@@ -1073,7 +1128,7 @@
 
 
             $('#mode_nav a').on('shown.bs.tab', function (e) {
-              console.log('switch 1');
+              // console.log('switch 1');
               updateCurrentTab($(e.currentTarget.hash + " .row .tab-content div.tab-pane.active").get()[0].id)
               filter_browser();
             });
