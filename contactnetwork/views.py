@@ -1537,7 +1537,7 @@ def ClusteringData(request):
     data['Gprot_coupling'] = selectivitydata
 
     # hierarchical clustering
-    hclust = sch.linkage(ssd.squareform(distance_matrix), method='ward')
+    hclust = sch.linkage(ssd.squareform(distance_matrix), method='average')
     tree = sch.to_tree(hclust, False)
 
     #inconsistency = sch.inconsistent(hclust)
