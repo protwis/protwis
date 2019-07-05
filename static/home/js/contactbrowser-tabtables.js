@@ -1196,8 +1196,9 @@ function renderBrowser(data) {
             var distance = v['distance'];
             var angles_1 = v['angles'][0];
             var angles_2 = v['angles'][1];
+            //id="${pos1},${pos2}"
             tr = `
-                    <tr class="clickable-row filter_rows" id="${pos1},${pos2}">
+                    <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center"><span>${pos1}</span>-<span>${pos2}</span></td>
                       <td class="dt-center">${gn1}-${gn2}</td>

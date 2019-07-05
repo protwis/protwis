@@ -498,6 +498,9 @@
         //     delete link;
         // }
 
+        function get_current_mode() {
+            return $(".main_option:visible").attr("id").replace("-tab","");
+        }
 
 
         function redraw_renders() {
@@ -770,21 +773,42 @@
                 $(this).html(dropdown_html);
             });
             $('.plot_selection').click(function() {
-                var mode = $('.contact-browser:visible').attr('id').replace("-primary-browser", "");
                 plot_type = $(this).attr('plot_type');
                 plot_div = $(this).closest('.panel');
                 plot_id = plot_div.attr('id');
                 // Delete whatever is already there
                 plot_div.find('.plot-container').html('');
+                var mode = get_current_mode();
                 console.log("SET UP PLOT", plot_type, plot_div, plot_id, mode);
+                switch (mode) {
+                    case "two-crystal-groups":
+                        raw_data = two_sets_data;
+                        break;
+                    case "single-crystal":
+                        raw_data = single_crystal_data;
+                        break;
+                    case "single-crystal-group":
+                        raw_data = single_set_data;
+                        break;
+                }
                 switch (plot_type) {
                     case "ngl":
-                        var pdb = JSON.parse($('.main_option:visible .crystal-pdb').val());
                         plot_div.find('.plot-container').removeClass('none');
                         plot_div.find('.plot-container').addClass('ngl-container');
                         plot_div.find('.plot-container').attr('id', 'ngl-' + plot_id);
                         plot_div.find('.plot-container').attr('style', 'margin: auto; width: 100%; height: 500px; overflow: hidden;');
-                        createNGLview(plot_id, pdb[0]);
+
+                        switch (mode) {
+                            case "two-crystal-groups":
+                                createNGLview(plot_id, two_sets_pdbs1[0], two_sets_pdbs1, two_sets_pdbs2,two_sets_pdbs2[0]);
+                                break;
+                            case "single-crystal":
+                                createNGLview(plot_id, single_crystal_pdb);
+                                break;
+                            case "single-crystal-group":
+                                createNGLview(plot_id, single_set_pdbs[0], single_set_pdbs);
+                                break;
+                        }
                         break;
                     case "heatmap":
                         plot_div.find('.plot-container').removeClass('none');
@@ -798,12 +822,16 @@
                         plot_div.find('.plot-container').removeClass('none');
                         plot_div.find('.plot-container').addClass('flareplot-container');
                         plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
+
                         createFlareplotBox(raw_data, '#flareplot-' + plot_id);
                 }
             });
         }
-        var raw_data = ''
 
+        var single_set_pdbs = '';
+        var single_crystal_pdb = '';
+        var single_set_data = '';
+        var single_crystal_data = '';
         function loadPDBsView(pdb, selector, heatmapFunction, generic) {
             console.time('Get loadPDBsView Data');
             $(".main_loading_overlay").show();
@@ -872,6 +900,18 @@
                         console.timeEnd('Get loadPDBsView Data');
                         // Re-render heatmap
                         data_browser = data;
+
+                        var mode = get_current_mode();
+                        switch (mode) {
+                            case "single-crystal-group":
+                                single_set_data = data;
+                                single_set_pdbs = pdb;
+                                break;
+                            case "single-crystal":
+                                single_crystal_data = data;
+                                single_crystal_pdb = pdb;
+                                break;
+                        }
                         renderBrowser(data);
                         renderBrowser_2(data);
                         renderBrowser_4(data);
@@ -897,6 +937,9 @@
             });
         }
 
+        var two_sets_pdbs1 = '';
+        var two_sets_pdbs2 = '';
+        var two_sets_data = '';
         function loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic) {
             console.time('Get loadTwoPDBsView Data');
             $(".main_loading_overlay").show();
@@ -908,6 +951,10 @@
                 // $(".heatmap-legend").hide();
                 $(".matrix-tab:visible").click();
                 $(selector + ' .heatmap-container').append('<span id=svgloading>Loading... (0%)</span>');
+
+                two_sets_pdbs1 = pdbs1;
+                two_sets_pdbs2 = pdbs2;
+
 
                 $.ajax({
                     url: '/contactnetwork/browserdata',
@@ -923,7 +970,7 @@
                     success: function(data) {
                         console.timeEnd('Get loadTwoPDBsView Data');
                         // Re-render heatmap
-                        data_browser = data;
+                        two_sets_data = data;
                         renderBrowser(data);
                         renderBrowser_2(data);
                         renderBrowser_3(data);
@@ -931,6 +978,7 @@
                         renderBrowser_5(data);
                         browser_visible = $(".nav-browsers:visible li.active a").attr('id');
                         renderDataTablesYadcf(browser_visible);
+                        generate_display_options();
                         $(".main_loading_overlay").hide();
                         redraw_renders();
                     }
@@ -1043,6 +1091,7 @@
         var interactionsToggleList = [];
 
         function createFlareplotBox(data, container, toggle = false) {
+            console.log(data);
             // clean
             if (toggle) {
                 $(container).children().last().remove();
@@ -1069,11 +1118,12 @@
                     '<option value="rainbow">GPCR rainbow</option>' +
                     '<option value="segment">GPCR segment</option>';
 
+                var mode = get_current_mode();
                 // if single structure - use interaction coloring
-                if (container.indexOf("single-crystal-tab") >= 0) {
+                if (mode == "single-crystal") {
                     content += '<option value="interactions" selected>Interaction Type</option>';
                     // if single group of structures - use frequency coloring (gradient)
-                } else if (container.indexOf("single-crystal-group-tab") >= 0) {
+                } else if (mode == "single-crystal-group") {
                     content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
                     // if group(s) of structures - use frequency coloring (gradient)
                 } else {
@@ -1434,24 +1484,8 @@
 
         // TODO update for other tabs
         function updateFlareplot() {
-            var container = '#' + currentTab + ' .flareplot-container'
 
-
-            switch (currentTab) {
-                case "single-crystal-tab":
-                    // interactionsToggleList = [];
-                    // $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
-                    //     // init toggle list
-                    //     if ($(this).is(':checked'))
-                    //         interactionsToggleList.push($(this).data('interaction-type'));
-                    // });
-
-                    // // toggle interactions in flareplot
-                    // if (container in flareplot)
-                    //     flareplot[container].showInteractions(interactionsToggleList);
-                    if (!filtered_gn_pairs.length) break;
-
-                    var paths = $(container + ' path').each(function() {
+            var paths = $('.main_option:visible .flareplot-container path').each(function() {
                         // var f1 = $(this).data("group-1-freq");
                         // var f2 = $(this).data("group-2-freq");
                         // var f3 = $(this).data("frequency-diff");
@@ -1473,40 +1507,80 @@
                             }
                         }
                     });
-                    break;
-                case "single-crystal-group-tab":
-                    // var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
-                    // if (container in flareplot)
-                    //     flareplot[container].updateRange(tMin, tMax);
-                    break;
-                case "two-crystal-groups-tab":
 
-                    if (!filtered_gn_pairs.length) break;
+            // var container = '#' + currentTab + ' .flareplot-container'
 
-                    var paths = $(container + ' path').each(function() {
-                        // var f1 = $(this).data("group-1-freq");
-                        // var f2 = $(this).data("group-2-freq");
-                        // var f3 = $(this).data("frequency-diff");
-                        // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
-                        //     $(this).hide();
-                        // } else {
-                        //     $(this).show();
-                        // }
-                        if ($(this).attr("class")) {
-                            var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
-                            var gn1 = path_class[1].replace("source-", "");
-                            var gn2 = path_class[2].replace("target-", "");
-                            var pair = gn1 + "," + gn2;
-                            // console.log(pair);
-                            if (filtered_gn_pairs.includes(pair)) {
-                                $(this).show();
-                            } else {
-                                $(this).hide();
-                            }
-                        }
-                    });
-                    break;
-            }
+
+            // switch (currentTab) {
+            //     case "single-crystal-tab":
+            //         // interactionsToggleList = [];
+            //         // $('#' + currentTab+ ' .controls-panel input[type=checkbox]').each(function() {
+            //         //     // init toggle list
+            //         //     if ($(this).is(':checked'))
+            //         //         interactionsToggleList.push($(this).data('interaction-type'));
+            //         // });
+
+            //         // // toggle interactions in flareplot
+            //         // if (container in flareplot)
+            //         //     flareplot[container].showInteractions(interactionsToggleList);
+            //         if (!filtered_gn_pairs.length) break;
+
+            //         var paths = $(container + ' path').each(function() {
+            //             // var f1 = $(this).data("group-1-freq");
+            //             // var f2 = $(this).data("group-2-freq");
+            //             // var f3 = $(this).data("frequency-diff");
+            //             // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+            //             //     $(this).hide();
+            //             // } else {
+            //             //     $(this).show();
+            //             // }
+            //             if ($(this).attr("class")) {
+            //                 var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
+            //                 var gn1 = path_class[1].replace("source-", "");
+            //                 var gn2 = path_class[2].replace("target-", "");
+            //                 var pair = gn1 + "," + gn2;
+            //                 // console.log(pair);
+            //                 if (filtered_gn_pairs.includes(pair)) {
+            //                     $(this).show();
+            //                 } else {
+            //                     $(this).hide();
+            //                 }
+            //             }
+            //         });
+            //         break;
+            //     case "single-crystal-group-tab":
+            //         // var [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
+            //         // if (container in flareplot)
+            //         //     flareplot[container].updateRange(tMin, tMax);
+            //         break;
+            //     case "two-crystal-groups-tab":
+
+            //         if (!filtered_gn_pairs.length) break;
+
+            //         var paths = $(container + ' path').each(function() {
+            //             // var f1 = $(this).data("group-1-freq");
+            //             // var f2 = $(this).data("group-2-freq");
+            //             // var f3 = $(this).data("frequency-diff");
+            //             // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (f3 < r3[0] || r3[1] < f3) ) {
+            //             //     $(this).hide();
+            //             // } else {
+            //             //     $(this).show();
+            //             // }
+            //             if ($(this).attr("class")) {
+            //                 var path_class = $(this).attr("class").split(' '); //[1].replace("edge-","")
+            //                 var gn1 = path_class[1].replace("source-", "");
+            //                 var gn2 = path_class[2].replace("target-", "");
+            //                 var pair = gn1 + "," + gn2;
+            //                 // console.log(pair);
+            //                 if (filtered_gn_pairs.includes(pair)) {
+            //                     $(this).show();
+            //                 } else {
+            //                     $(this).hide();
+            //                 }
+            //             }
+            //         });
+            //         break;
+            // }
         }
 
         // TODO create interaction toggle for Hiveplot
@@ -1581,6 +1655,8 @@
         function updateGeneralControls(ignore_ngl = false) {
             // update current vizualization
             console.log('ignore_ngl', ignore_ngl);
+
+            updateFlareplot();
             switch (currentViz.toLowerCase()) {
                 case "matrix":
                     updateMatrix()

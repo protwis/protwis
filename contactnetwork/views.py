@@ -461,6 +461,8 @@ def InteractionBrowserData(request):
         interactions = sorted(interactions, key=lambda x: order.index(x['interaction_type']))
 
         data = {}
+        data['segments'] = set()
+        data['segment_map'] = {}
         data['interactions'] = {}
         data['pdbs'] = set()
         data['proteins'] = set()
@@ -553,19 +555,22 @@ def InteractionBrowserData(request):
                                     all_pdbs_pairs[coord] = {}
                                 all_pdbs_pairs[coord][pair] = p
             cache.set("all_pdbs_aa_pairs",all_pdbs_pairs,60*60*24*7) #Cache results
-        else:
-            residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs
-                    ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__slug').all()
-            r_lookup = {}
-            r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
-            segm_lookup = {}
-            r_presence_lookup = defaultdict(lambda: [])
+        residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs
+                ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__slug').all()
+        r_lookup = {}
+        r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
+        segm_lookup = {}
+        r_presence_lookup = defaultdict(lambda: [])
 
-            for r in residues:
-                r_lookup[r['pk']] = r
-                r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
-                segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
-                r_presence_lookup[r['generic_number__label']].append(r['protein_conformation__protein__entry_name'])
+        for r in residues:
+            r_lookup[r['pk']] = r
+            r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
+            segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
+            r_presence_lookup[r['generic_number__label']].append(r['protein_conformation__protein__entry_name'])
+            data['segments'].add(r['protein_segment__slug'])
+        
+        data['segment_map'] = segm_lookup
+
 
 
         print('Start going through interactions',time.time()-start_time)
@@ -1486,6 +1491,7 @@ def InteractionBrowserData(request):
         data['pdbs'] = list(data['pdbs'])
         data['proteins'] = list(data['proteins'])
         data['segm_lookup'] = segm_lookup
+        data['segments'] = list(data['segments'])
         if mode == 'double':
             data['pdbs1'] = list(data['pdbs1'])
             data['pdbs2'] = list(data['pdbs2'])

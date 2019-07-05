@@ -7,6 +7,7 @@
         var gpcr_rep = {}
         var int_labels = []
         function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false) {
+            console.log(mode, pdb, pdbs, pdbs_set2, pdb2);
             $("#ngl-"+mode).html("");
             stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
             color_schemes[mode] = [[],[]];

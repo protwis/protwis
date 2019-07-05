@@ -672,11 +672,12 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     }
                 })
                 .attr("class", function(d) {
+                    console.log(d);
                     var ret = "link source-" + d.source.key + " target-" + d.target.key;
                     if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
                         ret += " toggled";
                     }
-                    ret += " " + Object.keys(d.interactions).join(" ");
+                    ret += " " + d.interactions.join(" ");
                     return ret;
                 })
                 //.attr("class", function(d) { return "link source-" + d.source.key + " target-" + d.target.key; })
@@ -1155,7 +1156,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
               case "interactions":
                 svg.selectAll("path.link")
                     // .style("stroke", function(d){ console.log('get color!',d.interactions,Object.keys(d.interactions),interactions); return getColorStrongestInteraction(Object.keys(d.interactions).filter(value => -1 !== interactions.indexOf(value)), false); });
-                    .style("stroke", function(d){ return getColorStrongestInteraction(Object.keys(d.interactions), false); });
+                    .style("stroke", function(d){ return getColorStrongestInteraction(d.interactions, false); });
                 break;
               case "rainbow":
                 svg.selectAll("path.link")
