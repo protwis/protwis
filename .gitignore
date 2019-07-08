@@ -6,6 +6,7 @@ env
 /Archive
 empty_db.txt
 
+*.sh
 .DS_Store
 .idea/
 static/home/js/node_modules
