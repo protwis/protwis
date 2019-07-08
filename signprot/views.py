@@ -17,7 +17,7 @@ from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_
 
 from seqsign.sequence_signature import SignatureMatch
 from seqsign.sequence_signature import SequenceSignature
-from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions
+from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions, SignprotComplex
 from signprot.interactions import (
     get_entry_names,
     get_ignore_info,
@@ -554,6 +554,7 @@ def signprotdetail(request, slug):
 
     # get structures of this signal protein
     structures = SignprotStructure.objects.filter(origin=p)
+    structures = list(structures) + list(SignprotComplex.objects.filter(protein=p))
 
     # mutations
     mutations = MutationExperiment.objects.filter(protein=p)

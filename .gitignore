@@ -3,6 +3,8 @@
 protwis/settings_local.py
 env
 /data
+/Archive
+empty_db.txt
 
 .DS_Store
 .idea/

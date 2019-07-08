@@ -1394,12 +1394,12 @@ class AlignedReferenceTemplate(Alignment):
 
     def get_template_from_gprotein(self, signprot):
         gprotein = Protein.objects.get(entry_name=signprot)
-        templates = SignprotComplex.objects.filter(protein=gprotein).values_list('structure__pdb_code__index', flat=True)
+        templates = SignprotComplex.objects.filter(protein=gprotein).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
             subfamily = Protein.objects.filter(family=gprotein.family).exclude(entry_name=gprotein.entry_name)
-            templates = SignprotComplex.objects.filter(protein__in=subfamily).values_list('structure__pdb_code__index', flat=True)
+            templates = SignprotComplex.objects.filter(protein__in=subfamily).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
-            templates = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
+            templates = SignprotComplex.objects.all().exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         return templates
 
     def overwrite_db_seq_nums(self, structure, cutoff):

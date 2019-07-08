@@ -135,7 +135,11 @@
     </div>
     <div class="col-md-10">
         {% for structure in structures %}
-        <p><a href="../../signprot/structure/{{ structure }}">{{ structure }}</a></p>
+        {% if structure.protein %}
+          <a href="../../structure/{{ structure.structure.pdb_code.index }}">{{ structure.structure.pdb_code.index }}</a>,
+        {% else %}
+          <a href="../../signprot/structure/{{ structure }}">{{ structure }}</a>,
+        {% endif %}
         {% empty %}
         No structures available
         {% endfor %}
