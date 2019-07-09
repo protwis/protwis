@@ -232,16 +232,12 @@ class Alignment:
                 selected_residue_positions.append(segment_residue)
                 continue
 
-            # fetch split segments (e.g. ECL2_before and ECL2_after)
-            # AJK: point for optimization
-            # Remove this part as there are no _before or _after segments anymore
-
             unsorted_segments[selected_segment.pk] = []
             segment_lookup[selected_segment.pk] = selected_segment.slug
             segment_lookup_positions[selected_segment.pk] = segment_positions_lookup[selected_segment.slug]
             for segment_residue in segment_positions_lookup[selected_segment.slug]:
                 unsorted_segments[selected_segment.pk].append(segment_residue.label)
-            
+
         # Use PK values of segments to sort them before making alignment to ensure logical order
         sorted_segments = sorted(unsorted_segments)
         for s in sorted_segments:

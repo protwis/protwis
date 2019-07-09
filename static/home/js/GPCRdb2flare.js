@@ -165,45 +165,56 @@ function parseGPCRdb2flare(data) {
   Object.keys(data.interactions).forEach(function(pair) {
     pairResidues = separatePair(pair);
 
+    var values = data.interactions[pair];
     // merge all interactions in data
-    var allInteractions = [];
-    Object.keys(data.interactions[pair]).forEach( key => {
-      var tmp = [];
-      for (var i = 0; i < data.interactions[pair][key].length; i++) {
-        tmp.push(getFriendlyInteractionName(data.interactions[pair][key][i]).replace(' ', '-'));
-      }
-      allInteractions.push(Array.from(new Set(tmp)));
-    });
-    allInteractions = [].concat.apply([],allInteractions); // flatten
+    // var allInteractions = [];
+    // Object.keys(data.interactions[pair]).forEach( key => {
+    //   var tmp = [];
+    //   for (var i = 0; i < data.interactions[pair][key].length; i++) {
+    //     tmp.push(getFriendlyInteractionName(data.interactions[pair][key][i]).replace(' ', '-'));
+    //   }
+    //   allInteractions.push(Array.from(new Set(tmp)));
+    // });
+    // allInteractions = [].concat.apply([],allInteractions); // flatten
 
-    // Essential for multiple x-rays in group - count num X-rays with interaction
-    var interactions = { any : Object.keys(data.interactions[pair]).length };
-    new Set(allInteractions).forEach( i => { interactions[i] = 0; });
-    allInteractions.forEach( i => { interactions[i] = interactions[i] + 1; });
+    // // Essential for multiple x-rays in group - count num X-rays with interaction
+    // var interactions = { any : Object.keys(data.interactions[pair]).length };
+    // new Set(allInteractions).forEach( i => { interactions[i] = 0; });
+    // allInteractions.forEach( i => { interactions[i] = interactions[i] + 1; });
 
-    if ("frequency" in data){
+    if ("pdbs2" in data){
+        c1 = values['pdbs1'].length;
+        c2 = values['pdbs2'].length;
+        c3 = c1+c2;
+        f1 = c1/data['pdbs1'].length;
+        f2 = c2/data['pdbs2'].length;
+        f3 = f1 - f2;
+
+        var frequency = [f1, f2, f3];
+        var count = [c1, c2, c3];
         dataFlare.edges.push({
           name1: pairResidues[0],
           name2: pairResidues[1],
           frames: [0],
           color: "#A0A0A0", // Default gray coloring of edges
-          interactions: interactions, // For frequency and type coloring
+          interactions: values['types'], // For frequency and type coloring
           // split between 1 and 2 groups
-          frequency: data.frequency[pair],
-          count: data.count[pair],
+          frequency: frequency,
+          count: count,
           segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
           rainbow: assignRainbowColor(data.segment_map[pairResidues[0]]), // Rainbow coloring
         });
     } else {
+        c1 = values['pdbs'].length;
+        f1 = c1/data['pdbs'].length;
         dataFlare.edges.push({
           name1: pairResidues[0],
           name2: pairResidues[1],
           frames: [0],
           color: "#A0A0A0", // Default gray coloring of edges
-          interactions: interactions, // For frequency and type coloring
-          // split between 1 and 2 groups
-          frequency: interactions["any"]/data.pdbs.length,
-          count: interactions["any"],
+          interactions: values['types'], // For frequency and type coloring
+          frequency: f1,
+          count: c1,
           segment: assignColor(data.segment_map[pairResidues[0]]), // Segment coloring
           rainbow: assignRainbowColor(data.segment_map[pairResidues[0]]), // Rainbow coloring
         });

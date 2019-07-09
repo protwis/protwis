@@ -100,7 +100,7 @@ function check_all(elem, button) {
     if (mode == 'Single group of structures' || $("#single-group-tree-tab").length) {
         var pdbs = [];
 
-        // REMOVE EXISITING? Probably not, more logically that filtering adds more
+        // REMOVE EXISITING? Probably not, more logical that filtering adds more
         // $('input', oTable.cells().nodes()).prop('checked',false);
 
         if (show_all) {
@@ -241,9 +241,13 @@ function showPDBtable(element) {
         $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
         $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
         $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
-        $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary export_pdbs">Contact Representative</button></span>');
-        $(element + ' .tableview').before(' | <span>Structure with lowest average distance to all other structures of the same receptor in the same activation state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary export_pdbs">Distance Representative</button></span>');
-        $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary export_pdbs">New Representative</button></span>');
+        if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
+          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
+        else {
+          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
+        }
+
         oTable[mode] = $(element + ' .tableview table').DataTable({
             'scrollX': true,
             // 'paging': true,
