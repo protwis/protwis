@@ -467,6 +467,9 @@ def InteractionBrowserData(request):
         data['pdbs'] = set()
         data['proteins'] = set()
         data['tab3'] = {}
+        data['aa_map'] = {}
+        data['gn_map'] = OrderedDict()
+        data['pos_map'] = OrderedDict()
 
         if mode == 'double':
             data['pdbs1'] = set()
@@ -572,6 +575,8 @@ def InteractionBrowserData(request):
         data['segment_map'] = segm_lookup
 
 
+        # Dict to keep track of which residue numbers are in use
+        number_dict = set()
 
         print('Start going through interactions',time.time()-start_time)
         for i in interactions:
@@ -597,6 +602,14 @@ def InteractionBrowserData(request):
                 coord = str(res2) + ',' + str(res1)
                 res1_aa, res2_aa = res2_aa, res1_aa
 
+            # Populate the AA map
+            if pdb_name not in data['aa_map']:
+                data['aa_map'][pdb_name] = {}
+
+            data['aa_map'][res1] = res1_aa
+            data['aa_map'][res2] = res2_aa
+
+            number_dict |= {res1, res2}
 
             if mode == 'double':
                 if res1 not in data['tab3']:
@@ -680,6 +693,7 @@ def InteractionBrowserData(request):
                 data['interactions'][coord]['pos1_presence'] = round(100*len(pdbs1_with_res1) / len(pdbs1))
                 data['interactions'][coord]['pos2_presence'] = round(100*len(pdbs1_with_res2) / len(pdbs1))
 
+        data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
 
         print('Do Secondary data',time.time()-start_time)
         data['secondary'] = {}
