@@ -769,15 +769,18 @@
                     } else
                       labelName = treeAnnotations[node.name][1].split("_")[0].toUpperCase()
 
-                    // non-breaking space (&#160;) breaks svg/png download
                     label = node_label[0][0]
+                    // Space left and right of the label (instead of &nbsp/&#160 which breaks SVG)
+                    label.setAttribute("margin-left", font_size+"px")
+                    label.setAttribute("margin-right", font_size+"px")
+
                     if (hidePDBs){
-                      label.innerHTML = "&#160;" + labelName + "&#160;"
+                      label.innerHTML = labelName
                     } else {
-                      label.innerHTML = "&#160;" + labelName + " (" + node.name + ")" + "&#160;"
+                      label.innerHTML = labelName + " (" + node.name + ")"
                       // Extra: rotate labels when on the left half
                       if (label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
-                        label.innerHTML = "&#160;(" + node.name + ") " + labelName + "&#160;"
+                        label.innerHTML = "(" + node.name + ") " + labelName
                     }
 
                     // color labels
@@ -975,7 +978,7 @@
 
           // Key: strip xmlns tags otherwise this will result in a double definition
           oDOM.removeAttribute("xmlns");
-          
+
           // Note: keep scale low enough for Chrome to allow download (max size 1.3MB)
           saveSvgAsPng(oDOM, name, {scale: 2});
         }
