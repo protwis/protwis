@@ -277,89 +277,94 @@ function renderHeatmap(data, heatMapSelector) {
                 if (num in interactions) {
 
                     if (heatmap_mode == 'single') {
-                        getInteractionTypesFromPdbObject(interactions[num]).forEach(function(interaction) {
-                            var rgb = getInteractionColor(interaction);
-                            // var cell = heatmap.rect(i, j, 1, 1);
+                        // getInteractionTypesFromPdbObject(interactions[num]).forEach(function(interaction) {
+                        interaction = interactions[num];
+                        var rgb = getInteractionColor(interaction.types[0]);
+                        // var cell = heatmap.rect(i, j, 1, 1);
 
-                            var rect = document.createElementNS(svgns, 'rect');
-                            rect.setAttributeNS(null, 'x', i);
-                            rect.setAttributeNS(null, 'y', j);
-                            rect.setAttributeNS(null, 'height', '1');
-                            rect.setAttributeNS(null, 'width', '1');
+                        var rect = document.createElementNS(svgns, 'rect');
+                        rect.setAttributeNS(null, 'x', i);
+                        rect.setAttributeNS(null, 'y', j);
+                        rect.setAttributeNS(null, 'height', '1');
+                        rect.setAttributeNS(null, 'width', '1');
 
-                            var interactionsString = getInteractionTypesFromPdbObject(interactions[num]).map(getFriendlyInteractionName).filter(function(item, pos, self) {
-                                return self.indexOf(item) == pos;
-                            }).join(", ");
+                        var interactionsString = interaction.types.join(", ");
 
-                            var content, title = 'Residues ' + aa_map[seq_i] + seq_i + '-' + aa_map[seq_j] + seq_j + '<br />' +
-                                'Interactions: ' + interactionsString + '<br />' +
-                                'Segments: ' + segment_map[seq_i] + ', ' + segment_map[seq_j] + '<br />';
+                        var aa_i = aa_map[seq_i];
+                        var aa_j = aa_map[seq_j];
 
-                            // Add generic numbers where applicable
-                            if (seq_i in gen_map) {
-                                title += 'Res. 1 gen. no: ' + gen_map[seq_i] + '<br />';
-                            }
+                        var seq_pos_i = interaction.seq_pos[0];
+                        var seq_pos_j = interaction.seq_pos[1];
 
-                            if (seq_j in gen_map) {
-                                title += 'Res. 2 gen. no: ' + gen_map[seq_j] + '<br />';
-                            }
+                        var content, title = 'Residues ' + aa_map[seq_i] + seq_pos_i + '-' + aa_map[seq_j] + seq_pos_j + '<br />' +
+                            'Interactions: ' + interactionsString + '<br />' +
+                            'Segments: ' + segment_map[seq_i] + ', ' + segment_map[seq_j] + '<br />';
 
-                            var genStrI = gen_map[seq_i];
-                            var genStrJ = gen_map[seq_j];
+                        // // Add generic numbers where applicable
+                        // if (seq_i in gen_map) {
+                        //     title += 'Res. 1 gen. no: ' + gen_map[seq_i] + '<br />';
+                        // }
 
-                            if (typeof gen_map[seq_i] == 'undefined') {
-                                genStrI = '-';
-                            }
+                        // if (seq_j in gen_map) {
+                        //     title += 'Res. 2 gen. no: ' + gen_map[seq_j] + '<br />';
+                        // }
 
-                            if (typeof gen_map[seq_j] == 'undefined') {
-                                genStrJ = '-';
-                            }
+                        // var genStrI = gen_map[seq_i];
+                        // var genStrJ = gen_map[seq_j];
 
-                            var popoverTable = '<table class="table">' +
-                                '<thead>' +
-                                '<tr>' +
-                                '<th>Residue</th>' +
-                                '<th>' + aa_map[seq_i] + seq_i + '</th>' +
-                                '<th>' + aa_map[seq_j] + seq_j + '</th>' +
-                                '</tr>' +
-                                '</thead>' +
-                                '<tbody>' +
-                                '<td>Segment</td>' +
-                                '<td>' + segment_map[seq_i] + '</td>' +
-                                '<td>' + segment_map[seq_j] + '</td>' +
-                                '</tr>' +
-                                '<tr>' +
-                                '<td>Gen. no.</td>' +
-                                '<td>' + genStrI + '</td>' +
-                                '<td>' + genStrJ + '</td>' +
-                                '</tr>' +
-                                '</tbody>' +
-                                '</table>' +
-                                '<table class="table">' +
-                                '<thead>' +
-                                '<tr>' +
-                                '<th>Interactions</th>' +
-                                '</tr>' +
-                                '<tr>' +
-                                '</thead>' +
-                                '<tbody>' +
-                                '<tr>' +
-                                '<td>' + interactionsString + '</td>' +
-                                '</tr>' +
-                                '</tbody>' +
-                                '</table>';
+                        // if (typeof gen_map[seq_i] == 'undefined') {
+                        //     genStrI = '-';
+                        // }
 
-                            rect.setAttributeNS(null, 'fill', "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")");
-                            rect.setAttributeNS(null, 'class', "heatmap-interaction");
-                            rect.setAttributeNS(null, 'title', "Interaction between " + seq_i + ", " + seq_j);
-                            rect.setAttributeNS(null, 'data-content', popoverTable);
-                            rect.setAttributeNS(null, 'data-res-no-1', seq_i);
-                            rect.setAttributeNS(null, 'data-res-no-2', seq_j);
-                            rect.setAttributeNS(null, 'data-gen-no-1', genStrI);
-                            rect.setAttributeNS(null, 'data-gen-no-2', genStrJ);
-                            rect.setAttributeNS(null, 'data-interaction-type', interaction);
-                            document.getElementById(heatmap_id).appendChild(rect);
-                        });
+                        // if (typeof gen_map[seq_j] == 'undefined') {
+                        //     genStrJ = '-';
+                        // }
+
+                        var popoverTable = '<table class="table">' +
+                            '<thead>' +
+                            '<tr>' +
+                            '<th>Residue</th>' +
+                            '<th>' + aa_map[seq_i] + seq_pos_i + '</th>' +
+                            '<th>' + aa_map[seq_j] + seq_pos_j + '</th>' +
+                            '</tr>' +
+                            '</thead>' +
+                            '<tbody>' +
+                            '<td>Segment</td>' +
+                            '<td>' + segment_map[seq_i] + '</td>' +
+                            '<td>' + segment_map[seq_j] + '</td>' +
+                            '</tr>' +
+                            '<tr>' +
+                            '<td>Gen. no.</td>' +
+                            '<td>' + seq_i + '</td>' +
+                            '<td>' + seq_j + '</td>' +
+                            '</tr>' +
+                            '</tbody>' +
+                            '</table>' +
+                            '<table class="table">' +
+                            '<thead>' +
+                            '<tr>' +
+                            '<th>Interactions</th>' +
+                            '</tr>' +
+                            '<tr>' +
+                            '</thead>' +
+                            '<tbody>' +
+                            '<tr>' +
+                            '<td>' + interactionsString + '</td>' +
+                            '</tr>' +
+                            '</tbody>' +
+                            '</table>';
+
+                        rect.setAttributeNS(null, 'fill', "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")");
+                        rect.setAttributeNS(null, 'class', "heatmap-interaction");
+                        rect.setAttributeNS(null, 'title', "Interaction between " + seq_i + ", " + seq_j);
+                        rect.setAttributeNS(null, 'data-content', popoverTable);
+                        rect.setAttributeNS(null, 'data-res-no-1', seq_i);
+                        rect.setAttributeNS(null, 'data-res-no-2', seq_j);
+                        // rect.setAttributeNS(null, 'data-gen-no-1', genStrI);
+                        // rect.setAttributeNS(null, 'data-gen-no-2', genStrJ);
+                        rect.setAttributeNS(null, 'data-interaction-type', interaction);
+                        document.getElementById(heatmap_id).appendChild(rect);
+                        // });
 
                     } else if (heatmap_mode == 'single_group') {
                         var rect = document.createElementNS(svgns, 'rect');
@@ -368,7 +373,7 @@ function renderHeatmap(data, heatMapSelector) {
                         rect.setAttributeNS(null, 'height', '1');
                         rect.setAttributeNS(null, 'width', '1');
 
-                        var nInteractions = Object.keys(interactions[num]).length;
+                        var nInteractions = Object.keys(interactions[num].pdbs).length;
                         var frequency = nInteractions / data.pdbs.length;
 
                         var rgb = { r: 255, g: Math.round(255 - frequency * 255), b: Math.round(255 - frequency * 255) };
@@ -401,6 +406,63 @@ function renderHeatmap(data, heatMapSelector) {
                         rect.setAttributeNS(null, 'data-frequency', frequency);
                         // rect.setAttributeNS(null, 'data-extra', JSON.stringify(interactions[num][2]));
                         document.getElementById(heatmap_id).appendChild(rect);
+                    } else if (heatmap_mode == 'two_groups') {
+
+                        // Only draw if an interaction exists
+                        var num = seq_i + "," + seq_j;
+                        var num2 = seq_j + "," + seq_i;
+
+                        if (num2 in interactions) num = num2;
+                        // console.log(interactions[num]);
+
+                        // // Difference in frequencies
+                        var f1 = (interactions[num].pdbs1.length / pdbs1.length);
+                        var f2 = (interactions[num].pdbs2.length / pdbs2.length);
+                        var fDiff = f1 - f2;
+
+                        var rgb = getGradientColor(fDiff, true);
+
+                        var rect = document.createElementNS(svgns, 'rect');
+                        rect.setAttributeNS(null, 'x', i);
+                        rect.setAttributeNS(null, 'y', j);
+                        rect.setAttributeNS(null, 'height', '1');
+                        rect.setAttributeNS(null, 'width', '1');
+
+                        var title = 'Residues ' + seq_i + ', ' + seq_j + '<br />' +
+                            'Frequency group 1: ' + f1.toFixed(2) + '<br />' +
+                            'Frequency group 2: ' + f2.toFixed(2) + '<br />' +
+                            'Frequency difference: ' + fDiff.toFixed(2) + '<br />';
+
+                        var popoverTable = '<table class="table">' +
+                            '<thead>' +
+                            '<tr>' +
+                            '<th>Residue #</th>' +
+                            '<th>' + seq_i + '</th>' +
+                            '<th>' + seq_j + '</th>' +
+                            '</tr>' +
+                            '</thead>' +
+                            '<tbody>' +
+                            '<td>Segment</td>' +
+                            '<td>' + segment_map[seq_i] + '</td>' +
+                            '<td>' + segment_map[seq_j] + '</td>' +
+                            '</tr>' +
+                            '</tbody>' +
+                            '</table>' +
+                            'Group 1 freq: ' + f1.toFixed(2) + '<br />' +
+                            'Group 2 freq: ' + f2.toFixed(2) + '<br />' +
+                            'Frequency difference: ' + fDiff.toFixed(2)
+
+                        rect.setAttributeNS(null, 'fill', "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")");
+                        rect.setAttributeNS(null, 'class', "heatmap-interaction");
+                        rect.setAttributeNS(null, 'title', "Interaction between " + seq_i + ", " + seq_j);
+                        rect.setAttributeNS(null, 'data-content', popoverTable);
+                        rect.setAttributeNS(null, 'data-frequency-diff', fDiff.toFixed(2));
+                        rect.setAttributeNS(null, 'data-gen-no-1', seq_i);
+                        rect.setAttributeNS(null, 'data-gen-no-2', seq_j);
+                        document.getElementById(heatmap_id).appendChild(rect);
+
+
+
                     }
 
                 }
