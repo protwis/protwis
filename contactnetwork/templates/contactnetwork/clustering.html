@@ -80,14 +80,29 @@
                 <div class="row">
                   <div class="col-md-12">
                     <div class="tree-menu dropup">
-                      <form>
-                        <label>Radial layout</label>
-                        <input type="checkbox" id="layout" checked/>
-                        <label>Color edges and leaves</label>
-                        <input type="checkbox" id="colored-edges" checked/>
-                        <label>Hide PDB-codes</label>
-                        <input type="checkbox" id="hide-pdbs"/>
-                      </form>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                          Options <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="#">
+                              <label>Radial layout</label>
+                              <input type="checkbox" id="layout" checked/>
+                            </a></li>
+                            <li><a href="#">
+                              <label>Color edges and leaves</label>
+                              <input type="checkbox" id="colored-edges" checked/>
+                            </a></li>
+                            <li><a href="#">
+                              <label>Hide PDB-codes</label>
+                              <input type="checkbox" id="hide-pdbs"/>
+                            </a></li>
+                            <li><a href="#">
+                                <label>Switch label order</label>
+                                <input type="checkbox" id="label-order"/>
+                            </a></li>
+                        </ul>
+                      </div>
                       <div class="btn-group">
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                           Receptor names <span class="caret"></span>
@@ -203,6 +218,7 @@
         var phylotree;
         var doBranchColoring = true;
         var hidePDBs = false;
+        var labelReorder = false;
         var treeAnnotations = [];
         var couplingAnnotations = [];
         var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Experimental method", "Ligand function", "G-protein coupling", "Primary G-protein coupling", "Secondary G-protein coupling"]
@@ -779,7 +795,7 @@
                     } else {
                       label.innerHTML = labelName + " (" + node.name + ")"
                       // Extra: rotate labels when on the left half
-                      if (label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
+                      if (!labelReorder && label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
                         label.innerHTML = "(" + node.name + ") " + labelName
                     }
 
@@ -1191,6 +1207,11 @@
               maximumLeafSize();
             });
 
+            $("#label-order").on("click", function(e) {
+              // refresh layout
+              labelReorder = $("#label-order").prop("checked")
+              d3.layout.phylotree.trigger_refresh(phylotree);
+            });
 
             // init dropdowns
             $(".dropdown-menu.names").on("click", "li", toggleNames)
