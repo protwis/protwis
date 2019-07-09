@@ -81,9 +81,8 @@ class Command(BaseBuild):
         try:
             print('CREATING BIAS DATA')
             print(options['filename'])
-            #self.prepare_all_data(options['filename'])
-
-
+            # self.prepare_all_data(options['filename'])
+            # self.bias_list()
             self.logger.info('COMPLETED CREATING BIAS')
 
         except Exception as msg:
@@ -138,10 +137,10 @@ class Command(BaseBuild):
         print("start")
         for i, r in enumerate(rows, 1):
             # code to skip rows in excel for faster testing
-            # if i < 0:
-            #     continue
-            # if i > 1:
-            #     break
+            if i < 0:
+                continue
+            if i > 1000:
+                break
             print(i)
             d = {}
             if r[4] != '':  # checks if the ligand field exists
@@ -402,14 +401,14 @@ class Command(BaseBuild):
 
         return pub
 
-    def fetch_experiment(self, publication, ligand, receptor):
+    def fetch_experiment(self, publication, ligand, receptor, residue, mutation):
         """
         fetch receptor with Protein model
         requires: protein id, source
         """
         try:
             experiment = AnalyzedExperiment.objects.filter(
-                publication=publication, ligand=ligand, receptor=receptor)
+                publication=publication, ligand=ligand, receptor=receptor, residue=residue, mutation=mutation)
             experiment = experiment.get()
             return True
         except Exception as msg:
@@ -479,44 +478,12 @@ class Command(BaseBuild):
             temp['publication'] = j['main'].publication
             temp['ligand'] = j['main'].ligand
             temp['receptor'] = j['main'].receptor
+            temp['residue'] = j['main'].residue
+            temp['mutation'] = j['main'].mutation
+
             if not j['children']:
                 continue
             else:
-                if (j['children'][0].signalling_protein == 'β-arrestin' or
-                    j['children'][0].signalling_protein == 'β-arrestin-1 (non-visual arrestin-2)' or
-                        j['children'][0].signalling_protein == 'β-arrestin-2 (non-visual arrestin-3)'):
-                    temp_dict['pathway'] = 'β-arrestin'
-
-                elif (j['children'][0].signalling_protein == 'gi/o-family' or
-                      j['children'][0].signalling_protein == 'gαi1' or
-                      j['children'][0].signalling_protein == 'gαi2' or
-                      j['children'][0].signalling_protein == 'gαi3' or
-                      j['children'][0].signalling_protein == 'gαo' or
-                      j['children'][0].signalling_protein == 'gαoA' or
-                      j['children'][0].signalling_protein == 'gαoB'):
-                    temp_dict['pathway'] = 'Gi/o-family'
-
-                elif (j['children'][0].signalling_protein == 'gq-family' or
-                        j['children'][0].signalling_protein == 'gαq' or
-                        j['children'][0].signalling_protein == 'gαq11' or
-                        j['children'][0].signalling_protein == 'gαq14' or
-                        j['children'][0].signalling_protein == 'gαq14' or
-                        j['children'][0].signalling_protein == 'gαq16' or
-                        j['children'][0].signalling_protein == 'gαq14 (gαq16)'):
-                    temp_dict['pathway'] = 'Gq-family'
-
-                elif (j['children'][0].signalling_protein == 'g12/13-family' or
-                      j['children'][0].signalling_protein == 'gα12' or
-                      j['children'][0].signalling_protein == 'gα13'):
-                    temp_dict['pathway'] = 'G12/13-family'
-
-                elif (j['children'][0].signalling_protein == 'gs-family' or
-                      j['children'][0].signalling_protein == 'gαs' or
-                      j['children'][0].signalling_protein == 'gαolf'):
-                    temp_dict['pathway'] = 'Gs-family'
-                else:
-                    temp_dict['pathway'] = 'No data'
-
                 temp_dict['signalling_protein'] = j['children'][0].signalling_protein
                 temp_dict['cell_line'] = j['children'][0].cell_line
                 temp_dict['assay_type'] = j['children'][0].assay_type
@@ -541,6 +508,7 @@ class Command(BaseBuild):
                 doubles.append(temp_dict)
                 temp['assay'] = doubles
                 send[increment] = temp
+
                 increment = increment + 1
 
         return send
@@ -553,8 +521,10 @@ class Command(BaseBuild):
         '''
         references = list()
         for item in dictionary.items():
-            if item[1]['assay'][0]['bias_reference'].lower() != '':
+            if (item[1]['assay'][0]['bias_reference'].lower() != '' and
+                    item[1]['assay'][0]['bias_reference'] not in references):
                 references.append(item[1])
+
                 #del item
 
         for item in dictionary.items():
@@ -581,83 +551,199 @@ class Command(BaseBuild):
         send = {}
         for j in dictionary.items():
             name = str(j[1]['publication']) + \
-                '/' + str(j[1]['ligand']) + '/' + str(j[1]['receptor'])
+                '/' + str(j[1]['ligand']) + '/' + str(j[1]['receptor']
+                                                      ) + str(j[1]['residue']) + str(j[1]['mutation'])
             temp_obj = list()
             reference_obj = list()
             if(name in context):
+
                 temp_obj = context[name]['sub']
                 reference_obj = context[name]['reference']
 
                 for i in j[1]['assay']:
                     temp_obj = temp_obj + j[1]['assay']
-                if 'reference' not  in j[1]:
+                    temp_obj = [i for n, i in enumerate(
+                        temp_obj) if i not in temp_obj[n + 1:]]
+
+                if 'reference' not in j[1]:
                     continue
                 else:
                     for i in j[1]['reference']:
                         reference_obj = reference_obj + j[1]['reference']
+                        reference_obj = [i for n, i in enumerate(
+                            reference_obj) if i not in reference_obj[n + 1:]]
+
             else:
                 for entry in j[1]['assay']:
                     temp_obj.append(entry)
-                if 'reference' not  in j[1]:
+                if 'reference' not in j[1]:
                     continue
                 else:
                     for entry in j[1]['reference']:
                         reference_obj.append(entry)
+                        reference_obj = [i for n, i in enumerate(
+                            reference_obj) if i not in reference_obj[n + 1:]]
 
             context[name] = j[1]
+
             context[name].pop('assay')
             context[name]['sub'] = temp_obj
             context[name]['reference'] = reference_obj
             send[name] = self.parse_children(context[name])
             send[name]['reference'] = reference_obj
 
-        self.group_family(send)
         for i in send.items():
             test = dict()
-            i[1].pop('assay')
-            # family sorting
-            try:
-                test = sorted(i[1]['family'].items(), key=lambda x: x[1]['quantitive_activity']
-                              if x[1]['quantitive_activity'] else 0,  reverse=False)
-            except Exception as msg:
-                print('error---', msg, i[1],'\n')
-                continue
+            # try:
+            i[1]['assay'][:] = [d for d in i[1]['assay']
+                                if d.get('bias_reference').lower() != 'yes']
+            # TODO: Change 9999999 to normal method that skips None value
+            test = sorted(i[1]['assay'], key=lambda x: x['quantitive_activity']
+                          if x['quantitive_activity'] else 999999,  reverse=False)
+
+            # except Exception as msg:
+            #     print('error---', msg, i[1],'\n')
+            #     continue
             for x in enumerate(test):
-                x[1][1]['order_no'] = x[0]
+                x[1]['order_no'] = x[0]
 
             i[1]['biasdata'] = test
+            i[1].pop('assay')
 
-            self.verify_calc(i[1]['biasdata'], i[1]['reference'])
+            # TODO: CHECK VARIABLES FOR CALCULATIONS
+            # TODO: ASSIGN QUALITATIVE VALUE FOR IC50 OR PIC50
+            # TODO: Change COLOR DEPENDING IC50
             self.calc_potency(i[1]['biasdata'])
+            self.verify_calc(i[1]['biasdata'], i[1]['reference'])
             self.calc_bias_factor(i[1]['biasdata'], i[1]['reference'])
 
-            for j in i[1]['family'].items():
-                if(j[1]['quantitive_activity'] is not None and
-                   j[1]['quantitive_efficacy'] is not None):
-                    j[1]['quantitive_activity'] = round(
-                    j[1]['quantitive_activity'], 1)
-                    j[1]['quantitive_efficacy'] = int(
-                        j[1]['quantitive_efficacy'])
+            for j in i[1]['biasdata']:
+                if(j['quantitive_activity'] is not None and
+                   j['quantitive_efficacy'] is not None):
+                    j['quantitive_activity'] = round(
+                        j['quantitive_activity'], 1)
+                    j['quantitive_efficacy'] = int(
+                        j['quantitive_efficacy'])
         # self.assay_five(send)
         return send
 
     def verify_calc(self, biasdata, reference):
         '''
-        check for  transduction t_coefficient
+        check for  transduction t_coefficient_initial both in assay and reference
         if exists, then calcualte Relative transduction t_coefficient
         '''
         for item in enumerate(biasdata):
 
-            if (item[1][1]['t_coefficient_initial'] is not None and
-                    item[1][1]['t_coefficient'] is None):
+            if not isinstance(item[1]['t_coefficient_initial'], (int, float)):
+                item[1]['t_coefficient_initial'] = None
+            if not isinstance(item[1]['quantitive_activity'], (int, float)):
+                item[1]['quantitive_activity'] = None
+        # TODO: verify calc with Kasper or Sahar
+            else:
+                if item[1]['quantitive_measure_type'].lower() == 'ec50':
+                    continue
+                elif item[1]['quantitive_measure_type'].lower() == 'pec50':
+                    item[1]['quantitive_activity'] = 10**(
+                        item[1]['quantitive_activity'] * (-1))
+                    item[1]['quantitive_measure_type'] = 'EC50'
+                elif item[1]['quantitive_measure_type'].lower() == 'logec50':
+                    item[1]['quantitive_activity'] = 10**(
+                        item[1]['quantitive_activity'])
+                    item[1]['quantitive_measure_type'] = 'EC50'
+                elif item[1]['quantitive_measure_type'].lower() == 'pic50':
+                    item[1]['quantitive_activity'] = 10**(
+                        item[1]['quantitive_activity'] * (-1))
+                    item[1]['quantitive_measure_type'] = 'IC50'
+                else:
+                    item[1]['quantitive_activity'] = None
+
+                    # TODO: continue ec50 types
+            if not isinstance(item[1]['quantitive_efficacy'], (int, float)):
+                item[1]['quantitive_efficacy'] = None
+            if not isinstance(item[1]['t_coefficient'], (int, float)):
+                item[1]['t_coefficient'] = None
+
+            for j in reference:
+                if not isinstance(j['t_coefficient_initial'], (int, float)):
+                    j['t_coefficient_initial'] = None
+                if not isinstance(j['quantitive_activity'], (int, float)):
+                    j['quantitive_activity'] = None
+                if not isinstance(j['quantitive_efficacy'], (int, float)):
+                    j['quantitive_efficacy'] = None
+                if not isinstance(j['t_coefficient'], (int, float)):
+                    j['t_coefficient'] = None
+            for j in reference:
+                if (j['assay_type'] == item[1]['assay_type'] and
+                        j['cell_line'] == item[1]['cell_line'] and
+                        j['signalling_protein'] == item[1]['signalling_protein'] and
+                        item[1]['t_coefficient'] == None and
+                        isinstance(item[1]['t_coefficient_initial'], (int, float)) and
+                        isinstance(j['t_coefficient_initial'], (int, float))):
+                    item[1]['t_coefficient'] = round(math.log10(
+                        item[1]['t_coefficient_initial']) - math.log10(j['t_coefficient_initial']), 1)
+                else:
+                    continue
+
+    def calc_potency(self, biasdata):
+        most_potent = dict()
+        for i in biasdata:
+
+            if i['order_no'] == 0:
+                most_potent = i
+            else:
+                # TODO: change color, differentiate according pc50 ic50 logpc50 logic50
+                if i['quantitive_measure_type'].lower() == 'ec50':
+                    if i['quantitive_activity'] is not None and most_potent['quantitive_activity'] is not None:
+                        i['potency'] = round(
+                            i['quantitive_activity'] / most_potent['quantitive_activity'], 1)
+                    elif i['quantitive_measure_type'].lower() == 'ic50':
+                        i['potency'] = round(
+                            i['quantitive_activity'] - most_potent['quantitive_activity'], 1)
+                    else:
+                        i['potency'] = None
+
+                if i['t_coefficient'] is not None and most_potent['t_coefficient'] is not None:
+                    # TODO: validate if difference is non negative
+                    i['t_factor'] = round(
+                        math.pow(10, (most_potent['t_coefficient'] - i['t_coefficient'])), 1)
+                else:
+                    i['t_factor'] = None
+
+    def calc_bias_factor(self, biasdata, reference):
+        most_reference = dict()
+        most_potent = dict()
+        for i in biasdata:
+
+            temp_reference = dict()
+            if i['order_no'] == 0:
+                most_potent = i
                 for j in reference:
-                    if (item[1][1]['assay_type'] == j['assay_type'] and
-                        item[1][1]['cell_line'] == j['cell_line'] and
-                            item[1][1]['signalling_protein'] == j['signalling_protein']):
-                        item[1][1]['t_coefficient'] = round(math.log10(
-                            item[1][1]['t_coefficient_initial']) - math.log10(j['t_coefficient_initial']),1)
-                    if j['emax_reference_ligand'] is None:
-                        j['emax_reference_ligand'] = j['ligand']
+                    if (i['assay_type'] == j['assay_type'] and
+                        i['cell_line'] == j['cell_line'] and
+                            i['signalling_protein'] == j['signalling_protein']):
+                        most_reference = j
+            else:
+                for j in reference:
+                    if (i['assay_type'] == j['assay_type'] and
+                        i['cell_line'] == j['cell_line'] and
+                            i['signalling_protein'] == j['signalling_protein']):
+                        temp_reference = j
+                if (i['quantitive_activity'] is not None and most_potent['quantitive_activity'] is not None and
+                    i['quantitive_efficacy'] is not None and most_potent['quantitive_efficacy'] is not None and
+                    j['quantitive_activity'] is not None and j['quantitive_efficacy'] is not None and
+                        temp_reference['quantitive_activity'] is not None and temp_reference['quantitive_efficacy'] is not None):
+                    if (i['quantitive_measure_type'].lower() == 'ec50' and j['quantitive_measure_type'].lower() == 'ec50' and
+                            most_potent['quantitive_measure_type'].lower() == 'ec50' and temp_reference['quantitive_measure_type'].lower() == 'ec50'):
+                        temp_calculation = math.log10(most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - math.log10(most_reference['quantitive_efficacy'] / most_reference['quantitive_activity']) - (
+                            math.log10(i['quantitive_efficacy'] / i['quantitive_activity']) - math.log10(temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity']))
+                        i['log_bias_factor'] = round(temp_calculation, 1)
+                    elif (i['quantitive_measure_type'].lower() == 'ic50' and j['quantitive_measure_type'].lower() == 'ic50' and
+                          most_potent['quantitive_measure_type'].lower() == 'ic50' and temp_reference['quantitive_measure_type'].lower() == 'ic50'):
+                        i['log_bias_factor'] = 'Only agonism in main pathway'
+                    else:
+                        i['log_bias_factor'] = None
+                else:
+                    i['log_bias_factor'] = None
 
     def assay_five(self, send):
         '''
@@ -668,8 +754,8 @@ class Command(BaseBuild):
             temp_dict = dict()
             bias_dict = 0
 
-            if len(i[1]['family']) < 6:
-                length = 5 - len(i[1]['family'])
+            if len(i[1]['biasdata']) < 5:
+                length = 5 - len(i[1]['biasdata'])
                 temp_dict['pathway'] = ''
                 temp_dict['bias'] = ''
                 temp_dict['cell_line'] = ''
@@ -679,8 +765,7 @@ class Command(BaseBuild):
                 temp_dict['ligand_function'] = ''
 
                 for j in range(length, 6):
-                    test = ('No_data', temp_dict)
-                    i[1]['family'][str(length)] = test
+                    i[1]['biasdata'].append(temp_dict)
                     length += 1
 
     def parse_children(self, context):
@@ -697,6 +782,10 @@ class Command(BaseBuild):
                 temp['receptor'] = k[1]
             elif k[0] == 'publication':
                 temp['publication'] = k[1]
+            elif k[0] == 'residue':
+                temp['residue'] = k[1]
+            elif k[0] == 'mutation':
+                temp['mutation'] = k[1]
 
             elif k[0] == 'sub':
                 counter = 0
@@ -769,83 +858,11 @@ class Command(BaseBuild):
         context = temp
         return context
 
-    def group_family(self, send):
-        '''
-        reformat data by families
-        to correctly display it
-        '''
-        for item in send.items():
-
-            context = dict()
-            for i in item[1]['assay']:
-
-                if i['pathway'] == 'β-arrestin':
-                    context['br'] = i
-                    #item[1]['family']= context
-                elif i['pathway'] == 'Gi/o-family':
-                    context['gi'] = i
-                    #item[1]['gi']= i
-                elif i['pathway'] == 'Gq-family':
-                    context['gq'] = i
-                    #item[1]['gq']= i
-                elif i['pathway'] == 'G12/13-family':
-                    context['g12'] = i
-                    #item[1]['g12']= i
-                elif i['pathway'] == 'Gs-family':
-                    context['gs'] = i
-                    #item[1]['gs']= i
-                else:
-                    continue
-                item[1]['family'] = context
-
-    def calc_potency(self, biasdata):
-        most_potent = dict()
-        for i in enumerate(biasdata):
-            if i[0] == 0:
-                most_potent = i[1][1]
-            else:
-                if i[1][1]['quantitive_activity'] is not None and most_potent['quantitive_activity'] is not None:
-                    i[1][1]['potency'] = round(i[1][1]['quantitive_activity'] / most_potent['quantitive_activity'], 1)
-
-                if i[1][1]['t_coefficient'] is not None and most_potent['t_coefficient'] is not None:
-                    i[1][1]['t_factor'] = round(math.pow(10, (most_potent['t_coefficient'] - i[1][1]['t_coefficient'])), 1)
-                else:
-                    i[1][1]['t_factor'] = None
-
-    def calc_bias_factor(self, biasdata, reference):
-        most_reference = dict()
-        most_potent = dict()
-        for i in enumerate(biasdata):
-            temp_reference = dict()
-            for j in reference:
-                if i[0] == 0:
-                    most_potent = i[1][1]
-                    if (i[1][1]['assay_type'] == j['assay_type'] and
-                        i[1][1]['cell_line'] == j['cell_line'] and
-                            i[1][1]['signalling_protein'] == j['signalling_protein']):
-                        most_reference = j
-                else:
-                    if (i[1][1]['quantitive_activity'] is not None and most_potent['quantitive_activity'] is not None and
-                        i[1][1]['quantitive_efficacy'] is not None and most_potent['quantitive_efficacy'] is not None and
-                            j['quantitive_efficacy'] is not None and j['quantitive_efficacy'] is not None):
-                        if (i[1][1]['assay_type'] == j['assay_type'] and
-                            i[1][1]['cell_line'] == j['cell_line'] and
-                                i[1][1]['signalling_protein'] == j['signalling_protein'] and
-                                most_reference['quantitive_activity'] is not None):
-                            temp_reference = j
-                            #print('---experiment---', type(most_potent['quantitive_efficacy']), type( most_potent['quantitive_activity']),type(most_reference['quantitive_efficacy']),type(most_reference['quantitive_activity']),type(temp_reference['quantitive_efficacy']),type(temp_reference['quantitive_activity']))
-                            i[1][1]['log_bias_factor'] = round((most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - (most_reference['quantitive_efficacy'] / most_reference['quantitive_activity']) - (
-                                (i[1][1]['quantitive_efficacy'] / i[1][1]['quantitive_activity']) - (temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity'])), 1)
-
-
-                        else:
-                            i[1][1]['log_bias_factor'] = ''
-
     def bias_list(self):
         print('i am in')
         context = {}
         content = BiasedExperiment.objects.all().prefetch_related(
-            'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference')
+            'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference', 'mutation', 'mutation__residue')
         # merge children
         pre_data = self.process_data(content)
         # transform to combined dictionary
@@ -854,46 +871,48 @@ class Command(BaseBuild):
         self.process_references(combined)
         context.update({'data': self.process_dublicates(combined)})
         for i in context['data'].items():
-            try:
-                i[1].pop('reference')
-                i[1].pop('biasdata')
-            except Exception as msg:
-                print('\n---saving error---',msg)
-                continue
-            if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor']) == False:
+            # try:
+                # i[1].pop('reference')
+                # i[1].pop('biasdata')
+                # TODO: move by one tab when uncomment try catch
+            if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor'], i[1]['residue'], i[1]['mutation']) == False:
                 experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                       ligand=i[1]['ligand'],
-                                                      receptor=i[1]['receptor']
+                                                      receptor=i[1]['receptor'],
+                                                      mutation=i[1]['mutation'],
+                                                      residue=i[1]['residue']
                                                       )
                 experiment_entry.save()
-                for ex in i[1]['family'].items():
-                    emax_ligand = ex[1]['emax_reference_ligand']
+                for ex in i[1]['biasdata']:
+                    print('--saving---', ex, '\n')
+                    emax_ligand = ex['emax_reference_ligand']
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                     family=ex[0],
-                                                     order_no=ex[1]['order_no'],
-                                                     signalling_protein=ex[1]['signalling_protein'],
-                                                     cell_line=ex[1]['cell_line'],
-                                                     assay_type=ex[1]['assay_type'],
-                                                     assay_measure=ex[1]['assay_measure_method'],
-                                                     assay_time_resolved=ex[1]['assay_time_resolved'],
-                                                     ligand_function=ex[1]['ligand_function'],
-                                                     quantitive_measure_type=ex[1]['quantitive_measure_type'],
-                                                     quantitive_activity=ex[1]['quantitive_activity'],
-                                                     # quantitive_activity_sign=ex[1]['quantitive_activity_sign'],
-                                                     quantitive_unit=ex[1]['quantitive_unit'],
-                                                     qualitative_activity=ex[1]['qualitative_activity'],
-                                                     quantitive_efficacy=ex[1]['quantitive_efficacy'],
-                                                     efficacy_measure_type=ex[1]['efficacy_measure_type'],
-                                                     # efficacy_sign=ex[1]['efficacy_sign'],
-                                                     efficacy_unit=ex[1]['efficacy_unit'],
-                                                     potency=ex[1]['potency'],
-                                                     t_coefficient=ex[1]['t_coefficient'],
-                                                     t_value=ex[1]['t_coefficient'],
-                                                     t_factor=ex[1]['t_factor'],
-                                                     log_bias_factor=ex[1]['log_bias_factor'],
+                                                     family=ex['pathway'],
+                                                     order_no=ex['order_no'],
+                                                     signalling_protein=ex['signalling_protein'],
+                                                     cell_line=ex['cell_line'],
+                                                     assay_type=ex['assay_type'],
+                                                     assay_measure=ex['assay_measure_method'],
+                                                     assay_time_resolved=ex['assay_time_resolved'],
+                                                     ligand_function=ex['ligand_function'],
+                                                     quantitive_measure_type=ex['quantitive_measure_type'],
+                                                     quantitive_activity=ex['quantitive_activity'],
+                                                     quantitive_unit=ex['quantitive_unit'],
+                                                     qualitative_activity=ex['qualitative_activity'],
+                                                     quantitive_efficacy=ex['quantitive_efficacy'],
+                                                     efficacy_measure_type=ex['efficacy_measure_type'],
+                                                     efficacy_unit=ex['efficacy_unit'],
+                                                     potency=ex['potency'],
+                                                     t_coefficient=ex['t_coefficient'],
+                                                     t_value=ex['t_coefficient_initial'],
+                                                     t_factor=ex['t_factor'],
+                                                     log_bias_factor=ex['log_bias_factor'],
                                                      emax_ligand_reference=emax_ligand
                                                      )
                     experiment_assay.save()
                     print('saved')
             else:
                 print("already defined")
+            # except Exception as msg:
+            #     print('\n---saving error---', msg)
+            #     continue

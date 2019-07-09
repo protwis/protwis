@@ -352,6 +352,10 @@ class AnalyzedExperiment(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE, null = True)
+    mutation  = models.ForeignKey('mutation.Mutation', on_delete = models.CASCADE,
+                                    null = True)
+    residue = models.ForeignKey('residue.Residue', on_delete = models.CASCADE,
+                                    null = True)
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(

@@ -1,185 +1,181 @@
 {% extends "home/base.html" %}
+
 {% load staticfiles %}
+{% load replace_slash %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet" />
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet" />
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
 
-
 <style type="text/css">
-  #content {
-    width: 100%;
+  .select2-result-label {
+    font-size: x-small;
+    font-size: 10px;
   }
+
+  #filters {
+
+    font-size: 10px;
+    padding: 7px 15px;
+  }
+
+  @media (min-width: 1600px) {
+    #content {
+      width: 1570px;
+    }
+  }
+
+  @media (min-width: 1800px) {
+    #content {
+      width: 1770px;
+    }
+  }
+
+  table.dataTable.compact thead th.over_header {
+    border-right: 1px solid;
+    border-left: 0px solid;
+    text-align: center;
+    padding: 4px 4px 4px 4px;
+  }
+
+  table.dataTable.compact thead tr.over_header th {
+    border-bottom: 1px solid #ccc;
+  }
+
+  table.dataTable.compact thead th.leftborder {
+    border-left: 1px solid;
+  }
+
+  table.dataTable.compact thead th.rightborder {
+    border-right: 1px solid;
+  }
+
+  table.dataTable.compact thead th.checkbox_tr {
+    text-align: left;
+    padding: 4px 4px 4px 4px;
+  }
+
+  table.dataTable.compact thead th {
+    padding: 4px 16px 4px 2px;
+  }
+
+  .yadcf-filter-wrapper {
+    margin-top: 0px;
+  }
+
+  input.yadcf-filter {
+    width: 100px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+  }
+
   .yadcf-filter-range-date,
   .yadcf-filter-range-number {
     width: 30px;
-    /*font-family: sans-serif;*/d
+    font-family: sans-serif;
     font-size: 100%;
-    /*font-weight: bold;*/
+    font-weight: bold;
+  }
+
+  .clicked_button {
+    background-color: rgb(215, 215, 215);
   }
 </style>
 {% endblock %}
 {% block content %}
 <h2>Biased Ligands Browser</h2>
 
-<form action="#" method="get">
- <input type="text" value="8" name="mytextbox" size="1"/>
- <input type="submit" class="btn" value="Click" name="mybtn">
-</form>
+
+
+Check me: <input id="test" type="checkbox" />
 
 {% if data %}
-<div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+{% autoescape off %}
+<div id="testTable" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+
   <table id="drugdata" class="display compact table table-striped table-bordered" cellspacing="0">
     <thead>
+      <!-- <th style="text-align:center">Class</th>
+      <th style="text-align:center">Receptor family</th>
+      <th colspan="3" style="text-align:center">Receptor</th>
+      <th colspan="2" style="text-align:center">Ligand </th>
+      <th colspan="5" style="text-align:center">Pathway Bias Rank Order </th>
+      <th colspan="4" style="text-align:center">Operational model dd(Tau/Ka)</th>
+      <th colspan="4" style="text-align:center">Log bias factor (ddLog(Emax/EC50)</th>
+      <th colspan="4" style="text-align:center">Potency ratio ddlog(EC50)</th>
+      <th colspan="5" style="text-align:center">Potency (pEC50 or pIC50)</th>
+      <th colspan="5" style="text-align:center">Emax (% of ref ligand)</th>
+      <th colspan="5" style="text-align:center">Transduction efficacy </th> <!-- TODO: add equatioon -->
+      <!-- <th colspan="5" style="text-align:center">Assay type</th>
+      <th colspan="5" style="text-align:center">Cell line </th>
+      <th style="text-align:center">Authors</th> -->
       <tr>
-        <th>Reference <br>Ligand
-          <!-- <input autocomplete='off' class='filter' name='Ligand' placeholder='Search' data-col='Ligand' /> -->
-        </th>
-        <th>Biased <br>Ligand
-          <!-- <input autocomplete='off' class='filter' name='Ligand' placeholder='Search' data-col='Ligand' /> -->
-        </th>
-        <th>Receptor UniProt
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Receptor IUPHAR
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gi/o <br>Log Potency
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gs <br>Log Potency
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gq/11 <br>Log Potency
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>G12/13 <br>Log Potency
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>B-arr <br>Log Potency
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
+        <th>Class<br></th>
+        <th>Receptor<br>family</th>
+        <th>Receptor<br>UniProt</th>
+        <th>Receptor<br>IUPHAR</th>
+        <th>Receptor<br>Species</th>
+        <th>Ligand<br>Reference</th>
+        <th>Ligand<br>Biased</th>
+        <th>Pathway Bias Rank Order<br>Pathway 1</th>
+        <th>Pathway Bias Rank Order<br>Pathway 2</th>
+        <th>Pathway Bias Rank Order<br>Pathway 3</th>
+        <th>Pathway Bias Rank Order<br>Pathway 4</th>
+        <th>Pathway Bias Rank Order<br>Pathway 5</th>
+        <!-- operational model -->
+        <th>Operational model dd(Tau/Ka)<br>Pathway 2</th>
+        <th>Operational model dd(Tau/Ka)<br>Pathway 3</th>
+        <th>Operational model dd(Tau/Ka)<br>Pathway 4</th>
+        <th>Operational model dd(Tau/Ka)<br>Pathway 5</th>
+        <!-- log bias factor -->
+        <th>Log bias factor (ddLog(Emax/EC50)<br>Pathway 2</th>
+        <th>Log bias factor (ddLog(Emax/EC50)<br>Pathway 3</th>
+        <th>Log bias factor (ddLog(Emax/EC50)<br>Pathway 4</th>
+        <th>Log bias factor (ddLog(Emax/EC50)<br>Pathway 5</th>
+        <!-- Potency ratio -->
+        <th>Potency ratio ddlog(EC50)<br>Pathway 2</th>
+        <th>Potency ratio ddlog(EC50)<br>Pathway 3</th>
+        <th>Potency ratio ddlog(EC50)<br>Pathway 4</th>
+        <th>Potency ratio ddlog(EC50)<br>Pathway 5</th>
+        <!-- Potency -->
+        <th>Potency EC50 or <font color="#FF0000">IC50</font><br>Pathway 1</th>
+        <th>Potency EC50 or <font color="#FF0000">IC50</font><br>Pathway 2</th>
+        <th>Potency EC50 or <font color="#FF0000">IC50</font><br>Pathway 3</th>
+        <th>Potency EC50 or <font color="#FF0000">IC50</font><br>Pathway 4</th>
+        <th>Potency EC50 or <font color="#FF0000">IC50</font><br>Pathway 5</th>
+        <!-- emax -->
+        <th>Emax (% of ref ligand)<br>Pathway 1</th>
+        <th>Emax (% of ref ligand)<br>Pathway 2</th>
+        <th>Emax (% of ref ligand)<br>Pathway 3</th>
+        <th>Emax (% of ref ligand)<br>Pathway 4</th>
+        <th>Emax (% of ref ligand)<br>Pathway 5</th>
+        <!-- transduction efficacy -->
+        <th>Transduction efficacy<br>Pathway 1</th>
+        <th>Transduction efficacy<br>Pathway 2</th>
+        <th>Transduction efficacy<br>Pathway 3</th>
+        <th>Transduction efficacy<br>Pathway 4</th>
+        <th>Transduction efficacy<br>Pathway 5</th>
+        <!-- Assay type -->
+        <th>Assay type<br>Pathway 1</th>
+        <th>Assay type<br>Pathway 2</th>
+        <th>Assay type<br>Pathway 3</th>
+        <th>Assay type<br>Pathway 4</th>
+        <th>Assay type<br>Pathway 5</th>
+        <!-- Cell Line -->
+        <th>Cell Line<br>Pathway 1</th>
+        <th>Cell Line<br>Pathway 2</th>
+        <th>Cell Line<br>Pathway 3</th>
+        <th>Cell Line<br>Pathway 4</th>
+        <th>Cell Line<br>Pathway 5</th>
+        <!-- Authors -->
+        <th>Authors</th>
 
-        <th>Gi/o <br>Emax
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gs <br>Emax
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gq/11 <br>Emax
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>G12/13 <br>Emax
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>B-arr <br>Emax
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>1st potency
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>2nd potency
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Potency ratio
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Log bias factor <br>(ddLog(Emax/EC50)
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Operational model <br>dd(Tau/Ka)
-
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>3rd potency
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Potency ratio
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Log bias factor <br>(ddLog(Emax/EC50)
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Operational model <br>dd(Tau/Ka)
-
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>4th potency
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Potency ratio
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Log bias factor <br>(ddLog(Emax/EC50)
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Operational model <br>dd(Tau/Ka)
-
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th> 5th potency
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Potency ratio
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Log bias factor <br>(ddLog(Emax/EC50)
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th>Operational model <br>dd(Tau/Ka)
-          e
-          <!-- <input autocomplete='off' class='filter' name='Mutation' placeholder='Search' data-col='Mutation' /> -->
-        </th>
-        <th style="width:150px !important;">Article Authors
-          <!-- <input autocomplete='off' class='filter' name='Article DOI' placeholder='Search' data-col='Article DOI' /> -->
-        </th>
-
-        <th>Gi/o <br> Cell line
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gs <br> Cell line
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gq/11 <br> Cell line
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>G12/13 <br> Cell line
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>B-arr <br> Cell line
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gi/o <br> Ligand Function
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gs <br> Ligand Function
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gq/11 <br> Ligand Function
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>G12/13 <br> Ligand Function
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>B-arr <br> Ligand Function
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gi/o <br> Assay Type
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gs <br> Assay Type
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>Gq/11 <br> Assay Type
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>G12/13 <br> Assay Type
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
-        <th>B-arr <br> Assay Type
-          <!-- <input autocomplete='off' class='filter' name='Receptor' placeholder='Search' data-col='Receptor' /> -->
-        </th>
       </tr>
       <tr>
         <th style="text-align:center"> </th>
@@ -213,85 +209,107 @@
         <th style="text-align:center"> </th>
         <th style="text-align:center"> </th>
         <th style="text-align:center"> </th>
-        <th style="width:150px !important;"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
+        <th style="text-align:center"> </th>
 
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
-        <th style="text-align:center"> </th>
       </tr>
     </thead>
     <tbody>
       {%for e in data.items%}
       <tr>
-        <td style="text-align:center;">{{e.1.reference_ligand}}</td>
-        <td style="text-align:center;"> <a href='/ligand/{{e.1.ligand}}' target='blank'>{{e.1.ligand}}</td>
+        <!-- TODO: class name -->
+        <!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
+        <td style="text-align:center;">{{e.1.receptor}}</td>
+        <td style="text-align:center;">{{e.1.receptor.family.parent}}</td>
         <td style="text-align:center;">{{e.1.receptor.accession}}</td>
         <td style="text-align:center;">{{e.1.receptor.entry_name}}</td>
+        <td style="text-align:center;">{{e.1.receptor.species.common_name}}</td>
 
+        <td style="text-align:center;">{{e.1.reference_ligand}}</td>
+        <td style="text-align:center;"> <a href='/ligand/{{e.1.ligand}}' target='blank'>{{e.1.ligand}}</td>
 
-        <td style="text-align:center;">{{e.1.family.gi.quantitive_activity}}</td>
-        <td style="text-align:center">{{e.1.family.gs.quantitive_activity}}</td>
-        <td style="text-align:center">{{e.1.family.gq.quantitive_activity}}</td>
-        <td style="text-align:center">{{e.1.family.g12.quantitive_activity}}</td>
-        <td style="text-align:center">{{e.1.family.br.quantitive_activity}}</td>
-        <td style="text-align:center">{{e.1.family.gi.quantitive_efficacy}}</td>
-        <td style="text-align:center">{{e.1.family.gs.quantitive_efficacy}}</td>
-        <td style="text-align:center">{{e.1.family.gq.quantitive_efficacy}}</td>
-        <td style="text-align:center">{{e.1.family.g12.quantitive_efficacy}}</td>
-        <td style="text-align:center">{{e.1.family.br.quantitive_efficacy}}</td>
         {% for ex in e.1.biasdata%}
+        <td style="text-align:center;">{{ex.signalling_protein}}</td>
+        {%endfor%}
 
-        {% if  forloop.first %}
-        <td style="text-align:center">{{ex.signalling_protein }}</td>
-        {%else%}
-        <td style="text-align:center">{{ex.signalling_protein }}</td>
-        <td style="text-align:center">{{ex.potency }}</td>
-        <td style="text-align:center">{{ex.log_bias_factor }}</td>
+        {% for ex in e.1.biasdata%}
+        {% if not forloop.first %}
         <td style="text-align:center">{{ex.t_factor }}</td>
         {% endif %}
         {%endfor%}
-        <td style="
-                  text-align:center;
+
+        {% for ex in e.1.biasdata%}
+        {% if not forloop.first %}
+        <td style="text-align:center">{{ex.log_bias_factor }}</td>
+        {% endif %}
+        {%endfor%}
+
+        {% for ex in e.1.biasdata%}
+        {% if not forloop.first %}
+        <td style="text-align:center">{{ex.potency }}</td>
+        {% endif %}
+        {%endfor%}
+
+        {% for ex in e.1.biasdata%}
+        {%if ex.quantitive_activity %}
+        {%if ex.quantitive_measure_type == 'EC50' %}
+        <td style="text-align:center">{{ex.quantitive_activity }}</td>
+        {%else%}
+        <td style="text-align:center">
+          <font color="#FF0000">{{ex.quantitive_activity }}</font>
+        </td>
+        {%endif%}
+        {%else%}
+        <td style="text-align:center">{{ex.qualitative_activity }}</td>
+        {%endif%}
+        {%endfor%}
+
+        {% for ex in e.1.biasdata%}
+        <td style="text-align:center">{{ex.quantitive_efficacy }}</td>
+        {%endfor%}
+
+        {% for ex in e.1.biasdata%}
+        <td style="text-align:center">{{ex.t_value}}</td>
+        {%endfor%}
+
+        {% for ex in e.1.biasdata%}
+        <td style="text-align:center;">{{ex.assay_type|replace_slash}}</td>
+        {%endfor%}
+
+        {% for ex in e.1.biasdata%}
+        <td style="text-align:center;">{{ex.cell_line }}</td>
+        {%endfor%}
+
+        <td style=" text-align:center;
                   width: 18%;
                   word-wrap: break-word;
                   word-break: break-all;
-                  white-space: normal;"><a href='{{e.1.publication.web_link}}' target='blank'>
+                  white-space: normal"><a href='{{e.1.publication.web_link}}' target='blank'>
             {{e.1.publication.authors}}</td>
-
-
-        <td style="text-align:center;">{{e.1.family.gi.cell_line}}</td>
-        <td style="text-align:center">{{e.1.family.gs.cell_line}}</td>
-        <td style="text-align:center">{{e.1.family.gq.cell_line}}</td>
-        <td style="text-align:center">{{e.1.family.g12.cell_line}}</td>
-        <td style="text-align:center">{{e.1.family.br.cell_line}}</td>
-        <td style="text-align:center">{{e.1.family.gi.ligand_function}}</td>
-        <td style="text-align:center">{{e.1.family.gs.ligand_function}}</td>
-        <td style="text-align:center">{{e.1.family.gq.ligand_function}}</td>
-        <td style="text-align:center">{{e.1.family.g12.ligand_function}}</td>
-        <td style="text-align:center">{{e.1.family.br.ligand_function}}</td>
-        <td style="text-align:center">{{e.1.family.gi.assay_type}}</td>
-        <td style="text-align:center">{{e.1.family.gs.assay_type}}</td>
-        <td style="text-align:center">{{e.1.family.gq.assay_type}}</td>
-        <td style="text-align:center">{{e.1.family.g12.assay_type}}</td>
-        <td style="text-align:center">{{e.1.family.br.assay_type}}</td>
 
       </tr>
       {%endfor%}
     </tbody>
   </table>
 </div>
+{% endautoescape %}
 {% else %}
 <p> Ooops! There is no data to show here yet. </p>
 {% endif %}
@@ -305,49 +323,52 @@
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
-<script src="https://cdn.datatables.net/1.10.15/css/jquery.dataTables.min.css"> </script>
-<script src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"> </script>
 <script src="https://cdn.datatables.net/buttons/1.4.0/js/dataTables.buttons.min.js"> </script>
-<script src="https://cdn.datatables.net/buttons/1.4.0/js/buttons.flash.min.js"> </script>
 <script src="https://cdn.datatables.net/buttons/1.4.0/js/buttons.html5.min.js"> </script>
 <script src="https://cdn.datatables.net/buttons/1.4.0/js/buttons.print.min.js"> </script>
 <script src="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css"> </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"> </script>
-<script src="https://cdn.rawgit.com/bpampuch/pdfmake/0.1.27/build/pdfmake.min.js"> </script>
-<script src="https://cdn.rawgit.com/bpampuch/pdfmake/0.1.27/build/vfs_fonts.js"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.fixedColumns.js' %}"> </script>
+<link href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.dataTables.min.css" rel="stylesheet" />
 
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function() {
 
-
     hideEmptyCols($("#drugdata"))
-
     oTable = $('#drugdata').DataTable({
-
       dom: 'Bfrtip',
-      buttons: [{
-        extend: 'excel',
-        text: 'Export to Excel',
-        exportOptions: {
-          format: {
-            header: function(data, row, column, node) {
-              var newdata = data ;
+      // buttons: [{
+      //   extend: 'excel',
+      //   text: 'Export to Excel',
+      //   exportOptions: {
+      //     format: {
+      //       header: function(data, row, column, node) {
+      //         var newdata = data;
+      //         newdata = newdata.replace(/<.*?<\/*?>/gi, '');
+      //         newdata = newdata.replace(/<div.*?<\/div>/gi, '');
+      //         newdata = newdata.replace(/<\/div.*?<\/div>/gi, '');
+      //         return newdata;
+      //       }
+      //     }
+      //   }
+      // }],
 
-              newdata = newdata.replace(/<.*?<\/*?>/gi, '');
-              newdata = newdata.replace(/<div.*?<\/div>/gi, '');
-              newdata = newdata.replace(/<\/div.*?<\/div>/gi, '');
-              return newdata;
-            }
-          }
-        }
-      }],
-
-      scrollX: true,
+      scrollX: '100%',
       scrollY: '70vh',
-      // scrollCollapse: true,
-      paging: false,
+
+      // fixedColumns: {
+      //   leftColumns: 2,
+      //
+      // },
+      scrollCollapse: true,
+      paging: true,
+      "lengthMenu": [
+        [1000, -1],
+        [1000, "All"]
+      ],
       "columns": [
+        // "width": "8%"null
         null,
         null,
         null,
@@ -394,6 +415,9 @@
         null,
         null,
         null,
+        null,
+        null,
+        null,
         null
       ],
     });
@@ -403,23 +427,23 @@
           column_number: 0,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Reference Ligand",
+          filter_default_label: "Class",
           filter_reset_button_text: false,
+
         },
         {
           column_number: 1,
           filter_type: "multi_select",
           select_type: 'select2',
-          column_data_type: "html",
-          filter_default_label: "Biased Ligand",
+          filter_default_label: "Family",
           filter_reset_button_text: false,
+
         },
         {
           column_number: 2,
           filter_type: "multi_select",
           select_type: 'select2',
           //column_data_type: "html",
-          html_data_type: "text",
           filter_default_label: "UniProt",
           filter_match_mode: "exact",
           filter_reset_button_text: false,
@@ -432,77 +456,70 @@
           filter_default_label: "IUPHAR",
           filter_reset_button_text: false,
         },
-
-
         {
           column_number: 4,
-          filter_type: "range_number",
-          filter_default_label: ["From", "To"],
+          filter_type: "multi_select",
+          select_type: 'select2',
+          filter_default_label: "Species",
           filter_reset_button_text: false,
         },
-
-
         {
           column_number: 5,
-          filter_type: "range_number",
-          filter_default_label: ["From", "To"],
+          filter_type: "multi_select",
+          select_type: 'select2',
+          filter_default_label: "Reference Ligand",
           filter_reset_button_text: false,
         },
-
-
         {
           column_number: 6,
-          filter_type: "range_number",
-          filter_default_label: ["From", "To"],
+          filter_type: "multi_select",
+          select_type: 'select2',
+          filter_default_label: "Biased Ligand",
           filter_reset_button_text: false,
         },
-
+        // pathway bias rank
         {
           column_number: 7,
-          filter_type: "range_number",
-          filter_default_label: ["From", "To"],
+          select_type: 'select2',
+          filter_type: "multi_select",
+          filter_default_label: "Pathway 1",
           filter_reset_button_text: false,
         },
-
-
         {
           column_number: 8,
-          filter_type: "range_number",
-          filter_default_label: ["From", "To"],
+          select_type: 'select2',
+          filter_type: "multi_select",
+          filter_default_label: "Pathway 2",
           filter_reset_button_text: false,
         },
-
-
         {
           column_number: 9,
-          filter_type: "range_number",
-          filter_default_label: ["From", "To"],
+          select_type: 'select2',
+          filter_type: "multi_select",
+          filter_default_label: "Pathway 3",
           filter_reset_button_text: false,
         },
-
-
         {
           column_number: 10,
-          filter_type: "range_number",
-          filter_default_label: ["From", "To"],
+          select_type: 'select2',
+          filter_type: "multi_select",
+          filter_default_label: "Pathway 4",
           filter_reset_button_text: false,
         },
-
         {
           column_number: 11,
-          filter_type: "range_number",
-          filter_default_label: ["From", "To"],
+          select_type: 'select2',
+          filter_type: "multi_select",
+          filter_default_label: "Pathway 5",
           filter_reset_button_text: false,
         },
-
-
+        // pathway operational model
         {
           column_number: 12,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 13,
           filter_type: "range_number",
@@ -512,112 +529,94 @@
 
         {
           column_number: 14,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "1st potency",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
-
         {
           column_number: 15,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "2nd potency",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
 
-
+        //Log bias factor <br>(ddLog(Emax/EC50)
         {
-          //Potency ratio
           column_number: 16,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
-          //Log bias factor <br>(ddLog(Emax/EC50)
           column_number: 17,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
-          //B-arr Log Potency
           column_number: 18,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 19,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "3rd potency",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
 
+        //"Potency ratio ddlog(EC50)"
         {
           column_number: 20,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 21,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 22,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 23,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "4th potency",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
+        //potency or ic50
+        // TODO: change to p value
         {
           column_number: 24,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 25,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 26,
           filter_type: "range_number",
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 27,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "5th potency",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 28,
           filter_type: "range_number",
@@ -625,6 +624,8 @@
           filter_reset_button_text: false,
         },
 
+
+        // Emax
         {
           column_number: 29,
           filter_type: "range_number",
@@ -638,95 +639,77 @@
           filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 31,
-
-          filter_type: "multi_select",
-          select_type: 'select2',
-          column_data_type: "html",
-          html_data_type: "text",
-          filter_default_label: "Article Authors",
-          filter_reset_button_text: true,
-          select_type_options: {
-            width: '150px',
-          }
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
+          filter_reset_button_text: false,
         },
-
         {
           column_number: 32,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "Cell line ",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
         {
           column_number: 33,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "Cell line ",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
+        //Transduction eff
         {
           column_number: 34,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "Cell line ",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 35,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "Cell line",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 36,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "Cell line",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
-
         {
           column_number: 37,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "Ligand Function",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
         {
           column_number: 38,
-          filter_type: "multi_select",
-          select_type: 'select2',
-          filter_default_label: "Ligand Function",
+          filter_type: "range_number",
+          filter_default_label: ["From", "To"],
           filter_reset_button_text: false,
         },
+        //assay_type
 
         {
           column_number: 39,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Ligand Function",
+          filter_default_label: "Assay type",
           filter_reset_button_text: false,
         },
-
         {
           column_number: 40,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Ligand Function",
+          filter_default_label: "Assay type",
           filter_reset_button_text: false,
+
         },
         {
           column_number: 41,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Ligand Function",
+          filter_default_label: "Assay type",
           filter_reset_button_text: false,
         },
 
@@ -734,7 +717,7 @@
           column_number: 42,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Assay Type",
+          filter_default_label: "Assay type",
           filter_reset_button_text: false,
         },
 
@@ -742,47 +725,82 @@
           column_number: 43,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Assay Type",
-          filter_reset_button_text: false
+          filter_default_label: "Assay type",
+          filter_reset_button_text: false,
         },
+        //cell_line
         {
           column_number: 44,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Assay Type",
+          filter_default_label: "Cell Line",
           filter_reset_button_text: false,
         },
-
         {
           column_number: 45,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Assay Type",
+          filter_default_label: "Cell Line",
           filter_reset_button_text: false,
         },
-
         {
           column_number: 46,
           filter_type: "multi_select",
           select_type: 'select2',
-          filter_default_label: "Assay Type",
+          filter_default_label: "Cell Line",
           filter_reset_button_text: false,
-        }
+        },
+        {
+          column_number: 47,
+          filter_type: "multi_select",
+          select_type: 'select2',
+          filter_default_label: "Cell Line",
+          filter_reset_button_text: false,
+        },
+        {
+          column_number: 48,
+          filter_type: "multi_select",
+          select_type: 'select2',
+          filter_default_label: "Cell Line",
+          filter_reset_button_text: false,
 
-      ], {
-        cumulative_filtering: false
-      }
+        },
+        //Article
+        {
+          column_number: 49,
+          filter_type: "multi_select",
+          select_type: 'select2',
+
+          filter_default_label: "Article Authors",
+        }
+      ],
     );
+    $('#container').css('display', 'block');
 
     yadcf.exResetAllFilters(oTable);
 
 
-
+    setTimeout(function () {
+        otable.columns.adjust().draw();
+    }, 10);
   });
 </script>
-
+<script type="text/javascript">
+  $('#test').click(function() {
+    alert("Checkbox state (method 1) = " + $('#test').prop('checked'));
+    if (this.checked) // if changed state is "CHECKED"
+    {
+      console.log('checked')
+      $('#testTable').fadeIn('slow');
+    } else {
+      $('#testTable').fadeOut('slow');
+    }
+    oTable.columns.adjust().draw();
+  });
+</script>
 <script type="text/javascript">
   function hideEmptyCols(table) {
+
     //count # of columns
     var numCols = $("th", table).length;
     for (var i = 0; i <= numCols; i++) {
@@ -790,7 +808,6 @@
       //grab all the <td>'s of the column at i
       $("td:nth-child(" + i + ")", table).each(function(index, el) {
         //check if the  of this <td> is empty
-        console.log(el)
         if ($("td", el).prevObject.text() != '') {
 
           empty = false;
@@ -802,6 +819,7 @@
         $("th:nth-child(" + i + ")", table).hide(); //hide header <th>
       }
     }
+
   }
 </script>
 {% endblock %}

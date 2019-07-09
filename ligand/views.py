@@ -457,18 +457,22 @@ access data from db, fill empty fields with empty parse_children
 def bias_browser(request):
     context = dict()
     content = AnalyzedExperiment.objects.all().prefetch_related(
-        'analyzed_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'publication__web_link__web_resource', 'publication__journal', 'analyzed_data__emax_ligand_reference')
+        'analyzed_data', 'ligand', 'receptor','receptor__family', 'receptor__species','publication', 'publication__web_link', 'publication__web_link__web_resource', 'publication__journal', 'analyzed_data__emax_ligand_reference')
 
     prepare_data = process_data1(content)
-    multply_assay(prepare_data)
 
-    #print("---data---",prepare_data)
+    keys = [k for k, v in prepare_data.items() if len(v['biasdata']) < 1]
+    for x in keys:
+        del prepare_data[x]
+
+    multply_assay(prepare_data)
     context.update({'data': prepare_data})
 
     return render(request, 'bias_browser.html', context)
 
 
 def process_data1(content):
+
     '''
     Merge BiasedExperiment with its children
     and pass it back to loop through dublicates
@@ -480,13 +484,16 @@ def process_data1(content):
         fin_obj['main'] = instance
         temp = dict()
         doubles = []
+
         temp['publication'] = instance.publication
         temp['ligand'] = instance.ligand
         temp['receptor'] = instance.receptor
-        temp['family'] = {}
+        temp['biasdata'] = list()
 
         for entry in instance.analyzed_data.all():
-            temp['family'][entry.family] = dict()
+
+
+            temp['reference_ligand'] = entry.emax_ligand_reference
             temp_dict = dict()
             temp_dict['family'] = entry.family
             temp_dict['signalling_protein'] = entry.signalling_protein
@@ -509,15 +516,15 @@ def process_data1(content):
             temp_dict['t_factor'] = entry.t_factor
             temp_dict['log_bias_factor'] = entry.log_bias_factor
             temp_dict['emax_ligand_reference'] = entry.emax_ligand_reference
-            temp['reference_ligand'] = entry.emax_ligand_reference
-            temp['family'][entry.family] = temp_dict
+
+            temp['biasdata'].append(temp_dict)
 
             doubles.append(temp_dict)
 
         #print('---data---', temp, '\n')
 
         rd[increment] = temp
-        rd[increment]['biasdata'] = doubles
+
         increment+=1
     return rd
 
@@ -527,14 +534,8 @@ def multply_assay(data):
     to hide columns im template
     '''
     for i in data.items():
-        lenght = 0
-        families = ['br','gi','gq','g12','gs']
-        for k in i[1]['family']:
-            if k in families:
-                families.remove(k)
-                lenght+=1
-
-        for key in families:
+        lenght = len(i[1]['biasdata'])
+        for key in range(lenght,5):
             temp_dict = dict()
             temp_dict['pathway'] = ''
             temp_dict['bias'] = ''
@@ -544,11 +545,8 @@ def multply_assay(data):
             temp_dict['t_factor'] = ''
             temp_dict['ligand_function'] = ''
             temp_dict['order_no'] = lenght
-            i[1]['family'][key] = temp_dict
             i[1]['biasdata'].append(temp_dict)
             lenght+=1
-
-
         test = sorted(i[1]['biasdata'], key=lambda x: x['order_no'],
                       reverse=False)
         i[1]['biasdata'] = test
@@ -557,106 +555,3 @@ def multply_assay(data):
 '''
 End  of Bias Browser
 '''
-
-'''
-Bias browser between same family
-access data from db, fill empty fields with empty parse_children
-'''
-
-def bias_family_browser(request):
-    context = dict()
-    content = AnalyzedExperiment.objects.all().prefetch_related(
-        'analyzed_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'publication__web_link__web_resource', 'publication__journal', 'analyzed_data__emax_ligand_reference')
-
-    prepare_data = process_data_family(content)
-    multply_assay_family(prepare_data)
-
-    #print("---data---",prepare_data)
-    context.update({'data': prepare_data})
-
-    return render(request, 'bias_browser.html', context)
-
-def process_data_family(content):
-    '''
-    Merge BiasedExperiment with its children
-    and pass it back to loop through dublicates
-    '''
-    rd = dict()
-    increment = 0
-    for instance in content:
-        fin_obj = {}
-        fin_obj['main'] = instance
-        temp = dict()
-        doubles = []
-        temp['publication'] = instance.publication
-        temp['ligand'] = instance.ligand
-        temp['receptor'] = instance.receptor
-        temp['family'] = {}
-
-        for entry in instance.analyzed_data.all():
-            temp['family'][entry.family] = dict()
-            temp_dict = dict()
-            temp_dict['family'] = entry.family
-            temp_dict['signalling_protein'] = entry.signalling_protein
-            temp_dict['cell_line'] = entry.cell_line
-            temp_dict['assay_type'] = entry.assay_type
-            temp_dict['assay_measure'] = entry.assay_measure
-            temp_dict['assay_time_resolved'] = entry.assay_time_resolved
-            temp_dict['ligand_function'] = entry.ligand_function
-            temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
-            temp_dict['quantitive_activity'] = entry.quantitive_activity
-            temp_dict['quantitive_unit'] = entry.quantitive_unit
-            temp_dict['qualitative_activity'] = entry.qualitative_activity
-            temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
-            temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
-            temp_dict['efficacy_unit'] = entry.efficacy_unit
-            temp_dict['potency'] =  entry.potency
-            temp_dict['order_no'] =  int(entry.order_no)
-            temp_dict['t_coefficient'] = entry.t_coefficient
-            temp_dict['t_value'] = entry.t_value
-            temp_dict['t_factor'] = entry.t_factor
-            temp_dict['log_bias_factor'] = entry.log_bias_factor
-            temp_dict['emax_ligand_reference'] = entry.emax_ligand_reference
-            temp['reference_ligand'] = entry.emax_ligand_reference
-            temp['family'][entry.family] = temp_dict
-
-            doubles.append(temp_dict)
-
-        #print('---data---', temp, '\n')
-
-        rd[increment] = temp
-        rd[increment]['biasdata'] = doubles
-        increment+=1
-    return rd
-
-def multply_assay_family(data):
-    '''
-    Used to fill empty template (5 in total, 5 families) spaces
-    to hide columns im template
-    '''
-    for i in data.items():
-        lenght = 0
-        families = ['br','gi','gq','g12','gs']
-        for k in i[1]['family']:
-            if k in families:
-                families.remove(k)
-                lenght+=1
-
-        for key in families:
-            temp_dict = dict()
-            temp_dict['pathway'] = ''
-            temp_dict['bias'] = ''
-            temp_dict['cell_line'] = ''
-            temp_dict['assay_type'] = ''
-            temp_dict['log_bias_factor'] = ''
-            temp_dict['t_factor'] = ''
-            temp_dict['ligand_function'] = ''
-            temp_dict['order_no'] = lenght
-            i[1]['family'][key] = temp_dict
-            i[1]['biasdata'].append(temp_dict)
-            lenght+=1
-
-
-        test = sorted(i[1]['biasdata'], key=lambda x: x['order_no'],
-                      reverse=False)
-        i[1]['biasdata'] = test
