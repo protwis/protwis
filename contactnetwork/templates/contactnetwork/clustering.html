@@ -87,7 +87,7 @@
                         <ul class="dropdown-menu" role="menu">
                             <li><a href="#">
                               <label>Radial layout</label>
-                              <input type="checkbox" id="layout" checked/>
+                              <input type="checkbox" id="radial-layout" checked/>
                             </a></li>
                             <li><a href="#">
                               <label>Color edges and leaves</label>
@@ -1189,8 +1189,15 @@
 
             // init tree toggles
             // Button Toggles
-            $("#layout").on("click", function(e) {
-              phylotree.radial($(this).prop("checked")).placenodes().update();
+            $("#radial-layout").on("click", function(e) {
+              var radial = $(this).prop("checked");
+              phylotree.radial(radial).placenodes().update();
+              if (!radial){
+                $("#clustering-tree g.svg-pan-zoom_viewport").css("transform", "matrix(.8, 0, 0, .8, 0, 0)")
+              } else {
+                window.zoomCluster["#clustering-tree"].zoom(1.1)
+                window.zoomCluster["#clustering-tree"].center()
+              }
             });
 
             $("#colored-edges").on("click", function(e) {
