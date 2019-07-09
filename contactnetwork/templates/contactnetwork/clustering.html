@@ -769,6 +769,7 @@
                     } else
                       labelName = treeAnnotations[node.name][1].split("_")[0].toUpperCase()
 
+                    // non-breaking space (&#160;) breaks svg/png download
                     label = node_label[0][0]
                     if (hidePDBs){
                       label.innerHTML = "&#160;" + labelName + "&#160;"
@@ -974,7 +975,9 @@
 
           // Key: strip xmlns tags otherwise this will result in a double definition
           oDOM.removeAttribute("xmlns");
-          saveSvgAsJpg(oDOM, name, {scale: 3});
+          
+          // Note: keep scale low enough for Chrome to allow download (max size 1.3MB)
+          saveSvgAsPng(oDOM, name, {scale: 2});
         }
 
         var lastData;
