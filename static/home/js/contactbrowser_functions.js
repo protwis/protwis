@@ -1320,9 +1320,9 @@
 
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
-            console.log('updateStructureRepresentations');
+            console.log('updateStructureRepresentations',mode);
             var structures = 1;
-            if (mode == "two-groups")
+            if (mode.startsWith("two_sets"))
                 structures = 2;
 
             for (var key = 0; key < structures; key++) {
@@ -1683,9 +1683,15 @@
 
             // Always invoke NGL update
             if (!ignore_ngl) {
+                ngl_plots = [];
+
+                $(".ngl-container:visible").each( function() {
+                    // statements
+                    ngl_plot = $(this).attr('id').replace("ngl-","");
+                    createNGLRepresentations(ngl_plot, 0, ngl_plot)
+                    if (ngl_plot.startsWith('two_sets')) createNGLRepresentations(ngl_plot, 1, ngl_plot)
+                });
                 // Do not update when simply changing viz tabs.
-                createNGLRepresentations(currentTab, 0, currentTab)
-                if (currentTab == "two-crystal-groups-tab") createNGLRepresentations(currentTab, 1, currentTab)
             }
         }
 
