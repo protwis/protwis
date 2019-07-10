@@ -37,7 +37,7 @@ def structureCheck(request):
     """
     Show structure annotation check page
     """
-    return render(request, 'angles/structureCheck.html')
+    return render(request, 'angles/structurecheck.html')
 
 def get_angles(request):
     data = {'error': 0}
@@ -56,7 +56,7 @@ def get_angles(request):
         if len(pdbs)==1 and len(pdbs2)==0:
             pdbs = list(pdbs)
             query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number").order_by('residue__generic_number__label')
-            
+
             # Prep data
             data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.outer_angle, q.hse, q.sasa, q.rsa, q.phi, q.psi, q.theta, q.tau, q.core_distance ] for q in query]
             data['headers'] = [{"title" : "Value"}]
