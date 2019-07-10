@@ -1224,15 +1224,29 @@ function renderBrowser(data) {
         });
     }
 
-    // table.on('click', '.clickable-row', function(event) {
-    //   if($(this).hasClass('active')){
-    //     $(this).removeClass('active'); 
-    //     $(selector + " .secondary-table").find('tbody').empty();
-    //   } else {
-    //     $(this).addClass('active').siblings().removeClass('active');
-    //     renderSecondary($(this).attr('id'))
-    //   }
-    // });
+    table.on('click', '.core_distance', function(event) {
+        // $(this)
+
+        gn_pair = $(this).closest("tr").attr('id').split(",");
+
+        gn1 = gn_pair[0];
+        gn2 = gn_pair[1];
+
+
+        all_angles_1 = two_sets_data['all_angles'][gn1];
+        all_angles_2 = two_sets_data['all_angles'][gn2];
+
+        console.log('clicked!',$(this),gn_pair);
+        console.table(all_angles_1);
+        console.table(all_angles_2);
+
+        $("#resModal").find(".modal-body").html("<div id='modal_plotly_1'></div><div id='modal_plotly_2'></div>");
+        $("#resModal").modal();
+
+        createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles');
+        createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles');
+
+    });
 
     console.timeEnd("RenderBrowser");
     gray_scale_table(table);

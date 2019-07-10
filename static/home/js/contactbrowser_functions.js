@@ -757,6 +757,8 @@
                 ['heatmap', 'Matrix of interactions'],
                 ['flareplot', 'Flare Plot'],
                 ['ngl', '3D view'],
+                ['boxplot', 'Box-plot (Frequency)'],
+                ['boxplot_angles', 'Box-plot (Angles)'],
                 ['schematic_non', 'Schematic (Non-consecutive)'],
                 ['schematic_con', 'Schematic (Consecutive)'],
             ];
@@ -824,6 +826,21 @@
                         plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
 
                         createFlareplotBox(raw_data, '#flareplot-' + plot_id);
+                        break;
+                    case "boxplot":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('boxplot-container');
+                        plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+
+                        createBoxPlot(raw_data, 'boxplot-' + plot_id);
+                        break;
+                    case "boxplot_angles":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('boxplot-container');
+                        plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+
+                        createBoxPlot(raw_data, 'boxplot-' + plot_id,'angles');
+                        break;
                 }
             });
         }

@@ -929,6 +929,18 @@ def InteractionBrowserData(request):
                     distance = ""
                 data['interactions'][coord]['distance'] = distance
 
+        # del class_pair_lookup
+        # del r_pair_lookup
+        print('Prepare all angles values for',mode,'mode',time.time()-start_time)
+        data['all_angles'] = {}
+        ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs_upper) \
+            .exclude(residue__generic_number=None) \
+            .values_list('residue__generic_number__label','structure__pdb_code__index','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+        for d in ds:
+            if d[0] not in data['all_angles']:
+                data['all_angles'][d[0]] = {}
+            data['all_angles'][d[0]][d[1]] = d
+
         print('Prepare angles values for',mode,'mode',time.time()-start_time)
 
         if mode == "double":
