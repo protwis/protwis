@@ -449,7 +449,7 @@ var signprotmat = {
 
         yAxis: function (yScale) {
             var yAxis = d3
-                .axisRight(yScale)
+                .axisLeft(yScale)
                 .tickSize(0)
                 .tickPadding(8);
             return yAxis;
@@ -675,7 +675,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("class", "y axis")
-                .attr("transform", "translate(" + (w - xScale.step()) + "," + yScale.step() / 2 + ")")
+                .attr("transform", "translate(" + (0) + "," + yScale.step() / 2 + ")")
                 .call(yAxis)
                 .selectAll("text")
                 .attr("font-size", "12px");
@@ -703,9 +703,9 @@ var signprotmat = {
             svg
                 .append("line")
                 .style("stroke", "black")
-                .attr("x1", 0)
+                .attr("x1", w - xScale.step())
                 .attr("y1", yScale.step())
-                .attr("x2", 0)
+                .attr("x2", w - xScale.step())
                 .attr("y2", h);
             // * ADD AXIS LABELS
             svg
