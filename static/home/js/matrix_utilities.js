@@ -367,6 +367,42 @@ const filter_pairs = function(floor, ceiling) {
     })
 }
 
+
+const initialize_filter_slider = function() {
+  // initializing range slider
+  $( "#slider-range" ).slider({
+    range: true,
+    min: 1,
+    max: 20,
+    values: [ 1, 20 ],
+    slide: function( event, ui ) {
+      const floor = parseInt(ui.values[0])
+      const ceil = parseInt(ui.values[1])
+      $( "#amount" ).val( 'From: ' + floor + " To: " + ceil );
+      filter_pairs(floor, ceil)
+    }
+  });
+};
+
+const reset_slider = function() {
+  // reset the slider to the possible min and max values
+  const min = $( "#slider-range" ).slider( "option", "min" );
+  const max = $( "#slider-range" ).slider( "option", "max" );
+  $( "#slider-range" ).slider( "values", [ min, max ] );
+}
+
+const set_slider_max_value = function(){
+  // setting the max value of the interaction filter slider according to selected data
+  const max_val = parseInt($("#interface-count").text().match(/\d+/))
+  $( "#slider-range" ).slider( "option", "max", max_val );
+}
+
+const update_slider_label = function() {
+    // update the text span above the slider
+  $( "#amount" ).val( 'From: ' + $( "#slider-range" ).slider( "values", 0 ) +
+    " To: " + $( "#slider-range" ).slider( "values", 1 ) );
+}
+
 var tableToExcel = (function () {
   var uri = 'data:application/vnd.ms-excel;base64,',
     template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
@@ -497,6 +533,10 @@ $(document).ready(function () {
   pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id');
   pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
 
+  initialize_filter_slider()
+  set_slider_max_value()
+  update_slider_label()
+
   $('#interface-modal-table').on('hidden.bs.modal', function (e) {
     selection = table.rows({ selected: true }).data();
     let old_pdb_sel = pdb_sel;
@@ -540,6 +580,10 @@ $(document).ready(function () {
       );
       document.querySelector("#intbut").classList.add("active");
       document.querySelector("#resbut").classList.remove("active");
+
+      set_slider_max_value()   
+      reset_slider()
+      update_slider_label()
 
       // interface_data_table.clear();
       // interface_data_table.rows.add(data.transformed);
