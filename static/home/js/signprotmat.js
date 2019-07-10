@@ -547,9 +547,48 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "interact")
+
+            var each_rect = svg
+                .select("g#interact")
                 .selectAll("rects")
                 .data(result)
                 .enter()
+                .append("g")
+                .attr("class", function (d) { return "p" + d.pairs.length; })
+                .on("mouseover", function (d) {
+                tip.show(d);
+            })
+                .on("mouseout", function (d) {
+                tip.hide();
+            })
+                .on("click", function (d) {
+                var index;
+                // let rect_x = d3.event.target.getAttribute('x')
+                // let rect_y = d3.event.target.getAttribute('y')
+                // console.log(rect_x, rect_y)
+                // https://stackoverflow.com/a/20251369/8160230
+                // select the rect under cursor
+                var curr = d3.select(this);
+                // Determine if current rect was clicked before
+                var active = d.active ? false : true;
+                // Update whether or not the elements are active
+                d.active = active;
+                // set style in regards to active
+                if (d.active) {
+                    curr.style("stroke", "yellow").style("stroke-width", 2);
+                    info_data.push(d);
+                }
+                else {
+                    curr.style("stroke", "none").style("stroke-width", 2);
+                    index = info_data.indexOf(d);
+                    info_data.splice(index, 1);
+                }
+                signprotmat.d3.infoBoxUpdate();
+                signprotmat.d3.colorRecResidues(d);
+                signprotmat.d3.colorSigResidues(d);
+            });
+
+            each_rect
                 .append("rect")
                 .attr("x", function (d) {
                 // return xScale(d.rec_gn) - shift_left * xScale.step() + offset;
@@ -587,39 +626,40 @@ var signprotmat = {
                     return colScale(d.pairs[0].int_ty[0]);
                 }
             })
-                .attr("class", function (d) { return "p" + d.pairs.length; })
-                .on("mouseover", function (d) {
-                tip.show(d);
+             
+            each_rect
+                .append("text")
+                .attr("text-anchor", "middle")
+                .attr("class", 'int_count')
+                .attr("x", function (d) {
+                // return xScale(d.rec_gn) - shift_left * xScale.step() + offset;
+                return xScale(d.rec_gn) - xScale.step();
             })
-                .on("mouseout", function (d) {
-                tip.hide();
+                .attr("y", function (d) {
+                // return yScale(d.sig_gn) + shift_top * yScale.step() + offset;
+                return yScale(d.sig_gn);
             })
-                .on("click", function (d) {
-                var index;
-                // let rect_x = d3.event.target.getAttribute('x')
-                // let rect_y = d3.event.target.getAttribute('y')
-                // console.log(rect_x, rect_y)
-                // https://stackoverflow.com/a/20251369/8160230
-                // select the rect under cursor
-                var curr = d3.select(this);
-                // Determine if current rect was clicked before
-                var active = d.active ? false : true;
-                // Update whether or not the elements are active
-                d.active = active;
-                // set style in regards to active
-                if (d.active) {
-                    curr.style("stroke", "yellow").style("stroke-width", 2);
-                    info_data.push(d);
-                }
-                else {
-                    curr.style("stroke", "none").style("stroke-width", 2);
-                    index = info_data.indexOf(d);
-                    info_data.splice(index, 1);
-                }
-                signprotmat.d3.infoBoxUpdate();
-                signprotmat.d3.colorRecResidues(d);
-                signprotmat.d3.colorSigResidues(d);
-            });
+                .attr("dx", xScale.step() / 2)
+                .attr("dy", yScale.step() / 2)
+                .style("fill", function (d) {
+                    const num_pairs = d.pairs.length
+                    const max_count = get_max_interface_count()
+                    const ratio = (num_pairs / max_count)*100
+                    if (ratio >= 50) {
+                        return "#eaeaea";
+                    }
+                    else if (ratio < 50) {
+                        return "#000000";
+                    }
+                })
+                .text(function(d){ return d.pairs.length })
+                // .text(function(d){ 
+                //     const num_pairs = d.pairs.length
+                //     const max_count = get_max_interface_count()
+                //     const ratio = (num_pairs / max_count)*100
+                //     return _.round(ratio, 1)
+                // })
+
             // * DRAWING AXES
             svg
                 .append("g")

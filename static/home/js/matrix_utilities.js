@@ -361,7 +361,7 @@ const replace_filter_value = function(d) {
 const filter_pairs = function(floor, ceiling) {
   // const num = parseInt($('#currentpairs').text())
   d3.select('g#interact')
-    .selectAll("rect")
+    .selectAll("g")
     .style('display', function(d){
       return (floor <= d.pairs.length && ceiling >= d.pairs.length ? 'block' : 'none')
     })
@@ -393,7 +393,7 @@ const reset_slider = function() {
 
 const set_slider_max_value = function(){
   // setting the max value of the interaction filter slider according to selected data
-  const max_val = parseInt($("#interface-count").text().match(/\d+/))
+  const max_val = get_max_interface_count()
   $( "#slider-range" ).slider( "option", "max", max_val );
 }
 
@@ -401,6 +401,10 @@ const update_slider_label = function() {
     // update the text span above the slider
   $( "#amount" ).val( 'From: ' + $( "#slider-range" ).slider( "values", 0 ) +
     " To: " + $( "#slider-range" ).slider( "values", 1 ) );
+}
+
+const get_max_interface_count = function() {
+  return parseInt($("#interface-count").text().match(/\d+/))
 }
 
 var tableToExcel = (function () {
