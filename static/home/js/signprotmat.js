@@ -1,5 +1,5 @@
 // * CONSTANTS
-var margin = { top: 60, right: 200, bottom: 180, left: 200 };
+var margin = { top: 60, right: 20, bottom: 180, left: 240 };
 var w = 1200 - margin.left - margin.right, h = 1000 - margin.top - margin.bottom;
 // change to 600 for more compact view
 var non_int_col = "#fff";
@@ -712,44 +712,45 @@ var signprotmat = {
                 .append("text")
                 .attr("class", "x axis_label")
                 .attr("text-anchor", "end")
-                .attr("x", 0)
-                .attr("y", h + 15)
-                .text("GPCR");
+                .attr("x", 0 - 7)
+                .attr("y", h + 25)
+                .text("Receptor GN");
             svg
                 .append("text")
                 .attr("class", "y axis_label")
-                .attr("text-anchor", "begin")
-                .attr("x", w - 0.8 * xScale.step())
+                .attr("text-anchor", "end")
+                .attr("x", 0 - 7)
                 .attr("y", 0.8 * yScale.step())
-                .text("G-Protein");
+                .text("G-Prot. GN");
             // * ADD INFOBOX ELEMENT
             svg
                 .append("g")
                 .attr("id", "infobox")
                 .attr("transform", "translate(-15," + (data.inttypes.length + 2) * 20 + ")");
-            // * ADDING Interaction Type LEGEND
-            svg
-                .append("g")
-                .attr("class", "legendOrdinal")
-                .attr("transform", "translate(-30," + yScale.step() + ")");
-            var legendOrdinal = d3
-                .legendColor()
-                .cells(data.inttypes.length)
-                .scale(colScale)
-                // .cellFilter(function (d) { return d.label !== "undefined" })
-                .orient("vertical")
-                .labelOffset(-20);
-            svg
-                .select(".legendOrdinal")
-                .call(legendOrdinal)
-                .selectAll("rect")
-                .attr("rx", 3)
-                .attr("ry", 3);
-            svg
-                .select(".legendOrdinal")
-                .selectAll("text")
-                .attr("class", "legend")
-                .attr("text-anchor", "end");
+            // // * ADDING Interaction Type LEGEND
+            // svg
+            //     .append("g")
+            //     .attr("class", "legendOrdinal")
+            //     .attr("transform", "translate(-30," + yScale.step() + ")");
+            // var legendOrdinal = d3
+            //     .legendColor()
+            //     .cells(data.inttypes.length)
+            //     .scale(colScale)
+            //     // .cellFilter(function (d) { return d.label !== "undefined" })
+            //     .orient("vertical")
+            //     .labelOffset(-20);
+            // svg
+            //     .select(".legendOrdinal")
+            //     .call(legendOrdinal)
+            //     .selectAll("rect")
+            //     .attr("rx", 3)
+            //     .attr("ry", 3);
+            // svg
+            //     .select(".legendOrdinal")
+            //     .selectAll("text")
+            //     .attr("class", "legend")
+            //     .attr("text-anchor", "end");
+
             // * APPENDING COL TICK ANNOTATION FOR RECEPTOR GNs
             svg
                 .append("g")
@@ -777,7 +778,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "sigPDB")
-                .attr("transform", "translate(" + w + "," + yScale.step() + ")rotate(-90)")
+                .attr("transform", "translate(" + ((0 - margin.left * 0.9) - sigScale.range()[0] / 2 - 5) + "," + yScale.step() + ")rotate(-90)")
                 .selectAll("text")
                 .data(data.pdbids)
                 .enter()
@@ -887,7 +888,8 @@ var signprotmat = {
                 .append("g")
                 .attr("id", "sigAA")
                 .attr("transform", "translate(" +
-                (w + (1 / 3) * margin.right) +
+                // (w + (1 / 3) * margin.right) +
+                (0 - margin.left * 0.9) +
                 "," +
                 yScale.step() / 2 +
                 ")")
