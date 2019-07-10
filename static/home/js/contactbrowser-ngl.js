@@ -7,6 +7,7 @@
         var gpcr_rep = {}
         var int_labels = []
         function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false) {
+            // console.log(mode, pdb, pdbs, pdbs_set2, pdb2);
             $("#ngl-"+mode).html("");
             stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
             color_schemes[mode] = [[],[]];
@@ -394,11 +395,11 @@
                          + '<span class="ngl_control"><h4>Controls</h4>';
 
             // Toggle for showing two structures simultaneously
-            if (mode == "two-groups" && pdbs_set2)
+            if (mode.startsWith("two_sets") && pdbs_set2)
               two_structures = true;
             else
               two_structures = false;
-
+            console.log("controls mode",mode);
             if (pdbs){
                 if (two_structures)
                   controls += '<p>Structure set 1: <select id="ngl_pdb_'+mode+'_ref">';
@@ -524,10 +525,26 @@
         var linkMap = {}
         var linkColourScheme = {}
         function createNGLRepresentations(mode, structureNumber, update = false) {
-          if (mode=='single-crystal-tab') {mode='single'}
-          if (mode=='single-crystal-group-tab') {mode='single-group'}
-          if (mode=='two-crystal-groups-tab') {mode='two-groups'}
-            console.log("createNGLRepresentations",mode,structureNumber);
+
+          interactions_data = ''
+          if (mode.startsWith("single_group")) {
+            mode_short='single-group';
+            interactions_data = single_set_data;
+          } else if (mode.startsWith("single")) {
+            mode_short='single';
+            interactions_data = single_crystal_data;
+          } else if (mode.startsWith("two_sets")) {
+            mode_short='two-groups';
+            interactions_data = two_sets_data;
+          }
+
+          // if (mode=='single-crystal-tab') {mode='single'}
+          // if (mode=='single-crystal-group-tab') {mode='single-group'}
+          // if (mode=='two-crystal-groups-tab') {mode='two-groups'}
+
+
+            // console.log("createNGLRepresentations",mode,structureNumber);
+            // console.table(reps);
             var links = []
             var res_int = []
             if (mode in reps && structureNumber in reps[mode] && reps[mode][structureNumber].structureComponent)
@@ -549,7 +566,10 @@
 
             var gnOnly = !update || $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
 
-            if (mode=='single') {
+            // Get interactions from raw_data
+            // console.log('i data',interactions_data);
+
+            if (mode_short=='single') {
               var addedLinks = []
 
               // populate enabled interactions
@@ -558,24 +578,21 @@
               });
 
               // Go through interaction table in inverse order (only show strongest color)
-              $($('#single-crystal-tab .heatmap-interaction').get().reverse()).each(function(e) {
+              // $($('#single-crystal-tab .heatmap-interaction').get().reverse()).each(function(e) {
+              $.each(interactions_data.interactions, function( index, value ) {
                   var rect = $(this);
-                  var resNo1 = rect.data('res-no-1');
-                  var resNo2 = rect.data('res-no-2');
-                  var seg1 = rect.data('seg-1');
-                  var seg2 = rect.data('seg-2');
-                  var genNo1 = rect.data('gen-no-1');
-                  var genNo2 = rect.data('gen-no-2');
-                  var aa1 = rect.data('aa-1');
-                  var aa2 = rect.data('aa-2');
-                  var iType = rect.data('interaction-type');
+                  var resNo1 = value['seq_pos'][0];
+                  var resNo2 = value['seq_pos'][1];
+                  var genNo1 = index.split(",")[0];
+                  var genNo2 = index.split(",")[1];
+                  var iType = value['types'][0]; //get strongest, which is first element.
 
 
                   var pair = resNo1 + "," + resNo2;
+                  var pair = genNo1 + "," + genNo2;
                   if ( !(filtered_gn_pairs.includes(pair)) && filtered_gn_pairs.length) {
                       return
                   } 
-
                   // Interaction type filtering
                   // if (update && !enabledInteractions.includes(iType)) return
 
@@ -595,26 +612,14 @@
                     int_labels[mode][structureNumber][o.structure.id + "|" + resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                   }
                 });
-            } else if (mode=='single-group') {
-              // get cutoffs from control-tab
-              var [tMin,tMax] = [0, 9999999];
-              if ($('#' + currentTab + ' #pdbs-range-slider').slider("instance"))
-                [tMin,tMax] = $('#' + currentTab + ' #pdbs-range-slider').slider( "option", "values" );
+            } else if (mode_short=='single-group') {
 
-              $('#single-crystal-group-tab .heatmap-container .heatmap-interaction').each(function(e) {
-                  var rect = $(this);
-                  var genNo1 = rect.data('gen-no-1');
-                  var genNo2 = rect.data('gen-no-2');
-                  var seg1 = rect.data('seg-1');
-                  var seg2 = rect.data('seg-2');
-                  var nInteractions = rect.data('num-interactions');
-                  var nTotalInteractions = rect.data('total-possible-interactions');
-                  var frequency = rect.data('frequency');
+              // $('#single-crystal-group-tab .heatmap-container .heatmap-interaction').each(function(e) {
+              $.each(interactions_data.interactions, function( index, value ) {
+                  var genNo1 = index.split(",")[0];
+                  var genNo2 = index.split(",")[1];
+                  var frequency = value['pdbs'].length / interactions_data['pdbs'].length;
 
-                  // apply cutoffs
-                  if (nInteractions < tMin || tMax < nInteractions) return
-
-                  // TODO Add frequency filtering here
                   if ((genNo1=='-') || (genNo2=='-')) return
 
                   var pair = genNo1 + "," + genNo2;
@@ -636,21 +641,15 @@
                   int_labels[mode][structureNumber][o.structure.id + "|" + resNo1+"-"+resNo2] = genNo1+" - "+genNo2
                 });
             } else {
-              // get cutoffs from control-tab if sliders are initialized
-              var r1, r2, r3;
-              r1 = r2 = r3 = [-1000, 1000]
-              if ($('#' + currentTab + ' #freq-slider-range-1').slider("instance")){
-                  r1 = $('#' + currentTab + ' #freq-slider-range-1').slider( "option", "values" );
-                  r2 = $('#' + currentTab + ' #freq-slider-range-2').slider( "option", "values" );
-                  r3 = $('#' + currentTab + ' #freq-slider-range-3').slider( "option", "values" );
-              }
 
-              $('#two-crystal-groups-tab .heatmap-container .heatmap-interaction').each(function(e) {
-                  var rect = $(this);
+              // $('#two-crystal-groups-tab .heatmap-container .heatmap-interaction').each(function(e) {
+              var pdbs_1 = interactions_data['pdbs1'].length
+              var pdbs_2 = interactions_data['pdbs2'].length
+              $.each(interactions_data.interactions, function( index, v ) {
 
                   // Generic numbering
-                  var genNo1 = rect.data('gen-no-1');
-                  var genNo2 = rect.data('gen-no-2');
+                  var genNo1 = index.split(",")[0];
+                  var genNo2 = index.split(",")[1];
                   if ((genNo1=='-') || (genNo2=='-')) return
 
                   // Link GN numbering to the shown structure
@@ -658,16 +657,14 @@
                   var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo2)];
                   if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
 
-                  // Apply frequency cutoffs
-                  var frequency = rect.data('frequencyDiff');
-                  var f1 = rect.data('group-1Freq');
-                  var f2 = rect.data('group-2Freq');
+                  var f1 = Math.round(100 * v['pdbs1'].length / pdbs_1);
+                  var f2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
+                  var frequency = f1 - f2;
 
                   var pair = genNo1 + "," + genNo2;
                   if ( !(filtered_gn_pairs.includes(pair)) && filtered_gn_pairs.length) {
                       return
                   } 
-                  // if ( (f1 < r1[0] || r1[1] < f1) || (f2 < r2[0] || r2[1] < f2) || (frequency < r3[0] || r3[1] < frequency) ) return
 
                   // Push interacting residues
                   if (!res_int.includes(resNo1)) res_int.push(resNo1)
