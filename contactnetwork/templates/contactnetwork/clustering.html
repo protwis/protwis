@@ -56,10 +56,11 @@
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Conformational clusters (tree of structures)</h3>
-                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                  <span class="pull-right glyphicon glyphicon-download btn-download"></span>
-                                  <span class="pull-right glyphicon glyphicon-download-alt btn-download-alt"></span> <!-- Use this one for figure downloads? -->
-                                  <span class="pull-right glyphicon glyphicon-picture btn-camera"></span> <!-- Use this one for PNG figure downloads? -->
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen" data-toggle="tooltip" data-placement="bottom" title="Fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon-download btn-download" data-toggle="tooltip" data-placement="bottom" title="Download raw distance data (CSV)"></span>
+                                  <span class="pull-right glyphicon glyphicon-tree-conifer btn-newick" data-toggle="tooltip" data-placement="bottom" title="Download tree (Newick format)"></span>
+                                  <span class="pull-right glyphicon glyphicon-download-alt btn-download-alt" data-toggle="tooltip" data-placement="bottom" title="Download figure (SVG)"></span> <!-- Use this one for figure downloads? -->
+                                  <span class="pull-right glyphicon glyphicon-picture btn-camera" data-toggle="tooltip" data-placement="bottom" title="Download figure (PNG)"></span> <!-- Use this one for PNG figure downloads? -->
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -216,6 +217,7 @@
         window.zoomCluster = {};
 
         var phylotree;
+        var treedata;
         var doBranchColoring = true;
         var hidePDBs = false;
         var labelReorder = false;
@@ -226,6 +228,7 @@
         function renderTree(data) {
             dataClasses = [["active", "inactive", "intermediate"],0,0];
             colorClasses = [["#0F0", "#F00", "#F80"], 0, 0];
+            treedata = data // store globally
             var tree = data["tree"]; // contains tree in Newick format
 
             // data annotations
@@ -949,6 +952,25 @@
             return "#"+RR+GG+BB;
         }
 
+        function downloadNewick(name){
+          // Obtain from download data
+          if ("tree" in treedata){
+            download(name, treedata["tree"])
+          }
+        }
+
+        function download(filename, text) {
+          var element = document.createElement('a');
+          element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+          element.setAttribute('download', filename);
+
+          element.style.display = 'none';
+          document.body.appendChild(element);
+          element.click();
+
+          document.body.removeChild(element);
+        }
+
         function downloadSVG(svgSelector, name) {
           if ($("#" + svgSelector).length > 0) {
             var ContainerElements = ["svg","g"];
@@ -1113,6 +1135,12 @@
             $(selector + ' .btn-download-alt').click(function() {
                 // svg download
                 downloadSVG("clustering-tree", "GPCR_structure_clustering.svg")
+            });
+
+            // Dendrogram download in newick
+            $(selector + ' .btn-newick').click(function() {
+                // svg download
+                downloadNewick("GPCR_structure_clustering.tree")
             });
 
             // Dendrogram download in PNG
@@ -1315,7 +1343,7 @@
             background-color: rgba(124, 124, 255, 0.1);
         }
 
-        .btn-download, .btn-download-alt, .btn-fullscreen, .btn-camera {
+        .btn-download, .btn-download-alt, .btn-fullscreen, .btn-camera, .btn-newick {
           margin-right: 10px;
         }
 
