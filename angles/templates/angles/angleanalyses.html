@@ -867,17 +867,22 @@
 
           // add selector
           var selectVariable = '<select class="variable_selector">';
+          selectVariable += '<optgroup label="Backbone movement">';
+          selectVariable += '<option value="distance" SELECTED>Distance to 7TM axis</option>';
           selectVariable += '<option value="bb_angle">Angle of C&alpha; atom relative to GPCR core</option>';
           selectVariable += '<option value="sc_angle">Angle of C&beta; atom relative to GPCR core</option>';
-          selectVariable += '<option value="outer_angle" SELECTED>Most outer angle</option>';
           selectVariable += '<option value="HSE">Half-sphere exposure</option>';
-          selectVariable += '<option value="SASA">Solvent Accessible Surface Area (SASA)</option>';
-          selectVariable += '<option value="RSA">Relative SASA</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Helix types, bulges and constrictions">';
           selectVariable += '<option value="phi">Phi dihedral</option>';
           selectVariable += '<option value="psi">Psi dihedral</option>';
-          selectVariable += '<option value="tau">Tau angle</option>';
-          selectVariable += '<option value="theta">Theta dihedral</option>';
-          selectVariable += '<option value="distance">Distance to core</option>';
+          selectVariable += '<option value="tau">Tau dihedral (between 4 consecutive C&alpha;-atoms)</option>';
+          selectVariable += '<option value="theta">Theta angle (between 3 consecutive C&alpha;-atoms)</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Sidechain properties">';
+          selectVariable += '<option value="outer_angle">Angle terminal atom - helix axis - 7TM axis</option>';
+          selectVariable += '<option value="RSA">Relative SASA</option>';
+          selectVariable += '<option value="SASA">Solvent Accessible Surface Area (SASA)</option>';
           selectVariable += '</select>';
           cp.html(selectVariable)
 
@@ -908,7 +913,7 @@
 
         var coloringData = {}
         var repr_dict = {}
-        function updateDataTable(selector, variable = "outer_angle") {
+        function updateDataTable(selector, variable = "distance") {
             data = angleData[selector];
             coloringData[tabMap[selector]] = {}
 
