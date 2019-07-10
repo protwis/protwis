@@ -14,9 +14,11 @@ var signprotmat = {
             Object.keys(dataset).forEach(function (e) { return ret.push(e.toUpperCase()); });
             return ret;
         },
+
         objectToArray: function (dataset) {
             return Object.keys(dataset).map(function (key) { return dataset[key]; });
         },
+
         moveKeyToArray: function (dataset, pdb_ids) {
             for (var i = 0; i < pdb_ids.length; i++) {
                 var pdb = pdb_ids[i];
@@ -26,10 +28,12 @@ var signprotmat = {
             }
             return dataset;
         },
+
         // https://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript/25804569#comment50580016_10865042
         flattenOnce: function (array) {
             return [].concat.apply([], array);
         },
+
         labelData: function (data, keys) {
             var data_labeled = data.map(function (e) {
                 var obj = {};
@@ -40,6 +44,7 @@ var signprotmat = {
             });
             return data_labeled;
         },
+
         getInteractionTypes: function (dataset) {
             var int_ty = [];
             for (var i = 0; i < dataset.length; i++) {
@@ -55,6 +60,7 @@ var signprotmat = {
             }
             return int_ty;
         },
+
         get_additional_receptors: function (data, xvals, prids) {
             var new_receptor_data = [];
             for (var index = 0; index < data.length; index++) {
@@ -66,6 +72,7 @@ var signprotmat = {
             }
             return new_receptor_data;
         },
+
         extractRecSigData: function (data, which_component) {
             if (which_component === "rec") {
                 return _.uniqBy(data, function (t) { return [t.rec_gn, t.pdb_id].join(); });
@@ -77,6 +84,7 @@ var signprotmat = {
                 console.log("No component specified...");
             }
         },
+
         select_by_value: function (selection, value) {
             var ret_sel = [];
             for (var index = 0; index < selection.length; index++) {
@@ -84,11 +92,13 @@ var signprotmat = {
             }
             return ret_sel;
         },
+
         removeUndefinedGN: function (dataset) {
             return _.filter(dataset, function (o) {
                 return o.rec_gn !== "-";
             });
         },
+
         dataTransformationWrapper: function (dataset, keys, pdb_sel) {
             // dataset = _.pick(dataset, pdb_sel);
             // let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
@@ -112,6 +122,7 @@ var signprotmat = {
             };
             return return_data;
         },
+
         annotateNonInteractionData: function (meta, data) {
             data.forEach(function (element) {
                 var tmp = _.find(meta, function (d) { return d.entry_name === element.entry_name; });
@@ -120,6 +131,7 @@ var signprotmat = {
             return data;
         }
     },
+
     // * D3 DRAW FUNCTIONS
     d3: {
         // * SETTING UP SVG FOR OUTPUT
@@ -152,6 +164,7 @@ var signprotmat = {
                 .attr("transform", "translate(" + margin.left + "," + mt + ")");
             return svg;
         },
+
         // * SETTING THE X/Y SCALE
         xScale: function (data) {
             var xScale = d3
@@ -165,6 +178,7 @@ var signprotmat = {
                 .padding(1);
             return xScale;
         },
+
         yScale: function (data, gprot) {
             var domain = d3
                 .map(data, function (d) { return d.sig_gn; })
@@ -189,6 +203,7 @@ var signprotmat = {
                 .padding(1);
             return yScale;
         },
+
         // * SETTING THE PDB/SIG-PROT SCALE
         pdbScale: function (data, meta) {
             var pdbScale = d3
@@ -205,6 +220,7 @@ var signprotmat = {
                 .padding(1);
             return pdbScale;
         },
+
         sigScale: function (data, meta) {
             var sigScale = d3
                 .scaleBand()
@@ -220,6 +236,7 @@ var signprotmat = {
                 .padding(1);
             return sigScale;
         },
+
         // * SETTING THE COLOR SCALE
         colScale: function (f) {
             var scale = {
@@ -242,6 +259,7 @@ var signprotmat = {
                 .range(Object.values(scale));
             return colScale;
         },
+
         // * seqsig
         // * SETTING THE FEATURE SCALE
         fScale: function (data) {
@@ -257,6 +275,7 @@ var signprotmat = {
                 .padding(1);
             return fScale;
         },
+
         resScaleColor: function (f) {
             var scale = {
                 A: { bg_color: "#E6E600", font_color: "#000000" },
@@ -285,6 +304,7 @@ var signprotmat = {
             };
             return scale[f];
         },
+
         fScaleColor: function (f) {
             if (f === "αH") {
                 f = "aH";
@@ -325,6 +345,7 @@ var signprotmat = {
             };
             return scale[f];
         },
+
         colorBySwitch: function (which, colScale) {
             if (which === "res") {
                 var other = "int";
@@ -403,6 +424,7 @@ var signprotmat = {
             document.querySelector("#" + which + "but").classList.add("active");
             document.querySelector("#" + other + "but").classList.remove("active");
         },
+
         cScale: function (data) {
             // const values = d3
             //   .map(data, (d: any) => d.cons)
@@ -415,6 +437,7 @@ var signprotmat = {
             var cScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 100]);
             return cScale;
         },
+
         // * DEFINING AXIS FOR X/Y AND GRID
         xAxis: function (xScale) {
             var xAxis = d3
@@ -423,6 +446,7 @@ var signprotmat = {
                 .tickPadding(8);
             return xAxis;
         },
+
         yAxis: function (yScale) {
             var yAxis = d3
                 .axisRight(yScale)
@@ -430,6 +454,7 @@ var signprotmat = {
                 .tickPadding(8);
             return yAxis;
         },
+
         xAxisGrid: function (xScale, yScale) {
             var xAxisGrid = d3
                 .axisTop(xScale)
@@ -437,6 +462,7 @@ var signprotmat = {
                 .tickFormat(function (d) { return ""; });
             return xAxisGrid;
         },
+
         yAxisGrid: function (xScale, yScale) {
             var yAxisGrid = d3
                 .axisRight(yScale)
@@ -444,6 +470,7 @@ var signprotmat = {
                 .tickFormat(function (d) { return ""; });
             return yAxisGrid;
         },
+
         // * ADD TOOLTIP FUNCTIONALITY
         tooltip: function (svg) {
             var tip = d3
@@ -476,6 +503,7 @@ var signprotmat = {
             svg.call(tip);
             return tip;
         },
+
         // * RENDER DATA
         renderData: function (svg, data, data_non, interactions_metadata, xScale, yScale, xAxis, yAxis, xAxisGrid, yAxisGrid, colScale, pdbScale, sigScale, tip) {
             var shift_left = 7 / 8;
@@ -512,6 +540,7 @@ var signprotmat = {
                 }
                 return r;
             }, []);
+
             var bwScale = d3
                 .scaleSequential(d3.interpolateGreys)
                 .domain([0, pdbScale.domain().length]);
@@ -867,6 +896,7 @@ var signprotmat = {
                 .attr("height", yScale.range()[0] - yScale.step());
             return svg;
         },
+
         addReceptor: function (new_data, data, svg) {
             data = _.union(data.transformed, new_data);
             data = signprotmat.data.extractRecSigData(data, "rec");
@@ -963,6 +993,7 @@ var signprotmat = {
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", pdbScale.range()[0] - pdbScale.step());
         },
+
         colorRecResidues: function (d) {
             var rec_gn = _.replace(d.rec_gn, ".", "p");
             var pdb_list = d.pairs.map(function (x) { return x["pdb_id"]; });
@@ -973,6 +1004,7 @@ var signprotmat = {
                     .classed("activeRes", d.active ? true : false);
             });
         },
+
         colorSigResidues: function (d) {
             var sig_gn = d.sig_gn.replace(/\./gi, "p");
             var pdb_list = d.pairs.map(function (x) { return x["pdb_id"]; });
@@ -983,6 +1015,7 @@ var signprotmat = {
                     .classed("activeRes", d.active ? true : false);
             });
         },
+
         infoBoxUpdate: function () {
             // create selection and bind data
             var info_box = d3
@@ -1015,6 +1048,7 @@ var signprotmat = {
                 return d.rec_gn + " : " + d.sig_gn;
             });
         },
+
         conSeqUpdate: function (row_height) {
             var cScale = signprotmat.d3.cScale();
             var seqsigTip = d3
@@ -1085,6 +1119,7 @@ var signprotmat = {
                     .attr("width", xScale.step())
                     .attr("height", row_height);
             }, function (update) {
+
                 return update
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
                     .attr("y", 75)
@@ -1101,6 +1136,7 @@ var signprotmat = {
                     });
                 });
             }, function (exit) { return exit.remove(); });
+
             con_seq_mat
                 .selectAll("text.res_label")
                 .data(function (d) { return d; })
@@ -1128,6 +1164,7 @@ var signprotmat = {
                 })
                     .text(function (d) { return d.feature_code; });
             }, function (update) {
+
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
                     .attr("y", 75)
@@ -1147,6 +1184,7 @@ var signprotmat = {
                 })
                     .text(function (d) { return d.feature_code; });
             }, function (exit) { return exit.remove(); });
+
             // PROPERTY LENGTH
             con_seq_mat
                 .selectAll("rect.len_rect")
@@ -1162,10 +1200,12 @@ var signprotmat = {
                     .attr("width", xScale.step())
                     .attr("height", row_height / 2);
             }, function (update) {
+
                 return update
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
                     .attr("y", function (d) { return 75 + row_height; });
             }, function (exit) { return exit.remove(); });
+
             con_seq_mat
                 .selectAll("text.len_label")
                 .data(function (d) { return d; })
@@ -1180,12 +1220,14 @@ var signprotmat = {
                     .style("fill", "#000000")
                     .text(function (d) { return d.length; });
             }, function (update) {
+
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
                     .attr("y", 75 + row_height)
                     .style("fill", "#000000")
                     .text(function (d) { return d.length; });
             }, function (exit) { return exit.remove(); });
+
             // CONSERVATION
             con_seq_mat
                 .selectAll("rect.cons_rect")
@@ -1208,6 +1250,7 @@ var signprotmat = {
                     .attr("width", xScale.step())
                     .attr("height", row_height / 2);
             }, function (update) {
+
                 return update
                     .style("fill", function (d) {
                     if (d.cons === -1) {
@@ -1220,6 +1263,7 @@ var signprotmat = {
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
                     .attr("y", function (d) { return 75 + 1.5 * row_height; });
             }, function (exit) { return exit.remove(); });
+
             con_seq_mat
                 .selectAll("text.cons_label")
                 .data(function (d) { return d; })
@@ -1241,6 +1285,7 @@ var signprotmat = {
                 })
                     .text(function (d) { return d.freq; });
             }, function (update) {
+
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
                     .attr("y", 75 + 1.5 * row_height)
@@ -1254,7 +1299,9 @@ var signprotmat = {
                 })
                     .text(function (d) { return d.freq; });
             }, function (exit) { return exit.remove(); });
+
         },
+
         draw_seq_sig: function (data_in, svg, xScale) {
             var data = data_in.feat;
             var cScale = signprotmat.d3.cScale();
@@ -1513,6 +1560,7 @@ var signprotmat = {
              *    .attr("height", area_height);
              */
         },
+
         draw_seq_cons: function (data_in, svg, xScale, xAxis, sigmatch) {
             var data = data_in.cons;
             var fScale = signprotmat.d3.fScale(data);
