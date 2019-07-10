@@ -1237,8 +1237,6 @@ function renderBrowser(data) {
         all_angles_2 = two_sets_data['all_angles'][gn2];
 
         console.log('clicked!',$(this),gn_pair);
-        console.table(all_angles_1);
-        console.table(all_angles_2);
 
         $("#resModal").find(".modal-body").html("<div id='modal_plotly_1'></div><div id='modal_plotly_2'></div>");
         $("#resModal").modal();
