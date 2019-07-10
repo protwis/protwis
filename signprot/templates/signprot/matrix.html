@@ -259,7 +259,6 @@ const interactions_metadata = {{ interactions_metadata | safe}};
 const gprot = {{ gprot | safe}};
 const csrf_token = "{{ csrf_token }}"
 
-
 $('#score-button').click( function () {
     const render_url = window.location.origin + '/signprot/matrix/render_sigmat/';
     window.open(render_url,'_blank');
