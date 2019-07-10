@@ -358,11 +358,13 @@ const replace_filter_value = function(d) {
   }
 };
 
-const filter_pairs = function() {
-  const num = parseInt($('#currentpairs').text())
+const filter_pairs = function(floor, ceiling) {
+  // const num = parseInt($('#currentpairs').text())
   d3.select('g#interact')
     .selectAll("rect")
-    .style('display', function(d){return (num <= d.pairs.length ? 'block' : 'none') })
+    .style('display', function(d){
+      return (floor <= d.pairs.length && ceiling >= d.pairs.length ? 'block' : 'none')
+    })
 }
 
 var tableToExcel = (function () {
