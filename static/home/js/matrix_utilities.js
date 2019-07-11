@@ -546,6 +546,50 @@ $(document).ready(function () {
   set_slider_max_value()
   update_slider_label()
 
+  let keys = [
+    "rec_chain",
+    "rec_aa",
+    "rec_pos",
+    "rec_gn",
+    "sig_chain",
+    "sig_aa",
+    "sig_pos",
+    "sig_gn",
+    "int_ty",
+    "gprot",
+    "entry_name",
+    "pdb_id"
+  ];
+
+  data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
+  svg = signprotmat.d3.setup("div#interface-svg");
+  xScale = signprotmat.d3.xScale(data.transformed);
+  yScale = signprotmat.d3.yScale(data.transformed, gprot);
+  xAxis = signprotmat.d3.xAxis(xScale);
+  yAxis = signprotmat.d3.yAxis(yScale);
+  xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
+  yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
+  pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+  sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
+  colScale = signprotmat.d3.colScale(data.inttypes);
+  tooltip = signprotmat.d3.tooltip(svg);
+  signprotmat.d3.renderData(
+    svg,
+    data,
+    non_interactions,
+    interactions_metadata,
+    xScale,
+    yScale,
+    xAxis,
+    yAxis,
+    xAxisGrid,
+    yAxisGrid,
+    colScale,
+    pdbScale,
+    sigScale,
+    tooltip
+  );
+
   $('#interface-modal-table').on('hidden.bs.modal', function (e) {
     selection = table.rows({ selected: true }).data();
     let old_pdb_sel = pdb_sel;
@@ -607,50 +651,6 @@ $(document).ready(function () {
       // signprotmat.d3.addReceptor(receptor_data, data, svg);
     };
   });
-
-  let keys = [
-    "rec_chain",
-    "rec_aa",
-    "rec_pos",
-    "rec_gn",
-    "sig_chain",
-    "sig_aa",
-    "sig_pos",
-    "sig_gn",
-    "int_ty",
-    "gprot",
-    "entry_name",
-    "pdb_id"
-  ];
-
-  data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
-  svg = signprotmat.d3.setup("div#interface-svg");
-  xScale = signprotmat.d3.xScale(data.transformed);
-  yScale = signprotmat.d3.yScale(data.transformed, gprot);
-  xAxis = signprotmat.d3.xAxis(xScale);
-  yAxis = signprotmat.d3.yAxis(yScale);
-  xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
-  yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
-  pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
-  sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
-  colScale = signprotmat.d3.colScale(data.inttypes);
-  tooltip = signprotmat.d3.tooltip(svg);
-  signprotmat.d3.renderData(
-    svg,
-    data,
-    non_interactions,
-    interactions_metadata,
-    xScale,
-    yScale,
-    xAxis,
-    yAxis,
-    xAxisGrid,
-    yAxisGrid,
-    colScale,
-    pdbScale,
-    sigScale,
-    tooltip
-  );
 
   // https://www.datatables.net/examples/api/tabs_and_scrolling.html
   $(document).on('shown.bs.modal', function (e) {
