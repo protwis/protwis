@@ -532,7 +532,12 @@ $(document).ready(function () {
     });
 
   // Default: Select all rows on page load
-  table.rows().select();
+  // table.rows().select();
+  // New: Select all rows for Gs
+  table.rows( function ( idx, data, node ) {
+        return data.gprot_class === 'Gi/o' ?
+            true : false;
+    } ).select()
   let selection = table.rows({ selected: true }).data();
   pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id');
   pos_set = signprotmat.data.select_by_value(selection, 'entry_name')

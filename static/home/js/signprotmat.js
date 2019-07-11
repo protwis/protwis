@@ -729,11 +729,8 @@ var signprotmat = {
                 .attr("transform", "translate(-15," + (data.inttypes.length + 2) * 20 + ")");
             
             // * ADDING Interaction Type LEGEND
-            
             let size = 2
             let window_starts = _.range(0, colScale.domain().length+1, size)
-            // let window_starts = _.range(0, 2, 2)
-            console.log(window_starts)
     
             let i = 0
             for(let windo of window_starts) {
