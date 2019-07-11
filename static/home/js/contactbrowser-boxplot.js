@@ -1,6 +1,5 @@
 function createBoxPlot(data, element, plottype) {
     var mode = get_current_mode();
-    console.log(mode);
     var layout = {};
     switch (mode) {
         case "single-crystal-group":
@@ -155,9 +154,8 @@ function createBoxPlot(data, element, plottype) {
 
 }
 
-function createBoxPlotResidue(data, element, plottype) {
+function createBoxPlotResidue(data, element, plottype, limit_pdbs = false, aa = false) {
     var mode = get_current_mode();
-    console.log(mode);
     var layout = {};
     switch (mode) {
         case "single-crystal-group":
@@ -193,11 +191,15 @@ function createBoxPlotResidue(data, element, plottype) {
                     x = [];
                     ys = {};
                     pdbs = [];
-                    console.table(data);
+                    pos = '';
                     pdbs = two_sets_pdbs1.concat(two_sets_pdbs2);
+                    // If only use a subset of pdbs.
+                    if (limit_pdbs) pdbs = limit_pdbs;
                     pdbs.forEach(function(pdb){
+                        pdb = pdb.toUpperCase();
                         let d = data[pdb];
                         if (d.length) {
+                            pos = d[0];
                             if (two_sets_pdbs1.includes(pdb)) {
                                 x.push('Set 1');
                             } else if (two_sets_pdbs2.includes(pdb)) {
@@ -209,6 +211,8 @@ function createBoxPlotResidue(data, element, plottype) {
                             }
                         }
                     });
+
+                    if (aa) pos = pos+" "+aa;
 
                     names = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
 
@@ -229,9 +233,11 @@ function createBoxPlotResidue(data, element, plottype) {
                     var data = traces;
 
                     var layout = {
-                        title: 'Grouped Horizontal Box Plot',
+                        title: 'Angles data for position '+pos,
                         xaxis: {
-                            title: 'Angles',
+                            zeroline: false
+                        },
+                        yaxis: {
                             zeroline: false
                         },
                         boxmode: 'group'
