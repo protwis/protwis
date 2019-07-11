@@ -160,11 +160,16 @@ const run_seq_sig = function(){
       run_sig_match();
     },
     error: function(error){
+      $("#calc_spin").addClass("fa-times");
+      $("#calc_spin").removeClass("fa-spinner");
+      $("#calc_spin").removeClass("fa-spin");
       console.log(error)
       alert(error);
     },
     complete: function(){
-      document.querySelector("#calc_spin").style.display = "none";
+      $("#calc_spin").addClass("fa-check");
+      $("#calc_spin").removeClass("fa-spinner");
+      $("#calc_spin").removeClass("fa-spin");
     }
   });
 };
@@ -342,11 +347,16 @@ const run_sig_match = function(){
 
     },
     error: function(error){
-      console.log(error);
-      document.querySelector("#sigm_spin").style.display = "none";
+      $("#sigm_spin").addClass("fa-times");
+      $("#sigm_spin").removeClass("fa-spinner");
+      $("#sigm_spin").removeClass("fa-spin");
+      console.log(error)
+      alert(error);
     },
     complete: function(){
-      document.querySelector("#sigm_spin").style.display = "none";
+      $("#sigm_spin").addClass("fa-check");
+      $("#sigm_spin").removeClass("fa-spinner");
+      $("#sigm_spin").removeClass("fa-spin");
     }
   })
 }
@@ -432,7 +442,7 @@ var tableToExcel = (function () {
     // reattach th titles
     tr.find('th').each (function( column, th) {
       if ($(th).attr('title')) $(th).html($(th).attr('title'));
-    });     
+    });
 
     var ctx = {
       worksheet: name || 'Worksheet',
