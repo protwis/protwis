@@ -116,6 +116,17 @@
                             class="fa fa-spinner fa-spin"
                             style="display: none">
                         </i></button>
+
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onClick="run_sig_match();">
+                        Find Proteins
+                        <i id="sigm_spin"
+                            class="fa fa-spinner fa-spin"
+                            style="display: none">
+                        </i>
+                    </button>
                 </div>
             </div>
 
@@ -153,44 +164,6 @@
 </div>
 
 <div id="seqsig-container" style="display: none;margin-bottom:20px;">
-    <div id="seqsig">
-        <h2>Property Conservation</h2>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title"></h3>
-                    </div>
-
-                    <div class="panel-body">
-
-                        <div class="col-md-2">
-                            <p><b>Hide / Show </b></p>
-                            <button class="btn btn-primary" data-toggle="collapse"
-                                data-target="#seqsig-svg">Collapse</button>
-                        </div>
-
-                        <div class="col-md-10">
-                            <p>Click the button to <b>find similar proteins</b>, based on the sequence features.</p>
-                            <button
-                                type="button"
-                                class="btn btn-primary"
-                                onClick="run_sig_match();">
-                                Find Proteins
-                                <i id="sigm_spin"
-                                    class="fa fa-spinner fa-spin"
-                                    style="display: none">
-                                </i>
-                            </button>
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
     <div id="seqsig-svg" class="collapse in"></div>
 </div>
 
