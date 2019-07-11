@@ -71,7 +71,7 @@
         ) {
           var bl = parseFloat(_node["attribute"]);
           if (!isNaN(bl)) {
-            return Math.max(0, bl);
+            return Math.max(0, bl) + options['inner_spacing']; // Add additional spacing here
           }
         }
         //console.log ("No branch length for ", _node.name);
@@ -106,6 +106,7 @@
         collapsible: true,
         "left-right-spacing": "fixed-step", //'fit-to-size',
         "top-bottom-spacing": "fixed-step",
+        "inner_spacing": 0,
         "left-offset": 0,
         "show-scale": "top",
         // currently not implemented to support any other positioning

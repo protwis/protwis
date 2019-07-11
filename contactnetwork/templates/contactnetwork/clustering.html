@@ -20,8 +20,9 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-1">
-                        <div class="btn btn-success btn-lg pull-left go-button">Go</div>
+                    <div class="col-md-2">
+                        <div class="btn btn-success pull-left go-button">Go (distance pairs)</div>
+                        <div class="btn btn-success pull-left go-button">Go (distance to core)</div>
                     </div>
                     <div class="col-md-2 hidden" id="output-group0">
                         <div class="panel panel-default">
@@ -44,8 +45,8 @@
                         </div>
                     </div>
                     <div class="col-md-2 hidden" id="submit-group">
-                        <div class="btn btn-success btn-lg pull-left CN-button disabled" id="CN-button">Contact Network</div>
-                        <div class="btn btn-success btn-lg pull-left DN-button disabled" id="DN-button">Distance Network</div>
+                        <div class="btn btn-success pull-left CN-button disabled" id="CN-button">Contact Network</div>
+                        <div class="btn btn-success pull-left DN-button disabled" id="DN-button">Distance Network</div>
                     </div>
                 </div>
 
@@ -56,51 +57,89 @@
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Conformational clusters (tree of structures)</h3>
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                                  <span class="pull-right glyphicon glyphicon glyphicon-download-alt btn-download-alt"></span> <!-- Use this one for figure downloads? -->
-                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
+                                  <span class="pull-right glyphicon glyphicon-download btn-download"></span>
+                                  <span class="pull-right glyphicon glyphicon-download-alt btn-download-alt"></span> <!-- Use this one for figure downloads? -->
+                                  <span class="pull-right glyphicon glyphicon-picture btn-camera"></span> <!-- Use this one for PNG figure downloads? -->
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
-                                  <div class="tree-container">
-                                      <div class="tree-legend"></div>
-                                      <div class="tree-menu">
-                                        <form>
-                                          <label>Radial layout</label>
-                                          <input type="checkbox" id="layout" checked/>
-                                        </form>
-                                        <div class="btn-group">
-                                          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                            Receptor names <span class="caret"></span>
-                                          </button>
-                                          <ul class="dropdown-menu names" role="menu">
-                                            <li><a href="#">UniProt names</a></li>
-                                            <li><a href="#">IUPHAR names</a></li>
-                                          </ul>
-                                        </div>
-                                        <div class="btn-group">
-                                          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                            Display data <span class="caret"></span>
-                                          </button>
-                                          <ul class="dropdown-menu data" role="menu">
-                                            <li><a href="#">Ligand function</a></li>
-                                            <li><a href="#">GPCR class</a></li>
-                                            <li><a href="#">Ligand type</a></li>
-                                            <li><a href="#">Receptor family</a></li>
-                                            <li><a href="#">Experimental method</a></li>
-                                            <li><a href="#">G-protein coupling</a></li>
-                                            <li><a href="#">Primary G-protein coupling</a></li>
-                                            <li><a href="#">Secondary G-protein coupling</a></li>
-                                          </ul>
+                                  <div class="tree-container" id="tree-container">
+                                      <div>
+                                        <svg id="clustering-tree"></svg>
+                                        <div class="legend_box">
+                                          <div class="outer_legend"></div>
+                                          <div class="inner_legend"></div>
                                         </div>
                                       </div>
-                                      <svg id="clustering-tree"></svg>
                                   </div>
                               </div>
                            </div>
                       </div>
                     </div>
                 </div>
-
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="tree-menu dropup">
+                      <form>
+                        <label>Radial layout</label>
+                        <input type="checkbox" id="layout" checked/>
+                        <label>Color edges and leaves</label>
+                        <input type="checkbox" id="colored-edges" checked/>
+                        <label>Hide PDB-codes</label>
+                        <input type="checkbox" id="hide-pdbs"/>
+                      </form>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                          Receptor names <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu names" role="menu">
+                          <li class="active"><a href="#">UniProt names</a></li>
+                          <li><a href="#">IUPHAR names</a></li>
+                        </ul>
+                      </div>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                          Outer markers<span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu dataouter" role="menu">
+                          <li><a href="#">No data</a></li>
+                          <h6 class="dropdown-header">Classification</h6>
+                          <li><a href="#">GPCR class</a></li>
+                          <li><a href="#">Ligand type</a></li>
+                          <li><a href="#">Receptor family</a></li>
+                          <h6 class="dropdown-header">Structure</h6>
+                          <li><a href="#">Receptor activation state</a></li>
+                          <li class="active"><a href="#">Ligand function</a></li>
+                          <li><a href="#">Experimental method</a></li>
+                          <h6 class="dropdown-header">Coupling</h6>
+                          <li><a href="#">All G-protein coupling</a></li>
+                          <li><a href="#">Primary G-protein coupling</a></li>
+                          <li><a href="#">Secondary G-protein coupling</a></li>
+                        </ul>
+                      </div>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                          Inner markers<span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu datainner" role="menu">
+                          <li><a href="#">No data</a></li>
+                          <h6 class="dropdown-header">Classification</h6>
+                          <li><a href="#">GPCR class</a></li>
+                          <li><a href="#">Ligand type</a></li>
+                          <li><a href="#">Receptor family</a></li>
+                          <h6 class="dropdown-header">Structure</h6>
+                          <li class="active"><a href="#">Receptor activation state</a></li>
+                          <li><a href="#">Ligand function</a></li>
+                          <li><a href="#">Experimental method</a></li>
+                          <h6 class="dropdown-header">Coupling</h6>
+                          <li><a href="#">All G-protein coupling</a></li>
+                          <li><a href="#">Primary G-protein coupling</a></li>
+                          <li><a href="#">Secondary G-protein coupling</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
             </div>
             <!-- END SINGLE CRYSTAL GROUP TAB -->
         </div>
@@ -156,35 +195,80 @@
     <script src="{% static 'home/js/phylo_library.js' %}"> </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js" charset="utf-8"></script>
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 
     <script>
         window.zoomCluster = {};
 
         var phylotree;
+        var doBranchColoring = true;
+        var hidePDBs = false;
         var treeAnnotations = [];
         var couplingAnnotations = [];
-        var dataClasses = [0,0];
+        var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Experimental method", "Ligand function", "G-protein coupling", "Primary G-protein coupling", "Secondary G-protein coupling"]
+        var dataClasses, colorClasses;
         function renderTree(data) {
+            dataClasses = [["active", "inactive", "intermediate"],0,0];
+            colorClasses = [["#0F0", "#F00", "#F80"], 0, 0];
             var tree = data["tree"]; // contains tree in Newick format
 
             // data annotations
             treeAnnotations = data["annotations"];
 
-            // G-protein coupling
-            couplingAnnotations = data["Gprot_coupling"];
-
             // Annotations: 0 state, 1 name, 2 fullname, 3 family, 4 ligand type, 5 class, 6 method, 7 ligand function, 8 g-protein coupling
-            for (var i = 2; i < 7; i++){
+            for (var i = 3; i < 7; i++){
                 dataClasses[i] = new Set()
                 for (key in treeAnnotations)
                   dataClasses[i].add(treeAnnotations[key][i])
                 dataClasses[i] = Array.from(dataClasses[i]).sort();
             }
-            dataClasses[7] = 0
-            dataClasses[8] = ['Gs family', 'Gi/Go family', 'Gq/G11 family', 'G12/G13 family']
+            dataClasses[7] = ["agonist", "agonist-partial", "partial-agonist", "pam", "antagonist", "inverse-agonist", "nam"]
+            dataClasses[8] = ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family']
             dataClasses[9] = dataClasses[8]
             dataClasses[10] = dataClasses[8]
 
+            for (var i = colorClasses.length; i <= 8; i++) {
+                colorClasses[i] = []
+                if (i != 7) {
+                  var class_colors;
+                  if (dataClasses[i].length > 10) {
+                    class_colors = d3.scale.category20()
+                        .domain(dataClasses[i])
+                  } else {
+                    class_colors = d3.scale.category10()
+                        .domain(dataClasses[i])
+                  }
+                  for (var j = 0; j < dataClasses[i].length; j++) {
+                    colorClasses[i].push(class_colors(dataClasses[i][j]))
+                  }
+                }
+            }
+            colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
+            colorClasses[9] = colorClasses[8]
+            colorClasses[10] = colorClasses[8]
+
+            // G-protein coupling
+            couplingAnnotations = data["Gprot_coupling"];
+
+            // Annotate and order coupling data
+            for (name in treeAnnotations){
+              var slug = treeAnnotations[name][8]
+              treeAnnotations[name][8] = []
+              treeAnnotations[name][9] = []
+              treeAnnotations[name][10] = []
+              var gproteins = dataClasses[8]
+              for (g = 0; g < gproteins.length; g++) {
+                if (slug in couplingAnnotations){
+                  if ("primary" in couplingAnnotations[slug] && couplingAnnotations[slug]["primary"].includes(gproteins[g])) {
+                    treeAnnotations[name][8].push(gproteins[g])
+                    treeAnnotations[name][9].push(gproteins[g])
+                  } else if ("secondary" in couplingAnnotations[slug] && couplingAnnotations[slug]["secondary"].includes(gproteins[g])){
+                    treeAnnotations[name][8].push(gproteins[g])
+                    treeAnnotations[name][10].push(gproteins[g])
+                  }
+                }
+              }
+            }
 
             /*var r = 1200 / 2;
             var spacing = 240;
@@ -198,6 +282,7 @@
               'top-bottom-spacing': 'fit-to-size', // fit to given size top-to-bottom
               //'left-right-spacing': 'fixed-step',
               //'top-bottom-spacing': 'fixed-step',
+              //'left-offset': 200,
               'restricted-selectable': 'none', // disable normal selection
               'selectable': false,  // make nodes and branches not selectable
               'collapsible': false, // turn off the menu on internal nodes
@@ -207,22 +292,54 @@
               'brush': false, // brush
               'reroot': true, // rerooting
               'hide': false, // hiding a subtree
-              'zoom': false // zooming
+              'zoom': false, // zooming
+              'inner_spacing': (newCluster ? 1 : 5) // extra spacing between splits in tree (own custom option)
             })
             .radial(true)
-            .size([800, 800]);
-            //.separation (function (a,b) {return 1;});
+            .node_span ('equal')
+            .size([document.getElementById('tree-container').offsetWidth*0.75, document.getElementById('tree-container').offsetWidth*0.9])
+            .separation (function (a,b) {return 0.1;});
+
 
             // DRAW
             phylotree(tree)
               .style_nodes(nodeStyler)
               .style_edges(branchStyler)
-              .layout(true);
+              .layout(false);
 
-            // Button Toggles
-            $("#layout").on("click", function(e) {
-              phylotree.radial($(this).prop("checked")).placenodes().update();
+            // REDRAW with the correct leaves
+            maximumLeafSize()
+            phylotree.layout(true)
+
+            // set consensus values for each node
+            phylotree.get_nodes().forEach(function(node){
+              pdbs = connectedPDBs(node);
+
+              // loop over dataclasses and assign conserved if present
+              node['colorClasses'] = JSON.parse(JSON.stringify(treeAnnotations[pdbs[0]]));
+              for (i = 1; i < pdbs.length; i++) {
+                var pdb = pdbs[i]
+                for (j = 0; j < node['colorClasses'].length; j++) {
+                  if (Array.isArray(node['colorClasses'][j])) {
+                      node['colorClasses'][j] = node['colorClasses'][j].filter(x => treeAnnotations[pdbs[i]][j].includes(x));
+                  } else {
+                      if (node['colorClasses'][j] != treeAnnotations[pdbs[i]][j]) {
+                        node['colorClasses'][j] = "-"
+                      }
+                  }
+                }
+              }
             });
+
+            if (doBranchColoring){
+              // Refresh twice to ensure correct leaf coloring
+              d3.layout.phylotree.trigger_refresh(phylotree);
+              d3.layout.phylotree.trigger_refresh(phylotree);
+            }
+
+            // add legends
+            refreshOuterLegend()
+            refreshInnerLegend()
 
             // add custom menu items
             phylotree.get_nodes()
@@ -249,9 +366,26 @@
                   inGroup2 // condition on when to display the menu
                   );
             });
+        }
 
-            // Simulate click to fix issue with translating on the first click
-//            $("#clustering-tree").trigger('click');
+        var maxLeafNodeLenght = -1
+        function maximumLeafSize(refresh = true) {
+          // set to 0
+          maxLeafNodeLenght = 0;
+
+          // Find longest label
+          d3.select("#clustering-tree").selectAll("text")[0].forEach(
+            function(node_label){
+              labelSize = node_label.getBBox().width*1.05
+              if (labelSize > maxLeafNodeLenght){
+                maxLeafNodeLenght = labelSize
+              }
+            });
+
+          // redraw labels with new max
+          if (refresh){
+            d3.layout.phylotree.trigger_refresh(phylotree);
+          }
         }
 
         function menuGroup1(node) {
@@ -325,46 +459,151 @@
                 displayName = 0
           }
 
+          // update active label on menu items
+          event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
+            e.classList.remove( "active" ) );
+          event.target.parentNode.classList.add("active")
+
           // refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
+          maximumLeafSize();
         }
 
-
         var displayData = 7
-        function toggleData(event){
+        function toggleDataOuter(event){
           var dataName = event.target.innerText
 
+          displayData = menuItem(dataName)
+
+          // Refresh legend
+          refreshOuterLegend()
+
+          // update active label on menu items
+          event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
+            e.classList.remove( "active" ) );
+          event.target.parentNode.classList.add("active")
+
+          // Refresh layout with updated selections
+          d3.layout.phylotree.trigger_refresh(phylotree);
+          // Refresh twice to ensure correct leaf coloring
+          if (doBranchColoring)
+            d3.layout.phylotree.trigger_refresh(phylotree);
+        }
+
+        function refreshOuterLegend(){
+          refreshLegend(".outer_legend", displayData)
+        }
+
+        function refreshInnerLegend(){
+          refreshLegend(".inner_legend", displayDataInner)
+        }
+
+        function refreshLegend(div_class, selectData){
+          d3.select(div_class).html("");
+          if (selectData >= 0) {
+            var svg_legend_receptor_class = d3.select(div_class).append("svg")
+                .attr("height", (dataClasses[selectData].length+1)*20+"px")
+                .attr("id", "class_legend_box");
+
+            // add specific title to legend
+            svg_legend_receptor_class.append("text")
+                .attr("x", 0)
+                .attr("y", 7)
+                .attr("dy", ".35em")
+                .text(typeClasses[selectData])
+                .attr("fill", "black")
+                .style("font-size", 14)
+                .style("font-weight", "bold");
+
+            //// Vertical Legend ////
+            var class_legend = svg_legend_receptor_class.selectAll('.class_legend')
+                .data(dataClasses[selectData])
+                .enter().append('g')
+                .attr("class", "class_legend_group")
+                .attr("transform", function (d, i) {
+                    return "translate(0," + i * 20 + ")"
+                });
+
+            if (div_class==".inner_legend"){
+              class_legend.append("circle")
+              .attr("cx", 7)
+              .attr("cy", 25)
+              .attr("r", 5)
+              .style("stroke", "#000")
+              .style("stroke-width", "1px")
+              .style("fill", function (d) {
+                  return colorClasses[selectData][dataClasses[selectData].indexOf(d)]
+              });
+            } else {
+              class_legend.append("rect")
+              .attr("x", 2)
+              .attr("y", 20)
+              .attr("width", 10)
+              .attr("height", 10)
+              .style("stroke", "#000")
+              .style("stroke-width", "1px")
+              .style("fill", function (d) {
+                  return colorClasses[selectData][dataClasses[selectData].indexOf(d)]
+              });
+            }
+
+            class_legend.append('text')
+                .attr("x", 20)
+                .attr("y", 30)
+                .text(function (d) {
+                    return (d)
+                })
+                .style("text-anchor", "start")
+                .style("font-size", 13);
+          }
+        }
+
+        var displayDataInner = 0
+        function toggleDataInner(event){
+          var dataName = event.target.innerText
+          displayDataInner = menuItem(dataName)
+
+          // Refresh legend
+          refreshInnerLegend()
+
+          // update active label on menu items
+          event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
+            e.classList.remove( "active" ) );
+          event.target.parentNode.classList.add("active")
+
+          // Refresh layout with updated selections
+          d3.layout.phylotree.trigger_refresh(phylotree);
+          // Refresh twice to ensure correct leaf coloring
+          if (doBranchColoring)
+            d3.layout.phylotree.trigger_refresh(phylotree);
+        }
+
+        function menuItem(dataName){
           // Annotations: 0 state, 1 name, 2 fullname, 3 family, 4 ligand type, 5 class, 6 method, 7 ligand function
           switch(dataName){
+              case "No data":
+                return -1;
+              case "Receptor activation state":
+                return 0;
               case "GPCR class":
-                displayData = 5
-                break;
+                return 5
               case "Ligand type":
-                displayData = 4
-                break;
+                return 4
               case "Receptor family":
-                displayData = 3
-                break;
+                return 3
               case "Experimental method":
-                displayData = 6
-                break;
-              case "G-protein coupling":
-                displayData = 8
-                break;
+                return 6
+              case "All G-protein coupling":
+                return 8
               case "Primary G-protein coupling":
-                displayData = 9
-                break;
+                return 9
               case "Secondary G-protein coupling":
-                displayData = 10
-                break;
+                return 10
               case "Ligand function":
+                return 7
               default:
-                displayData = 7
-                break;
+                return -1
           }
-
-          // refresh layout with updated selections
-          d3.layout.phylotree.trigger_refresh(phylotree);
         }
 
         function connectedPDBs(node){
@@ -447,39 +686,82 @@
           return array.filter(el => el !== element);
         }
 
-        var firstD = true
         function nodeStyler(element, node){
-            if (firstD && d3.layout.phylotree.is_leafnode(node)) {
+            if (d3.layout.phylotree.is_leafnode(node)) {
                 if (node.name in treeAnnotations) {
                     var node_label = element.select("text");
                     var font_size  = parseFloat(node_label.style("font-size"));
                     var scale = 0.8;
 
-                    // add receptor state
+                    // Add inner markers
                     element.selectAll("circle").remove()
-                    var state = treeAnnotations[node.name][0]
-                    element.append("circle")
-                        .attr("r", (font_size*scale)/2)
-                        .style("stroke", "#000")
-                        .style("stroke-width", font_size/20+"px")
-                        .style("fill", function(n) {
-                          // color based on activity
-                          switch(state){
-                              case "active":
-                                  return "#0F0";
-                              case "inactive":
-                                  return "#F00";
-                              case "intermediate":
-                                  return "#F80";
-                              default:
-                                  return "#888";
-                          }
-                        });
+                    var firstColor = "#CCC";
+                    if (displayDataInner >= 0) {
+                      if (!Array.isArray(treeAnnotations[node.name][displayDataInner]))
+                        treeAnnotations[node.name][displayDataInner] = [treeAnnotations[node.name][displayDataInner]]
+
+                      for (var i = 0; i < treeAnnotations[node.name][displayDataInner].length; i++) {
+                        var currentType = typeClasses[displayDataInner]
+                        var currentData = treeAnnotations[node.name][displayDataInner][i]
+                        var classIndex = dataClasses[displayDataInner].indexOf(currentData)
+                        var currentColor = colorClasses[displayDataInner][classIndex]
+                        if (i==0){
+                          firstColor = currentColor
+                        }
+
+                        var annotation = element.append("circle")
+                        annotation.attr("r", (font_size*scale)/2)
+                          .style("stroke", "#000")
+                          .style("stroke-width", font_size/20+"px")
+                          .style("fill", currentColor)
+                          .on("mouseover", function(d) { // add tooltip
+                              class_tooltip.transition()
+                                .style("opacity", .9);
+                              class_tooltip.html("<b>" + typeClasses[displayDataInner] + ":</b> " + $(d3.event.target).data("datalabel"))
+                                .style("left", (d3.event.pageX) + "px")
+                                .style("top", (d3.event.pageY - 28) + "px");
+                            })
+                          .on("mouseout", function() {
+                              class_tooltip.transition().duration(100)
+                                  .style("opacity", 0);
+                          });
+
+                          annotation.attr("data-datalabel", currentData)
+
+                        // Shift circles according to placement label
+                        if (phylotree.radial ()) {
+                            var shifter_rect = phylotree.shift_tip(node)[0];
+                            var setX = shifter_rect > 0 ? shifter_rect -  font_size*scale/1.8  - i*(font_size*scale): shifter_rect + font_size*scale/1.8 + i*(font_size*scale);
+                            annotation.attr("transform", "rotate (" + node.text_angle + ")")
+                                .attr ("cx", setX)
+                        }
+                      }
+
+                      // Color branch-tracer
+                      var tracer = element.select("line")[0][0];
+                      tracer.setAttribute("stroke-dasharray", "3,4");
+                      tracer.setAttribute("stroke-width", Math.min(1.5, font_size/3*2));
+                      tracer.className.baseVal = ""
+                      if (doBranchColoring) {
+                        // check length of current and if array
+                        if (treeAnnotations[node.name][displayDataInner].length > 1 && 'colorClasses' in node && Array.isArray(node['colorClasses'][displayDataInner]) && node['colorClasses'][displayDataInner].length >= 1) {
+                          classIndex = dataClasses[displayDataInner].indexOf(node['colorClasses'][displayDataInner][0])
+                          firstColor = colorClasses[displayDataInner][classIndex]
+                        }
+
+                        tracer.setAttribute("stroke", firstColor);
+                      } else {
+                        tracer.setAttribute("stroke", "#CCC");
+                      }
+                    }
 
                     var labelName
                     if (displayName == 1) {
-                      labelName = treeAnnotations[node.name][2].replace("receptor", "")
                       // fix italics and subscript annotations
+                      labelName = treeAnnotations[node.name][2].replace(new RegExp(" receptor$"), "")
+                      labelName = labelName.replace("-adrenoceptor", '')
+                      labelName = labelName.replace(" receptor-", '-')
+
                       labelName = labelName.replace("<sub>", '<tspan baseline-shift = "sub">')
                       labelName = labelName.replace("</sub>", '</tspan>')
                       labelName = labelName.replace("<i>", '<tspan font-style = "italic">')
@@ -488,160 +770,85 @@
                       labelName = treeAnnotations[node.name][1].split("_")[0].toUpperCase()
 
                     label = node_label[0][0]
-                    label.innerHTML = node.name + " (" + labelName + ")"
+                    // Space left and right of the label (instead of &nbsp/&#160 which breaks SVG)
+                    label.setAttribute("margin-left", font_size+"px")
+                    label.setAttribute("margin-right", font_size+"px")
 
-                    // Extra: rotate labels when on the left half
-                    if (label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
-                        label.innerHTML = "(" + labelName + ") " + node.name
-
-                    // data toggle
-                    // TODO: currently ugly, so clean this
-                    // Annotations: 0 state, 1 name, 2 fullname, 3 family, 4 ligand type, 5 class, 6 method, 7 ligand function
-                    element.selectAll("rect").remove()
-                    var nodeColor = "#888"
-                    // MAYBE TODO: customize coloring
-                    var class_colors = d3.scale.category10()
-                        .domain(dataClasses[displayData])
-
-                    var nodeData = []
-                    var option = ""
-                    switch(displayData){
-                        case 3: // Receptor family
-                          option  = "Receptor family"
-                          break;
-                        case 4: // Ligand type
-                          option  = "Ligand type"
-                          break;
-                        case 5: // GPCR class
-                          option  = "GPCR class"
-                          break;
-                        case 6: // Experimental method
-                          option  = "Experimental method"
-                          break;
-                        case 8: // G-protein coupling preferences
-                        case 9: // primary G-protein coupling preferences
-                        case 10: // Secondary G-protein coupling preferences
-                          if (displayData == 8)
-                            option = "G-protein coupling"
-                          else if (displayData == 9)
-                            option = "Primary G-protein coupling"
-                          else if (displayData == 10)
-                            option = "Secondary G-protein coupling"
-
-                          // collect coupling data
-                          var slug = treeAnnotations[node.name][8]
-                          var coupling = []
-                          if (slug in couplingAnnotations) {
-                            if ("primary" in couplingAnnotations[slug] && displayData <= 9)
-                              coupling = coupling.concat(couplingAnnotations[slug]["primary"])
-                            if ("secondary" in couplingAnnotations[slug]  && (displayData == 8 || displayData == 10))
-                              coupling = coupling.concat(couplingAnnotations[slug]["secondary"])
-                          }
-
-                          // create nodeData
-                          nodeColor = []
-                          if (coupling.length > 0){
-                            var gproteins = dataClasses[8]
-                            for (g = 0; g < gproteins.length; g++){
-                              if (coupling.includes(gproteins[g])) {
-                                  nodeData.push(gproteins[g])
-                                  nodeColor.push(class_colors(gproteins[g]))
-                              }
-                            }
-                          }
-
-                          // write back in correct order
-                          if (!(node.name in coupling))
-                            coupling[node.name] = {}
-                          coupling[node.name][displayData] = nodeData // to maintain correct order
-
-                          break;
-                        case 7: // ligand function
-                        default:
-                          displayData = 7 // (re)set in case of erroneous selection
-                          option = "Ligand function"
-
-                          // node color
-                          if (treeAnnotations[node.name][displayData].length > 0){
-                              switch(treeAnnotations[node.name][displayData][0]) {
-                                  case "agonist":
-                                  case "agonist-partial":
-                                  case "partial-agonist":
-                                  case "pam":
-                                      nodeColor = "#0F0";
-                                      break;
-                                  case "antagonist":
-                                  case "inverse-agonist":
-                                  case "nam":
-                                      nodeColor = "#F00";
-                                      break;
-                                  default:
-                                      nodeColor = "#888";
-                                      break;
-                              }
-                          }
+                    if (hidePDBs){
+                      label.innerHTML = labelName
+                    } else {
+                      label.innerHTML = labelName + " (" + node.name + ")"
+                      // Extra: rotate labels when on the left half
+                      if (label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
+                        label.innerHTML = "(" + node.name + ") " + labelName
                     }
 
-                    if (displayData < 7)
-                      nodeColor = class_colors(treeAnnotations[node.name][displayData])
+                    // color labels
+                    if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1'])
+                      element.style("fill", "purple");
+                    else if ('group0' in node && node['group0'])
+                      element.style("fill", "red");
+                    else if ('group1' in node && node['group1'])
+                      element.style("fill", "blue");
+                    else {
+                      if (doBranchColoring)
+                        element.style("fill", firstColor);
+                      else
+                        element.style("fill", "black");
+                    }
 
-                    if (!Array.isArray(nodeColor))
-                      nodeColor = [nodeColor]
+                    // Add outer markers
+                    element.selectAll("rect").remove() // remove old data
+                    if (displayData >= 0){
 
-                    // add annotationBlock
-//                    var font_size  = parseFloat(node_label.style("font-size"));
-//                    var scale = 0.8
-                    var nodeNameMeasure = label.innerHTML.replace(/(<([^>]+)>)/ig,"");
-                    var move_past_label_rect = label.getBBox().width*1.05 + font_size
+                      if (!Array.isArray(treeAnnotations[node.name][displayData]))
+                        treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
-                    // add blocks
-                    for (var i = 0; i < nodeColor.length; i++) {
-                      var currentColor = nodeColor[i]
+                      for (var i = 0; i < treeAnnotations[node.name][displayData].length; i++) {
+                        var currentType = typeClasses[displayData]
+                        var currentData = treeAnnotations[node.name][displayData][i]
+                        var classIndex = dataClasses[displayData].indexOf(currentData)
+                        var currentColor = colorClasses[displayData][classIndex]
 
-                      // create block
-                      var annotation = element.append("rect")
-                      annotation.attr("width", font_size*scale*0.9)
-                        .style("stroke", "#000")
-                        .style("stroke-width", font_size/20+"px")
-                        .attr("height", font_size*scale*0.9)
-                        .attr ("y", -(font_size*scale)/2)
-                        .attr("fill", currentColor)
-                        .on("mouseover", function(d) { // add tooltip
-                            class_tooltip.transition()
-                              .style("opacity", .9);
-                            class_tooltip.html("<b>" + option + ":</b> " + $(d3.event.target).data("datalabel"))
-                              .style("left", (d3.event.pageX) + "px")
-                              .style("top", (d3.event.pageY - 28) + "px");
-                          })
+                        // create block
+                        var annotation = element.append("rect")
+                        annotation.attr("width", font_size*scale*0.9)
+                          .style("stroke", "#000")
+                          .style("stroke-width", font_size/20+"px")
+                          .attr("height", font_size*scale*0.9)
+                          .attr ("y", -(font_size*scale)/2)
+                          .attr("fill", currentColor)
+                          .on("mouseover", function(d) { // add tooltip
+                              class_tooltip.transition()
+                                .style("opacity", .9);
+                              class_tooltip.html("<b>" + currentType + ":</b> " + $(d3.event.target).data("datalabel"))
+                                .style("left", (d3.event.pageX) + "px")
+                                .style("top", (d3.event.pageY - 28) + "px");
+                            })
+                          .on("mouseout", function() {
+                              class_tooltip.transition().duration(100)
+                                  .style("opacity", 0);
+                          });
 
-                        .on("mouseout", function() {
-                            class_tooltip.transition().duration(100)
-                                .style("opacity", 0);
-                        });
+                          // label
+                          var toollabel = ""
+                          annotation.attr("data-datalabel", currentData)
 
-                        // label
-                        var toollabel = ""
-                        if (displayData >= 8)
-                          annotation.attr("data-datalabel", nodeData[i])
-                        else if (Array.isArray(treeAnnotations[node.name][displayData]))
-                          annotation.attr("data-datalabel", treeAnnotations[node.name][displayData][i])
-                        else
-                          annotation.attr("data-datalabel", treeAnnotations[node.name][displayData])
-
-                      if (phylotree.radial ()) {
-                          var shifter_rect = phylotree.shift_tip(node)[0];
-                          var setX = shifter_rect > 0 ? shifter_rect + move_past_label_rect + i*(font_size*scale+2) : shifter_rect - move_past_label_rect - i*(font_size*scale+2);
-                          annotation.attr("transform", "rotate (" + node.text_angle + ")")
-                              .attr ("x", setX)
-                      } else {
-                          var x_shift_rect = phylotree.shift_tip(node)[0] + move_past_label_rect + i*(font_size*scale+2);
-                          annotation.attr("transform", null).attr("x", function (d, i) { return  x_shift_rect + font_size * i;})
+                        if (phylotree.radial ()) {
+                            var shifter_rect = phylotree.shift_tip(node)[0];
+                            var setX = shifter_rect > 0 ? shifter_rect + maxLeafNodeLenght + i*(font_size*scale+2) : shifter_rect - maxLeafNodeLenght - font_size*scale*0.9 - i*(font_size*scale+2);
+                            annotation.attr("transform", "rotate (" + node.text_angle + ")")
+                                .attr ("x", setX)
+                        } else {
+                            var x_shift_rect = phylotree.shift_tip(node)[0] + maxLeafNodeLenght + i*(font_size*scale+2);
+                            annotation.attr("transform", null).attr("x", function (d, i) { return  x_shift_rect + font_size * i;})
+                        }
                       }
                     }
                 } else {
                   console.log("Structure without annotation: " + node.name)
                 }
-            } else if (firstD) {
+            } else {
                 // restyle innner node by coloring according to silhouette score
                 silhouette_color = "#FFFFFF";
                 if (!isNaN(node.name)) {
@@ -653,22 +860,22 @@
                   } else {
                     silhouette_color = "#FFAAAA";
                   }
+
                 }
                 element.selectAll("circle").style("fill", silhouette_color)
 
-
-                // TODO: Add tooltip with silhouette score
-            }
-            // color labels
-            if (d3.layout.phylotree.is_leafnode(node)) {
-                if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1'])
-                  element.style("fill", "purple");
-                else if ('group0' in node && node['group0'])
-                  element.style("fill", "red");
-                else if ('group1' in node && node['group1'])
-                  element.style("fill", "blue");
-                else
-                  element.style("fill", "black");
+                // Add tooltip
+                element.selectAll("circle").on("mouseover", function(d) { // add tooltip
+                    class_tooltip.transition()
+                      .style("opacity", .9);
+                    class_tooltip.html("<b>Silhouette score:</b> " + score)
+                      .style("left", (d3.event.pageX) + "px")
+                      .style("top", (d3.event.pageY - 28) + "px");
+                  })
+                .on("mouseout", function() {
+                    class_tooltip.transition().duration(100)
+                        .style("opacity", 0);
+                });
             }
         }
 
@@ -683,8 +890,26 @@
               element.style("stroke", "blue");
               element.style("stroke-width", 3)
             } else {
-              element.style("stroke", "#CCC");
               element.style("stroke-width", 1.5)
+              element.style("stroke", "#CCC");
+              if (doBranchColoring && displayDataInner >= 0 && 'colorClasses' in node.target){
+                // color according to shared feature
+                if (node.target['colorClasses'][displayDataInner] != "-" && node.target['colorClasses'][displayDataInner].length > 0 ) {
+                    if (Array.isArray(node.target['colorClasses'][displayDataInner])) {
+                      // if array with multiple options - first based on previous connection
+                      if (node.target['colorClasses'][displayDataInner].length > 1){
+                          if (node.source['colorClasses'][displayDataInner] != "-" && node.source['colorClasses'][displayDataInner].length > 0){
+                            node.target['colorClasses'][displayDataInner] = node.target['colorClasses'][displayDataInner].filter(x => node.source['colorClasses'][displayDataInner].includes(x))
+                          }
+                      }
+                      var select = dataClasses[displayDataInner].indexOf(node.target['colorClasses'][displayDataInner][0])
+                      element.style("stroke", colorClasses[displayDataInner][select]);
+                    } else {
+                      var select = dataClasses[displayDataInner].indexOf(node.target['colorClasses'][displayDataInner])
+                      element.style("stroke", colorClasses[displayDataInner][select]);
+                    }
+                }
+              }
             }
         }
 
@@ -747,23 +972,41 @@
           }
         }
 
+        function downloadPNG(pngSelector, name) {
+          var SVGElem = document.getElementById(pngSelector);
+          var oDOM = SVGElem.cloneNode(true);
+
+          // Key: strip xmlns tags otherwise this will result in a double definition
+          oDOM.removeAttribute("xmlns");
+
+          // Note: keep scale low enough for Chrome to allow download (max size 1.3MB)
+          saveSvgAsPng(oDOM, name, {scale: 2});
+        }
+
         var lastData;
+        var newCluster = false;
         function initializeButtons(selector, treeFunction) {
             $(selector + ' .go-button').click(function() {
-                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+                var pdbs = JSON.parse($(selector + ' .crystal-pdb').val());
 
                 // DEBUG input:
-                if (pdb.length == 0)
-                  pdb = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+                if (pdbs.length == 0)
+                  pdbs = ["6A94", "6IIV", "6FJ3", "3V2Y", "5T04", "6BQH", "5DSG", "6E3Y", "4Z35", "6B73", "3RZE", "4ZUD", "4XT1", "5ZTY", "5WIV", "3VW7", "5YWY", "4Z9G", "4XNW", "5ZBH", "5TUD", "5VEW", "5UEN", "6AK3", "4BUO", "5X33", "5DHG", "5CXV", "6D32", "5NX2", "4ZJ8", "4MQT", "4DJH", "5TGZ", "6BD4", "5XSZ", "5ZKP", "4OR2", "5ZKQ", "5ZKC", "6HLL", "3OE9", "6MXT", "6C1R", "5WQC", "6D26", "5XRA", "4PY0", "5OM1", "5NJ6", "5XF1", "5UNF", "6N51", "5CGC", "6IGK", "5TZR", "2YCZ", "6DDF", "2YDV", "4XEE", "4IAR", "5X7D", "5EN0", "5XPR", "4U15", "6DO1", "6AKY", "6GPS", "5UZ7", "4RWD", "5G53", "6BQG", "2G87", "6D9H", "6G79", "6CM4", "6B3J", "4DKL", "6DS0", "5VBL", "6H7O", "6M9T", "3PBL"]
 
-                if (pdb.length > 1) {
+                if (pdbs.length > 1) {
                     $("#clustering-tree").html("")
                     $("#svgloading").remove();
                     $(selector + ' .tree-container').append('<span id="svgloading">Loading...</span>');
+                    newCluster = (this.innerHTML=="Go (distance to core)")
                     $.getJSON( '/contactnetwork/clusteringdata',
                     {
-                        'pdbs': pdb,
+                        'pdbs': pdbs.join(","),
+                        'new_cluster': newCluster
                     },
+                    /*$.post('/contactnetwork/clusteringdata',
+                    {
+                        'pdbs': pdbs,
+                    },*/
                     function( data ) {
                         lastData = data
 
@@ -802,9 +1045,9 @@
                             dblClickZoomEnabled: true
                         });
 
-                        // TODO: calculate zoom level as center + fit doesn't work correctly
-                        window.zoomCluster[container].zoom(2);
-                        // TODO manual center
+                        // Calculate zoom level as center + fit doesn't work correctly
+                        window.zoomCluster[container].zoom(1.5);
+                        // Manual center
                         window.zoomCluster[container].center()
 
                     });
@@ -850,10 +1093,16 @@
                 toggleFullScreen(fullScreenElement.get(0));
             });
 
-            // Distance matrix download
+            // Dendrogram download in SVG
             $(selector + ' .btn-download-alt').click(function() {
                 // svg download
                 downloadSVG("clustering-tree", "GPCR_structure_clustering.svg")
+            });
+
+            // Dendrogram download in PNG
+            $(selector + ' .btn-camera').click(function() {
+                // svg download
+                downloadPNG("clustering-tree", "GPCR_structure_clustering.png")
             });
 
             // Distance matrix download
@@ -922,9 +1171,31 @@
             initializeButtons('#single-crystal-group-tab', renderTree);
             initializeTopButtons('#single-crystal-group-tab');
 
+            // init tree toggles
+            // Button Toggles
+            $("#layout").on("click", function(e) {
+              phylotree.radial($(this).prop("checked")).placenodes().update();
+            });
+
+            $("#colored-edges").on("click", function(e) {
+              doBranchColoring = $("#colored-edges").prop("checked")
+              // Refresh twice to ensure correct leaf coloring
+              d3.layout.phylotree.trigger_refresh(phylotree);
+              d3.layout.phylotree.trigger_refresh(phylotree);
+            });
+
+            $("#hide-pdbs").on("click", function(e) {
+              // refresh layout
+              hidePDBs = $("#hide-pdbs").prop("checked")
+              d3.layout.phylotree.trigger_refresh(phylotree);
+              maximumLeafSize();
+            });
+
+
             // init dropdowns
             $(".dropdown-menu.names").on("click", "li", toggleNames)
-            $(".dropdown-menu.data").on("click", "li", toggleData)
+            $(".dropdown-menu.dataouter").on("click", "li", toggleDataOuter)
+            $(".dropdown-menu.datainner").on("click", "li", toggleDataInner)
         });
 
         var class_tooltip = d3.select("body").append("div")
@@ -1016,7 +1287,7 @@
             background-color: rgba(124, 124, 255, 0.1);
         }
 
-        .btn-download, .btn-download-alt, .btn-fullscreen {
+        .btn-download, .btn-download-alt, .btn-fullscreen, .btn-camera {
           margin-right: 10px;
         }
 
@@ -1098,6 +1369,10 @@
         }
         .svg-download-button {
             margin-top: 6px;
+        }
+
+        div.class_tooltip {
+            padding: 4px;
         }
 
         div.tooltip {
