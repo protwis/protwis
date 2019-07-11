@@ -520,6 +520,26 @@
             /*$("#ngl-"+mode+" #ngl_contacts").change(function(e){
                 updateStructureRepresentations(mode);
             });*/
+
+            // Link the 3D viewers together
+            stage[mode].mouseObserver.signals.dragged.add(function (){linkNGLMouseControls(mode)});
+            stage[mode].mouseObserver.signals.scrolled.add(function (){linkNGLMouseControls(mode)});
+            // Click signals not fully functional because of animation -> disabled for now
+            //stage[mode].mouseObserver.signals.clicked.add(function (){linkNGLMouseControls(mode)});
+            //stage[mode].mouseObserver.signals.doubleClicked.add(function (){linkNGLMouseControls(mode)});
+
+            // Reset 3D view
+            linkNGLMouseControls(mode)
+        }
+
+        function linkNGLMouseControls(origin){
+          var mode = origin.substring(0, origin.length - 1)
+
+          for (var graph in stage){
+            if (graph!=origin && graph.startsWith(mode)){
+              stage[graph].viewerControls.orient(stage[origin].viewerControls.getOrientation());
+            }
+          }
         }
 
         var linkMap = {}
@@ -592,7 +612,7 @@
                   var pair = genNo1 + "," + genNo2;
                   if ( !(filtered_gn_pairs.includes(pair)) && filtered_gn_pairs.length) {
                       return
-                  } 
+                  }
                   // Interaction type filtering
                   // if (update && !enabledInteractions.includes(iType)) return
 
@@ -625,7 +645,7 @@
                   var pair = genNo1 + "," + genNo2;
                   if ( !(filtered_gn_pairs.includes(pair)) && filtered_gn_pairs.length) {
                       return
-                  } 
+                  }
 
                   // Adjust GN numbering to the shown structure
                   var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo1)];
@@ -664,7 +684,7 @@
                   var pair = genNo1 + "," + genNo2;
                   if ( !(filtered_gn_pairs.includes(pair)) && filtered_gn_pairs.length) {
                       return
-                  } 
+                  }
 
                   // Push interacting residues
                   if (!res_int.includes(resNo1)) res_int.push(resNo1)
