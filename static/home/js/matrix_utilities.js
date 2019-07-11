@@ -155,6 +155,9 @@ const run_seq_sig = function(){
         xAxis
       );
       initialize_consensus(data.feat);
+
+      // Once done run the signature match
+      run_sig_match();
     },
     error: function(error){
       console.log(error)
@@ -347,7 +350,6 @@ const run_sig_match = function(){
     }
   })
 }
-
 
 const replace_filter_value = function(d) {
   const num = parseInt($('#currentpairs').text())
@@ -542,9 +544,9 @@ $(document).ready(function () {
   pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id');
   pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
 
-  initialize_filter_slider()
-  set_slider_max_value()
-  update_slider_label()
+  initialize_filter_slider();
+  set_slider_max_value();
+  update_slider_label();
 
   let keys = [
     "rec_chain",
@@ -590,6 +592,8 @@ $(document).ready(function () {
     tooltip
   );
 
+  run_seq_sig();
+
   $('#interface-modal-table').on('hidden.bs.modal', function (e) {
     selection = table.rows({ selected: true }).data();
     let old_pdb_sel = pdb_sel;
@@ -634,9 +638,10 @@ $(document).ready(function () {
       document.querySelector("#intbut").classList.add("active");
       document.querySelector("#resbut").classList.remove("active");
 
-      set_slider_max_value()   
-      reset_slider()
-      update_slider_label()
+      set_slider_max_value();
+      reset_slider();
+      update_slider_label();
+      run_seq_sig();
 
       // interface_data_table.clear();
       // interface_data_table.rows.add(data.transformed);
