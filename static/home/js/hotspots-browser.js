@@ -326,6 +326,10 @@ function createNGLview(mode, pdb, pdbs = false) {
     // Click signals not fully functional because of animation -> disabled for now
     //stage[mode].mouseObserver.signals.clicked.add(function (){linkNGLMouseControls(mode)});
     //stage[mode].mouseObserver.signals.doubleClicked.add(function (){linkNGLMouseControls(mode)});
+
+    // Prevent scrolling of document
+    document.getElementById( mode ).onwheel = function(event){event.preventDefault();};
+    document.getElementById( mode ).onmousewheel = function(event){event.preventDefault();};
 }
 
 // Linking the viewers together

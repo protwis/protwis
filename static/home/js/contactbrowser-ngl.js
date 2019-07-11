@@ -305,86 +305,8 @@
 
                             reps[mode][1].structureComponent = o
                             createNGLRepresentations(mode, 1, false)
-                            /*
-                            // interactions for two groups tab
-                            var res_int = []
-                            $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
-                                var rect = $(this);
-                                var genNo1 = rect.data('gen-no-1');
-                                var genNo2 = rect.data('gen-no-2');
-                                if ((genNo1=='-') || (genNo2=='-')) return
-
-                                // Adjust GN numbering to the shown structure
-                                var resNo1 = pdb_data[mode][1]['only_gn'][pdb_data[mode][1]['gn_map'].indexOf(genNo1)];
-                                var resNo2 = pdb_data[mode][1]['only_gn'][pdb_data[mode][1]['gn_map'].indexOf(genNo2)];
-
-                                if ((typeof resNo1=='undefined') || (typeof resNo2=='undefined')) return
-
-                                // Push interactions
-                                res_int.push(resNo1);
-                                res_int.push(resNo2);
-                              });
-
-                            // NULL representation - for clarity purposes only showing links for first structure
-                            reps[mode][1].links = o.addRepresentation( "spacefill", {
-                              sele: ":F and :O and :O and :B and :A and :R",
-                              visible: false
-                            });
-                            reps[mode][1].links_gn = reps[mode][1].links
-
-                            reps[mode][1].int_res = o.addRepresentation( "spacefill", {
-                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
-                              color: "#811808",
-                              // colorScale: ["#44f", "#444"],
-                              radiusScale: .2,
-                              name: "res",
-                              visible: false
-                            });
-
-
-                            res_int_gn = Object.assign([], res_int);
-                            res_int_gn = intersect(res_int_gn, pdb_data[mode][1]['only_gn']);
-                            reps[mode][1].int_res_gn = o.addRepresentation( "spacefill", {
-                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and (.CA)",
-                              color: "#811808",
-                              // colorScale: ["#44f", "#444"],
-                              radiusScale: .2,
-                              name: "res",
-                              visible: true
-                            });
-
-                            reps[mode][1].ball_all = o.addRepresentation("ball+stick", {
-                              sele: ":"+pdb_data[mode][1]['chain']+" and sidechainAttached",
-                              color: "element",
-                              colorValue: "#dda8bc",
-                              visible: false
-                              })
-
-                            reps[mode][1].ball = o.addRepresentation("ball+stick", {
-                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+") and sidechainAttached",
-                              color: "element",
-                              colorValue: "#dda8bc",
-                              visible: false
-                              })
-
-                            // CHECK: can res_int and res_int_gn actually be different?
-                            reps[mode][1].ball_int = o.addRepresentation("ball+stick", {
-                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
-                              color: "element",
-                              colorValue: "#dda8bc",
-                              visible: false
-                              })
-
-                            reps[mode][1].ball_int_gn = o.addRepresentation("ball+stick", {
-                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+res_int_gn.join(", ")+") and sidechainAttached",
-                              color: "element",</span>
-                              colorValue: "#dda8b</span>c",
-                              visible: false
-                            })*/
-
                             o.autoView(selectionTwo);
                         } );
-
                     });
                 }
             });
@@ -530,6 +452,10 @@
 
             // Reset 3D view
             linkNGLMouseControls(mode)
+
+            // Prevent scrolling of document
+            document.getElementById( mode ).onwheel = function(event){event.preventDefault();};
+            document.getElementById( mode ).onmousewheel = function(event){event.preventDefault();};
         }
 
         function linkNGLMouseControls(origin){
