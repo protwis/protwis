@@ -91,11 +91,12 @@ var reps = {} // store ngl representations
 var gpcr_rep = {}
 var selectColoring = {} // store coloring settings
 var int_labels = []
-var basecolor = { 1: 'red', 2: 'blue', 3: 'grey' }
+var basecolor = { "ngl-1": 'red', "ngl-2": 'blue', "ngl-3": 'grey' }
 
 function createNGLview(mode, pdb, pdbs = false) {
-    $("#ngl-" + mode).html("");
-    stage[mode] = new NGL.Stage("ngl-" + mode, { backgroundColor: "white" });
+    var mode = "ngl-" + mode
+    $("#" + mode).html("");
+    stage[mode] = new NGL.Stage(mode, { backgroundColor: "white" });
     color_schemes[mode] = [
         [],
         []
@@ -289,7 +290,7 @@ function createNGLview(mode, pdb, pdbs = false) {
     controls += '</select></p>'
     newDiv.innerHTML = controls;
 
-    $("#ngl-" + mode).append(newDiv);
+    $("#" + mode).append(newDiv);
 
     selectColoring[mode] = "diff"
     $('#ngl_coloring_' + mode).change(function(e) {
@@ -302,7 +303,7 @@ function createNGLview(mode, pdb, pdbs = false) {
         createNGLview(mode, $(this).val(), pdbs, pdbs_set2);
     });
 
-    $("#ngl-" + mode + " #ngl_color").change(function(e) {
+    $("#" + mode + " #ngl_color").change(function(e) {
         gpcr_rep[mode][0].setParameters({
             color: color_schemes[mode][0][$(this).val()]
         });
@@ -315,9 +316,27 @@ function createNGLview(mode, pdb, pdbs = false) {
         });
     });
 
-    $("#ngl-" + mode + " #ngl_only_gns").change(function(e) {
+    $("#" + mode + " #ngl_only_gns").change(function(e) {
         updateStructureRepresentations(mode);
     });
+
+    // Link the 3D viewers together
+    stage[mode].mouseObserver.signals.dragged.add(function (){linkNGLMouseControls(mode)});
+    stage[mode].mouseObserver.signals.scrolled.add(function (){linkNGLMouseControls(mode)});
+    // Click signals not fully functional because of animation -> disabled for now
+    //stage[mode].mouseObserver.signals.clicked.add(function (){linkNGLMouseControls(mode)});
+    //stage[mode].mouseObserver.signals.doubleClicked.add(function (){linkNGLMouseControls(mode)});
+}
+
+// Linking the viewers together
+function linkNGLMouseControls(origin){
+  var mode = origin.substring(0, origin.length - 1)
+
+  for (var graph in stage){
+    if (graph!=origin && graph.startsWith(mode)){
+      stage[graph].viewerControls.orient(stage[origin].viewerControls.getOrientation());
+    }
+  }
 }
 
 var linkColourScheme = {}
@@ -332,7 +351,7 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
     // initialize linkMap + colorScheme
     if (!(mode in linkColourScheme)) linkColourScheme[mode] = {}
 
-    var gnOnly = !update || $("#ngl-" + mode + " #ngl_only_gns").prop('checked');
+    var gnOnly = !update || $("#" + mode + " #ngl_only_gns").prop('checked');
 
     // Empty? Update selection with a fake residue -> hide everything
     if (res_int.length == 0) res_int.push("9999999")
@@ -411,7 +430,7 @@ function updateStructureRepresentations(mode) {
             }
 
             // Update cartoon using selection
-            checked = $("#ngl-" + mode + " #ngl_only_gns").prop('checked');
+            checked = $("#" + mode + " #ngl_only_gns").prop('checked');
             sele = ":" + pdb_data[mode][key]['chain'];
             int_sele = sele
             if (checked)
