@@ -968,7 +968,7 @@ function renderBrowser(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -1072,7 +1072,7 @@ function renderBrowser(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -1797,7 +1797,7 @@ function renderBrowser_3(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -1897,19 +1897,19 @@ function renderBrowser_4(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
-                          <th colspan="9" rowspan="1">Residue angles</th> \
-                          <th colspan="6" rowspan="1">Helix turn angle</th> \
+                          <th colspan="6" rowspan="1">Residue angles</th> \
+                          <th colspan="9" rowspan="1">Helix turn angle</th> \
                           <th colspan="5" rowspan="1">Seq consensus</th> \
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Consensus SS</th> \
                           <th colspan="3">Frequency (%)</th> \
-                          <th colspan="3">Tau (N-Ca-C)</th> \
                           <th colspan="3">Phi (N(+1)-C-Ca-N)</th> \
                           <th colspan="3">Psi (C-Ca-N-C(-1))</th> \
-                          <th colspan="3">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="3">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="3">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
+                          <th colspan="3">Theta (Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="3">Next Theta (Ca(+2)-Ca(+1)-Ca)</th> \
                           <th colspan="2">AA</th> \
                           <th colspan="3">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -1961,7 +1961,7 @@ function renderBrowser_4(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -1987,10 +1987,6 @@ function renderBrowser_4(data) {
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
 
-                      <td class="narrow_col">${angles1[3]}</td>
-                      <td class="narrow_col">${angles2[3]}</td>
-                      <td class="narrow_col">${angles_diff[3]}</td>
-
                       <td class="narrow_col">${angles1[4]}</td>
                       <td class="narrow_col">${angles2[4]}</td>
                       <td class="narrow_col">${angles_diff[4]}</td>
@@ -1999,10 +1995,14 @@ function renderBrowser_4(data) {
                       <td class="narrow_col">${angles2[5]}</td>
                       <td class="narrow_col">${angles_diff[5]}</td>
 
+                      <td class="narrow_col">${angles1[3]}</td>
+                      <td class="narrow_col">${angles2[3]}</td>
+                      <td class="narrow_col">${angles_diff[3]}</td>
+
                       <td class="narrow_col">${angles1[8]}</td>
                       <td class="narrow_col">${angles2[8]}</td>
                       <td class="narrow_col">${angles_diff[8]}</td>
-                      
+
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
@@ -2030,19 +2030,19 @@ function renderBrowser_4(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="2" rowspan="1">Secondary structure</th> \
-                          <th colspan="3" rowspan="1">Residue angles</th> \
-                          <th colspan="2" rowspan="1">Helix turn angle</th> \
+                          <th colspan="2" rowspan="1">Residue angles</th> \
+                          <th colspan="3" rowspan="1">Helix turn angle</th> \
                           <th colspan="2" rowspan="1">Seq consensus</th> \
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
                           <th colspan="1">Consensus SS</th> \
                           <th colspan="1">Frequency (%)</th> \
-                          <th colspan="1">Tau (N-Ca-C)</th> \
                           <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
                           <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="1">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
+                          <th colspan="1">Theta (Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Next Theta (Ca(+2)-Ca(+1)-Ca)</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -2076,7 +2076,7 @@ function renderBrowser_4(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -2096,14 +2096,14 @@ function renderBrowser_4(data) {
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
 
-                      <td class="narrow_col">${angles[3]}</td>
-
                       <td class="narrow_col">${angles[4]}</td>
 
                       <td class="narrow_col">${angles[5]}</td>
 
+                      <td class="narrow_col">${angles[3]}</td>
+
                       <td class="narrow_col">${angles[8]}</td>
-                      
+
                       <td class="narrow_col"></td>
 
                       <td class="narrow_col">${set_seq_cons_aa}</td>
@@ -2124,18 +2124,18 @@ function renderBrowser_4(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="1">Secondary structure</th> \
-                          <th colspan="3" rowspan="1">Residue angles</th> \
-                          <th colspan="2" rowspan="1">Helix turn angle</th> \
+                          <th colspan="2" rowspan="1">Residue angles</th> \
+                          <th colspan="3" rowspan="1">Helix turn angle</th> \
                           <th colspan="1" rowspan="1">Seq</th> \
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
                           <th colspan="1">Consensus SS</th> \
-                          <th colspan="1">Tau (N-Ca-C)</th> \
                           <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
                           <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="1">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
+                          <th colspan="1">Theta (Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Next Theta (Ca(+2)-Ca(+1)-Ca)</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Cons (%)</th> \
@@ -2166,7 +2166,7 @@ function renderBrowser_4(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -2183,14 +2183,14 @@ function renderBrowser_4(data) {
 
                       <td class="narrow_col"></td>
 
-                      <td class="narrow_col">${angles[3]}</td>
-
                       <td class="narrow_col">${angles[4]}</td>
 
                       <td class="narrow_col">${angles[5]}</td>
 
+                      <td class="narrow_col">${angles[3]}</td>
+
                       <td class="narrow_col">${angles[8]}</td>
-                      
+
                       <td class="narrow_col"></td>
 
                       <td class="narrow_col">${set_seq_cons_aa}</td>
@@ -2249,7 +2249,7 @@ function renderBrowser_5(data) {
         // 2 'outer_angle',
         // 3 'tau',
         // 4 'phi',
-        // 5 'psi', 
+        // 5 'psi',
         // 6 'sasa',
         // 7 'rsa',
         // 8 'theta',
