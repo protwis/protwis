@@ -10,4 +10,5 @@ urlpatterns = [
     url(r'^autocomplete', views.SelectionAutocomplete, name='autocomplete'),
     url(r'^gproteins', views.g_proteins, name='g_proteins'),
     url(r'^(?P<slug>[-\w]+)/$', views.detail, name='detail'),
+    url(r'^isoforms', views.isoforms, name='g_proteins'),
 ]
