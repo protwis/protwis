@@ -163,6 +163,9 @@ const run_seq_sig = function(){
       $("#calc_spin").addClass("fa-times");
       $("#calc_spin").removeClass("fa-spinner");
       $("#calc_spin").removeClass("fa-spin");
+      $("#sigm_spin").addClass("fa-times");
+      $("#sigm_spin").removeClass("fa-spinner");
+      $("#sigm_spin").removeClass("fa-spin");
       console.log(error)
       alert(error);
     },
