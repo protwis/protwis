@@ -1,0 +1,284 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+  <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<style>
+    .node circle {
+  /*fill: #fff;*/
+  /*stroke: DarkGreen;*/
+  /*fill: DarkGreen;*/
+  stroke: #000000 ;
+  stroke-width: .3px;
+}
+
+.node {
+  font: 8px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 1px;
+}
+
+.node text {
+  font: 8px sans-serif;
+}
+
+.links {
+  fill: none;
+  stroke: #000;
+}
+
+.link-extensions {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .25;
+}
+
+.d3-tip {
+  font-family: Verdana;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 9px;
+  border: 0px;
+  border-radius: 10px;
+  color: #fff;
+  z-index: 5070;
+}
+
+/*body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+}*/
+
+.links {
+  fill: none;
+  stroke: #000;
+}
+
+.link-extensions {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .25;
+}
+
+.labels {
+  font: 14px Palatino;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.link--active {
+  stroke: #000 !important;
+  stroke-width: 3.5px;
+}
+
+.link-extension--active {
+  stroke-opacity: .6;
+}
+
+.label--active {
+  font-weight: bold;
+}
+
+/* CSS GRID */
+.svg {
+grid-area: svg;
+}
+.isoformtable {
+grid-area: isoformtable;
+}
+
+.wrapper {
+  display: grid;
+  width: 100vw;
+  grid-gap: 10px;
+  grid-template-columns: 40px auto 40px;
+  grid-template-areas:
+  ". svg  ."
+  ". isoformtable .";
+}
+@media (min-width: 1400px) {
+  .wrapper {
+    grid-template-columns: 40px minmax(400px,1200px) auto 40px;
+    grid-template-areas:
+    ". svg isoformtable ."
+    ". . . .";
+  }
+}
+
+.isoformtable table td {
+  text-align: center;
+}
+
+.popovertooltip {
+  cursor: pointer;
+}
+
+</style>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script type="text/javascript" charset="utf-8" src="//d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="{% static 'home/js/d3.tip.js' %}"></script>
+<script type="text/javascript" src="{% static 'home/js/protein-isoforms.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+<script type="text/javascript" charset="utf-8">
+var interactions = {{ tree | safe }};
+var table_data = {{ table_data | safe }};
+
+$(document).ready(function() {
+    make_coverage_tree();
+    build_table();
+});
+
+function filter_this_receptor(name){
+  console.log('filter this!',name.toUpperCase());
+  $('.popovertooltip').popover('hide');
+  yadcf.exFilterColumn(dtable, [[0, [name.toUpperCase()]]]);
+}
+
+var dtable = ''
+function build_table() {
+    var table = $(".table");
+    var tbody = table.find('tbody');
+    $.each(table_data, function(i, v) {
+        if (i == 0) return;
+        // 1: "receptor"
+        // 2: "isoform_id"
+        // 3: "number_of_transcripts"
+        // 4: "transcripts"
+        // 5: "number_of_tissues"
+        // 6: "tissues"
+        // 7: "varying_segments"
+        // 8: "functional_annotation"
+        // 9: "reference (PMID)"
+        if (v[8]==0) v[8] = '';
+        if (v[9]==0) { v[9] = '' } else {
+          v[9] = `<a href="https://www.ncbi.nlm.nih.gov/pubmed/${v[9]}"  target=_blank>${v[9]}</a>`;
+        }
+        // https://www.ensembl.org/homo_sapiens/Transcript/Summary?t=ENST00000371950
+        var tooltips_transcripts = v[4];
+        if (tooltips_transcripts) {
+          ts = tooltips_transcripts.split(",");
+          tooltips_transcripts = '';
+          $.each(ts, function(i, t) {
+            console.log(t)
+            tooltips_transcripts += `<a href='https://www.ensembl.org/Homo_sapiens/Transcript/Summary?t=${t}'  target=_blank>${t}</a>, `;
+          });
+        }
+        var tooltips_tissues = v[6];
+        tr = `
+                    <tr id="${i}">
+                      <td>${v[1]}</td>
+                      <td>${v[2]}</td>
+                      <td class="popovertooltip" html_content="${tooltips_transcripts}" content="${v[4]}" popover-title='Transcripts'>${v[3]}</td>
+                      <td class="popovertooltip" html_content="${tooltips_tissues}" content="${tooltips_tissues}" popover-title='Tissues'>${v[5]}</td>
+                      <td>${v[7]}</td>
+                      <td>${v[8]}</td>
+                      <td>${v[9]}</td>
+                    </tr>`;
+        tbody.append(tr);
+    });
+
+    // $('[data-toggle="tooltip"]').tooltip(); 
+    $('.popovertooltip').each(function() {
+        $(this).popover({
+            html: true,
+            placement: 'bottom',
+            content: $(this).attr("html_content"),
+            container: '.dataTables_scrollBody',
+            title: $(this).attr("popover-title")
+        })
+        $(this).tooltip({
+            html: true,
+            placement: 'bottom',
+            container: '.dataTables_scrollBody',
+            title: $(this).attr("content")
+        })
+    })
+
+    dtable = table.DataTable({
+        // 'scrollX': true,
+        "scrollY": '80vh',
+        paging: true,
+        pageLength: 200,
+        "bLengthChange": false,
+        "bPaginate": false,
+        "bInfo": false,
+        "order": [],
+    });
+    yadcf.init(dtable,
+        [{
+                column_number: 0,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Receptor",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px'
+                },
+            },
+            {
+                column_number: 5,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Functional annotation",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 4,
+                filter_type: "multi_select",
+                text_data_delimiter: ", ",
+                select_type: 'select2',
+                filter_default_label: "Varying segment(s)",
+                filter_reset_button_text: false,
+            }
+        ], {
+            cumulative_filtering: false
+        }
+
+    );
+
+    $('.popovertooltip').on('click', function(e) {
+        $('.popovertooltip').not(this).popover('hide');
+        $('.popovertooltip').tooltip('hide');
+    });
+
+    dtable.columns.adjust();
+
+    $('html').on('click', function(e) {
+        if (typeof $(e.target).data('original-title') == 'undefined' &&
+            !$(e.target).parents().is('.popover.in')) {
+            $('[data-original-title]').popover('hide');
+        }
+    });
+}
+</script>
+{% endblock %}
+{% block outcontent %}
+<div class="wrapper">
+    <div class="svg" id="svg" width="100%"></div>
+    <div class="isoformtable">
+        <table class="table table-sm display compact">
+            <thead>
+                <tr>
+                    <th ></th>
+                    <th>Isoform</th>
+                    <th>Transcript</th>
+                    <th>Tissue</th>
+                    <th></th>
+                    <th></th>
+                    <th>Reference</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -672,7 +672,6 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     }
                 })
                 .attr("class", function(d) {
-                    console.log(d);
                     var ret = "link source-" + d.source.key + " target-" + d.target.key;
                     if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
                         ret += " toggled";

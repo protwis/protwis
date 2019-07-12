@@ -757,6 +757,8 @@
                 ['heatmap', 'Matrix of interactions'],
                 ['flareplot', 'Flare Plot'],
                 ['ngl', '3D view'],
+                ['boxplot', 'Box-plot (Frequency)'],
+                ['boxplot_angles', 'Box-plot (Angles)'],
                 ['schematic_non', 'Schematic (Non-consecutive)'],
                 ['schematic_con', 'Schematic (Consecutive)'],
             ];
@@ -824,6 +826,21 @@
                         plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
 
                         createFlareplotBox(raw_data, '#flareplot-' + plot_id);
+                        break;
+                    case "boxplot":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('boxplot-container');
+                        plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+
+                        createBoxPlot(raw_data, 'boxplot-' + plot_id);
+                        break;
+                    case "boxplot_angles":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('boxplot-container');
+                        plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+
+                        createBoxPlot(raw_data, 'boxplot-' + plot_id,'angles');
+                        break;
                 }
             });
         }
@@ -1320,9 +1337,9 @@
 
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
-            console.log('updateStructureRepresentations');
+            console.log('updateStructureRepresentations',mode);
             var structures = 1;
-            if (mode == "two-groups")
+            if (mode.startsWith("two_sets"))
                 structures = 2;
 
             for (var key = 0; key < structures; key++) {
@@ -1683,9 +1700,15 @@
 
             // Always invoke NGL update
             if (!ignore_ngl) {
+                ngl_plots = [];
+
+                $(".ngl-container:visible").each( function() {
+                    // statements
+                    ngl_plot = $(this).attr('id').replace("ngl-","");
+                    createNGLRepresentations(ngl_plot, 0, ngl_plot)
+                    if (ngl_plot.startsWith('two_sets')) createNGLRepresentations(ngl_plot, 1, ngl_plot)
+                });
                 // Do not update when simply changing viz tabs.
-                createNGLRepresentations(currentTab, 0, currentTab)
-                if (currentTab == "two-crystal-groups-tab") createNGLRepresentations(currentTab, 1, currentTab)
             }
         }
 

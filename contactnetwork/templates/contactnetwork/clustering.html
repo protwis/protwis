@@ -21,8 +21,8 @@
                         </div>
                     </div>
                     <div class="col-md-2">
-                        <div class="btn btn-success btn-lg pull-left go-button">Go (distance pairs)</div>
-                        <div class="btn btn-success btn-lg pull-left go-button">Go (distance to core)</div>
+                        <div class="btn btn-success pull-left go-button">Go (distance pairs)</div>
+                        <div class="btn btn-success pull-left go-button">Go (distance to core)</div>
                     </div>
                     <div class="col-md-2 hidden" id="output-group0">
                         <div class="panel panel-default">
@@ -45,8 +45,8 @@
                         </div>
                     </div>
                     <div class="col-md-2 hidden" id="submit-group">
-                        <div class="btn btn-success btn-lg pull-left CN-button disabled" id="CN-button">Contact Network</div>
-                        <div class="btn btn-success btn-lg pull-left DN-button disabled" id="DN-button">Distance Network</div>
+                        <div class="btn btn-success pull-left CN-button disabled" id="CN-button">Contact Network</div>
+                        <div class="btn btn-success pull-left DN-button disabled" id="DN-button">Distance Network</div>
                     </div>
                 </div>
 
@@ -79,12 +79,14 @@
                 </div>
                 <div class="row">
                   <div class="col-md-12">
-                    <div class="tree-menu">
+                    <div class="tree-menu dropup">
                       <form>
                         <label>Radial layout</label>
                         <input type="checkbox" id="layout" checked/>
-                        <label>Color edges</label>
-                        <input type="checkbox" id="colored-edges"/>
+                        <label>Color edges and leaves</label>
+                        <input type="checkbox" id="colored-edges" checked/>
+                        <label>Hide PDB-codes</label>
+                        <input type="checkbox" id="hide-pdbs"/>
                       </form>
                       <div class="btn-group">
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
@@ -199,7 +201,8 @@
         window.zoomCluster = {};
 
         var phylotree;
-        var doBranchColoring = false;
+        var doBranchColoring = true;
+        var hidePDBs = false;
         var treeAnnotations = [];
         var couplingAnnotations = [];
         var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Experimental method", "Ligand function", "G-protein coupling", "Primary G-protein coupling", "Secondary G-protein coupling"]
@@ -220,7 +223,7 @@
                 dataClasses[i] = Array.from(dataClasses[i]).sort();
             }
             dataClasses[7] = ["agonist", "agonist-partial", "partial-agonist", "pam", "antagonist", "inverse-agonist", "nam"]
-            dataClasses[8] = ['Gs family', 'Gi/Go family', 'Gq/G11 family', 'G12/G13 family']
+            dataClasses[8] = ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family']
             dataClasses[9] = dataClasses[8]
             dataClasses[10] = dataClasses[8]
 
@@ -329,23 +332,14 @@
             });
 
             if (doBranchColoring){
+              // Refresh twice to ensure correct leaf coloring
+              d3.layout.phylotree.trigger_refresh(phylotree);
               d3.layout.phylotree.trigger_refresh(phylotree);
             }
 
             // add legends
             refreshOuterLegend()
             refreshInnerLegend()
-
-            // Button Toggles
-            $("#layout").on("click", function(e) {
-              phylotree.radial($(this).prop("checked")).placenodes().update();
-            });
-
-            $("#colored-edges").on("click", function(e) {
-              // refresh layout
-              doBranchColoring = $("#colored-edges").prop("checked")
-              d3.layout.phylotree.trigger_refresh(phylotree);
-            });
 
             // add custom menu items
             phylotree.get_nodes()
@@ -489,8 +483,11 @@
             e.classList.remove( "active" ) );
           event.target.parentNode.classList.add("active")
 
-          // refresh layout with updated selections
+          // Refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
+          // Refresh twice to ensure correct leaf coloring
+          if (doBranchColoring)
+            d3.layout.phylotree.trigger_refresh(phylotree);
         }
 
         function refreshOuterLegend(){
@@ -574,8 +571,11 @@
             e.classList.remove( "active" ) );
           event.target.parentNode.classList.add("active")
 
-          // refresh layout with updated selections
+          // Refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
+          // Refresh twice to ensure correct leaf coloring
+          if (doBranchColoring)
+            d3.layout.phylotree.trigger_refresh(phylotree);
         }
 
         function menuItem(dataName){
@@ -740,12 +740,19 @@
                       // Color branch-tracer
                       var tracer = element.select("line")[0][0];
                       tracer.setAttribute("stroke-dasharray", "3,4");
-                      tracer.setAttribute("stroke-width", 1.5);
+                      tracer.setAttribute("stroke-width", Math.min(1.5, font_size/3*2));
                       tracer.className.baseVal = ""
                       if (doBranchColoring) {
+                        // check length of current and if array
+                        if (treeAnnotations[node.name][displayDataInner].length > 1 && 'colorClasses' in node && Array.isArray(node['colorClasses'][displayDataInner]) && node['colorClasses'][displayDataInner].length >= 1) {
+                          classIndex = dataClasses[displayDataInner].indexOf(node['colorClasses'][displayDataInner][0])
+                          firstColor = colorClasses[displayDataInner][classIndex]
+                        }
+
                         tracer.setAttribute("stroke", firstColor);
-                      } else
+                      } else {
                         tracer.setAttribute("stroke", "#CCC");
+                      }
                     }
 
                     var labelName
@@ -753,6 +760,7 @@
                       // fix italics and subscript annotations
                       labelName = treeAnnotations[node.name][2].replace(new RegExp(" receptor$"), "")
                       labelName = labelName.replace("-adrenoceptor", '')
+                      labelName = labelName.replace(" receptor-", '-')
 
                       labelName = labelName.replace("<sub>", '<tspan baseline-shift = "sub">')
                       labelName = labelName.replace("</sub>", '</tspan>')
@@ -762,10 +770,32 @@
                       labelName = treeAnnotations[node.name][1].split("_")[0].toUpperCase()
 
                     label = node_label[0][0]
-                    label.innerHTML = " " + labelName + " (" + node.name + ")"
-                    // Extra: rotate labels when on the left half
-                    if (label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
-                        label.innerHTML = " (" + node.name + ") " + labelName
+                    // Space left and right of the label (instead of &nbsp/&#160 which breaks SVG)
+                    label.setAttribute("margin-left", font_size+"px")
+                    label.setAttribute("margin-right", font_size+"px")
+
+                    if (hidePDBs){
+                      label.innerHTML = labelName
+                    } else {
+                      label.innerHTML = labelName + " (" + node.name + ")"
+                      // Extra: rotate labels when on the left half
+                      if (label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
+                        label.innerHTML = "(" + node.name + ") " + labelName
+                    }
+
+                    // color labels
+                    if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1'])
+                      element.style("fill", "purple");
+                    else if ('group0' in node && node['group0'])
+                      element.style("fill", "red");
+                    else if ('group1' in node && node['group1'])
+                      element.style("fill", "blue");
+                    else {
+                      if (doBranchColoring)
+                        element.style("fill", firstColor);
+                      else
+                        element.style("fill", "black");
+                    }
 
                     // Add outer markers
                     element.selectAll("rect").remove() // remove old data
@@ -847,17 +877,6 @@
                         .style("opacity", 0);
                 });
             }
-            // color labels
-            if (d3.layout.phylotree.is_leafnode(node)) {
-                if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1'])
-                  element.style("fill", "purple");
-                else if ('group0' in node && node['group0'])
-                  element.style("fill", "red");
-                else if ('group1' in node && node['group1'])
-                  element.style("fill", "blue");
-                else
-                  element.style("fill", "black");
-            }
         }
 
         function branchStyler(element, node){
@@ -877,6 +896,12 @@
                 // color according to shared feature
                 if (node.target['colorClasses'][displayDataInner] != "-" && node.target['colorClasses'][displayDataInner].length > 0 ) {
                     if (Array.isArray(node.target['colorClasses'][displayDataInner])) {
+                      // if array with multiple options - first based on previous connection
+                      if (node.target['colorClasses'][displayDataInner].length > 1){
+                          if (node.source['colorClasses'][displayDataInner] != "-" && node.source['colorClasses'][displayDataInner].length > 0){
+                            node.target['colorClasses'][displayDataInner] = node.target['colorClasses'][displayDataInner].filter(x => node.source['colorClasses'][displayDataInner].includes(x))
+                          }
+                      }
                       var select = dataClasses[displayDataInner].indexOf(node.target['colorClasses'][displayDataInner][0])
                       element.style("stroke", colorClasses[displayDataInner][select]);
                     } else {
@@ -953,7 +978,9 @@
 
           // Key: strip xmlns tags otherwise this will result in a double definition
           oDOM.removeAttribute("xmlns");
-          saveSvgAsPng(oDOM, name, {scale: 3});
+
+          // Note: keep scale low enough for Chrome to allow download (max size 1.3MB)
+          saveSvgAsPng(oDOM, name, {scale: 2});
         }
 
         var lastData;
@@ -964,7 +991,7 @@
 
                 // DEBUG input:
                 if (pdbs.length == 0)
-                  pdbs = ["3SN6", "4LDE", "4LDL", "4LDO", "4QKX", "5D5A", "5D5B", "5JQH", "5D6L", "5X7D"]
+                  pdbs = ["6A94", "6IIV", "6FJ3", "3V2Y", "5T04", "6BQH", "5DSG", "6E3Y", "4Z35", "6B73", "3RZE", "4ZUD", "4XT1", "5ZTY", "5WIV", "3VW7", "5YWY", "4Z9G", "4XNW", "5ZBH", "5TUD", "5VEW", "5UEN", "6AK3", "4BUO", "5X33", "5DHG", "5CXV", "6D32", "5NX2", "4ZJ8", "4MQT", "4DJH", "5TGZ", "6BD4", "5XSZ", "5ZKP", "4OR2", "5ZKQ", "5ZKC", "6HLL", "3OE9", "6MXT", "6C1R", "5WQC", "6D26", "5XRA", "4PY0", "5OM1", "5NJ6", "5XF1", "5UNF", "6N51", "5CGC", "6IGK", "5TZR", "2YCZ", "6DDF", "2YDV", "4XEE", "4IAR", "5X7D", "5EN0", "5XPR", "4U15", "6DO1", "6AKY", "6GPS", "5UZ7", "4RWD", "5G53", "6BQG", "2G87", "6D9H", "6G79", "6CM4", "6B3J", "4DKL", "6DS0", "5VBL", "6H7O", "6M9T", "3PBL"]
 
                 if (pdbs.length > 1) {
                     $("#clustering-tree").html("")
@@ -1143,6 +1170,27 @@
             // Single group of PDB files
             initializeButtons('#single-crystal-group-tab', renderTree);
             initializeTopButtons('#single-crystal-group-tab');
+
+            // init tree toggles
+            // Button Toggles
+            $("#layout").on("click", function(e) {
+              phylotree.radial($(this).prop("checked")).placenodes().update();
+            });
+
+            $("#colored-edges").on("click", function(e) {
+              doBranchColoring = $("#colored-edges").prop("checked")
+              // Refresh twice to ensure correct leaf coloring
+              d3.layout.phylotree.trigger_refresh(phylotree);
+              d3.layout.phylotree.trigger_refresh(phylotree);
+            });
+
+            $("#hide-pdbs").on("click", function(e) {
+              // refresh layout
+              hidePDBs = $("#hide-pdbs").prop("checked")
+              d3.layout.phylotree.trigger_refresh(phylotree);
+              maximumLeafSize();
+            });
+
 
             // init dropdowns
             $(".dropdown-menu.names").on("click", "li", toggleNames)

@@ -1037,6 +1037,27 @@
             <img src="/static/home/images/loading.gif" id="img-load" />
         </div>
     </div>
+
+      <!-- MODAL POP UP FOR RESIDUE INFO -->
+      <div class="modal fade" id="resModal" role="dialog">
+        <div class="modal-dialog modal-wide">
+        
+          <!-- Modal content-->
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+              <h4 class="modal-title">Modal Header</h4>
+            </div>
+            <div class="modal-body" style="height:1000px;">
+              <p>Some text in the modal.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+          
+        </div>
+      </div>
 {% endblock %}
 {% block addon_js %}
 
@@ -1058,6 +1079,9 @@
 
     <!-- NGL -->
     <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
     <!-- Flareplot -->
     <script type="text/javascript" src="{% static 'home/js/GPCRdb2flare.js' %}"> </script>
@@ -1087,6 +1111,7 @@
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-ngl.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-heatmap.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-tabtables.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/contactbrowser-boxplot.js' %}"> </script>
 
     <script>
 

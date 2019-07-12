@@ -982,16 +982,16 @@ function renderBrowser(data) {
                       <td class="narrow_col">${diff_sfreq}</td>
                       <td>${types}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col core_distance">${angles_1[0]}</td>
-                      <td class="narrow_col core_distance">${angles_2[0]}</td>
-                      <td class="narrow_col a_angle">${angles_1[1]}</td>
-                      <td class="narrow_col a_angle">${angles_2[1]}</td>
-                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
-                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
-                      <td class="narrow_col sasa">${angles_1[6]}</td>
-                      <td class="narrow_col sasa">${angles_2[6]}</td>
-                      <td class="narrow_col rsa">${angles_1[7]}</td>
-                      <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[0]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[0]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[1]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[1]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[2]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[2]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[6]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[6]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[7]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[7]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col"> </td>
@@ -1204,16 +1204,16 @@ function renderBrowser(data) {
                       <td class="dt-center">${gn1}-${gn2}</td>
                       <td>${types}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col core_distance">${angles_1[0]}</td>
-                      <td class="narrow_col core_distance">${angles_2[0]}</td>
-                      <td class="narrow_col a_angle">${angles_1[1]}</td>
-                      <td class="narrow_col a_angle">${angles_2[1]}</td>
-                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
-                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
-                      <td class="narrow_col sasa">${angles_1[6]}</td>
-                      <td class="narrow_col sasa">${angles_2[6]}</td>
-                      <td class="narrow_col rsa">${angles_1[7]}</td>
-                      <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[0]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[0]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[1]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[1]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[2]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[2]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[6]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[6]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[7]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[7]}</td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
                       <td class="narrow_col"> </td>
@@ -1224,15 +1224,24 @@ function renderBrowser(data) {
         });
     }
 
-    // table.on('click', '.clickable-row', function(event) {
-    //   if($(this).hasClass('active')){
-    //     $(this).removeClass('active'); 
-    //     $(selector + " .secondary-table").find('tbody').empty();
-    //   } else {
-    //     $(this).addClass('active').siblings().removeClass('active');
-    //     renderSecondary($(this).attr('id'))
-    //   }
-    // });
+    table.on('click', '.angles_modal', function(event) {
+        // $(this)
+
+        gn_pair = $(this).closest("tr").attr('id').split(",");
+        gn1 = gn_pair[0];
+        gn2 = gn_pair[1];
+
+        all_angles_1 = two_sets_data['all_angles'][gn1];
+        all_angles_2 = two_sets_data['all_angles'][gn2];
+
+        $("#resModal").find(".modal-body").html("<div id='modal_plotly_1' style='height:100%;width:50%;display: inline-block;'></div><div id='modal_plotly_2' style='height:100%;width:50%;display: inline-block;'></div>");
+        $("#resModal").modal();
+
+        //Slight wait, to be sure modal is open.
+        setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles') }, 500);
+        setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles') }, 500);
+
+    });
 
     console.timeEnd("RenderBrowser");
     gray_scale_table(table);
@@ -1411,16 +1420,16 @@ function renderBrowser_2(data) {
 
                       <td>${types}</td>
                       <td class="narrow_col">${distance_2}</td>
-                      <td class="narrow_col core_distance">${angles_1[0]}</td>
-                      <td class="narrow_col core_distance">${angles_2[0]}</td>
-                      <td class="narrow_col a_angle">${angles_1[1]}</td>
-                      <td class="narrow_col a_angle">${angles_2[1]}</td>
-                      <td class="narrow_col outer_angle">${angles_1[2]}</td>
-                      <td class="narrow_col outer_angle">${angles_2[2]}</td>
-                      <td class="narrow_col sasa">${angles_1[6]}</td>
-                      <td class="narrow_col sasa">${angles_2[6]}</td>
-                      <td class="narrow_col rsa">${angles_1[7]}</td>
-                      <td class="narrow_col rsa">${angles_2[7]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[0]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[0]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[1]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[1]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[2]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[2]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[6]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[6]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[7]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[7]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col"> </td>
@@ -1680,6 +1689,29 @@ function renderBrowser_2(data) {
         // insert natively for speed increase
         tbody[0].innerHTML = tr_list;
     }
+    table.on('click', '.angles_modal', function(event) {
+        // $(this)
+        i = $(this).closest("tr").attr('id');
+        v2 = data['tab2'][i];
+        var gn1 = v2['pos_key'].split(",")[0]
+        var gn2 = v2['pos_key'].split(",")[1]
+        var pdbs_aa1 = v2['set1']['occurance']['aa1'].concat(v2['set2']['occurance']['aa1']);
+        var pdbs_aa2 = v2['set1']['occurance']['aa2'].concat(v2['set2']['occurance']['aa2']);
+        var aa1 = v2['aa1'];
+        var aa2 = v2['aa2'];
+            
+        all_angles_1 = two_sets_data['all_angles'][gn1];
+        all_angles_2 = two_sets_data['all_angles'][gn2];
+
+        $("#resModal").find(".modal-body").html("<div id='modal_plotly_1' style='height:100%;width:50%;display: inline-block;'></div><div id='modal_plotly_2' style='height:100%;width:50%;display: inline-block;'></div>");
+        $("#resModal").modal();
+
+        //Slight wait, to be sure modal is open.
+        console.log(pdbs_aa1,pdbs_aa2);
+        setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',pdbs_aa1,aa1) }, 500);
+        setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles',pdbs_aa2,aa2) }, 500);
+
+    });
 
     console.timeEnd("RenderBrowser2");
 }
