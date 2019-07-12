@@ -190,6 +190,9 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                 }
 
                 o.autoView(":" + pdb_data[mode][0]['chain'] + " and (" + pdb_data[mode][0]['only_gn'].join(", ") + ") and (.CA)")
+
+                // DEBUG: color by values
+                colorByData(mode, 5, 3)
             });
 
         }).then(function() {
@@ -488,13 +491,144 @@ function linkNGLMouseControls(origin) {
     }
 }
 
-function colorByData() {
+function colorByData(mode, tableNumber, columnNumber) {
+    var structureKey = 0; // structure number now limited to structure 1
+    // TODO: make a switch for the different data tables (or handle in the click handler function?)
+    /*     switch (mode) {
+             case "single-crystal-group":
+               break;
+             case "single-crystal":
+               break;
+             case "two-crystal-groups":
+               break;
+         }*/
 
+    // Grab data from table
+    var rows = getDateFromTable(tableNumber, [1, columnNumber]);
+
+    // Residue positions
+    var residue_positions = getColumn(rows, 0);
+    var residue_values = getColumn(rows, 1).map(function(e){ return parseInt(e);});
+
+    // Filter NaNs
+    residue_positions = residue_positions.filter( function(value, index){ return !isNaN(residue_values[index]); })
+    residue_values = residue_values.filter( function(value, index){ return !isNaN(residue_values[index]); })
+
+    // Identify range
+    var valMax = Math.max(...residue_values)
+    var valMin = Math.min(...residue_values)
+
+    // Create coloring scheme
+    color_scheme = []
+
+    // Create gradient scaled by data type
+    for (var i = 0; i < residue_positions.length; i++) {
+      // Find X-ray residue number
+      gn = pdb_data[mode][structureKey]["gn_map"].indexOf(residue_positions[i])
+
+      if (gn >= 0) {
+        // create residue selector
+        var ngl_selection = ":" + pdb_data[mode][structureKey]['chain'] + " and " + pdb_data[mode][structureKey]["only_gn"][gn]
+
+        // get color
+        var newColor = "#BBB";
+        if (valMin < 0) // three coloringData
+          newColor = numberTo3Colors(valMax, residue_values[i], neg_and_pos = true)
+        else
+          newColor = numberTo2Colors(valMax, residue_values[i], neg_and_pos = true)
+
+        // add color + residue to scheme
+        color_scheme.push([newColor, ngl_selection])
+      }
+    }
+    console.log(color_scheme)
+
+    // gray for residues not present
+    color_scheme.push([ "#BBB", "*" ]);
+    color_schemes[mode]['feature'] = NGL.ColormakerRegistry.addSelectionScheme(color_scheme)
+
+    // Assign the coloring to the 3D viewer
+    gpcr_rep[mode][structureKey].setParameters({
+        color: color_schemes[mode]['feature']
+    });
+
+}
+
+function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
+    var color1 = rgbColor1;
+    var color2 = rgbColor2;
+    var fade = fadeFraction;
+
+    // Do we have 3 colors for the gradient? Need to adjust the params.
+    if (rgbColor3) {
+      fade = fade * 2;
+
+      // Find which interval to use and adjust the fade percentage
+      if (fade >= 1) {
+        fade -= 1;
+        color1 = rgbColor2;
+        color2 = rgbColor3;
+      }
+    }
+
+    var diffRed = color2.red - color1.red;
+    var diffGreen = color2.green - color1.green;
+    var diffBlue = color2.blue - color1.blue;
+
+    var gradient = {
+      red: parseInt(Math.floor(color1.red + (diffRed * fade)), 10),
+      green: parseInt(Math.floor(color1.green + (diffGreen * fade)), 10),
+      blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
+    };
+
+    //return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
+    return rgb2hexCG(gradient.red.toString(16),gradient.green.toString(16),gradient.blue.toString(16));
+}
+
+function rgb2hexCG(r,g,b) {
+
+    if (r.length == 1)
+        r = '0' + r;
+
+    if (g.length == 1)
+        g = '0' + g;
+
+    if (b.length == 1)
+        b = '0' + b;
+
+    return '#' + r + g + b;
+}
+
+function numberTo3Colors(max, value, neg_and_pos = false) {
+    if (neg_and_pos) {
+      value = value + max
+      max = max*2
+    }
+
+    if (value > max)
+      value = max
+    if (value < 0)
+      value = 0
+
+    return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+}
+
+function numberTo2Colors(max, value, neg_and_pos = false) {
+    if (neg_and_pos) {
+      value = value + max
+      max = max*2
+    }
+
+    if (value > max)
+      value = max
+    if (value < 0)
+      value = 0
+
+    return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
 }
 
 var linkMap = {}
 var linkColourScheme = {}
-
 function createNGLRepresentations(mode, structureNumber, update = false) {
     interactions_data = ''
     if (mode.startsWith("single_group")) {
@@ -708,7 +842,6 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
         reps[mode][structureNumber].int_res = o.addRepresentation("spacefill", {
             sele: ":" + pdb_data[mode][structureNumber]['chain'] + " and (" + res_int.join(", ") + ") and (.CA)",
             color: (structureNumber == 0 ? "#084081" : "#811808"),
-            // colorScale: ["#44f", "#444"],
             radiusScale: .2,
             name: "res",
             visible: true
