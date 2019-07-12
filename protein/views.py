@@ -363,6 +363,10 @@ def AlignIsoformWildtype(request):
     data['isoforms'] = {}
     protein = Protein.objects.get(entry_name__startswith=p.lower(), sequence_type__slug='wt', species__common_name='Human')
     parent_seq = protein.sequence
+    rs = Residue.objects.filter(protein_conformation__protein=protein).prefetch_related('protein_segment','display_generic_number','generic_number')
+    data['res'] = {}
+    for r in rs:
+        data['res'][r.sequence_number] = [r.protein_segment.slug,str(r.display_generic_number), r.sequence_number]
 
     from common.tools import fetch_from_web_api
     from Bio import pairwise2
@@ -375,39 +379,6 @@ def AlignIsoformWildtype(request):
         isoform_info = fetch_from_web_api(url, e, cache_dir)
         if (isoform_info):
             seq = isoform_info['seq']
-            # pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
-
-            # matrix = matlist.blosum62
-            # gap_open = -10
-            # gap_extend = -0.5
-
-            # gaps = 0
-            # unmapped_ref = {}
-            # ref_positions = {} #WT postions in alignment
-            # mapped_seq = {} # index in contruct, tuple of AA and WT [position,AA]
-            # ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
-            # for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
-            #     print(i,r,temp_seq[i-1]) #print alignment for sanity check
-            #     if r == "-":
-            #         gaps += 1
-            #     if r != "-":
-            #         ref_positions[i] = [i-gaps,r]
-            #     elif r == "-":
-            #         ref_positions[i] = [None,'-']
-
-            #     if temp_seq[i-1]=='-':
-            #         unmapped_ref[i-gaps] = '-'
-
-            # gaps = 0
-            # for i, r in enumerate(temp_seq, 1): #make second lookup
-            #     print(i,r,ref_seq[i-1]) #print alignment for sanity check
-            #     if r == "-":
-            #         gaps += 1
-            #     if r != "-":
-            #         mapped_seq[i-gaps] = [r,ref_positions[i]]
-            #         if r!=ref_seq[i-1]:
-            #             print('aa mismatch')
-
             seq_filename = "/tmp/" + e + ".fa"
             with open(seq_filename, 'w') as seq_file:
                 seq_file.write("> ref\n")
@@ -426,6 +397,16 @@ def AlignIsoformWildtype(request):
             with open (seq_filename, "r") as myfile:
                 fasta=myfile.readlines()
             data['fasta'] = fasta
+            gaps = 0
+            data['res_correct'] = {}
+            for i, r in enumerate(data['wt'], 1):
+                if r == "-":
+                    data['res_correct'][i] = ['','','']
+                    gaps += 1
+                else:
+                    data['res_correct'][i] = data['res'][i-gaps]
+        else:
+            print('error fetching info from',e)
 
 
     return JsonResponse(data)
