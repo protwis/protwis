@@ -1139,6 +1139,7 @@ var signprotmat = {
                 .join("g");
             var svg = d3.select("svg.svg-content.seqsig");
             var t = svg.transition().duration(750);
+
             // PROPERTY CODES
             con_seq_mat
                 .selectAll("rect.res_rect")
@@ -1360,6 +1361,83 @@ var signprotmat = {
                     .text(function (d) { return d.freq; });
             }, function (exit) { return exit.remove(); });
 
+
+            // AMINO ACIDS
+            con_seq_mat
+                .selectAll("rect.amino_rect")
+                .data(function (d) { return d; })
+                .join(function (enter) {
+                return enter
+                    .append("rect")
+                    .attr("class", "amino_rect")
+                    .style("fill", function (d) {
+                        return signprotmat.d3.resScaleColor(d.aa)['bg_color']
+                    })
+                    .style("stroke", "black")
+                    .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                    .attr("y", 75 + 2 * row_height)
+                    .attr("width", xScale.step())
+                    .attr("height", row_height);
+            }, function (update) {
+
+                return update
+                    .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                    .attr("y", 75 + 2 * row_height)
+                    .call(function (update) {
+                    return update.transition(t).style("fill", function (d) {
+                        return resScaleColor(d.aa)['bg_color']
+                    });
+                });
+            }, function (exit) { return exit.remove(); });
+
+            // con_seq_mat
+            //     .selectAll("text.res_label")
+            //     .data(function (d) { return d; })
+            //     .join(function (enter) {
+            //     return enter
+            //         .append("text")
+            //         .attr("class", "res_label")
+            //         .attr("text-anchor", "middle")
+            //         .attr("x", function (d) { return xScale(d.gn); })
+            //         .attr("y", 75)
+            //         .attr("dy", row_height / 2)
+            //         .style("fill", function (d) {
+            //         var gcol = signprotmat.d3.fScaleColor(d.feature_code);
+            //         if (typeof gcol != "undefined") {
+            //             if (typeof gcol.font_color != "undefined") {
+            //                 return gcol.font_color;
+            //             }
+            //             else {
+            //                 return "#000000";
+            //             }
+            //         }
+            //         else {
+            //             return "#000000";
+            //         }
+            //     })
+            //         .text(function (d) { return d.feature_code; });
+            // }, function (update) {
+            //
+            //     return update
+            //         .attr("x", function (d) { return xScale(d.gn); })
+            //         .attr("y", 75)
+            //         .style("fill", function (d) {
+            //         var gcol = signprotmat.d3.fScaleColor(d.feature_code);
+            //         if (typeof gcol != "undefined") {
+            //             if (typeof gcol.font_color != "undefined") {
+            //                 return gcol.font_color;
+            //             }
+            //             else {
+            //                 return "#000000";
+            //             }
+            //         }
+            //         else {
+            //             return "#000000";
+            //         }
+            //     })
+            //         .text(function (d) { return d.feature_code; });
+            // }, function (exit) { return exit.remove(); });
+            //
         },
 
         draw_seq_sig: function (data_in, svg, xScale) {
@@ -1722,6 +1800,7 @@ var signprotmat = {
                     .text("Conservation");
                 var group = "g#conseq_mat";
             }
+
             var each_res = svg
                 .select(group)
                 .selectAll("text")
@@ -1735,6 +1814,7 @@ var signprotmat = {
                 .on("mouseout", function (d) {
                 conseqTip.hide();
             });
+
             // the rectangles, colored by feature
             each_res
                 .append("rect")
@@ -1752,6 +1832,7 @@ var signprotmat = {
                 .attr("y", function (d) { return 75; })
                 .attr("width", xScale.step())
                 .attr("height", 37.5);
+
             // the rectangles, colored by conservation
             each_res
                 .append("rect")
@@ -1768,6 +1849,7 @@ var signprotmat = {
                 .attr("y", function (d) { return 75 + 37.5; })
                 .attr("width", xScale.step())
                 .attr("height", 37.5);
+
             // adding the feature text to each rectangle
             each_res
                 .append("text")
@@ -1792,6 +1874,7 @@ var signprotmat = {
             })
                 .attr("text-anchor", "middle")
                 .text(function (d) { return d.code; });
+
             // adding the conservation value to each rectangle
             each_res
                 .append("text")
@@ -1812,6 +1895,7 @@ var signprotmat = {
             })
                 .attr("text-anchor", "middle")
                 .text(function (d) { return d.score; });
+
             // putting a black border around the signature
             d3.select(group)
                 .append("rect")

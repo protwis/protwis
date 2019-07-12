@@ -1252,11 +1252,11 @@ def IMSequenceSignature(request):
     signature_features = get_signature_features(signature_data, generic_numbers, feats)
     grouped_features = group_signature_features(signature_features)
 
-    # FEATURE CONSENSUS
-    generic_numbers_flat = list(chain.from_iterable(generic_numbers))
-    sigcons = get_signature_consensus(signature_data, generic_numbers_flat)
+    # # FEATURE CONSENSUS
+    # generic_numbers_flat = list(chain.from_iterable(generic_numbers))
+    # sigcons = get_signature_consensus(signature_data, generic_numbers_flat)
 
-    rec_class = pos_set[0].get_protein_class()
+    # rec_class = pos_set[0].get_protein_class()
 
     # dump = {
     #     'rec_class': rec_class,
@@ -1268,7 +1268,7 @@ def IMSequenceSignature(request):
 
     # pass back to front
     res = {
-        'cons': sigcons,
+        # 'cons': sigcons,
         'feat': grouped_features,
     }
 
