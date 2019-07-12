@@ -1385,59 +1385,101 @@ var signprotmat = {
                     .attr("y", 75 + 2 * row_height)
                     .call(function (update) {
                     return update.transition(t).style("fill", function (d) {
-                        return resScaleColor(d.aa)['bg_color']
+                        return signprotmat.d3.resScaleColor(d.aa)['bg_color']
                     });
                 });
             }, function (exit) { return exit.remove(); });
 
-            // con_seq_mat
-            //     .selectAll("text.res_label")
-            //     .data(function (d) { return d; })
-            //     .join(function (enter) {
-            //     return enter
-            //         .append("text")
-            //         .attr("class", "res_label")
-            //         .attr("text-anchor", "middle")
-            //         .attr("x", function (d) { return xScale(d.gn); })
-            //         .attr("y", 75)
-            //         .attr("dy", row_height / 2)
-            //         .style("fill", function (d) {
-            //         var gcol = signprotmat.d3.fScaleColor(d.feature_code);
-            //         if (typeof gcol != "undefined") {
-            //             if (typeof gcol.font_color != "undefined") {
-            //                 return gcol.font_color;
-            //             }
-            //             else {
-            //                 return "#000000";
-            //             }
-            //         }
-            //         else {
-            //             return "#000000";
-            //         }
-            //     })
-            //         .text(function (d) { return d.feature_code; });
-            // }, function (update) {
-            //
-            //     return update
-            //         .attr("x", function (d) { return xScale(d.gn); })
-            //         .attr("y", 75)
-            //         .style("fill", function (d) {
-            //         var gcol = signprotmat.d3.fScaleColor(d.feature_code);
-            //         if (typeof gcol != "undefined") {
-            //             if (typeof gcol.font_color != "undefined") {
-            //                 return gcol.font_color;
-            //             }
-            //             else {
-            //                 return "#000000";
-            //             }
-            //         }
-            //         else {
-            //             return "#000000";
-            //         }
-            //     })
-            //         .text(function (d) { return d.feature_code; });
-            // }, function (exit) { return exit.remove(); });
-            //
+            con_seq_mat
+                .selectAll("text.amino_label")
+                .data(function (d) { return d; })
+                .join(function (enter) {
+                return enter
+                    .append("text")
+                    .attr("class", "amino_label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", function (d) { return xScale(d.gn); })
+                    .attr("y", 75 + 2 * row_height)
+                    .attr("dy", row_height / 2)
+                    .style("fill", function (d) {
+                        return signprotmat.d3.resScaleColor(d.aa)['fg_color']
+                    })
+                    .text(function (d) { return d.aa; });
+            }, function (update) {
+            
+                return update
+                    .attr("x", function (d) { return xScale(d.gn); })
+                    .attr("y", 75 + 2 * row_height)
+                    .style("fill", function (d) {
+                        return signprotmat.d3.resScaleColor(d.aa)['fg_color']
+                    })
+                    .text(function (d) { return d.aa; });
+            }, function (exit) { return exit.remove(); });
+
+            // AMINO CONSERVATION
+            con_seq_mat
+                .selectAll("rect.amino.cons_rect")
+                .data(function (d) { return d; })
+                .join(function (enter) {
+                return enter
+                    .append("rect")
+                    .attr("class", "amino cons_rect")
+                    .style("fill", function (d) {
+                        return cScale(d.aa_cons);
+                    })
+                    .style("stroke", "black")
+                    .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                    .attr("y", 75 + 3 * row_height)
+                    .attr("width", xScale.step())
+                    .attr("height", row_height/2);
+            }, function (update) {
+
+                return update
+                    .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                    .attr("y", 75 + 3 * row_height)
+                    .call(function (update) {
+                    return update.transition(t).style("fill", function (d) {
+                        return cScale(d.aa_cons);
+                    });
+                });
+            }, function (exit) { return exit.remove(); });
+
+            con_seq_mat
+                .selectAll("text.amino.cons_label")
+                .data(function (d) { return d; })
+                .join(function (enter) {
+                return enter
+                    .append("text")
+                    .attr("class", "amino cons_label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", function (d) { return xScale(d.gn); })
+                    .attr("y", 75 + 3 * row_height)
+                    .attr("dy", row_height / 4)
+                    .style("fill", function (d) {
+                        if (Math.abs(d.aa_cons) >= 50) {
+                            return "#eaeaea";
+                        }
+                        else if (Math.abs(d.aa_cons) < 50) {
+                            return "#000000";
+                        }
+                    })
+                    .text(function (d) { return d.aa_cons; });
+            }, function (update) {
+            
+                return update
+                    .attr("x", function (d) { return xScale(d.gn); })
+                    .attr("y", 75 + 2.5 * row_height)
+                    .style("fill", function (d) {
+                        if (Math.abs(d.aa_cons) >= 50) {
+                            return "#eaeaea";
+                        }
+                        else if (Math.abs(d.aa_cons) < 50) {
+                            return "#000000";
+                        }
+                    })
+                    .text(function (d) { return d.aa_cons; });
+            }, function (exit) { return exit.remove(); });
+            
         },
 
         draw_seq_sig: function (data_in, svg, xScale) {
@@ -1486,7 +1528,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "seqsig_mat")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 90 + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 120 + ")")
                 .append("rect")
                 .attr("class", "border-bg")
                 .style("fill", "#ffffff")

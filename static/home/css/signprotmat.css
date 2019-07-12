@@ -130,7 +130,7 @@ line {
 }
 
 
-.res_label, .cons_label, .len_label, .int_count {
+.res_label, .cons_label, .len_label, .amino_label, .int_count {
     display: inline;
     font-size: 75%;
     dominant-baseline: central;
