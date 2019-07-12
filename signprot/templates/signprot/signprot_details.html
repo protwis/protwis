@@ -135,13 +135,22 @@
     </div>
     <div class="col-md-10">
         {% for structure in structures %}
-        {% if structure.protein %}
-          <a href="../../structure/{{ structure.structure.pdb_code.index }}">{{ structure.structure.pdb_code.index }}</a>,
-        {% else %}
           <a href="../../signprot/structure/{{ structure }}">{{ structure }}</a>,
-        {% endif %}
         {% empty %}
         No structures available
+        {% endfor %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>RECEPTOR COMPLEX STRUCTURES</h4>
+    </div>
+    <div class="col-md-10">
+        {% for complex_structure in complex_structures %}
+          <a href="../../structure/{{ complex_structure.structure.pdb_code.index }}">{{ complex_structure.structure.pdb_code.index }}</a>,
+        {% empty %}
+        No receptor complex structures available
         {% endfor %}
     </div>
 </div>

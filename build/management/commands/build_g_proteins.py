@@ -915,6 +915,7 @@ class Command(BaseCommand):
             self.logger.info('Created protein {}'.format(p.entry_name))
         except Exception as msg:
             self.logger.error('Failed creating protein {} ({})'.format(p.entry_name,msg))
+            p = Protein.objects.get(entry_name=p.entry_name)
 
         # protein aliases
         for i, alias in enumerate(uniprot['names']):
@@ -951,7 +952,7 @@ class Command(BaseCommand):
                 if res == '-':
                     res = 0
 
-                structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res)
+                structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein=p)
                 if created:
                     self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
             except IntegrityError:
@@ -959,7 +960,7 @@ class Command(BaseCommand):
 
             if g:
                 pcgn = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
-                structure.origin.add(pcgn)
+                structure.protein = p
                 structure.save()
 
     def cgn_parent_protein_family(self):

@@ -6,7 +6,7 @@ from structure.models import Structure
 # Create your models here.
 
 class SignprotStructure(models.Model):
-    origin = models.ManyToManyField('protein.Protein')
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     
     PDB_code = models.CharField(max_length=4)
     resolution = models.DecimalField(max_digits=5, decimal_places=3)

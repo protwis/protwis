@@ -269,7 +269,7 @@ def familyDetail(request, slug):
     list_proteins = list(proteins.values_list('pk',flat=True))
 
     # get structures of this family
-    structures = SignprotStructure.objects.filter(origin__family__slug__startswith=slug
+    structures = SignprotStructure.objects.filter(protein__family__slug__startswith=slug
         )
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number', 'exp_qual', 'ligand')
@@ -553,8 +553,8 @@ def signprotdetail(request, slug):
     alt_genes = genes[1:]
 
     # get structures of this signal protein
-    structures = SignprotStructure.objects.filter(origin=p)
-    structures = list(structures) + list(SignprotComplex.objects.filter(protein=p))
+    structures = SignprotStructure.objects.filter(protein=p)
+    complex_structures = SignprotComplex.objects.filter(protein=p)
 
     # mutations
     mutations = MutationExperiment.objects.filter(protein=p)
@@ -601,7 +601,7 @@ def signprotdetail(request, slug):
     if r_buffer:
         r_chunks.append(r_buffer)
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
+        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'complex_structures': complex_structures, 'mutations': mutations}
 
     return render(request, 'signprot/signprot_details.html', context)
 

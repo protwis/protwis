@@ -1392,7 +1392,7 @@ class AlignedReferenceTemplate(Alignment):
         gprotein = Protein.objects.get(entry_name=signprot)
         templates = SignprotComplex.objects.filter(protein=gprotein).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
-            subfamily = Protein.objects.filter(family=gprotein.family).exclude(entry_name=gprotein.entry_name)
+            subfamily = Protein.objects.filter(family__parent=gprotein.family.parent).exclude(entry_name=gprotein.entry_name)
             templates = SignprotComplex.objects.filter(protein__in=subfamily).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
             templates = SignprotComplex.objects.all().exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
