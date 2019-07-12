@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views import generic
-from django.http import HttpResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, F, Func, Value
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
@@ -227,7 +227,7 @@ def g_proteins(request, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60*60*24*7)
+# @cache_page(60*60*24*7)
 def isoforms(request):
 
     context = dict()
@@ -354,3 +354,79 @@ def isoforms(request):
     context['table_data'] = json.dumps(table_data)
 
     return render(request, 'protein/isoforms.html', context)
+
+def AlignIsoformWildtype(request):
+
+    p = request.GET.get("protein")
+    es = request.GET.getlist("ensembl_id[]")
+    data = {}
+    data['isoforms'] = {}
+    protein = Protein.objects.get(entry_name__startswith=p.lower(), sequence_type__slug='wt', species__common_name='Human')
+    parent_seq = protein.sequence
+
+    from common.tools import fetch_from_web_api
+    from Bio import pairwise2
+    from Bio.SubsMat import MatrixInfo as matlist
+    from Bio.Align.Applications import ClustalOmegaCommandline
+    from Bio import AlignIO
+    cache_dir = ['ensembl', 'isoform']
+    url = 'https://rest.ensembl.org/sequence/id/$index?content-type=application/json&type=protein'
+    for e in es:
+        isoform_info = fetch_from_web_api(url, e, cache_dir)
+        if (isoform_info):
+            seq = isoform_info['seq']
+            # pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
+
+            # matrix = matlist.blosum62
+            # gap_open = -10
+            # gap_extend = -0.5
+
+            # gaps = 0
+            # unmapped_ref = {}
+            # ref_positions = {} #WT postions in alignment
+            # mapped_seq = {} # index in contruct, tuple of AA and WT [position,AA]
+            # ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+            # for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
+            #     print(i,r,temp_seq[i-1]) #print alignment for sanity check
+            #     if r == "-":
+            #         gaps += 1
+            #     if r != "-":
+            #         ref_positions[i] = [i-gaps,r]
+            #     elif r == "-":
+            #         ref_positions[i] = [None,'-']
+
+            #     if temp_seq[i-1]=='-':
+            #         unmapped_ref[i-gaps] = '-'
+
+            # gaps = 0
+            # for i, r in enumerate(temp_seq, 1): #make second lookup
+            #     print(i,r,ref_seq[i-1]) #print alignment for sanity check
+            #     if r == "-":
+            #         gaps += 1
+            #     if r != "-":
+            #         mapped_seq[i-gaps] = [r,ref_positions[i]]
+            #         if r!=ref_seq[i-1]:
+            #             print('aa mismatch')
+
+            seq_filename = "/tmp/" + e + ".fa"
+            with open(seq_filename, 'w') as seq_file:
+                seq_file.write("> ref\n")
+                seq_file.write(parent_seq + "\n")
+                seq_file.write("> seq\n")
+                seq_file.write(seq + "\n")
+
+            ali_filename = "/tmp/"+e +"_out.fa"
+            acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
+            stdout, stderr = acmd()
+            pw2 = AlignIO.read(ali_filename, "fasta")
+            aln_human = str(pw2[0].seq)
+            aln_isoform = str(pw2[1].seq)
+            data['wt'] = aln_human
+            data['isoforms'][e]=aln_isoform
+            with open (seq_filename, "r") as myfile:
+                fasta=myfile.readlines()
+            data['fasta'] = fasta
+
+
+    return JsonResponse(data)
+    #https://rest.ensembl.org/sequence/id/ENST00000506598?content-type=application/json&type=protein

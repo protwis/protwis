@@ -116,6 +116,38 @@ grid-area: isoformtable;
 .popovertooltip {
   cursor: pointer;
 }
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
+        }
+
+.alignment {
+  display: grid;
+  width: 100%;
+  grid-gap: 3px;
+  grid-template-columns: repeat(auto-fill, 30px);
+  row-gap: 20px;
+   align-items: stretch;
+   justify-content: center;
+}
+.alignment item {
+  background-color: MediumSeaGreen ;
+  text-align: center;
+}
+.alignment item.issame_false {
+  background-color: indianred;
+}
 
 </style>
 {% endblock %}
@@ -167,16 +199,14 @@ function build_table() {
           ts = tooltips_transcripts.split(",");
           tooltips_transcripts = '';
           $.each(ts, function(i, t) {
-            console.log(t)
             tooltips_transcripts += `<a href='https://www.ensembl.org/Homo_sapiens/Transcript/Summary?t=${t}'  target=_blank>${t}</a>, `;
           });
         }
         var tooltips_tissues = v[6];
         tr = `
                     <tr id="${i}">
-                      <td>${v[1]}</td>
-                      <td>${v[2]}</td>
-                      <td class="popovertooltip" html_content="${tooltips_transcripts}" content="${v[4]}" popover-title='Transcripts'>${v[3]}</td>
+                      <td class="protein">${v[1]}</td>
+                      <td class="popovertooltip" html_content="${tooltips_transcripts}" content="${v[4]}" popover-title='Transcripts'>#${v[2]}</td>
                       <td class="popovertooltip" html_content="${tooltips_tissues}" content="${tooltips_tissues}" popover-title='Tissues'>${v[5]}</td>
                       <td>${v[7]}</td>
                       <td>${v[8]}</td>
@@ -224,14 +254,14 @@ function build_table() {
                 },
             },
             {
-                column_number: 5,
+                column_number: 4,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Functional annotation",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 4,
+                column_number: 3,
                 filter_type: "multi_select",
                 text_data_delimiter: ", ",
                 select_type: 'select2',
@@ -247,6 +277,48 @@ function build_table() {
     $('.popovertooltip').on('click', function(e) {
         $('.popovertooltip').not(this).popover('hide');
         $('.popovertooltip').tooltip('hide');
+    });
+
+    $('.protein').on('click', function(e) {
+      id = $(this).parent('tr').attr('id');
+      d = table_data[id];
+      e_id = d[4].split(',');
+      p = d[1];
+      $("#alignment").modal();
+      $("#alignment").find(".modal-body").html("Loading..");
+      $.ajax({
+                    url: '/protein/isoform_lookup',
+                    dataType: 'json',
+                    data: {
+                        'protein': p,
+                        'ensembl_id': e_id,
+                    },
+                    async: true,
+                    success: function(data) {
+                        div = '<div class="alignment">'
+                        if (data['wt']) {
+                        for (var i = 0; i < data['wt'].length; i++) {
+                          wt_aa = data['wt'][i];
+                          iso_string = '';
+                          is_same = "true";
+                          Object.keys(data['isoforms']).forEach(function(key) {
+                            iso_string += "<br>" +data['isoforms'][key][i];
+                            if (wt_aa!=data['isoforms'][key][i]) is_same = 'false'
+                          });
+                          // iso_aa = data['isoforms'][e_id[0]][i];
+                          // console.log(wt_aa,iso_aa);
+                          is_same = 
+                          div += `<item class='issame_${is_same}'>${i+1}<br>${wt_aa}${iso_string}</item>`
+                        }
+                        div += "</div>";
+
+                        $("#alignment").find(".modal-body").html(div);
+                      } else {
+                        $("#alignment").find(".modal-body").html("Error with fetching info for "+d[4]);
+                      }
+                    }
+                });
+
     });
 
     dtable.columns.adjust();
@@ -268,8 +340,7 @@ function build_table() {
             <thead>
                 <tr>
                     <th ></th>
-                    <th>Isoform</th>
-                    <th>Transcript</th>
+                    <th>IsoformID</th>
                     <th>Tissue</th>
                     <th></th>
                     <th></th>
@@ -280,5 +351,25 @@ function build_table() {
             </tbody>
         </table>
     </div>
+</div>
+<!-- MODAL POP UP FOR RESIDUE INFO -->
+<div class="modal fade" id="alignment" role="dialog">
+  <div class="modal-dialog modal-wide">
+  
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Isoform (bottom) alignment to Wild-Type sequence (top)</h4>
+      </div>
+      <div class="modal-body">
+        <p>Some text in the modal.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+    
+  </div>
 </div>
 {% endblock %}
