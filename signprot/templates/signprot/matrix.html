@@ -12,62 +12,143 @@
 {% block content %}
 <a id="dlink"  style="display:none;"></a>
 <div id="excel_table"  style2="display:none;"></div>
-<h1 class="page-header">GPCR - Signal Protein Interaction Matrix</h1>
+<h1 class="page-header">GPCR - G protein interface interactions</h1>
 <p>
     Display the interaction between one or multiple GPCR/G-protein complex interfaces.
 </p>
 
+
+
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-md-12">
         <div class="panel panel-default">
 
             <div class="panel-heading">
-                <h3 class="panel-title">Interface(s)</h3>
+                <h3 class="panel-title">Structure(s)</h3>
             </div>
 
             <div class="panel-body">
-                <h5><span id='interface-count' class="crystal-count">0 interfaces selected.</span></h5>
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#interface-modal-table">Select
-                    Interface</button>
+
+
+                <div class="col-md-2">
+                    <h5><span
+                            id='interface-count'
+                            class="crystal-count">
+                            0 structures selected.
+                        </span></h5>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            data-toggle="modal"
+                            data-target="#interface-modal-table">
+                            Select Structure
+                        </button>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                    The darker the rectangle in the matrix, the more interacting
+                    residue pairs are observed across receptor/signaling protein
+                    complexes (colored from white to black).
+                    </p>
+                </div>
+
+                <div class="col-md-2">
+                    <p><b>Color by</b> Interaction or Residue: </p>
+
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button
+                            type="button"
+                            id="resbut"
+                            class="btn btn-primary"
+                            onClick="signprotmat.d3.colorBySwitch('res', colScale)">
+                            Residue
+                        </button>
+                        <button
+                            type="button"
+                            id="intbut"
+                            class="btn btn-primary active"
+                            onClick="signprotmat.d3.colorBySwitch('int', colScale)">
+                            Interaction
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+
+                    <!-- <p>Interaction frequency <b>Filter</b> <span id='currentpairs'>1</span></p> -->
+
+                    <p>
+                      <label for="amount">Interaction frequency <b>filter</b> </label>
+                      <input
+                          type="text"
+                          id="amount"
+                          readonly
+                          style="border:0;">
+                    </p>
+                     
+                    <div id="slider-range"></div>
+
+                    <!-- <div class="">                                                 -->
+                    <!--     <button                                                    -->
+                    <!--         class="btn                                             -->
+                    <!--         btn-primary"                                           -->
+                    <!--         onclick="replace_filter_value('dec'); filter_pairs()"> -->
+                    <!--         -                                                      -->
+                    <!--     </button>                                                  -->
+                    <!--     <button                                                    -->
+                    <!--         class="btn                                             -->
+                    <!--         btn-primary"                                           -->
+                    <!--         onclick="replace_filter_value('inc'); filter_pairs()"> -->
+                    <!--         +                                                      -->
+                    <!--     </button>                                                  -->
+                    <!-- </div>                                                         -->
+                </div>
+
+                <div class="col-md-2">
+                    <div class="col">
+                        <p>Sequence Features:
+                            <i id="calc_spin"
+                               class="fa fa-spinner fa-spin"
+                               style="display: inline-block">
+                            </i>
+                        </p>
+                    </div>
+                    <div class="col">
+                        <p>Feature Match:
+                            <i id="sigm_spin"
+                               class="fa fa-spinner fa-spin"
+                               style="display: inline-block">
+                            </i>
+                        </p>
+                    </div>
+                    <!-- <button                               -->
+                    <!--     type="button"                     -->
+                    <!--     class="btn                        -->
+                    <!--     btn-primary"                      -->
+                    <!--     onClick="run_seq_sig();">         -->
+                    <!--     Calculate                         -->
+                    <!--     <i                                -->
+                    <!--         id="calc_spin"                -->
+                    <!--         class="fa fa-spinner fa-spin" -->
+                    <!--         style="display: none">        -->
+                    <!--     </i></button>                     -->
+
+                    <!-- <button                               -->
+                    <!--     type="button"                     -->
+                    <!--     class="btn btn-primary"           -->
+                    <!--     onClick="run_sig_match();">       -->
+                    <!--     Find Proteins                     -->
+                    <!--     <i id="sigm_spin"                 -->
+                    <!--         class="fa fa-spinner fa-spin" -->
+                    <!--         style="display: none">        -->
+                    <!--     </i>                              -->
+                    <!-- </button>                             -->
+                </div>
             </div>
 
         </div>
     </div>
-
-    {% comment %} <div class="col-md-3">
-        <div class="panel panel-default">
-
-            <div class="panel-heading">
-                <h3 class="panel-title">Add additional PDB(s)</h3>
-            </div>
-
-            <div class="panel-body">
-                <h5><span id='pdb-count' class="crystal-count">0 PDBs selected.</span></h5>
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pdb-modal-table">Add
-                    PDB</button>
-            </div>
-
-        </div>
-    </div> {% endcomment %}
-
-    <div class="col-md-3">
-        <div class="panel panel-default">
-
-            <div class="panel-heading">
-                <h3 class="panel-title">Sequence Features</h3>
-            </div>
-
-            <div class="panel-body">
-                <p>Click the button to determine sequence features.</p>
-                <button type="button" class="btn btn-primary" onClick="run_seq_sig();">Calculate <i id="calc_spin"
-                        class="fa fa-spinner fa-spin" style="display: none"></i></button>
-            </div>
-
-        </div>
-    </div>
-
 </div>
-
 
 <div class="modal fade" id="interface-modal-table" role="dialog">
     <div class="modal-dialog modal-wide" style="width: 70%">
@@ -94,158 +175,11 @@
     </div>
 </div>
 
-{% comment %} <div class="modal fade" id="pdb-modal-table" role="dialog">
-    <!-- <div class="modal-dialog modal-wide" style="width: 800px"> -->
-    <div class="modal-dialog modal-wide" style="width: 70%">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">Select PDBs from the table</h4>
-            </div>
-
-            <div class="modal-body">
-                <div class="col-md-12">
-                    <table id="table-pdb" class="display" width="100%">
-                    </table>
-                </div>
-                <div class="clearfix"></div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            </div>
-
-        </div>
-    </div>
-</div> {% endcomment %}
-
-{% comment %} <div id="raw-data">
-    <h2>Raw Data</h2>
-    <table id="table-data" class="display">
-        <thead>
-            <tr>
-                <th>int_ty</th>
-                <th>PDB</th>
-                <th>R AA</th>
-                <th>R GN</th>
-                <th>R Pos</th>
-                <th>S AA</th>
-                <th>S Pos</th>
-            </tr>
-        </thead>
-    </table>
-</div> {% endcomment %}
-
 <div id="interface-container" class="" style="margin-bottom:20px;">
-    <div>
-        <h2>Interaction Interface</h2>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title"></h3>
-                    </div>
-
-                    <div class="panel-body">
-
-                        <div class="col-md-12">
-                            <p>
-                            The darker the rectangle in the matrix, the more interacting
-                            residue pairs are observed across receptor/signaling protein
-                            complexes (colored from white to black).
-                            </p>
-                        </div>
-
-                        <div class="col-md-2">
-                            <p><b>Hide / Show </b></p>
-                            <button class="btn btn-primary" data-toggle="collapse"
-                                data-target="#interface-svg">Collapse</button>
-                        </div>
-
-                        <div class="col-md-5">
-                            <p><b>Color by</b> Interaction or Residue: </p>
-
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" id="resbut" class="btn btn-primary" onClick="signprotmat.d3.colorBySwitch('res', colScale)">
-                                    Residue </button>
-                                <button type="button" id="intbut" class="btn btn-primary active" onClick="signprotmat.d3.colorBySwitch('int', colScale)">
-                                    Interaction </button>
-                            </div>
-                        </div>
-                        <div class="col-md-5">
-
-                            <p><b>Filter</b> for residue pairs with <span id='currentpairs'>1</span> <br /> or more interfaces.</p>
-
-                            <!-- <div style="padding: 10px 0;">
-                                                <span class="">1</span>
-                                                <input
-                                                type="range"
-                                                id="highlight_pair_num"
-                                                class="btn"
-                                                value="1"
-                                                min="1"
-                                                max="20"
-                                                name="highlight_pair_num"
-                                                onchange="filter_pairs()"
-                                                style="display: inline-block; width: auto">
-                                                <span class="">20</span>
-                                            </div> -->
-
-                            <div class="">
-                                <button class="btn btn-primary" onclick="replace_filter_value('dec'); filter_pairs()">-</button>
-                                <button class="btn btn-primary" onclick="replace_filter_value('inc'); filter_pairs()">+</button>
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
     <div id="interface-svg" class="collapse in"></div>
 </div>
 
 <div id="seqsig-container" style="display: none;margin-bottom:20px;">
-    <div id="seqsig">
-        <h2>Property Conservation</h2>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title"></h3>
-                    </div>
-
-                    <div class="panel-body">
-
-                        <div class="col-md-2">
-                            <p><b>Hide / Show </b></p>
-                            <button class="btn btn-primary" data-toggle="collapse"
-                                data-target="#seqsig-svg">Collapse</button>
-                        </div>
-
-                        <div class="col-md-10">
-                            <p>Click the button to <b>find similar proteins</b>, based on the sequence features.</p>
-                            <button
-                                type="button"
-                                class="btn btn-primary"
-                                onClick="run_sig_match();">
-                                Find Proteins
-                                <i id="sigm_spin"
-                                    class="fa fa-spinner fa-spin"
-                                    style="display: none">
-                                </i>
-                            </button>
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
     <div id="seqsig-svg" class="collapse in"></div>
 </div>
 
@@ -264,7 +198,7 @@
         <h2>Match Table</h2>
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title"></h3>
@@ -310,14 +244,12 @@ const interactions_metadata = {{ interactions_metadata | safe}};
 const gprot = {{ gprot | safe}};
 const csrf_token = "{{ csrf_token }}"
 
-
 $('#score-button').click( function () {
     const render_url = window.location.origin + '/signprot/matrix/render_sigmat/';
     window.open(render_url,'_blank');
 });
 
 </script>
-
 <script src="{% static 'home/js/d3.v5.min.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
 <script src="{% static 'home/js/d3-legend.min.js' %}"></script>
@@ -328,6 +260,5 @@ $('#score-button').click( function () {
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script src="{% static 'home/js/matrix_utilities.js' %}"></script>
-<script src="{% static 'home/js/matrix_utilities2.js' %}"></script>
 
 {% endblock %}

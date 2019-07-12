@@ -155,13 +155,21 @@ const run_seq_sig = function(){
         xAxis
       );
       initialize_consensus(data.feat);
+
+      // Once done run the signature match
+      run_sig_match();
     },
     error: function(error){
+      $("#calc_spin").addClass("fa-times");
+      $("#calc_spin").removeClass("fa-spinner");
+      $("#calc_spin").removeClass("fa-spin");
       console.log(error)
       alert(error);
     },
     complete: function(){
-      document.querySelector("#calc_spin").style.display = "none";
+      $("#calc_spin").addClass("fa-check");
+      $("#calc_spin").removeClass("fa-spinner");
+      $("#calc_spin").removeClass("fa-spin");
     }
   });
 };
@@ -339,15 +347,19 @@ const run_sig_match = function(){
 
     },
     error: function(error){
-      console.log(error);
-      document.querySelector("#sigm_spin").style.display = "none";
+      $("#sigm_spin").addClass("fa-times");
+      $("#sigm_spin").removeClass("fa-spinner");
+      $("#sigm_spin").removeClass("fa-spin");
+      console.log(error)
+      alert(error);
     },
     complete: function(){
-      document.querySelector("#sigm_spin").style.display = "none";
+      $("#sigm_spin").addClass("fa-check");
+      $("#sigm_spin").removeClass("fa-spinner");
+      $("#sigm_spin").removeClass("fa-spin");
     }
   })
 }
-
 
 const replace_filter_value = function(d) {
   const num = parseInt($('#currentpairs').text())
@@ -358,11 +370,53 @@ const replace_filter_value = function(d) {
   }
 };
 
-const filter_pairs = function() {
-  const num = parseInt($('#currentpairs').text())
+const filter_pairs = function(floor, ceiling) {
+  // const num = parseInt($('#currentpairs').text())
   d3.select('g#interact')
-    .selectAll("rect")
-    .style('display', function(d){return (num <= d.pairs.length ? 'block' : 'none') })
+    .selectAll("g")
+    .style('display', function(d){
+      return (floor <= d.pairs.length && ceiling >= d.pairs.length ? 'block' : 'none')
+    })
+}
+
+
+const initialize_filter_slider = function() {
+  // initializing range slider
+  $( "#slider-range" ).slider({
+    range: true,
+    min: 1,
+    max: 20,
+    values: [ 1, 20 ],
+    slide: function( event, ui ) {
+      const floor = parseInt(ui.values[0])
+      const ceil = parseInt(ui.values[1])
+      $( "#amount" ).val( 'From: ' + floor + " To: " + ceil );
+      filter_pairs(floor, ceil)
+    }
+  });
+};
+
+const reset_slider = function() {
+  // reset the slider to the possible min and max values
+  const min = $( "#slider-range" ).slider( "option", "min" );
+  const max = $( "#slider-range" ).slider( "option", "max" );
+  $( "#slider-range" ).slider( "values", [ min, max ] );
+}
+
+const set_slider_max_value = function(){
+  // setting the max value of the interaction filter slider according to selected data
+  const max_val = get_max_interface_count()
+  $( "#slider-range" ).slider( "option", "max", max_val );
+}
+
+const update_slider_label = function() {
+    // update the text span above the slider
+  $( "#amount" ).val( 'From: ' + $( "#slider-range" ).slider( "values", 0 ) +
+    " To: " + $( "#slider-range" ).slider( "values", 1 ) );
+}
+
+const get_max_interface_count = function() {
+  return parseInt($("#interface-count").text().match(/\d+/))
 }
 
 var tableToExcel = (function () {
@@ -388,7 +442,7 @@ var tableToExcel = (function () {
     // reattach th titles
     tr.find('th').each (function( column, th) {
       if ($(th).attr('title')) $(th).html($(th).attr('title'));
-    });     
+    });
 
     var ctx = {
       worksheet: name || 'Worksheet',
@@ -400,3 +454,222 @@ var tableToExcel = (function () {
     document.getElementById("dlink").click();
   }
 })()
+
+
+$(document).ready(function () {
+  non_interactions = signprotmat.data.annotateNonInteractionData(interactions_metadata, non_interactions);
+
+  $('[data-toggle="tooltip"]').tooltip();
+
+  const table = $('#table-interface').DataTable({
+    dom: 'Bfrtip',
+    data: interactions_metadata,
+    columnDefs: [
+      {
+        data: null,
+        targets: 0,
+        defaultContent: '',
+        orderable: false,
+        className: 'select-checkbox',
+      }, {
+        data: 'name',
+        title: 'Name',
+        targets: 1,
+      }, {
+        data: 'family',
+        title: 'Family',
+        targets: 2,
+      }, {
+        data: 'class',
+        title: 'Class',
+        targets: 3,
+      }, {
+        data: 'organism',
+        title: 'Organism',
+        targets: 4,
+      }, {
+        data: 'pdb_id',
+        title: 'PDB',
+        targets: 5,
+      },
+      {
+        data: 'gprot',
+        title: 'G-Protein',
+        targets: 6,
+      },
+      {
+        data: 'gprot_class',
+        title: 'G-Protein Class',
+        targets: 7,
+      }],
+    order: [[ 7, "desc" ],[ 6, "asc" ],[ 3, "asc" ]],
+    select: {
+      style: 'os',
+    },
+    paging: false,
+    scrollY: '60vh',
+    scrollCollapse: true,
+    buttons: [
+      {
+        text: 'Select all',
+        action: function () {
+          table.rows().select();
+        }
+      },
+      {
+        text: 'Select none',
+        action: function () {
+          table.rows().deselect();
+        }
+      },
+    ]
+  });
+
+  table
+    .on('select', function (e, dt, type, indexes) {
+      const row_count = table.rows({ selected: true }).count()
+      if (row_count >= 2 || row_count === 0) {
+        $('#interface-count').text(row_count + ' interfaces selected.');
+      } else {
+        $('#interface-count').text(row_count + ' interface selected.');
+      }
+    })
+    .on('deselect', function (e, dt, type, indexes) {
+      const row_count = table.rows({ selected: true }).count()
+      if (row_count >= 2 || row_count === 0) {
+        $('#interface-count').text(row_count + ' interfaces selected.');
+      } else {
+        $('#interface-count').text(row_count + ' interface selected.');
+      }
+    });
+
+  // Default: Select all rows on page load
+  // table.rows().select();
+  // New: Select all rows for Gs
+  table.rows( function ( idx, data, node ) {
+        return data.gprot_class === 'Gi/o' ?
+            true : false;
+    } ).select()
+  let selection = table.rows({ selected: true }).data();
+  pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id');
+  pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
+
+  initialize_filter_slider();
+  set_slider_max_value();
+  update_slider_label();
+
+  let keys = [
+    "rec_chain",
+    "rec_aa",
+    "rec_pos",
+    "rec_gn",
+    "sig_chain",
+    "sig_aa",
+    "sig_pos",
+    "sig_gn",
+    "int_ty",
+    "gprot",
+    "entry_name",
+    "pdb_id"
+  ];
+
+  data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
+  svg = signprotmat.d3.setup("div#interface-svg");
+  xScale = signprotmat.d3.xScale(data.transformed);
+  yScale = signprotmat.d3.yScale(data.transformed, gprot);
+  xAxis = signprotmat.d3.xAxis(xScale);
+  yAxis = signprotmat.d3.yAxis(yScale);
+  xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
+  yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
+  pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+  sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
+  colScale = signprotmat.d3.colScale(data.inttypes);
+  tooltip = signprotmat.d3.tooltip(svg);
+  signprotmat.d3.renderData(
+    svg,
+    data,
+    non_interactions,
+    interactions_metadata,
+    xScale,
+    yScale,
+    xAxis,
+    yAxis,
+    xAxisGrid,
+    yAxisGrid,
+    colScale,
+    pdbScale,
+    sigScale,
+    tooltip
+  );
+
+  run_seq_sig();
+
+  $('#interface-modal-table').on('hidden.bs.modal', function (e) {
+    selection = table.rows({ selected: true }).data();
+    let old_pdb_sel = pdb_sel;
+    pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id')
+    pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
+
+    if (!_.isEqual(old_pdb_sel.sort(), pdb_sel.sort())){
+      $('.svg-content').remove();
+      con_seq = {};
+      document.querySelector('#seqsig-container').style.display = "none";
+      document.querySelector('#conseq-container').style.display = "none";
+      document.getElementById("interface-svg").className = "collapse in";
+
+      data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
+      svg = signprotmat.d3.setup("div#interface-svg");
+      xScale = signprotmat.d3.xScale(data.transformed);
+      yScale = signprotmat.d3.yScale(data.transformed, gprot);
+      xAxis = signprotmat.d3.xAxis(xScale);
+      yAxis = signprotmat.d3.yAxis(yScale);
+      xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
+      yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
+      pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+      sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
+      colScale = signprotmat.d3.colScale(data.inttypes);
+      tooltip = signprotmat.d3.tooltip(svg);
+      signprotmat.d3.renderData(
+        svg,
+        data,
+        non_interactions,
+        interactions_metadata,
+        xScale,
+        yScale,
+        xAxis,
+        yAxis,
+        xAxisGrid,
+        yAxisGrid,
+        colScale,
+        pdbScale,
+        sigScale,
+        tooltip
+      );
+      document.querySelector("#intbut").classList.add("active");
+      document.querySelector("#resbut").classList.remove("active");
+
+      set_slider_max_value();
+      reset_slider();
+      update_slider_label();
+      run_seq_sig();
+
+      // interface_data_table.clear();
+      // interface_data_table.rows.add(data.transformed);
+      // interface_data_table.draw();
+
+      // const row_selection = pdb_table.rows({ selected: true }).data();
+      // const xvals = xScale.domain();
+      // const prids = signprotmat.data.select_by_value(row_selection, 'entry_name');
+
+      // receptor_data = signprotmat.data.get_additional_receptors(rs, xvals, prids)
+      // console.log(receptor_data)
+      // signprotmat.d3.addReceptor(receptor_data, data, svg);
+    };
+  });
+
+  // https://www.datatables.net/examples/api/tabs_and_scrolling.html
+  $(document).on('shown.bs.modal', function (e) {
+    $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+  });
+
+});

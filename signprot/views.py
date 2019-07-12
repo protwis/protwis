@@ -74,6 +74,7 @@ class BrowseSelection(AbsTargetSelection):
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
         # del ppf_g
         # del ppf_a
+        print('hi!')
     except Exception as e:
         pass
 
@@ -1142,7 +1143,7 @@ def InteractionMatrix(request):
     for s in struc:
         r = {}
         r['pdb_id'] = str.lower(s.pdb_code.index)
-        r['name'] = s.protein_conformation.protein.parent.name
+        r['name'] = s.protein_conformation.protein.parent.short()
         r['entry_name'] = s.protein_conformation.protein.parent.entry_name
         r['class'] = s.protein_conformation.protein.get_protein_class()
         r['family'] = s.protein_conformation.protein.get_protein_family()
