@@ -8,6 +8,38 @@ var blue_colors = ['#f0fcfa', '#D3E4EA', '#B6CDDB', '#99B5CC', '#7C9EBD', '#5F86
 var red_colors = ['#fbf0fc', '#f3dbec', '#ebc5df', '#dda8bc', '#cc7b7f', '#d3574e', '#be372b', '#ac1808', '#811808']
 var rb_colors = ['#736DA7', '#5EB7B7', '#CE9AC6', '#DD7D7E', '#E6AF7C', '#DEDB75', '#80B96F', '#000000'] // #C897B8
 
+// Reference values for table values
+// entry: display (boolean), min, max, coloring
+// Values for single residue (skipping the pairs)
+dataType = {}
+dataType["no_viewing"]    = [false, 0, 0, ""]
+dataType["core_distance"] = [true, 0, 15, "wb"]
+dataType["ca_angle"]      = [true, 0, 180, "wb"]
+dataType["outer_angle"]   = [true, 0, 180, "wb"]
+dataType["ss_freq"]       = [true, 0, 100, "wb"]
+dataType["SASA"]          = [true, 0, 200, "wb"]
+dataType["RSA"]           = [true, 0, 100, "wb"]
+dataType["HSE"]           = [true, 0, 20, "wb"]
+dataType["conservation"]  = [true, 0, 100, "wb"]
+dataType["phi"]           = [true, 0, 180, "wb"]
+dataType["psi"]           = [true, 0, 180, "wb"]
+dataType["tau"]           = [true, 0, 180, "wb"]
+dataType["theta"]         = [true, 0, 180, "wb"]
+// Same for differences between groups
+// TODO: finetune to relative variation per data type
+dataType["core_distance_diff"] = [true, -5, 5, "rwb"]
+dataType["ca_angle_diff"]      = [true, -45, 45, "rwb"]
+dataType["outer_angle_diff"]   = [true, -45, 45, "rwb"]
+dataType["ss_freq_diff"]       = [true, -50, 50, "wb"]
+dataType["SASA_diff"]          = [true, -50, 50, "rwb"]
+dataType["RSA_diff"]           = [true, -25, 25, "rwb"]
+dataType["HSE_diff"]           = [true, -10, 10, "wb"]
+//dataType["conservation"]  = [true, 0, 100, "rwb"]
+dataType["phi_diff"]           = [true, -45, 45, "rwb"]
+dataType["psi_diff"]           = [true, -45, 45, "rwb"]
+dataType["tau_diff"]           = [true, -45, 45, "rwb"]
+dataType["theta_diff"]         = [true, -45, 45, "rwb"]
+
 function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false) {
     // console.log(mode, pdb, pdbs, pdbs_set2, pdb2);
     $("#ngl-" + mode).html("");
@@ -533,9 +565,9 @@ function colorByData(mode, tableNumber, columnNumber) {
         // get color
         var newColor = "#BBB";
         if (valMin < 0) // three coloringData
-          newColor = numberTo3Colors(valMax, residue_values[i], neg_and_pos = true)
+          newColor = numberToColorGradient(residue_values[i], valMax, "rwb", neg_and_pos = true)
         else
-          newColor = numberTo2Colors(valMax, residue_values[i], neg_and_pos = true)
+          newColor = numberToColorGradient(residue_values[i], valMax, "rb", neg_and_pos = false)
 
         // add color + residue to scheme
         color_scheme.push([newColor, ngl_selection])
@@ -552,6 +584,51 @@ function colorByData(mode, tableNumber, columnNumber) {
         color: color_schemes[mode]['feature']
     });
 
+}
+
+// TODO: add smart handling of minimum values (now based on max)
+function numberToColorGradient(value, max, palette, neg_and_pos = false) {
+    if (neg_and_pos) {
+      value = value + max
+      max = max*2
+    }
+
+    if (value > max)
+      value = max
+    if (value < 0)
+      value = 0
+
+    switch(palette){
+        case "rwb": // red-white-blue
+          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          break;
+        case "bwr": // blue-white-red
+          return colorGradient(value/max, {red:0, green:0, blue: 255}, {red:255, green:255, blue: 255}, {red:255, green:0, blue: 0})
+          break;
+        case "ryg": // red-yellow-green
+          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:0, green:255, blue: 0}, {red:0, green:255, blue: 0})
+          break;
+        case "gyr": // green-yellow-red
+          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 0}, {red:0, green:255, blue: 0})
+          break;
+        case "rgb":
+          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          break;
+        case "wr": // white-red
+          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:255, green:0, blue: 0})
+          break;
+        case "wg": // white-green
+          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:255, blue: 0})
+          break;
+        case "wb": // white-blue
+          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          break;
+        // ADDON if you're missing gradient values
+        case "br": // blue-red
+        default:
+          return colorGradient(value/max, {red:0, green:0, blue: 255}, {red:255, green:0, blue: 0})
+          break;
+    }
 }
 
 function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
@@ -581,50 +658,18 @@ function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
       blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
     };
 
-    //return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
     return rgb2hexCG(gradient.red.toString(16),gradient.green.toString(16),gradient.blue.toString(16));
 }
 
 function rgb2hexCG(r,g,b) {
-
     if (r.length == 1)
         r = '0' + r;
-
     if (g.length == 1)
         g = '0' + g;
-
     if (b.length == 1)
         b = '0' + b;
 
     return '#' + r + g + b;
-}
-
-function numberTo3Colors(max, value, neg_and_pos = false) {
-    if (neg_and_pos) {
-      value = value + max
-      max = max*2
-    }
-
-    if (value > max)
-      value = max
-    if (value < 0)
-      value = 0
-
-    return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
-}
-
-function numberTo2Colors(max, value, neg_and_pos = false) {
-    if (neg_and_pos) {
-      value = value + max
-      max = max*2
-    }
-
-    if (value > max)
-      value = max
-    if (value < 0)
-      value = 0
-
-    return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
 }
 
 var linkMap = {}
