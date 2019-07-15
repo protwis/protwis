@@ -25,15 +25,16 @@ dataType["phi"]           = [true, 0, 180, "wb"]
 dataType["psi"]           = [true, 0, 180, "wb"]
 dataType["tau"]           = [true, 0, 180, "wb"]
 dataType["theta"]         = [true, 0, 180, "wb"]
+
 // Same for differences between groups
 // TODO: finetune to relative variation per data type
 dataType["core_distance_diff"] = [true, -5, 5, "rwb"]
 dataType["ca_angle_diff"]      = [true, -45, 45, "rwb"]
 dataType["outer_angle_diff"]   = [true, -45, 45, "rwb"]
-dataType["ss_freq_diff"]       = [true, -50, 50, "wb"]
+dataType["ss_freq_diff"]       = [true, -50, 50, "rwb"]
 dataType["SASA_diff"]          = [true, -50, 50, "rwb"]
 dataType["RSA_diff"]           = [true, -25, 25, "rwb"]
-dataType["HSE_diff"]           = [true, -10, 10, "wb"]
+dataType["HSE_diff"]           = [true, -10, 10, "rwb"]
 //dataType["conservation"]  = [true, 0, 100, "rwb"]
 dataType["phi_diff"]           = [true, -45, 45, "rwb"]
 dataType["psi_diff"]           = [true, -45, 45, "rwb"]
@@ -224,7 +225,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                 o.autoView(":" + pdb_data[mode][0]['chain'] + " and (" + pdb_data[mode][0]['only_gn'].join(", ") + ") and (.CA)")
 
                 // DEBUG: color by values
-                colorByData(mode, 5, 3)
+                colorByData(mode, 5, 2)
             });
 
         }).then(function() {
@@ -524,6 +525,7 @@ function linkNGLMouseControls(origin) {
 }
 
 function colorByData(mode, tableNumber, columnNumber) {
+    var defaultColor = "#666";
     var structureKey = 0; // structure number now limited to structure 1
     // TODO: make a switch for the different data tables (or handle in the click handler function?)
     /*     switch (mode) {
@@ -563,20 +565,19 @@ function colorByData(mode, tableNumber, columnNumber) {
         var ngl_selection = ":" + pdb_data[mode][structureKey]['chain'] + " and " + pdb_data[mode][structureKey]["only_gn"][gn]
 
         // get color
-        var newColor = "#BBB";
+        var newColor = defaultColor;
         if (valMin < 0) // three coloringData
           newColor = numberToColorGradient(residue_values[i], valMax, "rwb", neg_and_pos = true)
         else
-          newColor = numberToColorGradient(residue_values[i], valMax, "rb", neg_and_pos = false)
+          newColor = numberToColorGradient(residue_values[i], valMax, "rwb", neg_and_pos = false)
 
         // add color + residue to scheme
         color_scheme.push([newColor, ngl_selection])
       }
     }
-    console.log(color_scheme)
 
     // gray for residues not present
-    color_scheme.push([ "#BBB", "*" ]);
+    color_scheme.push([ defaultColor, "*" ]);
     color_schemes[mode]['feature'] = NGL.ColormakerRegistry.addSelectionScheme(color_scheme)
 
     // Assign the coloring to the 3D viewer
@@ -622,6 +623,9 @@ function numberToColorGradient(value, max, palette, neg_and_pos = false) {
           break;
         case "wb": // white-blue
           return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          break;
+        case "rb": // red-blue
+          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:0, green:0, blue: 255})
           break;
         // ADDON if you're missing gradient values
         case "br": // blue-red
