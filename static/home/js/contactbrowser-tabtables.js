@@ -1714,6 +1714,7 @@ function renderBrowser_2(data) {
 
     });
 
+    enable_3Dclick(table)
     console.timeEnd("RenderBrowser2");
 }
 
@@ -1892,7 +1893,7 @@ function renderBrowser_3(data) {
             column.popover('show');
         }
     });
-
+    enable_3Dclick(table)
     console.timeEnd("RenderBrowser3");
 }
 
@@ -2223,7 +2224,7 @@ function renderBrowser_4(data) {
         tbody[0].innerHTML = tr_list;
 
     }
-
+    enable_3Dclick(table)
     console.timeEnd("RenderBrowser4");
 }
 
@@ -2288,7 +2289,7 @@ function renderBrowser_5(data) {
     // insert natively for speed increase on Chrome
     tbody[0].innerHTML = tr_list;
 
-
+    enable_3Dclick(table)
     console.timeEnd("RenderBrowser5");
 }
 

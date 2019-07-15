@@ -225,7 +225,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                 o.autoView(":" + pdb_data[mode][0]['chain'] + " and (" + pdb_data[mode][0]['only_gn'].join(", ") + ") and (.CA)")
 
                 // DEBUG: color by values
-                colorByData(mode, 5, 2)
+//                colorByData(mode, 5, 2)
             });
 
         }).then(function() {
@@ -538,11 +538,29 @@ function colorByData(mode, tableNumber, columnNumber) {
          }*/
 
     // Grab data from table
-    var rows = getDateFromTable(tableNumber, [1, columnNumber]);
+    var rows
+    if (mode.startsWith("single_") && tableNumber==1) {
+      rows = getDateFromTable(tableNumber, [2, columnNumber].flat());
+    } else {
+      rows = getDateFromTable(tableNumber, [1, columnNumber].flat());
+    }
 
     // Residue positions
     var residue_positions = getColumn(rows, 0);
-    var residue_values = getColumn(rows, 1).map(function(e){ return parseInt(e);});
+
+    // If residue pairs -> split and concatenate
+    if (residue_positions.length == 0)
+      return;
+
+    if (residue_positions[0].indexOf("-")>=1){
+      residue_positions1 = residue_positions.map(function(e){return e.split("-")[0]});
+      residue_positions2 = residue_positions.map(function(e){return e.split("-")[1]});
+      residue_positions = residue_positions1.concat(residue_positions2)
+    }
+
+    var residue_values = getColumn(rows, 1).map(function(e){ return parseInt(e);})
+    if (Array.isArray(columnNumber) && columnNumber.length > 1)
+       residue_values = residue_values.concat(getColumn(rows, 2).map(function(e){ return parseInt(e);}));
 
     // Filter NaNs
     residue_positions = residue_positions.filter( function(value, index){ return !isNaN(residue_values[index]); })
