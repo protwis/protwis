@@ -123,192 +123,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.options = options
-        # self.update_alignment()
-
-        # self.add_new_orthologs()
-        # return 0
-
-        # self.fetch_missing_uniprot_files()
-        # return 0
-
-        # files = os.listdir(self.local_uniprot_dir)
-        # for f in files:
-        #     print(f)
-        #     with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot', f]), 'r') as fi:
-        #         for l in fi.readlines():
-        #             if l.startswith('DE'):
-        #                 print(l)
-        # return 0
-
-        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_segment_ends.yaml']), 'r') as yfile:
-        #     dic = yaml.load(yfile)
-        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'test_alignment.fasta']), 'w') as testfile:
-
-        #     for record in SeqIO.parse(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_proteins.fasta']), 'fasta'):
-        #         sp, accession, name, ens = record.id.split('|')
-        #         sequence = record.seq
-        #         for d in dic:
-        #             if name.lower() in dic[d]:
-        #                 offset = 0
-        #                 try:
-        #                     for seg in ['HN','S1','H1','HA','HB','HC','HD','HE','HF','S2','S3','H2','S4','H3','S5','HG','H4','S6','H5']:
-        #                         s, e = dic[d][name.lower()][seg][0], dic[d][name.lower()][seg][1]
-        #                         sequence = sequence[:s-1+offset]+'['+sequence[s-1+offset:e+offset]+']'+sequence[e+offset:]
-        #                         offset+=2
-        #                     break
-        #                 except:
-        #                     pass
-        #         testfile.write(record.id+'\n'+str(sequence)+'\n')
-            
-
-        # return 0
-
-        # dic = {}
-        # for record in SeqIO.parse(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_proteins.fasta']), 'fasta'):
-        #     sp, accession, name, ens = record.id.split('|')
-        #     if 'HUMAN' in name:
-        #         subtype = name.split('_')[0].lower()
-        #         dic[subtype] = {name.lower(): {}}
-        #     else:
-        #         dic[subtype][name.lower()] = {}
-
-        #     # dic[subtype][name.lower()]['accession'] = accession
-        #     # dic[subtype][name.lower()]['ensemble'] = 
-        #     try:
-        #         p = Protein.objects.get(entry_name=name.lower())
-        #         helices = ProteinSegment.objects.filter(proteinfamily='Alpha', category__in=['helix','sheet'])
-        #         for h in helices:
-        #             helix_resis = Residue.objects.filter(protein_conformation__protein=p, protein_segment=h)
-        #             start, end = helix_resis[0], helix_resis.reverse()[0]
-        #             dic[subtype][name.lower()][h.slug] = [start.sequence_number, end.sequence_number]
-        #     except:
-        #         print(name)
-            
-        # with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_segment_ends.yaml']), 'w') as f:
-        #     yaml.dump(dic, f, indent=4)
-        # return 0
-
-        # with open(self.barcode_data_file,'r') as bdf:
-        #     bdf_lines = bdf.readlines()
-        #     new_lines = []
-        #     for line in bdf_lines:
-        #         line_split = line.split(',')
-        #         if line_split[4] in ['G.hgh4.09','G.hgh4.10','G.H4.01','G.H4.02','G.H4.03','G.H4.04','G.H4.05','G.H4.06','G.H4.07','G.H4.08','G.H4.09','G.H4.10','G.H4.11','G.H4.12','G.H4.13',
-        #                              'G.H4.14','G.H4.15','G.H4.16','G.H4.17','G.H4.18','G.H4.19','G.H4.20','G.H4.21','G.H4.22','G.H4.23','G.H4.24','G.H4.25','G.H4.26','G.H4.27']:
-        #             line_split[1] = str(0)
-        #             line_split[2] = str(0)
-        #             line_split[5] = str(0)+'\n'
-        #         if line_split[4] in ['G.hgh4.09','G.hgh4.10']:
-        #             if line_split[3] not in ['GNAS2', 'GNAL']:
-        #                 if line_split[4]=='G.hgh4.09':
-        #                     line_split[4] = 'G.H4.01'
-        #                 if line_split[4]=='G.hgh4.10':
-        #                     line_split[4] = 'G.H4.02'
-        #         elif line_split[4]=='G.H4.01':
-        #             if line_split[3] in ['GNAS2', 'GNAL']:
-        #                 line_split[4] = 'G.hgh4.11'
-        #             else:
-        #                 line_split[4] = 'G.H4.03'
-        #         elif line_split[4]=='G.H4.02':
-        #             if line_split[3] in ['GNAS2', 'GNAL']:
-        #                 line_split[4] = 'G.hgh4.12'
-        #             else:
-        #                 line_split[4] = 'G.H4.04'
-        #         elif line_split[4]=='G.H4.03':
-        #             if line_split[3] in ['GNAS2', 'GNAL']:
-        #                 line_split[4] = 'G.hgh4.13'
-        #             else:
-        #                 line_split[4] = 'G.H4.05'
-        #         elif line_split[4]=='G.H4.04':
-        #             if line_split[3] in ['GNAS2', 'GNAL']:
-        #                 line_split[4] = 'G.hgh4.14'
-        #             else:
-        #                 line_split[4] = 'G.H4.06'
-        #         elif line_split[4]=='G.H4.05':
-        #             if line_split[3] in ['GNAS2', 'GNAL']:
-        #                 line_split[4] = 'G.hgh4.15'
-        #             else:
-        #                 line_split[4] = 'G.H4.07'
-        #         elif line_split[4]=='G.H4.06':
-        #             if line_split[3] in ['GNAS2', 'GNAL']:
-        #                 line_split[4] = 'G.hgh4.16'
-        #             else:
-        #                 line_split[4] = 'G.H4.08'
-        #         elif line_split[4]=='G.H4.07':
-        #             if line_split[3] in ['GNAS2', 'GNAL']:
-        #                 line_split[4] = 'G.hgh4.17'
-        #             else:
-        #                 line_split[4] = 'G.H4.09'
-        #         if line_split[3] in ['GNAS2', 'GNAL']:
-        #             if line_split[4]=='G.H4.08':
-        #                 line_split[4] = 'G.hgh4.18'
-        #             elif line_split[4]=='G.H4.09':
-        #                 line_split[4] = 'G.hgh4.19'
-        #             elif line_split[4]=='G.H4.10':
-        #                 line_split[4] = 'G.hgh4.20'
-        #             elif line_split[4]=='G.H4.11':
-        #                 line_split[4] = 'G.hgh4.21'
-        #             elif line_split[4]=='G.H4.12':
-        #                 line_split[4] = 'G.H4.01'
-        #             elif line_split[4]=='G.H4.13':
-        #                 line_split[4] = 'G.H4.02'
-        #             elif line_split[4]=='G.H4.14':
-        #                 line_split[4] = 'G.H4.03'
-        #             elif line_split[4]=='G.H4.15':
-        #                 line_split[4] = 'G.H4.04'
-        #             elif line_split[4]=='G.H4.16':
-        #                 line_split[4] = 'G.H4.05'
-        #             elif line_split[4]=='G.H4.17':
-        #                 line_split[4] = 'G.H4.06'
-        #             elif line_split[4]=='G.H4.18':
-        #                 line_split[4] = 'G.H4.07'
-        #             elif line_split[4]=='G.H4.19':
-        #                 line_split[4] = 'G.H4.08'
-        #             elif line_split[4]=='G.H4.20':
-        #                 line_split[4] = 'G.H4.10'
-        #             elif line_split[4]=='G.H4.21':
-        #                 line_split[4] = 'G.H4.11'
-        #             elif line_split[4]=='G.H4.22':
-        #                 line_split[4] = 'G.H4.12'
-        #             elif line_split[4]=='G.H4.23':
-        #                 line_split[4] = 'G.H4.13'
-        #             elif line_split[4]=='G.H4.24':
-        #                 line_split[4] = 'G.H4.14'
-        #             elif line_split[4]=='G.H4.25':
-        #                 line_split[4] = 'G.H4.15'
-        #             elif line_split[4]=='G.H4.26':
-        #                 line_split[4] = 'G.H4.16'
-        #             elif line_split[4]=='G.H4.27':
-        #                 line_split[4] = 'G.H4.17'
-        #         else:
-        #             if line_split[4]=='G.H4.20':
-        #                 line_split[4] = 'G.H4.10'
-        #             elif line_split[4]=='G.H4.21':
-        #                 line_split[4] = 'G.H4.11'
-        #             elif line_split[4]=='G.H4.22':
-        #                 line_split[4] = 'G.H4.12'
-        #             elif line_split[4]=='G.H4.23':
-        #                 line_split[4] = 'G.H4.13'
-        #             elif line_split[4]=='G.H4.24':
-        #                 line_split[4] = 'G.H4.14'
-        #             elif line_split[4]=='G.H4.25':
-        #                 line_split[4] = 'G.H4.15'
-        #             elif line_split[4]=='G.H4.26':
-        #                 line_split[4] = 'G.H4.16'
-        #             elif line_split[4]=='G.H4.27':
-        #                 line_split[4] = 'G.H4.17'
-        #         new_lines.append(line_split)
-        #     with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'barcode_test.csv']), 'w') as f:
-        #         out_lines = []
-        #         for l in new_lines:
-        #             out_line = ','.join(l)
-        #             out_lines.append(out_line)
-        #         out = ''.join(out_lines)
-        #         f.write(out)
-
-        # return 0
-
-
         if options['filename']:
             filenames = options['filename']
         else:
@@ -944,10 +758,22 @@ class Command(BaseCommand):
         #Human proteins from CGN with families as keys: http://www.mrc-lmb.cam.ac.uk/CGN/about.html
         cgn_dict = {}
         cgn_dict['G-Protein']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
-        cgn_dict['100_001_001']=['GNAS2_HUMAN', 'GNAL_HUMAN']
-        cgn_dict['100_001_002']=['GNAI2_HUMAN', 'GNAI1_HUMAN', 'GNAI3_HUMAN', 'GNAT2_HUMAN', 'GNAT1_HUMAN', 'GNAT3_HUMAN', 'GNAZ_HUMAN', 'GNAO_HUMAN' ]
-        cgn_dict['100_001_003']=['GNAQ_HUMAN', 'GNA11_HUMAN', 'GNA14_HUMAN', 'GNA15_HUMAN']
-        cgn_dict['100_001_004']=['GNA12_HUMAN', 'GNA13_HUMAN']
+        cgn_dict['100_001_001_001']=['GNAS2_HUMAN']
+        cgn_dict['100_001_001_002']=['GNAL_HUMAN']
+        cgn_dict['100_001_002_001']=['GNAI1_HUMAN']
+        cgn_dict['100_001_002_002']=['GNAI2_HUMAN']
+        cgn_dict['100_001_002_003']=['GNAI3_HUMAN']
+        cgn_dict['100_001_002_004']=['GNAT1_HUMAN']
+        cgn_dict['100_001_002_005']=['GNAT2_HUMAN']
+        cgn_dict['100_001_002_006']=['GNAT3_HUMAN']
+        cgn_dict['100_001_002_007']=['GNAZ_HUMAN']
+        cgn_dict['100_001_002_008']=['GNAO_HUMAN' ]
+        cgn_dict['100_001_003_001']=['GNAQ_HUMAN']
+        cgn_dict['100_001_003_002']=['GNA11_HUMAN']
+        cgn_dict['100_001_003_003']=['GNA14_HUMAN']
+        cgn_dict['100_001_003_004']=['GNA15_HUMAN']
+        cgn_dict['100_001_004_001']=['GNA12_HUMAN']
+        cgn_dict['100_001_004_002']=['GNA13_HUMAN']
 
         #list of all 16 proteins
         cgn_proteins_list=[]
@@ -1089,6 +915,7 @@ class Command(BaseCommand):
             self.logger.info('Created protein {}'.format(p.entry_name))
         except Exception as msg:
             self.logger.error('Failed creating protein {} ({})'.format(p.entry_name,msg))
+            p = Protein.objects.get(entry_name=p.entry_name)
 
         # protein aliases
         for i, alias in enumerate(uniprot['names']):
@@ -1125,7 +952,7 @@ class Command(BaseCommand):
                 if res == '-':
                     res = 0
 
-                structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res)
+                structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein=p)
                 if created:
                     self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
             except IntegrityError:
@@ -1133,7 +960,7 @@ class Command(BaseCommand):
 
             if g:
                 pcgn = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
-                structure.origin.add(pcgn)
+                structure.protein = p
                 structure.save()
 
     def cgn_parent_protein_family(self):
@@ -1175,8 +1002,21 @@ class Command(BaseCommand):
         cgn_dict['3']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
 
         #Protein lines not to be added to Protein families
-        cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI2', 'GNAI3', 'GNAT2', 'GNAT1', 'GNAT3', 'GNAO', 'GNAZ', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
-
+        cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI2', 'GNAI3', 'GNAT1', 'GNAT2', 'GNAT3', 'GNAZ', 'GNAO', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
+        
+        grouped_subtypes = OrderedDict()
+        for j in cgn_dict['3']:
+            grouped_subtypes[j] = []
+            for k in cgn_dict['4']:
+                if j=='Gs' and k in ['GNAS2', 'GNAL']:
+                    grouped_subtypes[j].append(k)
+                elif j=='Gi/o' and k in ['GNAI1', 'GNAI2', 'GNAI3', 'GNAT1', 'GNAT2', 'GNAT3', 'GNAZ', 'GNAO']:
+                    grouped_subtypes[j].append(k)
+                elif j=='Gq/11' and k in ['GNAQ', 'GNA11', 'GNA14', 'GNA15']:
+                    grouped_subtypes[j].append(k)
+                elif j=='G12/13' and k in ['GNA12', 'GNA13']:
+                    grouped_subtypes[j].append(k)
+        
         for entry in cgn_dict['001']:
 
             name = entry
@@ -1192,6 +1032,11 @@ class Command(BaseCommand):
             pff_cgn = ProteinFamily.objects.get(slug='100_001')
 
             new_pf, created = ProteinFamily.objects.get_or_create(slug=slug, name=entry, parent=pff_cgn)
+            j = 1
+            for en in grouped_subtypes[entry]:
+                ort_slug = slug+'_00'+str(j)
+                new_ort_fam, created = ProteinFamily.objects.get_or_create(slug=ort_slug, name=en, parent=new_pf)
+                j+=1
 
         #function to create necessary arguments to add protein entry
         self.cgn_add_proteins()

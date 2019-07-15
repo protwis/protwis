@@ -32,19 +32,14 @@ AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
 
 class Command(BaseBuild):
 	def add_arguments(self, parser):
-		parser.add_argument('--filename', action='append', dest='filename',
-							help='Filename to import. Can be used multiple times')
-		parser.add_argument('--wt', default=False, type=str, help='Add wild type protein sequence to data')
-		parser.add_argument('--xtal', default=False, type=str, help='Add xtal to data')
-		parser.add_argument('--build_datafile', default=False, action='store_true', help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
 		parser.add_argument('--purge', default=False, action='store_true', help='Purge G protein structures from database')
 
 	def handle(self, *args, **options):
 		self.options = options
 		if self.options['purge']:
-			Residue.objects.filter(protein_conformation__protein__entry_name__endswith='_a', protein_conformation__protein__family__parent__name='Alpha').delete()
-			ProteinConformation.objects.filter(protein__entry_name__endswith='_a', protein__family__parent__name='Alpha').delete()
-			Protein.objects.filter(entry_name__endswith='_a', family__parent__name='Alpha').delete()
+			Residue.objects.filter(protein_conformation__protein__entry_name__endswith='_a', protein_conformation__protein__family__parent__parent__name='Alpha').delete()
+			ProteinConformation.objects.filter(protein__entry_name__endswith='_a', protein__family__parent__parent__name='Alpha').delete()
+			Protein.objects.filter(entry_name__endswith='_a', family__parent__parent__name='Alpha').delete()
 
 		# Building protein and protconf objects for g protein structure in complex
 		scs = SignprotComplex.objects.all()
@@ -79,7 +74,11 @@ class Command(BaseBuild):
 				chain = s[0][sc.alpha]
 				nums = []
 				for res in chain:
-					nums.append(res.get_id()[1])
+					try:
+						res['CA']
+						nums.append(res.get_id()[1])
+					except:
+						pass
 				
 				resis = Residue.objects.filter(protein_conformation__protein=sc.protein)
 				num_i = 0
@@ -87,7 +86,11 @@ class Command(BaseBuild):
 				pdb_num_dict = OrderedDict()
 				# Create first alignment based on sequence numbers
 				for n in nums:
-					pdb_num_dict[n] = [chain[n], resis.get(sequence_number=n)]
+					if sc.structure.pdb_code.index=='6OIJ' and n<30:
+						nr = n+6
+					else:
+						nr = n
+					pdb_num_dict[n] = [chain[n], resis.get(sequence_number=nr)]
 				# Find mismatches
 				mismatches = []
 				for n, res in pdb_num_dict.items():
@@ -114,6 +117,9 @@ class Command(BaseBuild):
 								# Exception for 6G79
 								if line_search.group(3)!=line_search.group(6) and 'CONFLICT' in line_search.group(7):
 									mutations[int(line_search.group(3))] = [line_search.group(1), line_search.group(5)]
+								# Exception for 5G53
+								if line_search.group(4).strip()!=sc.protein.accession:
+									mutations[int(line_search.group(3))] = [line_search.group(1), line_search.group(5)]
 				remaining_mismatches = []
 
 				# Check and clear mismatches that are registered in pdb SEQADV as engineered mutation
@@ -127,8 +133,15 @@ class Command(BaseBuild):
 					else:
 						remaining_mismatches.append(m)
 
+				### sanity check
+				# print(mutations)
+				# print(shifted_mutations)
+				# print(mismatches)
+				# print(remaining_mismatches)
+				# pprint.pprint(pdb_num_dict)
+
 				# Mismatches remained possibly to seqnumber shift, making pairwise alignment to try and fix alignment
-				if len(remaining_mismatches)>0:
+				if len(remaining_mismatches)>0 and sc.structure.pdb_code.index!='6OIJ':
 					ppb = PPBuilder()
 					seq = ''
 					for pp in ppb.build_peptides(chain, aa_only=False):
@@ -165,6 +178,7 @@ class Command(BaseBuild):
 
 				bulked_residues = []
 				for key, val in pdb_num_dict.items():
+					# print(key, val) # sanity check
 					res_obj = Residue()
 					res_obj.sequence_number = val[0].get_id()[1]
 					res_obj.amino_acid = AA[val[0].get_resname()]
@@ -175,6 +189,7 @@ class Command(BaseBuild):
 					bulked_residues.append(res_obj)
 				Residue.objects.bulk_create(bulked_residues)
 				self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} is finished'.format(sc))
-			except:
+			except Exception as msg:
 				print('Protein, ProteinConformation and Residue build for alpha subunit of {} has failed'.format(sc))
+				print(msg)
 				self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} has failed'.format(sc))
