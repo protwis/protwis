@@ -17,7 +17,7 @@ from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_
 
 from seqsign.sequence_signature import SignatureMatch
 from seqsign.sequence_signature import SequenceSignature
-from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions
+from signprot.models import SignprotStructure, SignprotBarcode, SignprotInteractions, SignprotComplex
 from signprot.interactions import (
     get_entry_names,
     get_ignore_info,
@@ -74,7 +74,6 @@ class BrowseSelection(AbsTargetSelection):
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
         # del ppf_g
         # del ppf_a
-        print('hi!')
     except Exception as e:
         pass
 
@@ -270,7 +269,7 @@ def familyDetail(request, slug):
     list_proteins = list(proteins.values_list('pk',flat=True))
 
     # get structures of this family
-    structures = SignprotStructure.objects.filter(origin__family__slug__startswith=slug
+    structures = SignprotStructure.objects.filter(protein__family__slug__startswith=slug
         )
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number', 'exp_qual', 'ligand')
@@ -554,7 +553,8 @@ def signprotdetail(request, slug):
     alt_genes = genes[1:]
 
     # get structures of this signal protein
-    structures = SignprotStructure.objects.filter(origin=p)
+    structures = SignprotStructure.objects.filter(protein=p)
+    complex_structures = SignprotComplex.objects.filter(protein=p)
 
     # mutations
     mutations = MutationExperiment.objects.filter(protein=p)
@@ -601,7 +601,7 @@ def signprotdetail(request, slug):
     if r_buffer:
         r_chunks.append(r_buffer)
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
+        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'complex_structures': complex_structures, 'mutations': mutations}
 
     return render(request, 'signprot/signprot_details.html', context)
 

@@ -1,0 +1,364 @@
+GPCRdb_accession	receptor	GPCRdb_family	GPCRdb_ligand_type	GPCRdb_class	isoforms_per_receptor	mean_isoforms_per_class_ligand_type_family	mean_isoforms_per_class_ligand_type	mean_isoforms_per_class
+1	P08908	5HT1A	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	2	2	1.83333333333333	1.76779026217228
+2	P28222	5HT1B	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+3	P28221	5HT1D	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+4	P28566	5HT1E	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+5	P30939	5HT1F	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+6	P28223	5HT2A	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	2	2	1.83333333333333	1.76779026217228
+7	P41595	5HT2B	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+8	P28335	5HT2C	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	2	2	1.83333333333333	1.76779026217228
+9	Q13639	5HT4R	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	7	2	1.83333333333333	1.76779026217228
+10	P47898	5HT5A	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+11	P50406	5HT6R	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+12	P34969	5HT7R	5-Hydroxytryptamine receptors	Aminergic receptors	Class A (Rhodopsin)	4	2	1.83333333333333	1.76779026217228
+13	P30542	AA1R	Adenosine receptors	Nucleotide receptors	Class A (Rhodopsin)	2	4	2.18181818181818	1.76779026217228
+14	P29274	AA2AR	Adenosine receptors	Nucleotide receptors	Class A (Rhodopsin)	9	4	2.18181818181818	1.76779026217228
+15	P29275	AA2BR	Adenosine receptors	Nucleotide receptors	Class A (Rhodopsin)	1	4	2.18181818181818	1.76779026217228
+16	Q16570	ACKR1	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	3	2.30434782608696	2.41379310344828	1.76779026217228
+17	O00590	ACKR2	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	5	2.30434782608696	2.41379310344828	1.76779026217228
+18	P25106	ACKR3	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	2	2.30434782608696	2.41379310344828	1.76779026217228
+19	Q9NPB9	ACKR4	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	1	2.30434782608696	2.41379310344828	1.76779026217228
+20	P11229	ACM1	Acetylcholine receptors (muscarinic)	Aminergic receptors	Class A (Rhodopsin)	2	1.6	1.83333333333333	1.76779026217228
+21	P08172	ACM2	Acetylcholine receptors (muscarinic)	Aminergic receptors	Class A (Rhodopsin)	1	1.6	1.83333333333333	1.76779026217228
+22	P20309	ACM3	Acetylcholine receptors (muscarinic)	Aminergic receptors	Class A (Rhodopsin)	2	1.6	1.83333333333333	1.76779026217228
+23	P08173	ACM4	Acetylcholine receptors (muscarinic)	Aminergic receptors	Class A (Rhodopsin)	1	1.6	1.83333333333333	1.76779026217228
+24	P08912	ACM5	Acetylcholine receptors (muscarinic)	Aminergic receptors	Class A (Rhodopsin)	2	1.6	1.83333333333333	1.76779026217228
+25	Q01718	ACTHR	Melanocortin receptors	Peptide receptors	Class A (Rhodopsin)	2	1.75	1.6986301369863	1.76779026217228
+26	P35348	ADA1A	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	7	1.77777777777778	1.83333333333333	1.76779026217228
+27	P35368	ADA1B	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	1	1.77777777777778	1.83333333333333	1.76779026217228
+28	P25100	ADA1D	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	1	1.77777777777778	1.83333333333333	1.76779026217228
+29	P08913	ADA2A	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	1	1.77777777777778	1.83333333333333	1.76779026217228
+30	P18089	ADA2B	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	1	1.77777777777778	1.83333333333333	1.76779026217228
+31	P18825	ADA2C	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	2	1.77777777777778	1.83333333333333	1.76779026217228
+32	P08588	ADRB1	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	1	1.77777777777778	1.83333333333333	1.76779026217228
+33	P07550	ADRB2	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	1	1.77777777777778	1.83333333333333	1.76779026217228
+34	P13945	ADRB3	Adrenoceptors	Aminergic receptors	Class A (Rhodopsin)	1	1.77777777777778	1.83333333333333	1.76779026217228
+35	Q86SQ6	AGRA1	ADGRA	Adhesion receptors	Class B2 (Adhesion)	2	2	4.76666666666667	4.76666666666667
+36	Q96PE1	AGRA2	ADGRA	Adhesion receptors	Class B2 (Adhesion)	2	2	4.76666666666667	4.76666666666667
+37	Q8IWK6	AGRA3	ADGRA	Adhesion receptors	Class B2 (Adhesion)	2	2	4.76666666666667	4.76666666666667
+38	O60241	AGRB2	ADGRB	Adhesion receptors	Class B2 (Adhesion)	8	4.66666666666667	4.76666666666667	4.76666666666667
+39	O60242	AGRB3	ADGRB	Adhesion receptors	Class B2 (Adhesion)	5	4.66666666666667	4.76666666666667	4.76666666666667
+40	Q6QNK2	AGRD1	ADGRD	Adhesion receptors	Class B2 (Adhesion)	10	5.5	4.76666666666667	4.76666666666667
+41	Q7Z7M1	AGRD2	ADGRD	Adhesion receptors	Class B2 (Adhesion)	1	5.5	4.76666666666667	4.76666666666667
+42	Q14246	AGRE1	ADGRE	Adhesion receptors	Class B2 (Adhesion)	5	5.5	4.76666666666667	4.76666666666667
+43	Q9UHX3	AGRE2	ADGRE	Adhesion receptors	Class B2 (Adhesion)	7	5.5	4.76666666666667	4.76666666666667
+44	Q9BY15	AGRE3	ADGRE	Adhesion receptors	Class B2 (Adhesion)	4	5.5	4.76666666666667	4.76666666666667
+45	Q5T601	AGRF1	ADGRF	Adhesion receptors	Class B2 (Adhesion)	2	1.75	4.76666666666667	4.76666666666667
+46	Q8IZF5	AGRF3	ADGRF	Adhesion receptors	Class B2 (Adhesion)	1	1.75	4.76666666666667	4.76666666666667
+47	Q8IZF3	AGRF4	ADGRF	Adhesion receptors	Class B2 (Adhesion)	1	1.75	4.76666666666667	4.76666666666667
+48	Q8IZF2	AGRF5	ADGRF	Adhesion receptors	Class B2 (Adhesion)	3	1.75	4.76666666666667	4.76666666666667
+49	Q9Y653	AGRG1	ADGRG	Adhesion receptors	Class B2 (Adhesion)	46	9.28571428571429	4.76666666666667	4.76666666666667
+50	Q8IZP9	AGRG2	ADGRG	Adhesion receptors	Class B2 (Adhesion)	8	9.28571428571429	4.76666666666667	4.76666666666667
+51	Q86Y34	AGRG3	ADGRG	Adhesion receptors	Class B2 (Adhesion)	1	9.28571428571429	4.76666666666667	4.76666666666667
+52	Q8IZF6	AGRG4	ADGRG	Adhesion receptors	Class B2 (Adhesion)	2	9.28571428571429	4.76666666666667	4.76666666666667
+53	Q8IZF4	AGRG5	ADGRG	Adhesion receptors	Class B2 (Adhesion)	1	9.28571428571429	4.76666666666667	4.76666666666667
+54	Q86SQ4	AGRG6	ADGRG	Adhesion receptors	Class B2 (Adhesion)	6	9.28571428571429	4.76666666666667	4.76666666666667
+55	Q96K78	AGRG7	ADGRG	Adhesion receptors	Class B2 (Adhesion)	1	9.28571428571429	4.76666666666667	4.76666666666667
+56	O94910	AGRL1	ADGRL	Adhesion receptors	Class B2 (Adhesion)	2	4	4.76666666666667	4.76666666666667
+57	O95490	AGRL2	ADGRL	Adhesion receptors	Class B2 (Adhesion)	9	4	4.76666666666667	4.76666666666667
+58	Q9HBW9	AGRL4	ADGRL	Adhesion receptors	Class B2 (Adhesion)	1	4	4.76666666666667	4.76666666666667
+59	P30556	AGTR1	Angiotensin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+60	P50052	AGTR2	Angiotensin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+61	P35414	APJ	Apelin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+62	O14514	BAI1	ADGRB	Adhesion receptors	Class B2 (Adhesion)	1	4.66666666666667	4.76666666666667	4.76666666666667
+63	P46663	BKRB1	Bradykinin receptors	Peptide receptors	Class A (Rhodopsin)	2	2	1.6986301369863	1.76779026217228
+64	P30411	BKRB2	Bradykinin receptors	Peptide receptors	Class A (Rhodopsin)	2	2	1.6986301369863	1.76779026217228
+65	P32247	BRS3	Bombesin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+66	Q16581	C3AR	Complement peptide receptors	Peptide receptors	Class A (Rhodopsin)	2	1.66666666666667	1.6986301369863	1.76779026217228
+67	P21730	C5AR1	Complement peptide receptors	Peptide receptors	Class A (Rhodopsin)	2	1.66666666666667	1.6986301369863	1.76779026217228
+68	Q9P296	C5AR2	Complement peptide receptors	Peptide receptors	Class A (Rhodopsin)	1	1.66666666666667	1.6986301369863	1.76779026217228
+69	P30988-2	CALCR	Calcitonin receptors	Peptide receptors	Class B1 (Secretin)	1	2	2.06666666666667	2.06666666666667
+70	Q16602	CALRL	Calcitonin receptors	Peptide receptors	Class B1 (Secretin)	3	2	2.06666666666667	2.06666666666667
+71	P41180	CASR	Calcium-sensing receptors	Ion receptors	Class C (Glutamate)	2	2	2	2.47619047619048
+72	P32238	CCKAR	Cholecystokinin receptors	Peptide receptors	Class A (Rhodopsin)	1	3	1.6986301369863	1.76779026217228
+73	P32246	CCR1	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	1	2.30434782608696	2.41379310344828	1.76779026217228
+74	P46092	CCR10	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	3	2.30434782608696	2.41379310344828	1.76779026217228
+75	P41597	CCR2	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	3	2.30434782608696	2.41379310344828	1.76779026217228
+76	P51677	CCR3	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	4	2.30434782608696	2.41379310344828	1.76779026217228
+77	P51679	CCR4	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	1	2.30434782608696	2.41379310344828	1.76779026217228
+78	P51681	CCR5	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	1	2.30434782608696	2.41379310344828	1.76779026217228
+79	P51684	CCR6	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	1	2.30434782608696	2.41379310344828	1.76779026217228
+80	P32248	CCR7	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	2	2.30434782608696	2.41379310344828	1.76779026217228
+81	P51685	CCR8	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	2	2.30434782608696	2.41379310344828	1.76779026217228
+82	P51686	CCR9	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	2	2.30434782608696	2.41379310344828	1.76779026217228
+83	O00421	CCRL2	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	3	2.30434782608696	2.41379310344828	1.76779026217228
+84	P48960	CD97	ADGRE	Adhesion receptors	Class B2 (Adhesion)	6	5.5	4.76666666666667	4.76666666666667
+85	Q9NYQ6	CELR1	ADGRC	Adhesion receptors	Class B2 (Adhesion)	1	1.33333333333333	4.76666666666667	4.76666666666667
+86	Q9HCU4	CELR2	ADGRC	Adhesion receptors	Class B2 (Adhesion)	1	1.33333333333333	4.76666666666667	4.76666666666667
+87	Q9NYQ7	CELR3	ADGRC	Adhesion receptors	Class B2 (Adhesion)	2	1.33333333333333	4.76666666666667	4.76666666666667
+88	Q9Y271	CLTR1	Leukotriene receptors	Lipid receptors	Class A (Rhodopsin)	1	1.5	1.78787878787879	1.76779026217228
+89	Q9NS75	CLTR2	Leukotriene receptors	Lipid receptors	Class A (Rhodopsin)	1	1.5	1.78787878787879	1.76779026217228
+90	Q99788	CML1	Chemerin receptor	Protein receptors	Class A (Rhodopsin)	4	4	2.41379310344828	1.76779026217228
+91	P21554	CNR1	Cannabinoid receptors	Lipid receptors	Class A (Rhodopsin)	5	3	1.78787878787879	1.76779026217228
+92	P34972	CNR2	Cannabinoid receptors	Lipid receptors	Class A (Rhodopsin)	1	3	1.78787878787879	1.76779026217228
+93	P34998-2	CRFR1	Corticotropin-releasing factor receptors	Peptide receptors	Class B1 (Secretin)	4	2.5	2.06666666666667	2.06666666666667
+94	Q13324	CRFR2	Corticotropin-releasing factor receptors	Peptide receptors	Class B1 (Secretin)	1	2.5	2.06666666666667	2.06666666666667
+95	P49238	CX3C1	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	4	2.30434782608696	2.41379310344828	1.76779026217228
+96	P25024	CXCR1	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	1	2.30434782608696	2.41379310344828	1.76779026217228
+97	P25025	CXCR2	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	6	2.30434782608696	2.41379310344828	1.76779026217228
+98	P49682	CXCR3	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	2	2.30434782608696	2.41379310344828	1.76779026217228
+99	P61073	CXCR4	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	2	2.30434782608696	2.41379310344828	1.76779026217228
+100	P32302	CXCR5	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	1	2.30434782608696	2.41379310344828	1.76779026217228
+101	O00574	CXCR6	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	1	2.30434782608696	2.41379310344828	1.76779026217228
+102	P21728	DRD1	Dopamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+103	P14416	DRD2	Dopamine receptors	Aminergic receptors	Class A (Rhodopsin)	6	2	1.83333333333333	1.76779026217228
+104	P35462	DRD3	Dopamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+105	P21917	DRD4	Dopamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+106	P21918	DRD5	Dopamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	2	1.83333333333333	1.76779026217228
+107	P25101	EDNRA	Endothelin receptors	Peptide receptors	Class A (Rhodopsin)	3	2.5	1.6986301369863	1.76779026217228
+108	P24530	EDNRB	Endothelin receptors	Peptide receptors	Class A (Rhodopsin)	2	2.5	1.6986301369863	1.76779026217228
+109	O60883	ETBR2	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+110	O14842	FFAR1	Free fatty acid receptors	Lipid receptors	Class A (Rhodopsin)	1	1	1.78787878787879	1.76779026217228
+111	O15552	FFAR2	Free fatty acid receptors	Lipid receptors	Class A (Rhodopsin)	1	1	1.78787878787879	1.76779026217228
+112	O14843	FFAR3	Free fatty acid receptors	Lipid receptors	Class A (Rhodopsin)	1	1	1.78787878787879	1.76779026217228
+113	P21462	FPR1	Formylpeptide receptors	Peptide receptors	Class A (Rhodopsin)	3	2.66666666666667	1.6986301369863	1.76779026217228
+114	P25090	FPR2	Formylpeptide receptors	Peptide receptors	Class A (Rhodopsin)	4	2.66666666666667	1.6986301369863	1.76779026217228
+115	P25089	FPR3	Formylpeptide receptors	Peptide receptors	Class A (Rhodopsin)	1	2.66666666666667	1.6986301369863	1.76779026217228
+116	P23945	FSHR	Glycoprotein hormone receptors	Protein receptors	Class A (Rhodopsin)	4	3.66666666666667	2.41379310344828	1.76779026217228
+117	Q9UP38	FZD1	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+118	Q9ULW2	FZD10	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+119	Q14332	FZD2	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+120	Q9NPG1	FZD3	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+121	Q9ULV1	FZD4	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+122	Q13467	FZD5	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+123	O60353	FZD6	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+124	O75084	FZD7	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+125	Q9H461	FZD8	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+126	O00144	FZD9	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+127	Q96N19	G137A	Other GPCR orphans	Orphan receptors	Other GPCRs	16	7.25	7.25	7.25
+128	Q9UBS5	GABR1	GABA<sub>B</sub> receptors	Amino acid receptors	Class C (Glutamate)	6	3.5	2.9	2.47619047619048
+129	O75899	GABR2	GABA<sub>B</sub> receptors	Amino acid receptors	Class C (Glutamate)	1	3.5	2.9	2.47619047619048
+130	P47211	GALR1	Galanin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+131	O43603	GALR2	Galanin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+132	O60755	GALR3	Galanin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+133	P32239	GASR	Cholecystokinin receptors	Peptide receptors	Class A (Rhodopsin)	5	3	1.6986301369863	1.76779026217228
+134	Q02643	GHRHR	Glucagon receptor family	Peptide receptors	Class B1 (Secretin)	1	1.83333333333333	2.06666666666667	2.06666666666667
+135	Q92847	GHSR	Ghrelin receptors	Peptide receptors	Class A (Rhodopsin)	2	2	1.6986301369863	1.76779026217228
+136	P48546	GIPR	Glucagon receptor family	Peptide receptors	Class B1 (Secretin)	3	1.83333333333333	2.06666666666667	2.06666666666667
+137	P43220	GLP1R	Glucagon receptor family	Peptide receptors	Class B1 (Secretin)	1	1.83333333333333	2.06666666666667	2.06666666666667
+138	O95838	GLP2R	Glucagon receptor family	Peptide receptors	Class B1 (Secretin)	2	1.83333333333333	2.06666666666667	2.06666666666667
+139	P47871	GLR	Glucagon receptor family	Peptide receptors	Class B1 (Secretin)	3	1.83333333333333	2.06666666666667	2.06666666666667
+140	P30968	GNRHR	Gonadotrophin-releasing hormone receptors	Peptide receptors	Class A (Rhodopsin)	2	2	1.6986301369863	1.76779026217228
+141	Q96P66	GP101	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+142	Q9UNW8	GP132	Class A orphans	Orphan receptors	Class A (Rhodopsin)	3	1.52857142857143	1.52857142857143	1.76779026217228
+143	Q8IZ08	GP135	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+144	Q7Z602	GP141	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+145	Q7Z601	GP142	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+146	P51810	GP143	Other GPCR orphans	Orphan receptors	Other GPCRs	4	7.25	7.25	7.25
+147	Q96CH1	GP146	Class A orphans	Orphan receptors	Class A (Rhodopsin)	3	1.52857142857143	1.52857142857143	1.76779026217228
+148	Q8TDV2	GP148	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+149	Q86SP6	GP149	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+150	Q8NGU9	GP150	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+151	Q8TDT2	GP152	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+152	Q6NV75	GP153	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+153	Q8NFN8	GP156	Class C Orphans	Orphan receptors	Class C (Glutamate)	2	2.28571428571429	2.28571428571429	2.47619047619048
+154	Q5UAW9	GP157	Other GPCR orphans	Orphan receptors	Other GPCRs	3	7.25	7.25	7.25
+155	Q5T848	GP158	Class C Orphans	Orphan receptors	Class C (Glutamate)	1	2.28571428571429	2.28571428571429	2.47619047619048
+156	Q9UJ42	GP160	Class A orphans	Orphan receptors	Class A (Rhodopsin)	5	1.52857142857143	1.52857142857143	1.76779026217228
+157	Q8N6U8	GP161	Class A orphans	Orphan receptors	Class A (Rhodopsin)	5	1.52857142857143	1.52857142857143	1.76779026217228
+158	Q16538	GP162	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+159	O14626	GP171	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+160	Q9NS66	GP173	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+161	Q9BXC1	GP174	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+162	Q14439	GP176	Class A orphans	Orphan receptors	Class A (Rhodopsin)	3	1.52857142857143	1.52857142857143	1.76779026217228
+163	Q6PRD1	GP179	Class C Orphans	Orphan receptors	Class C (Glutamate)	1	2.28571428571429	2.28571428571429	2.47619047619048
+164	O15218	GP182	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+165	P32249	GP183	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+166	Q8TDU6	GPBAR	Bile acid receptors	Steroid receptors	Class A (Rhodopsin)	1	1	1.5	1.76779026217228
+167	Q9NZH0	GPC5B	Class C Orphans	Orphan receptors	Class C (Glutamate)	4	2.28571428571429	2.28571428571429	2.47619047619048
+168	Q9NZD1	GPC5D	Class C Orphans	Orphan receptors	Class C (Glutamate)	3	2.28571428571429	2.28571428571429	2.47619047619048
+169	Q5T6X5	GPC6A	Class C Orphans	Orphan receptors	Class C (Glutamate)	2	2.28571428571429	2.28571428571429	2.47619047619048
+170	Q99527	GPER1	Estrogen (G protein-coupled) receptors	Steroid receptors	Class A (Rhodopsin)	2	2	1.5	1.76779026217228
+171	P46091	GPR1	Class A orphans	Orphan receptors	Class A (Rhodopsin)	6	1.52857142857143	1.52857142857143	1.76779026217228
+172	P47775	GPR12	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+173	P49685	GPR15	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+174	Q13304	GPR17	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+175	Q14330	GPR18	GPR18, GPR55 and GPR119	Lipid receptors	Class A (Rhodopsin)	2	2	1.78787878787879	1.76779026217228
+176	Q15760	GPR19	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+177	Q99678	GPR20	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+178	Q99679	GPR21	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+179	Q99680	GPR22	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+180	O00155	GPR25	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+181	Q8NDV2	GPR26	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+182	Q9NS67	GPR27	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+183	P46089	GPR3	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+184	O75388	GPR32	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+185	Q9UPC5	GPR34	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+186	Q9HC97	GPR35	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+187	O15354	GPR37	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+188	O43194	GPR39	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+189	P46093	GPR4	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+190	O15529	GPR42	Free fatty acid receptors	Lipid receptors	Class A (Rhodopsin)	1	1	1.78787878787879	1.76779026217228
+191	Q9Y5Y3	GPR45	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+192	Q9Y2T5	GPR52	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+193	Q9Y2T6	GPR55	GPR18, GPR55 and GPR119	Lipid receptors	Class A (Rhodopsin)	2	2	1.78787878787879	1.76779026217228
+194	P46095	GPR6	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+195	Q9BZJ8	GPR61	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+196	Q9BZJ7	GPR62	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+197	Q9BZJ6	GPR63	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+198	O95800	GPR75	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+199	Q96P69	GPR78	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+200	Q96P67	GPR82	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+201	Q9NYM4	GPR83	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+202	Q9NQS5	GPR84	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+203	P60893	GPR85	Class A orphans	Orphan receptors	Class A (Rhodopsin)	3	1.52857142857143	1.52857142857143	1.76779026217228
+204	Q9BY21	GPR87	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+205	Q9GZN0	GPR88	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+206	Q8WXG9	GPR98	ADGRV	Adhesion receptors	Class B2 (Adhesion)	2	2	4.76666666666667	4.76666666666667
+207	Q13255	GRM1	Metabotropic glutamate receptors	Amino acid receptors	Class C (Glutamate)	2	2.75	2.9	2.47619047619048
+208	Q14416	GRM2	Metabotropic glutamate receptors	Amino acid receptors	Class C (Glutamate)	3	2.75	2.9	2.47619047619048
+209	Q14832	GRM3	Metabotropic glutamate receptors	Amino acid receptors	Class C (Glutamate)	5	2.75	2.9	2.47619047619048
+210	Q14833	GRM4	Metabotropic glutamate receptors	Amino acid receptors	Class C (Glutamate)	1	2.75	2.9	2.47619047619048
+211	P41594	GRM5	Metabotropic glutamate receptors	Amino acid receptors	Class C (Glutamate)	3	2.75	2.9	2.47619047619048
+212	O15303	GRM6	Metabotropic glutamate receptors	Amino acid receptors	Class C (Glutamate)	1	2.75	2.9	2.47619047619048
+213	Q14831	GRM7	Metabotropic glutamate receptors	Amino acid receptors	Class C (Glutamate)	2	2.75	2.9	2.47619047619048
+214	O00222	GRM8	Metabotropic glutamate receptors	Amino acid receptors	Class C (Glutamate)	5	2.75	2.9	2.47619047619048
+215	P30550	GRPR	Bombesin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+216	Q9BXC0	HCAR1	Hydroxycarboxylic acid receptors	Alicarboxylic acid receptors	Class A (Rhodopsin)	1	1	1.4	1.76779026217228
+217	Q8TDS4	HCAR2	Hydroxycarboxylic acid receptors	Alicarboxylic acid receptors	Class A (Rhodopsin)	1	1	1.4	1.76779026217228
+218	P49019	HCAR3	Hydroxycarboxylic acid receptors	Alicarboxylic acid receptors	Class A (Rhodopsin)	1	1	1.4	1.76779026217228
+219	P35367	HRH1	Histamine receptors	Aminergic receptors	Class A (Rhodopsin)	2	1.75	1.83333333333333	1.76779026217228
+220	P25021	HRH2	Histamine receptors	Aminergic receptors	Class A (Rhodopsin)	2	1.75	1.83333333333333	1.76779026217228
+221	Q9Y5N1	HRH3	Histamine receptors	Aminergic receptors	Class A (Rhodopsin)	2	1.75	1.83333333333333	1.76779026217228
+222	Q9H3N8	HRH4	Histamine receptors	Aminergic receptors	Class A (Rhodopsin)	1	1.75	1.83333333333333	1.76779026217228
+223	Q969F8	KISSR	Kisspeptin receptors	Peptide receptors	Class A (Rhodopsin)	3	3	1.6986301369863	1.76779026217228
+224	Q9BXB1	LGR4	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+225	O75473	LGR5	Class A orphans	Orphan receptors	Class A (Rhodopsin)	3	1.52857142857143	1.52857142857143	1.76779026217228
+226	Q9HBX8	LGR6	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+227	Q92633	LPAR1	Lysophospholipid (LPA) receptors	Lipid receptors	Class A (Rhodopsin)	4	2.33333333333333	1.78787878787879	1.76779026217228
+228	Q9HBW0	LPAR2	Lysophospholipid (LPA) receptors	Lipid receptors	Class A (Rhodopsin)	5	2.33333333333333	1.78787878787879	1.76779026217228
+229	Q9UBY5	LPAR3	Lysophospholipid (LPA) receptors	Lipid receptors	Class A (Rhodopsin)	1	2.33333333333333	1.78787878787879	1.76779026217228
+230	Q99677	LPAR4	Lysophospholipid (LPA) receptors	Lipid receptors	Class A (Rhodopsin)	2	2.33333333333333	1.78787878787879	1.76779026217228
+231	Q9H1C0	LPAR5	Lysophospholipid (LPA) receptors	Lipid receptors	Class A (Rhodopsin)	1	2.33333333333333	1.78787878787879	1.76779026217228
+232	P43657	LPAR6	Lysophospholipid (LPA) receptors	Lipid receptors	Class A (Rhodopsin)	1	2.33333333333333	1.78787878787879	1.76779026217228
+233	P22888	LSHR	Glycoprotein hormone receptors	Protein receptors	Class A (Rhodopsin)	3	3.66666666666667	2.41379310344828	1.76779026217228
+234	Q15722	LT4R1	Leukotriene receptors	Lipid receptors	Class A (Rhodopsin)	3	1.5	1.78787878787879	1.76779026217228
+235	P04201	MAS	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+236	P35410	MAS1L	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+237	P32245	MC4R	Melanocortin receptors	Peptide receptors	Class A (Rhodopsin)	1	1.75	1.6986301369863	1.76779026217228
+238	P33032	MC5R	Melanocortin receptors	Peptide receptors	Class A (Rhodopsin)	2	1.75	1.6986301369863	1.76779026217228
+239	Q99705	MCHR1	Melanin-concentrating hormone	Peptide receptors	Class A (Rhodopsin)	2	1.5	1.6986301369863	1.76779026217228
+240	Q969V1	MCHR2	Melanin-concentrating hormone	Peptide receptors	Class A (Rhodopsin)	1	1.5	1.6986301369863	1.76779026217228
+241	Q8TDS7	MRGRD	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+242	Q86SM8	MRGRE	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+243	Q96AM1	MRGRF	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+244	Q86SM5	MRGRG	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+245	Q96LB1	MRGX2	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+246	Q96LB0	MRGX3	Class A orphans	Orphan receptors	Class A (Rhodopsin)	2	1.52857142857143	1.52857142857143	1.76779026217228
+247	Q01726	MSHR	Melanocortin receptors	Peptide receptors	Class A (Rhodopsin)	2	1.75	1.6986301369863	1.76779026217228
+248	O43193	MTLR	Motilin receptors	Peptide receptors	Class A (Rhodopsin)	2	2	1.6986301369863	1.76779026217228
+249	P48039	MTR1A	Melatonin	Melatonin receptors	Class A (Rhodopsin)	1	1	1	1.76779026217228
+250	P49286	MTR1B	Melatonin	Melatonin receptors	Class A (Rhodopsin)	1	1	1	1.76779026217228
+251	Q13585	MTR1L	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+252	P25103	NK1R	Tachykinin receptors	Peptide receptors	Class A (Rhodopsin)	2	1.66666666666667	1.6986301369863	1.76779026217228
+253	P21452	NK2R	Tachykinin receptors	Peptide receptors	Class A (Rhodopsin)	2	1.66666666666667	1.6986301369863	1.76779026217228
+254	P29371	NK3R	Tachykinin receptors	Peptide receptors	Class A (Rhodopsin)	1	1.66666666666667	1.6986301369863	1.76779026217228
+255	P28336	NMBR	Bombesin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+256	Q9HB89	NMUR1	Neuromedin U receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+257	Q9GZQ4	NMUR2	Neuromedin U receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+258	P48145	NPBW1	Neuropeptide W/neuropeptide B receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+259	P48146	NPBW2	Neuropeptide W/neuropeptide B receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+260	Q9GZQ6	NPFF1	Neuropeptide FF/neuropeptide AF receptors	Peptide receptors	Class A (Rhodopsin)	1	2	1.6986301369863	1.76779026217228
+261	Q9Y5X5	NPFF2	Neuropeptide FF/neuropeptide AF receptors	Peptide receptors	Class A (Rhodopsin)	3	2	1.6986301369863	1.76779026217228
+262	P25929	NPY1R	Neuropeptide Y receptors	Peptide receptors	Class A (Rhodopsin)	7	2.5	1.6986301369863	1.76779026217228
+263	P49146	NPY2R	Neuropeptide Y receptors	Peptide receptors	Class A (Rhodopsin)	1	2.5	1.6986301369863	1.76779026217228
+264	P50391	NPY4R	Neuropeptide Y receptors	Peptide receptors	Class A (Rhodopsin)	1	2.5	1.6986301369863	1.76779026217228
+265	Q15761	NPY5R	Neuropeptide Y receptors	Peptide receptors	Class A (Rhodopsin)	1	2.5	1.6986301369863	1.76779026217228
+266	P30989	NTR1	Neurotensin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+267	O95665	NTR2	Neurotensin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+268	Q15743	OGR1	Class A orphans	Orphan receptors	Class A (Rhodopsin)	3	1.52857142857143	1.52857142857143	1.76779026217228
+269	Q9H1Y3	OPN3	Opsins	Sensory receptors	Class A (Rhodopsin)	2	1.66666666666667	1.66666666666667	1.76779026217228
+270	Q9UHM6	OPN4	Opsins	Sensory receptors	Class A (Rhodopsin)	2	1.66666666666667	1.66666666666667	1.76779026217228
+271	Q6U736	OPN5	Opsins	Sensory receptors	Class A (Rhodopsin)	3	1.66666666666667	1.66666666666667	1.76779026217228
+272	P41143	OPRD	Opioid receptors	Peptide receptors	Class A (Rhodopsin)	1	2	1.6986301369863	1.76779026217228
+273	P41145	OPRK	Opioid receptors	Peptide receptors	Class A (Rhodopsin)	2	2	1.6986301369863	1.76779026217228
+274	P35372	OPRM	Opioid receptors	Peptide receptors	Class A (Rhodopsin)	4	2	1.6986301369863	1.76779026217228
+275	P41146	OPRX	Opioid receptors	Peptide receptors	Class A (Rhodopsin)	1	2	1.6986301369863	1.76779026217228
+276	P03999	OPSB	Opsins	Sensory receptors	Class A (Rhodopsin)	1	1.66666666666667	1.66666666666667	1.76779026217228
+277	P08100	OPSD	Opsins	Sensory receptors	Class A (Rhodopsin)	1	1.66666666666667	1.66666666666667	1.76779026217228
+278	P04001	OPSG	Opsins	Sensory receptors	Class A (Rhodopsin)	1	1.66666666666667	1.66666666666667	1.76779026217228
+279	O43613	OX1R	Orexin receptors	Peptide receptors	Class A (Rhodopsin)	2	1.5	1.6986301369863	1.76779026217228
+280	O43614	OX2R	Orexin receptors	Peptide receptors	Class A (Rhodopsin)	1	1.5	1.6986301369863	1.76779026217228
+281	Q8TDS5	OXER1	Leukotriene receptors	Lipid receptors	Class A (Rhodopsin)	1	1.5	1.78787878787879	1.76779026217228
+282	Q96P68	OXGR1	Oxoglutarate receptors	Alicarboxylic acid receptors	Class A (Rhodopsin)	3	3	1.4	1.76779026217228
+283	P30559	OXYR	Vasopressin and oxytocin receptors	Peptide receptors	Class A (Rhodopsin)	3	2.25	1.6986301369863	1.76779026217228
+284	P47900	P2RY1	P2Y receptors	Nucleotide receptors	Class A (Rhodopsin)	1	1.5	2.18181818181818	1.76779026217228
+285	P41231	P2RY2	P2Y receptors	Nucleotide receptors	Class A (Rhodopsin)	1	1.5	2.18181818181818	1.76779026217228
+286	P51582	P2RY4	P2Y receptors	Nucleotide receptors	Class A (Rhodopsin)	1	1.5	2.18181818181818	1.76779026217228
+287	Q15077	P2RY6	P2Y receptors	Nucleotide receptors	Class A (Rhodopsin)	4	1.5	2.18181818181818	1.76779026217228
+288	Q86VZ1	P2RY8	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+289	O00398	P2Y10	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+290	Q96G91	P2Y11	P2Y receptors	Nucleotide receptors	Class A (Rhodopsin)	1	1.5	2.18181818181818	1.76779026217228
+291	Q9H244	P2Y12	P2Y receptors	Nucleotide receptors	Class A (Rhodopsin)	1	1.5	2.18181818181818	1.76779026217228
+292	Q9BPV8	P2Y13	P2Y receptors	Nucleotide receptors	Class A (Rhodopsin)	1	1.5	2.18181818181818	1.76779026217228
+293	Q15391	P2Y14	P2Y receptors	Nucleotide receptors	Class A (Rhodopsin)	2	1.5	2.18181818181818	1.76779026217228
+294	P41586	PACR	VIP and PACAP receptors	Peptide receptors	Class B1 (Secretin)	3	2.66666666666667	2.06666666666667	2.06666666666667
+295	P25116	PAR1	Proteinase-activated receptors	Peptide receptors	Class A (Rhodopsin)	2	1.5	1.6986301369863	1.76779026217228
+296	P55085	PAR2	Proteinase-activated receptors	Peptide receptors	Class A (Rhodopsin)	1	1.5	1.6986301369863	1.76779026217228
+297	O00254	PAR3	Proteinase-activated receptors	Peptide receptors	Class A (Rhodopsin)	1	1.5	1.6986301369863	1.76779026217228
+298	Q96RI0	PAR4	Proteinase-activated receptors	Peptide receptors	Class A (Rhodopsin)	2	1.5	1.6986301369863	1.76779026217228
+299	Q13258	PD2R	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	2	2	1.78787878787879	1.76779026217228
+300	Q9Y5Y4	PD2R2	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	1	2	1.78787878787879	1.76779026217228
+301	P34995	PE2R1	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	1	2	1.78787878787879	1.76779026217228
+302	P43116	PE2R2	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	2	2	1.78787878787879	1.76779026217228
+303	P43115	PE2R3	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	5	2	1.78787878787879	1.76779026217228
+304	P35408	PE2R4	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	1	2	1.78787878787879	1.76779026217228
+305	P43088	PF2R	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	2	2	1.78787878787879	1.76779026217228
+306	P43119	PI2R	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	1	2	1.78787878787879	1.76779026217228
+307	Q8TCW9	PKR1	Prokineticin receptors	Protein receptors	Class A (Rhodopsin)	1	1	2.41379310344828	1.76779026217228
+308	Q8NFJ6	PKR2	Prokineticin receptors	Protein receptors	Class A (Rhodopsin)	1	1	2.41379310344828	1.76779026217228
+309	P49683	PRLHR	Prolactin-releasing peptide receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+310	Q8IYL9	PSYR	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+311	P25105	PTAFR	Platelet-activating factor receptors	Lipid receptors	Class A (Rhodopsin)	1	1	1.78787878787879	1.76779026217228
+312	Q03431	PTH1R	Parathyroid hormone receptors	Peptide receptors	Class B1 (Secretin)	2	1.5	2.06666666666667	2.06666666666667
+313	P49190	PTH2R	Parathyroid hormone receptors	Peptide receptors	Class B1 (Secretin)	1	1.5	2.06666666666667	2.06666666666667
+314	Q96P65	QRFPR	Peptide P518 receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+315	Q8NFJ5	RAI3	Class C Orphans	Orphan receptors	Class C (Glutamate)	3	2.28571428571429	2.28571428571429	2.47619047619048
+316	Q9NSD7	RL3R1	Relaxin family peptide receptors	Peptide receptors	Class A (Rhodopsin)	1	1.5	1.6986301369863	1.76779026217228
+317	Q8TDU9	RL3R2	Relaxin family peptide receptors	Peptide receptors	Class A (Rhodopsin)	1	1.5	1.6986301369863	1.76779026217228
+318	Q9HBX9	RXFP1	Relaxin family peptide receptors	Peptide receptors	Class A (Rhodopsin)	2	1.5	1.6986301369863	1.76779026217228
+319	Q8WXD0	RXFP2	Relaxin family peptide receptors	Peptide receptors	Class A (Rhodopsin)	2	1.5	1.6986301369863	1.76779026217228
+320	P21453	S1PR1	Lysophospholipid (S1P) receptors	Lipid receptors	Class A (Rhodopsin)	1	1.2	1.78787878787879	1.76779026217228
+321	O95136	S1PR2	Lysophospholipid (S1P) receptors	Lipid receptors	Class A (Rhodopsin)	1	1.2	1.78787878787879	1.76779026217228
+322	Q99500	S1PR3	Lysophospholipid (S1P) receptors	Lipid receptors	Class A (Rhodopsin)	1	1.2	1.78787878787879	1.76779026217228
+323	O95977	S1PR4	Lysophospholipid (S1P) receptors	Lipid receptors	Class A (Rhodopsin)	1	1.2	1.78787878787879	1.76779026217228
+324	Q9H228	S1PR5	Lysophospholipid (S1P) receptors	Lipid receptors	Class A (Rhodopsin)	2	1.2	1.78787878787879	1.76779026217228
+325	P47872	SCTR	Glucagon receptor family	Peptide receptors	Class B1 (Secretin)	1	1.83333333333333	2.06666666666667	2.06666666666667
+326	Q99835	SMO	Frizzled	Protein receptors	Class F (Frizzled)	1	1	1	1
+327	P30872	SSR1	Somatostatin receptors	Peptide receptors	Class A (Rhodopsin)	1	1.4	1.6986301369863	1.76779026217228
+328	P30874	SSR2	Somatostatin receptors	Peptide receptors	Class A (Rhodopsin)	2	1.4	1.6986301369863	1.76779026217228
+329	P32745	SSR3	Somatostatin receptors	Peptide receptors	Class A (Rhodopsin)	1	1.4	1.6986301369863	1.76779026217228
+330	P31391	SSR4	Somatostatin receptors	Peptide receptors	Class A (Rhodopsin)	1	1.4	1.6986301369863	1.76779026217228
+331	P35346	SSR5	Somatostatin receptors	Peptide receptors	Class A (Rhodopsin)	2	1.4	1.6986301369863	1.76779026217228
+332	Q9BXA5	SUCR1	Succinate receptors	Alicarboxylic acid receptors	Class A (Rhodopsin)	1	1	1.4	1.76779026217228
+333	Q9NYW0	T2R10	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+334	Q9NYV8	T2R14	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+335	P59542	T2R19	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+336	P59543	T2R20	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+337	P59538	T2R31	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+338	P59533	T2R38	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+339	P59535	T2R40	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+340	P59537	T2R43	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+341	P59540	T2R46	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+342	P59544	T2R50	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+343	P59551	T2R60	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+344	P21731	TA2R	Prostanoid receptors	Lipid receptors	Class A (Rhodopsin)	3	2	1.78787878787879	1.76779026217228
+345	Q9NYW7	TA2R1	Taste 2 receptors	Sensory receptors	Taste 2	3	1.13333333333333	1.13333333333333	1.13333333333333
+346	Q9NYW6	TA2R3	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+347	Q9NYW5	TA2R4	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+348	Q9NYW4	TA2R5	Taste 2 receptors	Sensory receptors	Taste 2	1	1.13333333333333	1.13333333333333	1.13333333333333
+349	Q96RJ0	TAAR1	Trace amine receptors	Aminergic receptors	Class A (Rhodopsin)	1	1	1.83333333333333	1.76779026217228
+350	Q969N4	TAAR8	Class A orphans	Orphan receptors	Class A (Rhodopsin)	1	1.52857142857143	1.52857142857143	1.76779026217228
+351	Q86W33	TPRA1	Other GPCR orphans	Orphan receptors	Other GPCRs	6	7.25	7.25	7.25
+352	P34981	TRFR	Thyrotropin-releasing hormone receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+353	Q7RTX1	TS1R1	Taste 1 receptors	Sensory receptors	Class C (Glutamate)	3	1.66666666666667	1.66666666666667	2.47619047619048
+354	Q8TE23	TS1R2	Taste 1 receptors	Sensory receptors	Class C (Glutamate)	1	1.66666666666667	1.66666666666667	2.47619047619048
+355	Q7RTX0	TS1R3	Taste 1 receptors	Sensory receptors	Class C (Glutamate)	1	1.66666666666667	1.66666666666667	2.47619047619048
+356	P16473	TSHR	Glycoprotein hormone receptors	Protein receptors	Class A (Rhodopsin)	4	3.66666666666667	2.41379310344828	1.76779026217228
+357	Q9UKP6	UR2R	Urotensin receptors	Peptide receptors	Class A (Rhodopsin)	1	1	1.6986301369863	1.76779026217228
+358	P37288	V1AR	Vasopressin and oxytocin receptors	Peptide receptors	Class A (Rhodopsin)	2	2.25	1.6986301369863	1.76779026217228
+359	P47901	V1BR	Vasopressin and oxytocin receptors	Peptide receptors	Class A (Rhodopsin)	1	2.25	1.6986301369863	1.76779026217228
+360	P30518	V2R	Vasopressin and oxytocin receptors	Peptide receptors	Class A (Rhodopsin)	3	2.25	1.6986301369863	1.76779026217228
+361	P32241	VIPR1	VIP and PACAP receptors	Peptide receptors	Class B1 (Secretin)	2	2.66666666666667	2.06666666666667	2.06666666666667
+362	P41587	VIPR2	VIP and PACAP receptors	Peptide receptors	Class B1 (Secretin)	3	2.66666666666667	2.06666666666667	2.06666666666667
+363	P46094	XCR1	Chemokine receptors	Protein receptors	Class A (Rhodopsin)	2	2.30434782608696	2.41379310344828	1.76779026217228
