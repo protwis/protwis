@@ -1245,6 +1245,7 @@ function renderBrowser(data) {
 
     console.timeEnd("RenderBrowser");
     gray_scale_table(table);
+    enable_3Dclick(table)
 }
 
 function renderBrowser_2(data) {
@@ -1699,7 +1700,7 @@ function renderBrowser_2(data) {
         var pdbs_aa2 = v2['set1']['occurance']['aa2'].concat(v2['set2']['occurance']['aa2']);
         var aa1 = v2['aa1'];
         var aa2 = v2['aa2'];
-            
+
         all_angles_1 = two_sets_data['all_angles'][gn1];
         all_angles_2 = two_sets_data['all_angles'][gn2];
 
@@ -2333,3 +2334,93 @@ function gray_scale_table(table) {
     console.log(cell_count, 'cells greyscaled');
     console.timeEnd('Greyscale');
 }
+
+
+function enable_3Dclick(table){
+  for (header in table[0].children[0].children[1].children){
+    var th = table[0].children[0].children[1].children[header]
+    if (typeof th === 'object')
+      th.addEventListener("click", function(e){
+
+        // filter keys for current mode (single/single_group/two_sets)
+        const analys_mode = $('.main_option:visible').attr('id').replace('-tab', '');
+        var cmode = "single_"
+        if (analys_mode=="two-crystal-groups")
+          cmode = "two_sets_"
+        else if (analys_mode=="single-crystal-group")
+          cmode = "single_group_"
+
+        // BUG: single_ and single_group both match the single_ string
+        var viewers = Object.keys(stage).filter(function(x){ return x.startsWith(cmode)})
+        if (viewers.length > 0) {
+          var mode = viewers[0];
+          // TODO: select which 3D view if more than one
+
+          // Table data
+          var th = e.target
+          var tableNumber = th.parentNode.parentNode.parentNode.className.split(" ")[0];
+          var tableNumber = tableNumber.substr(-1)
+          var columnNumber = $(th).cellPos().left;
+
+          // Color 3D viewer
+          if ( th.colSpan == 3 ){
+            // Toggle between group 1/2 values and group differences
+
+          } else if (th.colSpan == 2 ){
+            colorByData(mode, tableNumber, [columnNumber, columnNumber+1])
+          } else {
+            colorByData(mode, tableNumber, columnNumber)
+          }
+        }
+      })
+  }
+}
+
+/*  cellPos jQuery plugin
+    ---------------------
+    Get visual position of cell in HTML table (or its block like thead).
+    Return value is object with "top" and "left" properties set to row and column index of top-left cell corner.
+    Example of use:
+        $("#myTable tbody td").each(function(){
+            $(this).text( $(this).cellPos().top +", "+ $(this).cellPos().left );
+        });
+*/
+(function($){
+    /* scan individual table and set "cellPos" data in the form { left: x-coord, top: y-coord } */
+    function scanTable( $table ) {
+        var m = [];
+        $table.children( "tr" ).each( function( y, row ) {
+            $( row ).children( "td, th" ).each( function( x, cell ) {
+                var $cell = $( cell ),
+                    cspan = $cell.attr( "colspan" ) | 0,
+                    rspan = $cell.attr( "rowspan" ) | 0,
+                    tx, ty;
+                cspan = cspan ? cspan : 1;
+                rspan = rspan ? rspan : 1;
+                for( ; m[y] && m[y][x]; ++x );  //skip already occupied cells in current row
+                for( tx = x; tx < x + cspan; ++tx ) {  //mark matrix elements occupied by current cell with true
+                    for( ty = y; ty < y + rspan; ++ty ) {
+                        if( !m[ty] ) {  //fill missing rows
+                            m[ty] = [];
+                        }
+                        m[ty][tx] = true;
+                    }
+                }
+                var pos = { top: y, left: x };
+                $cell.data( "cellPos", pos );
+            } );
+        } );
+    };
+
+    /* plugin */
+    $.fn.cellPos = function( rescan ) {
+        var $cell = this.first(),
+            pos = $cell.data( "cellPos" );
+        if( !pos || rescan ) {
+            var $table = $cell.closest( "table, thead, tbody, tfoot" );
+            scanTable( $table );
+        }
+        pos = $cell.data( "cellPos" );
+        return pos;
+    }
+})(jQuery);
