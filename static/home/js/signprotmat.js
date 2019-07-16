@@ -1574,11 +1574,10 @@ var signprotmat = {
 
         draw_seq_sig: function (data_in, svg, xScale) {
             var data = data_in.feat;
-            var data_ungrouped = data_in.feat_ungrouped;
 
             var cScale = signprotmat.d3.cScale();
             var feats = [];
-            
+
             for (var _i = 0, _a = Object.keys(data); _i < _a.length; _i++) {
                 var key = _a[_i];
                 if (xScale(key) == null) {
@@ -1621,6 +1620,92 @@ var signprotmat = {
             var new_vb = viewbox_1 + (area_height + Math.round(area_height / 4) + 150);
             viewbox_svg.attr('viewBox', new_vb);
             
+            var data = data_in.feat_ungrouped;
+            var fScale = signprotmat.d3.fScale(data);
+            data.forEach(d => {
+                const length_text = d.length != "" ? " (" + d.length + ")" : "";
+                feats.push({
+                    code: d.feature_code,
+                    feature: d.feature,
+                    length: d.length,
+                    comb: d.feature + length_text
+                });
+            });
+            let uniq_feats = _.uniqBy(feats, "comb");
+            console.log(uniq_feats);
+
+            // filter out NA generic numbers based on xScale
+            data = _.filter(data, function(d) {
+                return xScale(d.gn);
+            });
+
+
+            let row = svg
+                .append("g")
+                .attr("id", "seqsig_feature")
+                .attr("transform", "translate(" + 0 + "," + 120 + ")")
+                .selectAll("text")
+                .data(uniq_feats)
+                .enter();
+
+            //feature row labels
+            row
+                .append("text")
+                .attr("class", "y seq_label")
+                .attr("x", -10 - xScale.step())
+                .attr("y", function(d) {
+                    return fScale(d.comb) - fScale.step() / 2;
+                })
+                .attr("text-anchor", "end")
+                .attr("dy", 75)
+                .text(function(d) {
+                    return d.comb;
+                });
+           
+            // feature color code rectangles 
+            row
+                .append("rect")
+                .style("fill", function(d) {
+                    const gcol = signprotmat.d3.fScaleColor(d.code);
+                    if (typeof gcol != "undefined") {
+                        return gcol.bg_color;
+                    } else {
+                        return null;
+                    }
+                })
+                .style("stroke", "black")
+                .attr("x", -xScale.step())
+                .attr("y", function(d) {
+                    return 75 + fScale(d.comb) - fScale.step();
+                })
+                .attr("width", xScale.step())
+                .attr("height", fScale.step());
+
+            // feature code label text
+            row
+                .append("text")
+                .attr("class", "y seq_label")
+                .attr("text-anchor", "middle")
+                .attr("x", -xScale.step() / 2)
+                .attr("y", function(d) {
+                    return 75 + fScale(d.comb) - fScale.step() / 2;
+                })
+                .style("fill", (d) => {
+                    const gcol = signprotmat.d3.fScaleColor(d.code);
+                    if (typeof gcol != "undefined") {
+                        if (typeof gcol.font_color != "undefined") {
+                            return gcol.font_color;
+                        } else {
+                            return "#000000";
+                        }
+                    } else {
+                        return "#000000";
+                    }
+                })
+                .text(function(d) {
+                    return d.code;
+                });
+
             // generating the white backdrop for all the properties
             svg
                 .append("g")
@@ -1632,73 +1717,64 @@ var signprotmat = {
                 .attr("x", xScale.step() / 2)
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
-                .attr("height", area_height);
-            
-            var each_res = svg
+                .attr("height", fScale.range()[1] - fScale.step());
+
+            let each_res = svg
                 .select("g#seqsig_mat")
-                .selectAll("g")
-                .data(Object.values(data))
+                .selectAll("text")
+                .data(data)
                 .enter()
                 .append("g")
-                .selectAll("rect")
-                .data(function (d) {
-                    return d;
-                })
-                .enter();
-
-            each_res
-                .append("rect")
                 .call(seqsigTip)
-                .on("mouseover", function (d) {
+                .on("mouseover", function(d) {
                     if (d.freq !== 0) {
                         seqsigTip.show(d);
                     }
                 })
-                .on("mouseout", function (d) {
+                .on("mouseout", function(d) {
                     seqsigTip.hide();
-                })
-                .attr("class", "res_rect")
-                .style("fill", function (d) {
-                var gcol = signprotmat.d3.fScaleColor(d.feature_code);
-                    if (typeof gcol != "undefined") {
-                        return gcol.bg_color;
-                    }
-                    else {
-                        return null;
-                    }
-                })
-                .style("stroke", "black")
-                .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                .attr("y", function (d, i) { return 75 + i * row_height; })
-                .attr("width", xScale.step())
-                .attr("height", row_height);
-           
+                });
+
+            // the rectangles, colored by conservation
             each_res
-                .append("text")
-                .attr("class", "res_label")
-                .attr("text-anchor", "middle")
-                .attr("x", function (d) { return xScale(d.gn); })
-                .attr("y", function (d, i) { return 75 + i * row_height; })
-                .attr("dy", row_height / 2)
-                .style("fill", function (d) {
-                    var gcol = signprotmat.d3.fScaleColor(d.feature_code);
-                    if (typeof gcol != "undefined") {
-                        if (typeof gcol.font_color != "undefined") {
-                            return gcol.font_color;
-                        }
-                        else {
-                            return "#000000";
-                        }
-                    }
-                    else {
-                        return "#000000";
+                .append("rect")
+                .attr("class", "res_rect")
+                .style("fill", function(d) {
+                    if (d.cons <= 0) {
+                        return "none";
+                    } else {
+                        return cScale(d.freq);
                     }
                 })
-                .text(function (d) {
-                return d.feature_code;
-            });
-            
-            // moving elements
+                .attr("x", (d) => xScale(d.gn) - xScale.step() / 2)
+                .attr("y", function(d) {
+                    const length_text = d.length != "" ? " (" + d.length + ")" : "";
+                    const comb = d.feature + length_text;
+                    return 75 + fScale(comb) - fScale.step();
+                })
+                .attr("width", xScale.step())
+                .attr("height", fScale.step());
+
+            // adding the frequency text to each rectangle
+            // each_res
+            //   .append("text")
+            //   .attr("class", "res_label")
+            //   .attr("x", (d) => xScale(d.gn))
+            //   .attr("y", (d) => fScale(d.feature) - fScale.step() / 2)
+            //   .style("fill", (d) => {
+            //     if(Math.abs(d.freq) >= 50) {
+            //       return '#eaeaea';
+            //     } else if (Math.abs(d.freq) < 50) {
+            //       return '#000000';
+            //     }
+            //   })
+            //   .attr("text-anchor", "middle")
+            //   .attr("dy", 75)
+            //   .text((d) => d.freq);
+            // .text((d) => _.round(d.freq/100, 1));
+
+
+            // Setting up the consensus area
             d3.select("svg.svg-content.seqsig")
                 .select("g")
                 .append("g")
@@ -1734,7 +1810,7 @@ var signprotmat = {
                 .attr("x", xScale.step() / 2)
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
-                .attr("height", area_height);
+                .attr("height", fScale.range()[1] - fScale.step());
 
         },
 
