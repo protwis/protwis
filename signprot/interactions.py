@@ -83,6 +83,15 @@ def get_signature_features(signature_data, generic_numbers, feats):
     """Extract the signature features and prepare for visualization"""
     signature_features = []
     x = 0
+
+    tmp = list()
+    for segment, s in signature_data["a_pos"].consensus.items():
+        for p, r in s.items():
+            tmp.append({
+                "aa": r[0],
+                "aa_cons": r[2]
+                })
+
     for i, feature in enumerate(signature_data["a_pos"].feature_stats):
         for j, segment in enumerate(feature):
             for k, freq in enumerate(segment):
@@ -116,6 +125,8 @@ def get_signature_features(signature_data, generic_numbers, feats):
                                 "cons": dcons,
                                 "sort_score": sort_score,
                                 # 'expl': str(freq[2]),
+                                "aa": str(tmp[k]["aa"]),
+                                "aa_cons": int(tmp[k]["aa_cons"]),
                             }
                         )
                     x += 1

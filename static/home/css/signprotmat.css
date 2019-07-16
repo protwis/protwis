@@ -129,13 +129,44 @@ line {
     font-family: sans-serif;
 }
 
+.con_seq_label {
+    text-anchor: end;
+    display: inline;
+    font-size: 90%;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    dominant-baseline: central;
+    font-family: sans-serif;
+}
 
-.res_label, .cons_label, .len_label, .int_count {
+.res_label, .cons_label, .len_label, .amino_label, .int_count {
     display: inline;
     font-size: 75%;
     dominant-baseline: central;
     pointer-events: none;
 }
+
+rect.expand {
+    fill: #337ab7;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+rect.expand:hover {
+    fill: #286090;
+}
+
+text.expand {
+    text-anchor: middle;
+    fill: white;
+    font-size: 120%;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+
 
 
 /* removing unnecessary paths via assigning no stroke */

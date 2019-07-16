@@ -147,13 +147,13 @@ const run_seq_sig = function(){
         svg,
         xScale,
       );
-      svg = signprotmat.d3.setup("div#conseq-svg", 'conseq');
-      signprotmat.d3.draw_seq_cons(
-        data,
-        svg,
-        xScale,
-        xAxis
-      );
+      // svg = signprotmat.d3.setup("div#conseq-svg", 'conseq');
+      // signprotmat.d3.draw_seq_cons(
+      //   data,
+      //   svg,
+      //   xScale,
+      //   xAxis
+      // );
       initialize_consensus(data.feat);
 
       // Once done run the signature match
@@ -163,6 +163,9 @@ const run_seq_sig = function(){
       $("#calc_spin").addClass("fa-times");
       $("#calc_spin").removeClass("fa-spinner");
       $("#calc_spin").removeClass("fa-spin");
+      $("#sigm_spin").addClass("fa-times");
+      $("#sigm_spin").removeClass("fa-spinner");
+      $("#sigm_spin").removeClass("fa-spin");
       console.log(error)
       alert(error);
     },
