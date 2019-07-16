@@ -653,13 +653,13 @@ var signprotmat = {
                         return "#000000";
                     }
                 })
-                .text(function(d){ return d.pairs.length })
-                // .text(function(d){
-                //     const num_pairs = d.pairs.length
-                //     const max_count = get_max_interface_count()
-                //     const ratio = (num_pairs / max_count)*100
-                //     return _.round(ratio, 1)
-                // })
+                // .text(function(d){ return d.pairs.length })
+                .text(function(d){
+                    const num_pairs = d.pairs.length
+                    const max_count = get_max_interface_count()
+                    const ratio = (num_pairs / max_count)
+                    return _.round(ratio, 1)
+                })
 
             // * DRAWING AXES
             svg
