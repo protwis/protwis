@@ -1269,6 +1269,7 @@ def IMSequenceSignature(request):
     # pass back to front
     res = {
         # 'cons': sigcons,
+        'feat_ungrouped': signature_features,
         'feat': grouped_features,
     }
 
