@@ -626,7 +626,7 @@ var signprotmat = {
                     return colScale(d.pairs[0].int_ty[0]);
                 }
             })
-             
+
             each_rect
                 .append("text")
                 .attr("text-anchor", "middle")
@@ -653,7 +653,7 @@ var signprotmat = {
                     }
                 })
                 .text(function(d){ return d.pairs.length })
-                // .text(function(d){ 
+                // .text(function(d){
                 //     const num_pairs = d.pairs.length
                 //     const max_count = get_max_interface_count()
                 //     const ratio = (num_pairs / max_count)*100
@@ -727,24 +727,24 @@ var signprotmat = {
                 .append("g")
                 .attr("id", "infobox")
                 .attr("transform", "translate(-15," + (data.inttypes.length + 2) * 20 + ")");
-            
+
             // * ADDING Interaction Type LEGEND
             let size = 2
             let window_starts = _.range(0, colScale.domain().length+1, size)
-    
+
             let i = 0
             for(let windo of window_starts) {
                 let start = windo
                 let stop = (windo + size)
                 let element_ids = _.range(start, stop)
                 let filter_elements = _.pullAt(colScale.domain(), element_ids)
-                
+
                 svg
                     .append("g")
                     .attr("class", "legendOrdinal" + i)
                     .attr("transform", "translate(" +
-                        // (xScale.step() / 2 + i * 10 * xScale.step()) + "," 
-                        (xScale.step() / 2 + i * 160) + "," 
+                        // (xScale.step() / 2 + i * 10 * xScale.step()) + ","
+                        (xScale.step() / 2 + i * 160) + ","
                         + -25 +
                     ")");
 
@@ -1144,7 +1144,7 @@ var signprotmat = {
             var label_area = d3.select("g#con_seq_mat")
                 .append('g')
                 .attr('id', 'labels')
-            
+
             // Labels
             label_area
                 .append('text')
@@ -1191,8 +1191,7 @@ var signprotmat = {
                 .append('g')
                 .attr('id', 'prop_con_expand')
                 .on('click', function(){console.log('click event')})
-                
-            
+
             tmp.append('rect')
                 .attr('class', 'expand')
                 .attr('x', -180)
@@ -1208,12 +1207,12 @@ var signprotmat = {
                 .attr('dx', '25px')
                 .attr("dy", row_height / 2 + 3)
                 .text('+')
-            
+
             tmp = label_area
                 .append('g')
                 .attr('id', 'seq_con_expand')
                 .on('click', function(){console.log('click event')})
-            
+
             tmp.append('rect')
                 .attr('class', 'expand')
                 .attr('x', -180)
@@ -1221,7 +1220,7 @@ var signprotmat = {
                 .attr('rx', '4')
                 .attr('width', '50px')
                 .attr('height', row_height)
-            
+
             tmp.append('text')
                 .attr('class', 'expand')
                 .attr('x', -180)
@@ -1496,7 +1495,7 @@ var signprotmat = {
                     })
                     .text(function (d) { return d.aa; });
             }, function (update) {
-            
+
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
                     .attr("y", 75 + 2 * row_height)
@@ -1555,7 +1554,7 @@ var signprotmat = {
                     })
                     .text(function (d) { return d.aa_cons; });
             }, function (update) {
-            
+                
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
                     .attr("y", 75 + 2.5 * row_height)
@@ -1569,7 +1568,7 @@ var signprotmat = {
                     })
                     .text(function (d) { return d.aa_cons; });
             }, function (exit) { return exit.remove(); });
-            
+
         },
 
         draw_seq_sig: function (data_in, svg, xScale) {
@@ -1661,8 +1660,8 @@ var signprotmat = {
                 .text(function(d) {
                     return d.comb;
                 });
-           
-            // feature color code rectangles 
+            
+            // feature color code rectangles
             row
                 .append("rect")
                 .style("fill", function(d) {
@@ -1795,7 +1794,7 @@ var signprotmat = {
                 .attr("dy", "-5px")
                 .attr("transform", "rotate(-90)");
 
-            // removing the axis line 
+            // removing the axis line
             svg
                 .select(".x.axis")
                 .selectAll("path")
