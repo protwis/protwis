@@ -326,6 +326,22 @@ const run_sig_match = function(){
             }
           },
           {
+            text: "Export to CSV",
+            action: function ( e, dt, button, config ) {
+              var data = Papa.unparse(sigmatch_table.data().toArray())
+
+              $('<a></a>')
+                .attr('id','downloadFile')
+                .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(data))
+                .attr('download','export.csv')
+                .appendTo('body');
+              
+              $('#downloadFile').ready(function() {
+                $('#downloadFile').get(0).click();
+              });
+            }
+          },
+          {
             text: 'Deselect',
             action: function () {
               sigmatch_table.rows().deselect();
