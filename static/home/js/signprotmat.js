@@ -1140,6 +1140,96 @@ var signprotmat = {
             var svg = d3.select("svg.svg-content.seqsig");
             var t = svg.transition().duration(750);
 
+            // adding the labels and collapse/hide buttons
+            var label_area = d3.select("g#con_seq_mat")
+                .append('g')
+                .attr('id', 'labels')
+            
+            // Labels
+            label_area
+                .append('text')
+                .attr('class', 'con_seq_label')
+                .attr('x', -2)
+                .attr('y', 75)
+                .attr("dy", row_height / 2)
+                .text('Property Consensus')
+
+            label_area
+                .append('text')
+                .attr('class', 'con_seq_label')
+                .attr('x', -2)
+                .attr('y', 75 + row_height)
+                .attr("dy", row_height / 4)
+                .text('Length')
+
+            label_area
+                .append('text')
+                .attr('class', 'con_seq_label')
+                .attr('x', -2)
+                .attr('y', 75 + row_height * 1.5)
+                .attr("dy", row_height / 4)
+                .text('Conservation')
+
+            label_area
+                .append('text')
+                .attr('class', 'con_seq_label')
+                .attr('x', -2)
+                .attr('y', 75 + row_height * 2)
+                .attr("dy", row_height / 2)
+                .text('Sequence Consensus')
+
+            label_area
+                .append('text')
+                .attr('class', 'con_seq_label')
+                .attr('x', -2)
+                .attr('y', 75 + row_height * 3)
+                .attr("dy", row_height / 4)
+                .text('Conservation')
+
+            // Expand Buttons
+            var tmp = label_area
+                .append('g')
+                .attr('id', 'prop_con_expand')
+                .on('click', function(){console.log('click event')})
+                
+            
+            tmp.append('rect')
+                .attr('class', 'expand')
+                .attr('x', -180)
+                .attr('y', 75)
+                .attr('rx', '4')
+                .attr('width', '50px')
+                .attr('height', row_height)
+
+            tmp.append('text')
+                .attr('class', 'expand')
+                .attr('x', -180)
+                .attr('y', 75)
+                .attr('dx', '25px')
+                .attr("dy", row_height / 2 + 3)
+                .text('+')
+            
+            tmp = label_area
+                .append('g')
+                .attr('id', 'seq_con_expand')
+                .on('click', function(){console.log('click event')})
+            
+            tmp.append('rect')
+                .attr('class', 'expand')
+                .attr('x', -180)
+                .attr('y', 75 + row_height * 2)
+                .attr('rx', '4')
+                .attr('width', '50px')
+                .attr('height', row_height)
+            
+            tmp.append('text')
+                .attr('class', 'expand')
+                .attr('x', -180)
+                .attr('y', 75 + row_height * 2)
+                .attr('dx', '25px')
+                .attr("dy", row_height / 2 + 3)
+                .text('+')
+
             // PROPERTY CODES
             con_seq_mat
                 .selectAll("rect.res_rect")
@@ -1484,19 +1574,24 @@ var signprotmat = {
 
         draw_seq_sig: function (data_in, svg, xScale) {
             var data = data_in.feat;
+            var data_ungrouped = data_in.feat_ungrouped;
+
             var cScale = signprotmat.d3.cScale();
             var feats = [];
+            
             for (var _i = 0, _a = Object.keys(data); _i < _a.length; _i++) {
                 var key = _a[_i];
                 if (xScale(key) == null) {
                     data = _.omit(data, key);
                 }
             }
+            
             var col_lengths = [];
             for (var _b = 0, _c = Object.keys(data); _b < _c.length; _b++) {
                 var elem = _c[_b];
                 col_lengths.push(data[elem].length);
             }
+            
             var row_height = 30;
             var area_height = _.max(col_lengths) * row_height;
             var seqsigTip = d3
@@ -1519,11 +1614,13 @@ var signprotmat = {
                     d.freq +
                     "<br>");
             });
+            
             var viewbox_svg = d3.select('.svg-content.seqsig');
             var viewbox = viewbox_svg.attr('viewBox');
             var viewbox_1 = viewbox.slice(0, 9);
             var new_vb = viewbox_1 + (area_height + Math.round(area_height / 4) + 150);
             viewbox_svg.attr('viewBox', new_vb);
+            
             // generating the white backdrop for all the properties
             svg
                 .append("g")
@@ -1536,6 +1633,7 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", area_height);
+            
             var each_res = svg
                 .select("g#seqsig_mat")
                 .selectAll("g")
@@ -1544,127 +1642,37 @@ var signprotmat = {
                 .append("g")
                 .selectAll("rect")
                 .data(function (d) {
-                return d;
-            })
+                    return d;
+                })
                 .enter();
-            /*
-             *            each_res
-             *                .append('rect')
-             *                .call(seqsigTip)
-             *                .on("mouseover", function(d) {
-             *                    if (d.freq !== 0) {
-             *                        seqsigTip.show(d);
-             *                    }
-             *                })
-             *                .on("mouseout", function(d) {
-             *                    seqsigTip.hide();
-             *                })
-             *                .attr("class", "res_rect")
-             *                .style("fill", d => cScale(d.freq))
-             *                .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-             *                .attr("y", (d: any, i: number) => 75 + (i * row_height))
-             *                .attr("width", xScale.step())
-             *                .attr("height", row_height);
-             *
-             *
-             *            each_res
-             *                .append("text")
-             *                .attr("class", "res_label")
-             *                .attr("x", (d: any) => xScale(d.gn))
-             *                .attr("y", (d: any, i: number) => 75 + (i * row_height))
-             *                .style("fill", (d: any) => {
-             *                    if(Math.abs(d.freq) >= 50) {
-             *                        return '#eaeaea';
-             *                    } else if (Math.abs(d.freq) < 50) {
-             *                        return '#000000';
-             *                    }
-             *                })
-             *                .attr("text-anchor", "middle")
-             *                .attr("dy", row_height / 2)
-             *                .text((d: any) => d.freq);
-             */
+
             each_res
                 .append("rect")
                 .call(seqsigTip)
                 .on("mouseover", function (d) {
-                if (d.freq !== 0) {
-                    seqsigTip.show(d);
-                }
-            })
+                    if (d.freq !== 0) {
+                        seqsigTip.show(d);
+                    }
+                })
                 .on("mouseout", function (d) {
-                seqsigTip.hide();
-            })
-                // .on("click", function(d) {
-                //   let index;
-                //   // let rect_x = d3.event.target.getAttribute('x')
-                //   // let rect_y = d3.event.target.getAttribute('y')
-                //   // console.log(rect_x, rect_y)
-                //
-                //   // https://stackoverflow.com/a/20251369/8160230
-                //   // select the rect under cursor
-                //   let curr = d3.select(this);
-                //   d.active = true;
-                //
-                //   // set style in regards to active
-                //   if (
-                //     d.active &&
-                //     con_seq[d.gn].length > 0 &&
-                //     d.key == con_seq[d.gn][0].key
-                //   ) {
-                //     // remove prev. sele. rectangle
-                //     con_seq[d.gn].active = false;
-                //     //con_seq = _.omit(con_seq, d.gn)
-                //     con_seq[d.gn] = [];
-                //     curr.style("stroke", "black").style("stroke-width", 1);
-                //   } else if (d.active && con_seq[d.gn].length > 0) {
-                //     // change the selected property to the clicked one
-                //     // remove the active value from the prev. selec. property
-                //     con_seq[d.gn].active = false;
-                //     // remove the previously selected property
-                //     //con_seq = _.omit(con_seq, d.gn)
-                //     con_seq[d.gn] = [];
-                //     // add the new prop to the object
-                //     con_seq[d.gn] = [d];
-                //     // apply appropriate syling
-                //     curr.style("stroke", "yellow").style("stroke-width", 2);
-                //     d3.select("g#seqsig_mat")
-                //       .selectAll("rect.res_rect")
-                //       .filter(e => e.active)
-                //       .filter(e => e.gn == d.gn)
-                //       .filter(
-                //         e => e.feature_code + e.length != d.feature_code + d.length
-                //       )
-                //       .style("stroke", "black")
-                //       .style("stroke-width", 1);
-                //   } else if (d.active) {
-                //     // add a newly clicked rectangle
-                //     con_seq[d.gn] = [d];
-                //     curr.style("stroke", "yellow").style("stroke-width", 2);
-                //   } else {
-                //     // edge case rect removal
-                //     con_seq[d.gn].active = false;
-                //     con_seq = _.omit(con_seq, d.gn);
-                //     curr.style("stroke", "black").style("stroke-width", 1);
-                //   }
-                //   //console.log(con_seq)
-                //
-                //   signprotmat.d3.conSeqUpdate(row_height);
-                // })
+                    seqsigTip.hide();
+                })
                 .attr("class", "res_rect")
                 .style("fill", function (d) {
                 var gcol = signprotmat.d3.fScaleColor(d.feature_code);
-                if (typeof gcol != "undefined") {
-                    return gcol.bg_color;
-                }
-                else {
-                    return null;
-                }
-            })
+                    if (typeof gcol != "undefined") {
+                        return gcol.bg_color;
+                    }
+                    else {
+                        return null;
+                    }
+                })
                 .style("stroke", "black")
                 .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
                 .attr("y", function (d, i) { return 75 + i * row_height; })
                 .attr("width", xScale.step())
                 .attr("height", row_height);
+           
             each_res
                 .append("text")
                 .attr("class", "res_label")
@@ -1673,44 +1681,31 @@ var signprotmat = {
                 .attr("y", function (d, i) { return 75 + i * row_height; })
                 .attr("dy", row_height / 2)
                 .style("fill", function (d) {
-                var gcol = signprotmat.d3.fScaleColor(d.feature_code);
-                if (typeof gcol != "undefined") {
-                    if (typeof gcol.font_color != "undefined") {
-                        return gcol.font_color;
+                    var gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                    if (typeof gcol != "undefined") {
+                        if (typeof gcol.font_color != "undefined") {
+                            return gcol.font_color;
+                        }
+                        else {
+                            return "#000000";
+                        }
                     }
                     else {
                         return "#000000";
                     }
-                }
-                else {
-                    return "#000000";
-                }
-            })
+                })
                 .text(function (d) {
                 return d.feature_code;
             });
+            
+            // moving elements
             d3.select("svg.svg-content.seqsig")
                 .select("g")
                 .append("g")
                 .attr("id", "con_seq_mat")
                 .attr("transform", "translate(" + -xScale.step() / 2 + "," + -10 + ")");
-            //.append("rect")
-            //.attr("class", "border-bg")
-            //.style("fill", "#ffffff")
-            //.attr("x", xScale.step() / 2)
-            //.attr("y", 75)
-            //.attr("width", xScale.range()[1] - xScale.step())
-            //.attr("height", row_height * 1.5)
-            //d3.select("g#con_seq_mat")
-            //d3.select("g#con_seq_mat")
-            //.append("rect")
-            //.attr("class", "border")
-            //.style("stroke", "black")
-            //.style("fill", "none")
-            //.attr("x", xScale.step() / 2)
-            //.attr("y", 75)
-            //.attr("width", xScale.range()[1] - xScale.step())
-            //.attr("height", row_height * 1.5);
+            
+            // adding the gn labels
             d3.select("svg.svg-content.seqsig")
                 .select("g")
                 .append("g")
@@ -1723,22 +1718,24 @@ var signprotmat = {
                 .attr("dx", "-5px")
                 .attr("dy", "-5px")
                 .attr("transform", "rotate(-90)");
+
+            // removing the axis line 
             svg
                 .select(".x.axis")
                 .selectAll("path")
                 .remove();
+
             // putting a black border around the signature
-            /*
-             *d3.select("g#seqsig_mat")
-             *    .append("rect")
-             *    .attr("class", "border")
-             *    .style("stroke", "black")
-             *    .style("fill", "none")
-             *    .attr("x", xScale.step() / 2)
-             *    .attr("y", 75)
-             *    .attr("width", xScale.range()[1] - xScale.step())
-             *    .attr("height", area_height);
-             */
+            d3.select("g#seqsig_mat")
+                .append("rect")
+                .attr("class", "border")
+                .style("stroke", "black")
+                .style("fill", "none")
+                .attr("x", xScale.step() / 2)
+                .attr("y", 75)
+                .attr("width", xScale.range()[1] - xScale.step())
+                .attr("height", area_height);
+
         },
 
         draw_seq_cons: function (data_in, svg, xScale, xAxis, sigmatch) {
