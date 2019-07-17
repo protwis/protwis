@@ -886,6 +886,21 @@ function renderBrowser(data) {
         // <th colspan="2">Phi dihedral</th> \
         // <th colspan="2">Psi dihedral</th> \
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="3" class="pairselector" datatype="frequency"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="distance_diff"></th> \
+                      <th colspan="2" class="selector" datatype="core_distance_diff"></th> \
+                      <th colspan="2" class="selector" datatype="rotation_diff"></th> \
+                      <th colspan="2" class="selector" datatype="rotamer_diff"></th> \
+                      <th colspan="2" class="selector"datatype="SASA_diff"></th> \
+                      <th colspan="2" class="selector"datatype="RSA_diff"></th> \
+                      <th colspan="2" class="selector"datatype="presence_diff"></th> \
+                      <th colspan="2" class="selector"datatype="consensus_SS"></th> \
+                      <th colspan="2" class="selector"datatype="consensus_freq"></th> \
+                      <th colspan="3" class="skip"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2"> Frequency (%)</th> \
@@ -1006,6 +1021,21 @@ function renderBrowser(data) {
         });
     } else if (data['proteins'].length > 1) {
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="pairselector" datatype="frequency"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="pairselector" datatype="distance"></th> \
+                      <th colspan="2" class="selector" datatype="core_distance"></th> \
+                      <th colspan="2" class="selector" datatype="rotation"></th> \
+                      <th colspan="2" class="selector" datatype="rotamer"></th> \
+                      <th colspan="2" class="selector" datatype="SASA"></th> \
+                      <th colspan="2" class="selector" datatype="RSA"></th> \
+                      <th colspan="2" class="selector" datatype="presence"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="1" class="skip"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2"> Frequency (%)</th> \
@@ -1141,6 +1171,18 @@ function renderBrowser(data) {
                         </tr>';
 
         thead = '<tr> \
+                      <th colspan="4" class="skip"></th> \
+                      <th colspan="1" class="pairselector" datatype="distance"></th> \
+                      <th colspan="2" class="selector" datatype="core_distance"></th> \
+                      <th colspan="2" class="selector" datatype="rotation"></th> \
+                      <th colspan="2" class="selector" datatype="rotamer"></th> \
+                      <th colspan="2" class="selector" datatype="SASA"></th> \
+                      <th colspan="2" class="selector" datatype="RSA"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="1" class="skip"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
@@ -1245,7 +1287,8 @@ function renderBrowser(data) {
 
     console.timeEnd("RenderBrowser");
     gray_scale_table(table);
-    enable_3Dclick(table)
+    enable_hover(table);
+    //enable_3Dclick(table)
 }
 
 function renderBrowser_2(data) {
@@ -2336,6 +2379,89 @@ function gray_scale_table(table) {
     console.timeEnd('Greyscale');
 }
 
+var currentHover = -1;
+function enable_hover(table){
+    table[0].children[0].addEventListener("mouseover", function(e){
+      var th = e.target
+      while (th.nodeName != "TH") {
+        th = th.parentNode
+      }
+      var columnNumber = $(th).cellPos().left;
+
+      // Get correct selector cell
+      var selectorHeader = th.parentNode.parentNode.children[0]
+      var selector = selectorHeader.children[0]
+      var columnSelector = 0
+      for (var i = 0; i < selectorHeader.children.length; i++) {
+        if ($(selectorHeader.children[i]).cellPos().left > columnNumber)
+          break
+        selector = selectorHeader.children[i]
+        columnSelector = $(selectorHeader.children[i]).cellPos().left
+      }
+
+      if (currentHover != columnSelector && selector.className!="skip") {
+        // other variables
+        var tableNumber = th.parentNode.parentNode.parentNode.className.split(" ")[0]
+        var tableNumber = tableNumber.substr(-1)
+
+        // grab graph options
+        var plots = $('.main_option:visible').find(".plot-container");
+        for (var i = 0; i < plots.length; i++){
+          var plotType = plots[i].id
+
+          var button = document.createElement("span")
+          button.className = "glyphicon glyphicon-stats"
+          selector.appendChild(button)
+          if (selector.className=="pairselector") {
+              if (plotType.startsWith("heatmap")) { // heatmap
+                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+                continue;
+              } else if (plotType.startsWith("flareplot")) {  // flareplot
+                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+                continue;
+              } else if (plotType.startsWith("boxplot")) { // Box-plot (not available right now)
+                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+                continue;
+              }
+          } else if (selector.className=="selector") {
+            if (plotType.startsWith("ngl")) { // 3D
+              button.addEventListener("click", (function(a, b, c){ return function(){colorByData(a.replace("ngl-",""), b, c);}})(plotType, tableNumber, columnSelector))
+              continue;
+            } else if (plotType.startsWith("snakeplot")) { // Snakeplot
+              button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+              continue;
+            }
+          }
+
+          // Grayout button if not available
+          button.className = button.className + " gray"
+        }
+
+        currentHover = columnSelector;
+      }
+    });
+
+    table[0].children[0].addEventListener("mouseout", function(e){
+      classes = e.target.className
+      // TODO: better way of toggling the header on hover
+      if (!(classes.includes("glyphicon") || classes.includes("selector") || classes.includes("pairselector"))) {
+        // clear selector header on mouse out
+        var header = e.target
+        while (header.nodeName != "THEAD") {
+          header = header.parentNode
+        }
+
+        // cleanup with smarter class selector
+        header = header.children[0];
+        for (var i = 0; i < header.children.length; i++){
+            if (header.children[i].innerHTML.length > 0 && !header.children[i].className.includes("keep")){
+                header.children[i].innerHTML = ""
+            }
+        }
+        currentHover = -1;
+      }
+    });
+}
 
 function enable_3Dclick(table){
   for (header in table[0].children[0].children[1].children){
