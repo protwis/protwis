@@ -54,6 +54,7 @@ class Command(BaseBuild):
 
 	def build_segments(self):
 		self.segments = ['H1', 'h1b1', 'B1', 'b1b2', 'B2', 'b2b3', 'B3', 'b3h2', 'H2', 'h2b4', 'B4', 'b4h3', 'H3', 'h3tm1']
+		self.segments = ProteinSegment.objects.filter(name__startswith='ECD')
 		self.segments_dict = OrderedDict()
 		for s in self.segments:
 			if s[0]=='H':

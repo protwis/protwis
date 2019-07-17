@@ -67,6 +67,7 @@ class Command(BaseCommand):
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
 
     ECD_wt_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_wt.yaml'])
+    ECD_B1_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_B1.yaml'])
 
 
     if not os.path.exists(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])):
@@ -93,6 +94,13 @@ class Command(BaseCommand):
             data_dict[entry_name] = val
         with open(self.ECD_wt_file, 'w') as outfile:
             yaml.dump(data_dict, outfile, indent=4)
+        B1_dict = OrderedDict()
+        for key, val in self.ECD_data['B1'].items():
+            entry_name = val['protein']
+            del val['protein']
+            B1_dict[entry_name] = val
+        with open(self.ECD_B1_file, 'w') as outfile:
+            yaml.dump(B1_dict, outfile, indent=4)
 
 
     def parse_excel(self,path):
