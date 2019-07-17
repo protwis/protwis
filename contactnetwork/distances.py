@@ -1,9 +1,10 @@
 from django.db.models import Avg, Variance, Count, Value, StdDev
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.core.cache import cache
 
 from structure.models import Structure
 from contactnetwork.models import *
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumber
 
 from collections import OrderedDict
 
@@ -114,7 +115,7 @@ class Distances():
                         .exclude(generic_number__label__contains='45x') \
                         .values('generic_number__label') \
                         .annotate(c = Count('generic_number__label')).filter(c__gte=int(len(self.structures)*0.9)).values_list('generic_number__label',flat=True).order_by('c') #.values_list('generic_number__label') #.filter(c__gte=int(len(self.structures)*0.9))
-        
+
         common_gn = sorted(res)
 
         return common_gn
@@ -317,6 +318,7 @@ class Distances():
         ds = Distance.objects.filter(structure__in=self.structures) \
                 .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                 .values_list('distance','gns_pair')
+
         self.data = {}
         for d in ds:
             label = d[1]
@@ -340,3 +342,94 @@ class Distances():
         # print(stats_sorted[1])
         #print(data)
             #print(d.interacting_pair.res1.generic_number.label)
+
+    def get_distance_matrix(self):
+        # common GNs
+        common_gn = self.fetch_common_gns_tm()
+
+        all_gns = sorted(list(ResidueGenericNumber.objects.filter(scheme__slug='gpcrdb')\
+            .exclude(label__startswith='8x') \
+            .exclude(label__startswith='12x') \
+            .exclude(label__startswith='23x') \
+            .exclude(label__startswith='34x') \
+            .exclude(label__startswith='45x') \
+            .values_list('label',flat=True)))
+
+        pdb_distance_maps = {}
+        pdb_gns = {}
+        for pdb in self.pdbs:
+            cache_key = "distanceMap-" + pdb
+
+            # Cached?
+            if cache.has_key(cache_key):
+                cached_data = cache.get(cache_key)
+                distance_map = cached_data["map"]
+                structure_gn = cached_data["gns"]
+            else:
+                # grab raw distance data per structure
+                temp = Distances()
+                temp.load_pdbs([pdb])
+                temp.fetch_distances_tm()
+
+                structure_gn = list(Residue.objects.filter(protein_conformation__in=temp.pconfs) \
+                    .exclude(generic_number=None) \
+                    .exclude(generic_number__label__startswith='8x') \
+                    .exclude(generic_number__label__startswith='12x') \
+                    .exclude(generic_number__label__startswith='23x') \
+                    .exclude(generic_number__label__startswith='34x') \
+                    .exclude(generic_number__label__startswith='45x') \
+                    .values_list('generic_number__label',flat=True))
+
+                # create distance map
+                distance_map = np.full((len(all_gns), len(all_gns)), 0.0)
+
+                for i,res1 in enumerate(all_gns):
+                    for j in range(i+1, len(all_gns)):
+                        # grab average value
+                        res2 = all_gns[j]
+                        if res1+"_"+res2 in temp.data:
+                            distance_map[i][j] = temp.data[res1+"_"+res2][0]
+
+                # store in cache
+                store = {
+                    "map" : distance_map,
+                    "gns" : structure_gn
+                }
+                cache.set(cache_key, store, 60*60*24*14)
+
+            pdb_gns[pdb] = structure_gn
+
+            # Filtering indices to map to common_gns
+            gn_indices = np.array([ all_gns.index(residue) for residue in common_gn ])
+            pdb_distance_maps[pdb] = distance_map[gn_indices,:][:, gn_indices]
+
+            if "average" in pdb_distance_maps:
+                pdb_distance_maps["average"] +=  pdb_distance_maps[pdb]/len(self.pdbs)
+            else:
+                pdb_distance_maps["average"] =  pdb_distance_maps[pdb]/len(self.pdbs)
+
+        # store distance map
+        for pdb in self.pdbs:
+            pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"])
+
+        # calculate distance matrix
+        distance_matrix = np.full((len(self.pdbs), len(self.pdbs)), 0.0)
+        for i, pdb1 in enumerate(self.pdbs):
+            for j in range(i+1, len(self.pdbs)):
+                pdb2 = self.pdbs[j]
+
+                # Get common GNs between two PDBs
+                common_between_pdbs = sorted(list(set(pdb_gns[pdb1]).intersection(pdb_gns[pdb2])))
+
+                # Get common between above set and the overall common set of GNs
+                common_with_query_gns = sorted(list(set(common_gn).intersection(common_between_pdbs)))
+
+                # Get the indices of positions that are shared between two PDBs
+                gn_indices = np.array([ common_gn.index(residue) for residue in common_with_query_gns ])
+
+                # Get distance between cells that have both GNs.
+                distance = np.sum(np.absolute(pdb_distance_maps[pdb1][gn_indices,:][:, gn_indices] - pdb_distance_maps[pdb2][gn_indices,:][:, gn_indices]))
+                distance_matrix[i, j] = pow(distance,2)/(len(gn_indices)*len(gn_indices))
+                distance_matrix[j, i] = distance_matrix[i, j]
+
+        return distance_matrix

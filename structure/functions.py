@@ -927,6 +927,8 @@ class PdbStateIdentifier():
     def run(self):
         if self.structure_type=='structure':
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+            ssno = StructureSeqNumOverwrite(self.structure)
+            ssno.seq_num_overwrite('pdb')
         elif self.structure_type=='refined':
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein)
         elif self.structure_type=='hommod':
@@ -991,14 +993,16 @@ class PdbStateIdentifier():
             tm7 = self.get_residue_distance(tm3_gn_f, tm7_gn_f)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<5:
+                if self.activation_value<0:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 5<=self.activation_value<=15:
+                elif 0<=self.activation_value<=2:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>15:
+                elif self.activation_value>2:
                     self.state = ProteinState.objects.get(slug='active')
         else:
             print('{} is not class A,B,C,F'.format(self.structure))
+        if self.structure_type=='structure':
+            ssno.seq_num_overwrite('pdb')
 
     def get_residue_distance(self, residue1, residue2):
         try:

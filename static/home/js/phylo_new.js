@@ -52,7 +52,7 @@ function init() {
     var svg = d3.select(container_id)
         .append("svg")
         .attr("id", "my_svg");
-    
+
 
     default_tree_settings();
     tree(phylip_data).svg(svg).layout();
@@ -279,7 +279,7 @@ function remove_annotations() {
 function get_class_index(class_name, class_array) {
     /**
      * This function is used to get the index of a class used to color the text label
-     * 
+     *
      */
 
     var index = -1;
@@ -331,6 +331,7 @@ function draw_class_categ_data(select_data, data_type, stacking_shifter){
         //         maximum_length = maximum_length < node.name.length ? node.name.length : maximum_length;
         //     }
         // });
+
         // TODO remove this lines once selectivity is fixed
         tree.get_nodes().forEach(function (node) {
         if (d3.layout.phylotree.is_leafnode(node)) {
@@ -1156,4 +1157,3 @@ function edge_colorizer (element, data) {
 function dblclick(url){
     window.open(url);
 }
-

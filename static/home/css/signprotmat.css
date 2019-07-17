@@ -3,7 +3,7 @@
     display: inline-block;
     position: relative;
     width: 100%;
-    padding-bottom: 100%;
+    /*padding-bottom: 100%;*/
     /* aspect ratio */
     vertical-align: top;
     /* overflow: hidden; */
@@ -15,9 +15,9 @@
 
 .svg-content {
     display: inline-block;
-    position: absolute;
-    top: 0;
-    left: 0;
+    /*position: absolute;*/
+    /*top: 0;*/
+    /*left: 0;*/
 }
 
 
@@ -130,10 +130,11 @@ line {
 }
 
 
-.res_label {
+.res_label, .cons_label, .len_label {
     display: inline;
     font-size: 75%;
     dominant-baseline: central;
+    pointer-events: none;
 }
 
 /* removing unnecessary paths via assigning no stroke */
@@ -153,4 +154,22 @@ line {
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
+}
+
+.fa.mattab {
+    font-size: 24px !important;
+    padding: 0 3px;
+}
+
+.coupling {
+    border-radius: 3px;
+    color: white;
+}
+
+.coupling.prim {
+    background-color: #000000;
+}
+
+.coupling.seco {
+    background-color: #7F7F7F;
 }

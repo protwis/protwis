@@ -3,11 +3,17 @@
 protwis/settings_local.py
 env
 /data
+/Archive
+empty_db.txt
 
+*.sh
 .DS_Store
 .idea/
 static/home/js/node_modules
 static/home/js/package-lock.json
 static/home/js/package.json
+signprot/pickles
+signprot/notebook/interface_pickles
 .vscode
 tsconfig.json
+tags

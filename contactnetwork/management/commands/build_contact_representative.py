@@ -18,6 +18,7 @@ class Command(BaseCommand):
 
         self.receptor_representatives()
         self.class_level_contacts()
+        self.class_based_representative()
 
     def receptor_representatives(self):
         print('Script to decide contact representative for a conformation. Maximising highest frequence of common contacts, while minimizing uncommon (50%)')
@@ -310,4 +311,76 @@ class Command(BaseCommand):
             s = Structure.objects.get(pdb_code__index=pdb)
             s.active_class_contacts_fraction = active_intersection_fraction
             s.inactive_class_contacts_fraction = inactive_intersection_fraction
+            s.save()
+
+    def class_based_representative(self):
+        print('Script to decide contact representative for a conformation. Maximising highest frequence of common contacts, while minimizing uncommon (50%)')
+
+        structures = Structure.objects.filter(refined=False).prefetch_related(
+            "pdb_code",
+            "state",
+            "protein_conformation__protein__parent__family")
+
+        distinct_proteins = {}
+
+        resolution_lookup = {}
+        for s in structures:
+            pdb = s.pdb_code.index
+            resolution_lookup[pdb] = s.resolution
+            state = s.state.slug
+            slug = s.protein_conformation.protein.parent.family.slug
+            name = s.protein_conformation.protein.parent.family.name
+
+            key = '{}_{}'.format(name,state)
+
+            if key not in distinct_proteins:
+                distinct_proteins[key] = []
+
+            distinct_proteins[key].append(s)
+
+
+        conformation_representative = []
+        conformation_non_representative = []
+        for conformation, pdbs in distinct_proteins.items():
+            state = conformation.split("_")[-1]
+            print(state,conformation)
+            number_of_pdbs = len(pdbs)
+            if (number_of_pdbs==1):
+                # Do not care when only one PDB for a conformation rep
+                print("REPRESENTATIVE:",pdbs[0])
+                conformation_representative.append(pdbs[0])
+                continue
+            
+            scores = []
+            for s in pdbs:
+                fraction_active = s.active_class_contacts_fraction
+                fraction_inactive = s.inactive_class_contacts_fraction
+                diff_in_fraction = fraction_inactive-fraction_active
+                abs_diff = abs(diff_in_fraction)
+
+                scores.append([s,fraction_inactive,fraction_active,diff_in_fraction,abs_diff])
+
+            if state=='active':
+                scores_sorted = sorted(scores, key=lambda x: (x[3]))
+            elif state=='inactive': 
+                scores_sorted = sorted(scores, key=lambda x: (-x[3]))
+            elif state=='intermediate':
+                scores_sorted = sorted(scores, key=lambda x: (x[4]))
+            
+            print("REPRESENTATIVE:",scores_sorted[0])
+            conformation_representative.append(scores_sorted[0][0])
+            conformation_non_representative += [row[0] for row in scores_sorted[1:]]
+            #print(interactions)
+
+            # break
+        print('CONFORMATION REPRESENTATIVE')
+        print(conformation_representative)
+        for s in conformation_representative:
+            s.class_contact_representative = True
+            s.save()
+
+        print('CONFORMATION NON REPRESENTATIVE')
+        print(conformation_non_representative)
+        for s in conformation_non_representative:
+            s.class_contact_representative = False
             s.save()

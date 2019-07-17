@@ -161,9 +161,15 @@ class Command(BaseCommand):
 
         def ca_cb_calc(ca,cb,pca):
             """
-            Calcuate the angles between ca, cb and center axis
+            Calculate the angles between ca, cb and center axis
             """
             return calc_angle(pca.transform(ca),pca.transform(cb))
+
+        def ca_distance_calc(ca,pca):
+            """
+            Calculate the smallest distance between the ca and the center axis
+            """
+            return np.sqrt(np.sum(np.power(pca.transform(ca)[:,1:],2), axis = 1))
 
         def axes_calc(h,p,pca):
             """
@@ -214,7 +220,7 @@ class Command(BaseCommand):
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-#        references = Structure.objects.filter(pdb_code__index="6AK3").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        #references = Structure.objects.filter(pdb_code__index="6AK3").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         references = list(references)
 
@@ -370,8 +376,8 @@ class Command(BaseCommand):
                     center_vector = pca_line( pca, np.vstack(hres_three))
 
                 # DEBUG print arrow for PyMol
-                #a = [str(i) for i in center_vector[0]]
-                #b = [str(i) for i in center_vector[1]]
+                # a = [str(i) for i in center_vector[0]]
+                # b = [str(i) for i in center_vector[1]]
                 # print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
 
                 ### ANGLES
@@ -380,6 +386,9 @@ class Command(BaseCommand):
 
                 # Center axis to CA to CB
                 b_angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)]).round(3)
+
+                # Distance from center axis to CA
+                core_distance = np.concatenate([ca_distance_calc(ca,pca) for ca in hres_list]).round(3)
 
                 # STORE STRUCTURE REFERENCES
                 # center axis
@@ -449,14 +458,14 @@ class Command(BaseCommand):
                         asa_list[residue_id] = None
 
 
-                for res, angle1, angle2 in zip(pchain, a_angle, b_angle):
+                for res, angle1, angle2, distance in zip(pchain, a_angle, b_angle, core_distance):
                     residue_id = res.id[1]
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "OUTER", "ASA"
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "OUTER", "ASA", "DISTANCE"
                     dblist.append([reference, gdict[residue_id], angle1, angle2, \
                         rsa_list[residue_id], \
                         hselist[residue_id]] + \
                         dihedrals[residue_id] + \
-                        [asa_list[residue_id]])
+                        [asa_list[residue_id], distance])
 
             except Exception as e:
 #            else:
@@ -481,9 +490,9 @@ class Command(BaseCommand):
 #            std = stats.t.cdf(std_test, df=std_len)
 #            dblist[i].append(0.501 if np.isnan(std) else std)
 
-        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA"
+        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA", "DISTANCE"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,outer,asa in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,outer,asa,distance in dblist:
             try:
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
@@ -495,7 +504,7 @@ class Command(BaseCommand):
                     tau = round(np.rad2deg(tau),3)
                 if outer != None:
                     outer = round(np.rad2deg(outer),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, outer_angle=outer))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, outer_angle=outer, core_distance=distance))
             except Exception as e:
                 print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau, asa])
 

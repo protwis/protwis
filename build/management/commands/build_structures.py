@@ -341,7 +341,11 @@ class Command(BaseBuild):
         # print(seq)
         # print('parent_seq',len(parent_seq),'pdb_seq',len(seq))
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
-        pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
+        
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH']:
+            pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
+        else:
+            pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
 
         gaps = 0
         unmapped_ref = {}

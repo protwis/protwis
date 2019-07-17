@@ -6,6 +6,8 @@ from protein import views
 
 urlpatterns = [
     #url(r'^$', views.BrowseSelection.as_view(), name='index'),
+    url(r'^isoforms[/]?$', views.isoforms, name='isoforms'),
+    url(r'^isoform_lookup$', views.AlignIsoformWildtype, name='isoform_lookup'),
     url(r'^$', cache_page(60*60*24*7)(views.BrowseSelection.as_view()), name='index'),
     url(r'^autocomplete', views.SelectionAutocomplete, name='autocomplete'),
     url(r'^gproteins', views.g_proteins, name='g_proteins'),

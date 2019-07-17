@@ -677,8 +677,10 @@
                 tmpStr = obj.oInstance.selector;
             } else if (obj.selector !== undefined) {
                 tmpStr = obj.selector;
-            } else {
+            } else if (obj.table !== undefined) {
                 tmpStr = obj.table().node().id;
+            } else {
+                return '';
             }
             tmpStr = replaceAll(tmpStr, ".", "-");
             tmpStr = replaceAll(tmpStr, ' ', '');

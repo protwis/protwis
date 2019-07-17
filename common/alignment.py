@@ -232,16 +232,12 @@ class Alignment:
                 selected_residue_positions.append(segment_residue)
                 continue
 
-            # fetch split segments (e.g. ECL2_before and ECL2_after)
-            # AJK: point for optimization
-            # Remove this part as there are no _before or _after segments anymore
-
             unsorted_segments[selected_segment.pk] = []
             segment_lookup[selected_segment.pk] = selected_segment.slug
             segment_lookup_positions[selected_segment.pk] = segment_positions_lookup[selected_segment.slug]
             for segment_residue in segment_positions_lookup[selected_segment.slug]:
                 unsorted_segments[selected_segment.pk].append(segment_residue.label)
-            
+
         # Use PK values of segments to sort them before making alignment to ensure logical order
         sorted_segments = sorted(unsorted_segments)
         for s in sorted_segments:
@@ -764,7 +760,7 @@ class Alignment:
         """A placeholder for an instance specific function"""
         return generic_number
 
-    def calculate_statistics(self):
+    def calculate_statistics(self, ignore={}):
         """Calculate consesus sequence and amino acid and feature frequency"""
 
         if not self.stats_done:
@@ -776,12 +772,16 @@ class Alignment:
             # AJK: optimized for speed - split into multiple steps
             for i, p in enumerate(self.unique_proteins):
                 entry_name = p.protein.entry_name
+                # print(entry_name)
                 for j, s in p.alignment.items():
                     if i == 0:
                         self.aa_count[j] = OrderedDict()
                     for p in s:
                         generic_number = p[0]
+                        display_generic_number = p[1]
                         amino_acid = p[2]
+
+                        ignore_list = ignore.get(display_generic_number, [])
 
                         # Indicate gap and collect statistics
                         if amino_acid in self.gaps:
@@ -789,6 +789,11 @@ class Alignment:
 
                         # Skip when unknown amino acid type
                         elif amino_acid == 'X':
+                            continue
+
+                        # skip when position is on the ignore list
+                        if entry_name in ignore_list:
+                            # print(amino_acid)
                             continue
 
                         # Init counters
@@ -1385,12 +1390,12 @@ class AlignedReferenceTemplate(Alignment):
 
     def get_template_from_gprotein(self, signprot):
         gprotein = Protein.objects.get(entry_name=signprot)
-        templates = SignprotComplex.objects.filter(protein=gprotein).values_list('structure__pdb_code__index', flat=True)
+        templates = SignprotComplex.objects.filter(protein=gprotein).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
-            subfamily = Protein.objects.filter(family=gprotein.family).exclude(entry_name=gprotein.entry_name)
-            templates = SignprotComplex.objects.filter(protein__in=subfamily).values_list('structure__pdb_code__index', flat=True)
+            subfamily = Protein.objects.filter(family__parent=gprotein.family.parent).exclude(entry_name=gprotein.entry_name)
+            templates = SignprotComplex.objects.filter(protein__in=subfamily).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
-            templates = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
+            templates = SignprotComplex.objects.all().exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         return templates
 
     def overwrite_db_seq_nums(self, structure, cutoff):

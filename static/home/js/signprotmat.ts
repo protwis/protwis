@@ -7,6 +7,7 @@ const non_int_col = "#fff";
 
 // array for data in infobox
 let info_data = [];
+let con_seq = {};
 
 const signprotmat = {
   // * DATA TRANSFORMATION FUNCTIONS
@@ -144,11 +145,14 @@ const signprotmat = {
     // * SETTING UP SVG FOR OUTPUT
     setup: function(div, loc) {
       if (loc === "seqsig") {
-        h = 1500;
+        h = 1200;
+        let mt = 0;
       } else if (loc === "conseq") {
         h = 0;
+        let mt = 30;
       } else {
         h = 1000 - margin.top - margin.bottom;
+        let mt = 60;
       }
       let svg = d3
         .select("body")
@@ -169,7 +173,7 @@ const signprotmat = {
           typeof loc !== "undefined" ? "svg-content " + loc : "svg-content"
         )
         .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", "translate(" + margin.left + "," + mt + ")");
 
       return svg;
     },
@@ -626,7 +630,13 @@ const signprotmat = {
         // .attr("height", yScale.step() * scale_size)
         .attr("width", xScale.step())
         .attr("height", yScale.step())
-        .attr("fill", (d: any) => bwScale(d.pairs.length))
+        .attr("fill", (d: any) => {
+          if (pdbScale.domain().length > 1) {
+            return bwScale(d.pairs.length);
+          } else {
+            return colScale(d.pairs[0].int_ty[0]);
+          }
+        })
         .attr("class", (d: any) => "p" + d.pairs.length)
         .on("mouseover", function(d) {
           tip.show(d);
@@ -1163,27 +1173,8 @@ const signprotmat = {
       });
     },
 
-    draw_seq_sig: function(data_in, svg, xScale) {
-      let data = data_in.feat;
-      let fScale = signprotmat.d3.fScale(data);
-      let cScale = signprotmat.d3.cScale(data);
-      let feats = [];
-      data.forEach(d => {
-        const length_text = d.length != "" ? " (" + d.length + ")" : "";
-        feats.push({
-          code: d.feature_code,
-          feature: d.feature,
-          length: d.length,
-          comb: d.feature + length_text
-        });
-      });
-      let uniq_feats = _.uniqBy(feats, "comb");
-      console.log(uniq_feats);
-
-      // filter out NA generic numbers based on xScale
-      data = _.filter(data, function(d) {
-        return xScale(d.gn);
-      });
+    conSeqUpdate: function(row_height) {
+      let cScale = signprotmat.d3.cScale();
 
       let seqsigTip = d3
         .tip()
@@ -1208,30 +1199,414 @@ const signprotmat = {
           );
         });
 
-      let row = svg
+      // create selection and bind data
+      let con_seq_mat = d3
+        .select("g#con_seq_mat")
+        .selectAll("g")
+        .data(Object.values(con_seq))
+        .join("g");
+
+      const svg = d3.select("svg.svg-content.seqsig");
+      const t = svg.transition().duration(750);
+
+      // PROPERTY CODES
+      con_seq_mat
+        .selectAll("rect.res_rect")
+        .data(d => d)
+        .join(
+          enter =>
+            enter
+              .append("rect")
+              .attr("class", "res_rect")
+              .call(seqsigTip)
+              .on("mouseover", function(d) {
+                seqsigTip.show(d);
+              })
+              .on("mouseout", function(d) {
+                seqsigTip.hide();
+              })
+              .style("fill", function(d: any) {
+                const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                if (typeof gcol != "undefined") {
+                  return gcol.bg_color;
+                } else {
+                  return null;
+                }
+              })
+              //.style("fill", '#ffffff')
+              //.call(enter => enter.transition(t)
+              //.style("fill", function(d: any) {
+              //const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+              //if (typeof gcol != "undefined") {
+              //return gcol.bg_color;
+              //} else {
+              //return null;
+              //}
+              //}))
+              .style("stroke", "black")
+              .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+              .attr("y", 75)
+              .attr("width", xScale.step())
+              .attr("height", row_height),
+          update =>
+            update
+              .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+              .attr("y", 75)
+              //.style("fill", '#ffffff')
+              .call(update =>
+                update.transition(t).style("fill", function(d: any) {
+                  const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                  if (typeof gcol != "undefined") {
+                    return gcol.bg_color;
+                  } else {
+                    return null;
+                  }
+                })
+              ),
+          exit => exit.remove()
+        );
+
+      con_seq_mat
+        .selectAll("text.res_label")
+        .data(d => d)
+        .join(
+          enter =>
+            enter
+              .append("text")
+              .attr("class", "res_label")
+              .attr("text-anchor", "middle")
+              .attr("x", (d: any) => xScale(d.gn))
+              .attr("y", 75)
+              .attr("dy", row_height / 2)
+              .style("fill", (d: any) => {
+                const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                if (typeof gcol != "undefined") {
+                  if (typeof gcol.font_color != "undefined") {
+                    return gcol.font_color;
+                  } else {
+                    return "#000000";
+                  }
+                } else {
+                  return "#000000";
+                }
+              })
+              .text(d => d.feature_code),
+          update =>
+            update
+              .attr("x", (d: any) => xScale(d.gn))
+              .attr("y", 75)
+              .style("fill", (d: any) => {
+                const gcol = signprotmat.d3.fScaleColor(d.feature_code);
+                if (typeof gcol != "undefined") {
+                  if (typeof gcol.font_color != "undefined") {
+                    return gcol.font_color;
+                  } else {
+                    return "#000000";
+                  }
+                } else {
+                  return "#000000";
+                }
+              })
+              .text(d => d.feature_code),
+          exit => exit.remove()
+        );
+
+      // PROPERTY LENGTH
+      con_seq_mat
+        .selectAll("rect.len_rect")
+        .data(d => d)
+        .join(
+          enter =>
+            enter
+              .append("rect")
+              .attr("class", "len_rect")
+              .style("fill", "#ffffff")
+              .style("stroke", "black")
+              .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+              .attr("y", (d: any) => 75 + row_height)
+              .attr("width", xScale.step())
+              .attr("height", row_height / 2),
+          update =>
+            update
+              .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+              .attr("y", (d: any) => 75 + row_height),
+          exit => exit.remove()
+        );
+
+      con_seq_mat
+        .selectAll("text.len_label")
+        .data(d => d)
+        .join(
+          enter =>
+            enter
+              .append("text")
+              .attr("class", "len_label")
+              .attr("text-anchor", "middle")
+              .attr("x", (d: any) => xScale(d.gn))
+              .attr("y", 75 + row_height)
+              .attr("dy", row_height / 4)
+              .style("fill", "#000000")
+              .text(d => d.length),
+          update =>
+            update
+              .attr("x", (d: any) => xScale(d.gn))
+              .attr("y", 75 + row_height)
+              .style("fill", "#000000")
+              .text(d => d.length),
+          exit => exit.remove()
+        );
+
+      // CONSERVATION
+      con_seq_mat
+        .selectAll("rect.cons_rect")
+        .data(d => d)
+        .join(
+          enter =>
+            enter
+              .append("rect")
+              .attr("class", "cons_rect")
+              .style("fill", function(d: any) {
+                if (d.cons === -1) {
+                  return "#ffffff";
+                } else {
+                  return cScale(d.freq);
+                }
+              })
+              .style("stroke", "black")
+              .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+              .attr("y", (d: any) => 75 + 1.5 * row_height)
+              .attr("width", xScale.step())
+              .attr("height", row_height / 2),
+          update =>
+            update
+              .style("fill", function(d: any) {
+                if (d.cons === -1) {
+                  return "#ffffff";
+                } else {
+                  return cScale(d.freq);
+                }
+              })
+              .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+              .attr("y", (d: any) => 75 + 1.5 * row_height),
+          exit => exit.remove()
+        );
+
+      con_seq_mat
+        .selectAll("text.cons_label")
+        .data(d => d)
+        .join(
+          enter =>
+            enter
+              .append("text")
+              .attr("class", "cons_label")
+              .attr("text-anchor", "middle")
+              .attr("x", (d: any) => xScale(d.gn))
+              .attr("y", 75 + 1.5 * row_height)
+              .attr("dy", row_height / 4)
+              .style("fill", (d: any) => {
+                if (Math.abs(d.freq) >= 50) {
+                  return "#eaeaea";
+                } else if (Math.abs(d.freq) < 50) {
+                  return "#000000";
+                }
+              })
+              .text(d => d.freq),
+          update =>
+            update
+              .attr("x", (d: any) => xScale(d.gn))
+              .attr("y", 75 + 1.5 * row_height)
+              .style("fill", (d: any) => {
+                if (Math.abs(d.freq) >= 50) {
+                  return "#eaeaea";
+                } else if (Math.abs(d.freq) < 50) {
+                  return "#000000";
+                }
+              })
+              .text(d => d.freq),
+          exit => exit.remove()
+        );
+    },
+    draw_seq_sig: function(data_in, svg, xScale) {
+      let data = data_in.feat;
+      let cScale = signprotmat.d3.cScale();
+      let feats = [];
+
+      for (let key of Object.keys(data)) {
+        if (xScale(key) == null) {
+          data = _.omit(data, key);
+        }
+      }
+
+      let col_lengths = [];
+      for (let elem of Object.keys(data)) {
+        col_lengths.push(data[elem].length);
+      }
+      const row_height = 30;
+      const area_height = _.max(col_lengths) * row_height;
+
+      let seqsigTip = d3
+        .tip()
+        .attr("class", "d3-tip")
+        .html(function(d) {
+          return (
+            "Generic Residue No.: " +
+            d.gn +
+            "<br>" +
+            "Feature: " +
+            d.feature +
+            "<br>" +
+            "Length: " +
+            d.length +
+            "<br>" +
+            // "Score: " +
+            // d.expl +
+            // "<br>" +
+            "Frequency: " +
+            d.freq +
+            "<br>"
+          );
+        });
+     
+      let viewbox_svg = d3.select('.svg-content.seqsig')
+     
+      const viewbox = viewbox_svg.attr('viewBox')
+      const viewbox_1 = viewbox.slice(0, 9)
+      
+      const new_vb = viewbox_1 + (area_height + Math.round(area_height / 4) + 150)
+      viewbox_svg.attr('viewBox', new_vb)
+
+      // generating the white backdrop for all the properties
+      svg
         .append("g")
-        .attr("id", "seqsig_feature")
-        .attr("transform", "translate(" + 0 + "," + 0 + ")")
-        .selectAll("text")
-        .data(uniq_feats)
+        .attr("id", "seqsig_mat")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + 90 + ")")
+        .append("rect")
+        .attr("class", "border-bg")
+        .style("fill", "#ffffff")
+        .attr("x", xScale.step() / 2)
+        .attr("y", 75)
+        .attr("width", xScale.range()[1] - xScale.step())
+        .attr("height", area_height);
+
+      let each_res = svg
+        .select("g#seqsig_mat")
+        .selectAll("g")
+        .data(Object.values(data))
+        .enter()
+        .append("g")
+        .selectAll("rect")
+        .data(function(d) {
+          return d;
+        })
         .enter();
 
-      row
-        .append("text")
-        .attr("class", "y seq_label")
-        .attr("x", -10 - xScale.step())
-        .attr("y", function(d: any) {
-          return fScale(d.comb) - fScale.step() / 2;
-        })
-        .attr("text-anchor", "end")
-        .attr("dy", 75)
-        .text(function(d: any) {
-          return d.comb;
-        });
-      row
+      /*
+       *            each_res
+       *                .append('rect')
+       *                .call(seqsigTip)
+       *                .on("mouseover", function(d) {
+       *                    if (d.freq !== 0) {
+       *                        seqsigTip.show(d);
+       *                    }
+       *                })
+       *                .on("mouseout", function(d) {
+       *                    seqsigTip.hide();
+       *                })
+       *                .attr("class", "res_rect")
+       *                .style("fill", d => cScale(d.freq))
+       *                .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+       *                .attr("y", (d: any, i: number) => 75 + (i * row_height))
+       *                .attr("width", xScale.step())
+       *                .attr("height", row_height);
+       *
+       *
+       *            each_res
+       *                .append("text")
+       *                .attr("class", "res_label")
+       *                .attr("x", (d: any) => xScale(d.gn))
+       *                .attr("y", (d: any, i: number) => 75 + (i * row_height))
+       *                .style("fill", (d: any) => {
+       *                    if(Math.abs(d.freq) >= 50) {
+       *                        return '#eaeaea';
+       *                    } else if (Math.abs(d.freq) < 50) {
+       *                        return '#000000';
+       *                    }
+       *                })
+       *                .attr("text-anchor", "middle")
+       *                .attr("dy", row_height / 2)
+       *                .text((d: any) => d.freq);
+       */
+
+      each_res
         .append("rect")
+        .call(seqsigTip)
+        .on("mouseover", function(d) {
+          if (d.freq !== 0) {
+            seqsigTip.show(d);
+          }
+        })
+        .on("mouseout", function(d) {
+          seqsigTip.hide();
+        })
+        // .on("click", function(d) {
+        //   let index;
+        //   // let rect_x = d3.event.target.getAttribute('x')
+        //   // let rect_y = d3.event.target.getAttribute('y')
+        //   // console.log(rect_x, rect_y)
+        //
+        //   // https://stackoverflow.com/a/20251369/8160230
+        //   // select the rect under cursor
+        //   let curr = d3.select(this);
+        //   d.active = true;
+        //
+        //   // set style in regards to active
+        //   if (
+        //     d.active &&
+        //     con_seq[d.gn].length > 0 &&
+        //     d.key == con_seq[d.gn][0].key
+        //   ) {
+        //     // remove prev. sele. rectangle
+        //     con_seq[d.gn].active = false;
+        //     //con_seq = _.omit(con_seq, d.gn)
+        //     con_seq[d.gn] = [];
+        //     curr.style("stroke", "black").style("stroke-width", 1);
+        //   } else if (d.active && con_seq[d.gn].length > 0) {
+        //     // change the selected property to the clicked one
+        //     // remove the active value from the prev. selec. property
+        //     con_seq[d.gn].active = false;
+        //     // remove the previously selected property
+        //     //con_seq = _.omit(con_seq, d.gn)
+        //     con_seq[d.gn] = [];
+        //     // add the new prop to the object
+        //     con_seq[d.gn] = [d];
+        //     // apply appropriate syling
+        //     curr.style("stroke", "yellow").style("stroke-width", 2);
+        //     d3.select("g#seqsig_mat")
+        //       .selectAll("rect.res_rect")
+        //       .filter(e => e.active)
+        //       .filter(e => e.gn == d.gn)
+        //       .filter(
+        //         e => e.feature_code + e.length != d.feature_code + d.length
+        //       )
+        //       .style("stroke", "black")
+        //       .style("stroke-width", 1);
+        //   } else if (d.active) {
+        //     // add a newly clicked rectangle
+        //     con_seq[d.gn] = [d];
+        //     curr.style("stroke", "yellow").style("stroke-width", 2);
+        //   } else {
+        //     // edge case rect removal
+        //     con_seq[d.gn].active = false;
+        //     con_seq = _.omit(con_seq, d.gn);
+        //     curr.style("stroke", "black").style("stroke-width", 1);
+        //   }
+        //   //console.log(con_seq)
+        //
+        //   signprotmat.d3.conSeqUpdate(row_height);
+        // })
+        .attr("class", "res_rect")
         .style("fill", function(d: any) {
-          const gcol = signprotmat.d3.fScaleColor(d.code);
+          const gcol = signprotmat.d3.fScaleColor(d.feature_code);
           if (typeof gcol != "undefined") {
             return gcol.bg_color;
           } else {
@@ -1239,23 +1614,20 @@ const signprotmat = {
           }
         })
         .style("stroke", "black")
-        .attr("x", -xScale.step())
-        .attr("y", function(d: any) {
-          return 75 + fScale(d.comb) - fScale.step();
-        })
+        .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
+        .attr("y", (d: any, i: number) => 75 + i * row_height)
         .attr("width", xScale.step())
-        .attr("height", fScale.step());
+        .attr("height", row_height);
 
-      row
+      each_res
         .append("text")
-        .attr("class", "y seq_label")
+        .attr("class", "res_label")
         .attr("text-anchor", "middle")
-        .attr("x", -xScale.step() / 2)
-        .attr("y", function(d: any) {
-          return 75 + fScale(d.comb) - fScale.step() / 2;
-        })
+        .attr("x", (d: any) => xScale(d.gn))
+        .attr("y", (d: any, i: number) => 75 + i * row_height)
+        .attr("dy", row_height / 2)
         .style("fill", (d: any) => {
-          const gcol = signprotmat.d3.fScaleColor(d.code);
+          const gcol = signprotmat.d3.fScaleColor(d.feature_code);
           if (typeof gcol != "undefined") {
             if (typeof gcol.font_color != "undefined") {
               return gcol.font_color;
@@ -1267,116 +1639,67 @@ const signprotmat = {
           }
         })
         .text(function(d: any) {
-          return d.code;
+          return d.feature_code;
         });
+
+      d3.select("svg.svg-content.seqsig")
+        .select("g")
+        .append("g")
+        .attr("id", "con_seq_mat")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + -10 + ")");
+      //.append("rect")
+      //.attr("class", "border-bg")
+      //.style("fill", "#ffffff")
+      //.attr("x", xScale.step() / 2)
+      //.attr("y", 75)
+      //.attr("width", xScale.range()[1] - xScale.step())
+      //.attr("height", row_height * 1.5)
+
+      //d3.select("g#con_seq_mat")
+
+      //d3.select("g#con_seq_mat")
+      //.append("rect")
+      //.attr("class", "border")
+      //.style("stroke", "black")
+      //.style("fill", "none")
+      //.attr("x", xScale.step() / 2)
+      //.attr("y", 75)
+      //.attr("width", xScale.range()[1] - xScale.step())
+      //.attr("height", row_height * 1.5);
+
+      d3.select("svg.svg-content.seqsig")
+        .select("g")
+        .append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(" + -xScale.step() / 2 + "," + 50 + ")")
+        .call(xAxis)
+        .selectAll("text")
+        .attr("text-anchor", "start")
+        .attr("font-size", "12px")
+        .attr("dx", "-5px")
+        .attr("dy", "-5px")
+        .attr("transform", "rotate(-90)");
 
       svg
-        .append("g")
-        .attr("id", "seqsig_mat")
-        .attr("transform", "translate(" + -xScale.step() / 2 + "," + 0 + ")")
-        .append("rect")
-        .attr("class", "border-bg")
-        .style("fill", "#ffffff")
-        .attr("x", xScale.step() / 2)
-        .attr("y", 75)
-        .attr("width", xScale.range()[1] - xScale.step())
-        .attr("height", fScale.range()[1] - fScale.step());
-
-      let each_res = svg
-        .select("g#seqsig_mat")
-        .selectAll("text")
-        .data(data)
-        .enter()
-        .append("g")
-        .call(seqsigTip)
-        .on("mouseover", function(d) {
-          if (d.freq !== 0) {
-            seqsigTip.show(d);
-          }
-        })
-        .on("mouseout", function(d) {
-          seqsigTip.hide();
-        });
-
-      // the rectangles, colored by conservation
-      each_res
-        .append("rect")
-        .attr("class", "res_rect")
-        .style("fill", function(d: any) {
-          if (d.cons <= 0) {
-            return "none";
-          } else {
-            return cScale(d.freq);
-          }
-        })
-        .attr("x", (d: any) => xScale(d.gn) - xScale.step() / 2)
-        .attr("y", function(d) {
-          const length_text = d.length != "" ? " (" + d.length + ")" : "";
-          const comb = d.feature + length_text;
-          return 75 + fScale(comb) - fScale.step();
-        })
-        .attr("width", xScale.step())
-        .attr("height", fScale.step());
-
-      // adding the frequency text to each rectangle
-      // each_res
-      //   .append("text")
-      //   .attr("class", "res_label")
-      //   .attr("x", (d: any) => xScale(d.gn))
-      //   .attr("y", (d: any) => fScale(d.feature) - fScale.step() / 2)
-      //   .style("fill", (d: any) => {
-      //     if(Math.abs(d.freq) >= 50) {
-      //       return '#eaeaea';
-      //     } else if (Math.abs(d.freq) < 50) {
-      //       return '#000000';
-      //     }
-      //   })
-      //   .attr("text-anchor", "middle")
-      //   .attr("dy", 75)
-      //   .text((d: any) => d.freq);
-      // .text((d: any) => _.round(d.freq/100, 1));
+        .select(".x.axis")
+        .selectAll("path")
+        .remove();
 
       // putting a black border around the signature
-      d3.select("g#seqsig_mat")
-        .append("rect")
-        .attr("class", "border")
-        .style("stroke", "black")
-        .style("fill", "none")
-        .attr("x", xScale.step() / 2)
-        .attr("y", 75)
-        .attr("width", xScale.range()[1] - xScale.step())
-        .attr("height", fScale.range()[1] - fScale.step());
-
-      // * ADDING COLOR LEGEND
-      svg
-        .append("g")
-        .attr("class", "legendSeqSig")
-        .attr("transform", "translate(-200,20)");
-
-      let legendSeqSig = d3
-        .legendColor()
-        .cells(5)
-        .labelFormat(d3.format(""))
-        .title("Scale in %")
-        .scale(cScale)
-        .orient("horizontal")
-        .shapeWidth(30);
-
-      svg
-        .select(".legendSeqSig")
-        .call(legendSeqSig)
-        .selectAll("rect")
-        .attr("rx", 3)
-        .attr("ry", 3)
-        .style("stroke", "black")
-        .style("stroke-width", "0.1px");
-      svg
-        .select(".legendSeqSig")
-        .selectAll("text")
-        .attr("class", "legend");
+      /*
+       *d3.select("g#seqsig_mat")
+       *    .append("rect")
+       *    .attr("class", "border")
+       *    .style("stroke", "black")
+       *    .style("fill", "none")
+       *    .attr("x", xScale.step() / 2)
+       *    .attr("y", 75)
+       *    .attr("width", xScale.range()[1] - xScale.step())
+       *    .attr("height", area_height);
+       */
     },
 
-    draw_seq_cons: function(data_in, svg, xScale, xAxis) {
+    draw_seq_cons: function(data_in, svg, xScale, xAxis, sigmatch) {
       let data = data_in.cons;
       let fScale = signprotmat.d3.fScale(data);
       let cScale = signprotmat.d3.cScale(data);
@@ -1407,53 +1730,101 @@ const signprotmat = {
           );
         });
 
-      svg
-        .append("g")
-        .attr("id", "conseq_mat")
-        .attr("transform", "translate(" + -xScale.step() / 2 + "," + -30 + ")")
-        .append("rect")
-        .attr("class", "border-bg")
-        .style("fill", "#ffffff")
-        .attr("x", xScale.step() / 2)
-        .attr("y", 75)
-        .attr("width", xScale.range()[1] - xScale.step())
-        .attr("height", 75);
+      if (sigmatch) {
+        svg = svg
+          .append("g")
+          .attr("id", "sigmatch_frame")
+          .attr(
+            "transform",
+            "translate(" + margin.left + "," + (margin.top + 140) + ")"
+          );
 
-      svg
-        .append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(" + -xScale.step() / 2 + "," + 35 + ")")
-        .call(xAxis)
-        .selectAll("text")
-        .attr("text-anchor", "start")
-        .attr("font-size", "12px")
-        .attr("dx", "-5px")
-        .attr("dy", "-5px")
-        .attr("transform", "rotate(-90)");
+        svg
+          .append("g")
+          .attr("id", "sigmatch_mat")
+          .attr(
+            "transform",
+            "translate(" + -xScale.step() / 2 + "," + -30 + ")"
+          )
+          .append("rect")
+          .attr("class", "border-bg")
+          .style("fill", "#ffffff")
+          .attr("x", xScale.step() / 2)
+          .attr("y", 75)
+          .attr("width", xScale.range()[1] - xScale.step())
+          .attr("height", 75);
 
-      svg
-        .select(".x.axis")
-        .selectAll("path")
-        .remove();
+        svg
+          .append("text")
+          .attr("class", "y seq_label")
+          .attr("text-anchor", "end")
+          .attr("x", -10)
+          .attr("y", 65)
+          .text("Property");
 
-      svg
-        .append("text")
-        .attr("class", "y seq_label")
-        .attr("text-anchor", "end")
-        .attr("x", -10)
-        .attr("y", 65)
-        .text("Property");
+        svg
+          .append("text")
+          .attr("class", "y seq_label")
+          .attr("text-anchor", "end")
+          .attr("x", -10)
+          .attr("y", 102)
+          .text("Conservation");
 
-      svg
-        .append("text")
-        .attr("class", "y seq_label")
-        .attr("text-anchor", "end")
-        .attr("x", -10)
-        .attr("y", 102)
-        .text("Conservation");
+        let group = "g#sigmatch_mat";
+      } else {
+        svg
+          .append("g")
+          .attr("id", "conseq_mat")
+          .attr(
+            "transform",
+            "translate(" + -xScale.step() / 2 + "," + -30 + ")"
+          )
+          .append("rect")
+          .attr("class", "border-bg")
+          .style("fill", "#ffffff")
+          .attr("x", xScale.step() / 2)
+          .attr("y", 75)
+          .attr("width", xScale.range()[1] - xScale.step())
+          .attr("height", 75);
+
+        svg
+          .append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(" + -xScale.step() / 2 + "," + 35 + ")")
+          .call(xAxis)
+          .selectAll("text")
+          .attr("text-anchor", "start")
+          .attr("font-size", "12px")
+          .attr("dx", "-5px")
+          .attr("dy", "-5px")
+          .attr("transform", "rotate(-90)");
+
+        svg
+          .select(".x.axis")
+          .selectAll("path")
+          .remove();
+
+        svg
+          .append("text")
+          .attr("class", "y seq_label")
+          .attr("text-anchor", "end")
+          .attr("x", -10)
+          .attr("y", 65)
+          .text("Property");
+
+        svg
+          .append("text")
+          .attr("class", "y seq_label")
+          .attr("text-anchor", "end")
+          .attr("x", -10)
+          .attr("y", 102)
+          .text("Conservation");
+
+        let group = "g#conseq_mat";
+      }
 
       let each_res = svg
-        .select("g#conseq_mat")
+        .select(group)
         .selectAll("text")
         .data(data)
         .enter()
@@ -1546,7 +1917,7 @@ const signprotmat = {
         .text((d: any) => d.score);
 
       // putting a black border around the signature
-      d3.select("g#conseq_mat")
+      d3.select(group)
         .append("rect")
         .attr("class", "border")
         .style("stroke", "black")
