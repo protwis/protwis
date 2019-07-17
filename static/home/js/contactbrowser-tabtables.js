@@ -182,39 +182,6 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal") {
-                // function myCustomFilterFunction(filterVal, columnVal) {
-                //     var found;
-                //     if (columnVal === '') {
-                //         return true;
-                //     }
-                //     switch (filterVal) {
-                //     case 'happy':
-                //         found = columnVal.search(/:-\]|:\)|Happy|JOY|:D/g);
-                //         break;
-                //     case 'sad':
-                //         found = columnVal.search(/:\(|Sad|:'\(/g);
-                //         break;
-                //     case 'angry':
-                //         found = columnVal.search(/!!!|Arr\.\.\./g);
-                //         break;
-                //     case 'lucky':
-                //         found = columnVal.search(/777|Bingo/g);
-                //         break;
-                //     case 'january':
-                //         found = columnVal.search(/01|Jan/g);
-                //         break;
-                //     default:
-                //         found = 1;
-                //         break;
-                //     }
-
-                //     if (found !== -1) {
-                //         return true;
-                //     }
-                //     return false;
-                // }
-
-
                 repeated_from_to = make_range_number_cols(4, 16);
 
                 yadcf.init(btable,
@@ -906,10 +873,14 @@ function renderBrowser(data) {
                           <th colspan="3" rowspan="2"> Frequency (%)</th> \
                           <th rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
-                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
-                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="2">Backbone movement</th> \
+                          <th colspan="2">(Ca-7TM axis)</th> \
+                          <th colspan="2">Sidechain differences</th> \
+                          <th colspan="2"></th> \
+                          <th colspan="2"></th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
-                          <th colspan="4">Secondary structure</th> \
+                          <th colspan="2">Secondary structure</th> \
+                          <th colspan="2"></th> \
                           <th rowspan="2" colspan="3">Sum of conservation of contact AA pairs in class (%)</th> \
                         </tr> \
                         <tr> \
@@ -1041,10 +1012,14 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2"> Frequency (%)</th> \
                           <th rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
-                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
-                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="2">Backbone movement</th> \
+                          <th colspan="2">(Ca-7TM axis)</th> \
+                          <th colspan="2">Sidechain differences</th> \
+                          <th colspan="2"></th> \
+                          <th colspan="2"></th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
-                          <th colspan="4">Secondary structure</th> \
+                          <th colspan="2">Secondary structure</th> \
+                          <th colspan="2"></th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
@@ -1188,9 +1163,13 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Positions GN</th> \
                           <th rowspan="2">Interaction</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
-                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
-                          <th colspan="6">Sidechain differences</th> \
-                          <th colspan="4">Secondary structure</th> \
+                          <th colspan="2">Backbone movement</th> \
+                          <th colspan="2">(Ca-7TM axis)</th> \
+                          <th colspan="2">Sidechain differences</th> \
+                          <th colspan="2"></th> \
+                          <th colspan="2"></th> \
+                          <th colspan="2">Secondary structure</th> \
+                          <th colspan="2"></th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
@@ -2399,7 +2378,7 @@ function enable_hover(table){
         columnSelector = $(selectorHeader.children[i]).cellPos().left
       }
 
-      if (currentHover != columnSelector && selector.className!="skip") {
+      if (currentHover != columnSelector && selector.className!="skip" && !selector.className.includes("keep")) {
         // other variables
         var tableNumber = th.parentNode.parentNode.parentNode.className.split(" ")[0]
         var tableNumber = tableNumber.substr(-1)
@@ -2410,31 +2389,56 @@ function enable_hover(table){
           var plotType = plots[i].id
 
           var button = document.createElement("span")
-          button.className = "glyphicon glyphicon-stats"
+          button.className = "glyphicon glyphicon-stats toggle"+i
           selector.appendChild(button)
+
+          var found = true;
           if (selector.className=="pairselector") {
-              if (plotType.startsWith("heatmap")) { // heatmap
+              if (plotType.startsWith("heatmapcontainer")) { // heatmap
                 button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
-                continue;
               } else if (plotType.startsWith("flareplot")) {  // flareplot
                 button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
-                continue;
               } else if (plotType.startsWith("boxplot")) { // Box-plot (not available right now)
                 button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
-                continue;
+              } else {
+                found = false;
               }
           } else if (selector.className=="selector") {
             if (plotType.startsWith("ngl")) { // 3D
               button.addEventListener("click", (function(a, b, c){ return function(){colorByData(a.replace("ngl-",""), b, c);}})(plotType, tableNumber, columnSelector))
-              continue;
             } else if (plotType.startsWith("snakeplot")) { // Snakeplot
               button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
-              continue;
+            } else {
+              found = false;
             }
           }
 
-          // Grayout button if not available
-          button.className = button.className + " gray"
+          if (found){
+            button.addEventListener("click", function(e){
+              var targetClasses = e.target.className.split(" ")
+              var object = $(e.target)
+              if (!object.hasClass("red")){
+                // Remove toggle and keep from other header if present
+                $(".glyphicon-stats, .red, ."+targetClasses[targetClasses.length -1]).each( function(i, other){
+                    $(other).removeClass("red")
+                    // clean header
+                    if ($(other).parent().find(".red").length == 0) {
+                      $(other).parent().removeClass("keep")
+                    }
+                })
+
+                // Keep header enabled
+                if (!object.parent().hasClass("keep"))
+                  object.parent().addClass("keep");
+
+                // Toggle icon color
+                object.addClass("red")
+              }
+            });
+          } else {
+            // Grayout button if not available
+            button.className = button.className + " gray"
+          }
         }
 
         currentHover = columnSelector;
@@ -2443,24 +2447,32 @@ function enable_hover(table){
 
     table[0].children[0].addEventListener("mouseout", function(e){
       classes = e.target.className
-      // TODO: better way of toggling the header on hover
       if (!(classes.includes("glyphicon") || classes.includes("selector") || classes.includes("pairselector"))) {
-        // clear selector header on mouse out
-        var header = e.target
-        while (header.nodeName != "THEAD") {
-          header = header.parentNode
-        }
-
-        // cleanup with smarter class selector
-        header = header.children[0];
-        for (var i = 0; i < header.children.length; i++){
-            if (header.children[i].innerHTML.length > 0 && !header.children[i].className.includes("keep")){
-                header.children[i].innerHTML = ""
-            }
-        }
-        currentHover = -1;
+        clearGraphHeader(e)
       }
     });
+
+    header = table[0].children[0].children[0];
+    for (var i = 0; i < header.children.length; i++){
+      $(header.children[i]).mouseleave( clearGraphHeader );
+    }
+}
+
+function clearGraphHeader(e){
+  // clear selector header on mouse out
+  var header = e.target
+  while (header.nodeName != "THEAD") {
+    header = header.parentNode
+  }
+
+  // cleanup with smarter class selector
+  header = header.children[0];
+  for (var i = 0; i < header.children.length; i++){
+      if (header.children[i].innerHTML.length > 0 && !header.children[i].className.includes("keep")){
+          header.children[i].innerHTML = ""
+      }
+  }
+  currentHover = -1;
 }
 
 function enable_3Dclick(table){
