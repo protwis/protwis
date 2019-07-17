@@ -1736,7 +1736,6 @@ function renderBrowser_2(data) {
 
     });
 
-    enable_3Dclick(table)
     console.timeEnd("RenderBrowser2");
 }
 
@@ -1757,6 +1756,20 @@ function renderBrowser_3(data) {
     var pdbs_2 = data['pdbs2'].length
     if (data['proteins2']) {
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="3" class="selector" datatype="contacts"></th> \
+                      <th colspan="3" class="selector" datatype="contacts"></th> \
+                      <th colspan="1" class="selector" datatype="contacts"></th> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="3" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
+                      <th colspan="1" class="selector" datatype="rotation_diff"></th> \
+                      <th colspan="1" class="selector" datatype="rotamer_diff"></th> \
+                      <th colspan="1" class="selector"datatype="SASA_diff"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2">Avg no contact pairs</th> \
@@ -1915,7 +1928,8 @@ function renderBrowser_3(data) {
             column.popover('show');
         }
     });
-    enable_3Dclick(table)
+
+    enable_hover(table);
     console.timeEnd("RenderBrowser3");
 }
 
@@ -1936,6 +1950,20 @@ function renderBrowser_4(data) {
         var pdbs_1 = data['pdbs1'].length
         var pdbs_2 = data['pdbs2'].length
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="3" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="3" class="selector" datatype="phi"></th> \
+                      <th colspan="3" class="selector" datatype="psi"></th> \
+                      <th colspan="3" class="selector" datatype="tau"></th> \
+                      <th colspan="3" class="selector" datatype="theta"></th> \
+                      <th colspan="3" class="selector" datatype="theta"></th> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="3" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
@@ -2069,6 +2097,20 @@ function renderBrowser_4(data) {
         var proteins = data['proteins'].length
         var pdbs = data['pdbs'].length
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="1" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="1" class="selector" datatype="phi"></th> \
+                      <th colspan="1" class="selector" datatype="psi"></th> \
+                      <th colspan="1" class="selector" datatype="tau"></th> \
+                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="2" rowspan="1">Secondary structure</th> \
@@ -2163,6 +2205,18 @@ function renderBrowser_4(data) {
         var proteins = data['proteins'].length
         var pdbs = data['pdbs'].length
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="1" class="selector" datatype="phi"></th> \
+                      <th colspan="1" class="selector" datatype="psi"></th> \
+                      <th colspan="1" class="selector" datatype="tau"></th> \
+                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="1">Secondary structure</th> \
@@ -2172,7 +2226,7 @@ function renderBrowser_4(data) {
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
-                          <th colspan="1">Consensus SS</th> \
+                          <th colspan="1">SS</th> \
                           <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
                           <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
                           <th colspan="1">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
@@ -2246,7 +2300,8 @@ function renderBrowser_4(data) {
         tbody[0].innerHTML = tr_list;
 
     }
-    enable_3Dclick(table)
+
+    enable_hover(table);
     console.timeEnd("RenderBrowser4");
 }
 
@@ -2262,7 +2317,24 @@ function renderBrowser_5(data) {
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
 
-    thead = '<tr> \
+    var thead;
+    if (data['proteins2']) {
+      thead = '<tr> \
+                    <th colspan="2" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
+                    <th colspan="1" class="selector" datatype="rotation_diff"></th> \
+                    <th colspan="1" class="selector" datatype="HSE_diff"></th> \
+                </tr>';
+    } else {
+      thead = '<tr> \
+                    <th colspan="2" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="core_distance"></th> \
+                    <th colspan="1" class="selector" datatype="rotation"></th> \
+                    <th colspan="1" class="selector" datatype="HSE"></th> \
+                </tr>';
+    }
+
+    thead += '<tr> \
                       <th colspan="1" rowspan="2">Segment</th> \
                       <th colspan="1" rowspan="2">Positions</th> \
                       <th colspan="2">Backbone movement (Ca-7TM axis)</th> \
@@ -2311,7 +2383,7 @@ function renderBrowser_5(data) {
     // insert natively for speed increase on Chrome
     tbody[0].innerHTML = tr_list;
 
-    enable_3Dclick(table)
+    enable_hover(table)
     console.timeEnd("RenderBrowser5");
 }
 

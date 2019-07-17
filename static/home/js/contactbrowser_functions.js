@@ -911,7 +911,7 @@
             $(selector + ' .go-button').click(function() {
                 var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
                 var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
-                loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic)
+                loadTwoPDBsView(pdbs1, pdbs2, selector, generic)
 
 
             });
@@ -920,7 +920,7 @@
         var two_sets_pdbs1 = '';
         var two_sets_pdbs2 = '';
         var two_sets_data = '';
-        function loadTwoPDBsView(pdbs1, pdbs2, selector, heatmapFunction, generic) {
+        function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
             console.time('Get loadTwoPDBsView Data');
             $(".main_loading_overlay").show();
             //var segments = JSON.parse($(selector + ' .segments-input').val());
@@ -963,53 +963,6 @@
                         redraw_renders();
                     }
                 });
-
-                // console.log('get wiz info');
-                // $.getJSON( '/contactnetwork/interactiondata',
-                // {
-                //     'segments': segments,
-                //     'generic': generic,
-                //     'pdbs': pdbs1,
-                //     'interaction_types': interactionTypes
-                // },
-                // function( data1 ) {
-                //     $("#svgloading").remove();
-                //     $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (33%)</span>');
-                //     $.getJSON( '/contactnetwork/interactiondata',
-                //     {
-                //         'segments': segments,
-                //         'generic': generic,
-                //         'pdbs': pdbs2,
-                //         'interaction_types': interactionTypes
-                //     },
-                //     function( data2 ) {
-                //         $("#svgloading").remove();
-                //         $(selector + ' .heatmap-container').append('<span id="svgloading">Loading... (66%)</span>');
-                //         // NOTE: this call seems redundant, shouldn't we already have all the data we need from the previous two calls
-                //         $.getJSON( '/contactnetwork/interactiondata',
-                //         {
-                //             'segments': segments,
-                //             'generic': generic,
-                //             'pdbs': pdbs1.concat(pdbs2),
-                //             'interaction_types': interactionTypes
-                //         }, function ( data3 ) {
-                //             // Re-render heatmap
-                //             $(".heatmap").show();
-                //             // $(".heatmap-legend").show();
-                //             $("#svgloading").remove()
-                //             heatmapFunction([data1, data2, data3], selector + ' .heatmap-container');
-                //             createSchematicPlot(data3, selector + " .schematic_con-container", {type: 'twoCrystalGroups'}, data1, data2); //.schematic_container
-                //             createSchematicPlot(data3, selector + " .schematic_non-container", {isContiguousPlot: false, type: 'twoCrystalGroups'}, data1, data2)
-
-                //             // Re-render flareplot
-                //             createTwoGroupFlareplotBox(data1, data2, data3, selector + " .flareplot-container");
-                //             createNGLview("two-groups",pdbs1[0], pdbs1, pdbs2);
-                //             $(".main_loading_overlay").hide();
-                //             redraw_renders();
-                //         });
-                //     });
-                // });
-
             }
             // $(".main_loading_overlay").hide();
         }
