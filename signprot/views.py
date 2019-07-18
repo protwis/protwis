@@ -74,7 +74,6 @@ class BrowseSelection(AbsTargetSelection):
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
         # del ppf_g
         # del ppf_a
-        print('hi!')
     except Exception as e:
         pass
 
