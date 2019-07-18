@@ -484,7 +484,7 @@ var tableToExcel = (function () {
 $(document).ready(function () {
   non_interactions = signprotmat.data.annotateNonInteractionData(interactions_metadata, non_interactions);
 
-  $.get('/contactnetwork/pdbtabledata', function(data) {
+  $.get('/contactnetwork/pdbtabledata', { exclude_non_interacting: true}, function(data) {
     $('#interface-modal-table .tableview').html(data);
   })
 

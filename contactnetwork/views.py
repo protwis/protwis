@@ -188,6 +188,7 @@ def PdbTreeData(request):
 
 # @cache_page(60*60*24*7)
 def PdbTableData(request):
+    exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
     constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
     methods = {}
@@ -243,6 +244,9 @@ def PdbTableData(request):
         arrestin = only_arrestins(a_list)
         fusion = only_fusions(a_list)
         antibody = only_antibodies(a_list)
+        
+        if exclude_non_interacting and g_protein == '-':
+            continue
 
         if pdb_id in methods:
             r['method'] = methods[pdb_id]
