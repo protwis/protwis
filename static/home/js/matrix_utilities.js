@@ -441,7 +441,7 @@ const update_slider_label = function() {
 }
 
 const get_max_interface_count = function() {
-  return parseInt($("#interface-count").text().match(/\d+/))
+  return parseInt($("#single-crystal-group-pdbs-modal-text").text().match(/\d+/))
 }
 
 var tableToExcel = (function () {
@@ -522,15 +522,16 @@ $(document).ready(function () {
     table = $($.fn.dataTable.tables()[0]).DataTable();
     selection = table.rows('.selected').data();
     let old_pdb_sel = pdb_sel;
+    pdb_sel = [];
+    pos_set = [];
+    // get selected pdb ids
     for (var value of selection.toArray()){ pdb_sel = [value[6].toLowerCase(), ...pdb_sel]}
+    // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata){
       if (pdb_sel.indexOf(int_meta['pdb_id']) != -1){
         pos_set = [int_meta['entry_name'], ...pos_set]
       }
     }
-    // pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
-    console.log(pdb_sel)
-    console.log(pos_set)
 
     if (!_.isEqual(old_pdb_sel.sort(), pdb_sel.sort())){
       $('.svg-content').remove();
