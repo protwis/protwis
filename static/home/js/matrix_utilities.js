@@ -441,7 +441,8 @@ const update_slider_label = function() {
 }
 
 const get_max_interface_count = function() {
-  return parseInt($("#single-crystal-group-pdbs-modal-text").text().match(/\d+/))
+  // return parseInt($("#single-crystal-group-pdbs-modal-text").text().match(/\d+/))
+  return pos_set.length
 }
 
 var tableToExcel = (function () {
