@@ -548,17 +548,17 @@ $(document).ready(function () {
     .on('select', function (e, dt, type, indexes) {
       const row_count = table.rows({ selected: true }).count()
       if (row_count >= 2 || row_count === 0) {
-        $('#interface-count').text(row_count + ' interfaces selected.');
+        $('#interface-count').text(row_count + ' structures selected.');
       } else {
-        $('#interface-count').text(row_count + ' interface selected.');
+        $('#interface-count').text(row_count + ' structure selected.');
       }
     })
     .on('deselect', function (e, dt, type, indexes) {
       const row_count = table.rows({ selected: true }).count()
       if (row_count >= 2 || row_count === 0) {
-        $('#interface-count').text(row_count + ' interfaces selected.');
+        $('#interface-count').text(row_count + ' structures selected.');
       } else {
-        $('#interface-count').text(row_count + ' interface selected.');
+        $('#interface-count').text(row_count + ' structure selected.');
       }
     });
 
