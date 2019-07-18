@@ -703,6 +703,7 @@ def ToggleFamilyTreeNode(request):
         else:
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 source__in=(protein_source_list)).order_by('source_id', 'id')
+
         if pref_g_proteins_list:
             proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list, transduction='primary')]
             ps = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
@@ -710,6 +711,9 @@ def ToggleFamilyTreeNode(request):
         if g_proteins_list:
             proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]
             ps = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
+
+        # Excluding G protein Alpha subunit protein structure objects, e.g. 3sn6_a
+        ps = ps.exclude(accession__isnull=True, family__parent__parent__name='Alpha')
 
         action = 'collapse'
     else:

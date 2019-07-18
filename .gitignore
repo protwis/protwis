@@ -3,6 +3,9 @@
 protwis/settings_local.py
 env
 /data
+/Archive
+empty_db.txt
+
 *.sh
 .DS_Store
 .idea/

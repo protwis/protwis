@@ -943,6 +943,8 @@ def InteractionBrowserData(request):
         for d in ds:
             if d[0] not in data['all_angles']:
                 data['all_angles'][d[0]] = {}
+                for pdb in pdbs_upper:
+                    data['all_angles'][d[0]][pdb] = []
             data['all_angles'][d[0]][d[1]] = d
 
         print('Prepare angles values for',mode,'mode',time.time()-start_time)
