@@ -58,7 +58,7 @@ def get_angles(request):
             query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number").order_by('residue__generic_number__label')
 
             # Prep data
-            data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.outer_angle, q.hse, q.sasa, q.rsa, q.phi, q.psi, q.theta, q.tau, q.core_distance ] for q in query]
+            data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.outer_angle, q.hse, q.sasa, q.rsa, q.phi, q.psi, q.theta, q.tau, q.core_distance, q.ss_dssp, q.ss_stride ] for q in query]
             data['headers'] = [{"title" : "Value"}]
         else: # always a grouping or a comparison
             query = Angle.objects.filter(structure__pdb_code__index__in=pdbs).prefetch_related("residue__generic_number") \
@@ -154,6 +154,23 @@ def get_angles(request):
     return JsonResponse(data)
 
 def ServePDB(request, pdbname):
+    # query = Angle.objects.filter(residue__protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']).prefetch_related("residue__generic_number") \
+    #         .aggregate(total=Count('ss_stride'), \
+    #         total2=Count('ss_dssp'))
+    # print(query)
+    #
+    # query = Angle.objects.filter(residue__protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']).prefetch_related("residue__generic_number") \
+    #         .values("ss_stride") \
+    #         .annotate(total=Count('ss_stride')) \
+    #         .order_by('ss_stride')
+    # print(query)
+    #
+    # query = Angle.objects.filter(residue__protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']).prefetch_related("residue__generic_number") \
+    #         .values("ss_dssp") \
+    #         .annotate(total=Count('ss_dssp')) \
+    #         .order_by('ss_dssp')
+    # print(query)
+
     structure=Structure.objects.filter(pdb_code__index=pdbname.upper())
     if structure.exists():
         structure=structure.get()
