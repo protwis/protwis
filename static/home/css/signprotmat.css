@@ -1,3 +1,7 @@
+#content {
+    max-width: 1400px;
+}
+
 /* make the svg responsive to the page width */
 .svg-container {
     display: inline-block;
