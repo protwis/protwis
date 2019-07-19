@@ -935,7 +935,7 @@ def InteractionBrowserData(request):
         data['all_angles'] = {}
         ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs_upper) \
             .exclude(residue__generic_number=None) \
-            .values_list('residue__generic_number__label','structure__pdb_code__index','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+            .values_list('residue__generic_number__label','structure__pdb_code__index','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp'))
         for d in ds:
             if d[0] not in data['all_angles']:
                 data['all_angles'][d[0]] = {}

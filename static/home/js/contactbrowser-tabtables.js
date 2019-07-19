@@ -182,7 +182,7 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal") {
-                repeated_from_to = make_range_number_cols(4, 16);
+                repeated_from_to = make_range_number_cols(4, 14);
 
                 yadcf.init(btable,
                     [{
@@ -391,7 +391,7 @@ function renderDataTablesYadcf(element) {
             } else if (analys_mode == "#single-crystal") {
 
                 repeated_from_to_1 = make_range_number_cols(4, 3);
-                repeated_from_to_2 = make_range_number_cols(8, 15);
+                repeated_from_to_2 = make_range_number_cols(8, 13);
 
                 yadcf.init(btable,
                     [{
@@ -949,6 +949,78 @@ function renderBrowser(data) {
 
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
+
+
+
+            // console.log(gn1,gn2);
+            all_angles_1 = data['all_angles'][gn1];
+            all_angles_2 = data['all_angles'][gn2];
+            ss_pos1_set1 = [];
+            ss_pos1_set2 = [];
+            ss_pos2_set1 = [];
+            ss_pos2_set2 = [];
+            pdbs = data['pdbs1'].concat(data['pdbs2']);
+            pdbs.forEach(function(pdb){
+                pdb_upper = pdb.toUpperCase();
+                if (all_angles_1) {
+                    let d1 = all_angles_1[pdb_upper];
+                    if (d1.length) {
+                        if (data['pdbs1'].includes(pdb)) {
+                            ss_pos1_set1.push(d1[12]);
+                        } else if (data['pdbs2'].includes(pdb)) {
+                            ss_pos1_set2.push(d1[12]);
+                        }
+                    }
+                }
+                if (all_angles_2) {
+                    let d2 = all_angles_2[pdb_upper];
+                    if (d2.length) {
+                        if (data['pdbs1'].includes(pdb)) {
+                            ss_pos2_set1.push(d2[12])
+                        } else if (data['pdbs2'].includes(pdb)) {
+                            ss_pos2_set2.push(d2[12])
+                        }
+                    }
+                }
+            });
+
+            dssp = [];
+            [ss_pos1_set1,ss_pos1_set2,ss_pos2_set1,ss_pos2_set2].forEach(function(list){
+                if (list.length) {
+                    // make count map
+                    c = new Map([...new Set(list)].map(
+                            x => [x, list.filter(y => y === x).length]
+                        ));
+                    // make count with highest number first element
+                    const mapSort = new Map([...c.entries()].sort((a, b) => b[1] - a[1]));
+                    // get first element as [key,value]
+                    most = mapSort.entries().next().value;
+                    // calculate frequency
+                    freq = most[1]/list.length;
+                    most = most[0];
+                } else {
+                    freq = 0;
+                    most = 'N/A';
+                }
+                dssp.push([most,freq]);
+            })
+            // console.table(dssp);
+            dssp_pos1 = '';
+            dssp_pos1_freq = '';
+            if (dssp[0][0]==dssp[1][0]){
+                // if pos1 category same
+                dssp_pos1=dssp[0][0];
+                dssp_pos1_freq = Math.round(100*(dssp[0][1]-dssp[1][1]));
+            }
+
+
+            dssp_pos2 = '';
+            dssp_pos2_freq = '';
+            if (dssp[2][0]==dssp[3][0]){
+                // if pos2 category same
+                dssp_pos2=dssp[2][0];
+                dssp_pos2_freq = Math.round(100*(dssp[2][1]-dssp[3][1]));
+            }
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -980,10 +1052,10 @@ function renderBrowser(data) {
                       <td class="narrow_col angles_modal">${angles_2[7]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${dssp_pos1}</td>
+                      <td class="narrow_col">${dssp_pos2}</td>
+                      <td class="narrow_col">${dssp_pos1_freq}</td>
+                      <td class="narrow_col">${dssp_pos2_freq}</td>
                       <td class="narrow_col">${class_seq_cons[0]}</td>
                       <td class="narrow_col">${class_seq_cons[1]}</td>
                       <td class="narrow_col">${class_seq_cons_diff}</td>
@@ -1072,6 +1144,66 @@ function renderBrowser(data) {
             var angles_2 = v['angles'][1];
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
+
+            all_angles_1 = data['all_angles'][gn1];
+            all_angles_2 = data['all_angles'][gn2];
+            ss_pos1_set1 = [];
+            ss_pos2_set1 = [];
+            pdbs = v['pdbs'];
+            pdbs.forEach(function(pdb){
+                pdb_upper = pdb.toUpperCase();
+                if (all_angles_1) {
+                    let d1 = all_angles_1[pdb_upper];
+                    if (d1.length) {
+                        ss_pos1_set1.push(d1[12]);
+                    }
+                }
+                if (all_angles_2) {
+                    let d2 = all_angles_2[pdb_upper];
+                    if (d2.length) {
+                        ss_pos2_set1.push(d2[12])
+                    }
+                }
+            });
+
+            dssp = [];
+            [ss_pos1_set1,ss_pos2_set1].forEach(function(list){
+                if (list.length) {
+                    // make count map
+                    c = new Map([...new Set(list)].map(
+                            x => [x, list.filter(y => y === x).length]
+                        ));
+                    // make count with highest number first element
+                    const mapSort = new Map([...c.entries()].sort((a, b) => b[1] - a[1]));
+                    // get first element as [key,value]
+                    most = mapSort.entries().next().value;
+                    // calculate frequency
+                    freq = most[1]/list.length;
+                    most = most[0];
+                } else {
+                    freq = 0;
+                    most = 'N/A';
+                }
+                dssp.push([most,freq]);
+            })
+            // console.table(dssp);
+            dssp_pos1 = '';
+            dssp_pos1_freq = '';
+            if (dssp[0][0]){
+                // if pos1 category same
+                dssp_pos1=dssp[0][0];
+                dssp_pos1_freq = Math.round(100*(dssp[0][1]));
+            }
+
+
+            dssp_pos2 = '';
+            dssp_pos2_freq = '';
+            if (dssp[1][0]){
+                // if pos2 category same
+                dssp_pos2=dssp[1][0];
+                dssp_pos2_freq = Math.round(100*(dssp[1][1]));
+            }
+
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -1101,10 +1233,10 @@ function renderBrowser(data) {
                       <td class="narrow_col rsa">${angles_2[7]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${dssp_pos1}</td>
+                      <td class="narrow_col">${dssp_pos2}</td>
+                      <td class="narrow_col">${dssp_pos1_freq}</td>
+                      <td class="narrow_col">${dssp_pos2_freq}</td>
                       <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
             tbody.append(tr);
@@ -1154,7 +1286,6 @@ function renderBrowser(data) {
                       <th colspan="2" class="selector" datatype="SASA"></th> \
                       <th colspan="2" class="selector" datatype="RSA"></th> \
                       <th colspan="2" class="selector" datatype="consensus_SS"></th> \
-                      <th colspan="2" class="selector" datatype="consensus_freq"></th> \
                       <th colspan="1" class="skip"></th> \
                   </tr> \
                   <tr> \
@@ -1169,7 +1300,6 @@ function renderBrowser(data) {
                           <th colspan="2"></th> \
                           <th colspan="2"></th> \
                           <th colspan="2">Secondary structure</th> \
-                          <th colspan="2"></th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
@@ -1179,7 +1309,6 @@ function renderBrowser(data) {
                           <th colspan="2">SASA</th> \
                           <th colspan="2">RSA</th> \
                           <th colspan="2">Consensus SS</th> \
-                          <th colspan="2">Frequency %</th> \
                         </tr> \
                         <tr> \
                           <th class="dt-center"></th> \
@@ -1187,8 +1316,6 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th></th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
@@ -1217,6 +1344,21 @@ function renderBrowser(data) {
             var distance = v['distance'];
             var angles_1 = v['angles'][0];
             var angles_2 = v['angles'][1];
+
+            all_angles_1 = data['all_angles'][gn1];
+            all_angles_2 = data['all_angles'][gn2];
+
+            if (all_angles_1) {
+                all_angles_1 = all_angles_1[data['pdbs'][0].toUpperCase()][12];
+            } else {
+                all_angles_1 = '';
+            }
+
+            if (all_angles_2) {
+                all_angles_2 = all_angles_2[data['pdbs'][0].toUpperCase()][12];
+            } else {
+                all_angles_2 = '';
+            }
             //id="${pos1},${pos2}"
             tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
@@ -1235,10 +1377,8 @@ function renderBrowser(data) {
                       <td class="narrow_col angles_modal">${angles_2[6]}</td>
                       <td class="narrow_col angles_modal">${angles_1[7]}</td>
                       <td class="narrow_col angles_modal">${angles_2[7]}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${all_angles_1}</td>
+                      <td class="narrow_col">${all_angles_2}</td>
                       <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
             tbody.append(tr);
@@ -1410,6 +1550,75 @@ function renderBrowser_2(data) {
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
 
+            all_angles_1 = data['all_angles'][gn1];
+            all_angles_2 = data['all_angles'][gn2];
+            ss_pos1_set1 = [];
+            ss_pos1_set2 = [];
+            ss_pos2_set1 = [];
+            ss_pos2_set2 = [];
+            pdbs = data['pdbs1'].concat(data['pdbs2']);
+            pdbs.forEach(function(pdb){
+                pdb_upper = pdb.toUpperCase();
+                if (all_angles_1) {
+                    let d1 = all_angles_1[pdb_upper];
+                    if (d1.length) {
+                        if (v2['set1']['occurance']['aa1'].includes(pdb)) {
+                            ss_pos1_set1.push(d1[12]);
+                        } else if (v2['set2']['occurance']['aa1'].includes(pdb)) {
+                            ss_pos1_set2.push(d1[12]);
+                        }
+                    }
+                }
+                if (all_angles_2) {
+                    let d2 = all_angles_2[pdb_upper];
+                    if (d2.length) {
+                        if (v2['set1']['occurance']['aa2'].includes(pdb)) {
+                            ss_pos2_set1.push(d2[12])
+                        } else if (v2['set2']['occurance']['aa2'].includes(pdb)) {
+                            ss_pos2_set2.push(d2[12])
+                        }
+                    }
+                }
+            });
+
+            dssp = [];
+            [ss_pos1_set1,ss_pos1_set2,ss_pos2_set1,ss_pos2_set2].forEach(function(list){
+                if (list.length) {
+                    // make count map
+                    c = new Map([...new Set(list)].map(
+                            x => [x, list.filter(y => y === x).length]
+                        ));
+                    // make count with highest number first element
+                    const mapSort = new Map([...c.entries()].sort((a, b) => b[1] - a[1]));
+                    // get first element as [key,value]
+                    most = mapSort.entries().next().value;
+                    // calculate frequency
+                    freq = most[1]/list.length;
+                    most = most[0];
+                } else {
+                    freq = 0;
+                    most = 'N/A';
+                }
+                dssp.push([most,freq]);
+            })
+            // console.table(dssp);
+            dssp_pos1 = '';
+            dssp_pos1_freq = '';
+            if (dssp[0][0]==dssp[1][0]){
+                // if pos1 category same
+                dssp_pos1=dssp[0][0];
+                dssp_pos1_freq = Math.round(100*(dssp[0][1]-dssp[1][1]));
+            }
+
+
+            dssp_pos2 = '';
+            dssp_pos2_freq = '';
+            if (dssp[2][0]==dssp[3][0]){
+                // if pos2 category same
+                dssp_pos2=dssp[2][0];
+                dssp_pos2_freq = Math.round(100*(dssp[2][1]-dssp[3][1]));
+            }
+
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
@@ -1455,10 +1664,10 @@ function renderBrowser_2(data) {
                       <td class="narrow_col angles_modal">${angles_2[7]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${dssp_pos1}</td>
+                      <td class="narrow_col">${dssp_pos2}</td>
+                      <td class="narrow_col">${dssp_pos1_freq}</td>
+                      <td class="narrow_col">${dssp_pos2_freq}</td>
                     </tr>`;
             // tbody.append(tr);
         });
@@ -1561,6 +1770,69 @@ function renderBrowser_2(data) {
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
 
+            all_angles_1 = data['all_angles'][gn1];
+            all_angles_2 = data['all_angles'][gn2];
+            ss_pos1_set = [];
+            ss_pos2_set = [];
+            pdbs = data['pdbs'];
+            pdbs.forEach(function(pdb){
+                pdb_upper = pdb.toUpperCase();
+                if (all_angles_1) {
+                    let d1 = all_angles_1[pdb_upper];
+                    if (d1.length) {
+                        if (v2['set']['occurance']['aa1'].includes(pdb)) {
+                            ss_pos1_set.push(d1[12]);
+                        }
+                    }
+                }
+                if (all_angles_2) {
+                    let d2 = all_angles_2[pdb_upper];
+                    if (d2.length) {
+                        if (v2['set']['occurance']['aa2'].includes(pdb)) {
+                            ss_pos2_set.push(d2[12])
+                        }
+                    }
+                }
+            });
+
+            dssp = [];
+            [ss_pos1_set,ss_pos2_set].forEach(function(list){
+                if (list.length) {
+                    // make count map
+                    c = new Map([...new Set(list)].map(
+                            x => [x, list.filter(y => y === x).length]
+                        ));
+                    // make count with highest number first element
+                    const mapSort = new Map([...c.entries()].sort((a, b) => b[1] - a[1]));
+                    // get first element as [key,value]
+                    most = mapSort.entries().next().value;
+                    // calculate frequency
+                    freq = most[1]/list.length;
+                    most = most[0];
+                } else {
+                    freq = 0;
+                    most = 'N/A';
+                }
+                dssp.push([most,freq]);
+            })
+            // console.table(dssp);
+            dssp_pos1 = '';
+            dssp_pos1_freq = '';
+            if (dssp[0][0]){
+                // if pos1 category same
+                dssp_pos1=dssp[0][0];
+                dssp_pos1_freq = Math.round(100*dssp[0][1]);
+            }
+
+
+            dssp_pos2 = '';
+            dssp_pos2_freq = '';
+            if (dssp[1][0]){
+                // if pos2 category same
+                dssp_pos2=dssp[1][0];
+                dssp_pos2_freq = Math.round(100*dssp[1][1]);
+            }
+
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
@@ -1594,10 +1866,10 @@ function renderBrowser_2(data) {
                       <td class="narrow_col rsa">${angles_2[7]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${dssp_pos1}</td>
+                      <td class="narrow_col">${dssp_pos2}</td>
+                      <td class="narrow_col">${dssp_pos1_freq}</td>
+                      <td class="narrow_col">${dssp_pos2_freq}</td>
                     </tr>`;
             tbody.append(tr);
         });
@@ -1613,7 +1885,7 @@ function renderBrowser_2(data) {
                           <th rowspan="2">Distance (Ca atoms)*</th> \
                           <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
                           <th colspan="6">Sidechain differences</th> \
-                          <th colspan="4">Secondary structure</th> \
+                          <th colspan="2">Secondary structure</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Distance</th> \
@@ -1622,7 +1894,6 @@ function renderBrowser_2(data) {
                           <th colspan="2">SASA</th> \
                           <th colspan="2">RSA</th> \
                           <th colspan="2">Consensus SS</th> \
-                          <th colspan="2">Frequency %</th> \
                         </tr> \
                         <tr> \
                           <th class="dt-center"></th> \
@@ -1634,8 +1905,6 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">Pair<br></th> \
                           <th></th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
@@ -1677,6 +1946,21 @@ function renderBrowser_2(data) {
             var aa1 = v2['aa1'];
             var aa2 = v2['aa2'];
 
+            all_angles_1 = data['all_angles'][gn1];
+            all_angles_2 = data['all_angles'][gn2];
+
+            if (all_angles_1) {
+                all_angles_1 = all_angles_1[data['pdbs'][0].toUpperCase()][12];
+            } else {
+                all_angles_1 = '';
+            }
+
+            if (all_angles_2) {
+                all_angles_2 = all_angles_2[data['pdbs'][0].toUpperCase()][12];
+            } else {
+                all_angles_2 = '';
+            }
+
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
@@ -1702,10 +1986,8 @@ function renderBrowser_2(data) {
                       <td class="narrow_col sasa">${angles_2[6]}</td>
                       <td class="narrow_col rsa">${angles_1[7]}</td>
                       <td class="narrow_col rsa">${angles_2[7]}</td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
-                      <td class="narrow_col"> </td>
+                      <td class="narrow_col">${all_angles_1}</td>
+                      <td class="narrow_col">${all_angles_2}</td>
                     </tr>`;
             tbody.append(tr);
         });
@@ -2045,17 +2327,73 @@ function renderBrowser_4(data) {
             var class_cons_aa = v['class_cons'][0];
             var class_cons_freq = Math.round(100 * v['class_cons'][1]);
 
+            all_angles_1 = data['all_angles'][i];
+            ss_pos1_set1 = [];
+            ss_pos1_set2 = [];
+            pdbs = data['pdbs1'].concat(data['pdbs2']);
+            pdbs.forEach(function(pdb){
+                pdb_upper = pdb.toUpperCase();
+                if (all_angles_1) {
+                    let d1 = all_angles_1[pdb_upper];
+                    if (d1.length) {
+                        if (data['pdbs1'].includes(pdb)) {
+                            ss_pos1_set1.push(d1[12]);
+                        } else if (data['pdbs2'].includes(pdb)) {
+                            ss_pos1_set2.push(d1[12]);
+                        }
+                    }
+                }
+            });
+
+            dssp = [];
+            [ss_pos1_set1,ss_pos1_set2].forEach(function(list){
+                if (list.length) {
+                    // make count map
+                    c = new Map([...new Set(list)].map(
+                            x => [x, list.filter(y => y === x).length]
+                        ));
+                    // make count with highest number first element
+                    const mapSort = new Map([...c.entries()].sort((a, b) => b[1] - a[1]));
+                    // get first element as [key,value]
+                    most = mapSort.entries().next().value;
+                    // calculate frequency
+                    freq = most[1]/list.length;
+                    most = most[0];
+                } else {
+                    freq = 0;
+                    most = 'N/A';
+                }
+                dssp.push([most,freq]);
+            })
+            // console.table(dssp);
+            // dssp_pos1 = '';
+            // dssp_pos1_freq = '';
+            // if (dssp[0][0]==dssp[1][0]){
+            //     // if pos1 category same
+            //     dssp_pos1=dssp[0][0];
+            //     dssp_pos1_freq = Math.round(100*(dssp[0][1]-dssp[1][1]));
+            // }
+
+
+            // dssp_pos2 = '';
+            // dssp_pos2_freq = '';
+            // if (dssp[2][0]==dssp[3][0]){
+            //     // if pos2 category same
+            //     dssp_pos2=dssp[2][0];
+            //     dssp_pos2_freq = Math.round(100*(dssp[2][1]-dssp[3][1]));
+            // }
+
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg}</td>
                       <td class="dt-center">${i}</td>
 
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">${dssp[0][0]}</td>
+                      <td class="narrow_col">${dssp[1][0]}</td>
+                      <td class="narrow_col">${Math.round(100*dssp[0][1])}</td>
+                      <td class="narrow_col">${Math.round(100*dssp[1][1])}</td>
+                      <td class="narrow_col">${Math.round(100*(dssp[0][1]-dssp[1][1]))}</td>
 
                       <td class="narrow_col">${angles1[4]}</td>
                       <td class="narrow_col">${angles2[4]}</td>
@@ -2171,14 +2509,48 @@ function renderBrowser_4(data) {
             var class_cons_aa = v['class_cons'][0];
             var class_cons_freq = Math.round(100 * v['class_cons'][1]);
 
+            all_angles_1 = data['all_angles'][i];
+            ss_pos1_set = [];
+            pdbs = data['pdbs'];
+            pdbs.forEach(function(pdb){
+                pdb_upper = pdb.toUpperCase();
+                if (all_angles_1) {
+                    let d1 = all_angles_1[pdb_upper];
+                    if (d1.length) {
+                        ss_pos1_set.push(d1[12]);
+                    }
+                }
+            });
+
+            dssp = [];
+            [ss_pos1_set].forEach(function(list){
+                if (list.length) {
+                    // make count map
+                    c = new Map([...new Set(list)].map(
+                            x => [x, list.filter(y => y === x).length]
+                        ));
+                    // make count with highest number first element
+                    const mapSort = new Map([...c.entries()].sort((a, b) => b[1] - a[1]));
+                    // get first element as [key,value]
+                    most = mapSort.entries().next().value;
+                    // calculate frequency
+                    freq = most[1]/list.length;
+                    most = most[0];
+                } else {
+                    freq = 0;
+                    most = 'N/A';
+                }
+                dssp.push([most,freq]);
+            })
+
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg}</td>
                       <td class="dt-center">${i}</td>
 
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">${dssp[0][0]}</td>
+                      <td class="narrow_col">${Math.round(100*dssp[0][1])}</td>
 
                       <td class="narrow_col">${angles[4]}</td>
 
@@ -2271,13 +2643,21 @@ function renderBrowser_4(data) {
             var class_cons_aa = v['class_cons'][0];
             var class_cons_freq = Math.round(100 * v['class_cons'][1]);
 
+            all_angles_1 = data['all_angles'][i];
+
+            if (all_angles_1) {
+                all_angles_1 = all_angles_1[data['pdbs'][0].toUpperCase()][12];
+            } else {
+                all_angles_1 = '';
+            }
+
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg}</td>
                       <td class="dt-center">${i}</td>
 
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">${all_angles_1}</td>
 
                       <td class="narrow_col">${angles[4]}</td>
 
