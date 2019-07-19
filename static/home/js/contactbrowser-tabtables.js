@@ -2477,7 +2477,7 @@ function enable_hover(table){
               }
           } else if (selector.className=="selector") {
             if (plotType.startsWith("ngl")) { // 3D
-              button.addEventListener("click", (function(a, b, c){ return function(){colorByData(a.replace("ngl-",""), b, c);}})(plotType, tableNumber, columnSelector))
+              button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a.replace("ngl-",""), b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
             } else if (plotType.startsWith("snakeplot")) { // Snakeplot
               button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
             } else {
@@ -2491,7 +2491,7 @@ function enable_hover(table){
               var object = $(e.target)
               if (!object.hasClass("red")){
                 // Remove toggle and keep from other header if present
-                $(".glyphicon-stats, .red, ."+targetClasses[targetClasses.length -1]).each( function(i, other){
+                $(".glyphicon-stats.red."+targetClasses[targetClasses.length -1]).each( function(i, other){
                     $(other).removeClass("red")
                     // clean header
                     if ($(other).parent().find(".red").length == 0) {
@@ -2547,7 +2547,7 @@ function clearGraphHeader(e){
   currentHover = -1;
 }
 
-function enable_3Dclick(table){
+/*function enable_3Dclick(table){
   for (header in table[0].children[0].children[1].children){
     var th = table[0].children[0].children[1].children[header]
     if (typeof th === 'object')
@@ -2585,7 +2585,7 @@ function enable_3Dclick(table){
         }
       })
   }
-}
+}*/
 
 /*  cellPos jQuery plugin
     ---------------------

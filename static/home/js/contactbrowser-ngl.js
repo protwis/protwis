@@ -12,25 +12,26 @@ var rb_colors = ['#736DA7', '#5EB7B7', '#CE9AC6', '#DD7D7E', '#E6AF7C', '#DEDB75
 // entry: display (boolean), min, max, coloring
 // Values for single residue (skipping the pairs)
 dataType = {}
-dataType["no_viewing"]    = [false, 0, 0, ""]
-dataType["core_distance"] = [true, 0, 15, "wb"]
-dataType["ca_angle"]      = [true, 0, 180, "wb"]
-dataType["outer_angle"]   = [true, 0, 180, "wb"]
-dataType["ss_freq"]       = [true, 0, 100, "wb"]
-dataType["SASA"]          = [true, 0, 200, "wb"]
-dataType["RSA"]           = [true, 0, 100, "wb"]
-dataType["HSE"]           = [true, 0, 20, "wb"]
-dataType["conservation"]  = [true, 0, 100, "wb"]
-dataType["phi"]           = [true, 0, 180, "wb"]
-dataType["psi"]           = [true, 0, 180, "wb"]
-dataType["tau"]           = [true, 0, 180, "wb"]
-dataType["theta"]         = [true, 0, 180, "wb"]
+dataType["no_viewing"]     = [false, 0, 0, ""]
+dataType["core_distance"]  = [true, 0, 15, "wb"]
+dataType["rotation"]       = [true, 0, 180, "wb"]
+dataType["rotamer"]        = [true, 0, 180, "wb"]
+dataType["consensus_freq"] = [true, 0, 100, "wb"]
+dataType["consensus_SS"]   = [true, 0, 100, "ss_coloring"]
+dataType["SASA"]           = [true, 0, 200, "wb"]
+dataType["RSA"]            = [true, 0, 100, "wb"]
+dataType["HSE"]            = [true, 0, 20, "wb"]
+dataType["conservation"]   = [true, 0, 100, "wb"]
+dataType["phi"]            = [true, 0, 180, "wb"]
+dataType["psi"]            = [true, 0, 180, "wb"]
+dataType["tau"]            = [true, 0, 180, "wb"]
+dataType["theta"]          = [true, 0, 180, "wb"]
 
 // Same for differences between groups
 // TODO: finetune to relative variation per data type
 dataType["core_distance_diff"] = [true, -5, 5, "rwb"]
-dataType["ca_angle_diff"]      = [true, -45, 45, "rwb"]
-dataType["outer_angle_diff"]   = [true, -45, 45, "rwb"]
+dataType["rotation_diff"]      = [true, -45, 45, "rwb"]
+dataType["rotamer_diff"]       = [true, -45, 45, "rwb"]
 dataType["ss_freq_diff"]       = [true, -50, 50, "rwb"]
 dataType["SASA_diff"]          = [true, -50, 50, "rwb"]
 dataType["RSA_diff"]           = [true, -25, 25, "rwb"]
@@ -40,6 +41,19 @@ dataType["phi_diff"]           = [true, -45, 45, "rwb"]
 dataType["psi_diff"]           = [true, -45, 45, "rwb"]
 dataType["tau_diff"]           = [true, -45, 45, "rwb"]
 dataType["theta_diff"]         = [true, -45, 45, "rwb"]
+
+// Secondary structure coloringData
+var SS_COLORING = {
+  "H": "#FF0000", // alpha helix
+  "G": "#FF00FF", // 3-10 helix
+  "I": "#00FF00", // pi helix
+  "B": "#ffd700", // isolated bridge
+  "E": "#00a8ff", // strand/extended conformation
+  "T": "#ff5700", // turn
+  "S": "#00ffff", // bend (unique to DSSP)
+  "C": "#5d8aa8", // coil/other (STRIDE)
+  "-": "#5d8aa8", // coil/other (DSSP)
+}
 
 function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false) {
     // console.log(mode, pdb, pdbs, pdbs_set2, pdb2);
@@ -524,7 +538,7 @@ function linkNGLMouseControls(origin) {
     }
 }
 
-function colorByData(mode, tableNumber, columnNumber) {
+function colorByData(mode, tableNumber, columnNumber, type) {
     var defaultColor = "#666";
     var structureKey = 0; // structure number now limited to structure 1
     // TODO: make a switch for the different data tables (or handle in the click handler function?)
@@ -569,6 +583,14 @@ function colorByData(mode, tableNumber, columnNumber) {
     // Identify range
     var valMax = Math.max(...residue_values)
     var valMin = Math.min(...residue_values)
+    var palette = "rwb"
+    if (type in dataType){
+      valMax = dataType[type][2]
+      valMin = dataType[type][1]
+      palette = dataType[type][3]
+    } else {
+      console.log("TYPE not found: "+type)
+    }
 
     // Create coloring scheme
     color_scheme = []
@@ -584,10 +606,15 @@ function colorByData(mode, tableNumber, columnNumber) {
 
         // get color
         var newColor = defaultColor;
-        if (valMin < 0) // three coloringData
-          newColor = numberToColorGradient(residue_values[i], valMax, "rwb", neg_and_pos = true)
-        else
-          newColor = numberToColorGradient(residue_values[i], valMax, "rwb", neg_and_pos = false)
+        if (palette=="ss_coloring") { // coloring for SS
+            if (residue_values[i] in SS_COLORING)
+              newColor = SS_COLORING[residue_values[i]]
+        } else {
+          if (valMin < 0)
+            newColor = numberToColorGradient(residue_values[i], valMax, palette, neg_and_pos = true)
+          else
+            newColor = numberToColorGradient(residue_values[i], valMax, palette, neg_and_pos = false)
+        }
 
         // add color + residue to scheme
         color_scheme.push([newColor, ngl_selection])
