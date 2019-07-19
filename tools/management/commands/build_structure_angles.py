@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import connection
 
 import contactnetwork.pdb as pdb
 from structure.models import Structure, StructureVectors
@@ -20,6 +21,9 @@ import scipy.stats as stats
 from collections import OrderedDict
 from sklearn.decomposition import PCA
 from numpy.core.umath_tests import inner1d
+
+
+from multiprocessing import Queue, Process, Value, Lock
 
 TMNUM = 7
 
@@ -112,6 +116,38 @@ class Command(BaseCommand):
     ############################ Helper  Functions ############################
     ###########################################################################
 
+    processes = 4
+
+    def prepare_input(self, proc, items, iteration=1):
+        q = Queue()
+        procs = list()
+        num_items = len(items)
+        num = Value('i', 0)
+        lock = Lock()
+
+        if not num_items:
+            return False
+
+        # make sure not to use more jobs than proteins (chunk size will be 0, which is not good)
+        if proc > num_items:
+            proc = num_items
+
+        chunk_size = int(num_items / proc)
+        connection.close()
+        for i in range(0, proc):
+            first = chunk_size * i
+            if i == proc - 1:
+                last = False
+            else:
+                last = chunk_size * (i + 1)
+    
+            p = Process(target=self.main_func, args=([(first, last), iteration,num,lock]))
+            procs.append(p)
+            p.start()
+
+        for p in procs:
+            p.join()
+
     def load_pdb_var(self, pdb_code, var):
         """
         load string of pdb as pdb with a file handle. Would be nicer to do this
@@ -121,7 +157,17 @@ class Command(BaseCommand):
         with io.StringIO(var) as f:
             return parser.get_structure(pdb_code,f)
 
+
     def handle(self, *args, **options):
+
+        Angle.objects.all().delete()
+        self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        print(len(self.references),'structures')
+        self.references = list(self.references)
+        self.prepare_input(self.processes, self.references)
+
+    def main_func(self, positions, iteration,count,lock):
+        print('main_func')
         def recurse(entity,slist):
             """
             filter a pdb structure in a recursive way
@@ -229,11 +275,12 @@ class Command(BaseCommand):
 
         # Get all structures
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
-        references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        #references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
         #references = Structure.objects.filter(pdb_code__index="6AK3").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
-        references = list(references)
+        # references = list(references)
+        references = self.references
 
         pids = [ref.protein_conformation.protein.id for ref in references]
 
@@ -252,7 +299,14 @@ class Command(BaseCommand):
         angle_dict = [{},{},{},{}]
         median_dict = [{},{},{},{}]
 
-        for reference in references:
+        #for reference in references:
+        while count.value<len(references):
+            with lock:
+                if count.value<len(references):
+                    reference = references[count.value]
+                    count.value +=1
+                else:
+                    break 
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
             print(pdb_code)
@@ -264,7 +318,7 @@ class Command(BaseCommand):
                 state_id = reference.protein_conformation.state.id
 
                 # DSSP
-                filename = "temp.pdb"
+                filename = "{}_temp.pdb".format(pdb_code)
                 pdbio = Bio.PDB.PDBIO()
                 pdbio.set_structure(pchain)
                 pdbio.save(filename, NonHetSelect())
@@ -549,5 +603,4 @@ class Command(BaseCommand):
 
         # Store the results
         # faster than updating: deleting and recreating
-        Angle.objects.all().delete()
         Angle.objects.bulk_create(object_list,batch_size=5000)
