@@ -1041,7 +1041,7 @@
       <!-- MODAL POP UP FOR RESIDUE INFO -->
       <div class="modal fade" id="resModal" role="dialog">
         <div class="modal-dialog modal-wide">
-        
+
           <!-- Modal content-->
           <div class="modal-content">
             <div class="modal-header">
@@ -1055,7 +1055,7 @@
               <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
           </div>
-          
+
         </div>
       </div>
 {% endblock %}
@@ -1216,5 +1216,23 @@
     <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
+    <style>
+        th.selector, th.pairselector, th.skip {
+            height: 1.5em;
+            text-align: center;
+        }
+
+        th.selector  span.glyphicon, th.pairselector span.glyphicon {
+          padding-right: 0.1em;
+        }
+
+        span.glyphicon.gray {
+          color: lightgray;
+        }
+
+        span.glyphicon.red {
+          color: red;
+        }
+    </style>
 
 {% endblock %}

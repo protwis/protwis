@@ -18,7 +18,7 @@ function initializeFullscreenButton(selector) {
     });
 }
 
-function thisPDB(elem) {
+/*function thisPDB(elem) {
     var group = $(elem).closest('.tableview').attr('group-number');
     var ReceptorName = $(elem).attr('long');
     var pdbName = $(elem).attr('id');
@@ -41,8 +41,8 @@ function thisPDB(elem) {
       }
       $('#pdb-input').val(JSON.stringify(pdbs));
     }
-}
-
+}*/
+/*
 $.fn.dataTable.ext.order['dom-checkbox'] = function  ( settings, col )
     {
         return this.api().column( col, {order:'index'} ).nodes().map( function ( td, i ) {
@@ -60,114 +60,7 @@ function check_all(elem) {
   }
 
   thisPDB(elem)
-}
-
-var oTable = [];
-function showPDBtable(element, table) {
-    if ( ! $.fn.DataTable.isDataTable( element+' .tableview table' ) ) {
-        oTable[table] = $(element+' .tableview table').DataTable({
-        'scrollX': true,
-        // 'autoWidth': true,
-        scrollY:        '80vh',
-        // scrollCollapse: true,
-        paging:         false,
-        columnDefs: [
-            { targets: 'no-sort', orderable: false }
-        ],
-        "aaSorting": [],
-            "columns": [
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        { "orderDataType": "dom-checkbox" }
-                    ]
-        });
-
-        yadcf.init(oTable[table],
-        [
-            {
-                column_number : 0,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Class",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 1,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                select_type_options: {
-                    width: '70px'
-                },
-                filter_default_label: "PDB",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 2,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "Receptor",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 3,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                html_data_type: "text",
-                select_type_options: {
-                    width: '150px'
-                },
-                filter_default_label: "Family",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 4,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Species",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 5,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                select_type_options: {
-                    minimumResultsForSearch: -1 // remove search box
-                },
-                filter_default_label: "State",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-
-            },
-            {
-                column_number : 6,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Representative",
-                filter_reset_button_text: false,
-
-            },
-        ],
-        {
-            cumulative_filtering: false
-        }
-    );
-
-    yadcf.exResetAllFilters(oTable[table]);
-
-    };
-}
+}*/
 
 var stage = [];
 var color_schemes = [];
@@ -176,6 +69,9 @@ var chain_selection = ""
 function createNGLview(mode, pdb, pdb2, pdbs = false) {
     var gpcr_rep
     $("#ngl-"+mode).html("");
+    console.log(pdb)
+    console.log(pdb2)
+    console.log(mode)
     stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
 
     var pdb_data
@@ -426,8 +322,8 @@ function renderTable() {
   createNGLview("single", pdb, undefined);
 }
 
-$('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
-    showPDBtable('#single-crystal-pdb-modal-table', "firsttable");
+$('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
+    showPDBtable('#single-crystal-group-pdbs-modal-table');
 })
 
 var selectortable
@@ -435,14 +331,14 @@ var residuetable
 $(document).ready(function() {
     // Get PDBs for table build
     $.get('/contactnetwork/pdbtabledata', function ( data ) {
-      $('#single-crystal-pdb-modal-table .tableview').html(data);
+      $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
 
       pdbtabledata = data;
     });
 
     // Single PDB files
-    initializeGoButton('#single-crystal-tab');
-    initializeFullscreenButton('#single-crystal-tab');
+    initializeGoButton('#single-crystal-group-tab');
+    initializeFullscreenButton('#single-crystal-group-tab');
 
      // toggle
      $('#forward').click(function() {

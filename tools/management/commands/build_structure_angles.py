@@ -11,6 +11,8 @@ import freesasa
 import io
 import logging
 import math
+import subprocess
+import os
 
 import numpy as np
 import scipy.stats as stats
@@ -238,7 +240,6 @@ class Command(BaseCommand):
         #######################################################################
         ######################### Start of main loop ##########################
         #######################################################################
-
         angle_dict = [{},{},{},{}]
         median_dict = [{},{},{},{}]
 
@@ -252,6 +253,33 @@ class Command(BaseCommand):
                 structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
                 state_id = reference.protein_conformation.state.id
+
+                # DSSP
+                filename = "temp.pdb"
+                pdbio = Bio.PDB.PDBIO()
+                pdbio.set_structure(pchain)
+                pdbio.save(filename)
+                if os.path.exists("/env/bin/dssp"):
+                    dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/dssp')
+                if os.path.exists("/env/bin/mkdssp"):
+                    dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/mkdssp')
+
+                # STRIDE
+                try:
+                    if os.path.exists("/env/bin/stride"):
+                       stride = subprocess.Popen(['/env/bin/stride', filename], stdout=subprocess.PIPE)
+                       # Grab SS assignment (ASG) and parse residue (cols 12-15) and SS (cols 25-25)
+                       for line in io.TextIOWrapper(stride.stdout, encoding="utf-8"):
+                           if line.startswith("ASG"):
+                               res_id = int(line[11:15].strip())
+                               res_ss = line[24:25].strip()
+                               # assign to residue
+                               pchain[res_id].xtra["SS_STRIDE"] = res_ss
+                except OSError:
+                   print(pdb_code, " - STRIDE ERROR - ", e)
+
+                # CLEANUP
+                os.remove(filename)
 
                 #######################################################################
                 ###################### prepare and evaluate query #####################
@@ -270,8 +298,6 @@ class Command(BaseCommand):
                         pass
 
                 # when gdict is not needed the helper can be removed
-                #db_tmlist = [[(' ',r.sequence_number,' ') for r in reslist_gen(x) if r.sequence_number in pchain and r.sequence_number < 1000] for x in ["1","2","3","4","5","6","7"]]
-                # db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain and r.sequence_number < 1000] for x in ["1","2","3","4","5","6","7"]]
                 db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain] for x in ["1","2","3","4","5","6","7"]]
                 gdict = {r[1]:r[0] for hlist in db_helper for r in hlist}
                 db_tmlist = [[(' ',r[1],' ') for r in sl] for sl in db_helper]
@@ -283,6 +309,7 @@ class Command(BaseCommand):
                 polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
                 poly = Bio.PDB.Polypeptide.Polypeptide(polychain)
                 poly.get_phi_psi_list() # backbone dihedrals
+
                 #poly.get_theta_list() # angle three consecutive Ca atoms
                 #poly.get_tau_list() # dihedral four consecutive Ca atoms
 
@@ -297,7 +324,7 @@ class Command(BaseCommand):
                 poly.get_tau_list() # dihedral four consecutive Ca atoms
                 dihedrals = {}
                 for r in poly:
-                  angle_list = ["PHI", "PSI", "THETA", "TAU"]
+                  angle_list = ["PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE"]
                   for angle in angle_list:
                       if angle not in r.xtra:
                           r.xtra[angle] = None
@@ -316,7 +343,7 @@ class Command(BaseCommand):
 #                      print(pdb_code, " - ANGLE ERROR - ", e)
                       outer = None
 
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], outer]
+                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"].upper(), outer]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -460,7 +487,7 @@ class Command(BaseCommand):
 
                 for res, angle1, angle2, distance in zip(pchain, a_angle, b_angle, core_distance):
                     residue_id = res.id[1]
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "OUTER", "ASA", "DISTANCE"
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
                     dblist.append([reference, gdict[residue_id], angle1, angle2, \
                         rsa_list[residue_id], \
                         hselist[residue_id]] + \
@@ -490,9 +517,9 @@ class Command(BaseCommand):
 #            std = stats.t.cdf(std_test, df=std_len)
 #            dblist[i].append(0.501 if np.isnan(std) else std)
 
-        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA", "DISTANCE"
+        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,outer,asa,distance in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance in dblist:
             try:
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
@@ -504,9 +531,9 @@ class Command(BaseCommand):
                     tau = round(np.rad2deg(tau),3)
                 if outer != None:
                     outer = round(np.rad2deg(outer),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, outer_angle=outer, core_distance=distance))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance))
             except Exception as e:
-                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau, asa])
+                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance])
 
         print("created list")
         print(len(object_list))

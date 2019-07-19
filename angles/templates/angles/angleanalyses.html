@@ -867,17 +867,28 @@
 
           // add selector
           var selectVariable = '<select class="variable_selector">';
+          if (selector=='#single-crystal-tab') {
+              selectVariable += '<optgroup label="Secondary structure">';
+              selectVariable += '<option value="ss_dssp">DSSP method</option>';
+              selectVariable += '<option value="ss_stride">Stride method</option>';
+              selectVariable += '</optgroup>';
+          }
+          selectVariable += '<optgroup label="Backbone movement">';
+          selectVariable += '<option value="distance" SELECTED>Distance to 7TM axis</option>';
           selectVariable += '<option value="bb_angle">Angle of C&alpha; atom relative to GPCR core</option>';
           selectVariable += '<option value="sc_angle">Angle of C&beta; atom relative to GPCR core</option>';
-          selectVariable += '<option value="outer_angle" SELECTED>Most outer angle</option>';
           selectVariable += '<option value="HSE">Half-sphere exposure</option>';
-          selectVariable += '<option value="SASA">Solvent Accessible Surface Area (SASA)</option>';
-          selectVariable += '<option value="RSA">Relative SASA</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Helix types, bulges and constrictions">';
           selectVariable += '<option value="phi">Phi dihedral</option>';
           selectVariable += '<option value="psi">Psi dihedral</option>';
-          selectVariable += '<option value="tau">Tau angle</option>';
-          selectVariable += '<option value="theta">Theta dihedral</option>';
-          selectVariable += '<option value="distance">Distance to core</option>';
+          selectVariable += '<option value="tau">Tau dihedral (between 4 consecutive C&alpha;-atoms)</option>';
+          selectVariable += '<option value="theta">Theta angle (between 3 consecutive C&alpha;-atoms)</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Sidechain properties">';
+          selectVariable += '<option value="outer_angle">Angle terminal atom - helix axis - 7TM axis</option>';
+          selectVariable += '<option value="RSA">Relative SASA</option>';
+          selectVariable += '<option value="SASA">Solvent Accessible Surface Area (SASA)</option>';
           selectVariable += '</select>';
           cp.html(selectVariable)
 
@@ -903,12 +914,14 @@
           "psi" : 9,
           "theta" : 10,
           "tau" : 11,
-          "distance" : 12
+          "distance" : 12,
+          "ss_dssp" : 13,
+          "ss_stride" : 14
         }
 
         var coloringData = {}
         var repr_dict = {}
-        function updateDataTable(selector, variable = "outer_angle") {
+        function updateDataTable(selector, variable = "distance") {
             data = angleData[selector];
             coloringData[tabMap[selector]] = {}
 
@@ -938,28 +951,34 @@
             var rowset = []
             data["data"].forEach(function (row){
                 var tmp = []
-                for (var i =0; i < dataSelector.length; i++)
+                for (var i =0; i < dataSelector.length; i++){
                   tmp.push(row[dataSelector[i]])
+                }
 
                 // add second dataset
                 for (var i = 0; i < dataSelector.length; i++){
-                  if (dataSelector[i]>1)
-                      if (data["data2"][row[0]] != undefined)
+                  if (dataSelector[i]>1){
+                      if (data["data2"][row[0]] != undefined && data["data2"][row[0]][dataSelector[i]] != undefined)
                         tmp.push(data["data2"][row[0]][dataSelector[i]])
                       else
                         tmp.push(['-','-','-'])
+                  }
                 }
                 tmp = tmp.flat()
 
                 // Add the diff column
-                if (tmp.length>6){
-                  tmp.push(tmp[2] - tmp[5])
-                  for (var i=1; i<tmp.length;i++)
-                    tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                if (availableVariables[variable] < 13){ // no secondary structure
+                  if (tmp.length>6){
+                    tmp.push(tmp[2] - tmp[5])
+                    for (var i=1; i<tmp.length;i++)
+                      tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                  } else {
+                    tmp.push(tmp[2] - tmp[4])
+                    for (var i=2; i<tmp.length;i++)
+                      tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                  }
                 } else {
-                  tmp.push(tmp[2] - tmp[4])
-                  for (var i=2; i<tmp.length;i++)
-                    tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                  tmp.push("-")
                 }
 
                 // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
@@ -1512,8 +1531,8 @@
               controls += '<option value="rangeG2">Variation in group 2</option>'
               controls += '<option value="diff" SELECTED>Difference between groups</option>'
             } else {
-              controls += '<option value="value">Value</option>'
-              controls += '<option value="diff" SELECTED>Difference with class</option>'
+              controls += '<option value="value" SELECTED>Value</option>'
+              controls += '<option value="diff">Difference with class</option>'
             }
             controls += '</select></p>'
 
@@ -1529,6 +1548,10 @@
             $("#ngl-"+mode).append(newDiv);
 
             selectColoring[mode] = "diff"
+            // DEBUG setting (or keep as default?)
+            if (mode=="single")
+                selectColoring[mode] = "value"
+
             $('#ngl_coloring_'+mode).change(function(e) {
                 selectColoring[mode] = $(this).val()
                 updateStructureRepresentations(mode)
@@ -1648,6 +1671,25 @@
              updateStructureRepresentations(mode)
         }
 
+        var DSSP_COLORING = {
+          "H": "#FF0000", // alpha helix
+          "G": "#FF00FF", // 3-10 helix
+          "I": "#00FF00", // pi helix
+          "B": "#ffd700", // isolated bridge
+          "E": "#00a8ff", // strand/extended conformation
+          "T": "#ff5700", // turn
+          "S": "#00ffff", // bend (unique to DSSP)
+          "-": "#5d8aa8", // coil/other
+        }
+        var STRIDE_COLORING = {
+          "H": "#FF0000",
+          "G": "#FF00FF",
+          "I": "#00FF00",
+          "B": "#ffd700",
+          "E": "#00a8ff",
+          "T": "#ff5700",
+          "C": "#5d8aa8",
+        }
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
           var structures = 1;
@@ -1768,6 +1810,14 @@
                         color_scheme.push([numberToColor5(10, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       else
                         color_scheme.push([numberToColor5(5, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "ss_dssp":
+                      if (coloringData[mode][gn_key][colorIndex] != null && coloringData[mode][gn_key][colorIndex] != "")
+                        color_scheme.push([DSSP_COLORING[coloringData[mode][gn_key][colorIndex]], ngl_selection])
+                      break;
+                    case "ss_stride":
+                      if (coloringData[mode][gn_key][colorIndex] != null && coloringData[mode][gn_key][colorIndex] != "")
+                        color_scheme.push([STRIDE_COLORING[coloringData[mode][gn_key][colorIndex]], ngl_selection])
                       break;
                   }
                 }

@@ -182,39 +182,6 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal") {
-                // function myCustomFilterFunction(filterVal, columnVal) {
-                //     var found;
-                //     if (columnVal === '') {
-                //         return true;
-                //     }
-                //     switch (filterVal) {
-                //     case 'happy':
-                //         found = columnVal.search(/:-\]|:\)|Happy|JOY|:D/g);
-                //         break;
-                //     case 'sad':
-                //         found = columnVal.search(/:\(|Sad|:'\(/g);
-                //         break;
-                //     case 'angry':
-                //         found = columnVal.search(/!!!|Arr\.\.\./g);
-                //         break;
-                //     case 'lucky':
-                //         found = columnVal.search(/777|Bingo/g);
-                //         break;
-                //     case 'january':
-                //         found = columnVal.search(/01|Jan/g);
-                //         break;
-                //     default:
-                //         found = 1;
-                //         break;
-                //     }
-
-                //     if (found !== -1) {
-                //         return true;
-                //     }
-                //     return false;
-                // }
-
-
                 repeated_from_to = make_range_number_cols(4, 16);
 
                 yadcf.init(btable,
@@ -886,15 +853,34 @@ function renderBrowser(data) {
         // <th colspan="2">Phi dihedral</th> \
         // <th colspan="2">Psi dihedral</th> \
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="3" class="pairselector" datatype="frequency"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="distance_diff"></th> \
+                      <th colspan="2" class="selector" datatype="core_distance_diff"></th> \
+                      <th colspan="2" class="selector" datatype="rotation_diff"></th> \
+                      <th colspan="2" class="selector" datatype="rotamer_diff"></th> \
+                      <th colspan="2" class="selector"datatype="SASA_diff"></th> \
+                      <th colspan="2" class="selector"datatype="RSA_diff"></th> \
+                      <th colspan="2" class="selector"datatype="presence_diff"></th> \
+                      <th colspan="2" class="selector"datatype="consensus_SS"></th> \
+                      <th colspan="2" class="selector"datatype="consensus_freq"></th> \
+                      <th colspan="3" class="skip"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2"> Frequency (%)</th> \
                           <th rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
-                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
-                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="2">Backbone movement</th> \
+                          <th colspan="2">(Ca-7TM axis)</th> \
+                          <th colspan="2">Sidechain differences</th> \
+                          <th colspan="2"></th> \
+                          <th colspan="2"></th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
-                          <th colspan="4">Secondary structure</th> \
+                          <th colspan="2">Secondary structure</th> \
+                          <th colspan="2"></th> \
                           <th rowspan="2" colspan="3">Sum of conservation of contact AA pairs in class (%)</th> \
                         </tr> \
                         <tr> \
@@ -968,7 +954,7 @@ function renderBrowser(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -1006,15 +992,34 @@ function renderBrowser(data) {
         });
     } else if (data['proteins'].length > 1) {
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="pairselector" datatype="frequency"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="pairselector" datatype="distance"></th> \
+                      <th colspan="2" class="selector" datatype="core_distance"></th> \
+                      <th colspan="2" class="selector" datatype="rotation"></th> \
+                      <th colspan="2" class="selector" datatype="rotamer"></th> \
+                      <th colspan="2" class="selector" datatype="SASA"></th> \
+                      <th colspan="2" class="selector" datatype="RSA"></th> \
+                      <th colspan="2" class="selector" datatype="presence"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="1" class="skip"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2"> Frequency (%)</th> \
                           <th rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
-                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
-                          <th colspan="6">Sidechain differences</th> \
+                          <th colspan="2">Backbone movement</th> \
+                          <th colspan="2">(Ca-7TM axis)</th> \
+                          <th colspan="2">Sidechain differences</th> \
+                          <th colspan="2"></th> \
+                          <th colspan="2"></th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
-                          <th colspan="4">Secondary structure</th> \
+                          <th colspan="2">Secondary structure</th> \
+                          <th colspan="2"></th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
@@ -1072,7 +1077,7 @@ function renderBrowser(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -1141,14 +1146,30 @@ function renderBrowser(data) {
                         </tr>';
 
         thead = '<tr> \
+                      <th colspan="4" class="skip"></th> \
+                      <th colspan="1" class="pairselector" datatype="distance"></th> \
+                      <th colspan="2" class="selector" datatype="core_distance"></th> \
+                      <th colspan="2" class="selector" datatype="rotation"></th> \
+                      <th colspan="2" class="selector" datatype="rotamer"></th> \
+                      <th colspan="2" class="selector" datatype="SASA"></th> \
+                      <th colspan="2" class="selector" datatype="RSA"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="1" class="skip"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
                           <th rowspan="2">Interaction</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
-                          <th colspan="4">Backbone movement (Ca-7TM axis)</th> \
-                          <th colspan="6">Sidechain differences</th> \
-                          <th colspan="4">Secondary structure</th> \
+                          <th colspan="2">Backbone movement</th> \
+                          <th colspan="2">(Ca-7TM axis)</th> \
+                          <th colspan="2">Sidechain differences</th> \
+                          <th colspan="2"></th> \
+                          <th colspan="2"></th> \
+                          <th colspan="2">Secondary structure</th> \
+                          <th colspan="2"></th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
@@ -1245,6 +1266,8 @@ function renderBrowser(data) {
 
     console.timeEnd("RenderBrowser");
     gray_scale_table(table);
+    enable_hover(table);
+    //enable_3Dclick(table)
 }
 
 function renderBrowser_2(data) {
@@ -1699,7 +1722,7 @@ function renderBrowser_2(data) {
         var pdbs_aa2 = v2['set1']['occurance']['aa2'].concat(v2['set2']['occurance']['aa2']);
         var aa1 = v2['aa1'];
         var aa2 = v2['aa2'];
-            
+
         all_angles_1 = two_sets_data['all_angles'][gn1];
         all_angles_2 = two_sets_data['all_angles'][gn2];
 
@@ -1733,6 +1756,20 @@ function renderBrowser_3(data) {
     var pdbs_2 = data['pdbs2'].length
     if (data['proteins2']) {
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="3" class="selector" datatype="contacts"></th> \
+                      <th colspan="3" class="selector" datatype="contacts"></th> \
+                      <th colspan="1" class="selector" datatype="contacts"></th> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="3" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
+                      <th colspan="1" class="selector" datatype="rotation_diff"></th> \
+                      <th colspan="1" class="selector" datatype="rotamer_diff"></th> \
+                      <th colspan="1" class="selector"datatype="SASA_diff"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2">Avg no contact pairs</th> \
@@ -1815,7 +1852,7 @@ function renderBrowser_3(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -1892,6 +1929,7 @@ function renderBrowser_3(data) {
         }
     });
 
+    enable_hover(table);
     console.timeEnd("RenderBrowser3");
 }
 
@@ -1912,22 +1950,36 @@ function renderBrowser_4(data) {
         var pdbs_1 = data['pdbs1'].length
         var pdbs_2 = data['pdbs2'].length
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="3" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="3" class="selector" datatype="phi"></th> \
+                      <th colspan="3" class="selector" datatype="psi"></th> \
+                      <th colspan="3" class="selector" datatype="tau"></th> \
+                      <th colspan="3" class="selector" datatype="theta"></th> \
+                      <th colspan="3" class="selector" datatype="theta"></th> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="3" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
-                          <th colspan="9" rowspan="1">Residue angles</th> \
-                          <th colspan="6" rowspan="1">Helix turn angle</th> \
+                          <th colspan="6" rowspan="1">Residue angles</th> \
+                          <th colspan="9" rowspan="1">Helix turn angle</th> \
                           <th colspan="5" rowspan="1">Seq consensus</th> \
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Consensus SS</th> \
                           <th colspan="3">Frequency (%)</th> \
-                          <th colspan="3">Tau (N-Ca-C)</th> \
                           <th colspan="3">Phi (N(+1)-C-Ca-N)</th> \
                           <th colspan="3">Psi (C-Ca-N-C(-1))</th> \
-                          <th colspan="3">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="3">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="3">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
+                          <th colspan="3">Theta (Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="3">Next Theta (Ca(+2)-Ca(+1)-Ca)</th> \
                           <th colspan="2">AA</th> \
                           <th colspan="3">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -1979,7 +2031,7 @@ function renderBrowser_4(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -2005,10 +2057,6 @@ function renderBrowser_4(data) {
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
 
-                      <td class="narrow_col">${angles1[3]}</td>
-                      <td class="narrow_col">${angles2[3]}</td>
-                      <td class="narrow_col">${angles_diff[3]}</td>
-
                       <td class="narrow_col">${angles1[4]}</td>
                       <td class="narrow_col">${angles2[4]}</td>
                       <td class="narrow_col">${angles_diff[4]}</td>
@@ -2017,10 +2065,14 @@ function renderBrowser_4(data) {
                       <td class="narrow_col">${angles2[5]}</td>
                       <td class="narrow_col">${angles_diff[5]}</td>
 
+                      <td class="narrow_col">${angles1[3]}</td>
+                      <td class="narrow_col">${angles2[3]}</td>
+                      <td class="narrow_col">${angles_diff[3]}</td>
+
                       <td class="narrow_col">${angles1[8]}</td>
                       <td class="narrow_col">${angles2[8]}</td>
                       <td class="narrow_col">${angles_diff[8]}</td>
-                      
+
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
@@ -2045,22 +2097,36 @@ function renderBrowser_4(data) {
         var proteins = data['proteins'].length
         var pdbs = data['pdbs'].length
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="1" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="1" class="selector" datatype="phi"></th> \
+                      <th colspan="1" class="selector" datatype="psi"></th> \
+                      <th colspan="1" class="selector" datatype="tau"></th> \
+                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="2" rowspan="1">Secondary structure</th> \
-                          <th colspan="3" rowspan="1">Residue angles</th> \
-                          <th colspan="2" rowspan="1">Helix turn angle</th> \
+                          <th colspan="2" rowspan="1">Residue angles</th> \
+                          <th colspan="3" rowspan="1">Helix turn angle</th> \
                           <th colspan="2" rowspan="1">Seq consensus</th> \
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
                           <th colspan="1">Consensus SS</th> \
                           <th colspan="1">Frequency (%)</th> \
-                          <th colspan="1">Tau (N-Ca-C)</th> \
                           <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
                           <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="1">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
+                          <th colspan="1">Theta (Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Next Theta (Ca(+2)-Ca(+1)-Ca)</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -2094,7 +2160,7 @@ function renderBrowser_4(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -2114,14 +2180,14 @@ function renderBrowser_4(data) {
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
 
-                      <td class="narrow_col">${angles[3]}</td>
-
                       <td class="narrow_col">${angles[4]}</td>
 
                       <td class="narrow_col">${angles[5]}</td>
 
+                      <td class="narrow_col">${angles[3]}</td>
+
                       <td class="narrow_col">${angles[8]}</td>
-                      
+
                       <td class="narrow_col"></td>
 
                       <td class="narrow_col">${set_seq_cons_aa}</td>
@@ -2139,21 +2205,33 @@ function renderBrowser_4(data) {
         var proteins = data['proteins'].length
         var pdbs = data['pdbs'].length
         thead = '<tr> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="1" class="selector" datatype="phi"></th> \
+                      <th colspan="1" class="selector" datatype="psi"></th> \
+                      <th colspan="1" class="selector" datatype="tau"></th> \
+                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                  </tr> \
+                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="1">Secondary structure</th> \
-                          <th colspan="3" rowspan="1">Residue angles</th> \
-                          <th colspan="2" rowspan="1">Helix turn angle</th> \
+                          <th colspan="2" rowspan="1">Residue angles</th> \
+                          <th colspan="3" rowspan="1">Helix turn angle</th> \
                           <th colspan="1" rowspan="1">Seq</th> \
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
-                          <th colspan="1">Consensus SS</th> \
-                          <th colspan="1">Tau (N-Ca-C)</th> \
+                          <th colspan="1">SS</th> \
                           <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
                           <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Theta (Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Next Theta (Ca(+1)-CA-CA(-1)-CA(-2))</th> \
+                          <th colspan="1">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
+                          <th colspan="1">Theta (Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Next Theta (Ca(+2)-Ca(+1)-Ca)</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Cons (%)</th> \
@@ -2184,7 +2262,7 @@ function renderBrowser_4(data) {
             // 2 'outer_angle',
             // 3 'tau',
             // 4 'phi',
-            // 5 'psi', 
+            // 5 'psi',
             // 6 'sasa',
             // 7 'rsa',
             // 8 'theta',
@@ -2201,14 +2279,14 @@ function renderBrowser_4(data) {
 
                       <td class="narrow_col"></td>
 
-                      <td class="narrow_col">${angles[3]}</td>
-
                       <td class="narrow_col">${angles[4]}</td>
 
                       <td class="narrow_col">${angles[5]}</td>
 
+                      <td class="narrow_col">${angles[3]}</td>
+
                       <td class="narrow_col">${angles[8]}</td>
-                      
+
                       <td class="narrow_col"></td>
 
                       <td class="narrow_col">${set_seq_cons_aa}</td>
@@ -2223,6 +2301,7 @@ function renderBrowser_4(data) {
 
     }
 
+    enable_hover(table);
     console.timeEnd("RenderBrowser4");
 }
 
@@ -2238,7 +2317,24 @@ function renderBrowser_5(data) {
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
 
-    thead = '<tr> \
+    var thead;
+    if (data['proteins2']) {
+      thead = '<tr> \
+                    <th colspan="2" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
+                    <th colspan="1" class="selector" datatype="rotation_diff"></th> \
+                    <th colspan="1" class="selector" datatype="HSE_diff"></th> \
+                </tr>';
+    } else {
+      thead = '<tr> \
+                    <th colspan="2" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="core_distance"></th> \
+                    <th colspan="1" class="selector" datatype="rotation"></th> \
+                    <th colspan="1" class="selector" datatype="HSE"></th> \
+                </tr>';
+    }
+
+    thead += '<tr> \
                       <th colspan="1" rowspan="2">Segment</th> \
                       <th colspan="1" rowspan="2">Positions</th> \
                       <th colspan="2">Backbone movement (Ca-7TM axis)</th> \
@@ -2267,7 +2363,7 @@ function renderBrowser_5(data) {
         // 2 'outer_angle',
         // 3 'tau',
         // 4 'phi',
-        // 5 'psi', 
+        // 5 'psi',
         // 6 'sasa',
         // 7 'rsa',
         // 8 'theta',
@@ -2287,7 +2383,7 @@ function renderBrowser_5(data) {
     // insert natively for speed increase on Chrome
     tbody[0].innerHTML = tr_list;
 
-
+    enable_hover(table)
     console.timeEnd("RenderBrowser5");
 }
 
@@ -2333,3 +2429,209 @@ function gray_scale_table(table) {
     console.log(cell_count, 'cells greyscaled');
     console.timeEnd('Greyscale');
 }
+
+var currentHover = -1;
+function enable_hover(table){
+    table[0].children[0].addEventListener("mouseover", function(e){
+      var th = e.target
+      while (th.nodeName != "TH") {
+        th = th.parentNode
+      }
+      var columnNumber = $(th).cellPos().left;
+
+      // Get correct selector cell
+      var selectorHeader = th.parentNode.parentNode.children[0]
+      var selector = selectorHeader.children[0]
+      var columnSelector = 0
+      for (var i = 0; i < selectorHeader.children.length; i++) {
+        if ($(selectorHeader.children[i]).cellPos().left > columnNumber)
+          break
+        selector = selectorHeader.children[i]
+        columnSelector = $(selectorHeader.children[i]).cellPos().left
+      }
+
+      if (currentHover != columnSelector && selector.className!="skip" && !selector.className.includes("keep")) {
+        // other variables
+        var tableNumber = th.parentNode.parentNode.parentNode.className.split(" ")[0]
+        var tableNumber = tableNumber.substr(-1)
+
+        // grab graph options
+        var plots = $('.main_option:visible').find(".plot-container");
+        for (var i = 0; i < plots.length; i++){
+          var plotType = plots[i].id
+
+          var button = document.createElement("span")
+          button.className = "glyphicon glyphicon-stats toggle"+i
+          selector.appendChild(button)
+
+          var found = true;
+          if (selector.className=="pairselector") {
+              if (plotType.startsWith("heatmapcontainer")) { // heatmap
+                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+              } else if (plotType.startsWith("flareplot")) {  // flareplot
+                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+              } else if (plotType.startsWith("boxplot")) { // Box-plot (not available right now)
+                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+              } else {
+                found = false;
+              }
+          } else if (selector.className=="selector") {
+            if (plotType.startsWith("ngl")) { // 3D
+              button.addEventListener("click", (function(a, b, c){ return function(){colorByData(a.replace("ngl-",""), b, c);}})(plotType, tableNumber, columnSelector))
+            } else if (plotType.startsWith("snakeplot")) { // Snakeplot
+              button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+            } else {
+              found = false;
+            }
+          }
+
+          if (found){
+            button.addEventListener("click", function(e){
+              var targetClasses = e.target.className.split(" ")
+              var object = $(e.target)
+              if (!object.hasClass("red")){
+                // Remove toggle and keep from other header if present
+                $(".glyphicon-stats, .red, ."+targetClasses[targetClasses.length -1]).each( function(i, other){
+                    $(other).removeClass("red")
+                    // clean header
+                    if ($(other).parent().find(".red").length == 0) {
+                      $(other).parent().removeClass("keep")
+                    }
+                })
+
+                // Keep header enabled
+                if (!object.parent().hasClass("keep"))
+                  object.parent().addClass("keep");
+
+                // Toggle icon color
+                object.addClass("red")
+              }
+            });
+          } else {
+            // Grayout button if not available
+            button.className = button.className + " gray"
+          }
+        }
+
+        currentHover = columnSelector;
+      }
+    });
+
+    table[0].children[0].addEventListener("mouseout", function(e){
+      classes = e.target.className
+      if (!(classes.includes("glyphicon") || classes.includes("selector") || classes.includes("pairselector"))) {
+        clearGraphHeader(e)
+      }
+    });
+
+    header = table[0].children[0].children[0];
+    for (var i = 0; i < header.children.length; i++){
+      $(header.children[i]).mouseleave( clearGraphHeader );
+    }
+}
+
+function clearGraphHeader(e){
+  // clear selector header on mouse out
+  var header = e.target
+  while (header.nodeName != "THEAD") {
+    header = header.parentNode
+  }
+
+  // cleanup with smarter class selector
+  header = header.children[0];
+  for (var i = 0; i < header.children.length; i++){
+      if (header.children[i].innerHTML.length > 0 && !header.children[i].className.includes("keep")){
+          header.children[i].innerHTML = ""
+      }
+  }
+  currentHover = -1;
+}
+
+function enable_3Dclick(table){
+  for (header in table[0].children[0].children[1].children){
+    var th = table[0].children[0].children[1].children[header]
+    if (typeof th === 'object')
+      th.addEventListener("click", function(e){
+
+        // filter keys for current mode (single/single_group/two_sets)
+        const analys_mode = $('.main_option:visible').attr('id').replace('-tab', '');
+        var cmode = "single_"
+        if (analys_mode=="two-crystal-groups")
+          cmode = "two_sets_"
+        else if (analys_mode=="single-crystal-group")
+          cmode = "single_group_"
+
+        // BUG: single_ and single_group both match the single_ string
+        var viewers = Object.keys(stage).filter(function(x){ return x.startsWith(cmode)})
+        if (viewers.length > 0) {
+          var mode = viewers[0];
+          // TODO: select which 3D view if more than one
+
+          // Table data
+          var th = e.target
+          var tableNumber = th.parentNode.parentNode.parentNode.className.split(" ")[0];
+          var tableNumber = tableNumber.substr(-1)
+          var columnNumber = $(th).cellPos().left;
+
+          // Color 3D viewer
+          if ( th.colSpan == 3 ){
+            // Toggle between group 1/2 values and group differences
+
+          } else if (th.colSpan == 2 ){
+            colorByData(mode, tableNumber, [columnNumber, columnNumber+1])
+          } else {
+            colorByData(mode, tableNumber, columnNumber)
+          }
+        }
+      })
+  }
+}
+
+/*  cellPos jQuery plugin
+    ---------------------
+    Get visual position of cell in HTML table (or its block like thead).
+    Return value is object with "top" and "left" properties set to row and column index of top-left cell corner.
+    Example of use:
+        $("#myTable tbody td").each(function(){
+            $(this).text( $(this).cellPos().top +", "+ $(this).cellPos().left );
+        });
+*/
+(function($){
+    /* scan individual table and set "cellPos" data in the form { left: x-coord, top: y-coord } */
+    function scanTable( $table ) {
+        var m = [];
+        $table.children( "tr" ).each( function( y, row ) {
+            $( row ).children( "td, th" ).each( function( x, cell ) {
+                var $cell = $( cell ),
+                    cspan = $cell.attr( "colspan" ) | 0,
+                    rspan = $cell.attr( "rowspan" ) | 0,
+                    tx, ty;
+                cspan = cspan ? cspan : 1;
+                rspan = rspan ? rspan : 1;
+                for( ; m[y] && m[y][x]; ++x );  //skip already occupied cells in current row
+                for( tx = x; tx < x + cspan; ++tx ) {  //mark matrix elements occupied by current cell with true
+                    for( ty = y; ty < y + rspan; ++ty ) {
+                        if( !m[ty] ) {  //fill missing rows
+                            m[ty] = [];
+                        }
+                        m[ty][tx] = true;
+                    }
+                }
+                var pos = { top: y, left: x };
+                $cell.data( "cellPos", pos );
+            } );
+        } );
+    };
+
+    /* plugin */
+    $.fn.cellPos = function( rescan ) {
+        var $cell = this.first(),
+            pos = $cell.data( "cellPos" );
+        if( !pos || rescan ) {
+            var $table = $cell.closest( "table, thead, tbody, tfoot" );
+            scanTable( $table );
+        }
+        pos = $cell.data( "cellPos" );
+        return pos;
+    }
+})(jQuery);
