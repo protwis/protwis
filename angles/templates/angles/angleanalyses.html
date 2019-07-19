@@ -970,12 +970,16 @@
                 if (availableVariables[variable] < 13){ // no secondary structure
                   if (tmp.length>6){
                     tmp.push(tmp[2] - tmp[5])
-                    for (var i=1; i<tmp.length;i++)
-                      tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                    for (var i=1; i<tmp.length;i++){
+                      //tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                      tmp[i] = Math.round(tmp[i]*10)/10
+                    }
                   } else {
                     tmp.push(tmp[2] - tmp[4])
-                    for (var i=2; i<tmp.length;i++)
-                      tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                    for (var i=2; i<tmp.length;i++){
+                      //tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                      tmp[i] = Math.round(tmp[i]*10)/10
+                    }
                   }
                 } else {
                   tmp.push("-")
@@ -1615,6 +1619,11 @@
             /*$("#ngl-"+mode+" #ngl_contacts").change(function(e){
                 updateStructureRepresentations(mode);
             });*/
+
+            // Prevent scrolling of document
+            // TODO: fix this for passive
+            document.getElementById( "ngl-"+mode ).onwheel = function(event){return false;};//event.preventDefault();};
+            document.getElementById( "ngl-"+mode ).onmousewheel = function(event){return false;};//event.preventDefault();};
         }
 
         var linkColourScheme = {}
@@ -1735,7 +1744,8 @@
                     case "bb_angle":
                     case "sc_angle":
                       if (colorIndex == 1 || colorIndex == 3)
-                        color_scheme.push([numberToColor4(140, coloringData[mode][gn_key][colorIndex]-40, false) , ngl_selection])
+                        //color_scheme.push([numberToColor4(140, coloringData[mode][gn_key][colorIndex]-40, false) , ngl_selection])
+                        color_scheme.push([numberToColor3(140, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       else if (colorIndex == 2 || colorIndex == 4)
                         color_scheme.push([numberToColor5(90, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       else
