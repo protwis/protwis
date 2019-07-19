@@ -483,8 +483,6 @@ var tableToExcel = (function () {
 
 
 $(document).ready(function () {
-  non_interactions = signprotmat.data.annotateNonInteractionData(interactions_metadata, non_interactions);
-
   $.get('/contactnetwork/pdbtabledata', { exclude_non_interacting: true}, function(data) {
     $('#interface-modal-table .tableview').html(data);
   })
@@ -527,6 +525,7 @@ $(document).ready(function () {
     pos_set = [];
     // get selected pdb ids
     for (var value of selection.toArray()){ pdb_sel = [value[6].toLowerCase(), ...pdb_sel]}
+    console.log(selection)
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata){
       if (pdb_sel.indexOf(int_meta['pdb_id']) != -1){
