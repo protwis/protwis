@@ -22,6 +22,7 @@ dataType["SASA"]           = [true, 0, 200, "wb"]
 dataType["RSA"]            = [true, 0, 100, "wb"]
 dataType["HSE"]            = [true, 0, 20, "wb"]
 dataType["conservation"]   = [true, 0, 100, "wb"]
+dataType["presence"]       = [true, 0, 100, "wb"]
 dataType["phi"]            = [true, 0, 180, "wb"]
 dataType["psi"]            = [true, 0, 180, "wb"]
 dataType["tau"]            = [true, 0, 180, "wb"]
@@ -553,7 +554,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
 
     // Grab data from table
     var rows
-    if (mode.startsWith("single_") && tableNumber==1) {
+    if (mode.startsWith("single_") && !mode.startsWith("single_group_") && tableNumber==1) {
       rows = getDateFromTable(tableNumber, [2, columnNumber].flat());
     } else {
       rows = getDateFromTable(tableNumber, [1, columnNumber].flat());
