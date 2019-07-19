@@ -34,6 +34,7 @@ AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
 
 class Command(BaseBuild):
 	wt_annotation_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_wt.yaml'])
+	B1_annotation_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_B1.yaml'])
 
 	def add_arguments(self, parser):
 		parser.add_argument('--filename', action='append', dest='filename',
@@ -46,25 +47,17 @@ class Command(BaseBuild):
 	def handle(self, *args, **options):
 		self.options = options
 		self.build_scheme()
-		self.build_segments()
+		self.get_segments()
 		self.build_residues()
 
 	def build_scheme(self):
 		self.scheme, created = ResidueNumberingScheme.objects.get_or_create(slug='ecd', short_name='ECD', name='Class B GPCR Extracellular domain', parent=None)
 
-	def build_segments(self):
-		self.segments = ['H1', 'h1b1', 'B1', 'b1b2', 'B2', 'b2b3', 'B3', 'b3h2', 'H2', 'h2b4', 'B4', 'b4h3', 'H3', 'h3tm1']
+	def get_segments(self):
 		self.segments = ProteinSegment.objects.filter(name__startswith='ECD')
 		self.segments_dict = OrderedDict()
 		for s in self.segments:
-			if s[0]=='H':
-				category = 'helix'
-			elif s[0]=='B':
-				category = 'sheet'
-			else:
-				category = 'loop'
-			seg = ProteinSegment.objects.get(slug=s, name='ECD '+s, proteinfamily='GPCR')
-			self.segments_dict[s] = seg
+			self.segments_dict[s.slug] = s
 
 	def build_ECD_gn(self, gn, segment):
 		ecd_gn, created = ResidueGenericNumber.objects.get_or_create(label=gn, protein_segment=segment, scheme=self.scheme)
@@ -73,16 +66,18 @@ class Command(BaseBuild):
 	def build_residues(self):
 		with open(self.wt_annotation_file, 'r') as f:
 			wt_annotation = yaml.load(f)
-		# wt_annotation = OrderedDict([('calcr_human', wt_annotation['calcr_human'])])
+		# wt_annotation = OrderedDict([('sctr_human', wt_annotation['sctr_human'])])
+		with open(self.B1_annotation_file, 'r') as fB1:
+			B1_annotation = yaml.load(fB1)
 		
 		for entry_name, val in wt_annotation.items():
 			protein = Protein.objects.get(entry_name=entry_name)
 			prot_conf = ProteinConformation.objects.get(protein=protein)
 			residues = Residue.objects.filter(protein_conformation=prot_conf, protein_segment__slug__in=['N-term', 'TM1'])
 			annotation_dict = OrderedDict()
-			print(entry_name, val)
-			for i, seg in enumerate(self.segments):
-				if seg[0] in ['H','B']:
+			for i, seg_obj in enumerate(self.segments):
+				seg = seg_obj.slug
+				if seg!='B1' and seg_obj.fully_aligned:
 					segment = OrderedDict()
 					x = 50
 					for i in range(int(val[seg+'x50']), int(val[seg+'b'])-1, -1):
@@ -95,6 +90,15 @@ class Command(BaseBuild):
 					key_order = sorted(list(segment.keys()))
 					ordered_segment = OrderedDict([(k, segment[k]) for k in key_order])
 					annotation_dict[seg] = ordered_segment
+				elif seg=='B1':
+					segment = OrderedDict()
+					seg_seqnums = list(range(int(val[seg+'b']), int(val[seg+'e'])+1))
+					i = 0
+					for x in range(int(min(B1_annotation[entry_name])[1:]), int(max(B1_annotation[entry_name])[1:])+1):
+						if B1_annotation[entry_name]['x'+str(x)]!='-':
+							segment[seg_seqnums[i]] = seg+'x'+str(x)
+							i+=1
+					annotation_dict[seg] = segment
 				else:
 					segment = OrderedDict()
 					if seg=='h3tm1':
@@ -103,14 +107,10 @@ class Command(BaseBuild):
 						for i in range(H3e+1, TM1b):
 							segment[i] = None
 					else:
-						for j in range(int(val[self.segments[i-1]+'e'])+1, int(val[self.segments[i+1]+'b'])):
+						for j in range(int(val[self.segments[i-1].slug+'e'])+1, int(val[self.segments[i+1].slug+'b'])):
 							segment[j] = None
 					annotation_dict[seg] = segment
-			
 
-			# pprint.pprint(annotation_dict)
-			# print(protein, prot_conf)
-			# print(residues)
 			for seg, val in annotation_dict.items():
 				for num, gn in val.items():
 					res = residues.get(sequence_number=num)
@@ -120,4 +120,3 @@ class Command(BaseBuild):
 						res.generic_number = gn
 					res.protein_segment = self.segments_dict[seg]
 					res.save()
-					# print(res,gn)

@@ -1,10 +1,12 @@
 from common.alignment import Alignment as GenericAlignment
+from protein.models import ProteinSegment
 
 from copy import deepcopy
 
 
 class Alignment(GenericAlignment):
     """A class representing a protein sequence alignment, with or without a reference sequence"""
+    ECD_segments = ProteinSegment.objects.filter(name__startswith='ECD').values_list('slug', flat=True)
 
     def merge_generic_numbers(self):
         """Check whether there are many display numbers for each position, and merge them if there are"""
@@ -53,7 +55,7 @@ class Alignment(GenericAlignment):
         if len(generic_number.split('.'))>2:
             formatted_gn = generic_number
         # ECD format
-        elif generic_number.split('x')[0] in ['H1', 'h1b1', 'B1', 'b1b2', 'B2', 'b2b3', 'B3', 'b3h2', 'H2', 'h2b4', 'B4', 'b4h3', 'H3']:
+        elif generic_number.split('x')[0] in self.ECD_segments:
             formatted_gn = '<br />'
             seq_class = 'ali-td-generic-num-normal'
             formatted_gn += '<span class="{:s}">{:s}<br /></span>'.format(seq_class, generic_number)
