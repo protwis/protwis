@@ -97,6 +97,10 @@ outerAtom = {
 }
 
 
+class NonHetSelect(Bio.PDB.Select):
+    def accept_residue(self, residue):
+        return 1 if residue.id[0] == " " else 0
+
 class Command(BaseCommand):
 
     help = "Command to calculate all angles for residues in each TM helix."
@@ -159,7 +163,12 @@ class Command(BaseCommand):
             ba = -b
             bc = c + ba
             ba[:,0] = 0
-            return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
+            #return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
+
+            # Alternative and clockwise angle implementation - angles left/right different value
+            ba = ba[:,1:3]
+            bc = bc[:,1:3]
+            return np.degrees(np.arctan2(ba[:,0]*bc[:,1]-ba[:,1]*bc[:,0], inner1d(ba, bc)))
 
         def ca_cb_calc(ca,cb,pca):
             """
@@ -258,7 +267,7 @@ class Command(BaseCommand):
                 filename = "temp.pdb"
                 pdbio = Bio.PDB.PDBIO()
                 pdbio.set_structure(pchain)
-                pdbio.save(filename)
+                pdbio.save(filename, NonHetSelect())
                 if os.path.exists("/env/bin/dssp"):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/dssp')
                 if os.path.exists("/env/bin/mkdssp"):
@@ -274,7 +283,7 @@ class Command(BaseCommand):
                                res_id = int(line[11:15].strip())
                                res_ss = line[24:25].strip()
                                # assign to residue
-                               pchain[res_id].xtra["SS_STRIDE"] = res_ss
+                               pchain[res_id].xtra["SS_STRIDE"] = res_ss.upper()
                 except OSError:
                    print(pdb_code, " - STRIDE ERROR - ", e)
 
@@ -343,7 +352,7 @@ class Command(BaseCommand):
 #                      print(pdb_code, " - ANGLE ERROR - ", e)
                       outer = None
 
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"].upper(), outer]
+                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -362,7 +371,7 @@ class Command(BaseCommand):
                 helix_pcas = [PCA() for i in range(7)]
                 helix_pca_vectors = [pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)]
 
-                # Calculate PCA based on the upper (extracellular) half of the GPCR (more stable)
+                # Calculate PCA based on the upper (extracellular) half of the GPCR (more stable, except class B)
                 pca = PCA()
                 if extra_pca:
                     minlength = 100
