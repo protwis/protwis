@@ -572,13 +572,20 @@ function colorByData(mode, tableNumber, columnNumber, type) {
       residue_positions = residue_positions1.concat(residue_positions2)
     }
 
-    var residue_values = getColumn(rows, 1).map(function(e){ return parseInt(e);})
-    if (Array.isArray(columnNumber) && columnNumber.length > 1)
-       residue_values = residue_values.concat(getColumn(rows, 2).map(function(e){ return parseInt(e);}));
-
     // Filter NaNs
-    residue_positions = residue_positions.filter( function(value, index){ return !isNaN(residue_values[index]); })
-    residue_values = residue_values.filter( function(value, index){ return !isNaN(residue_values[index]); })
+    var residue_values = getColumn(rows, 1)
+    if (type!="consensus_SS"){
+      residue_values = residue_values.map(function(e){ return parseInt(e);})
+      if (Array.isArray(columnNumber) && columnNumber.length > 1)
+         residue_values = residue_values.concat(getColumn(rows, 2).map(function(e){ return parseInt(e);}));
+
+      residue_positions = residue_positions.filter( function(value, index){ return !isNaN(residue_values[index]); })
+      residue_values = residue_values.filter( function(value, index){ return !isNaN(residue_values[index]); })
+    } else {
+      // remove positions with no data
+      residue_positions = residue_positions.filter( function(value, index){ return !(residue_values==""); })
+      residue_values = residue_values.filter( function(value, index){ return !(residue_values==""); })
+    }
 
     // Identify range
     var valMax = Math.max(...residue_values)
