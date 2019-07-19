@@ -640,6 +640,7 @@ def interface_dataset():
             int_ty=F('interaction_type'),
             
             pdb_id=F('interacting_pair__referenced_structure__pdb_code__index'),
+            conf_id=F('interacting_pair__referenced_structure__protein_conformation_id'),
             gprot=F('interacting_pair__referenced_structure__signprot_complex__protein__entry_name'),
             entry_name=F('interacting_pair__referenced_structure__protein_conformation__protein__parent__entry_name'),
         
@@ -662,6 +663,7 @@ def interface_dataset():
     # aggregate the interaction types for residue pairs with multiple distinct types
     for i in interactions:
         int_id = i['int_id']
+        conf_ids.update([i['conf_id']])
 
         if last_int_id is None:        
             r = set()
@@ -683,6 +685,28 @@ def InteractionMatrix(request):
 
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     
+    struc = Structure.objects.filter(protein_conformation_id__in=prot_conf_ids).prefetch_related('protein_conformation__protein__parent')
+
+    complex_info = []
+    for s in struc:
+        r = {}
+        r['pdb_id'] = str.lower(s.pdb_code.index)
+        r['name'] = s.protein_conformation.protein.parent.short()
+        r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        r['class'] = s.protein_conformation.protein.get_protein_class()
+        r['family'] = s.protein_conformation.protein.get_protein_family()
+        r['conf_id'] = s.protein_conformation.id
+        r['organism'] = s.protein_conformation.protein.species.common_name
+        try:
+            r['gprot'] = s.get_stab_agents_gproteins()
+        except Exception:
+            r['gprot'] = ''
+        try:
+            r['gprot_class'] = s.get_signprot_gprot_family()
+        except Exception:
+            r['gprot_class'] = ''
+        complex_info.append(r)
+
     remaining_residues = Residue.objects.filter(
             protein_conformation_id__in=prot_conf_ids,
             ).prefetch_related(
@@ -702,7 +726,7 @@ def InteractionMatrix(request):
 
     context = {
         'interactions': json.dumps(dataset),
-        'interactions_metadata': json.dumps(''),
+        'interactions_metadata': json.dumps(complex_info),
         'non_interactions': json.dumps(list(remaining_residues)),
         'gprot': json.dumps(list(gprotein_order)),
         }
