@@ -378,6 +378,7 @@ def AlignIsoformWildtype(request):
     from Bio import AlignIO
     cache_dir = ['ensembl', 'isoform']
     url = 'https://rest.ensembl.org/sequence/id/$index?content-type=application/json&type=protein'
+    url = 'https://grch37.rest.ensembl.org/sequence/id/$index?type=protein;content-type=application/json'
 
     # print(iso,'iso_id')
     # 1: 3, 2, 5, 3, 7
