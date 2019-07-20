@@ -122,7 +122,7 @@ def compute_interactions(pdb_name,save_to_db = False):
 
             # Convert to dictionary for water calculations
             interaction_pairs = {}
-            for pair in classified:
+            for pair in classified_complex:
                 res_1 = pair.get_residue_1()
                 res_2 = pair.get_residue_2()
                 key =  res_1.get_parent().get_id()+str(res_1.get_id()[1]) + "_" + res_2.get_parent().get_id()+str(res_2.get_id()[1])

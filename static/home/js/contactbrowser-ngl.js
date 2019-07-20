@@ -22,6 +22,7 @@ dataType["SASA"]           = [true, 0, 200, "wb"]
 dataType["RSA"]            = [true, 0, 100, "wb"]
 dataType["HSE"]            = [true, 0, 20, "wb"]
 dataType["conservation"]   = [true, 0, 100, "wb"]
+dataType["presence"]       = [true, 0, 100, "wb"]
 dataType["phi"]            = [true, 0, 180, "wb"]
 dataType["psi"]            = [true, 0, 180, "wb"]
 dataType["tau"]            = [true, 0, 180, "wb"]
@@ -553,7 +554,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
 
     // Grab data from table
     var rows
-    if (mode.startsWith("single_") && tableNumber==1) {
+    if (mode.startsWith("single_") && !mode.startsWith("single_group_") && tableNumber==1) {
       rows = getDateFromTable(tableNumber, [2, columnNumber].flat());
     } else {
       rows = getDateFromTable(tableNumber, [1, columnNumber].flat());
@@ -572,13 +573,20 @@ function colorByData(mode, tableNumber, columnNumber, type) {
       residue_positions = residue_positions1.concat(residue_positions2)
     }
 
-    var residue_values = getColumn(rows, 1).map(function(e){ return parseInt(e);})
-    if (Array.isArray(columnNumber) && columnNumber.length > 1)
-       residue_values = residue_values.concat(getColumn(rows, 2).map(function(e){ return parseInt(e);}));
-
     // Filter NaNs
-    residue_positions = residue_positions.filter( function(value, index){ return !isNaN(residue_values[index]); })
-    residue_values = residue_values.filter( function(value, index){ return !isNaN(residue_values[index]); })
+    var residue_values = getColumn(rows, 1)
+    if (type!="consensus_SS"){
+      residue_values = residue_values.map(function(e){ return parseInt(e);})
+      if (Array.isArray(columnNumber) && columnNumber.length > 1)
+         residue_values = residue_values.concat(getColumn(rows, 2).map(function(e){ return parseInt(e);}));
+
+      residue_positions = residue_positions.filter( function(value, index){ return !isNaN(residue_values[index]); })
+      residue_values = residue_values.filter( function(value, index){ return !isNaN(residue_values[index]); })
+    } else {
+      // remove positions with no data
+      residue_positions = residue_positions.filter( function(value, index){ return !(residue_values==""); })
+      residue_values = residue_values.filter( function(value, index){ return !(residue_values==""); })
+    }
 
     // Identify range
     var valMax = Math.max(...residue_values)
