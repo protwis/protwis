@@ -167,7 +167,8 @@ def compute_interactions(pdb_name,save_to_db = False):
 #                                interaction_pairs[key].interactions.append(WaterMediated(a + "|" + str(water_pair_one[0].get_parent().get_id()[1]), b))
 
         except SignprotComplex.DoesNotExist:
-            print("No complex definition found for", pdb_name)
+#            print("No complex definition found for", pdb_name)
+            log = "No complex definition found for " + pdb_name
 
     if save_to_db:
 

@@ -359,44 +359,83 @@ def AlignIsoformWildtype(request):
 
     p = request.GET.get("protein")
     es = request.GET.getlist("ensembl_id[]")
+    iso = request.GET.get("iso_id")
     data = {}
     data['isoforms'] = {}
     protein = Protein.objects.get(entry_name__startswith=p.lower(), sequence_type__slug='wt', species__common_name='Human')
     parent_seq = protein.sequence
     rs = Residue.objects.filter(protein_conformation__protein=protein).prefetch_related('protein_segment','display_generic_number','generic_number')
     data['res'] = {}
+    data['same'] = "true"
     for r in rs:
         data['res'][r.sequence_number] = [r.protein_segment.slug,str(r.display_generic_number), r.sequence_number]
 
     from common.tools import fetch_from_web_api
     from Bio import pairwise2
+    from Bio.pairwise2 import format_alignment
     from Bio.SubsMat import MatrixInfo as matlist
     from Bio.Align.Applications import ClustalOmegaCommandline
     from Bio import AlignIO
     cache_dir = ['ensembl', 'isoform']
     url = 'https://rest.ensembl.org/sequence/id/$index?content-type=application/json&type=protein'
+    url = 'https://grch37.rest.ensembl.org/sequence/id/$index?type=protein;content-type=application/json'
+
+    # print(iso,'iso_id')
+    # 1: 3, 2, 5, 3, 7
+    seq_filename = "protein/data/MSA_GPCR_isoforms/{}_human_isoform_MSA.fa".format(p.lower())
+    with open (seq_filename, "r") as myfile:
+        fasta_raw = myfile.read()
+        fasta=fasta_raw.splitlines() 
+    # print(aln_human)
+    # print(fasta_raw)
+    data['wt2']=fasta[1]
+    data['pre_aligned']=fasta[1+int(iso)*2]
+
+    new_wt2 = ''
+    new_pre_aligned = ''
+    for i,wt in enumerate(data['wt2']):
+        pa = data['pre_aligned'][i]
+        if not (wt=='-' and pa=='-'):
+            new_wt2 += wt
+            new_pre_aligned += pa
+    gaps = 0
+    data['res_correct2'] = {}
+    for i, r in enumerate(data['wt2'], 1):
+        if r == "-":
+            data['res_correct2'][i] = ['','','']
+            gaps += 1
+        else:
+            data['res_correct2'][i] = data['res'][i-gaps]
+
     for e in es:
         isoform_info = fetch_from_web_api(url, e, cache_dir)
         if (isoform_info):
             seq = isoform_info['seq']
-            seq_filename = "/tmp/" + e + ".fa"
-            with open(seq_filename, 'w') as seq_file:
-                seq_file.write("> ref\n")
-                seq_file.write(parent_seq + "\n")
-                seq_file.write("> seq\n")
-                seq_file.write(seq + "\n")
+            # seq_filename = "/tmp/" + e + ".fa"
+            # with open(seq_filename, 'w') as seq_file:
+            #     seq_file.write("> ref\n")
+            #     seq_file.write(parent_seq + "\n")
+            #     seq_file.write("> seq\n")
+            #     seq_file.write(seq + "\n")
 
-            ali_filename = "/tmp/"+e +"_out.fa"
-            acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
-            stdout, stderr = acmd()
-            pw2 = AlignIO.read(ali_filename, "fasta")
-            aln_human = str(pw2[0].seq)
-            aln_isoform = str(pw2[1].seq)
+            # ali_filename = "/tmp/"+e +"_out.fa"
+            # acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
+            # stdout, stderr = acmd()
+            # pw2 = AlignIO.read(ali_filename, "fasta")
+            # aln_human = str(pw2[0].seq)
+            # aln_isoform = str(pw2[1].seq)
+            pw2 = pairwise2.align.globalms(parent_seq, seq, 2, -5, -10, -.5)
+            # for a in pw2:
+            #     print(format_alignment(*a))
+            aln_human = pw2[0][0]
+            aln_isoform = pw2[0][1]
             data['wt'] = aln_human
             data['isoforms'][e]=aln_isoform
-            with open (seq_filename, "r") as myfile:
-                fasta=myfile.readlines()
-            data['fasta'] = fasta
+            # print(aln_human)
+            # print(aln_isoform)
+            # with open (ali_filename, "r") as myfile:
+            #     fasta=myfile.read()
+            # data['fasta'] = fasta
             gaps = 0
             data['res_correct'] = {}
             for i, r in enumerate(data['wt'], 1):
@@ -405,9 +444,16 @@ def AlignIsoformWildtype(request):
                     gaps += 1
                 else:
                     data['res_correct'][i] = data['res'][i-gaps]
+            # print(fasta)
+            # pw = pairwise2.align.globalms(parent_seq, seq, 2, 1, -10, -.5)
+            # for a in pw:
+            #     print(format_alignment(*a))
+            if new_pre_aligned!=aln_isoform:
+                # print(new_pre_aligned,aln_isoform)
+                data['same'] = "false"
         else:
             print('error fetching info from',e)
 
-
+    # print(data['same'])
     return JsonResponse(data)
     #https://rest.ensembl.org/sequence/id/ENST00000506598?content-type=application/json&type=protein

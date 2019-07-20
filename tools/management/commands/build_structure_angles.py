@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import connection
 
 import contactnetwork.pdb as pdb
 from structure.models import Structure, StructureVectors
@@ -11,6 +12,8 @@ import freesasa
 import io
 import logging
 import math
+import subprocess
+import os
 
 import numpy as np
 import scipy.stats as stats
@@ -18,6 +21,9 @@ import scipy.stats as stats
 from collections import OrderedDict
 from sklearn.decomposition import PCA
 from numpy.core.umath_tests import inner1d
+
+
+from multiprocessing import Queue, Process, Value, Lock
 
 TMNUM = 7
 
@@ -95,6 +101,10 @@ outerAtom = {
 }
 
 
+class NonHetSelect(Bio.PDB.Select):
+    def accept_residue(self, residue):
+        return 1 if residue.id[0] == " " else 0
+
 class Command(BaseCommand):
 
     help = "Command to calculate all angles for residues in each TM helix."
@@ -106,6 +116,38 @@ class Command(BaseCommand):
     ############################ Helper  Functions ############################
     ###########################################################################
 
+    processes = 4
+
+    def prepare_input(self, proc, items, iteration=1):
+        q = Queue()
+        procs = list()
+        num_items = len(items)
+        num = Value('i', 0)
+        lock = Lock()
+
+        if not num_items:
+            return False
+
+        # make sure not to use more jobs than proteins (chunk size will be 0, which is not good)
+        if proc > num_items:
+            proc = num_items
+
+        chunk_size = int(num_items / proc)
+        connection.close()
+        for i in range(0, proc):
+            first = chunk_size * i
+            if i == proc - 1:
+                last = False
+            else:
+                last = chunk_size * (i + 1)
+    
+            p = Process(target=self.main_func, args=([(first, last), iteration,num,lock]))
+            procs.append(p)
+            p.start()
+
+        for p in procs:
+            p.join()
+
     def load_pdb_var(self, pdb_code, var):
         """
         load string of pdb as pdb with a file handle. Would be nicer to do this
@@ -115,7 +157,17 @@ class Command(BaseCommand):
         with io.StringIO(var) as f:
             return parser.get_structure(pdb_code,f)
 
+
     def handle(self, *args, **options):
+
+        Angle.objects.all().delete()
+        self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        print(len(self.references),'structures')
+        self.references = list(self.references)
+        self.prepare_input(self.processes, self.references)
+
+    def main_func(self, positions, iteration,count,lock):
+        print('main_func')
         def recurse(entity,slist):
             """
             filter a pdb structure in a recursive way
@@ -157,7 +209,12 @@ class Command(BaseCommand):
             ba = -b
             bc = c + ba
             ba[:,0] = 0
-            return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
+            #return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
+
+            # Alternative and clockwise angle implementation - angles left/right different value
+            ba = ba[:,1:3]
+            bc = bc[:,1:3]
+            return np.degrees(np.arctan2(ba[:,0]*bc[:,1]-ba[:,1]*bc[:,0], inner1d(ba, bc)))
 
         def ca_cb_calc(ca,cb,pca):
             """
@@ -218,11 +275,12 @@ class Command(BaseCommand):
 
         # Get all structures
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
-        references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        #references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
         #references = Structure.objects.filter(pdb_code__index="6AK3").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
-        references = list(references)
+        # references = list(references)
+        references = self.references
 
         pids = [ref.protein_conformation.protein.id for ref in references]
 
@@ -238,11 +296,17 @@ class Command(BaseCommand):
         #######################################################################
         ######################### Start of main loop ##########################
         #######################################################################
-
         angle_dict = [{},{},{},{}]
         median_dict = [{},{},{},{}]
 
-        for reference in references:
+        #for reference in references:
+        while count.value<len(references):
+            with lock:
+                if count.value<len(references):
+                    reference = references[count.value]
+                    count.value +=1
+                else:
+                    break 
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
             print(pdb_code)
@@ -252,6 +316,33 @@ class Command(BaseCommand):
                 structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
                 state_id = reference.protein_conformation.state.id
+
+                # DSSP
+                filename = "{}_temp.pdb".format(pdb_code)
+                pdbio = Bio.PDB.PDBIO()
+                pdbio.set_structure(pchain)
+                pdbio.save(filename, NonHetSelect())
+                if os.path.exists("/env/bin/dssp"):
+                    dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/dssp')
+                if os.path.exists("/env/bin/mkdssp"):
+                    dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/mkdssp')
+
+                # STRIDE
+                try:
+                    if os.path.exists("/env/bin/stride"):
+                       stride = subprocess.Popen(['/env/bin/stride', filename], stdout=subprocess.PIPE)
+                       # Grab SS assignment (ASG) and parse residue (cols 12-15) and SS (cols 25-25)
+                       for line in io.TextIOWrapper(stride.stdout, encoding="utf-8"):
+                           if line.startswith("ASG"):
+                               res_id = int(line[11:15].strip())
+                               res_ss = line[24:25].strip()
+                               # assign to residue
+                               pchain[res_id].xtra["SS_STRIDE"] = res_ss.upper()
+                except OSError:
+                   print(pdb_code, " - STRIDE ERROR - ", e)
+
+                # CLEANUP
+                os.remove(filename)
 
                 #######################################################################
                 ###################### prepare and evaluate query #####################
@@ -270,8 +361,6 @@ class Command(BaseCommand):
                         pass
 
                 # when gdict is not needed the helper can be removed
-                #db_tmlist = [[(' ',r.sequence_number,' ') for r in reslist_gen(x) if r.sequence_number in pchain and r.sequence_number < 1000] for x in ["1","2","3","4","5","6","7"]]
-                # db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain and r.sequence_number < 1000] for x in ["1","2","3","4","5","6","7"]]
                 db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain] for x in ["1","2","3","4","5","6","7"]]
                 gdict = {r[1]:r[0] for hlist in db_helper for r in hlist}
                 db_tmlist = [[(' ',r[1],' ') for r in sl] for sl in db_helper]
@@ -283,6 +372,7 @@ class Command(BaseCommand):
                 polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
                 poly = Bio.PDB.Polypeptide.Polypeptide(polychain)
                 poly.get_phi_psi_list() # backbone dihedrals
+
                 #poly.get_theta_list() # angle three consecutive Ca atoms
                 #poly.get_tau_list() # dihedral four consecutive Ca atoms
 
@@ -297,7 +387,7 @@ class Command(BaseCommand):
                 poly.get_tau_list() # dihedral four consecutive Ca atoms
                 dihedrals = {}
                 for r in poly:
-                  angle_list = ["PHI", "PSI", "THETA", "TAU"]
+                  angle_list = ["PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE"]
                   for angle in angle_list:
                       if angle not in r.xtra:
                           r.xtra[angle] = None
@@ -316,7 +406,7 @@ class Command(BaseCommand):
 #                      print(pdb_code, " - ANGLE ERROR - ", e)
                       outer = None
 
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], outer]
+                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -335,7 +425,7 @@ class Command(BaseCommand):
                 helix_pcas = [PCA() for i in range(7)]
                 helix_pca_vectors = [pca_line(helix_pcas[i], h,i%2) for i,h in enumerate(hres_three)]
 
-                # Calculate PCA based on the upper (extracellular) half of the GPCR (more stable)
+                # Calculate PCA based on the upper (extracellular) half of the GPCR (more stable, except class B)
                 pca = PCA()
                 if extra_pca:
                     minlength = 100
@@ -460,7 +550,7 @@ class Command(BaseCommand):
 
                 for res, angle1, angle2, distance in zip(pchain, a_angle, b_angle, core_distance):
                     residue_id = res.id[1]
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "OUTER", "ASA", "DISTANCE"
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
                     dblist.append([reference, gdict[residue_id], angle1, angle2, \
                         rsa_list[residue_id], \
                         hselist[residue_id]] + \
@@ -490,9 +580,9 @@ class Command(BaseCommand):
 #            std = stats.t.cdf(std_test, df=std_len)
 #            dblist[i].append(0.501 if np.isnan(std) else std)
 
-        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "ASA", "DISTANCE"
+        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,outer,asa,distance in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance in dblist:
             try:
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
@@ -504,14 +594,13 @@ class Command(BaseCommand):
                     tau = round(np.rad2deg(tau),3)
                 if outer != None:
                     outer = round(np.rad2deg(outer),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, outer_angle=outer, core_distance=distance))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance))
             except Exception as e:
-                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau, asa])
+                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance])
 
         print("created list")
         print(len(object_list))
 
         # Store the results
         # faster than updating: deleting and recreating
-        Angle.objects.all().delete()
         Angle.objects.bulk_create(object_list,batch_size=5000)
