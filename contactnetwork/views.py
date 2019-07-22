@@ -447,11 +447,13 @@ def InteractionBrowserData(request):
         # Get the relevant interactions
         interactions = list(Interaction.objects.filter(
             interacting_pair__referenced_structure__pdb_code__index__in=pdbs_upper
+        ).filter(
+            interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
         ).values(
             'interaction_type',
             'interacting_pair__referenced_structure__pk',
             'interacting_pair__res1__pk',
-            'interacting_pair__res2__pk',
+            'interacting_pair__res2__pk'
         ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).filter(
             segment_filter_res1 & segment_filter_res2 #& i_types_filter
         ).distinct())
