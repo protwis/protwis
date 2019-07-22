@@ -2846,20 +2846,14 @@ function enable_hover(table){
 
           var found = true;
           if (selector.className=="pairselector") {
-              if (plotType.startsWith("heatmapcontainer")) { // heatmap
-                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
-              } else if (plotType.startsWith("flareplot")) {  // flareplot
-                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
-              } else if (plotType.startsWith("boxplot")) { // Box-plot (not available right now)
-                button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+              if (plotType.startsWith("heatmapcontainer") || plotType.startsWith("flareplot") || plotType.startsWith("boxplot")) {
+                button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
               } else {
                 found = false;
               }
           } else if (selector.className=="selector") {
-            if (plotType.startsWith("ngl")) { // 3D
-              button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a.replace("ngl-",""), b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
-            } else if (plotType.startsWith("snakeplot")) { // Snakeplot
-              button.addEventListener("click", (function(a, b, c){ return function(){ console.log(a+" - "+ b + " - "+c)}})(plotType, tableNumber, columnSelector))
+            if (plotType.startsWith("ngl") || plotType.startsWith("snakeplot")) {
+              button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
             } else {
               found = false;
             }
@@ -2941,8 +2935,10 @@ function colorByData(mode, tableNumber, columnNumber, type) {
          }*/
 
     // Grab data from table
-    var rows
-    if (mode.startsWith("single_") && !mode.startsWith("single_group_") && tableNumber==1) {
+    var rows = []
+    const selector = "#" + $('.main_option:visible').attr('id');
+    const analys_mode = selector.replace('-tab', '');
+    if (analys_mode == "#single-crystal" && tableNumber==1) {
       rows = getDateFromTable(tableNumber, [2, columnNumber].flat());
     } else {
       rows = getDateFromTable(tableNumber, [1, columnNumber].flat());
@@ -3005,8 +3001,21 @@ function colorByData(mode, tableNumber, columnNumber, type) {
       data_colors.push(newColor)
     }
 
-    // TODO add toggle for different plots
-    colorNGLByData(mode, residue_positions, data_colors, defaultColor);
+    // Toggle for different plots
+    if (mode.startsWith("ngl")) { // 3D
+      colorNGLByData(mode.replace("ngl-",""), residue_positions, data_colors, defaultColor);
+    } else if (mode.startsWith("heatmapcontainer")) { // heatmap
+      //somefunction(mode, residue_positions, data_colors, defaultColor);
+    } else if (mode.startsWith("flareplot")) {  // flareplot
+      //somefunction(mode, residue_positions, data_colors, defaultColor);
+    } else if (mode.startsWith("boxplot")) { // Box-plot (not available right now)
+      //somefunction(mode, residue_positions, data_colors, defaultColor);
+    } else if (mode.startsWith("snakeplot")) { // Snakeplot
+      //somefunction(mode, residue_positions, data_colors, defaultColor);
+    } else {
+      // missing plot type?
+      console.log("Missing plot type")
+    }
 }
 
 // Reference values for table values
