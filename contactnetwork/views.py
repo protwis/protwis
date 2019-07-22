@@ -1062,6 +1062,8 @@ def InteractionBrowserData(request):
                 ).filter(
                     interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
                 ).filter(
+                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
+                ).filter(
                     segment_filter_res1 & segment_filter_res2 & i_types_filter
                 ).exclude(
                     interacting_pair__res1__generic_number=None,
@@ -1094,6 +1096,8 @@ def InteractionBrowserData(request):
             set_id = 'set2'
             interactions = list(Interaction.objects.filter(
                     interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]
+                ).filter(
+                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
                 ).filter(
                     interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
                 ).filter(
@@ -1184,6 +1188,8 @@ def InteractionBrowserData(request):
             aa_pair_data = data['tab2']
             interactions = list(Interaction.objects.filter(
                     interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]
+                ).filter(
+                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
                 ).filter(
                     interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
                 ).filter(
