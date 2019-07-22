@@ -571,7 +571,7 @@ def InteractionBrowserData(request):
             segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
             r_presence_lookup[r['generic_number__label']].append(r['protein_conformation__protein__entry_name'])
             data['segments'].add(r['protein_segment__slug'])
-        
+
         data['segment_map'] = segm_lookup
 
 
@@ -1001,9 +1001,9 @@ def InteractionBrowserData(request):
                 # Get absolute numbers for a single structure
                 ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
                                 .exclude(residue__generic_number=None) \
-                                .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
+#                                .values('residue__generic_number__label') \
+#                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
+#                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
                                 .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
             else:
                 # A group, get StdDev
@@ -1283,7 +1283,7 @@ def InteractionBrowserData(request):
                 if key in group_1_distances and key in group_2_distances:
                     distance_diff = round(group_1_distances[key]-group_2_distances[key],2)
                 else:
-                    distance_diff = ""  
+                    distance_diff = ""
                 d['distance'] = distance_diff
             print('Done merging distance values for',mode,'mode',time.time()-start_time)
         else:
@@ -1304,9 +1304,9 @@ def InteractionBrowserData(request):
                 if key in group_distances:
                     distance_diff = round(group_distances[key],2)
                 else:
-                    distance_diff = ""  
+                    distance_diff = ""
                 d['distance'] = distance_diff
-        # del class_pair_lookup 
+        # del class_pair_lookup
         # del r_pair_lookup
         print('calculate angles per gen/aa',time.time()-start_time)
         if mode == "double":
