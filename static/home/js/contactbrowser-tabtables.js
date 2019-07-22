@@ -1129,11 +1129,11 @@ function renderBrowser(data) {
                         </tr>';
         table.find('thead').html(thead);
         var proteins = data['proteins'].length
-        var pdbs = data['pdbs'].length
+        var pdbs_counts = data['pdbs'].length
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
-            var sfreq1 = Math.round(100 * v['pdbs'].length / pdbs);
+            var sfreq1 = Math.round(100 * v['pdbs'].length / pdbs_counts);
             var class_seq_cons = v['class_seq_cons'];
             // var types = v['types'].join(",<br>");
             const types = v['types'].map((t) => types_to_short[t]).join('|');
@@ -1738,7 +1738,7 @@ function renderBrowser_2(data) {
         table.find('thead').html(thead);
         // two groups
         var proteins = data['proteins'].length
-        var pdbs = data['pdbs'].length
+        var pdbs_count = data['pdbs'].length
         tr_list = ''
         $.each(data['tab2'], function(i, v2) {
 
@@ -1752,7 +1752,7 @@ function renderBrowser_2(data) {
             // var pfreq1 = Math.round(100 * v['proteins1'].length / proteins_1);
             // var pfreq2 = Math.round(100 * v['proteins2'].length / proteins_2);
             // var diff_pfreq = pfreq1 - pfreq2;
-            var sfreq = Math.round(100 * v['pdbs'].length / pdbs);
+            var sfreq = Math.round(100 * v['pdbs'].length / pdbs_count);
             var class_seq_cons = v['class_seq_cons'];
             const types = v2['types'].map((t) => types_to_short[t]).join('|');
             var distance = v['distance'];
@@ -1765,9 +1765,9 @@ function renderBrowser_2(data) {
             var aa1 = v2['aa1'];
             var aa2 = v2['aa2'];
 
-            var set1_occurance_aa1 = Math.round(100 * v2['set']['occurance']['aa1'].length / pdbs);
-            var set1_occurance_aa2 = Math.round(100 * v2['set']['occurance']['aa2'].length / pdbs);
-            var set1_occurance_pair = Math.round(100 * v2['set']['occurance']['pair'].length / pdbs);
+            var set1_occurance_aa1 = Math.round(100 * v2['set']['occurance']['aa1'].length / pdbs_count);
+            var set1_occurance_aa2 = Math.round(100 * v2['set']['occurance']['aa2'].length / pdbs_count);
+            var set1_occurance_pair = Math.round(100 * v2['set']['occurance']['pair'].length / pdbs_count);
 
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
@@ -1922,8 +1922,8 @@ function renderBrowser_2(data) {
                         </tr>';
         table.find('thead').html(thead);
         // two groups
-        var proteins = data['proteins'].length
-        var pdbs = data['pdbs'].length
+        //var proteins = data['proteins'].length
+        //var pdbs = data['pdbs'].length
         tr_list = ''
         $.each(data['tab2'], function(i, v2) {
 
@@ -2435,7 +2435,7 @@ function renderBrowser_4(data) {
 
     } else if (data['proteins'].length > 1) {
         var proteins = data['proteins'].length
-        var pdbs = data['pdbs'].length
+        var pdbs_count = data['pdbs'].length
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="consensus_SS"></th> \
@@ -2506,7 +2506,7 @@ function renderBrowser_4(data) {
             // 8 'theta',
             // 9 'hse'
             var set_seq_cons_aa = v['set_seq_cons'][0];
-            var set_seq_cons_freq = Math.round(100 * v['set_seq_cons'][1] / pdbs);
+            var set_seq_cons_freq = Math.round(100 * v['set_seq_cons'][1] / pdbs_count);
 
             var class_cons_aa = v['class_cons'][0];
             var class_cons_freq = Math.round(100 * v['class_cons'][1]);
@@ -2576,8 +2576,8 @@ function renderBrowser_4(data) {
         tbody[0].innerHTML = tr_list;
 
     } else {
-        var proteins = data['proteins'].length
-        var pdbs = data['pdbs'].length
+        //var proteins = data['proteins'].length
+        //var pdbs = data['pdbs'].length
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="consensus_SS"></th> \
