@@ -1399,8 +1399,10 @@ function renderBrowser(data) {
         $("#resModal").modal();
 
         //Slight wait, to be sure modal is open.
-        setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles') }, 500);
-        setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles') }, 500);
+        if (typeof all_angles_1 !== 'undefined')
+          setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles') }, 500);
+        if (typeof all_angles_2 !== 'undefined')
+          setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles') }, 500);
 
     });
 
