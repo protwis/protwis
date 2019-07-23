@@ -611,55 +611,62 @@ def signprotdetail(request, slug):
 
 
 def interface_dataset():
-    # get all signprot complex structure ids
-    complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
-    
-    # get all interactions for those complexes
-    interactions = Interaction.objects.filter(
-            interacting_pair__referenced_structure__in=complex_structure_ids,
-        ).select_related(
-            'interacting_pair__referenced_structure',
-            'interacting_pair__referenced_structure__pdb_code',
-            'interacting_pair__referenced_structure__signprot_complex',
-            'interacting_pair__referenced_structure__signprot_complex__protein',
-            'interacting_pair__referenced_structure__protein_conformation',
-            'interacting_pair__referenced_structure__protein_conformation__protein',
-            'interacting_pair__referenced_structure__protein_conformation__protein__parent',
-            'interacting_pair__res1',
-            'interacting_pair__res2',
-            'interacting_pair__res1__display_generic_number',
-            'interacting_pair__res2__display_generic_number',
-        ).order_by(
-            'interacting_pair_id',
-            'interaction_type'
-        ).distinct(
-            'interacting_pair_id',
-            'interaction_type'
-        ).values(
-            int_id=F('interacting_pair'),
-            int_ty=F('interaction_type'),
-            
-            pdb_id=F('interacting_pair__referenced_structure__pdb_code__index'),
-            conf_id=F('interacting_pair__referenced_structure__protein_conformation_id'),
-            gprot=F('interacting_pair__referenced_structure__signprot_complex__protein__entry_name'),
-            entry_name=F('interacting_pair__referenced_structure__protein_conformation__protein__parent__entry_name'),
-        
-            #rec_chain=F(),
-            rec_aa=F('interacting_pair__res1__amino_acid'),
-            rec_pos=F('interacting_pair__res1__sequence_number'),
-            rec_gn=F('interacting_pair__res1__display_generic_number__label'),
-        
-            #sig_chain=F(),
-            sig_aa=F('interacting_pair__res2__amino_acid'),
-            sig_pos=F('interacting_pair__res2__sequence_number'),
-            sig_gn=F('interacting_pair__res2__display_generic_number__label')
-        )
+    # start_time = time.time()
 
+    # correct receptor entry names - the ones with '_a' appended
+    complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').all()
+    complex_names = [complex_obj.structure.protein_conformation.protein.entry_name + '_' + complex_obj.alpha.lower() for complex_obj in complex_objs]
+    # protein conformations for those
+    prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
+
+    # getting all the receptor residues for those protein conformations
+    prot_residues = Residue.objects.filter(
+        protein_conformation__in=prot_conf
+    ).values_list('id', flat=True)
+
+    interactions = InteractingResiduePair.objects.filter(
+        Q(res1__in=prot_residues) | Q(res2__in=prot_residues)
+    ).exclude(
+        Q(res1__in=prot_residues) & Q(res2__in=prot_residues)
+    ).select_related(
+        'referenced_structure__pdb_code',
+        'referenced_structure__signprot_complex__protein',
+        'referenced_structure__protein_conformation__protein__parent',
+        'res1__display_generic_number',
+        'res2__display_generic_number',
+    ).order_by(
+        'id',
+        'interaction__interaction_type',
+    ).distinct(
+        'id',
+        'interaction__interaction_type'
+    ).values(
+        int_id=F('id'),
+        int_ty=F('interaction__interaction_type'),
+
+        pdb_id=F('referenced_structure__pdb_code__index'),
+        conf_id=F('referenced_structure__protein_conformation_id'),
+        gprot=F('referenced_structure__signprot_complex__protein__entry_name'),
+        entry_name=F('referenced_structure__protein_conformation__protein__parent__entry_name'),
+
+        rec_aa=F('res1__amino_acid'),
+        rec_pos=F('res1__sequence_number'),
+        rec_gn=F('res1__display_generic_number__label'),
+
+        sig_aa=F('res2__amino_acid'),
+        sig_pos=F('res2__sequence_number'),
+        sig_gn=F('res2__display_generic_number__label')
+    )
+
+    # print(len(interactions))
+    # print('Query: {}'.format(time.time() - start_time))
+    # start_time = time.time()
+          
     dataset = []
     last_int_id = None
     append = dataset.append
     conf_ids = set()
-    
+
     # aggregate the interaction types for residue pairs with multiple distinct types
     for i in interactions:
         int_id = i['int_id']
@@ -675,6 +682,8 @@ def interface_dataset():
             i['int_ty'] = list(r)
             append(i)
             last_int_id = None
+          
+    # print('Python: {}'.format(time.time() - start_time))
         
 
     return list(conf_ids), dataset
