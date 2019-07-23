@@ -694,17 +694,13 @@ def InteractionMatrix(request):
 
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     
-    struc = Structure.objects.filter(
-                protein_conformation_id__in=prot_conf_ids
-            ).prefetch_related(
-                'protein_conformation__protein__parent',
-                'protein_conformation__protein__family'
-            )
+    struc = SignprotComplex.objects.all()
 
     complex_info = []
     for s in struc:
         r = {}
-        r['pdb_id'] = str.lower(s.pdb_code.index)
+        s = s.structure
+        r['pdb_id'] = s.pdb_code.index
         r['name'] = s.protein_conformation.protein.parent.short()
         r['entry_name'] = s.protein_conformation.protein.parent.entry_name
         r['class'] = s.protein_conformation.protein.get_protein_class()

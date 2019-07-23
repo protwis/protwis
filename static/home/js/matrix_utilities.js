@@ -510,7 +510,7 @@ $(document).ready(function () {
     pdb_sel = [];
     pos_set = [];
     // get selected pdb ids
-    for (var value of selection.toArray()){ pdb_sel = [value[6].toLowerCase(), ...pdb_sel]}
+    for (var value of selection.toArray()){ pdb_sel = [value[6], ...pdb_sel]}
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata){
       if (pdb_sel.indexOf(int_meta['pdb_id']) != -1){
