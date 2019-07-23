@@ -159,8 +159,13 @@ grid-area: isoformtable;
   cursor: pointer;
 }
 .alignment div.issame_false {
-  /*background-color: indianred;*/
+  background-color: indianred;
 }
+
+.alignment div.issame_insert {
+  background-color: plum;
+}
+
 .alignment div.issame_true {
   background-color: MediumSeaGreen;
 }
@@ -255,9 +260,9 @@ function build_table() {
             }
             if (Object.keys(summary['segments_altered']).includes(seg)) {
               opacity = Math.max(1- summary['segments_altered'][seg][0],0.5);
-              completeness += '<td class="red" style="opacity: '+opacity+';">'+count+'</td>';
+              completeness += '<td class="red protein" style="opacity: '+opacity+';">'+count+'</td>';
             } else {
-              completeness += '<td class="green">'+count+'</td>';
+              completeness += '<td class="green protein">'+count+'</td>';
             }
           }
         } else {
@@ -328,6 +333,10 @@ function build_table() {
                               Object.keys(data['isoforms']).forEach(function(key) {
                                 if (key != 'pre_aligned') {
                                   is_same = wt_aa!=data['isoforms'][key][i] ? 'false' : 'true';
+
+                                  if (wt_aa=='-' && wt_aa!=data['isoforms'][key][i]) {
+                                    is_same = 'insert';
+                                  }
 
                                   iso_string += `<div class='issame_${is_same}'">${data['isoforms'][key][i]}</div>`;
                                 }
