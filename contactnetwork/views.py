@@ -1805,12 +1805,22 @@ def coreMatrix(pdbs):
                         .exclude(core_distance=None) \
                         .values('structure__pdb_code__index', 'residue__generic_number__label', 'core_distance'))
 
+    # IN some cases the 7TM distances are missing e.g. due to missing (structure or annotation) of a TM bundle
+    pdbs_present = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs)\
+                        .exclude(residue__generic_number=None) \
+                        .exclude(core_distance=None) \
+                        .distinct('structure__pdb_code__index').values('structure__pdb_code__index'))
+
+    pdbs = [pdb['structure__pdb_code__index'] for pdb in pdbs_present]
+
     # create dictionary of all structures and all distances
     core_distances = {}
     for i,d in enumerate(ds):
         if not d['structure__pdb_code__index'] in core_distances:
             core_distances[d['structure__pdb_code__index']] = {}
         core_distances[d['structure__pdb_code__index']][d['residue__generic_number__label']] = d['core_distance']
+
+
 
     distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
     for i, pdb1 in enumerate(pdbs):
@@ -1825,7 +1835,7 @@ def coreMatrix(pdbs):
             distance_matrix[i, j] = pow(distance,2)/(len(common_between_pdbs)*len(common_between_pdbs))
             distance_matrix[j, i] = distance_matrix[i, j]
 
-    return distance_matrix
+    return [distance_matrix, pdbs]
 
 def ClusteringData(request):
     # PDB files
@@ -1844,7 +1854,7 @@ def ClusteringData(request):
 
     # load all
     if 'new_cluster' in request.GET and request.GET.get('new_cluster')=="true":
-        distance_matrix = coreMatrix(pdbs)
+        [distance_matrix, pdbs] = coreMatrix(pdbs)
     else:
         dis = Distances()
         dis.load_pdbs(pdbs)
