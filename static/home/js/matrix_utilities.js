@@ -498,20 +498,6 @@ $(document).ready(function () {
   set_slider_max_value();
   update_slider_label();
 
-  let keys = [
-    "rec_chain",
-    "rec_aa",
-    "rec_pos",
-    "rec_gn",
-    "sig_chain",
-    "sig_aa",
-    "sig_pos",
-    "sig_gn",
-    "int_ty",
-    "gprot",
-    "entry_name",
-    "pdb_id"
-  ];
 
   $('#interface-modal-table').on('shown.bs.modal', function(e) {
     showPDBtable('#interface-modal-table');
@@ -525,13 +511,15 @@ $(document).ready(function () {
     pos_set = [];
     // get selected pdb ids
     for (var value of selection.toArray()){ pdb_sel = [value[6].toLowerCase(), ...pdb_sel]}
-    console.log(selection)
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata){
       if (pdb_sel.indexOf(int_meta['pdb_id']) != -1){
         pos_set = [int_meta['entry_name'], ...pos_set]
       }
     }
+
+    console.log(pdb_sel)
+    console.log(pos_set)
 
     if (!_.isEqual(old_pdb_sel.sort(), pdb_sel.sort())){
       $('.svg-content').remove();
@@ -540,7 +528,7 @@ $(document).ready(function () {
       document.querySelector('#conseq-container').style.display = "none";
       document.getElementById("interface-svg").className = "collapse in";
 
-      data = signprotmat.data.dataTransformationWrapper(interactions, keys, pdb_sel);
+      data = signprotmat.data.dataTransformationWrapper(interactions, pdb_sel);
       svg = signprotmat.d3.setup("div#interface-svg");
       xScale = signprotmat.d3.xScale(data.transformed);
       yScale = signprotmat.d3.yScale(data.transformed, gprot);

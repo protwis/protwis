@@ -694,7 +694,12 @@ def InteractionMatrix(request):
 
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     
-    struc = Structure.objects.filter(protein_conformation_id__in=prot_conf_ids).prefetch_related('protein_conformation__protein__parent')
+    struc = Structure.objects.filter(
+                protein_conformation_id__in=prot_conf_ids
+            ).prefetch_related(
+                'protein_conformation__protein__parent',
+                'protein_conformation__protein__family'
+            )
 
     complex_info = []
     for s in struc:
@@ -759,6 +764,11 @@ def IMSequenceSignature(request):
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
+
+    print(pos_set)
+    print(ignore_in_alignment)
+    print(segments)
+
     signature.setup_alignments_signprot(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
     signature.calculate_signature_onesided()
     # preprocess data for return

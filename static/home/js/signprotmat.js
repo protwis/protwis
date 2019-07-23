@@ -99,15 +99,14 @@ var signprotmat = {
             });
         },
 
-        dataTransformationWrapper: function (dataset, keys, pdb_sel) {
+        dataTransformationWrapper: function (dataset, pdb_sel) {
             // dataset = _.pick(dataset, pdb_sel);
             // let pdb_ids = signprotmat.data.extractPdbIDs(dataset);
             // let data_t = signprotmat.data.objectToArray(dataset);
             // data_t = signprotmat.data.moveKeyToArray(data_t, pdb_ids);
             // data_t = signprotmat.data.flattenOnce(data_t);
-            var data_t = signprotmat.data.labelData(dataset, keys);
-            data_t = signprotmat.data.removeUndefinedGN(data_t);
-            data_t = _.filter(data_t, function (d) { return pdb_sel.includes(d.pdb_id); });
+            // data_t = signprotmat.data.removeUndefinedGN(data_t);
+            data_t = _.filter(dataset, function (d) { return pdb_sel.includes(d.pdb_id.toLowerCase()); });
             var data_t_rec = signprotmat.data.extractRecSigData(data_t, "rec");
             var data_t_sig = signprotmat.data.extractRecSigData(data_t, "sig");
             var int_ty = signprotmat.data.getInteractionTypes(data_t);
@@ -782,17 +781,17 @@ var signprotmat = {
                 .attr("class", "y seq_label")
                 .attr("x", -10)
                 .attr("y", function (d) {
-                return pdbScale(d) - pdbScale.step() / 2;
-            })
+                    return pdbScale(d) - pdbScale.step() / 2;
+                })
                 .attr("text-anchor", "end")
                 .attr("dy", 75)
                 .text(function (d) {
-                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
-                var text = i_obj.name.replace("&beta;", "\u03B2"); // beta
-                text = text.replace("&mu;", "\u03BC"); // mu
-                return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
-                // return d;
-            });
+                    var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id == d.toLowerCase(); });
+                    var text = i_obj.name.replace("&beta;", "\u03B2"); // beta
+                    text = text.replace("&mu;", "\u03BC"); // mu
+                    return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
+                    // return d;
+                });
             // * APPENDING ROW TICK ANNOTATION FOR SIGPROT GNs
             svg
                 .append("g")
@@ -814,13 +813,13 @@ var signprotmat = {
                 .attr("text-anchor", "begin")
                 .attr("dy", 68)
                 .text(function (d) {
-                var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id === d; });
-                // let text = i_obj.gprot.replace('Engineered', 'Eng.')
-                var text = i_obj.gprot.replace("Engineered", "E.");
-                // text = text.replace('protein', 'prot.')
-                text = text.replace("protein", "p.");
-                return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
-            });
+                    var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id == d.toLowerCase(); });
+                    // let text = i_obj.gprot.replace('Engineered', 'Eng.')
+                    var text = i_obj.gprot.replace("Engineered", "E.");
+                    // text = text.replace('protein', 'prot.')
+                    text = text.replace("protein", "p.");
+                    return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
+                });
             // * APPENDING AMINOACID SEQUENCE [RECEPTOR]
             var recTip = d3
                 .tip()

@@ -31,6 +31,7 @@ def get_protein_segments(request):
     number objects"""
     segments = []
     segment_raw = request.POST.getlist("seg[]")
+    print(segment_raw)
     for s in segment_raw:
         try:
             gen_object = ResidueGenericNumberEquivalent.objects.filter(
