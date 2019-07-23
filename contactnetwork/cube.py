@@ -169,6 +169,9 @@ def compute_interactions(pdb_name,save_to_db = False):
         except SignprotComplex.DoesNotExist:
 #            print("No complex definition found for", pdb_name)
             log = "No complex definition found for " + pdb_name
+        except ProteinConformation.DoesNotExist:
+            print("No protein conformation definition found for signaling protein of ", pdb_name)
+#            log = "No protein conformation definition found for signaling protein of " + pdb_name
 
     if save_to_db:
 
@@ -239,7 +242,4 @@ def compute_interactions(pdb_name,save_to_db = False):
                     bulk_distances = []
 
             pairs = Distance.objects.bulk_create(bulk_distances)
-
-
-
     return classified, distances
