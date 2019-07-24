@@ -246,17 +246,19 @@ var signprotmat = {
         colScale: function (f) {
             var scale = {
                 "van-der-waals": "#d9d9d9",
-                "edge-to-face": "#969696",
-                "water-mediated": "#7DB144",
+                // "edge-to-face": "#969696",
+                // "water-mediated": "#7DB144",
                 hydrophobic: "#93d050",
-                "polar-sidechain-sidechain": "#EAA91F",
-                "polar-sidechain-backbone": "#C38E1A",
-                "polar-backbone-sidechain": "#C3A563",
-                "h-bond donor-acceptor": "#7030a0",
-                "h-bond acceptor-donor": "#B24DFF",
-                "cation-pi": "#0070c0",
-                "pi-cation": "#005693",
-                ionic: "#00B9BF"
+                // "polar-sidechain-sidechain": "#EAA91F",
+                // "polar-sidechain-backbone": "#C38E1A",
+                // "polar-backbone-sidechain": "#C3A563",
+                // "h-bond donor-acceptor": "#7030a0",
+                // "h-bond acceptor-donor": "#B24DFF",
+                // "cation-pi": "#0070c0",
+                // "pi-cation": "#005693",
+                ionic: "#00B9BF",
+                aromatic: "#005693",
+                polar: "#C38E1A",
             };
             var colScale = d3
                 .scaleOrdinal()
