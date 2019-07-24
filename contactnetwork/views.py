@@ -27,6 +27,8 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 from django.http import JsonResponse, HttpResponse
 from collections import OrderedDict
 
+import math
+import cmath
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
@@ -949,26 +951,56 @@ def InteractionBrowserData(request):
 
         if mode == "double":
             group_1_angles = {}
-            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]) \
+            ds = ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
-            for i,d in enumerate(ds):
-                ds[i] = list(ds[i])
-                group_1_angles[d[0]] = d[1:]
+                                .annotate(a_angle = ArrayAgg('a_angle'), outer_angle = ArrayAgg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = ArrayAgg('tau'), phi = ArrayAgg('phi'), psi = ArrayAgg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = ArrayAgg('theta'), hse = Avg('hse'))
+                                #.values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+
+            # Process angle aggregates to angle averages
+            # angle names for custom averaging
+            custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+            for q in ds:
+                for angle in custom_angles:
+                    q[angle] = [ qa for qa in q[angle] if qa != None] # clean from None values
+                    if angle in q and len(q[angle]) > 1:
+                        # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
+                        q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
+                    elif len(q[angle]) == 1:
+                        q[angle] = q[angle][0]
+
+            list_order = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
+            for q in ds:
+                #ds[i] = list(ds[i])
+                #group_1_angles[d[0]] = d[1:]
+                group_1_angles[q["residue__generic_number__label"]] = list([q[key] for key in list_order])
 
             group_2_angles = {}
-            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]) \
+            ds = ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
-            for i,d in enumerate(ds):
-                ds[i] = list(ds[i])
-                group_2_angles[d[0]] = d[1:]
+                                .annotate(a_angle = ArrayAgg('a_angle'), outer_angle = ArrayAgg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = ArrayAgg('tau'), phi = ArrayAgg('phi'), psi = ArrayAgg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = ArrayAgg('theta'), hse = Avg('hse'))
+                                #.values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+
+            # Process angle aggregates to angle averages
+            # angle names for custom averaging
+            custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+            for q in ds:
+                for angle in custom_angles:
+                    q[angle] = [ qa for qa in q[angle] if qa != None] # clean from None values
+                    if angle in q and len(q[angle]) > 1:
+                        # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
+                        q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
+                    elif len(q[angle]) == 1:
+                        q[angle] = q[angle][0]
+
+            list_order = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
+            for q in ds:
+                #ds[i] = list(ds[i])
+                #group_2_angles[d[0]] = d[1:]
+                group_2_angles[q["residue__generic_number__label"]] = list([q[key] for key in list_order])
 
             print('got angles values for',mode,'mode',time.time()-start_time)
 
@@ -1007,17 +1039,36 @@ def InteractionBrowserData(request):
 #                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
 #                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
                                 .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+
+                for i,d in enumerate(ds):
+                    ds[i] = list(ds[i])
+                    group_angles[d[0]] = d[1:]
             else:
                 # A group, get StdDev
-                ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
+                ds = ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = StdDev('a_angle'), outer_angle = StdDev('outer_angle'), core_distance = StdDev('core_distance'), \
-                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi'), sasa = StdDev('sasa'), rsa = StdDev('rsa'), theta = StdDev('theta'), hse = StdDev('hse')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
-            for i,d in enumerate(ds):
-                ds[i] = list(ds[i])
-                group_angles[d[0]] = d[1:]
+                                .annotate(a_angle = ArrayAgg('a_angle'), outer_angle = ArrayAgg('outer_angle'), core_distance = StdDev('core_distance'), \
+                                          tau = ArrayAgg('tau'), phi = ArrayAgg('phi'), psi = ArrayAgg('psi'), sasa = StdDev('sasa'), rsa = StdDev('rsa'), theta = ArrayAgg('theta'), hse = StdDev('hse'))
+                                #.values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+
+                # Process angle aggregates to angle averages
+                # angle names for custom averaging
+                custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+                for q in ds:
+                    for angle in custom_angles:
+                        q[angle] = [ qa for qa in q[angle] if qa != None] # clean from None values
+                        if angle in q and len(q[angle]) > 1:
+                            # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
+                            q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
+                        elif len(q[angle]) == 1:
+                            q[angle] = q[angle][0]
+
+                list_order = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
+                for q in ds:
+                    #ds[i] = list(ds[i])
+                    #group_angles[d[0]] = d[1:]
+                    group_angles[q["residue__generic_number__label"]] = list([q[key] for key in list_order])
 
             for coord in data['interactions']:
                 gn1 = coord.split(",")[0]
