@@ -296,6 +296,30 @@ const run_sig_match = function(){
             targets: 12,
             className: 'aska dt-center',
             visible: false,
+          }, {
+            data: 'Merged.Gs',
+            title: '   Gs   ',
+            targets: 13,
+            className: 'merg dt-center',
+            visible: false,
+          }, {
+            data: 'Merged.Gi/Go',
+            title: 'Gi / Go ',
+            targets: 14,
+            className: 'merg dt-center',
+            visible: false,
+          }, {
+            data: 'Merged.Gq/G11',
+            title: 'Gq / G11',
+            targets: 15,
+            className: 'merg dt-center',
+            visible: false,
+          }, {
+            data: 'Merged.G12/G13',
+            title: 'G12 / G13',
+            targets: 16,
+            className: 'merg dt-center',
+            visible: false,
           },
         ],
         order: [[ 4, "desc" ]],
@@ -305,24 +329,37 @@ const run_sig_match = function(){
         paging: false,
         buttons: [
           {
-              text: 'Toggle <b>GuideToPharma</b> / Asuka Inoue',
+              text: 'Toggle <b>GuideToPharma</b> / Asuka Inoue / Merged Data',
               className: 'toggle-source',
               action: function () {
-                let gtopText = "<span>Toggle <b>GuideToPharma</b> / Asuka Inoue</span>"
-                let askaText = "<span>Toggle GuideToPharma / <b>Asuka Inoue</b></span>"
+                let gtopText = "<span>Toggle <b>GuideToPharma</b> / Asuka Inoue / Merged Data</span>"
+                let askaText = "<span>Toggle GuideToPharma / <b>Asuka Inoue</b> / Merged Data</span>"
+                let mergText = "<span>Toggle GuideToPharma / Asuka Inoue / <b>Merged Data</b></span>"
                 let currText = $('.dt-button.toggle-source').html()
 
                 if (currText == gtopText) {
                   $('.dt-button.toggle-source').html(askaText)
+                    var columns = sigmatch_table.columns('.gtop');
+                    columns.visible(!columns.visible()[0])
+
+                    columns = sigmatch_table.columns('.aska');
+                    columns.visible(!columns.visible()[0])
                 } else if (currText == askaText) {
+                  $('.dt-button.toggle-source').html(mergText)
+                    var columns = sigmatch_table.columns('.aska');
+                    columns.visible(!columns.visible()[0])
+
+                    columns = sigmatch_table.columns('.merg');
+                    columns.visible(!columns.visible()[0])
+                } else if (currText == mergText) {
                   $('.dt-button.toggle-source').html(gtopText)
+                    var columns = sigmatch_table.columns('.merg');
+                    columns.visible(!columns.visible()[0])
+
+                    columns = sigmatch_table.columns('.gtop');
+                    columns.visible(!columns.visible()[0])
                 }
 
-                var columns = sigmatch_table.columns('.gtop');
-                columns.visible(!columns.visible()[0])
-
-                columns = sigmatch_table.columns('.aska');
-                columns.visible(!columns.visible()[0])
               }
           },
           {

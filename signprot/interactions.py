@@ -215,7 +215,7 @@ def prepare_signature_match(signature_match):
         entry = elem[0].protein.entry_name
         coupling_entry = coupling_data_dict.get(entry)
         
-        sources = ["GuideToPharma", "Aska"]
+        sources = ["GuideToPharma", "Aska", "Merged"]
 
         for source in sources:
             out[entry][source] = {}
@@ -315,6 +315,9 @@ def prepare_coupling_data_container():
 
 
 def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
+    threshold_primary = -0.1
+    threshold_secondary = -1
+
     distinct_g_families = []
     distinct_g_subunit_families = {}
     distinct_sources = sources
@@ -368,14 +371,16 @@ def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
             if m > data[p][s][gf]["best"]:
                 data[p][s][gf]["best"] = round(Decimal(m), 2)
 
+
     return data
 
 
 def process_coupling_data(data):
     res = []
-    
+
     for entry in data.keys():
         i = data[entry]
+
         e = {}
 
         c_gtop = extract_coupling_bool(i, "GuideToPharma")
@@ -383,10 +388,14 @@ def process_coupling_data(data):
 
         c_aska = extract_coupling_bool(i, "Aska")
         p_aska = extract_coupling_primary(c_aska[1])
+
+        c_merg = extract_coupling_bool(i, "Merged")
+        p_merg = extract_coupling_primary(c_merg[1])
         
         e['coupling'] = {}
         e["GuideToPharma"] = {}
         e["Aska"] = {}
+        e["Merged"] = {}
 
         e["rec_class"] = i["rec_class"]
         e["rec_obj"] = i["rec_obj"]
@@ -394,6 +403,7 @@ def process_coupling_data(data):
         
         e["coupling"]["GuideToPharma"] = i["GuideToPharma"]
         e["coupling"]["Aska"] = c_aska[1]
+        e["coupling"]["Merged"] = c_merg[1]
         
         e["GuideToPharma"]["Gi/Go"] = c_gtop["Gi/Go"]
         e["GuideToPharma"]["Gs"] = c_gtop["Gs"]
@@ -405,8 +415,14 @@ def process_coupling_data(data):
         e["Aska"]["Gq/G11"] = c_aska[0]["Gq/G11"]
         e["Aska"]["G12/G13"] = c_aska[0]["G12/G13"]
         
+        e["Merged"]["Gi/Go"] = c_merg[0]["Gi/Go"]
+        e["Merged"]["Gs"] = c_merg[0]["Gs"]
+        e["Merged"]["Gq/G11"] = c_merg[0]["Gq/G11"]
+        e["Merged"]["G12/G13"] = c_merg[0]["G12/G13"]
+
         e["GuideToPharma"]["gprot"] = p_gtop
         e["Aska"]["gprot"] = p_aska
+        e["Merged"]["gprot"] = p_merg
 
         res.append(e)
 
@@ -415,6 +431,7 @@ def process_coupling_data(data):
 
 def extract_coupling_bool(gp, source):
     distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
+    distinct_g_subunit_families = OrderedDict([('Gs',['gnas2','gnal']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gnaq', 'gna14', 'gna15']), ('G12/G13',['gna12', 'gna13'])])
     threshold_primary = -0.1
     threshold_secondary = -1
 
@@ -441,6 +458,29 @@ def extract_coupling_bool(gp, source):
                     c_levels[gf] = "secondary"
         return (c, c_levels)
 
+    elif source == 'Merged':
+        c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
+        c_levels = {}
+        v = gp
+
+        for gf in distinct_g_families:
+            values = []
+            if 'GuideToPharma' in v and gf in v['GuideToPharma']:
+                values.append(v['GuideToPharma'][gf])
+            if 'Aska' in v and gf in v['Aska']:
+                best = v['Aska'][gf]['best']
+                if best > threshold_primary:
+                    values.append('primary')
+                elif best > threshold_secondary:
+                    values.append('secondary')
+            if 'primary' in values:
+                c[gf] = True
+                c_levels[gf] = "primary"
+            elif 'secondary' in values:
+                c[gf] = True
+                c_levels[gf] = "secondary"
+
+        return (c, c_levels)
 
 def extract_coupling_primary(gp):
     p = []
