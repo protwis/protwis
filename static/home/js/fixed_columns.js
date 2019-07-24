@@ -397,13 +397,13 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
 
                 },
-                {
+                /*{
                     column_number: 13,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "7TM Open IC (Å)",
                     filter_reset_button_text: false,
-                },
+                },*/
                 {
                     column_number: 14,
                     filter_type: "multi_select",

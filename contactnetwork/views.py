@@ -191,15 +191,15 @@ def PdbTreeData(request):
 # @cache_page(60*60*24*7)
 def PdbTableData(request):
 
-    constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
-    methods = {}
-    for c in constructs:
+    #constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
+    #methods = {}
+    #for c in constructs:
         # print(c.name)
-        if c.crystallization and c.crystallization.crystal_method:
-            method = c.crystallization.crystal_method.name
-        else:
-            method = "N/A"
-        methods[c.name] = method
+    #    if c.crystallization and c.crystallization.crystal_method:
+    #        method = c.crystallization.crystal_method.name
+    #    else:
+    #        method = "N/A"
+    #    methods[c.name] = method
 
     data = Structure.objects.filter(refined=False).prefetch_related(
                 "pdb_code",
@@ -207,6 +207,7 @@ def PdbTableData(request):
                 "stabilizing_agents",
                 "structureligandinteraction_set__ligand__properities__ligand_type",
                 "structureligandinteraction_set__ligand_role",
+                "structure_type",
                 "protein_conformation__protein__parent__parent__parent",
                 "protein_conformation__protein__parent__family__parent",
                 "protein_conformation__protein__parent__family__parent__parent__parent",
@@ -216,7 +217,7 @@ def PdbTableData(request):
     data_dict = OrderedDict()
     data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \
                                                                        <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></tr> \
-                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
+                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
 
     for s in data:
         pdb_id = s.pdb_code.index
@@ -246,10 +247,11 @@ def PdbTableData(request):
         fusion = only_fusions(a_list)
         antibody = only_antibodies(a_list)
 
-        if pdb_id in methods:
-            r['method'] = methods[pdb_id]
-        else:
-            r['method'] = "N/A"
+        #if pdb_id in methods:
+        #    r['method'] = methods[pdb_id]
+        #else:
+        #    r['method'] = "N/A"
+        r['method'] = s.structure_type.name
 
         r['resolution'] = "{0:.2g}".format(s.resolution)
         r['7tm_distance'] = s.distance
