@@ -1044,7 +1044,7 @@
 
                 // only possible with more than 4 segments, otherwise it will become a mess
                 if (data.segments.length > 4)
-                    content += '<p>Consecutive segment contacts<br> on outside: <input type=checkbox id="flareplot_contiguous" checked></p>';
+                    content += '<p>Consecutive segment contacts on outside: <input type=checkbox id="flareplot_contiguous" checked></p>';
 
                 content += '<p>Line colors: <select id="flareplot_color">' +
                     '<option value="none">None (gray)</option>' +
