@@ -569,32 +569,33 @@ var signprotmat = {
                 .on("mouseout", function (d) {
                 tip.hide();
             })
-                .on("click", function (d) {
-                var index;
-                // let rect_x = d3.event.target.getAttribute('x')
-                // let rect_y = d3.event.target.getAttribute('y')
-                // console.log(rect_x, rect_y)
-                // https://stackoverflow.com/a/20251369/8160230
-                // select the rect under cursor
-                var curr = d3.select(this);
-                // Determine if current rect was clicked before
-                var active = d.active ? false : true;
-                // Update whether or not the elements are active
-                d.active = active;
-                // set style in regards to active
-                if (d.active) {
-                    curr.style("stroke", "yellow").style("stroke-width", 2);
-                    info_data.push(d);
-                }
-                else {
-                    curr.style("stroke", "none").style("stroke-width", 2);
-                    index = info_data.indexOf(d);
-                    info_data.splice(index, 1);
-                }
-                signprotmat.d3.infoBoxUpdate();
-                signprotmat.d3.colorRecResidues(d);
-                signprotmat.d3.colorSigResidues(d);
-            });
+                // .on("click", function (d) {
+                // var index;
+                // // let rect_x = d3.event.target.getAttribute('x')
+                // // let rect_y = d3.event.target.getAttribute('y')
+                // // console.log(rect_x, rect_y)
+                // // https://stackoverflow.com/a/20251369/8160230
+                // // select the rect under cursor
+                // var curr = d3.select(this);
+                // // Determine if current rect was clicked before
+                // var active = d.active ? false : true;
+                // // Update whether or not the elements are active
+                // d.active = active;
+                // // set style in regards to active
+                // if (d.active) {
+                //     curr.style("stroke", "yellow").style("stroke-width", 2);
+                //     info_data.push(d);
+                // }
+                // else {
+                //     curr.style("stroke", "none").style("stroke-width", 2);
+                //     index = info_data.indexOf(d);
+                //     info_data.splice(index, 1);
+                // }
+                // signprotmat.d3.infoBoxUpdate();
+                // signprotmat.d3.colorRecResidues(d);
+                // signprotmat.d3.colorSigResidues(d);
+                // }
+            );
 
             each_rect
                 .append("rect")
