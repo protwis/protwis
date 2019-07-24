@@ -1,0 +1,213 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block content %}
+<ul class="nav nav-tabs" id="move_nav">
+    <li class="active"><a href="#3D-tab" data-toggle="tab">3D</a></li>
+    <li class=""><a href="#2D-tab" data-toggle="tab">2D</a></li>
+</ul>
+<div class="tab-content clearfix">
+    <div class="tab-pane main_option active" id="3D-tab">
+        <div class="row">
+            <div class="col-md-4 tab-pane" class="NGL-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">3D view 1</h3>
+                        <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="ngl-container" id="ngl-1" style="margin: auto; width:100%; height:400px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 tab-pane" class="NGL-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">3D view 2</h3>
+                        <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="ngl-container" id="ngl-2" style="margin: auto; width:100%; height:400px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 tab-pane" class="NGL-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">3D view 3</h3>
+                        <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="ngl-container" id="ngl-3" style="margin: auto; width:100%; height:400px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane main_option" id="2D-tab">
+        <div class="row">
+            <div class="col-md-4 tab-pane" class="SNAKE-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">Snakeplot 1</h3>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="snake-container" id="snake-1" style="margin: auto; width:100%; height:400px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 tab-pane" class="SNAKE-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">Snakeplot 2</h3>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="snake-container" id="snake-2" style="margin: auto; width:100%; height:400px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 tab-pane" class="SNAKE-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">Snakeplot 3</h3>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="snake-container" id="snake-3" style="margin: auto; width:100%; height:400px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tab-content clearfix">
+        <div class="row">
+            <div class="tab-pane col-md-12" class="matrix-tab">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title pull-left">HEATMAP/MATRIX</h3>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="heatmap-container" id="heatmap-container">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div>
+    <div class="main_loading_overlay">
+        <img src="/static/home/images/loading.gif" id="img-load" />
+    </div>
+</div>
+{% endblock %}
+{% block addon_js %}
+<script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<!-- NGL -->
+<script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+<script src="{% static 'home/js/hotspots-browser.js' %}"> </script>
+<script>
+
+$(document).ready(function() {
+    // TODO: adjust for 3 NGL viewers
+    //initializeFullscreenButton('#single-crystal-group-tab');
+    getBackendData();
+
+    // Example NGL viewers
+    createNGLview(1, "2rh1", ["2rh1"])
+    createNGLview(2, "2rh1", ["2rh1"])
+    createNGLview(3, "2rh1", ["2rh1"])
+
+});
+</script>
+{% endblock %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<style type="text/css">
+.no-top-border {
+    border-top: 0px;
+}
+
+
+@media (min-width: 1800px) {
+    #content {
+        width: 1770px;
+    }
+}
+
+@media (min-width: 2200px) {
+    #content {
+        width: 100%;
+        padding-left: 100px;
+        padding-right: 100px;
+    }
+}
+
+.nav-tabs {
+    border-bottom: 0px solid #ddd;
+}
+
+@media (min-width: 1200px) {
+    .modal-wide {
+        width: 1200px;
+    }
+}
+
+@media (min-width: 1800px) {
+    .modal-wide {
+        width: 1800px;
+    }
+}
+
+@media (min-width: 2400px) {
+    .modal-wide {
+        width: 2400px;
+    }
+}
+
+.modal-footer {
+    border-top: 0px;
+}
+
+
+.main_loading_overlay {
+    /*display:none; */
+    opacity: 0.9;
+    position: absolute;
+    background: #fff;
+    z-index: 99999;
+    top: 50px;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+
+td.num_cell {
+    text-align: right;
+    width: 30px;
+}
+
+td.border-left {
+  border-left: 1px solid #ccc;
+}
+</style>
+{% endblock %}

@@ -1595,21 +1595,55 @@ class HomologyModeling(object):
             else:
                 temp_coo = None
             
+            prev_num = 0
+
+            # check for gaps in N-term, usual in class B structures
+            N_gap = False
+            for n in N_term_temp:
+                if prev_num!=0 and n.sequence_number-prev_num!=1:
+                    N_gap = True
+                prev_num = n.sequence_number
+
             r_i, t_i, a_i, arr_i = OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict()
             N_r, N_t, N_a, N_arr = OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict()
             n_count = 0
-            for n in N_term:
-                n_count+=1
-                N_r[str(n.sequence_number)] = n.amino_acid
-                N_a[str(n.sequence_number)] = '-'
-                try:
-                    N_arr[str(n.sequence_number)] = temp_coo[-1*(len(N_term)-n_count+1)]
-                    N_t[str(n.sequence_number)] = list(N_term_temp)[-1*(len(N_term)-n_count+1)].amino_acid
-                    self.template_source['N-term'][str(n.sequence_number)][0] = N_struct
-                    self.template_source['N-term'][str(n.sequence_number)][1] = N_struct
-                except:
-                    N_t[str(n.sequence_number)] = '-'
-                    N_arr[str(n.sequence_number)] = '-'
+
+            # Gapped N-term residues aren't currently modeled, they are skipped ### FIXME
+            if N_gap:
+                if self.main_structure==N_struct:
+                    for n in N_term:
+                        n_count+=1
+                        N_r[str(n.sequence_number)] = n.amino_acid
+                        n_t = N_term_temp.filter(sequence_number=n.sequence_number)
+                        if len(n_t)==1:
+                            N_t[str(n.sequence_number)] = n_t[0].amino_acid
+                            self.template_source['N-term'][str(n.sequence_number)][0] = N_struct
+                            self.template_source['N-term'][str(n.sequence_number)][1] = N_struct
+                            N_arr[str(n.sequence_number)] = list(parse.fetch_residues_from_pdb(N_struct,[n.sequence_number]).values())[0]
+                            N_a[str(n.sequence_number)] = '-'
+                        else:
+                            N_t[(str(n.sequence_number))] = '-'
+                            self.template_source['N-term'][str(n.sequence_number)][0] = None
+                            self.template_source['N-term'][str(n.sequence_number)][1] = None
+                            N_arr[str(n.sequence_number)] = '-'
+                            N_a[str(n.sequence_number)] = '-'
+                            trimmed_residues.append(n.sequence_number)
+                else:
+                    logger.warning('Gaps in N-term in template {} for {} {} model, skipping N-term'.format(N_struct, self.reference_protein, self.state))
+            else:            
+                for n in N_term:
+                    n_count+=1
+                    N_r[str(n.sequence_number)] = n.amino_acid
+                    N_a[str(n.sequence_number)] = '-'
+                    
+                    try:
+                        N_arr[str(n.sequence_number)] = temp_coo[-1*(len(N_term)-n_count+1)]
+                        N_t[str(n.sequence_number)] = list(N_term_temp)[-1*(len(N_term)-n_count+1)].amino_acid
+                        self.template_source['N-term'][str(n.sequence_number)][0] = N_struct
+                        self.template_source['N-term'][str(n.sequence_number)][1] = N_struct
+                    except:
+                        N_t[str(n.sequence_number)] = '-'
+                        N_arr[str(n.sequence_number)] = '-'
 
             r_i['N-term'] = N_r
             t_i['N-term'] = N_t
@@ -1624,6 +1658,10 @@ class HomologyModeling(object):
             a.template_dict = t_i
             a.alignment_dict = a_i
             main_pdb_array = arr_i
+
+            # N-term alignment sanity check
+            # for i,j,k,l in zip(a.reference_dict['N-term'], a.template_dict['N-term'], a.alignment_dict['N-term'],main_pdb_array['N-term']):
+            #     print(i,j,k,l, a.reference_dict['N-term'][i], a.template_dict['N-term'][j],a.alignment_dict['N-term'][k],main_pdb_array['N-term'][l])
             
             try:
                 index = -1

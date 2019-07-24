@@ -84,13 +84,15 @@ function renderTree(data) {
     }
 
     var nodes = cluster.nodes(newick.parse(tree));
+    var reg = new RegExp('^[0-9]+[\.]?[0-9]*$');
     nodes.forEach(function(n) {
         // HACK: the internal nodes names are now cluster scoring values
-        if (n.name != "" && !isNaN(n.name)) {
+        if (n.name != "" && reg.test(n.name)) {
             n.score = n.name
             n.name = names.toString();
             names++;
         }
+
         // ORIGINAL
         /*if (n.name == "") {
             n.name = names.toString();
@@ -154,8 +156,8 @@ function renderTree(data) {
         .style("fill", function(n) {
           // color based on activity
           if (annotations[n.name]) {
-              if (annotations[n.name][6].length > 0){
-                  switch(annotations[n.name][6][0]){
+              if (annotations[n.name][7].length > 0){
+                  switch(annotations[n.name][7][0]){
                       case "agonist":
                       case "agonist-partial":
                       case "pam":
@@ -214,10 +216,10 @@ function renderTree(data) {
     var tooltip = d3.select("body").append("div")
                   .attr("class", "tooltip")
                   .style("opacity", 0);
-    for  (i=5; i>1; i--) {
+    for  (i=6; i>2; i--) {
         // store categories for legend
-        categories[5-i] = []
-        var ref = 5-i;
+        categories[6-i] = []
+        var ref = 6-i;
         for (var pdb in annotations){
             // assign color
             if (!categories[ref].includes(annotations[pdb][i]))

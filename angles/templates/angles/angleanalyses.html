@@ -15,8 +15,9 @@
   			</li>
 		  </ul>
 
-        <div class="tab-content clearfix">
-            <!-- BEGIN SINGLE CRYSTAL TAB -->
+      <div class="tab-content clearfix">
+
+        <!-- BEGIN SINGLE CRYSTAL TAB -->
 		    <div class="tab-pane main_option {% if not pdbs1 and not pdbs %}active{% endif %}" id="single-crystal-tab">
                 <div class="row">
                     <div class="col-md-3">
@@ -54,6 +55,7 @@
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Residue analysis (data)</h3>
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -68,7 +70,7 @@
                   <div class="col-md-5 tab-pane" id="single-NGL-tab">
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
                                 <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 <div class="clearfix"></div>
                             </div>
@@ -119,6 +121,7 @@
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Residue analysis (data)</h3>
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -133,7 +136,7 @@
                     <div class="col-md-5 tab-pane" id="single-group-NGL-tab">
                          <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title pull-left">NGL</h3>
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
                                 <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                                 <div class="clearfix"></div>
                             </div>
@@ -198,6 +201,7 @@
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Residue analysis (data)</h3>
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -212,7 +216,7 @@
                 <div class="col-md-5 tab-pane" id="two-groups-NGL-tab">
                      <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">NGL</h3>
+                            <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
                             <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             <div class="clearfix"></div>
                         </div>
@@ -863,16 +867,28 @@
 
           // add selector
           var selectVariable = '<select class="variable_selector">';
+          if (selector=='#single-crystal-tab') {
+              selectVariable += '<optgroup label="Secondary structure">';
+              selectVariable += '<option value="ss_dssp">DSSP method</option>';
+              selectVariable += '<option value="ss_stride">Stride method</option>';
+              selectVariable += '</optgroup>';
+          }
+          selectVariable += '<optgroup label="Backbone movement">';
+          selectVariable += '<option value="distance" SELECTED>Distance to 7TM axis</option>';
           selectVariable += '<option value="bb_angle">Angle of C&alpha; atom relative to GPCR core</option>';
           selectVariable += '<option value="sc_angle">Angle of C&beta; atom relative to GPCR core</option>';
-          selectVariable += '<option value="outer_angle" SELECTED>Most outer angle</option>';
           selectVariable += '<option value="HSE">Half-sphere exposure</option>';
-          selectVariable += '<option value="SASA">Solvent Accessible Surface Area (SASA)</option>';
-          selectVariable += '<option value="RSA">Relative SASA</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Helix types, bulges and constrictions">';
           selectVariable += '<option value="phi">Phi dihedral</option>';
           selectVariable += '<option value="psi">Psi dihedral</option>';
-          selectVariable += '<option value="tau">Tau angle</option>';
-          selectVariable += '<option value="theta">Theta dihedral</option>';
+          selectVariable += '<option value="tau">Tau dihedral (between 4 consecutive C&alpha;-atoms)</option>';
+          selectVariable += '<option value="theta">Theta angle (between 3 consecutive C&alpha;-atoms)</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Sidechain properties">';
+          selectVariable += '<option value="outer_angle">Angle terminal atom - helix axis - 7TM axis</option>';
+          selectVariable += '<option value="RSA">Relative SASA</option>';
+          selectVariable += '<option value="SASA">Solvent Accessible Surface Area (SASA)</option>';
           selectVariable += '</select>';
           cp.html(selectVariable)
 
@@ -897,12 +913,15 @@
           "phi" : 8,
           "psi" : 9,
           "theta" : 10,
-          "tau" : 11
+          "tau" : 11,
+          "distance" : 12,
+          "ss_dssp" : 13,
+          "ss_stride" : 14
         }
 
         var coloringData = {}
         var repr_dict = {}
-        function updateDataTable(selector, variable = "outer_angle") {
+        function updateDataTable(selector, variable = "distance") {
             data = angleData[selector];
             coloringData[tabMap[selector]] = {}
 
@@ -932,28 +951,38 @@
             var rowset = []
             data["data"].forEach(function (row){
                 var tmp = []
-                for (var i =0; i < dataSelector.length; i++)
+                for (var i =0; i < dataSelector.length; i++){
                   tmp.push(row[dataSelector[i]])
+                }
 
                 // add second dataset
                 for (var i = 0; i < dataSelector.length; i++){
-                  if (dataSelector[i]>1)
-                      if (data["data2"][row[0]] != undefined)
+                  if (dataSelector[i]>1){
+                      if (data["data2"][row[0]] != undefined && data["data2"][row[0]][dataSelector[i]] != undefined)
                         tmp.push(data["data2"][row[0]][dataSelector[i]])
                       else
                         tmp.push(['-','-','-'])
+                  }
                 }
                 tmp = tmp.flat()
 
                 // Add the diff column
-                if (tmp.length>6){
-                  tmp.push(tmp[2] - tmp[5])
-                  for (var i=1; i<tmp.length;i++)
-                    tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                if (availableVariables[variable] < 13){ // no secondary structure
+                  if (tmp.length>6){
+                    tmp.push(tmp[2] - tmp[5])
+                    for (var i=1; i<tmp.length;i++){
+                      //tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                      tmp[i] = Math.round(tmp[i]*10)/10
+                    }
+                  } else {
+                    tmp.push(tmp[2] - tmp[4])
+                    for (var i=2; i<tmp.length;i++){
+                      //tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                      tmp[i] = Math.round(tmp[i]*10)/10
+                    }
+                  }
                 } else {
-                  tmp.push(tmp[2] - tmp[4])
-                  for (var i=2; i<tmp.length;i++)
-                    tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
+                  tmp.push("-")
                 }
 
                 // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
@@ -997,7 +1026,7 @@
                 gn_key = $(selector + " .heatmap-table").DataTable().row(this).data()[0]
                 gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                 if (gn > -1) {
-                  ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                  ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
                   //temprepr = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                   reps[mode][key].hover.setSelection(ngl_selection)
 //                  reps[mode][key].structureComponent.autoView(ngl_selection)
@@ -1007,7 +1036,7 @@
                   key = 1
                   gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                   if (gn > -1) {
-                    ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                    ngl_selection = ":" + pdb_data[mode][key]['chain'] + "  and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
                     //temprepr = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                     reps[mode][key].hover.setSelection(ngl_selection)
                   }
@@ -1040,16 +1069,16 @@
                     gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                     repr_dict[mode][gn_key] = {}
                     if (gn > -1) {
-                      ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                      ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
                       repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                       reps[mode][key].structureComponent.autoView(ngl_selection, 1000)
                     }
 
-                    if (mode=="two-groups"){
+                    if (mode=="two-groups") {
                       key = 1
                       gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
                       if (gn > -1) {
-                        ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+                        ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
                         repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
                       }
                     }
@@ -1506,8 +1535,8 @@
               controls += '<option value="rangeG2">Variation in group 2</option>'
               controls += '<option value="diff" SELECTED>Difference between groups</option>'
             } else {
-              controls += '<option value="value">Value</option>'
-              controls += '<option value="diff" SELECTED>Difference with class</option>'
+              controls += '<option value="value" SELECTED>Value</option>'
+              controls += '<option value="diff">Difference with class</option>'
             }
             controls += '</select></p>'
 
@@ -1523,6 +1552,10 @@
             $("#ngl-"+mode).append(newDiv);
 
             selectColoring[mode] = "diff"
+            // DEBUG setting (or keep as default?)
+            if (mode=="single")
+                selectColoring[mode] = "value"
+
             $('#ngl_coloring_'+mode).change(function(e) {
                 selectColoring[mode] = $(this).val()
                 updateStructureRepresentations(mode)
@@ -1586,6 +1619,11 @@
             /*$("#ngl-"+mode+" #ngl_contacts").change(function(e){
                 updateStructureRepresentations(mode);
             });*/
+
+            // Prevent scrolling of document
+            // TODO: fix this for passive
+            document.getElementById( "ngl-"+mode ).onwheel = function(event){return false;};//event.preventDefault();};
+            document.getElementById( "ngl-"+mode ).onmousewheel = function(event){return false;};//event.preventDefault();};
         }
 
         var linkColourScheme = {}
@@ -1642,6 +1680,25 @@
              updateStructureRepresentations(mode)
         }
 
+        var DSSP_COLORING = {
+          "H": "#FF0000", // alpha helix
+          "G": "#FF00FF", // 3-10 helix
+          "I": "#00FF00", // pi helix
+          "B": "#ffd700", // isolated bridge
+          "E": "#00a8ff", // strand/extended conformation
+          "T": "#ff5700", // turn
+          "S": "#00ffff", // bend (unique to DSSP)
+          "-": "#5d8aa8", // coil/other
+        }
+        var STRIDE_COLORING = {
+          "H": "#FF0000",
+          "G": "#FF00FF",
+          "I": "#00FF00",
+          "B": "#ffd700",
+          "E": "#00a8ff",
+          "T": "#ff5700",
+          "C": "#5d8aa8",
+        }
         // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
         function updateStructureRepresentations(mode) {
           var structures = 1;
@@ -1687,7 +1744,8 @@
                     case "bb_angle":
                     case "sc_angle":
                       if (colorIndex == 1 || colorIndex == 3)
-                        color_scheme.push([numberToColor4(140, coloringData[mode][gn_key][colorIndex]-40, false) , ngl_selection])
+                        //color_scheme.push([numberToColor4(140, coloringData[mode][gn_key][colorIndex]-40, false) , ngl_selection])
+                        color_scheme.push([numberToColor3(140, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       else if (colorIndex == 2 || colorIndex == 4)
                         color_scheme.push([numberToColor5(90, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       else
@@ -1753,6 +1811,23 @@
                         color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
                       else
                         color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "distance":
+                      // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
+                      if (colorIndex == 1 || colorIndex == 3)
+                        color_scheme.push([numberToColor4(25, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(10, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(5, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "ss_dssp":
+                      if (coloringData[mode][gn_key][colorIndex] != null && coloringData[mode][gn_key][colorIndex] != "")
+                        color_scheme.push([DSSP_COLORING[coloringData[mode][gn_key][colorIndex]], ngl_selection])
+                      break;
+                    case "ss_stride":
+                      if (coloringData[mode][gn_key][colorIndex] != null && coloringData[mode][gn_key][colorIndex] != "")
+                        color_scheme.push([STRIDE_COLORING[coloringData[mode][gn_key][colorIndex]], ngl_selection])
                       break;
                   }
                 }
@@ -1932,19 +2007,99 @@
           });
         }
 
+        function swap(dict){
+          var ret = {};
+          for(var key in dict){
+            ret[dict[key]] = key;
+          }
+          return ret;
+        }
+
+        function initializeDownloadButton(selector) {
+          // Distance matrix download
+          $(selector + ' .btn-download').click(function() {
+              // create download table
+              if (angleData != undefined){
+                  /*var header = lastData['dm_labels']
+                  header.unshift("PDB-code")
+                  */
+
+
+                  // TODO Create header + data toggle HERE -> large download looping over all possible features
+                  var header = []
+                  var header2 = []
+                  var variables = swap(availableVariables);
+                  for (i in variables){
+                    if (i>=2){
+                      // group 1
+                      for (var j = 0; j < angleData[selector]["headers"].length; j++){
+                          header.push(variables[i])
+                          header2.push(angleData[selector]["headers"][j]["title"].replace(/(<([^>]+)>)/ig," "))
+                      }
+                      // group 2 or class
+                      for (var j = 0; j < angleData[selector]["headers2"].length; j++){
+                          header.push(variables[i])
+                          header2.push(angleData[selector]["headers2"][j]["title"].replace(/(<([^>]+)>)/ig," "))
+                      }
+                    } else {
+                      header.push("")
+                      header2.push(variables[i])
+                    }
+                  }
+                  // add headers
+                  var data = [];
+                  data.push(header);
+                  data.push(header2);
+
+                  rawdata = angleData[selector]["data"]
+                  rawdata2 = angleData[selector]["data2"]
+                  for (var i=0; i < rawdata.length; i++) {
+                    var residue = rawdata[i][0]
+                    var row = [residue, rawdata[i][1]]
+                    for (j in variables) {
+                        if (j >= 2){
+                          // group 1
+                          row.push(rawdata[i][j])
+
+                          // group 2
+                          if (residue in rawdata2)
+                            row.push(rawdata2[residue][j])
+                          else
+                            if (Array.isArray(rawdata[i][j]))
+                              for (var g=0; g < rawdata[i][j].length; g++)
+                                row.push('-')
+                            else
+                              row.push('-')
+                        }
+                    }
+                    data.push(row.flat())
+                  }
+
+                  // Convert to CSV
+                  var csv = Papa.unparse(data);
+
+                  // Download file
+                  downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), "GPCRdb_residue_properties.csv");
+              }
+          });
+        }
+
 
         function initalizeSingleCrystalView() {
             initializeGoButton('#single-crystal-tab');
+            initializeDownloadButton('#single-crystal-tab');
             initializeFullscreenButton('#single-crystal-tab');
         }
 
         function initializeSingleGroupCrystalView() {
             initializeGoButton('#single-crystal-group-tab');
+            initializeDownloadButton('#single-crystal-group-tab');
             initializeFullscreenButton('#single-crystal-group-tab');
         }
 
         function initializeTwoCrystalGroupsView() {
             initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab');
+            initializeDownloadButton('#two-crystal-groups-tab');
             initializeFullscreenButton('#two-crystal-groups-tab');
         }
 
@@ -2192,6 +2347,10 @@
 
         .csv-download-button {
             margin-top: 6px;
+        }
+
+        .btn-download, .btn-download-alt, .btn-fullscreen {
+          margin-right: 10px;
         }
 
         #sliderDiv {

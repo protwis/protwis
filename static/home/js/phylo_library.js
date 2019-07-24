@@ -27,7 +27,7 @@
  * @returns {Function} phylotree - an instance of a Phylotree.
  */
   d3.layout.phylotree = function(container) {
-      var item_selected = d3_phylotree_item_selected,
+    var item_selected = d3_phylotree_item_selected,
       node_visible = d3_phylotree_node_visible,
       node_notshown = d3_phylotree_node_notshown,
       edge_visible = d3_phylotree_edge_visible,
@@ -71,7 +71,7 @@
         ) {
           var bl = parseFloat(_node["attribute"]);
           if (!isNaN(bl)) {
-            return Math.max(0, bl);
+            return Math.max(0, bl) + options['inner_spacing']; // Add additional spacing here
           }
         }
         //console.log ("No branch length for ", _node.name);
@@ -106,14 +106,15 @@
         collapsible: true,
         "left-right-spacing": "fixed-step", //'fit-to-size',
         "top-bottom-spacing": "fixed-step",
-        "left-offset": 40,
+        "inner_spacing": 0,
+        "left-offset": 0,
         "show-scale": "top",
         // currently not implemented to support any other positioning
         "draw-size-bubbles": false,
         "binary-selectable": false,
         "is-radial": false,
         "attribute-list": [],
-        "max-radius": 300,
+        "max-radius": 768,
         "annular-limit": 0.38196601125010515,
         compression: 0.2,
         "align-tips": false,
@@ -127,7 +128,8 @@
         reroot: true,
         hide: true,
         "label-nodes-with-name": false,
-        zoom: true
+        zoom: false,
+        "show-menu": true
       },
       css_classes = {
         "tree-container": "phylotree-container",
@@ -488,7 +490,8 @@
         });
 
         var annular_shift = 0,
-          do_tip_offset = phylotree.align_tips() && !options["draw-size-bubbles"];
+          do_tip_offset =
+            phylotree.align_tips() && !options["draw-size-bubbles"];
 
         nodes.forEach(function(d) {
           if (!d.children) {
@@ -848,6 +851,7 @@
     };
 
     phylotree.handle_node_click = function(node) {
+
       var menu_object = d3
         .select(self.container)
         .select("#" + d3_layout_phylotree_context_menu_id);
@@ -863,6 +867,12 @@
 
       menu_object.selectAll("li").remove();
       if (node) {
+        if( !_.some([
+          Boolean(node.menu_items),
+          options["hide"],
+          options["selectable"],
+          options["collapsible"]
+        ]) || !options["show-menu"]) return;
         if (!d3_phylotree_is_leafnode(node)) {
           if (options["collapsible"]) {
             menu_object
@@ -878,11 +888,13 @@
                 menu_object.style("display", "none");
                 phylotree.toggle_collapse(node).update();
               });
-            menu_object.append("li").attr("class", "divider");
-            menu_object
-              .append("li")
-              .attr("class", "dropdown-header")
-              .text("Toggle selection");
+            if(options["selectable"]) {
+              menu_object.append("li").attr("class", "divider");
+              menu_object
+                .append("li")
+                .attr("class", "dropdown-header")
+                .text("Toggle selection");
+            }
           }
 
           if (options["selectable"]) {
@@ -1017,7 +1029,14 @@
         }
 
         if (has_user_elements.length) {
-          menu_object.append("li").attr("class", "divider");
+          const show_divider_options = [
+            options['hide'],
+            options['selectable'],
+            options['collapsible']
+          ];
+          if( _.some(show_divider_options) ) {
+            menu_object.append("li").attr("class", "divider");
+          }
           has_user_elements.forEach(function(d) {
             menu_object
               .append("li")
@@ -2548,9 +2567,7 @@
         }
 
         labels
-          .on("click", function(d, i) {
-            phylotree.handle_node_click(d);
-          })
+          .on("click", phylotree.handle_node_click)
           .attr("dy", function(d) {
             return shown_font_size * 0.33;
           })

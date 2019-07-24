@@ -1,0 +1,484 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+  <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<style>
+    .node circle {
+  /*fill: #fff;*/
+  /*stroke: DarkGreen;*/
+  /*fill: DarkGreen;*/
+  stroke: #000000 ;
+  stroke-width: .3px;
+}
+
+.node {
+  font: 8px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 1px;
+}
+
+.node text {
+  font: 8px sans-serif;
+}
+
+.links {
+  fill: none;
+  stroke: #000;
+}
+
+.link-extensions {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .25;
+}
+
+.d3-tip {
+  font-family: Verdana;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 9px;
+  border: 0px;
+  border-radius: 10px;
+  color: #fff;
+  z-index: 5070;
+}
+
+/*body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+}*/
+
+.links {
+  fill: none;
+  stroke: #000;
+}
+
+.link-extensions {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .25;
+}
+
+.labels {
+  font: 14px Palatino;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.link--active {
+  stroke: #000 !important;
+  stroke-width: 3.5px;
+}
+
+.link-extension--active {
+  stroke-opacity: .6;
+}
+
+.label--active {
+  font-weight: bold;
+}
+
+/* CSS GRID */
+.svg {
+grid-area: svg;
+}
+.isoformtable {
+grid-area: isoformtable;
+}
+
+.wrapper {
+  display: grid;
+  width: 100vw;
+  grid-gap: 10px;
+  grid-template-columns: 40px auto 40px;
+  grid-template-areas:
+  ". svg  ."
+  ". isoformtable .";
+}
+@media (min-width: 1400px) {
+  .wrapper {
+    grid-template-columns: 40px minmax(400px,1200px) auto 40px;
+    grid-template-areas:
+    ". svg isoformtable ."
+    ". . . .";
+  }
+}
+
+.isoformtable table td {
+  text-align: center;
+}
+
+.popovertooltip, .protein {
+  cursor: pointer;
+}
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
+        }
+
+.alignment {
+  display: grid;
+  width: 100%;
+  grid-column-gap: 0px;
+  grid-template-columns: repeat(auto-fill, 12px);
+  row-gap: 5px;
+   align-items: stretch;
+   justify-content: center;
+}
+.alignment div {
+  text-align: center;
+  font-family: Lucida Console, monospace;
+  font-size: 11px;
+}
+.alignment div {
+  width: 100%;
+}
+.pos > div {
+  height: 15px;
+}
+.pos > div.line {
+  height: 5px;
+}
+.wt {
+  cursor: pointer;
+}
+.alignment div.issame_false {
+  /*background-color: indianred;*/
+}
+.alignment div.issame_true {
+  background-color: MediumSeaGreen;
+}
+
+</style>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script type="text/javascript" charset="utf-8" src="//d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="{% static 'home/js/d3.tip.js' %}"></script>
+<script type="text/javascript" src="{% static 'home/js/protein-isoforms.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+<script type="text/javascript" charset="utf-8">
+var interactions = {{ tree | safe }};
+var table_data = {{ table_data | safe }};
+
+$(document).ready(function() {
+    make_coverage_tree();
+    build_table();
+});
+
+function filter_this_receptor(name){
+  console.log('filter this!',name.toUpperCase());
+  $('.popovertooltip').popover('hide');
+  yadcf.exFilterColumn(dtable, [[0, [name.toUpperCase()]]]);
+}
+
+var dtable = ''
+function build_table() {
+    var table = $(".table");
+    var tbody = table.find('tbody');
+    $.each(table_data, function(i, v) {
+        if (i == 0) return;
+        // 1: "receptor"
+        // 2: "isoform_id"
+        // 3: "number_of_transcripts"
+        // 4: "transcripts"
+        // 5: "number_of_tissues"
+        // 6: "tissues"
+        // 7: "varying_segments"
+        // 8: "functional_annotation"
+        // 9: "reference (PMID)"
+        if (v[8]==0) v[8] = '';
+        if (v[9]==0) { v[9] = '' } else {
+          v[9] = `<a href="https://www.ncbi.nlm.nih.gov/pubmed/${v[9]}"  target=_blank>${v[9]}</a>`;
+        }
+        // https://www.ensembl.org/homo_sapiens/Transcript/Summary?t=ENST00000371950
+        var tooltips_transcripts = v[4];
+        if (tooltips_transcripts) {
+          ts = tooltips_transcripts.split(",");
+          tooltips_transcripts = '';
+          $.each(ts, function(i, t) {
+            tooltips_transcripts += `<a href='https://www.ensembl.org/Homo_sapiens/Transcript/Summary?t=${t}'  target=_blank>${t}</a>, `;
+          });
+        }
+        var tooltips_tissues = v[6];
+        tr = `
+                    <tr id="${i}">
+                      <td class="protein">${v[1]}</td>
+                      <td class="popovertooltip" html_content="${tooltips_transcripts}" content="${v[4]}" popover-title='Transcripts'>#${v[2]} ${v[3]}</td>
+                      <td class="popovertooltip" html_content="${tooltips_tissues}" content="${tooltips_tissues}" popover-title='Tissues'>${v[5]}</td>
+                      <td>${v[7]}</td>
+                      <td>${v[8]}</td>
+                      <td>${v[9]}</td>
+                    </tr>`;
+        tbody.append(tr);
+    });
+
+    // $('[data-toggle="tooltip"]').tooltip(); 
+    $('.popovertooltip').each(function() {
+        $(this).popover({
+            html: true,
+            placement: 'bottom',
+            content: $(this).attr("html_content"),
+            container: '.dataTables_scrollBody',
+            title: $(this).attr("popover-title")
+        })
+        $(this).tooltip({
+            html: true,
+            placement: 'bottom',
+            container: '.dataTables_scrollBody',
+            title: $(this).attr("content")
+        })
+    })
+
+    $('.protein').on('click', function(e) {
+      id = $(this).parent('tr').attr('id');
+      d = table_data[id];
+      e_id = d[4].split(', ');
+      p = d[1];
+      iso_id = d[2];
+      $("#alignment").modal();
+      $("#alignment").find(".modal-body").html("Loading..");
+      $("#alignment").find(".modal-title").html("Aligning wildtype sequence of "+p+" with isoform #"+iso_id+"("+e_id+")");
+      $.ajax({
+                    url: '/protein/isoform_lookup',
+                    dataType: 'json',
+                    data: {
+                        'protein': p,
+                        'ensembl_id': e_id,
+                        'iso_id': iso_id,
+                    },
+                    async: true,
+                    success: function(data) {
+                        if (data['wt'] || data['wt2']) {
+                          new_div = '';
+                          if (data['wt']) {
+                            div = 'Based on Seq from <a href="https://rest.ensembl.org/sequence/id/'+e_id+'?content-type=application/json&type=protein">Ensembl</a> and on-demand pairwise alignment: <div class="alignment">';
+                            prev_segment = '';
+                            for (var i = 0; i < data['wt'].length; i++) {
+                              wt_aa = data['wt'][i];
+                              iso_string = '';
+                              is_same = "true";
+                              Object.keys(data['isoforms']).forEach(function(key) {
+                                if (key != 'pre_aligned') {
+                                  is_same = wt_aa!=data['isoforms'][key][i] ? 'false' : 'true';
+
+                                  iso_string += `<div class='issame_${is_same}'">${data['isoforms'][key][i]}</div>`;
+                                }
+                              });
+                              // iso_aa = data['isoforms'][e_id[0]][i];
+                              // console.log(wt_aa,iso_aa);
+                              number = ''
+                              wt_res = data['res_correct'][(i+1).toString()];
+                              if (wt_res[2] % 10 == 0) number = wt_res[2].toString();
+                              segment = wt_res ? wt_res[0] : ''
+                              segment = segment.toLowerCase().replace("-","");
+                              segment_name = segment;
+                              if (prev_segment!=segment_name) {
+                                show_segment = segment_name;
+                                prev_segment = segment_name;
+                              } else {
+                                show_segment = '';
+                              }
+                              if (['nterm','icl1','ecl1','icl2','ecl2','icl3','ecl3','cterm'].includes(segment)) {
+                                segment = 'bg-info';
+                              } else if (segment) {
+                                segment = 'bg-success';
+                              }
+                              tooltip_title = `${segment_name} - ${wt_aa}${wt_res[2]} - ${wt_res[1]}`
+                              div += `<div class="pos">
+                                        <div>${show_segment}</div>
+                                        <div class="line ${segment}"> </div>
+                                        <div class="wt" tooltip="${tooltip_title}">${wt_aa}</div>
+                                        ${iso_string}
+                                        <div>${number}</div>
+                                      </div>`;
+                            }
+                            div += "</div>";
+                            new_div += div;
+                          } else {
+                            new_div = '<p style="color:red;display:inline;">Error with fetching info for <a href="https://rest.ensembl.org/sequence/id/'+e_id+'?content-type=application/json&type=protein">'+d[4]+'</a></p><br>';
+                          }
+                          if (data['wt2']) {
+                            if (data['same']=='true') {
+                              div2 = 'Same as provided fasta file: <div class="alignment">';
+                            } else {
+                              div2 = '<p style="color:red;display:inline;">DIFFERENT</p> from provided fasta file: <div class="alignment">';
+                            }
+                            prev_segment = '';
+                            for (var i = 0; i < data['wt2'].length; i++) {
+                              wt_aa = data['wt2'][i];
+                              iso_string = '';
+                              is_same = "true";
+                              is_same = wt_aa!=data['pre_aligned'][i] ? 'false' : 'true';
+
+                              iso_string += `<div class='issame_${is_same}'">${data['pre_aligned'][i]}</div>`;
+       
+                              // iso_aa = data['isoforms'][e_id[0]][i];
+                              // console.log(wt_aa,iso_aa);
+                              number = ''
+                              wt_res = data['res_correct2'][(i+1).toString()];
+                              if (wt_res[2] % 10 == 0) number = wt_res[2].toString();
+                              segment = wt_res ? wt_res[0] : ''
+                              segment = segment.toLowerCase().replace("-","");
+                              segment_name = segment;
+                              if (prev_segment!=segment_name) {
+                                show_segment = segment_name;
+                                prev_segment = segment_name;
+                              } else {
+                                show_segment = '';
+                              }
+                              if (['nterm','icl1','ecl1','icl2','ecl2','icl3','ecl3','cterm'].includes(segment)) {
+                                segment = 'bg-info';
+                              } else if (segment) {
+                                segment = 'bg-success';
+                              }
+                              tooltip_title = `${segment_name} - ${wt_aa}${wt_res[2]} - ${wt_res[1]}`
+                              if (!(wt_aa=='-' && is_same)) {
+                                div2 += `<div class="pos">
+                                          <div>${show_segment}</div>
+                                          <div class="line ${segment}"> </div>
+                                          <div class="wt" tooltip="${tooltip_title}">${wt_aa}</div>
+                                          ${iso_string}
+                                          <div>${number}</div>
+                                        </div>`;
+                              }
+                            }
+                            div2 += "</div>";
+                            new_div += div2;
+                          }
+
+
+                          $("#alignment").find(".modal-body").html(new_div);
+                      } else {
+                        $("#alignment").find(".modal-body").html("Error with fetching info for "+d[4]);
+                      }
+                      $('.wt').each(function() {
+                          $(this).tooltip({
+                              html: true,
+                              placement: 'bottom',
+                              container: '.modal',
+                              title: $(this).attr("tooltip")
+                          })
+                      })
+                    }
+                });
+
+    });
+
+    dtable = table.DataTable({
+        // 'scrollX': true,
+        "scrollY": '80vh',
+        paging: true,
+        pageLength: 200,
+        "bLengthChange": false,
+        "bPaginate": false,
+        "bInfo": false,
+        "order": [],
+    });
+    yadcf.init(dtable,
+        [{
+                column_number: 0,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Receptor",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px'
+                },
+            },
+            {
+                column_number: 4,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Functional annotation",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 3,
+                filter_type: "multi_select",
+                text_data_delimiter: ", ",
+                select_type: 'select2',
+                filter_default_label: "Varying segment(s)",
+                filter_reset_button_text: false,
+            }
+        ], {
+            cumulative_filtering: false
+        }
+
+    );
+
+    $('.popovertooltip').on('click', function(e) {
+        $('.popovertooltip').not(this).popover('hide');
+        $('.popovertooltip').tooltip('hide');
+    });
+
+    dtable.columns.adjust();
+
+    $('html').on('click', function(e) {
+        if (typeof $(e.target).data('original-title') == 'undefined' &&
+            !$(e.target).parents().is('.popover.in')) {
+            $('[data-original-title]').popover('hide');
+        }
+    });
+}
+</script>
+{% endblock %}
+{% block outcontent %}
+<div class="wrapper">
+    <div class="svg" id="svg" width="100%"></div>
+    <div class="isoformtable">
+        <table class="table table-sm display compact">
+            <thead>
+                <tr>
+                    <th ></th>
+                    <th>IsoformID</th>
+                    <th>Tissue</th>
+                    <th></th>
+                    <th></th>
+                    <th>Reference</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- MODAL POP UP FOR RESIDUE INFO -->
+<div class="modal fade" id="alignment" role="dialog">
+  <div class="modal-dialog modal-wide">
+  
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Isoform (bottom) alignment to Wild-Type sequence (top)</h4>
+      </div>
+      <div class="modal-body">
+        <p>Some text in the modal.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+    
+  </div>
+</div>
+{% endblock %}

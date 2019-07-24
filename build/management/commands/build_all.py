@@ -39,6 +39,9 @@ class Command(BaseCommand):
             ['build_links'],
             ['build_construct_proteins'],
             ['build_structures', {'proc': options['proc']}],
+            ['build_structure_angles'],
+            ['build_distance_representative'],
+            ['build_contact_representative'],
             ['build_construct_data'],
             ['update_construct_mutations'],
             ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
@@ -56,8 +59,9 @@ class Command(BaseCommand):
             ['build_residue_sets'],
             ['build_dynamine_annotation', {'proc': options['proc']}],
             ['build_blast_database'],
+            ['build_complex_interactions'],
             # ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
-            ['build_text'], 
+            ['build_text'],
             ['build_release_notes'],
         ]
 

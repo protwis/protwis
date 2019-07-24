@@ -103,16 +103,16 @@
         if (clone.getAttribute('viewBox')) {
           width = clone.getAttribute('viewBox').split(" ")[2];
           height = clone.getAttribute('viewBox').split(" ")[3];
-        } 
+        }
 
 
-        if (width === undefined || 
-            width === null || 
+        if (width === undefined ||
+            width === null ||
             isNaN(parseFloat(width))) {
           width = 0;
         }
-        if (height === undefined || 
-            height === null || 
+        if (height === undefined ||
+            height === null ||
             isNaN(parseFloat(height))) {
           height = 0;
         }
@@ -180,7 +180,6 @@
     options = options || {};
     out$.svgAsDataUri(el, options, function(uri) {
       var image = new Image();
-      console.log('create image');
       image.onload = function() {
         var canvas = document.createElement('canvas');
         canvas.width = image.width;
