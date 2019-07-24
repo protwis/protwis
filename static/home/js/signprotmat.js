@@ -568,7 +568,7 @@ var signprotmat = {
             })
                 .on("mouseout", function (d) {
                 tip.hide();
-            })
+            });
                 // .on("click", function (d) {
                 // var index;
                 // // let rect_x = d3.event.target.getAttribute('x')
@@ -594,8 +594,7 @@ var signprotmat = {
                 // signprotmat.d3.infoBoxUpdate();
                 // signprotmat.d3.colorRecResidues(d);
                 // signprotmat.d3.colorSigResidues(d);
-                // }
-            );
+                // });
 
             each_rect
                 .append("rect")
