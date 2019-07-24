@@ -220,12 +220,15 @@ def prepare_signature_match(signature_match):
         for source in sources:
             out[entry][source] = {}
             for gprot in gprots:
+                out[entry][source][gprot] = {}
                 if coupling_entry:
                     ce = coupling_entry
                     cl = ce['coupling'][source].get(gprot, '')
-                    out[entry][source][gprot] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[source][gprot] else sign_false
+                    out[entry][source][gprot]['html'] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[source][gprot] else sign_false
+                    out[entry][source][gprot]['bool'] = 1 if ce[source][gprot] else 0
                 else:
-                    out[entry][source][gprot] = sign_false
+                    out[entry][source][gprot]['html'] = sign_false
+                    out[entry][source][gprot]['bool'] = 0
 
     # for elem in signature_match['signature_filtered'].items():
     # print(elem)

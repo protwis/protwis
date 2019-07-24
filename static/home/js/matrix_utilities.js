@@ -249,73 +249,73 @@ const run_sig_match = function(){
             title: 'Entry Name',
             targets: 3,
           }, {
-            data: 'GuideToPharma.Gs',
+            data: 'GuideToPharma.Gs.html',
             title: '   Gs   ',
             targets: 5,
             className: 'gtop dt-center',
             visible: true,
           }, {
-            data: 'GuideToPharma.Gi/Go',
+            data: 'GuideToPharma.Gi/Go.html',
             title: 'Gi / Go ',
             targets: 6,
             className: 'gtop dt-center',
             visible: true,
           }, {
-            data: 'GuideToPharma.Gq/G11',
+            data: 'GuideToPharma.Gq/G11.html',
             title: 'Gq / G11',
             targets: 7,
             className: 'gtop dt-center',
             visible: true,
           }, {
-            data: 'GuideToPharma.G12/G13',
+            data: 'GuideToPharma.G12/G13.html',
             title: 'G12 / G13',
             targets: 8,
             className: 'gtop dt-center',
             visible: true,
           }, {
-            data: 'Aska.Gs',
+            data: 'Aska.Gs.html',
             title: '   Gs   ',
             targets: 9,
             className: 'aska dt-center',
             visible: false,
           }, {
-            data: 'Aska.Gi/Go',
+            data: 'Aska.Gi/Go.html',
             title: 'Gi / Go ',
             targets: 10,
             className: 'aska dt-center',
             visible: false,
           }, {
-            data: 'Aska.Gq/G11',
+            data: 'Aska.Gq/G11.html',
             title: 'Gq / G11',
             targets: 11,
             className: 'aska dt-center',
             visible: false,
           }, {
-            data: 'Aska.G12/G13',
+            data: 'Aska.G12/G13.html',
             title: 'G12 / G13',
             targets: 12,
             className: 'aska dt-center',
             visible: false,
           }, {
-            data: 'Merged.Gs',
+            data: 'Merged.Gs.html',
             title: '   Gs   ',
             targets: 13,
             className: 'merg dt-center',
             visible: false,
           }, {
-            data: 'Merged.Gi/Go',
+            data: 'Merged.Gi/Go.html',
             title: 'Gi / Go ',
             targets: 14,
             className: 'merg dt-center',
             visible: false,
           }, {
-            data: 'Merged.Gq/G11',
+            data: 'Merged.Gq/G11.html',
             title: 'Gq / G11',
             targets: 15,
             className: 'merg dt-center',
             visible: false,
           }, {
-            data: 'Merged.G12/G13',
+            data: 'Merged.G12/G13.html',
             title: 'G12 / G13',
             targets: 16,
             className: 'merg dt-center',
@@ -371,12 +371,33 @@ const run_sig_match = function(){
           {
             text: "Export to CSV",
             action: function ( e, dt, button, config ) {
-              var data = Papa.unparse(sigmatch_table.data().toArray())
+              var table_data = sigmatch_table.data().toArray();
 
+              data = []
+              for (let i of Object.values(table_data)){
+                let r = {}
+                r['name'] = i['entry']
+                r['aska_gs'] = i['Aska']['Gs']['bool']
+                r['aska_gio'] = i['Aska']['Gi/Go']['bool']
+                r['aska_gq11'] = i['Aska']['Gq/G11']['bool']
+                r['aska_g1213'] = i['Aska']['G12/G13']['bool']
+                r['gtop_gs'] = i['GuideToPharma']['Gs']['bool']
+                r['gtop_gio'] = i['GuideToPharma']['Gi/Go']['bool']
+                r['gtop_gq11'] = i['GuideToPharma']['Gq/G11']['bool']
+                r['gtop_g1213'] = i['GuideToPharma']['G12/G13']['bool']
+                r['merg_gs'] = i['Merged']['Gs']['bool']
+                r['merg_gio'] = i['Merged']['Gi/Go']['bool']
+                r['merg_gq11'] = i['Merged']['Gq/G11']['bool']
+                r['merg_g1213'] = i['Merged']['G12/G13']['bool']
+                data.push(r)
+              }
+
+              data = Papa.unparse(data)
+              
               $('<a></a>')
                 .attr('id','downloadFile')
                 .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(data))
-                .attr('download','export.csv')
+                .attr('download', 'export.csv')
                 .appendTo('body');
               
               $('#downloadFile').ready(function() {
