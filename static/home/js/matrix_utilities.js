@@ -518,9 +518,6 @@ $(document).ready(function () {
       }
     }
 
-    console.log(pdb_sel)
-    console.log(pos_set)
-
     if (!_.isEqual(old_pdb_sel.sort(), pdb_sel.sort())){
       $('.svg-content').remove();
       con_seq = {};

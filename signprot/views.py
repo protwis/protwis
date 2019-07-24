@@ -611,8 +611,6 @@ def signprotdetail(request, slug):
 
 
 def interface_dataset():
-    # start_time = time.time()
-
     # correct receptor entry names - the ones with '_a' appended
     complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').all()
     complex_names = [complex_obj.structure.protein_conformation.protein.entry_name + '_' + complex_obj.alpha.lower() for complex_obj in complex_objs]
@@ -658,39 +656,28 @@ def interface_dataset():
         sig_gn=F('res2__display_generic_number__label')
     )
 
-    # print(len(interactions))
-    # print('Query: {}'.format(time.time() - start_time))
-    # start_time = time.time()
-          
     dataset = []
     last_int_id = None
-    append = dataset.append
     conf_ids = set()
+    r = set()
 
-    # aggregate the interaction types for residue pairs with multiple distinct types
     for i in interactions:
         int_id = i['int_id']
         conf_ids.update([i['conf_id']])
-
-        if last_int_id is None:        
-            r = set()
-            last_int_id = int_id
-
         r.update([i['int_ty']])
 
-        if last_int_id != int_id:
+        if last_int_id != int_id or last_int_id is None:
             i['int_ty'] = list(r)
-            append(i)
-            last_int_id = None
-          
-    # print('Python: {}'.format(time.time() - start_time))
-        
+            dataset.append(i)
+            r = set()
+            last_int_id = int_id
 
     return list(conf_ids), dataset
 
 
 def InteractionMatrix(request):
     prot_conf_ids, dataset = interface_dataset()
+    print(len(dataset))
 
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     
