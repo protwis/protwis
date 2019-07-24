@@ -610,6 +610,17 @@ def signprotdetail(request, slug):
     return render(request, 'signprot/signprot_details.html', context)
 
 
+def sort_a_by_b(a, b, remove_invalid=False):
+    '''Sort one list based on the order of elements from another list'''
+    # https://stackoverflow.com/q/12814667    
+    # a = ['alpha_mock', 'van-der-waals', 'ionic']
+    # b = ['ionic', 'aromatic', 'hydrophobic', 'polar', 'van-der-waals', 'alpha_mock']
+    # sort_a_by_b(a,b) -> ['ionic', 'van-der-waals', 'alpha_mock']
+    if remove_invalid:
+        a = [a_elem for a_elem in a if a_elem in b]
+    return sorted(a, key=lambda x: b.index(x))
+
+
 def interface_dataset():
     # correct receptor entry names - the ones with '_a' appended
     complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').all()
@@ -661,13 +672,22 @@ def interface_dataset():
     conf_ids = set()
     r = set()
 
+    interaction_sort_order = [
+        "ionic",
+        "aromatic",
+        "hydrophobic",
+        "polar",
+        "van-der-waals",    
+    ]
+
+    # aggregate the interaction types for residue pairs with multiple distinct types
     for i in interactions:
         int_id = i['int_id']
         conf_ids.update([i['conf_id']])
         r.update([i['int_ty']])
 
         if last_int_id != int_id or last_int_id is None:
-            i['int_ty'] = list(r)
+            i['int_ty'] = sort_a_by_b(list(r), interaction_sort_order)
             dataset.append(i)
             r = set()
             last_int_id = int_id
