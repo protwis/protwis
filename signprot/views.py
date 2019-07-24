@@ -677,7 +677,6 @@ def interface_dataset():
 
 def InteractionMatrix(request):
     prot_conf_ids, dataset = interface_dataset()
-    print(len(dataset))
 
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     
@@ -747,10 +746,6 @@ def IMSequenceSignature(request):
 
     # Calculate Sequence Signature
     signature = SequenceSignature()
-
-    print(pos_set)
-    print(ignore_in_alignment)
-    print(segments)
 
     signature.setup_alignments_signprot(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
     signature.calculate_signature_onesided()
