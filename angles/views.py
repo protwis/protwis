@@ -44,7 +44,7 @@ def structureCheck(request):
 
 def get_angles(request):
     data = {'error': 0}
-    
+
     # angle names for custom averaging
     angles = ['avg_aangle', 'avg_bangle', 'avg_outer', 'avg_phi', 'avg_psi', 'avg_theta', 'avg_tau']
 
@@ -86,7 +86,7 @@ def get_angles(request):
             # Process angle aggregates to angle averages
             for q in query:
                 for angle in angles:
-                    q[angle] = [ q for q in q[angle] if q != None]
+                    q[angle] = [ qa for qa in q[angle] if qa != None]
                     if angle in q and len(q[angle]) > 1:
                         # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
                         q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
