@@ -72,7 +72,7 @@ function thisPDB(elem) {
     update_text_in_modal();
 }
 
-function resetselection(not_update) {
+function resetselection(not_update = false, reset_filters = false) {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
@@ -82,6 +82,8 @@ function resetselection(not_update) {
     $('input', oTable[mode].cells().nodes()).prop('checked', false);
 
     if (!not_update) update_text_in_modal();
+
+    if (reset_filters) yadcf.exResetAllFilters(oTable[mode]);
 }
 
 function check_all(elem, button) {
