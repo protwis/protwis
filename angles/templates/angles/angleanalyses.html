@@ -918,6 +918,7 @@
           "ss_dssp" : 13,
           "ss_stride" : 14
         }
+        var angleVariables = [2,3,4,8,9,10,11]
 
         var coloringData = {}
         var repr_dict = {}
@@ -949,6 +950,7 @@
 
             // add rows based on selection
             var rowset = []
+            var angleColumn = angleVariables.includes(availableVariables[variable]);
             data["data"].forEach(function (row){
                 var tmp = []
                 for (var i =0; i < dataSelector.length; i++){
@@ -968,18 +970,16 @@
 
                 // Add the diff column
                 if (availableVariables[variable] < 13){ // no secondary structure
-                  if (tmp.length>6){
-                    tmp.push(tmp[2] - tmp[5])
-                    for (var i=1; i<tmp.length;i++){
-                      //tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
-                      tmp[i] = Math.round(tmp[i]*10)/10
-                    }
-                  } else {
-                    tmp.push(tmp[2] - tmp[4])
-                    for (var i=2; i<tmp.length;i++){
-                      //tmp[i] = Math.abs(Math.round(tmp[i]*10)/10)
-                      tmp[i] = Math.round(tmp[i]*10)/10
-                    }
+                  var otherCol = 4
+                  if (tmp.length>6)
+                    otherCol = 5;
+
+                  tmp.push(tmp[2] - tmp[otherCol])
+                  if (angleColumn && Math.abs(tmp[tmp.length - 1 ]) > 180) // correct for angle differences
+                    tmp[tmp.length - 1 ] = 360 - Math.abs(tmp[tmp.length - 1 ])
+
+                  for (var i=2; i<tmp.length;i++){
+                    tmp[i] = Math.round(tmp[i]*10)/10
                   }
                 } else {
                   tmp.push("-")

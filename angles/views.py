@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.shortcuts import render
 from django.db.models import Count, Avg, Min, Max, Q
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
@@ -13,6 +14,8 @@ from angles.models import ResidueAngle as Angle
 import Bio.PDB
 import copy
 import io
+import math
+import cmath
 from collections import OrderedDict
 import numpy as np
 from sklearn.decomposition import PCA
@@ -42,8 +45,12 @@ def structureCheck(request):
 def get_angles(request):
     data = {'error': 0}
 
+    # angle names for custom averaging
+    angles = ['avg_aangle', 'avg_bangle', 'avg_outer', 'avg_phi', 'avg_psi', 'avg_theta', 'avg_tau']
+
     # Request selection
     try:
+    #if True:
         pdbs = request.GET.getlist('pdbs[]')
         pdbs = set([pdb.upper() for pdb in pdbs])
         print(pdbs)
@@ -64,17 +71,27 @@ def get_angles(request):
             query = Angle.objects.filter(structure__pdb_code__index__in=pdbs).prefetch_related("residue__generic_number") \
                     .values("residue__generic_number__label") \
                     .order_by('residue__generic_number__label') \
-                    .annotate(min_aangle = Min('a_angle'), avg_aangle=Avg('a_angle'), max_aangle = Max('a_angle'), \
-                        min_bangle = Min('b_angle'), avg_bangle=Avg('b_angle'), max_bangle = Max('b_angle'), \
-                        min_outer = Min('outer_angle'), avg_outer=Avg('outer_angle'), max_outer = Max('outer_angle'), \
+                    .annotate(min_aangle = Min('a_angle'), avg_aangle=ArrayAgg('a_angle'), max_aangle = Max('a_angle'), \
+                        min_bangle = Min('b_angle'), avg_bangle=ArrayAgg('b_angle'), max_bangle = Max('b_angle'), \
+                        min_outer = Min('outer_angle'), avg_outer=ArrayAgg('outer_angle'), max_outer = Max('outer_angle'), \
                         min_hse = Min('hse'), avg_hse=Avg('hse'), max_hse = Max('hse'), \
                         min_sasa = Min('sasa'), avg_sasa=Avg('sasa'), max_sasa = Max('sasa'), \
                         min_rsa = Min('rsa'), avg_rsa=Avg('rsa'), max_rsa = Max('rsa'), \
-                        min_phi = Min('phi'), avg_phi=Avg('phi'), max_phi = Max('phi'), \
-                        min_psi = Min('psi'), avg_psi=Avg('psi'), max_psi = Max('psi'), \
-                        min_theta = Min('theta'), avg_theta=Avg('theta'), max_theta = Max('theta'), \
-                        min_tau = Min('tau'), avg_tau=Avg('tau'), max_tau = Max('tau'), \
+                        min_phi = Min('phi'), avg_phi=ArrayAgg('phi'), max_phi = Max('phi'), \
+                        min_psi = Min('psi'), avg_psi=ArrayAgg('psi'), max_psi = Max('psi'), \
+                        min_theta = Min('theta'), avg_theta=ArrayAgg('theta'), max_theta = Max('theta'), \
+                        min_tau = Min('tau'), avg_tau=ArrayAgg('tau'), max_tau = Max('tau'), \
                         min_distance = Min('core_distance'), avg_distance=Avg('core_distance'), max_distance = Max('core_distance'))
+
+            # Process angle aggregates to angle averages
+            for q in query:
+                for angle in angles:
+                    q[angle] = [ qa for qa in q[angle] if qa != None]
+                    if angle in q and len(q[angle]) > 1:
+                        # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
+                        q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
+                    elif len(q[angle]) == 1:
+                        q[angle] = q[angle][0]
 
             # Prep data
             data['data'] = [ [q["residue__generic_number__label"], " ", \
@@ -91,6 +108,7 @@ def get_angles(request):
                             [q["min_distance"], q["avg_distance"], q["max_distance"]], \
                             ] for q in query]
 
+            print(data)
             if len(pdbs2)==0:
                 data['headers'] = [{"title" : "Group<br/>Min"},{"title" : "Group<br/>Avg"},{"title" : "Group<br/>Max"}]
             else:
@@ -118,17 +136,27 @@ def get_angles(request):
 
         query = Angle.objects.filter(structure__pdb_code__index__in=pdbs2).prefetch_related("residue__generic_number") \
                 .values("residue__generic_number__label") \
-                .annotate(min_aangle = Min('a_angle'), avg_aangle=Avg('a_angle'), max_aangle = Max('a_angle'), \
-                    min_bangle = Min('b_angle'), avg_bangle=Avg('b_angle'), max_bangle = Max('b_angle'), \
-                    min_outer = Min('outer_angle'), avg_outer=Avg('outer_angle'), max_outer = Max('outer_angle'), \
+                .annotate(min_aangle = Min('a_angle'), avg_aangle=ArrayAgg('a_angle'), max_aangle = Max('a_angle'), \
+                    min_bangle = Min('b_angle'), avg_bangle=ArrayAgg('b_angle'), max_bangle = Max('b_angle'), \
+                    min_outer = Min('outer_angle'), avg_outer=ArrayAgg('outer_angle'), max_outer = Max('outer_angle'), \
                     min_hse = Min('hse'), avg_hse=Avg('hse'), max_hse = Max('hse'), \
                     min_sasa = Min('sasa'), avg_sasa=Avg('sasa'), max_sasa = Max('sasa'), \
                     min_rsa = Min('rsa'), avg_rsa=Avg('rsa'), max_rsa = Max('rsa'), \
-                    min_phi = Min('phi'), avg_phi=Avg('phi'), max_phi = Max('phi'), \
-                    min_psi = Min('psi'), avg_psi=Avg('psi'), max_psi = Max('psi'), \
-                    min_theta = Min('theta'), avg_theta=Avg('theta'), max_theta = Max('theta'), \
-                    min_tau = Min('tau'), avg_tau=Avg('tau'), max_tau = Max('tau'), \
+                    min_phi = Min('phi'), avg_phi=ArrayAgg('phi'), max_phi = Max('phi'), \
+                    min_psi = Min('psi'), avg_psi=ArrayAgg('psi'), max_psi = Max('psi'), \
+                    min_theta = Min('theta'), avg_theta=ArrayAgg('theta'), max_theta = Max('theta'), \
+                    min_tau = Min('tau'), avg_tau=ArrayAgg('tau'), max_tau = Max('tau'), \
                     min_distance = Min('core_distance'), avg_distance=Avg('core_distance'), max_distance = Max('core_distance'))
+
+        # Process angle aggregates to angle averages
+        for q in query:
+            for angle in angles:
+                q[angle] = [ q for q in q[angle] if q != None]
+                if angle in q and len(q[angle]) > 1:
+                    # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
+                    q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
+                elif len(q[angle]) == 1:
+                    q[angle] = q[angle][0]
 
         # Prep data
         data['data2'] = { q["residue__generic_number__label"]: [q["residue__generic_number__label"], " ", \
@@ -148,6 +176,7 @@ def get_angles(request):
 
 
     except IndexError:
+    #else:
         data['error'] = 1
         data['errorMessage'] = "No PDB(s) selection provided"
 
