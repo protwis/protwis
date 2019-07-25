@@ -423,14 +423,14 @@ function showPDBtable(element) {
                     column_number: 15,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "G protein",
+                    filter_default_label: "G prot",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "B arrestin",
+                    filter_default_label: "B arr",
                     filter_reset_button_text: false,
                 },
                 {
