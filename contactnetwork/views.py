@@ -215,9 +215,9 @@ def PdbTableData(request):
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
 
     data_dict = OrderedDict()
-    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \
-                                                                       <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></tr> \
-                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
+    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \
+                                                                       <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th></tr> \
+                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>\n"
 
     for s in data:
         pdb_id = s.pdb_code.index
@@ -274,6 +274,7 @@ def PdbTableData(request):
 
         data_dict[pdb_id] = r
         data_table += "<tr> \
+                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' distance_representative='{}' class_consensus_based_representative='{}' long='{}'  id='{}'></td> \
                         <td>{}</td> \
                         <td><span>{}</span></td> \
                         <td>{}</td> \
@@ -295,8 +296,12 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' distance_representative='{}' class_consensus_based_representative='{}' long='{}'  id='{}'></td> \
                         </tr>\n".format(
+                                        r['contact_representative'],
+                                        r['distance_representative'],
+                                        r['class_consensus_based_representative'],
+                                        r['protein_long'],
+                                        pdb_id,
                                         r['protein'],
                                         r['protein_long'],
                                         r['protein_family'],
@@ -317,12 +322,7 @@ def PdbTableData(request):
                                         r['antibody'],
                                         r['ligand'],
                                         r['ligand_function'],
-                                        r['ligand_type'],
-                                        r['contact_representative'],
-                                        r['distance_representative'],
-                                        r['class_consensus_based_representative'],
-                                        r['protein_long'],
-                                        pdb_id
+                                        r['ligand_type']
                                         )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
