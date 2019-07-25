@@ -568,7 +568,7 @@ $(document).ready(function () {
     pdb_sel = [];
     pos_set = [];
     // get selected pdb ids
-    for (var value of selection.toArray()){ pdb_sel = [value[7], ...pdb_sel]}
+    $('.pdb_selected:checked').each(function( index ) {pdb_sel.push(($( this ).attr('id')))});
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata){
       if (pdb_sel.indexOf(int_meta['pdb_id']) != -1){
