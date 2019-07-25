@@ -695,6 +695,7 @@ def interface_dataset():
     return list(conf_ids), dataset
 
 
+@cache_page(60*60*24*2)
 def InteractionMatrix(request):
     prot_conf_ids, dataset = interface_dataset()
 

@@ -90,9 +90,14 @@ const get_ignore = function(){
   return ignore_markers;
 }
 
+const get_receptor_classes = function(receptor_metadata, pdb_id_array){
+  return receptor_metadata.filter(x => pdb_id_array.includes(x.pdb_id)).map(x => x.class)
+}
+
 const run_seq_sig = function(){
   let segments = get_gn();
   let ignore_markers = get_ignore();
+  let selected_receptor_classes = get_receptor_classes(interactions_metadata, pdb_sel);
   //let pos_set = ["5ht2c_human", "acm4_human", "drd1_human"];
   //let neg_set = ["agtr1_human", "ednrb_human", "gnrhr_human"];
   //console.log(segments);
@@ -115,6 +120,7 @@ const run_seq_sig = function(){
       csrfmiddlewaretoken: csrf_token,
       pos: pos_set,
       seg: segments.label,
+      selectedreceptorclasses: selected_receptor_classes,
       ignore: JSON.stringify(ignore_markers),
     },
     beforeSend: function(){
