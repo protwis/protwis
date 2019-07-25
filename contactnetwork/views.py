@@ -19,6 +19,7 @@ from structure.templatetags.structure_extras import *
 from construct.models import Construct
 from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResidueGenericNumber
+from signprot.models import SignprotComplex
 from interaction.models import StructureLigandInteraction
 from angles.models import ResidueAngle
 
@@ -190,6 +191,7 @@ def PdbTreeData(request):
 
 # @cache_page(60*60*24*7)
 def PdbTableData(request):
+    exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
     #constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
     #methods = {}
@@ -213,6 +215,10 @@ def PdbTableData(request):
                 "protein_conformation__protein__parent__family__parent__parent__parent",
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
+
+    if exclude_non_interacting:
+        complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
+        data = data.filter(id__in=complex_structure_ids)
 
     data_dict = OrderedDict()
     data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \

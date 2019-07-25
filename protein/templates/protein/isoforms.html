@@ -159,12 +159,24 @@ grid-area: isoformtable;
   cursor: pointer;
 }
 .alignment div.issame_false {
-  /*background-color: indianred;*/
+  background-color: indianred;
 }
+
+.alignment div.issame_insert {
+  background-color: plum;
+}
+
 .alignment div.issame_true {
   background-color: MediumSeaGreen;
 }
 
+.green {
+  background-color: MediumSeaGreen !important;
+}
+
+.red {
+  background-color: indianred !important; 
+}
 </style>
 {% endblock %}
 {% block addon_js %}
@@ -178,6 +190,8 @@ grid-area: isoformtable;
 <script type="text/javascript" charset="utf-8">
 var interactions = {{ tree | safe }};
 var table_data = {{ table_data | safe }};
+var segments = {{segments | safe}};
+// console.log(segments);
 
 $(document).ready(function() {
     make_coverage_tree();
@@ -194,8 +208,9 @@ var dtable = ''
 function build_table() {
     var table = $(".table");
     var tbody = table.find('tbody');
-    $.each(table_data, function(i, v) {
-        if (i == 0) return;
+    $.each(table_data, function(id, v) {
+        
+        // console.log(v[v.length-1]);
         // 1: "receptor"
         // 2: "isoform_id"
         // 3: "number_of_transcripts"
@@ -218,13 +233,51 @@ function build_table() {
             tooltips_transcripts += `<a href='https://www.ensembl.org/Homo_sapiens/Transcript/Summary?t=${t}'  target=_blank>${t}</a>, `;
           });
         }
+
+        completeness = '';
+        summary = v[v.length-1];
+        inserts = {};
+
+        if (summary['inserts']) {
+          if (summary['inserts'].length) {
+            // console.log(summary['inserts']);
+            for (var i = 0; i < summary['inserts'].length; i++) {
+              i = summary['inserts'][i];
+              seg = i['inserted_into'][1]
+              if (!(inserts[seg])) {
+                inserts[seg] = 0;
+              }
+              inserts[seg] += 1;
+            }
+          }
+          // console.log(summary);
+          for (var i = 0; i < segments.length; i++) {
+            seg = segments[i];
+            if (inserts[seg]) {
+              count = inserts[seg];
+            } else {
+              count = '';
+            }
+            if (Object.keys(summary['segments_altered']).includes(seg)) {
+              opacity = Math.max(1- summary['segments_altered'][seg][0],0.5);
+              completeness += '<td class="red protein" style="opacity: '+opacity+';">'+count+'</td>';
+            } else {
+              completeness += '<td class="green protein">'+count+'</td>';
+            }
+          }
+        } else {
+          for (var i = 0; i < segments.length; i++) {
+            completeness += '<td class="green"></td>';
+          }
+        }
+
         var tooltips_tissues = v[6];
         tr = `
-                    <tr id="${i}">
+                    <tr id="${id}">
                       <td class="protein">${v[1]}</td>
                       <td class="popovertooltip" html_content="${tooltips_transcripts}" content="${v[4]}" popover-title='Transcripts'>#${v[2]} ${v[3]}</td>
                       <td class="popovertooltip" html_content="${tooltips_tissues}" content="${tooltips_tissues}" popover-title='Tissues'>${v[5]}</td>
-                      <td>${v[7]}</td>
+                      ${completeness}
                       <td>${v[8]}</td>
                       <td>${v[9]}</td>
                     </tr>`;
@@ -254,6 +307,7 @@ function build_table() {
       e_id = d[4].split(', ');
       p = d[1];
       iso_id = d[2];
+      // console.log(id, d,p,iso_id);
       $("#alignment").modal();
       $("#alignment").find(".modal-body").html("Loading..");
       $("#alignment").find(".modal-title").html("Aligning wildtype sequence of "+p+" with isoform #"+iso_id+"("+e_id+")");
@@ -279,6 +333,10 @@ function build_table() {
                               Object.keys(data['isoforms']).forEach(function(key) {
                                 if (key != 'pre_aligned') {
                                   is_same = wt_aa!=data['isoforms'][key][i] ? 'false' : 'true';
+
+                                  if (wt_aa=='-' && wt_aa!=data['isoforms'][key][i]) {
+                                    is_same = 'insert';
+                                  }
 
                                   iso_string += `<div class='issame_${is_same}'">${data['isoforms'][key][i]}</div>`;
                                 }
@@ -405,20 +463,20 @@ function build_table() {
                 },
             },
             {
-                column_number: 4,
+                column_number: 19,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Functional annotation",
                 filter_reset_button_text: false,
             },
-            {
-                column_number: 3,
-                filter_type: "multi_select",
-                text_data_delimiter: ", ",
-                select_type: 'select2',
-                filter_default_label: "Varying segment(s)",
-                filter_reset_button_text: false,
-            }
+            // {
+            //     column_number: 3,
+            //     filter_type: "multi_select",
+            //     text_data_delimiter: ", ",
+            //     select_type: 'select2',
+            //     filter_default_label: "Varying segment(s)",
+            //     filter_reset_button_text: false,
+            // }
         ], {
             cumulative_filtering: false
         }
@@ -451,7 +509,22 @@ function build_table() {
                     <th ></th>
                     <th>IsoformID</th>
                     <th>Tissue</th>
-                    <th></th>
+                    <th>N-term</th>
+                    <th>TM1</th>
+                    <th>ICL1</th>
+                    <th>TM2</th>
+                    <th>ECL1</th>
+                    <th>TM3</th>
+                    <th>ICL2</th>
+                    <th>TM4</th>
+                    <th>ECL2</th>
+                    <th>TM5</th>
+                    <th>ICL3</th>
+                    <th>TM6</th>
+                    <th>ECL3</th>
+                    <th>TM7</th>
+                    <th>H8</th>
+                    <th>C-term</th>
                     <th></th>
                     <th>Reference</th>
                 </tr>

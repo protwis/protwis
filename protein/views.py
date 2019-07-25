@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
 
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair,ProteinSegment
 from residue.models import Residue
 from structure.models import Structure, StructureModel
 from mutation.models import MutationExperiment
@@ -342,14 +342,29 @@ def isoforms(request):
         tree['children'].append(c_v)
         i += 1
 
+
+    context['segments'] = list(ProteinSegment.objects.filter(proteinfamily="GPCR").exclude(slug='ICL4').values_list('slug', flat=True))
+    # print(context['segments'])
     context['tree'] = json.dumps(tree)
+
+    with open('protein/data/isoforms.json') as json_file:
+        isoform_summary = json.load(json_file)
 
     filepath = 'protein/data/Isoform_annotation_table.txt'
     table_data = []
     with open(filepath, "r", encoding='UTF-8') as f:
-        for row in f:
-            c = row.split("\t")
-            table_data.append(c)
+        for i,row in enumerate(f):
+            if i>0:
+                c = row.split("\t")
+                try:
+                    lookup_entry = "{}_human_{}".format(c[1].lower(),c[2])
+                    summary = isoform_summary[lookup_entry]
+                    # print(lookup_entry,isoform_summary[lookup_entry])
+                    c.append(summary)
+                except:
+                    print("something off with ",c[1])
+                    c.append(['error'])
+                table_data.append(c)
 
     context['table_data'] = json.dumps(table_data)
 
