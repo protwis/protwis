@@ -45,7 +45,12 @@ class Structure(models.Model):
             return '-'
 
     def get_signprot_gprot_family(self):
-        return str(self.signprot_complex.protein.family)
+        tmp = self.signprot_complex.protein.family
+        while tmp.parent.parent.parent.parent is not None:
+            tmp = tmp.parent
+        return tmp.name
+
+        return str(self.signprot_complex.protein)
 
     def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
 
