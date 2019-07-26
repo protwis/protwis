@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.db.models import F
 from django.db.models import Q
 from django.views.decorators.cache import cache_page
+from django.contrib.postgres.aggregates import ArrayAgg
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinSegment, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResiduePositionSet, ResidueGenericNumberEquivalent
@@ -623,35 +624,51 @@ def sort_a_by_b(a, b, remove_invalid=False):
 
 def interface_dataset():
     # correct receptor entry names - the ones with '_a' appended
-    complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').all()
+    complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein')
     complex_names = [complex_obj.structure.protein_conformation.protein.entry_name + '_' + complex_obj.alpha.lower() for complex_obj in complex_objs]
+    complex_struc_ids = [co.structure_id for co in complex_objs]
     # protein conformations for those
     prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
 
-    # getting all the receptor residues for those protein conformations
+    interaction_sort_order = [
+        "ionic",
+        "aromatic",
+        "hydrophobic",
+        "polar",
+        "van-der-waals",    
+    ]
+
+    # getting all the signal protein residues for those protein conformations
     prot_residues = Residue.objects.filter(
         protein_conformation__in=prot_conf
     ).values_list('id', flat=True)
 
     interactions = InteractingResiduePair.objects.filter(
-        Q(res1__in=prot_residues) | Q(res2__in=prot_residues)
+        Q(res1__in=prot_residues) | Q(res2__in=prot_residues),
+        referenced_structure__in=complex_struc_ids
     ).exclude(
         Q(res1__in=prot_residues) & Q(res2__in=prot_residues)
-    ).select_related(
-        'referenced_structure__pdb_code',
-        'referenced_structure__signprot_complex__protein',
-        'referenced_structure__protein_conformation__protein__parent',
-        'res1__display_generic_number',
-        'res2__display_generic_number',
-    ).order_by(
-        'id',
+    ).prefetch_related(
         'interaction__interaction_type',
-    ).distinct(
-        'id',
-        'interaction__interaction_type'
+        'referenced_structure__pdb_code__index',
+        'referenced_structure__signprot_complex__protein__entry_name',
+        'referenced_structure__protein_conformation__protein__parent__entry_name',
+        'res1__amino_acid',
+        'res1__sequence_number',
+        'res1__display_generic_number__label',
+        'res2__amino_acid',
+        'res2__sequence_number',
+        'res2__display_generic_number__label',
+    ).order_by(
+        'res1__display_generic_number__label',
+        'res2__display_generic_number__label'
     ).values(
         int_id=F('id'),
-        int_ty=F('interaction__interaction_type'),
+        int_ty=ArrayAgg(
+            'interaction__interaction_type',
+            distinct=True,
+            ordering=interaction_sort_order
+        ),
 
         pdb_id=F('referenced_structure__pdb_code__index'),
         conf_id=F('referenced_structure__protein_conformation_id'),
@@ -667,32 +684,9 @@ def interface_dataset():
         sig_gn=F('res2__display_generic_number__label')
     )
 
-    dataset = []
-    last_int_id = None
-    conf_ids = set()
-    r = set()
+    conf_ids = {int_res['conf_id'] for int_res in interactions}
 
-    interaction_sort_order = [
-        "ionic",
-        "aromatic",
-        "hydrophobic",
-        "polar",
-        "van-der-waals",    
-    ]
-
-    # aggregate the interaction types for residue pairs with multiple distinct types
-    for i in interactions:
-        int_id = i['int_id']
-        conf_ids.update([i['conf_id']])
-        r.update([i['int_ty']])
-
-        if last_int_id != int_id or last_int_id is None:
-            i['int_ty'] = sort_a_by_b(list(r), interaction_sort_order)
-            dataset.append(i)
-            r = set()
-            last_int_id = int_id
-
-    return list(conf_ids), dataset
+    return list(conf_ids), list(interactions)
 
 
 @cache_page(60*60*24*2)
@@ -701,7 +695,15 @@ def InteractionMatrix(request):
 
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     
-    struc = SignprotComplex.objects.all()
+    struc = SignprotComplex.objects.prefetch_related(
+        'structure__pdb_code',
+        'structure__stabilizing_agents',
+        'structure__protein_conformation__protein__species',
+        'structure__protein_conformation__protein__parent__parent__parent',
+        'structure__protein_conformation__protein__family__parent__parent__parent__parent',
+        'structure__stabilizing_agents',
+        'structure__signprot_complex__protein__family__parent__parent__parent__parent',
+    )
 
     complex_info = []
     for s in struc:
