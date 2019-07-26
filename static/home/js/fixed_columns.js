@@ -2,6 +2,7 @@ function update_text_in_modal() {
 
     var pdbs = [];
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
     $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
@@ -18,7 +19,7 @@ function update_text_in_modal() {
     });
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
 
-    if (mode == 'Single group of structures' || $("#single-group-tree-tab").length) {
+    if (mode == 'Single set of structures' || $("#single-group-tree-tab").length) {
         var total_selected = pdbs.length
         var selected_visible = $('.dataTables_scrollBody:visible .pdb_selected:checked').length
         var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
@@ -34,7 +35,7 @@ function update_text_in_modal() {
         $(pdbsInputSelector).val(JSON.stringify(pdbs));
         $(pdbsCountSelector).html(pdbs.length);
 
-    } else if (mode == 'Two groups of structures') {
+    } else if (mode == 'Two sets of structures') {
         var total_selected = pdbs.length;
         var selected_visible = $('.pdb_selected:checked:visible').length;
         var ModalpdbsCountSelector = '#two-crystal-group-pdbs-modal-' + group + '-text';
@@ -114,7 +115,7 @@ function check_all(elem, button) {
         }
     }
 
-    if (mode == 'Single group of structures' || $("#single-group-tree-tab").length) {
+    if (mode == 'Single set of structures' || $("#single-group-tree-tab").length) {
         var pdbs = [];
 
         // REMOVE EXISITING? Probably not, more logical that filtering adds more
@@ -125,7 +126,7 @@ function check_all(elem, button) {
         } else {
             $('.pdb_selected:visible').prop("checked", false);
         }
-    } else if (mode == 'Two groups of structures') {
+    } else if (mode == 'Two sets of structures') {
         group = $(elem).closest('.tableview').attr('group-number');
         if (group) mode = mode + group;
         var pdbs = [];
