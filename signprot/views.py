@@ -667,7 +667,7 @@ def interface_dataset():
         int_ty=ArrayAgg(
             'interaction__interaction_type',
             distinct=True,
-            ordering=interaction_sort_order
+            # ordering=interaction_sort_order
         ),
 
         pdb_id=F('referenced_structure__pdb_code__index'),
