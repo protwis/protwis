@@ -294,6 +294,14 @@ class StructureType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
 
+    def type_short(self):
+        if self.name=="X-ray diffraction":
+            return "X-ray"
+        elif self.name=="Electron microscopy":
+            return "cryo-EM"
+        else:
+            return self.name
+
     def __str__(self):
         return self.name
 

@@ -257,7 +257,7 @@ def PdbTableData(request):
         #    r['method'] = methods[pdb_id]
         #else:
         #    r['method'] = "N/A"
-        r['method'] = s.structure_type.name
+        r['method'] = s.structure_type.type_short()
 
         r['resolution'] = "{0:.2g}".format(s.resolution)
         r['7tm_distance'] = s.distance
