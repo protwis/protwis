@@ -5,6 +5,8 @@ from itertools import chain
 import string
 import random
 
+from collections import Counter
+
 from residue.models import ResidueGenericNumberEquivalent
 from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinGProteinPair
 from common.definitions import *
@@ -25,17 +27,29 @@ def get_ignore_info(request):
     ignore_dict = request.POST.get("ignore")
     return json.loads(ignore_dict)
 
+def get_class_slug(common_class):
+    # access the list of the most common element and get the value
+    value = common_class[0][0]
+    # extract the class character, e.g. Class B1 Receptor -> B
+    value = value.split(' ')[1][0]
+    # return the lowercase character
+    return value.lower()
+
 
 def get_protein_segments(request):
     """From a list of given generic numbers (3x50), query appropriate generic residue
     number objects"""
     segments = []
     segment_raw = request.POST.getlist("seg[]")
-    print(segment_raw)
+    selected_receptor_classes = request.POST.getlist("selectedreceptorclasses[]")
+    most_common_class = Counter(selected_receptor_classes).most_common(1)
+    slug_ending = get_class_slug(most_common_class)
+    print(slug_ending)
+
     for s in segment_raw:
         try:
             gen_object = ResidueGenericNumberEquivalent.objects.filter(
-                label=s, scheme__slug__in=["gpcrdba"]
+                label=s, scheme__slug__in=['gpcrdb' + slug_ending]
             ).get()
             segments.append(gen_object)
         except ObjectDoesNotExist as e:
