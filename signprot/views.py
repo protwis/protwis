@@ -667,7 +667,7 @@ def interface_dataset():
         int_ty=ArrayAgg(
             'interaction__interaction_type',
             distinct=True,
-            ordering=interaction_sort_order
+            # ordering=interaction_sort_order
         ),
 
         pdb_id=F('referenced_structure__pdb_code__index'),
@@ -684,12 +684,15 @@ def interface_dataset():
         sig_gn=F('res2__display_generic_number__label')
     )
 
-    conf_ids = {int_res['conf_id'] for int_res in interactions}
+    conf_ids = set()
+    for i in interactions:
+            i['int_ty'] = sort_a_by_b(i['int_ty'], interaction_sort_order)
+            conf_ids.update([i['conf_id']])
 
     return list(conf_ids), list(interactions)
 
 
-@cache_page(60*60*24*2)
+# @cache_page(60*60*24*2)
 def InteractionMatrix(request):
     prot_conf_ids, dataset = interface_dataset()
 
