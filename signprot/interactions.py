@@ -239,7 +239,12 @@ def prepare_signature_match(signature_match):
                     ce = coupling_entry
                     cl = ce['coupling'][source].get(gprot, '')
                     out[entry][source][gprot]['html'] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[source][gprot] else sign_false
-                    out[entry][source][gprot]['bool'] = 1 if ce[source][gprot] else 0
+                    if ce[source][gprot]:
+                        out[entry][source][gprot]['html'] = sign_true.replace(repl_str, class_coupling+cl[:4])
+                        out[entry][source][gprot]['bool'] = 1 if cl[:4]=='prim' else 2
+                    else:
+                        out[entry][source][gprot]['html'] = sign_false
+                        out[entry][source][gprot]['bool'] = 0
                 else:
                     out[entry][source][gprot]['html'] = sign_false
                     out[entry][source][gprot]['bool'] = 0

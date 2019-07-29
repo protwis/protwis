@@ -246,10 +246,6 @@ const run_sig_match = function(){
             data: 'nscore',
             title: 'Score',
             targets: 4,
-          // }, {
-          //   data: 'score',
-          //   title: 'Score',
-          //   targets: 4,
           }, {
             data: 'entry',
             title: 'Entry Name',
