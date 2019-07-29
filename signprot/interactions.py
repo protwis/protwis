@@ -222,7 +222,9 @@ def prepare_signature_match(signature_match):
             "prot": elem[0].protein.name,
             "score": elem[1][0],
             "nscore": round(elem[1][1], 1),
-            "class": elem[0].protein.get_protein_class()
+            "class": elem[0].protein.get_protein_class(),
+            "family": elem[0].protein.get_protein_family(),
+            "subfamily": elem[0].protein.get_protein_subfamily(),
         }
 
     for elem in signature_match["scores"].items():
@@ -239,7 +241,12 @@ def prepare_signature_match(signature_match):
                     ce = coupling_entry
                     cl = ce['coupling'][source].get(gprot, '')
                     out[entry][source][gprot]['html'] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[source][gprot] else sign_false
-                    out[entry][source][gprot]['bool'] = 1 if ce[source][gprot] else 0
+                    if ce[source][gprot]:
+                        out[entry][source][gprot]['html'] = sign_true.replace(repl_str, class_coupling+cl[:4])
+                        out[entry][source][gprot]['bool'] = 1 if cl[:4]=='prim' else 2
+                    else:
+                        out[entry][source][gprot]['html'] = sign_false
+                        out[entry][source][gprot]['bool'] = 0
                 else:
                     out[entry][source][gprot]['html'] = sign_false
                     out[entry][source][gprot]['bool'] = 0

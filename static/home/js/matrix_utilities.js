@@ -239,96 +239,101 @@ const run_sig_match = function(){
             title: 'Class',
             targets: 1,
           }, {
+            data: 'family',
+            title: 'Family',
+            targets: 2,
+          }, {
+            data: 'subfamily',
+            title: 'Sub-Family',
+            targets: 3,
+          }, {
             data: 'prot',
             title: 'Protein',
-            targets: 2,
+            targets: 4,
           }, {
             data: 'nscore',
             title: 'Score',
-            targets: 4,
-          // }, {
-          //   data: 'score',
-          //   title: 'Score',
-          //   targets: 4,
+            targets: 6,
           }, {
             data: 'entry',
             title: 'Entry Name',
-            targets: 3,
+            targets: 5,
+            visible: false,
           }, {
             data: 'GuideToPharma.Gs.html',
             title: '   Gs   ',
-            targets: 5,
+            targets: 7,
             className: 'gtop dt-center',
             visible: true,
           }, {
             data: 'GuideToPharma.Gi/Go.html',
             title: 'Gi / Go ',
-            targets: 6,
+            targets: 8,
             className: 'gtop dt-center',
             visible: true,
           }, {
             data: 'GuideToPharma.Gq/G11.html',
             title: 'Gq / G11',
-            targets: 7,
+            targets: 9,
             className: 'gtop dt-center',
             visible: true,
           }, {
             data: 'GuideToPharma.G12/G13.html',
             title: 'G12 / G13',
-            targets: 8,
+            targets: 10,
             className: 'gtop dt-center',
             visible: true,
           }, {
             data: 'Aska.Gs.html',
             title: '   Gs   ',
-            targets: 9,
+            targets: 11,
             className: 'aska dt-center',
             visible: false,
           }, {
             data: 'Aska.Gi/Go.html',
             title: 'Gi / Go ',
-            targets: 10,
+            targets: 12,
             className: 'aska dt-center',
             visible: false,
           }, {
             data: 'Aska.Gq/G11.html',
             title: 'Gq / G11',
-            targets: 11,
+            targets: 13,
             className: 'aska dt-center',
             visible: false,
           }, {
             data: 'Aska.G12/G13.html',
             title: 'G12 / G13',
-            targets: 12,
+            targets: 14,
             className: 'aska dt-center',
             visible: false,
           }, {
             data: 'Merged.Gs.html',
             title: '   Gs   ',
-            targets: 13,
+            targets: 15,
             className: 'merg dt-center',
             visible: false,
           }, {
             data: 'Merged.Gi/Go.html',
             title: 'Gi / Go ',
-            targets: 14,
+            targets: 16,
             className: 'merg dt-center',
             visible: false,
           }, {
             data: 'Merged.Gq/G11.html',
             title: 'Gq / G11',
-            targets: 15,
+            targets: 17,
             className: 'merg dt-center',
             visible: false,
           }, {
             data: 'Merged.G12/G13.html',
             title: 'G12 / G13',
-            targets: 16,
+            targets: 18,
             className: 'merg dt-center',
             visible: false,
           },
         ],
-        order: [[ 4, "desc" ]],
+        order: [[ 6, "desc" ]],
         select: {
           style: 'single',
         },
@@ -379,10 +384,13 @@ const run_sig_match = function(){
             action: function ( e, dt, button, config ) {
               var table_data = sigmatch_table.data().toArray();
 
-              data = []
+              var export_data = []
               for (let i of Object.values(table_data)){
                 let r = {}
                 r['name'] = i['entry']
+                r['family'] = i['family']
+                r['subfamily'] = i['subfamily']
+                r['score'] = i['nscore']
                 r['aska_gs'] = i['Aska']['Gs']['bool']
                 r['aska_gio'] = i['Aska']['Gi/Go']['bool']
                 r['aska_gq11'] = i['Aska']['Gq/G11']['bool']
@@ -395,19 +403,20 @@ const run_sig_match = function(){
                 r['merg_gio'] = i['Merged']['Gi/Go']['bool']
                 r['merg_gq11'] = i['Merged']['Gq/G11']['bool']
                 r['merg_g1213'] = i['Merged']['G12/G13']['bool']
-                data.push(r)
+                export_data.push(r)
               }
 
-              data = Papa.unparse(data)
+              export_data = Papa.unparse(export_data)
               
               $('<a></a>')
                 .attr('id','downloadFile')
-                .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(data))
+                .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(export_data))
                 .attr('download', 'export.csv')
                 .appendTo('body');
               
               $('#downloadFile').ready(function() {
                 $('#downloadFile').get(0).click();
+                $('#downloadFile').remove();
               });
             }
           },
