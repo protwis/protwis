@@ -73,6 +73,11 @@ class Protein(models.Model):
             tmp = tmp.parent
         return tmp.name
 
+    def get_protein_topfamily(self):
+        tmp = self.family
+        while tmp.parent.parent.parent.parent is not None:
+            tmp = tmp.parent
+        return tmp.name
 
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
