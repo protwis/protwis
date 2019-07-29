@@ -25,8 +25,6 @@ from numpy.core.umath_tests import inner1d
 
 from multiprocessing import Queue, Process, Value, Lock
 
-TMNUM = 7
-
 SASA = True
 HSE  = True
 extra_pca = True
@@ -116,7 +114,7 @@ class Command(BaseCommand):
     ############################ Helper  Functions ############################
     ###########################################################################
 
-    processes = 4
+    processes = 2
 
     def prepare_input(self, proc, items, iteration=1):
         q = Queue()
@@ -140,7 +138,7 @@ class Command(BaseCommand):
                 last = False
             else:
                 last = chunk_size * (i + 1)
-    
+
             p = Process(target=self.main_func, args=([(first, last), iteration,num,lock]))
             procs.append(p)
             p.start()
@@ -162,12 +160,14 @@ class Command(BaseCommand):
 
         Angle.objects.all().delete()
         self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # DEBUG for a specific PDB
+        # self.references = Structure.objects.filter(pdb_code__index="5UZ7").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+
         print(len(self.references),'structures')
         self.references = list(self.references)
         self.prepare_input(self.processes, self.references)
 
     def main_func(self, positions, iteration,count,lock):
-        print('main_func')
         def recurse(entity,slist):
             """
             filter a pdb structure in a recursive way
@@ -271,8 +271,6 @@ class Command(BaseCommand):
         failed = []
         dblist = []
 
-        failed = []
-
         # Get all structures
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         #references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
@@ -306,7 +304,7 @@ class Command(BaseCommand):
                     reference = references[count.value]
                     count.value +=1
                 else:
-                    break 
+                    break
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
             print(pdb_code)
@@ -324,22 +322,22 @@ class Command(BaseCommand):
                 pdbio.save(filename, NonHetSelect())
                 if os.path.exists("/env/bin/dssp"):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/dssp')
-                if os.path.exists("/env/bin/mkdssp"):
+                elif os.path.exists("/env/bin/mkdssp"):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/mkdssp')
 
-                # STRIDE
-                try:
-                    if os.path.exists("/env/bin/stride"):
-                       stride = subprocess.Popen(['/env/bin/stride', filename], stdout=subprocess.PIPE)
-                       # Grab SS assignment (ASG) and parse residue (cols 12-15) and SS (cols 25-25)
-                       for line in io.TextIOWrapper(stride.stdout, encoding="utf-8"):
-                           if line.startswith("ASG"):
-                               res_id = int(line[11:15].strip())
-                               res_ss = line[24:25].strip()
-                               # assign to residue
-                               pchain[res_id].xtra["SS_STRIDE"] = res_ss.upper()
-                except OSError:
-                   print(pdb_code, " - STRIDE ERROR - ", e)
+                # DISABLED STRIDE - selected DSSP over STRIDE
+#                try:
+#                    if os.path.exists("/env/bin/stride"):
+#                       stride = subprocess.Popen(['/env/bin/stride', filename], stdout=subprocess.PIPE)
+#                       # Grab SS assignment (ASG) and parse residue (cols 12-15) and SS (cols 25-25)
+#                       for line in io.TextIOWrapper(stride.stdout, encoding="utf-8"):
+#                           if line.startswith("ASG"):
+#                               res_id = int(line[11:15].strip())
+#                               res_ss = line[24:25].strip()
+#                               # assign to residue
+#                               pchain[res_id].xtra["SS_STRIDE"] = res_ss.upper()
+#                except OSError:
+#                   print(pdb_code, " - STRIDE ERROR - ", e)
 
                 # CLEANUP
                 os.remove(filename)
@@ -469,6 +467,42 @@ class Command(BaseCommand):
                 # a = [str(i) for i in center_vector[0]]
                 # b = [str(i) for i in center_vector[1]]
                 # print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
+
+                # Measure level of activation by TM6 tilt
+                # Grab residues before (below)....
+                # 1. Middle of membrane of TM6
+                #membrane_middle = {'A' : '6x48', 'B' : '6x49', 'C' : '6x48', 'F' : '6x43'}
+                # 2. residue at kink start
+                kink_start = 44 #  general class A number 6x44 seems quite conserved to be the kink start
+
+                # Select all residues before indicated residue
+                lower_tm6 = []
+                for res in db_tmlist[5]:
+                    gnlabel = gdict[res[1]].generic_number.label
+                    if int(gnlabel.replace("6x","")) <= kink_start:
+                        lower_tm6.append(pchain[res]["CA"].get_coord())
+                lower_tm6 = np.asarray(lower_tm6)
+
+                if len(lower_tm6) >= 3:
+                    # Take the average of N consecutive elements
+                    tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+                    if len(tm6_lower_three) > 2:
+                        tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+                    else:
+                        tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+
+                    # Calculate angle between vectors
+                    tm6_angle = np.arccos(np.clip(np.dot(tm6_pca_vector[1]-tm6_pca_vector[0], center_vector[1]-center_vector[0]), -1.0, 1.0))
+
+                    # Check distance - closer to axis - negative angle - further away - positive angle
+                    tm6_inward = ca_distance_calc(np.asarray([tm6_pca_vector[1]]),pca) - ca_distance_calc(np.asarray([tm6_pca_vector[0]]),pca)
+
+                    if tm6_inward < 0:
+                        tm6_angle = -1*tm6_angle
+
+                    # Store as structure property
+                    reference.tm6_angle = np.degrees(tm6_angle)
+                    reference.save()
 
                 ### ANGLES
                 # Center axis to helix axis to CA
