@@ -384,10 +384,13 @@ const run_sig_match = function(){
             action: function ( e, dt, button, config ) {
               var table_data = sigmatch_table.data().toArray();
 
-              data = []
+              var export_data = []
               for (let i of Object.values(table_data)){
                 let r = {}
                 r['name'] = i['entry']
+                r['family'] = i['family']
+                r['subfamily'] = i['subfamily']
+                r['score'] = i['nscore']
                 r['aska_gs'] = i['Aska']['Gs']['bool']
                 r['aska_gio'] = i['Aska']['Gi/Go']['bool']
                 r['aska_gq11'] = i['Aska']['Gq/G11']['bool']
@@ -400,19 +403,20 @@ const run_sig_match = function(){
                 r['merg_gio'] = i['Merged']['Gi/Go']['bool']
                 r['merg_gq11'] = i['Merged']['Gq/G11']['bool']
                 r['merg_g1213'] = i['Merged']['G12/G13']['bool']
-                data.push(r)
+                export_data.push(r)
               }
 
-              data = Papa.unparse(data)
+              export_data = Papa.unparse(export_data)
               
               $('<a></a>')
                 .attr('id','downloadFile')
-                .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(data))
+                .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(export_data))
                 .attr('download', 'export.csv')
                 .appendTo('body');
               
               $('#downloadFile').ready(function() {
                 $('#downloadFile').get(0).click();
+                $('#downloadFile').remove();
               });
             }
           },
