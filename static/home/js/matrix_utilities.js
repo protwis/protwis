@@ -469,29 +469,55 @@ const replace_filter_value = function(d) {
 };
 
 const filter_pairs = function(floor, ceiling) {
-  // const num = parseInt($('#currentpairs').text())
+  const max_val = get_max_interface_count()
   d3.select('g#interact')
     .selectAll("g")
     .style('display', function(d){
-      return (floor <= d.pairs.length && ceiling >= d.pairs.length ? 'block' : 'none')
+      var ratio = d.pairs.length / max_val * 100
+      return (floor <= ratio && ceiling >= ratio ? 'block' : 'none')
     })
 }
 
+const set_min = function () {
+  $('#amount_min').html( $('#slider-range').slider('values', 0)).position({
+      my: 'center bottom',
+      at: 'center top',
+      of: $('#slider-range span:eq(0)'),
+  });
+}
+
+const set_max = function () {
+    $('#amount_max').html( $('#slider-range').slider('values', 1)).position({
+      my: 'center bottom',
+      at: 'center top',
+      of: $('#slider-range span:eq(1)'),
+  });
+}
 
 const initialize_filter_slider = function() {
   // initializing range slider
   $( "#slider-range" ).slider({
     range: true,
-    min: 1,
-    max: 20,
-    values: [ 1, 20 ],
+    min: 0,
+    max: 100,
+    step: 1,
+    values: [ 0, 100 ],
     slide: function( event, ui ) {
       const floor = parseInt(ui.values[0])
       const ceil = parseInt(ui.values[1])
-      $( "#amount" ).val( 'From: ' + floor + " To: " + ceil );
+
+      var label = ui.handleIndex == 0 ? '#amount_min' : '#amount_max';
+      $(label).html(ui.value).position({
+          my: 'center bottom',
+          at: 'center top',
+          of: ui.handle,
+      });
+
       filter_pairs(floor, ceil)
     }
   });
+
+  setTimeout(set_min, setTimeout(set_max, 1), 1)
 };
 
 const reset_slider = function() {
@@ -499,18 +525,8 @@ const reset_slider = function() {
   const min = $( "#slider-range" ).slider( "option", "min" );
   const max = $( "#slider-range" ).slider( "option", "max" );
   $( "#slider-range" ).slider( "values", [ min, max ] );
-}
 
-const set_slider_max_value = function(){
-  // setting the max value of the interaction filter slider according to selected data
-  const max_val = get_max_interface_count()
-  $( "#slider-range" ).slider( "option", "max", max_val );
-}
-
-const update_slider_label = function() {
-    // update the text span above the slider
-  $( "#amount" ).val( 'From: ' + $( "#slider-range" ).slider( "values", 0 ) +
-    " To: " + $( "#slider-range" ).slider( "values", 1 ) );
+  setTimeout(set_min, setTimeout(set_max, 1), 1)
 }
 
 const get_max_interface_count = function() {
@@ -568,9 +584,6 @@ $(document).ready(function () {
   // pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
 
   initialize_filter_slider();
-  set_slider_max_value();
-  update_slider_label();
-
 
   $('#interface-modal-table').on('shown.bs.modal', function(e) {
     showPDBtable('#interface-modal-table');
@@ -629,9 +642,7 @@ $(document).ready(function () {
       document.querySelector("#intbut").classList.add("active");
       document.querySelector("#resbut").classList.remove("active");
 
-      set_slider_max_value();
       reset_slider();
-      update_slider_label();
       run_seq_sig();
     };
   });

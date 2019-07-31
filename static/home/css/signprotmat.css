@@ -209,3 +209,9 @@ text.expand {
 .coupling.seco {
     background-color: #7F7F7F;
 }
+
+#amount_min, #amount_max {
+    position: relative;
+    width: 50px;
+    text-align: center;
+}
