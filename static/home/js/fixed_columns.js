@@ -303,6 +303,7 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
+                null,
                 null
             ]
         });
@@ -421,49 +422,53 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 15,
+                  column_number: 15,
+                  filter_type: "range_number"                  
+                },
+                {
+                    column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "G prot",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 16,
+                    column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "B arr",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 17,
+                    column_number: 18,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 18,
+                    column_number: 19,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 19,
+                    column_number: 20,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 20,
+                    column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand function",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 21,
+                    column_number: 22,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand type",
