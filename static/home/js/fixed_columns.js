@@ -257,13 +257,13 @@ function showPDBtable(element) {
         console.log(mode);
 
         $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-        $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
-        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
+        $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
+        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
         if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
-          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
-          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
-          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
 
         oTable[mode] = $(element + ' .tableview table').DataTable({
@@ -283,7 +283,6 @@ function showPDBtable(element) {
                 {
                   "orderDataType": "dom-checkbox"
                 },
-                null,
                 null,
                 null,
                 null,
@@ -422,53 +421,49 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                  column_number: 15,
-                  filter_type: "range_number"                  
-                },
-                {
-                    column_number: 16,
+                    column_number: 15,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "G prot",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 17,
+                    column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "B arr",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 18,
+                    column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 19,
+                    column_number: 18,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 20,
+                    column_number: 19,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 21,
+                    column_number: 20,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand function",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 22,
+                    column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand type",

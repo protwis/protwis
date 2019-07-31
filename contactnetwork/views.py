@@ -221,9 +221,9 @@ def PdbTableData(request):
         data = data.filter(id__in=complex_structure_ids)
 
     data_dict = OrderedDict()
-    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specific contact matches</th><th colspan=3></th><th colspan=2>Signalling protein</th> \
+    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \
                                                                        <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th></tr> \
-                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th><th>TM6 angle</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>\n"
+                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>\n"
 
     for s in data:
         pdb_id = s.pdb_code.index
@@ -313,7 +313,6 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td>{}</td> \
                         </tr>\n".format(
                                         r['contact_representative'],
                                         r['distance_representative'],
@@ -334,7 +333,6 @@ def PdbTableData(request):
                                         r['diff_class_contacts_fraction'],
                                         r['contact_representative_score'],
                                         r['7tm_distance'],
-#                                        r['tm6_angle'],
                                         r['g_protein'],
                                         r['arrestin'],
                                         r['fusion'],
