@@ -151,7 +151,7 @@ var signprotmat = {
             }
             else {
                 h = 1000 - margin.top - margin.bottom;
-                var mt = 60;
+                var mt = 100;
             }
             var svg = d3
                 .select("body")
@@ -1757,6 +1757,20 @@ var signprotmat = {
             row
                 .append("text")
                 .attr("class", "y seq_label")
+                .attr("x", -30 - xScale.step())
+                .attr("y", function(d) {
+                    return fScale(d.comb) - fScale.step() / 2;
+                })
+                .attr("text-anchor", "end")
+                .attr("dy", 75)
+                .text(function(d) {
+                    return d.feature;
+                });
+            
+            //feature length row labels
+            row
+                .append("text")
+                .attr("class", "y seq_label")
                 .attr("x", -10 - xScale.step())
                 .attr("y", function(d) {
                     return fScale(d.comb) - fScale.step() / 2;
@@ -1764,9 +1778,9 @@ var signprotmat = {
                 .attr("text-anchor", "end")
                 .attr("dy", 75)
                 .text(function(d) {
-                    return d.comb;
+                    return d.length;
                 });
-            
+
             // feature color code rectangles
             row
                 .append("rect")
