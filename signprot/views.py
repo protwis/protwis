@@ -742,7 +742,7 @@ def InteractionMatrix(request):
                 entry_name = F('protein_conformation__protein__parent__entry_name'),
                 pdb_id = F('protein_conformation__structure__pdb_code__index'),
                 rec_aa = F('amino_acid'),
-                rec_gn = F('display_generic_number__label'),
+                rec_gn = F('generic_number__label'),
             ).exclude(
                 Q(rec_gn=None)
             )
