@@ -1256,7 +1256,7 @@ var signprotmat = {
                 .append('text')
                 .attr('class', 'con_seq_label')
                 .attr('x', -2)
-                .attr('y', 75)
+                .attr('y', 75 + row_height * 1.5)
                 .attr("dy", row_height / 2)
                 .text('Property Consensus')
 
@@ -1264,7 +1264,7 @@ var signprotmat = {
                 .append('text')
                 .attr('class', 'con_seq_label')
                 .attr('x', -2)
-                .attr('y', 75 + row_height)
+                .attr('y', 75 + row_height * 2.5)
                 .attr("dy", row_height / 4)
                 .text('Length')
 
@@ -1272,7 +1272,7 @@ var signprotmat = {
                 .append('text')
                 .attr('class', 'con_seq_label')
                 .attr('x', -2)
-                .attr('y', 75 + row_height * 1.5)
+                .attr('y', 75 + row_height * 3)
                 .attr("dy", row_height / 4)
                 .text('Conservation')
 
@@ -1280,7 +1280,7 @@ var signprotmat = {
                 .append('text')
                 .attr('class', 'con_seq_label')
                 .attr('x', -2)
-                .attr('y', 75 + row_height * 2)
+                .attr('y', 75)
                 .attr("dy", row_height / 2)
                 .text('Sequence Consensus')
 
@@ -1288,7 +1288,7 @@ var signprotmat = {
                 .append('text')
                 .attr('class', 'con_seq_label')
                 .attr('x', -2)
-                .attr('y', 75 + row_height * 3)
+                .attr('y', 75 + row_height)
                 .attr("dy", row_height / 4)
                 .text('Conservation')
 
@@ -1301,7 +1301,7 @@ var signprotmat = {
             tmp.append('rect')
                 .attr('class', 'expand')
                 .attr('x', -180)
-                .attr('y', 75)
+                .attr('y', 75 + row_height * 1.5)
                 .attr('rx', '4')
                 .attr('width', '50px')
                 .attr('height', row_height)
@@ -1309,7 +1309,7 @@ var signprotmat = {
             tmp.append('text')
                 .attr('class', 'expand')
                 .attr('x', -180)
-                .attr('y', 75)
+                .attr('y', 75 + row_height * 1.5)
                 .attr('dx', '25px')
                 .attr("dy", row_height / 2 + 3)
                 .text('+')
@@ -1371,14 +1371,14 @@ var signprotmat = {
                     //}))
                     .style("stroke", "black")
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", 75)
+                    .attr('y', 75 + row_height * 1.5)
                     .attr("width", xScale.step())
                     .attr("height", row_height);
             }, function (update) {
 
                 return update
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", 75)
+                    .attr('y', 75 + row_height * 1.5)
                     //.style("fill", '#ffffff')
                     .call(function (update) {
                     return update.transition(t).style("fill", function (d) {
@@ -1402,7 +1402,7 @@ var signprotmat = {
                     .attr("class", "res_label")
                     .attr("text-anchor", "middle")
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75)
+                    .attr('y', 75 + row_height * 1.5)
                     .attr("dy", row_height / 2)
                     .style("fill", function (d) {
                     var gcol = signprotmat.d3.fScaleColor(d.feature_code);
@@ -1423,7 +1423,7 @@ var signprotmat = {
 
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75)
+                    .attr('y', 75 + row_height * 1.5)
                     .style("fill", function (d) {
                     var gcol = signprotmat.d3.fScaleColor(d.feature_code);
                     if (typeof gcol != "undefined") {
@@ -1452,14 +1452,14 @@ var signprotmat = {
                     .style("fill", "#ffffff")
                     .style("stroke", "black")
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", function (d) { return 75 + row_height; })
+                    .attr('y', 75 + row_height * 2.5)
                     .attr("width", xScale.step())
                     .attr("height", row_height / 2);
             }, function (update) {
 
                 return update
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", function (d) { return 75 + row_height; });
+                    .attr('y', 75 + row_height * 2.5)
             }, function (exit) { return exit.remove(); });
 
             con_seq_mat
@@ -1471,7 +1471,7 @@ var signprotmat = {
                     .attr("class", "len_label")
                     .attr("text-anchor", "middle")
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75 + row_height)
+                    .attr('y', 75 + row_height * 2.5)
                     .attr("dy", row_height / 4)
                     .style("fill", "#000000")
                     .text(function (d) { return d.length; });
@@ -1479,7 +1479,7 @@ var signprotmat = {
 
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75 + row_height)
+                    .attr('y', 75 + row_height * 2.5)
                     .style("fill", "#000000")
                     .text(function (d) { return d.length; });
             }, function (exit) { return exit.remove(); });
@@ -1502,7 +1502,7 @@ var signprotmat = {
                 })
                     .style("stroke", "black")
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", function (d) { return 75 + 1.5 * row_height; })
+                    .attr('y', 75 + row_height * 3)
                     .attr("width", xScale.step())
                     .attr("height", row_height / 2);
             }, function (update) {
@@ -1517,7 +1517,7 @@ var signprotmat = {
                     }
                 })
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", function (d) { return 75 + 1.5 * row_height; });
+                    .attr('y', 75 + row_height * 3)
             }, function (exit) { return exit.remove(); });
 
             con_seq_mat
@@ -1529,7 +1529,7 @@ var signprotmat = {
                     .attr("class", "cons_label")
                     .attr("text-anchor", "middle")
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75 + 1.5 * row_height)
+                    .attr('y', 75 + row_height * 3)
                     .attr("dy", row_height / 4)
                     .style("fill", function (d) {
                     if (Math.abs(d.freq) >= 50) {
@@ -1544,7 +1544,7 @@ var signprotmat = {
 
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75 + 1.5 * row_height)
+                    .attr('y', 75 + row_height * 3)
                     .style("fill", function (d) {
                     if (Math.abs(d.freq) >= 50) {
                         return "#eaeaea";
@@ -1570,14 +1570,14 @@ var signprotmat = {
                     })
                     .style("stroke", "black")
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", 75 + 2 * row_height)
+                    .attr('y', 75)
                     .attr("width", xScale.step())
                     .attr("height", row_height);
             }, function (update) {
 
                 return update
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", 75 + 2 * row_height)
+                    .attr('y', 75)
                     .call(function (update) {
                     return update.transition(t).style("fill", function (d) {
                         return signprotmat.d3.resScaleColor(d.aa)['bg_color']
@@ -1594,7 +1594,7 @@ var signprotmat = {
                     .attr("class", "amino_label")
                     .attr("text-anchor", "middle")
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75 + 2 * row_height)
+                    .attr('y', 75)
                     .attr("dy", row_height / 2)
                     .style("fill", function (d) {
                         return signprotmat.d3.resScaleColor(d.aa)['fg_color']
@@ -1604,7 +1604,7 @@ var signprotmat = {
 
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75 + 2 * row_height)
+                    .attr('y', 75)
                     .style("fill", function (d) {
                         return signprotmat.d3.resScaleColor(d.aa)['fg_color']
                     })
@@ -1624,14 +1624,14 @@ var signprotmat = {
                     })
                     .style("stroke", "black")
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", 75 + 3 * row_height)
+                    .attr("y", 75 + row_height)
                     .attr("width", xScale.step())
                     .attr("height", row_height/2);
             }, function (update) {
 
                 return update
                     .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
-                    .attr("y", 75 + 3 * row_height)
+                    .attr("y", 75 + row_height)
                     .call(function (update) {
                     return update.transition(t).style("fill", function (d) {
                         return cScale(d.aa_cons);
@@ -1648,7 +1648,7 @@ var signprotmat = {
                     .attr("class", "amino cons_label")
                     .attr("text-anchor", "middle")
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75 + 3 * row_height)
+                    .attr("y", 75 + row_height)
                     .attr("dy", row_height / 4)
                     .style("fill", function (d) {
                         if (Math.abs(d.aa_cons) >= 50) {
@@ -1663,7 +1663,7 @@ var signprotmat = {
                 
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
-                    .attr("y", 75 + 2.5 * row_height)
+                    .attr("y", 75 + row_height)
                     .style("fill", function (d) {
                         if (Math.abs(d.aa_cons) >= 50) {
                             return "#eaeaea";
