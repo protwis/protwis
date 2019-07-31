@@ -421,13 +421,19 @@ const run_sig_match = function(){
             }
           },
           {
-            text: 'Deselect',
+            text: 'Show Alignment',
+            className: 'score-button',
             action: function () {
               sigmatch_table.rows().deselect();
             }
           },
         ]
       })
+
+      $('.score-button').click( function () {
+          const render_url = window.location.origin + '/signprot/matrix/render_sigmat/';
+          window.open(render_url,'_blank');
+      });
 
       sigmatch_table.on('select', function (e, dt, type, indexes) {
         const entry = sigmatch_table.rows(indexes).data().toArray()[0];
@@ -580,9 +586,6 @@ $(document).ready(function () {
   $('[data-toggle="tooltip"]').tooltip();
   
   let table = $($.fn.dataTable.tables()[0]).DataTable();
-  // let selection = table.rows('.selected').data();
-  // pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id');
-  // pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
 
   initialize_filter_slider();
 
@@ -593,11 +596,14 @@ $(document).ready(function () {
   $('#interface-modal-table').on('hidden.bs.modal', function (e) {
     table = $($.fn.dataTable.tables()[0]).DataTable();
     selection = table.rows('.selected').data();
+   
     let old_pdb_sel = pdb_sel;
     pdb_sel = [];
     pos_set = [];
+
     // get selected pdb ids
     $('.pdb_selected:checked').each(function( index ) {pdb_sel.push(($( this ).attr('id')))});
+  
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata){
       if (pdb_sel.indexOf(int_meta['pdb_id']) != -1){
