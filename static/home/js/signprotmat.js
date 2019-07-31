@@ -171,18 +171,28 @@ var signprotmat = {
         },
 
         // * SETTING THE X/Y SCALE
-        xScale: function (data) {
-            var xScale = d3
-                .scaleBand()
-                .domain(d3
+        xScale: function (data, receptor) {
+            var domain = d3
                 .map(data, function (d) { return d.rec_gn; })
                 .keys()
-                .sort(d3.ascending))
-                .range([0, w])
-                // .round(true)
-                .padding(1);
-            return xScale;
-        },
+                .sort(function (a, b) {
+                    var a_patt = /(\d*)x/g;
+                    var b_patt = /(\d*)x/g;
+                    var a_match = a_patt.exec(a);
+                    var b_match = b_patt.exec(b);
+                    var a_obj = _.findIndex(receptor, function (d) { return d === a_match[1]; });
+                    var b_obj = _.findIndex(receptor, function (d) { return d === b_match[1]; });
+                    // console.log(a_obj);
+                    return d3.ascending(a_obj, b_obj);
+                });
+            var xScale = d3
+                    .scaleBand()
+                    .domain(domain)
+                    .range([0, w])
+                    // .round(true)
+                    .padding(1);
+                return xScale;
+                },
 
         yScale: function (data, gprot) {
             var domain = d3
@@ -850,14 +860,14 @@ var signprotmat = {
                 .attr("text-anchor", "end")
                 .attr("x", 0 - 7)
                 .attr("y", h + 25)
-                .text("Receptor GN");
+                .text("Res. Pos.");
             svg
                 .append("text")
                 .attr("class", "y axis_label")
                 .attr("text-anchor", "end")
                 .attr("x", 0 - 7)
                 .attr("y", 0.8 * yScale.step())
-                .text("G-Prot. GN");
+                .text("Res. Pos.");
             // * ADD INFOBOX ELEMENT
             svg
                 .append("g")
@@ -869,7 +879,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "recPDB")
-                .attr("transform", "translate(" + 0 + "," + h + ")")
+                .attr("transform", "translate(" + 0 + "," + h*0.97 + ")")
                 .selectAll("text")
                 .data(data.pdbids)
                 .enter()
@@ -892,7 +902,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "sigPDB")
-                .attr("transform", "translate(" + ((0 - margin.left * 0.9) - sigScale.range()[0] / 2 - 5) + "," + yScale.step() + ")rotate(-90)")
+                .attr("transform", "translate(" + ((0 - margin.left * 0.75) - sigScale.range()[0] / 2 - 5) + "," + yScale.step() + ")rotate(-90)")
                 .selectAll("text")
                 .data(data.pdbids)
                 .enter()
@@ -930,7 +940,7 @@ var signprotmat = {
             svg
                 .append("g")
                 .attr("id", "recAA")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + h + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + h*0.97 + ")")
                 .append("rect")
                 .attr("class", "border-bg")
                 .style("fill", "#ffffff")
@@ -1003,7 +1013,7 @@ var signprotmat = {
                 .attr("id", "sigAA")
                 .attr("transform", "translate(" +
                 // (w + (1 / 3) * margin.right) +
-                (0 - margin.left * 0.9) +
+                (0 - margin.left * 0.75) +
                 "," +
                 yScale.step() / 2 +
                 ")")

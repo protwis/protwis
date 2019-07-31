@@ -614,7 +614,7 @@ $(document).ready(function () {
 
       data = signprotmat.data.dataTransformationWrapper(interactions, pdb_sel);
       svg = signprotmat.d3.setup("div#interface-svg");
-      xScale = signprotmat.d3.xScale(data.transformed);
+      xScale = signprotmat.d3.xScale(data.transformed, receptor);
       yScale = signprotmat.d3.yScale(data.transformed, gprot);
       xAxis = signprotmat.d3.xAxis(xScale);
       yAxis = signprotmat.d3.yAxis(yScale);

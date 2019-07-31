@@ -655,13 +655,13 @@ def interface_dataset():
         'referenced_structure__protein_conformation__protein__parent__entry_name',
         'res1__amino_acid',
         'res1__sequence_number',
-        'res1__display_generic_number__label',
+        'res1__generic_number__label',
         'res2__amino_acid',
         'res2__sequence_number',
-        'res2__display_generic_number__label',
+        'res2__generic_number__label',
     ).order_by(
-        'res1__display_generic_number__label',
-        'res2__display_generic_number__label'
+        'res1__generic_number__label',
+        'res2__generic_number__label'
     ).values(
         int_id=F('id'),
         int_ty=ArrayAgg(
@@ -677,11 +677,11 @@ def interface_dataset():
 
         rec_aa=F('res1__amino_acid'),
         rec_pos=F('res1__sequence_number'),
-        rec_gn=F('res1__display_generic_number__label'),
+        rec_gn=F('res1__generic_number__label'),
 
         sig_aa=F('res2__amino_acid'),
         sig_pos=F('res2__sequence_number'),
-        sig_gn=F('res2__display_generic_number__label')
+        sig_gn=F('res2__generic_number__label')
     )
 
     conf_ids = set()
@@ -697,6 +697,7 @@ def InteractionMatrix(request):
     prot_conf_ids, dataset = interface_dataset()
 
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+    receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
     
     struc = SignprotComplex.objects.prefetch_related(
         'structure__pdb_code',
@@ -751,6 +752,7 @@ def InteractionMatrix(request):
         'interactions_metadata': json.dumps(complex_info),
         'non_interactions': json.dumps(list(remaining_residues)),
         'gprot': json.dumps(list(gprotein_order)),
+        'receptor': json.dumps(receptor_order),
         }
 
     request.session['signature'] = None
