@@ -482,8 +482,16 @@ class Command(BaseCommand):
                         lower_tm6.append(pchain[res]["CA"].get_coord())
                         if int(gnlabel.replace("6x","")) == kink_start:
                             kink_start_res = pchain[res]["CA"].get_coord()
-
                 lower_tm6 = np.asarray(lower_tm6)
+
+                # TM2 intracellular for comparison
+                lower_tm2 = []
+                for res in db_tmlist[1]:
+                    gnlabel = gdict[res[1]].generic_number.label
+                    gn_id = int(gnlabel.replace("2x",""))
+                    if gn_id >= 40 and gn_id <= 50: # Lower well-defined half of TM2
+                        lower_tm2.append(pchain[res]["CA"].get_coord())
+                lower_tm2 = np.asarray(lower_tm2)
 
                 # Find 5x46 (residue at membrane middle)
                 membrane_mid = None
@@ -493,85 +501,82 @@ class Command(BaseCommand):
                         membrane_mid = pchain[res]["CA"].get_coord()
                         break
 
-                # TODO: adjust for other classes
-                if len(lower_tm6) >= 3 and len(membrane_mid) == 3:
-                    # Take the average of N consecutive elements
-                    tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
-                    if len(tm6_lower_three) > 2:
-                        tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
-                    else:
-                        tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+                # TM6 tilt compared to TM2
+                if len(lower_tm6) >= 3 and len(lower_tm2) >= 3:
+                     # Take the average of N consecutive elements of TM2
+                     tm2_lower_three = sum([lower_tm2[i:-(len(lower_tm2) % N) or None:N] for i in range(N)])/N
+                     if len(tm2_lower_three) > 2:
+                         tm2_pca_vector = pca_line(PCA(), tm2_lower_three, 1)
+                     else:
+                         tm2_pca_vector = pca_line(PCA(), lower_tm2, 1)
 
-                    # 1. Find intersect of membrane mid with 7TM axis (project point to plane)
-                    membrane_mid_pca = pca.transform([membrane_mid])
-                    membrane_mid_pca[0,1:3] = 0 # project onto the same axis
-                    midpoint = pca.inverse_transform(membrane_mid_pca)
+                     # Take the average of N consecutive elements of TM6
+                     tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+                     if len(tm6_lower_three) > 2:
+                         tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+                     else:
+                         tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
 
-                    # 2. Find normal of plane through origin, kink start and project kink start
-                    #    A) Find projected point of kink_start
-                    kink_start_res_pca = pca.transform([kink_start_res])
-                    kink_start_res_pca[0,1:3] = 0 # project onto the same axis
-                    kink_start_proj = pca.inverse_transform(kink_start_res_pca)
+                     # angle between these vectors
+                     tm6_angle = np.arccos(np.clip(np.dot(tm6_pca_vector[1]-tm6_pca_vector[0], tm2_pca_vector[1]-tm2_pca_vector[0]), -1.0, 1.0))
+                     print(tm6_angle)
 
-                    #    B) Find normal of the new plane through kink start
-                    v1 = kink_start_res - center_vector[0]
-                    v2 = kink_start_proj - center_vector[0]
+                     # Store as structure property
+                     reference.tm6_angle = np.degrees(tm6_angle)
+                     reference.save()
 
-                    #plane_normal = np.cross(v1 / np.sqrt((v1**2).sum()), v2 / np.sqrt((v2**2).sum()))[0]
-                    plane_normal = np.cross(v1 / np.linalg.norm(v1), v2 / np.linalg.norm(v2))[0]
-                    plane_normal = plane_normal / np.linalg.norm(plane_normal)
 
-                    #    C) Find projected tm6 angle to plane
-                    displaced_point = tm6_pca_vector[1] - tm6_pca_vector[0]
-                    dist = np.dot(displaced_point, plane_normal)
-                    proj_point = (center_vector[0]+displaced_point) - dist*plane_normal
-                    tm6_tilt_proj = proj_point - center_vector[0]
+                # TM6 tilt with respect to 7TM bundle axis and plane through 6x44
+                # if len(lower_tm6) >= 3 and len(membrane_mid) == 3:
+                #     # Take the average of N consecutive elements
+                #     tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+                #     if len(tm6_lower_three) > 2:
+                #         tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+                #     else:
+                #         tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+                #
+                #     # 1. Find intersect of membrane mid with 7TM axis (project point to plane)
+                #     membrane_mid_pca = pca.transform([membrane_mid])
+                #     membrane_mid_pca[0,1:3] = 0 # project onto the same axis
+                #     midpoint = pca.inverse_transform(membrane_mid_pca)
+                #
+                #     # 2. Find normal of plane through origin, kink start and project kink start
+                #     #    A) Find projected point of kink_start
+                #     kink_start_res_pca = pca.transform([kink_start_res])
+                #     kink_start_res_pca[0,1:3] = 0 # project onto the same axis
+                #     kink_start_proj = pca.inverse_transform(kink_start_res_pca)
+                #
+                #     #    B) Find normal of the new plane through kink start
+                #     v1 = kink_start_res - center_vector[0]
+                #     v2 = kink_start_proj - center_vector[0]
+                #     plane_normal = np.cross(v1 / np.linalg.norm(v1), v2 / np.linalg.norm(v2))[0]
+                #     plane_normal = plane_normal / np.linalg.norm(plane_normal)
+                #
+                #     #    C) Find projected tm6 angle to plane
+                #     displaced_point = tm6_pca_vector[1] - tm6_pca_vector[0]
+                #     dist = np.dot(displaced_point, plane_normal)
+                #     proj_point = (center_vector[0]+displaced_point) - dist*plane_normal
+                #     tm6_tilt_proj = proj_point - center_vector[0]
+                #
+                #     # Calculate angle between vectors
+                #     tm6_angle = np.arccos(np.dot(tm6_tilt_proj,center_vector[1]-center_vector[0])/(np.linalg.norm(tm6_tilt_proj)*np.linalg.norm(center_vector[1]-center_vector[0])))
+                #
+                #     # Check change in distance for projected angle point on tm axis
+                #     # distance increased? -> negative angle - distance decreased -> positive angle
+                #     distance_kink_start = np.linalg.norm(kink_start_res - center_vector[0])
+                #
+                #     # VERIFY: not sure if correct
+                #     dist = np.dot(tm6_tilt_proj, center_vector[1] - center_vector[0])
+                #     proj_proj_tilt_point = (center_vector[0]+tm6_tilt_proj) - dist*(center_vector[1] - center_vector[0])
+                #     distance_tilt = np.linalg.norm(kink_start_res - proj_proj_tilt_point)
+                #     if (distance_tilt-distance_kink_start) > 0:
+                #         tm6_angle = -1*tm6_angle
+                #
+                #     # Store as structure property
+                #     reference.tm6_angle = np.degrees(tm6_angle)
+                #     reference.save()
 
-                    # Calculate angle between vectors
-                    # Clip necessary? - never out of bounds?
-                    #tm6_angle = np.arccos(np.clip(np.dot(tm6_tilt_proj, center_vector[1]-center_vector[0]), -1.0, 1.0))
-                    # Angle still incorrect?
-                    #tm6_angle = np.arccos(np.dot(tm6_tilt_proj, center_vector[1]-center_vector[0]))
-                    tm6_angle = np.arccos(np.dot(tm6_tilt_proj,center_vector[1]-center_vector[0])/(np.linalg.norm(tm6_tilt_proj)*np.linalg.norm(center_vector[1]-center_vector[0])))
-
-                    #tmp = center_vector[0]
-                    #print("pseudoatom mod1, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-                    #tmp = center_vector[0] + tm6_tilt_proj
-                    #print("pseudoatom mod2, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-                    #tmp = center_vector[0] + center_vector[1]-center_vector[0]
-                    #print("pseudoatom mod3, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-
-#                    cen_tm6 = center_vector[0]+(tm6_pca_vector[1]-tm6_pca_vector[0])
-#                    print("pseudoatom center1, pos=[{},{},{}]".format(center_vector[0][0],center_vector[0][1],center_vector[0][2]))
-#                    tmp = center_vector[0] + (center_vector[1]-center_vector[0])*10
-#                    print("pseudoatom center2, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-#                    tmp = kink_start_res
-#                    print("pseudoatom tm6, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-#                    tmp = kink_start_proj[0]
-#                    print("pseudoatom tm6_proj, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-#                    tmp = center_vector[0] + tm6_tilt_proj*10
-#                    print("pseudoatom tm6_tilt_proj, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-#                    tmp = tm6_pca_vector[0] + displaced_point*10
-#                    print("pseudoatom tm6_tilt, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-#                    tmp = center_vector[0] + plane_normal*10
-#                    print("pseudoatom tm6_plane_normal, pos=[{},{},{}]".format(tmp[0],tmp[1],tmp[2]))
-
-                    # Check change in distance for projected angle point on tm axis
-                    # distance increased? -> negative angle - distance decreased -> positive angle
-                    distance_kink_start = np.linalg.norm(kink_start_res - center_vector[0])
-
-                    # VERIFY: not sure if correct
-                    dist = np.dot(tm6_tilt_proj, center_vector[1] - center_vector[0])
-                    proj_proj_tilt_point = (center_vector[0]+tm6_tilt_proj) - dist*(center_vector[1] - center_vector[0])
-                    distance_tilt = np.linalg.norm(kink_start_res - proj_proj_tilt_point)
-                    if (distance_tilt-distance_kink_start) > 0:
-                        tm6_angle = -1*tm6_angle
-
-                    # Store as structure property
-                    reference.tm6_angle = np.degrees(tm6_angle)
-                    reference.save()
-
-                # TODO: adjust for other classes
+                # TM6 tilt with respect to 7TM bundle axis
                 # if len(lower_tm6) >= 3:
                 #     # Take the average of N consecutive elements
                 #     tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
