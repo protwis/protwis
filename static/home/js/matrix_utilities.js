@@ -125,13 +125,13 @@ const run_seq_sig = function(){
     },
     beforeSend: function(){
       old_sets = pos_set;
-      document.querySelector("#calc_spin").style.display = "inline-block";
-      $("#calc_spin").addClass("fa-spin");
-      $("#calc_spin").addClass("fa-spinner");
-      $("#calc_spin").removeClass("fa-times");
-      $("#sigm_spin").addClass("fa-spin");
-      $("#sigm_spin").addClass("fa-spinner");
-      $("#sigm_spin").removeClass("fa-times");
+      // document.querySelector("#calc_spin").style.display = "inline-block";
+      // $("#calc_spin").addClass("fa-spin");
+      // $("#calc_spin").addClass("fa-spinner");
+      // $("#calc_spin").removeClass("fa-times");
+      // $("#sigm_spin").addClass("fa-spin");
+      // $("#sigm_spin").addClass("fa-spinner");
+      // $("#sigm_spin").removeClass("fa-times");
     },
     success: function(data){
       $('.svg-content.seqsig').remove();
@@ -172,19 +172,19 @@ const run_seq_sig = function(){
       run_sig_match();
     },
     error: function(error){
-      $("#calc_spin").addClass("fa-times");
-      $("#calc_spin").removeClass("fa-spinner");
-      $("#calc_spin").removeClass("fa-spin");
-      $("#sigm_spin").addClass("fa-times");
-      $("#sigm_spin").removeClass("fa-spinner");
-      $("#sigm_spin").removeClass("fa-spin");
+      // $("#calc_spin").addClass("fa-times");
+      // $("#calc_spin").removeClass("fa-spinner");
+      // $("#calc_spin").removeClass("fa-spin");
+      // $("#sigm_spin").addClass("fa-times");
+      // $("#sigm_spin").removeClass("fa-spinner");
+      // $("#sigm_spin").removeClass("fa-spin");
       console.log(error)
       alert(error);
     },
     complete: function(){
-      $("#calc_spin").addClass("fa-check");
-      $("#calc_spin").removeClass("fa-spinner");
-      $("#calc_spin").removeClass("fa-spin");
+      // $("#calc_spin").addClass("fa-check");
+      // $("#calc_spin").removeClass("fa-spinner");
+      // $("#calc_spin").removeClass("fa-spin");
     }
   });
 };
@@ -216,7 +216,7 @@ const run_sig_match = function(){
       cutoff: cutoff,
     },
     beforeSend: function(){
-      document.querySelector("#sigm_spin").style.display = "inline-block";
+      // document.querySelector("#sigm_spin").style.display = "inline-block";
     },
     success: function(data){
       console.log(data)
@@ -445,16 +445,16 @@ const run_sig_match = function(){
 
     },
     error: function(error){
-      $("#sigm_spin").addClass("fa-times");
-      $("#sigm_spin").removeClass("fa-spinner");
-      $("#sigm_spin").removeClass("fa-spin");
+      // $("#sigm_spin").addClass("fa-times");
+      // $("#sigm_spin").removeClass("fa-spinner");
+      // $("#sigm_spin").removeClass("fa-spin");
       console.log(error)
       alert(error);
     },
     complete: function(){
-      $("#sigm_spin").addClass("fa-check");
-      $("#sigm_spin").removeClass("fa-spinner");
-      $("#sigm_spin").removeClass("fa-spin");
+      // $("#sigm_spin").addClass("fa-check");
+      // $("#sigm_spin").removeClass("fa-spinner");
+      // $("#sigm_spin").removeClass("fa-spin");
     }
   })
 }
