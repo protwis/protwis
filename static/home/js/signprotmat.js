@@ -1888,17 +1888,17 @@ var signprotmat = {
                 .select("g")
                 .append("g")
                 .attr("id", "con_seq_mat")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + -10 + ")");
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + -70 + ")");
             
             // adding the gn labels
             d3.select("svg.svg-content.seqsig")
                 .select("g")
                 .append("g")
                 .attr("class", "x axis")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 50 + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 130 + ")")
                 .call(xAxis)
                 .selectAll("text")
-                .attr("text-anchor", "start")
+                .attr("text-anchor", "end")
                 .attr("font-size", "12px")
                 .attr("dx", "-5px")
                 .attr("dy", "-5px")
