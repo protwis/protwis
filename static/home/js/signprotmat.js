@@ -313,6 +313,134 @@ var signprotmat = {
             return scale[f];
         },
 
+        print_resScaleColor_legend: function() {
+            var colScale = signprotmat.d3.colScale();
+            var scale = {
+                A: { bg_color: "#E6E600", font_color: "#000000" },
+                C: { bg_color: "#B2B548", font_color: "#000000" },
+                D: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+                E: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+                F: { bg_color: "#18FF0B", font_color: "#000000" },
+                G: { bg_color: "#FF00F2", font_color: "#000000" },
+                H: { bg_color: "#0093DD", font_color: "#000000" },
+                I: { bg_color: "#E6E600", font_color: "#000000" },
+                K: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+                L: { bg_color: "#E6E600", font_color: "#000000" },
+                M: { bg_color: "#E6E600", font_color: "#000000" },
+                N: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                P: { bg_color: "#CC0099", font_color: "#FDFF7B" },
+                Q: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                R: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+                S: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                T: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+                V: { bg_color: "#E6E600", font_color: "#000000" },
+                W: { bg_color: "#0BCF00", font_color: "#000000" },
+                Y: { bg_color: "#18FF0B", font_color: "#000000" },
+                "-": { bg_color: "#FFFFFF", font_color: "#000000" },
+                _: { bg_color: "#EDEDED", font_color: "#000000" },
+                "+": { bg_color: "#FFFFFF", font_color: "#000000" }
+            };
+
+            function responsivefy(svg) {
+                // get container + svg aspect ratio
+                var container = d3.select(svg.node().parentNode),
+                    width = parseInt(svg.style("width")),
+                    height = parseInt(svg.style("height")),
+                    aspect = width / height;
+
+                // add viewBox and preserveAspectRatio properties,
+                // and call resize so that svg resizes on inital page load
+                svg.attr("viewBox", "0 0 " + width + " " + height)
+                    .attr("perserveAspectRatio", "xMinYMid")
+                    .call(resize);
+
+                // to register multiple listeners for same event type, 
+                // you need to add namespace, i.e., 'click.foo'
+                // necessary if you call invoke this function for multiple svgs
+                // api docs: https://github.com/mbostock/d3/wiki/Selections#on
+                d3.select(window).on("resize." + container.attr("id"), resize);
+
+                // get width of container and resize svg to fit it
+                function resize() {
+                    var targetWidth = parseInt(container.style("width"));
+                    svg.attr("width", targetWidth);
+                    svg.attr("height", Math.round(targetWidth / aspect));
+                }
+            }
+
+            ordinal = d3.scaleOrdinal()
+                .domain(Object.keys(scale))
+                .range(Object.values(scale).map(x => x.bg_color))
+
+            var svg = d3.select('#legend-space')
+                .append('svg')
+                .attr("width", 554)
+                .attr("height", 110)
+                .call(responsivefy);
+
+            svg.append("g")
+                .attr("class", "legendOrdinal")
+                .attr("transform", "translate(10,20)");
+
+            var legendOrdinal = d3.legendColor()
+                .orient("horizontal")
+                .labelAlign("center")
+                .shapePadding(2)
+                .scale(ordinal);
+
+            svg.select(".legendOrdinal")
+                .call(legendOrdinal)
+                .selectAll("rect")
+                .attr("rx", 3)
+                .attr("ry", 3);
+            svg
+                .select(".legendOrdinal")
+                .selectAll("text")
+                .attr("class", "legend");
+
+            // * ADDING Interaction Type LEGEND
+            let size = 2
+            let window_starts = _.range(0, colScale.domain().length+1, size)
+
+            let i = 0
+            for(let windo of window_starts) {
+                let start = windo
+                let stop = (windo + size)
+                let element_ids = _.range(start, stop)
+                let filter_elements = _.pullAt(colScale.domain(), element_ids)
+
+                svg
+                    .append("g")
+                    .attr("class", "legendOrdinal" + i)
+                    .attr("transform", "translate(" +
+                        // (xScale.step() / 2 + i * 10 * xScale.step()) + ","
+                        (10 + i * 160) + ","
+                        + 65 +
+                    ")");
+
+                let legendOrdinal = d3
+                    .legendColor()
+                    .cellFilter(function (d) { return filter_elements.includes(d.label) })
+                    .orient("vertical")
+                    .labelAlign("start")
+                    .shapePadding(2)
+                    .scale(colScale);
+                svg
+                    .select(".legendOrdinal"+i)
+                    .call(legendOrdinal)
+                    .selectAll("rect")
+                    .attr("rx", 3)
+                    .attr("ry", 3);
+                svg
+                    .select(".legendOrdinal"+i)
+                    .selectAll("text")
+                    .attr("class", "legend");
+
+                i += 1;
+            }
+
+        },
+
         fScaleColor: function (f) {
             if (f === "αH") {
                 f = "aH";
@@ -736,46 +864,6 @@ var signprotmat = {
                 .attr("id", "infobox")
                 .attr("transform", "translate(-15," + (data.inttypes.length + 2) * 20 + ")");
 
-            // * ADDING Interaction Type LEGEND
-            let size = 2
-            let window_starts = _.range(0, colScale.domain().length+1, size)
-
-            let i = 0
-            for(let windo of window_starts) {
-                let start = windo
-                let stop = (windo + size)
-                let element_ids = _.range(start, stop)
-                let filter_elements = _.pullAt(colScale.domain(), element_ids)
-
-                svg
-                    .append("g")
-                    .attr("class", "legendOrdinal" + i)
-                    .attr("transform", "translate(" +
-                        // (xScale.step() / 2 + i * 10 * xScale.step()) + ","
-                        (xScale.step() / 2 + i * 160) + ","
-                        + -25 +
-                    ")");
-
-                let legendOrdinal = d3
-                    .legendColor()
-                    .cellFilter(function (d) { return filter_elements.includes(d.label) })
-                    .orient("vertical")
-                    .labelAlign("start")
-                    .shapePadding(2)
-                    .scale(colScale);
-                svg
-                    .select(".legendOrdinal"+i)
-                    .call(legendOrdinal)
-                    .selectAll("rect")
-                    .attr("rx", 3)
-                    .attr("ry", 3);
-                svg
-                    .select(".legendOrdinal"+i)
-                    .selectAll("text")
-                    .attr("class", "legend");
-
-                i += 1;
-            }
 
             // * APPENDING COL TICK ANNOTATION FOR RECEPTOR GNs
             svg

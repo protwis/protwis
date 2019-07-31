@@ -50,11 +50,12 @@
 
 
                 <div class="col-md-2">
-                    <h5><span
+                    <p
                             id='single-crystal-group-pdbs-modal-text'
-                            class="crystal-count">
-                            0 structures selected.
-                        </span></h5>
+                            class="crystal-count"
+                            style="font-weight: 700">
+                    0 structures selected.
+                        </p></h5>
                         <button
                             type="button"
                             class="btn btn-primary"
@@ -85,7 +86,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div id="legend-space" class="col-md-6">
                 </div>
 
                 <div class="col-md-2">
@@ -225,6 +226,7 @@ $('#score-button').click( function () {
     const render_url = window.location.origin + '/signprot/matrix/render_sigmat/';
     window.open(render_url,'_blank');
 });
+
 
 </script>
 <script src="{% static 'home/js/d3.v5.min.js' %}"></script>

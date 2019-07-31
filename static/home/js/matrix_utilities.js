@@ -576,6 +576,7 @@ $(document).ready(function () {
     $('#interface-modal-table .tableview').html(data);
   })
 
+  signprotmat.d3.print_resScaleColor_legend()
   $('[data-toggle="tooltip"]').tooltip();
   
   let table = $($.fn.dataTable.tables()[0]).DataTable();
