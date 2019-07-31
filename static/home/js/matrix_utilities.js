@@ -248,17 +248,16 @@ const run_sig_match = function(){
             targets: 3,
           }, {
             data: 'prot',
-            title: 'Protein',
+            title: 'IUPHAR',
             targets: 4,
           }, {
             data: 'nscore',
-            title: 'Score',
+            title: 'Interface Conservation (%)',
             targets: 6,
           }, {
             data: 'entry',
-            title: 'Entry Name',
+            title: 'UniProt',
             targets: 5,
-            visible: false,
           }, {
             data: 'GuideToPharma.Gs.html',
             title: '   Gs   ',

@@ -222,11 +222,11 @@ def prepare_signature_match(signature_match):
     for elem in signature_match["scores"].items():
         entry = elem[0].protein.entry_name
         out[entry] = {
-            "entry": elem[0].protein.entry_name,
+            "entry": elem[0].protein.entry_short(),
             "prot": elem[0].protein.name,
             "score": elem[1][0],
-            "nscore": round(elem[1][1], 1),
-            "class": elem[0].protein.get_protein_class(),
+            "nscore": round(elem[1][1], 0),
+            "class": elem[0].protein.get_protein_class().replace('Class', ''),
             "family": elem[0].protein.get_protein_family(),
             "subfamily": elem[0].protein.get_protein_subfamily(),
         }
