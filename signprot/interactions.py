@@ -84,13 +84,17 @@ def get_generic_numbers(signature_data):
         for elem, num in segments.items():
             gnl = []
             for x, dn in num.items():
-                if dn != "":
-                    rexp = r"(?<=<b>)\d{1,}|\.?\d{2,}[\-?\d{2,}]*|x\d{2,}"
-                    gn = re.findall(rexp, dn)
-                else:
-                    gn = "".join([str(trans[elem]), ".", str(x)])
-                gnl.append("".join(gn))
+                # print(dn)
+                # if dn != "":
+                #     rexp = r"(?<=<b>)\d{1,}|\.?\d{2,}[\-?\d{2,}]*|x\d{2,}"
+                #     gn = re.findall(rexp, dn)
+                # else:
+                #     gn = "".join([str(trans[elem]), ".", str(x)])
+                # gnl.append("".join(gn))
+                gnl.append(x)
             generic_numbers.append(gnl)
+
+    print(generic_numbers)
     return generic_numbers
 
 
