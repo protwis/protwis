@@ -205,8 +205,9 @@ def get_signature_consensus(signature_data, generic_numbers):
 
 def prepare_signature_match(signature_match):
     repl_str = id_generator(6)
-    sign_true = '<i class="fa mattab fa-check {}"></i>'.format(repl_str)
-    sign_false = '<i class="fa mattab fa-times"></i>'
+    sign_true_1 = '<div class="{}">'.format(repl_str)
+    sign_true_2 = '{}</div>'
+    sign_false = '<div></div>'
     gprots = ['Gs','Gi/Go','Gq/G11','G12/G13']
     class_coupling = 'coupling '
 
@@ -226,7 +227,7 @@ def prepare_signature_match(signature_match):
             "prot": elem[0].protein.name,
             "score": elem[1][0],
             "nscore": round(elem[1][1], 0),
-            "class": elem[0].protein.get_protein_class().replace('Class', ''),
+            "class": elem[0].protein.get_protein_class().strip().split(' ')[1],
             "family": elem[0].protein.get_protein_family(),
             "subfamily": elem[0].protein.get_protein_subfamily(),
         }
@@ -244,16 +245,27 @@ def prepare_signature_match(signature_match):
                 if coupling_entry:
                     ce = coupling_entry
                     cl = ce['coupling'][source].get(gprot, '')
-                    out[entry][source][gprot]['html'] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[source][gprot] else sign_false
                     if ce[source][gprot]:
-                        out[entry][source][gprot]['html'] = sign_true.replace(repl_str, class_coupling+cl[:4])
-                        out[entry][source][gprot]['bool'] = 1 if cl[:4]=='prim' else 2
+                        if cl[:4] == 'prim':
+                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:4]) + sign_true_2.format(cl)
+                            text_val = cl
+                        elif cl[:4] == 'seco':
+                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:4]) + sign_true_2.format(cl)
+                            text_val = cl
+                        elif cl[:2] == 'no':
+                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:2]) + sign_true_2.format(cl)
+                            text_val = cl
+                        else:
+                            html_val = sign_false
+                            text_val = ''
+                        out[entry][source][gprot]['html'] = html_val
+                        out[entry][source][gprot]['text'] = text_val
                     else:
                         out[entry][source][gprot]['html'] = sign_false
-                        out[entry][source][gprot]['bool'] = 0
+                        out[entry][source][gprot]['text'] = ''
                 else:
                     out[entry][source][gprot]['html'] = sign_false
-                    out[entry][source][gprot]['bool'] = 0
+                    out[entry][source][gprot]['text'] = ''
 
     # for elem in signature_match['signature_filtered'].items():
     # print(elem)
@@ -484,6 +496,9 @@ def extract_coupling_bool(gp, source):
                 elif gp[gf]['best']>threshold_secondary:
                     c[gf] = True
                     c_levels[gf] = "secondary"
+                else:
+                    c[gf] = True
+                    c_levels[gf] = "no coupling"
         return (c, c_levels)
 
     elif source == 'Merged':
@@ -501,12 +516,17 @@ def extract_coupling_bool(gp, source):
                     values.append('primary')
                 elif best > threshold_secondary:
                     values.append('secondary')
+                else:
+                    values.append("no coupling")
             if 'primary' in values:
                 c[gf] = True
                 c_levels[gf] = "primary"
             elif 'secondary' in values:
                 c[gf] = True
                 c_levels[gf] = "secondary"
+            elif 'no coupling' in values:
+                c[gf] = True
+                c_levels[gf] = "no coupling"
 
         return (c, c_levels)
 
