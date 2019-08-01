@@ -792,7 +792,8 @@ class Alignment:
                             continue
 
                         # skip when position is on the ignore list
-                        if entry_name in ignore_list:
+                        if entry_name in ignore_list or amino_acid in self.gaps:
+                        # if entry_name in ignore_list:
                             continue
 
                         # Init counters
