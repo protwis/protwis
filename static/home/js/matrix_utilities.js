@@ -222,6 +222,7 @@ const run_sig_match = function(){
       console.log(data)
       document.querySelector('#sigmatch-container').style.display = "inline-block";
       sigmatch_data = Object.keys(data).map(key => data[key])
+
       sigmatch_table = $('#sigmatch_table').DataTable({
         dom: 'Bfrtip',
         data: sigmatch_data,
@@ -234,6 +235,7 @@ const run_sig_match = function(){
             defaultContent: '',
             orderable: false,
             className: 'select-checkbox',
+            visible: false,
           }, {
             data: 'class',
             title: 'Class',
@@ -246,6 +248,7 @@ const run_sig_match = function(){
             data: 'subfamily',
             title: 'Sub-Family',
             targets: 3,
+            visible: false,
           }, {
             data: 'prot',
             title: 'IUPHAR',
@@ -420,6 +423,12 @@ const run_sig_match = function(){
             }
           },
           {
+            text: 'Reset All Filters',
+            action: function () {
+              yadcf.exResetAllFilters(sigmatch_table)
+            }
+          },
+          {
             text: 'Show Alignment',
             className: 'score-button',
             action: function () {
@@ -428,6 +437,44 @@ const run_sig_match = function(){
           },
         ]
       })
+
+      text_col_filter = {
+        filter_type: "multi_select",
+        select_type: 'select2',
+        filter_reset_button_text: false,
+      }
+
+      range_col_filter = {
+        filter_type: "range_number_slider",
+        filter_delay: 70,
+        filter_reset_button_text: false,
+      }
+
+      coupl_col_filter = {
+        filter_type: "multi_select",
+        select_type: 'select2',
+        filter_reset_button_text: false,
+        column_data_type: "html",
+        html_data_type: "text",
+      }
+
+      yadcf.init(sigmatch_table, [
+        {column_number : 2, ...text_col_filter},
+        {column_number : 4, ...text_col_filter},
+        {column_number : 6, ...range_col_filter},
+        {column_number : 7, ...coupl_col_filter},
+        {column_number : 8, ...coupl_col_filter},
+        {column_number : 9, ...coupl_col_filter},
+        {column_number : 10, ...coupl_col_filter},
+        {column_number : 11, ...coupl_col_filter},
+        {column_number : 12, ...coupl_col_filter},
+        {column_number : 13, ...coupl_col_filter},
+        {column_number : 14, ...coupl_col_filter},
+        {column_number : 15, ...coupl_col_filter},
+        {column_number : 16, ...coupl_col_filter},
+        {column_number : 17, ...coupl_col_filter},
+        {column_number : 18, ...coupl_col_filter},
+      ]);
 
       $('.score-button').click( function () {
           const render_url = window.location.origin + '/signprot/matrix/render_sigmat/';
