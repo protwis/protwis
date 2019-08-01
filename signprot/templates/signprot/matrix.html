@@ -63,6 +63,14 @@
                             data-target="#interface-modal-table">
                             Select Structures
                         </button>
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            style="margin-top: 5px"
+                            onClick='var fasta_data = signprotmat.data.get_data_gap_non_int(pdbScale, xScale, non_interactions, data.receptor);
+                            signprotmat.data.download_fasta(fasta_data, pdbScale)'>
+                            Download Fasta
+                        </button>
                 </div>
 
                 <div class="col-md-2">

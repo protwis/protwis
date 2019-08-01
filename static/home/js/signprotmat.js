@@ -134,7 +134,85 @@ var signprotmat = {
                 element["pdb_id"] = tmp.pdb_id;
             });
             return data;
-        }
+        },
+
+        get_data_gap_non_int: function(pdbScale, xScale, data_non, data_receptor){
+
+            // Appending a gap as the background for all residues
+            var data_gap = []
+
+            for (var pdb of pdbScale.domain()){
+                for (var gn of xScale.domain()){
+                    var d = {}
+                    d['rec_gn'] = gn
+                    d['pdb_id'] = pdb
+                    d['rec_aa'] = '-'
+                    data_gap.push(d)
+                }
+            }
+
+            data_non = _.filter(data_non, function (d) {
+                return xScale(d.rec_gn);
+            });
+
+            data_non = _.filter(data_non, function (d) {
+                return pdbScale(d.pdb_id);
+            });
+
+            data_gap.push(...data_non, ...data_receptor);
+            // data_non.push(...data_receptor)
+            // data_gap = data_non
+            // console.log(data_gap)
+
+            return data_gap
+        },
+
+        get_receptor_sequence: function(data, receptor_pdb){
+            // filter all of the data for the desired receptor
+            data = data.filter(data => data.pdb_id === receptor_pdb)
+            var entry_name = data.slice(-1)[0].entry_name
+            // it is assumed that the data comes from get_data_gap_non_int
+            // which stacks all of the sequence information in the order of
+            // first: gap for every residue
+            // secon: non interacting residues the receptor has
+            // last: interacting residues
+            // such, reversing and uniqBy on rec_gn gives the correct sequence
+            data = _.uniqBy(data.reverse(), 'rec_gn')
+            data = data.map(x => ({
+                rec_tm: x.rec_gn.match(/\d{1,2}/)[0],
+                rec_gn: x.rec_gn.slice(-2),
+                rec_aa: x.rec_aa
+            }))
+            data = _.orderBy(data, ['rec_tm', 'rec_gn'])
+            var seq = data.map(x => x.rec_aa).join('')
+            
+            return entry_name.concat('>\n', seq)
+
+        },
+
+        combine_fasta: function(array_of_fasta){
+            return array_of_fasta.join('\n')
+        },
+
+        download_fasta: function(data, pdbScale){
+            var fasta = []
+            for (var pdb of pdbScale.domain()) {
+                var entry = signprotmat.data.get_receptor_sequence(data, pdb)
+                fasta.push(entry)
+            }
+            var fasta_export = signprotmat.data.combine_fasta(fasta)
+
+            $('<a></a>')
+                .attr('id','downloadFile')
+                .attr('href','data:text/fasta;charset=utf8,' + encodeURIComponent(fasta_export))
+                .attr('download', 'export.fasta')
+                .appendTo('body');
+
+            $('#downloadFile').ready(function() {
+                $('#downloadFile').get(0).click();
+                $('#downloadFile').remove();
+            });
+        },
     },
 
     // * D3 DRAW FUNCTIONS
@@ -861,18 +939,19 @@ var signprotmat = {
                 .attr("x", 0 - 7)
                 .attr("y", h + 25)
                 .text("Res. Pos.");
-            svg
-                .append("text")
-                .attr("class", "y axis_label")
-                .attr("text-anchor", "end")
-                .attr("x", 0 - 7)
-                .attr("y", 0.8 * yScale.step())
-                .text("Res. Pos.");
+            // svg
+            //     .append("text")
+            //     .attr("class", "y axis_label")
+            //     .attr("text-anchor", "end")
+            //     .attr("x", 0 - 7)
+            //     .attr("y", 0.8 * yScale.step())
+            //     .text("Res. Pos.");
             // * ADD INFOBOX ELEMENT
             svg
                 .append("g")
                 .attr("id", "infobox")
                 .attr("transform", "translate(-15," + (data.inttypes.length + 2) * 20 + ")");
+
 
 
             // * APPENDING COL TICK ANNOTATION FOR RECEPTOR GNs
@@ -948,33 +1027,14 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", pdbScale.range()[0] - pdbScale.step());
-
-            // Appending a gap as the background for all residues
-            var data_gap = []
-
-            for (var pdb of pdbScale.domain()){
-                for (var gn of xScale.domain()){
-                    var d = {}
-                    d['rec_gn'] = gn
-                    d['pdb_id'] = pdb
-                    d['rec_aa'] = '-'
-                    data_gap.push(d)
-                }
-            }
-
-            data_non = _.filter(data_non, function (d) {
-                return xScale(d.rec_gn);
-            });
-
-            data_non = _.filter(data_non, function (d) {
-                return pdbScale(d.pdb_id);
-            });
-
-            data_gap.push(...data_non, ...data.receptor);
-            // data_non.push(...data.receptor)
-            // data_gap = data_non
-            // console.log(data_gap)
             
+            var data_gap = signprotmat.data.get_data_gap_non_int(
+                pdbScale,
+                xScale,
+                data_non,
+                data.receptor
+            )
+
             //Appending residues that are non interacting and residues that do interact on top
             each_res = svg
                 .select("g#recAA")
