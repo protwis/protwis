@@ -204,7 +204,8 @@ class SequenceSignature:
             # tweaking alignment
             if ignore_in_alignment:
                 self.aln_pos.calculate_statistics(ignore_in_alignment)
-            self.aln_pos.calculate_statistics()
+            else:
+                self.aln_pos.calculate_statistics()
             self._update_alignment(self.aln_pos)
             # tweaking consensus seq
             self._update_consensus_sequence(self.aln_pos)
@@ -213,7 +214,8 @@ class SequenceSignature:
             # tweaking negative alignment
             if ignore_in_alignment:
                 self.aln_neg.calculate_statistics(ignore_in_alignment)
-            self.aln_neg.calculate_statistics()
+            else:
+                self.aln_neg.calculate_statistics()
             self._update_alignment(self.aln_neg)
             # tweaking consensus seq
             self._update_consensus_sequence(self.aln_neg)

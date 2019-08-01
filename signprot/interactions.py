@@ -44,7 +44,6 @@ def get_protein_segments(request):
     selected_receptor_classes = request.POST.getlist("selectedreceptorclasses[]")
     most_common_class = Counter(selected_receptor_classes).most_common(1)
     slug_ending = get_class_slug(most_common_class)
-    print(slug_ending)
 
     for s in segment_raw:
         try:
@@ -94,7 +93,6 @@ def get_generic_numbers(signature_data):
                 gnl.append(x)
             generic_numbers.append(gnl)
 
-    print(generic_numbers)
     return generic_numbers
 
 
