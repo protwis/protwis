@@ -948,18 +948,38 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", pdbScale.range()[0] - pdbScale.step());
+
+            // Appending a gap as the background for all residues
+            var data_gap = []
+
+            for (var pdb of pdbScale.domain()){
+                for (var gn of xScale.domain()){
+                    var d = {}
+                    d['rec_gn'] = gn
+                    d['pdb_id'] = pdb
+                    d['rec_aa'] = '-'
+                    data_gap.push(d)
+                }
+            }
+
             data_non = _.filter(data_non, function (d) {
                 return xScale(d.rec_gn);
             });
+
             data_non = _.filter(data_non, function (d) {
                 return pdbScale(d.pdb_id);
             });
-            // data.receptor.push(...data_non)
-            data_non.push.apply(data_non, data.receptor);
+
+            data_gap.push(...data_non, ...data.receptor);
+            // data_non.push(...data.receptor)
+            // data_gap = data_non
+            // console.log(data_gap)
+            
+            //Appending residues that are non interacting and residues that do interact on top
             each_res = svg
                 .select("g#recAA")
                 .selectAll("text")
-                .data(data_non)
+                .data(data_gap)
                 .enter()
                 .append("g")
                 .attr("class", function (d) { return "R_" + _.replace(d.rec_gn, ".", "p") + "_P_" + d.pdb_id; })
@@ -997,6 +1017,7 @@ var signprotmat = {
             //     .attr("y", 75)
             //     .attr("width", xScale.range()[1] - xScale.step())
             //     .attr("height", pdbScale.range()[0] - pdbScale.step());
+
             // * APPENDING AMINOACID SEQUENCE [SIGPROT]
             var sigTip = d3
                 .tip()
