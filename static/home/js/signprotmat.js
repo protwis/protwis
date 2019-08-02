@@ -880,8 +880,8 @@ var signprotmat = {
                 .text(function(d){
                     const num_pairs = d.pairs.length
                     const max_count = get_max_interface_count()
-                    const ratio = (num_pairs / max_count)
-                    return _.round(ratio, 1)
+                    const ratio = (num_pairs / max_count) * 100
+                    return _.round(ratio, 0)
                 })
 
             // * DRAWING AXES
@@ -1974,8 +1974,8 @@ var signprotmat = {
               })
               .attr("text-anchor", "middle")
               .attr("dy", 75)
-              // .text(function(d) {return d.freq});
-              .text(function(d) { return _.round(d.freq/100, 1) });
+              .text(function(d) {return d.freq});
+              // .text(function(d) { return _.round(d.freq/100, 1) });
 
 
             // Setting up the consensus area
