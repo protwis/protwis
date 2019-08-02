@@ -8,6 +8,7 @@ import random
 from collections import Counter
 
 from residue.models import ResidueGenericNumberEquivalent
+from signprot.models import SignprotComplex
 from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinGProteinPair
 from common.definitions import *
 
@@ -19,7 +20,10 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 def get_entry_names(request):
     """Extract a list of entry names from the post request"""
-    return request.POST.getlist("pos[]")
+    prot_confs = request.POST.getlist("pos[]")
+    complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').filter(structure__protein_conformation__in=prot_confs)
+    entry_names = [complex_obj.structure.protein_conformation.protein.entry_name for complex_obj in complex_objs]
+    return entry_names
 
 
 def get_ignore_info(request):
@@ -44,7 +48,6 @@ def get_protein_segments(request):
     selected_receptor_classes = request.POST.getlist("selectedreceptorclasses[]")
     most_common_class = Counter(selected_receptor_classes).most_common(1)
     slug_ending = get_class_slug(most_common_class)
-    print(slug_ending)
 
     for s in segment_raw:
         try:
@@ -84,13 +87,16 @@ def get_generic_numbers(signature_data):
         for elem, num in segments.items():
             gnl = []
             for x, dn in num.items():
-                if dn != "":
-                    rexp = r"(?<=<b>)\d{1,}|\.?\d{2,}[\-?\d{2,}]*|x\d{2,}"
-                    gn = re.findall(rexp, dn)
-                else:
-                    gn = "".join([str(trans[elem]), ".", str(x)])
-                gnl.append("".join(gn))
+                # print(dn)
+                # if dn != "":
+                #     rexp = r"(?<=<b>)\d{1,}|\.?\d{2,}[\-?\d{2,}]*|x\d{2,}"
+                #     gn = re.findall(rexp, dn)
+                # else:
+                #     gn = "".join([str(trans[elem]), ".", str(x)])
+                # gnl.append("".join(gn))
+                gnl.append(x)
             generic_numbers.append(gnl)
+
     return generic_numbers
 
 
@@ -142,6 +148,7 @@ def get_signature_features(signature_data, generic_numbers, feats):
                                 # 'expl': str(freq[2]),
                                 "aa": str(tmp[k]["aa"]),
                                 "aa_cons": int(tmp[k]["aa_cons"]),
+                                "sort_code": str(sort_code),
                             }
                         )
                     x += 1
@@ -201,8 +208,9 @@ def get_signature_consensus(signature_data, generic_numbers):
 
 def prepare_signature_match(signature_match):
     repl_str = id_generator(6)
-    sign_true = '<i class="fa mattab fa-check {}"></i>'.format(repl_str)
-    sign_false = '<i class="fa mattab fa-times"></i>'
+    sign_true_1 = '<div class="{}">'.format(repl_str)
+    sign_true_2 = '{}</div>'
+    sign_false = '<div></div>'
     gprots = ['Gs','Gi/Go','Gq/G11','G12/G13']
     class_coupling = 'coupling '
 
@@ -218,11 +226,13 @@ def prepare_signature_match(signature_match):
     for elem in signature_match["scores"].items():
         entry = elem[0].protein.entry_name
         out[entry] = {
-            "entry": elem[0].protein.entry_name,
+            "entry": elem[0].protein.entry_short(),
             "prot": elem[0].protein.name,
             "score": elem[1][0],
-            "nscore": round(elem[1][1], 1),
-            "class": elem[0].protein.get_protein_class()
+            "nscore": round(elem[1][1], 0),
+            "class": elem[0].protein.get_protein_class().strip().split(' ')[1],
+            "family": elem[0].protein.get_protein_family(),
+            "subfamily": elem[0].protein.get_protein_subfamily(),
         }
 
     for elem in signature_match["scores"].items():
@@ -238,11 +248,27 @@ def prepare_signature_match(signature_match):
                 if coupling_entry:
                     ce = coupling_entry
                     cl = ce['coupling'][source].get(gprot, '')
-                    out[entry][source][gprot]['html'] = sign_true.replace(repl_str, class_coupling+cl[:4]) if ce[source][gprot] else sign_false
-                    out[entry][source][gprot]['bool'] = 1 if ce[source][gprot] else 0
+                    if ce[source][gprot]:
+                        if cl[:4] == 'prim':
+                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:4]) + sign_true_2.format(cl)
+                            text_val = cl
+                        elif cl[:4] == 'seco':
+                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:4]) + sign_true_2.format(cl)
+                            text_val = cl
+                        elif cl[:2] == 'no':
+                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:2]) + sign_true_2.format(cl)
+                            text_val = cl
+                        else:
+                            html_val = sign_false
+                            text_val = ''
+                        out[entry][source][gprot]['html'] = html_val
+                        out[entry][source][gprot]['text'] = text_val
+                    else:
+                        out[entry][source][gprot]['html'] = sign_false
+                        out[entry][source][gprot]['text'] = ''
                 else:
                     out[entry][source][gprot]['html'] = sign_false
-                    out[entry][source][gprot]['bool'] = 0
+                    out[entry][source][gprot]['text'] = ''
 
     # for elem in signature_match['signature_filtered'].items():
     # print(elem)
@@ -473,6 +499,9 @@ def extract_coupling_bool(gp, source):
                 elif gp[gf]['best']>threshold_secondary:
                     c[gf] = True
                     c_levels[gf] = "secondary"
+                else:
+                    c[gf] = True
+                    c_levels[gf] = "no coupling"
         return (c, c_levels)
 
     elif source == 'Merged':
@@ -490,12 +519,17 @@ def extract_coupling_bool(gp, source):
                     values.append('primary')
                 elif best > threshold_secondary:
                     values.append('secondary')
+                else:
+                    values.append("no coupling")
             if 'primary' in values:
                 c[gf] = True
                 c_levels[gf] = "primary"
             elif 'secondary' in values:
                 c[gf] = True
                 c_levels[gf] = "secondary"
+            elif 'no coupling' in values:
+                c[gf] = True
+                c_levels[gf] = "no coupling"
 
         return (c, c_levels)
 

@@ -67,7 +67,7 @@ const get_ignore = function(){
   // values are an array of entry_names with an
   // interaction at that position
   const data_int = data.receptor.reduce( function (acc, current) {
-    acc[current.rec_gn] = [current.entry_name].concat(acc[current.rec_gn])
+    acc[current.rec_gn] = [current.pdb_id].concat(acc[current.rec_gn])
     return acc;
   }, {});
 
@@ -76,8 +76,8 @@ const get_ignore = function(){
   // have an interaction registered in the data_int object
   const ignore_markers = data_non.reduce(function (acc, current) {
     let protein_array = data_int[current.rec_gn]
-    if ( !protein_array.includes(current.entry_name) ) {
-      acc[current.rec_gn] = [current.entry_name].concat(acc[current.rec_gn])
+    if ( !protein_array.includes(current.pdb_id) ) {
+      acc[current.rec_gn] = [current.pdb_id.toLowerCase()].concat(acc[current.rec_gn])
     }
     return acc;
   }, {});
@@ -125,13 +125,13 @@ const run_seq_sig = function(){
     },
     beforeSend: function(){
       old_sets = pos_set;
-      document.querySelector("#calc_spin").style.display = "inline-block";
-      $("#calc_spin").addClass("fa-spin");
-      $("#calc_spin").addClass("fa-spinner");
-      $("#calc_spin").removeClass("fa-times");
-      $("#sigm_spin").addClass("fa-spin");
-      $("#sigm_spin").addClass("fa-spinner");
-      $("#sigm_spin").removeClass("fa-times");
+      // document.querySelector("#calc_spin").style.display = "inline-block";
+      // $("#calc_spin").addClass("fa-spin");
+      // $("#calc_spin").addClass("fa-spinner");
+      // $("#calc_spin").removeClass("fa-times");
+      // $("#sigm_spin").addClass("fa-spin");
+      // $("#sigm_spin").addClass("fa-spinner");
+      // $("#sigm_spin").removeClass("fa-times");
     },
     success: function(data){
       $('.svg-content.seqsig').remove();
@@ -172,28 +172,55 @@ const run_seq_sig = function(){
       run_sig_match();
     },
     error: function(error){
-      $("#calc_spin").addClass("fa-times");
-      $("#calc_spin").removeClass("fa-spinner");
-      $("#calc_spin").removeClass("fa-spin");
-      $("#sigm_spin").addClass("fa-times");
-      $("#sigm_spin").removeClass("fa-spinner");
-      $("#sigm_spin").removeClass("fa-spin");
+      // $("#calc_spin").addClass("fa-times");
+      // $("#calc_spin").removeClass("fa-spinner");
+      // $("#calc_spin").removeClass("fa-spin");
+      // $("#sigm_spin").addClass("fa-times");
+      // $("#sigm_spin").removeClass("fa-spinner");
+      // $("#sigm_spin").removeClass("fa-spin");
       console.log(error)
       alert(error);
     },
     complete: function(){
-      $("#calc_spin").addClass("fa-check");
-      $("#calc_spin").removeClass("fa-spinner");
-      $("#calc_spin").removeClass("fa-spin");
+      // $("#calc_spin").addClass("fa-check");
+      // $("#calc_spin").removeClass("fa-spinner");
+      // $("#calc_spin").removeClass("fa-spin");
     }
   });
 };
 
-const initialize_consensus = function(data){
+const initialize_consensus = function(cons_data){
   const row_height = 30;
-  for (let key of Object.keys(data)) {
-    con_seq[key] = [data[key][0]];
+  const AMINO_ACID_GROUPS = {"HY_any": ["A", "C", "F", "I", "L", "M", "P", "V", "W", "Y"], "HY_4-5": ["F", "M", "Y"], "HA_any": ["A", "I", "L", "M", "V"], "HA_1-2": ["A", "V"], "HA_2-3": ["I", "L", "V"], "HA_3": ["I", "L"], "HA_3-4": ["I", "L", "M"], "M_4": ["M"], "A_1": ["A"], "I_": ["I"], "L_": ["L"], "V_": ["V"], "HR_any": ["F", "H", "W", "Y"], "HR_4-5": ["F", "H", "Y"], "HR_5": ["F", "Y"], "HR_5-6": ["F", "W", "Y"], "W_6": ["W"], "Y_?": ["Y"], "F_": ["F"], "Hb_any": ["D", "E", "H", "K", "N", "Q", "R", "S", "T", "Y"], "Hb_2": ["S", "T"], "Hb_3": ["H", "N"], "N_": ["N"], "Q_": ["Q"], "S_": ["S"], "T_": ["T"], "Hu_2-3": ["N", "S", "T"], "Hu_3-4": ["H", "N", "Q"], "Ha_2-3": ["D", "N", "S", "T"], "Ha_3": ["D", "N"], "Ha_3-4": ["D", "E", "H", "N", "Q"], "Ha_4": ["E", "H", "Q"], "Hd_4": ["H", "Q"], "Hd_4-5": ["H", "K", "Q"], "Hd_5-6": ["K", "R", "Y"], "Hd_6": ["R", "Y"], "+-_any": ["D", "E", "H", "K", "R"], "+-_3-4": ["D", "E", "H"], "+-_4-5": ["E", "H", "K"], "+_any": ["H", "K", "R"], "H_4": ["H"], "+_4-5": ["H", "K"], "K_5": ["K"], "+_5-6": ["K", "R"], "R_6": ["R"], "-_any": ["D", "E"], "D_3": ["D"], "E_4": ["E"], "Sm_0-2": ["A", "C", "G", "S"], "Sm_0-1": ["A", "G"], "Sm_1-2": ["A", "C", "S"], "aH_Hig": ["A", "K", "L", "M", "R"], "aH_Low": ["G", "P"], "G_0": ["G"], "P_2": ["P"], "C_2": ["C"], "-": "-"}
+  for (let key of Object.keys(cons_data)) {
+    con_seq[key] = [cons_data[key][0]];
   };
+
+  non_interactions.push(...data.receptor)
+  var seq_cons_data = []
+  for (gn of xScale.domain()){
+    var aa = con_seq[gn][0]['aa']
+    var seq_cons = parseInt(
+      (_.uniqBy(non_interactions.filter(x => x.rec_gn === gn), "pdb_id")
+        .filter(x => pdbScale.domain().includes(x.pdb_id))
+        .filter(x => x.rec_aa === aa).length /
+        pdbScale.domain().length) *
+        100
+    );
+
+    var sort_code = con_seq[gn][0]['sort_code'].replace('α', 'a')
+    var gn_aa = _.uniqBy(non_interactions.filter(x => x.rec_gn === gn), "pdb_id").filter(x => pdbScale.domain().includes(x.pdb_id)).map(x => x.rec_aa)
+    prop_seq_cons = 0
+    for (var aa of gn_aa){
+      if (AMINO_ACID_GROUPS[sort_code].includes(aa)){
+        prop_seq_cons += 1
+      }
+    }
+    prop_seq_cons = parseInt(prop_seq_cons / pdbScale.domain().length * 100)
+
+    con_seq[gn][0]['seq_cons'] = seq_cons
+    con_seq[gn][0]['prop_seq_cons'] = prop_seq_cons
+  }
   signprotmat.d3.conSeqUpdate(row_height);
 };
 
@@ -216,12 +243,13 @@ const run_sig_match = function(){
       cutoff: cutoff,
     },
     beforeSend: function(){
-      document.querySelector("#sigm_spin").style.display = "inline-block";
+      // document.querySelector("#sigm_spin").style.display = "inline-block";
     },
     success: function(data){
       console.log(data)
       document.querySelector('#sigmatch-container').style.display = "inline-block";
       sigmatch_data = Object.keys(data).map(key => data[key])
+
       sigmatch_table = $('#sigmatch_table').DataTable({
         dom: 'Bfrtip',
         data: sigmatch_data,
@@ -234,101 +262,107 @@ const run_sig_match = function(){
             defaultContent: '',
             orderable: false,
             className: 'select-checkbox',
+            visible: false,
           }, {
             data: 'class',
             title: 'Class',
             targets: 1,
           }, {
-            data: 'prot',
-            title: 'Protein',
+            data: 'family',
+            title: 'Family',
             targets: 2,
           }, {
-            data: 'nscore',
-            title: 'Score',
+            data: 'subfamily',
+            title: 'Sub-Family',
+            targets: 3,
+            visible: false,
+          }, {
+            data: 'prot',
+            title: 'IUPHAR',
             targets: 4,
-          // }, {
-          //   data: 'score',
-          //   title: 'Score',
-          //   targets: 4,
+          }, {
+            data: 'nscore',
+            title: 'Interface Conservation (%)',
+            targets: 6,
           }, {
             data: 'entry',
-            title: 'Entry Name',
-            targets: 3,
+            title: 'UniProt',
+            targets: 5,
           }, {
             data: 'GuideToPharma.Gs.html',
             title: '   Gs   ',
-            targets: 5,
+            targets: 7,
             className: 'gtop dt-center',
             visible: true,
           }, {
             data: 'GuideToPharma.Gi/Go.html',
             title: 'Gi / Go ',
-            targets: 6,
+            targets: 8,
             className: 'gtop dt-center',
             visible: true,
           }, {
             data: 'GuideToPharma.Gq/G11.html',
             title: 'Gq / G11',
-            targets: 7,
+            targets: 9,
             className: 'gtop dt-center',
             visible: true,
           }, {
             data: 'GuideToPharma.G12/G13.html',
             title: 'G12 / G13',
-            targets: 8,
+            targets: 10,
             className: 'gtop dt-center',
             visible: true,
           }, {
             data: 'Aska.Gs.html',
             title: '   Gs   ',
-            targets: 9,
+            targets: 11,
             className: 'aska dt-center',
             visible: false,
           }, {
             data: 'Aska.Gi/Go.html',
             title: 'Gi / Go ',
-            targets: 10,
+            targets: 12,
             className: 'aska dt-center',
             visible: false,
           }, {
             data: 'Aska.Gq/G11.html',
             title: 'Gq / G11',
-            targets: 11,
+            targets: 13,
             className: 'aska dt-center',
             visible: false,
           }, {
             data: 'Aska.G12/G13.html',
             title: 'G12 / G13',
-            targets: 12,
+            targets: 14,
             className: 'aska dt-center',
             visible: false,
           }, {
             data: 'Merged.Gs.html',
             title: '   Gs   ',
-            targets: 13,
+            targets: 15,
             className: 'merg dt-center',
             visible: false,
           }, {
             data: 'Merged.Gi/Go.html',
             title: 'Gi / Go ',
-            targets: 14,
+            targets: 16,
             className: 'merg dt-center',
             visible: false,
           }, {
             data: 'Merged.Gq/G11.html',
             title: 'Gq / G11',
-            targets: 15,
+            targets: 17,
             className: 'merg dt-center',
             visible: false,
           }, {
             data: 'Merged.G12/G13.html',
             title: 'G12 / G13',
-            targets: 16,
+            targets: 18,
             className: 'merg dt-center',
             visible: false,
           },
         ],
-        order: [[ 4, "desc" ]],
+        order: [[ 6, "desc" ]],
         select: {
           style: 'single',
         },
@@ -379,46 +413,100 @@ const run_sig_match = function(){
             action: function ( e, dt, button, config ) {
               var table_data = sigmatch_table.data().toArray();
 
-              data = []
+              var export_data = []
               for (let i of Object.values(table_data)){
                 let r = {}
                 r['name'] = i['entry']
-                r['aska_gs'] = i['Aska']['Gs']['bool']
-                r['aska_gio'] = i['Aska']['Gi/Go']['bool']
-                r['aska_gq11'] = i['Aska']['Gq/G11']['bool']
-                r['aska_g1213'] = i['Aska']['G12/G13']['bool']
-                r['gtop_gs'] = i['GuideToPharma']['Gs']['bool']
-                r['gtop_gio'] = i['GuideToPharma']['Gi/Go']['bool']
-                r['gtop_gq11'] = i['GuideToPharma']['Gq/G11']['bool']
-                r['gtop_g1213'] = i['GuideToPharma']['G12/G13']['bool']
-                r['merg_gs'] = i['Merged']['Gs']['bool']
-                r['merg_gio'] = i['Merged']['Gi/Go']['bool']
-                r['merg_gq11'] = i['Merged']['Gq/G11']['bool']
-                r['merg_g1213'] = i['Merged']['G12/G13']['bool']
-                data.push(r)
+                r['family'] = i['family']
+                r['subfamily'] = i['subfamily']
+                r['score'] = i['nscore']
+                r['aska_gs'] = i['Aska']['Gs']['text']
+                r['aska_gio'] = i['Aska']['Gi/Go']['text']
+                r['aska_gq11'] = i['Aska']['Gq/G11']['text']
+                r['aska_g1213'] = i['Aska']['G12/G13']['text']
+                r['gtop_gs'] = i['GuideToPharma']['Gs']['text']
+                r['gtop_gio'] = i['GuideToPharma']['Gi/Go']['text']
+                r['gtop_gq11'] = i['GuideToPharma']['Gq/G11']['text']
+                r['gtop_g1213'] = i['GuideToPharma']['G12/G13']['text']
+                r['merg_gs'] = i['Merged']['Gs']['text']
+                r['merg_gio'] = i['Merged']['Gi/Go']['text']
+                r['merg_gq11'] = i['Merged']['Gq/G11']['text']
+                r['merg_g1213'] = i['Merged']['G12/G13']['text']
+                export_data.push(r)
               }
 
-              data = Papa.unparse(data)
+              export_data = Papa.unparse(export_data)
               
               $('<a></a>')
                 .attr('id','downloadFile')
-                .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(data))
+                .attr('href','data:text/csv;charset=utf8,' + encodeURIComponent(export_data))
                 .attr('download', 'export.csv')
                 .appendTo('body');
               
               $('#downloadFile').ready(function() {
                 $('#downloadFile').get(0).click();
+                $('#downloadFile').remove();
               });
             }
           },
           {
-            text: 'Deselect',
+            text: 'Reset All Filters',
+            action: function () {
+              yadcf.exResetAllFilters(sigmatch_table)
+            }
+          },
+          {
+            text: 'Show Alignment',
+            className: 'score-button',
             action: function () {
               sigmatch_table.rows().deselect();
             }
           },
         ]
       })
+
+      text_col_filter = {
+        filter_type: "multi_select",
+        select_type: 'select2',
+        filter_reset_button_text: false,
+      }
+
+      range_col_filter = {
+        filter_type: "range_number_slider",
+        filter_delay: 70,
+        filter_reset_button_text: false,
+      }
+
+      coupl_col_filter = {
+        filter_type: "multi_select",
+        select_type: 'select2',
+        filter_reset_button_text: false,
+        column_data_type: "html",
+        html_data_type: "text",
+      }
+
+      yadcf.init(sigmatch_table, [
+        {column_number : 2, ...text_col_filter},
+        {column_number : 4, ...text_col_filter},
+        {column_number : 6, ...range_col_filter},
+        {column_number : 7, ...coupl_col_filter},
+        {column_number : 8, ...coupl_col_filter},
+        {column_number : 9, ...coupl_col_filter},
+        {column_number : 10, ...coupl_col_filter},
+        {column_number : 11, ...coupl_col_filter},
+        {column_number : 12, ...coupl_col_filter},
+        {column_number : 13, ...coupl_col_filter},
+        {column_number : 14, ...coupl_col_filter},
+        {column_number : 15, ...coupl_col_filter},
+        {column_number : 16, ...coupl_col_filter},
+        {column_number : 17, ...coupl_col_filter},
+        {column_number : 18, ...coupl_col_filter},
+      ]);
+
+      $('.score-button').click( function () {
+          const render_url = window.location.origin + '/signprot/matrix/render_sigmat/';
+          window.open(render_url,'_blank');
+      });
 
       sigmatch_table.on('select', function (e, dt, type, indexes) {
         const entry = sigmatch_table.rows(indexes).data().toArray()[0];
@@ -436,16 +524,16 @@ const run_sig_match = function(){
 
     },
     error: function(error){
-      $("#sigm_spin").addClass("fa-times");
-      $("#sigm_spin").removeClass("fa-spinner");
-      $("#sigm_spin").removeClass("fa-spin");
+      // $("#sigm_spin").addClass("fa-times");
+      // $("#sigm_spin").removeClass("fa-spinner");
+      // $("#sigm_spin").removeClass("fa-spin");
       console.log(error)
       alert(error);
     },
     complete: function(){
-      $("#sigm_spin").addClass("fa-check");
-      $("#sigm_spin").removeClass("fa-spinner");
-      $("#sigm_spin").removeClass("fa-spin");
+      // $("#sigm_spin").addClass("fa-check");
+      // $("#sigm_spin").removeClass("fa-spinner");
+      // $("#sigm_spin").removeClass("fa-spin");
     }
   })
 }
@@ -460,29 +548,55 @@ const replace_filter_value = function(d) {
 };
 
 const filter_pairs = function(floor, ceiling) {
-  // const num = parseInt($('#currentpairs').text())
+  const max_val = get_max_interface_count()
   d3.select('g#interact')
     .selectAll("g")
     .style('display', function(d){
-      return (floor <= d.pairs.length && ceiling >= d.pairs.length ? 'block' : 'none')
+      var ratio = d.pairs.length / max_val * 100
+      return (floor <= ratio && ceiling >= ratio ? 'block' : 'none')
     })
 }
 
+const set_min = function () {
+  $('#amount_min').html( $('#slider-range').slider('values', 0)).position({
+      my: 'center bottom',
+      at: 'center top',
+      of: $('#slider-range span:eq(0)'),
+  });
+}
+
+const set_max = function () {
+    $('#amount_max').html( $('#slider-range').slider('values', 1)).position({
+      my: 'center bottom',
+      at: 'center top',
+      of: $('#slider-range span:eq(1)'),
+  });
+}
 
 const initialize_filter_slider = function() {
   // initializing range slider
   $( "#slider-range" ).slider({
     range: true,
-    min: 1,
-    max: 20,
-    values: [ 1, 20 ],
+    min: 0,
+    max: 100,
+    step: 1,
+    values: [ 0, 100 ],
     slide: function( event, ui ) {
       const floor = parseInt(ui.values[0])
       const ceil = parseInt(ui.values[1])
-      $( "#amount" ).val( 'From: ' + floor + " To: " + ceil );
+
+      var label = ui.handleIndex == 0 ? '#amount_min' : '#amount_max';
+      $(label).html(ui.value).position({
+          my: 'center bottom',
+          at: 'center top',
+          of: ui.handle,
+      });
+
       filter_pairs(floor, ceil)
     }
   });
+
+  setTimeout(set_min, setTimeout(set_max, 1), 1)
 };
 
 const reset_slider = function() {
@@ -490,18 +604,8 @@ const reset_slider = function() {
   const min = $( "#slider-range" ).slider( "option", "min" );
   const max = $( "#slider-range" ).slider( "option", "max" );
   $( "#slider-range" ).slider( "values", [ min, max ] );
-}
 
-const set_slider_max_value = function(){
-  // setting the max value of the interaction filter slider according to selected data
-  const max_val = get_max_interface_count()
-  $( "#slider-range" ).slider( "option", "max", max_val );
-}
-
-const update_slider_label = function() {
-    // update the text span above the slider
-  $( "#amount" ).val( 'From: ' + $( "#slider-range" ).slider( "values", 0 ) +
-    " To: " + $( "#slider-range" ).slider( "values", 1 ) );
+  setTimeout(set_min, setTimeout(set_max, 1), 1)
 }
 
 const get_max_interface_count = function() {
@@ -551,17 +655,12 @@ $(document).ready(function () {
     $('#interface-modal-table .tableview').html(data);
   })
 
+  signprotmat.d3.print_resScaleColor_legend()
   $('[data-toggle="tooltip"]').tooltip();
   
   let table = $($.fn.dataTable.tables()[0]).DataTable();
-  // let selection = table.rows('.selected').data();
-  // pdb_sel = signprotmat.data.select_by_value(selection, 'pdb_id');
-  // pos_set = signprotmat.data.select_by_value(selection, 'entry_name')
 
   initialize_filter_slider();
-  set_slider_max_value();
-  update_slider_label();
-
 
   $('#interface-modal-table').on('shown.bs.modal', function(e) {
     showPDBtable('#interface-modal-table');
@@ -570,15 +669,18 @@ $(document).ready(function () {
   $('#interface-modal-table').on('hidden.bs.modal', function (e) {
     table = $($.fn.dataTable.tables()[0]).DataTable();
     selection = table.rows('.selected').data();
+   
     let old_pdb_sel = pdb_sel;
     pdb_sel = [];
     pos_set = [];
+
     // get selected pdb ids
     $('.pdb_selected:checked').each(function( index ) {pdb_sel.push(($( this ).attr('id')))});
+  
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata){
       if (pdb_sel.indexOf(int_meta['pdb_id']) != -1){
-        pos_set = [int_meta['entry_name'], ...pos_set]
+        pos_set = [int_meta['conf_id'], ...pos_set]
       }
     }
 
@@ -591,7 +693,7 @@ $(document).ready(function () {
 
       data = signprotmat.data.dataTransformationWrapper(interactions, pdb_sel);
       svg = signprotmat.d3.setup("div#interface-svg");
-      xScale = signprotmat.d3.xScale(data.transformed);
+      xScale = signprotmat.d3.xScale(data.transformed, receptor);
       yScale = signprotmat.d3.yScale(data.transformed, gprot);
       xAxis = signprotmat.d3.xAxis(xScale);
       yAxis = signprotmat.d3.yAxis(yScale);
@@ -620,9 +722,7 @@ $(document).ready(function () {
       document.querySelector("#intbut").classList.add("active");
       document.querySelector("#resbut").classList.remove("active");
 
-      set_slider_max_value();
       reset_slider();
-      update_slider_label();
       run_seq_sig();
     };
   });

@@ -25,8 +25,6 @@ from numpy.core.umath_tests import inner1d
 
 from multiprocessing import Queue, Process, Value, Lock
 
-TMNUM = 7
-
 SASA = True
 HSE  = True
 extra_pca = True
@@ -116,7 +114,7 @@ class Command(BaseCommand):
     ############################ Helper  Functions ############################
     ###########################################################################
 
-    processes = 4
+    processes = 2
 
     def prepare_input(self, proc, items, iteration=1):
         q = Queue()
@@ -140,7 +138,7 @@ class Command(BaseCommand):
                 last = False
             else:
                 last = chunk_size * (i + 1)
-    
+
             p = Process(target=self.main_func, args=([(first, last), iteration,num,lock]))
             procs.append(p)
             p.start()
@@ -162,12 +160,14 @@ class Command(BaseCommand):
 
         Angle.objects.all().delete()
         self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # DEBUG for a specific PDB
+        #self.references = Structure.objects.filter(pdb_code__index="6OT0").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+
         print(len(self.references),'structures')
         self.references = list(self.references)
         self.prepare_input(self.processes, self.references)
 
     def main_func(self, positions, iteration,count,lock):
-        print('main_func')
         def recurse(entity,slist):
             """
             filter a pdb structure in a recursive way
@@ -271,8 +271,6 @@ class Command(BaseCommand):
         failed = []
         dblist = []
 
-        failed = []
-
         # Get all structures
         #references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         #references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
@@ -306,7 +304,7 @@ class Command(BaseCommand):
                     reference = references[count.value]
                     count.value +=1
                 else:
-                    break 
+                    break
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
             print(pdb_code)
@@ -324,22 +322,22 @@ class Command(BaseCommand):
                 pdbio.save(filename, NonHetSelect())
                 if os.path.exists("/env/bin/dssp"):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/dssp')
-                if os.path.exists("/env/bin/mkdssp"):
+                elif os.path.exists("/env/bin/mkdssp"):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/mkdssp')
 
-                # STRIDE
-                try:
-                    if os.path.exists("/env/bin/stride"):
-                       stride = subprocess.Popen(['/env/bin/stride', filename], stdout=subprocess.PIPE)
-                       # Grab SS assignment (ASG) and parse residue (cols 12-15) and SS (cols 25-25)
-                       for line in io.TextIOWrapper(stride.stdout, encoding="utf-8"):
-                           if line.startswith("ASG"):
-                               res_id = int(line[11:15].strip())
-                               res_ss = line[24:25].strip()
-                               # assign to residue
-                               pchain[res_id].xtra["SS_STRIDE"] = res_ss.upper()
-                except OSError:
-                   print(pdb_code, " - STRIDE ERROR - ", e)
+                # DISABLED STRIDE - selected DSSP over STRIDE
+#                try:
+#                    if os.path.exists("/env/bin/stride"):
+#                       stride = subprocess.Popen(['/env/bin/stride', filename], stdout=subprocess.PIPE)
+#                       # Grab SS assignment (ASG) and parse residue (cols 12-15) and SS (cols 25-25)
+#                       for line in io.TextIOWrapper(stride.stdout, encoding="utf-8"):
+#                           if line.startswith("ASG"):
+#                               res_id = int(line[11:15].strip())
+#                               res_ss = line[24:25].strip()
+#                               # assign to residue
+#                               pchain[res_id].xtra["SS_STRIDE"] = res_ss.upper()
+#                except OSError:
+#                   print(pdb_code, " - STRIDE ERROR - ", e)
 
                 # CLEANUP
                 os.remove(filename)
@@ -469,6 +467,144 @@ class Command(BaseCommand):
                 # a = [str(i) for i in center_vector[0]]
                 # b = [str(i) for i in center_vector[1]]
                 # print("cgo_arrow [" + a[0] + ", " + a[1] + ", " + a[2] + "], [" + b[0] + ", " + b[1] + ", " + b[2] + "]")
+
+                # Measure level of activation by TM6 tilt
+                # Residue most often found at kink start
+                # TODO: check for numbering at other classes
+                kink_start = 44 #  general class A number 6x44 seems quite conserved to be the kink start
+
+                # Select all residues before indicated residue
+                lower_tm6 = []
+                kink_start_res = None
+                for res in db_tmlist[5]:
+                    gnlabel = gdict[res[1]].generic_number.label
+                    if int(gnlabel.replace("6x","")) <= kink_start:
+                        lower_tm6.append(pchain[res]["CA"].get_coord())
+                        if int(gnlabel.replace("6x","")) == kink_start:
+                            kink_start_res = pchain[res]["CA"].get_coord()
+                lower_tm6 = np.asarray(lower_tm6)
+
+                # TM2 intracellular for comparison
+                lower_tm2 = []
+                for res in db_tmlist[1]:
+                    gnlabel = gdict[res[1]].generic_number.label
+                    gn_id = int(gnlabel.replace("2x",""))
+                    if gn_id >= 40 and gn_id <= 50: # Lower well-defined half of TM2
+                        lower_tm2.append(pchain[res]["CA"].get_coord())
+                lower_tm2 = np.asarray(lower_tm2)
+
+                # Find 5x46 (residue at membrane middle)
+                membrane_mid = None
+                for res in db_tmlist[4]:
+                    gnlabel = gdict[res[1]].generic_number.label
+                    if gnlabel == "5x46":
+                        membrane_mid = pchain[res]["CA"].get_coord()
+                        break
+
+                # TM6 tilt compared to TM2
+                if len(lower_tm6) >= 3 and len(lower_tm2) >= 3:
+                     # Take the average of N consecutive elements of TM2
+                     tm2_lower_three = sum([lower_tm2[i:-(len(lower_tm2) % N) or None:N] for i in range(N)])/N
+                     if len(tm2_lower_three) > 2:
+                         tm2_pca_vector = pca_line(PCA(), tm2_lower_three, 1)
+                     else:
+                         tm2_pca_vector = pca_line(PCA(), lower_tm2, 1)
+
+                     # Take the average of N consecutive elements of TM6
+                     tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+                     if len(tm6_lower_three) > 2:
+                         tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+                     else:
+                         tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+
+                     # angle between these vectors
+                     tm6_angle = np.arccos(np.clip(np.dot(tm6_pca_vector[1]-tm6_pca_vector[0], tm2_pca_vector[1]-tm2_pca_vector[0]), -1.0, 1.0))
+                     print(tm6_angle)
+
+                     # Store as structure property
+                     reference.tm6_angle = np.degrees(tm6_angle)
+                     reference.save()
+
+
+                # TM6 tilt with respect to 7TM bundle axis and plane through 6x44
+                # if len(lower_tm6) >= 3 and len(membrane_mid) == 3:
+                #     # Take the average of N consecutive elements
+                #     tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+                #     if len(tm6_lower_three) > 2:
+                #         tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+                #     else:
+                #         tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+                #
+                #     # 1. Find intersect of membrane mid with 7TM axis (project point to plane)
+                #     membrane_mid_pca = pca.transform([membrane_mid])
+                #     membrane_mid_pca[0,1:3] = 0 # project onto the same axis
+                #     midpoint = pca.inverse_transform(membrane_mid_pca)
+                #
+                #     # 2. Find normal of plane through origin, kink start and project kink start
+                #     #    A) Find projected point of kink_start
+                #     kink_start_res_pca = pca.transform([kink_start_res])
+                #     kink_start_res_pca[0,1:3] = 0 # project onto the same axis
+                #     kink_start_proj = pca.inverse_transform(kink_start_res_pca)
+                #
+                #     #    B) Find normal of the new plane through kink start
+                #     v1 = kink_start_res - center_vector[0]
+                #     v2 = kink_start_proj - center_vector[0]
+                #     plane_normal = np.cross(v1 / np.linalg.norm(v1), v2 / np.linalg.norm(v2))[0]
+                #     plane_normal = plane_normal / np.linalg.norm(plane_normal)
+                #
+                #     #    C) Find projected tm6 angle to plane
+                #     displaced_point = tm6_pca_vector[1] - tm6_pca_vector[0]
+                #     dist = np.dot(displaced_point, plane_normal)
+                #     proj_point = (center_vector[0]+displaced_point) - dist*plane_normal
+                #     tm6_tilt_proj = proj_point - center_vector[0]
+                #
+                #     # Calculate angle between vectors
+                #     tm6_angle = np.arccos(np.dot(tm6_tilt_proj,center_vector[1]-center_vector[0])/(np.linalg.norm(tm6_tilt_proj)*np.linalg.norm(center_vector[1]-center_vector[0])))
+                #
+                #     # Check change in distance for projected angle point on tm axis
+                #     # distance increased? -> negative angle - distance decreased -> positive angle
+                #     distance_kink_start = np.linalg.norm(kink_start_res - center_vector[0])
+                #
+                #     # VERIFY: not sure if correct
+                #     dist = np.dot(tm6_tilt_proj, center_vector[1] - center_vector[0])
+                #     proj_proj_tilt_point = (center_vector[0]+tm6_tilt_proj) - dist*(center_vector[1] - center_vector[0])
+                #     distance_tilt = np.linalg.norm(kink_start_res - proj_proj_tilt_point)
+                #     if (distance_tilt-distance_kink_start) > 0:
+                #         tm6_angle = -1*tm6_angle
+                #
+                #     # Store as structure property
+                #     reference.tm6_angle = np.degrees(tm6_angle)
+                #     reference.save()
+
+                # TM6 tilt with respect to 7TM bundle axis
+                # if len(lower_tm6) >= 3:
+                #     # Take the average of N consecutive elements
+                #     tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+                #     if len(tm6_lower_three) > 2:
+                #         tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+                #     else:
+                #         tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+                #
+                #     # Calculate angle between vectors
+                #     tm6_angle = np.arccos(np.clip(np.dot(tm6_pca_vector[1]-tm6_pca_vector[0], center_vector[1]-center_vector[0]), -1.0, 1.0))
+                #
+                #     cen_tm6 = center_vector[0]+(tm6_pca_vector[1]-tm6_pca_vector[0])
+                #     print("pseudoatom center1, pos=[{},{},{}]".format(center_vector[0][0],center_vector[0][1],center_vector[0][2]))
+                #     print("pseudoatom center2, pos=[{},{},{}]".format(center_vector[1][0],center_vector[1][1],center_vector[1][2]))
+                #     print("pseudoatom cen_tm6, pos=[{},{},{}]".format(cen_tm6[0],cen_tm6[1],cen_tm6[2]))
+                #
+                #     # Check distance - closer to axis - negative angle - further away - positive angle
+                #     tm6_inward = ca_distance_calc(np.asarray([tm6_pca_vector[1]]),pca) - ca_distance_calc(np.asarray([tm6_pca_vector[0]]),pca)
+                #     print(np.degrees(tm6_angle))
+                #
+                #     if tm6_inward < 0:
+                #         tm6_angle = -1*tm6_angle
+                #
+                #     # Store as structure property
+                #     reference.tm6_angle = np.degrees(tm6_angle)
+                #     reference.save()
+
+                # Take the
 
                 ### ANGLES
                 # Center axis to helix axis to CA

@@ -37,9 +37,6 @@
 
 
 <h1 class="page-header">GPCR - G protein interface interactions</h1>
-<p>
-    Display the interaction between one or multiple GPCR/G-protein complex interfaces.
-</p>
 
 <div class="row">
     <div class="col-md-12">
@@ -53,32 +50,33 @@
 
 
                 <div class="col-md-2">
-                    <h5><span
+                    <p
                             id='single-crystal-group-pdbs-modal-text'
-                            class="crystal-count">
-                            0 structures selected.
-                        </span></h5>
+                            class="crystal-count"
+                            style="font-weight: 700">
+                    0 structures selected.
+                        </p></h5>
                         <button
                             type="button"
                             class="btn btn-primary"
                             data-toggle="modal"
                             data-target="#interface-modal-table">
-                            Select Structure
+                            Select Structures
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            style="margin-top: 5px"
+                            onClick='var fasta_data = signprotmat.data.get_data_gap_non_int(pdbScale, xScale, non_interactions, data.receptor);
+                            signprotmat.data.download_fasta(fasta_data, pdbScale)'>
+                            Download Fasta
                         </button>
                 </div>
 
-                <div class="col-md-4">
-                    <p>
-                    The darker the rectangle in the matrix, the more interacting
-                    residue pairs are observed across receptor/signaling protein
-                    complexes (colored from white to black).
-                    </p>
-                </div>
-
                 <div class="col-md-2">
-                    <p><b>Color by</b> Interaction or Residue: </p>
+                    <p><b>Sequence Color</b></p>
 
-                    <div class="btn-group btn-group-sm" role="group">
+                    <div class="btn-group-vertical btn-group-sm" role="group">
                         <button
                             type="button"
                             id="resbut"
@@ -95,38 +93,37 @@
                         </button>
                     </div>
                 </div>
-                <div class="col-md-2">
 
-                    <p>
-                      <label for="amount">Interaction frequency <b>filter</b> </label>
-                      <input
-                          type="text"
-                          id="amount"
-                          readonly
-                          style="border:0;">
-                    </p>
-                     
+                <div id="legend-space" class="col-md-6">
+                </div>
+
+                <div class="col-md-2">
+                    <p style='margin: 0'><b>Interaction frequency filter (%)</b></p>
+                    <div id="amount_min"></div>
+                    <div id="amount_max"></div>
+
                     <div id="slider-range"></div>
                 </div>
-
-                <div class="col-md-2">
-                    <div class="col">
-                        <p>Sequence Features:
-                            <i id="calc_spin"
-                               class="fa fa-times"
-                               style="display: inline-block">
-                            </i>
-                        </p>
-                    </div>
-                    <div class="col">
-                        <p>Feature Match:
-                            <i id="sigm_spin"
-                               class="fa fa-times"
-                               style="display: inline-block">
-                            </i>
-                        </p>
-                    </div>
-                </div>
+                
+                <!-- calculation status display -->
+                <!-- <div class="col-md-2">                        -->
+                <!--     <div class="col">                         -->
+                <!--         <p>Sequence Features:                 -->
+                <!--             <i id="calc_spin"                 -->
+                <!--                class="fa fa-times"            -->
+                <!--                style="display: inline-block"> -->
+                <!--             </i>                              -->
+                <!--         </p>                                  -->
+                <!--     </div>                                    -->
+                <!--     <div class="col">                         -->
+                <!--         <p>Feature Match:                     -->
+                <!--             <i id="sigm_spin"                 -->
+                <!--                class="fa fa-times"            -->
+                <!--                style="display: inline-block"> -->
+                <!--             </i>                              -->
+                <!--         </p>                                  -->
+                <!--     </div>                                    -->
+                <!-- </div>                                        -->
             </div>
 
         </div>
@@ -160,7 +157,7 @@
     </div>
 </div>
 
-<div id="interface-container" class="" style="margin-bottom:20px;">
+<div id="interface-container" class="" >
     <div id="interface-svg" class="collapse in"></div>
 </div>
 
@@ -180,40 +177,45 @@
 <div id="sigmatch-container" class="svg-container" style="display: none; padding-bottom:
     10%">
     <div>
-        <h2>Match Table</h2>
+        <h2>Interface Property Consensus Conversation in Class</h2>
 
-        <div class="row">
-            <div class="col-md-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title"></h3>
-                    </div>
+        <!-- <div class="row">                                                                                 -->
+        <!--     <div class="col-md-12">                                                                       -->
+        <!--         <div class="panel panel-default">                                                         -->
+        <!--             <div class="panel-heading">                                                           -->
+        <!--                 <h3 class="panel-title"></h3>                                                     -->
+        <!--             </div>                                                                                -->
 
 
-                    <div class="panel-body">
+        <!--             <div class="panel-body">                                                              -->
 
-                        <div class="col-md-12">
-                            <p>
-                            Receptors are marked with two different kinds of symbols:
-                            <ul>
-                                <li><i class="fa mattab fa-check"></i></li>
-                                <li><i class="fa mattab fa-times"></i></li>
-                            </ul>
-                            Coloring the symbols black and grey shows primary and
-                            secondary coupling respectively.
-                            </p>
-                        </div>
+        <!--                 <div class="col-md-12">                                                           -->
+        <!--                     <p>                                                                           -->
+        <!--                     Receptors are marked with two different kinds of symbols:                     -->
+        <!--                     <ul>                                                                          -->
+        <!--                         <li><i class="fa mattab fa-check"></i></li>                               -->
+        <!--                         <li><i class="fa mattab fa-times"></i></li>                               -->
+        <!--                     </ul>                                                                         -->
+        <!--                     Coloring the symbols black and grey shows primary and                         -->
+        <!--                     secondary coupling respectively.                                              -->
 
-                        <div class="col-md-12">
-                            <p><b>Show</b> the sequence alignments that correspond to the shown score</p>
-                            <a id='score-button' href="javascript:void(0)" class="btn
-                                btn-primary">Show Alignment</a>
-                        </div>
-                    </div>
+        <!--                     <br>                                                                          -->
 
-                </div>
-            </div>
-        </div>
+        <!--                     Note, that when <b>exporting the data</b> a 2 corresponds to                  -->
+        <!--                     secondary coupling, a 1 to primary coupling.                                  -->
+        <!--                     </p>                                                                          -->
+        <!--                 </div>                                                                            -->
+
+        <!--                 <div class="col-md-12">                                                           -->
+        <!--                     <p><b>Show</b> the sequence alignments that correspond to the shown score</p> -->
+        <!--                     <a id='score-button' href="javascript:void(0)" class="btn                     -->
+        <!--                         btn-primary">Show Alignment</a>                                           -->
+        <!--                 </div>                                                                            -->
+        <!--             </div>                                                                                -->
+
+        <!--         </div>                                                                                    -->
+        <!--     </div>                                                                                        -->
+        <!-- </div>                                                                                            -->
     </div>
     <table id='sigmatch_table' class="display" style="width: 100%"></table>
 </div>
@@ -226,12 +228,8 @@ const interactions = {{ interactions | safe}};
 let non_interactions = {{ non_interactions | safe}};
 const interactions_metadata = {{ interactions_metadata | safe}};
 const gprot = {{ gprot | safe}};
+const receptor = {{ receptor | safe}};
 const csrf_token = "{{ csrf_token }}"
-
-$('#score-button').click( function () {
-    const render_url = window.location.origin + '/signprot/matrix/render_sigmat/';
-    window.open(render_url,'_blank');
-});
 
 </script>
 <script src="{% static 'home/js/d3.v5.min.js' %}"></script>
