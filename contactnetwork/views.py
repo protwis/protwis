@@ -257,10 +257,21 @@ def PdbTableData(request):
         #    r['method'] = methods[pdb_id]
         #else:
         #    r['method'] = "N/A"
-        r['method'] = s.structure_type.name
+        r['method'] = s.structure_type.type_short()
 
         r['resolution'] = "{0:.2g}".format(s.resolution)
         r['7tm_distance'] = s.distance
+
+        # TEST - overwrite with distance to 6x38
+#        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
+#        if len(tm6_distance)>0:
+#            tm6_distance = tm6_distance[0].core_distance
+#        else:
+#            tm6_distance = -1
+#        r['7tm_distance'] = tm6_distance
+
+#        r['tm6_angle'] = s.tm6_angle if s.tm6_angle != None else 0
+
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin
         r['fusion'] = fusion

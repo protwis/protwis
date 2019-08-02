@@ -8,10 +8,10 @@
         <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
     </li>
     <li class="{% if pdbs %}active{% endif %}">
-        <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
+        <a href="#single-crystal-group-tab" data-toggle="tab">Single set of structures</a>
     </li>
     <li class="{% if pdbs1 %}active{% endif %}">
-        <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
+        <a href="#two-crystal-groups-tab" data-toggle="tab">Two sets of structures</a>
     </li>
 </ul>
 <div class="tab-content clearfix">
@@ -248,10 +248,9 @@
         </div>
         <ul class="nav nav-tabs nav-browsers">
             <li class="active"><a href="#single-crystal-browser-1-tab" data-toggle="tab" id="single-crystal-browser-1-tab-link">Contact position pairs</a></li>
-            <li><a href="#single-crystal-browser-2-tab" data-toggle="tab" id="single-crystal-browser-2-tab-link">Contact AA sequence conservation</a></li>
-            <li><a href="#single-crystal-browser-3-tab" data-toggle="tab" id="single-crystal-browser-3-tab-link">Contact hubs and micro-switch residues</a></li>
-            <li><a href="#single-crystal-browser-4-tab" data-toggle="tab" id="single-crystal-browser-4-tab-link">Helix types, bulges and constrictions</a></li>
-            <li><a href="#single-crystal-browser-5-tab" data-toggle="tab" id="single-crystal-browser-5-tab-link">Backbone movement (Ca-7TM axis)</a></li>
+            <li><a href="#single-crystal-browser-2-tab" data-toggle="tab" id="single-crystal-browser-2-tab-link">Contact position-AA pairs</a></li>
+            <li><a href="#single-crystal-browser-4-tab" data-toggle="tab" id="single-crystal-browser-4-tab-link">Residue helix types, bulges, and constrictions</a></li>
+            <li><a href="#single-crystal-browser-5-tab" data-toggle="tab" id="single-crystal-browser-5-tab-link">Residue backbone & sidechain movement</a></li>
         </ul>
         <div class="row">
             <div class="tab-content col-md-12 ">
@@ -272,7 +271,7 @@
                 <div class="contact-browser tab-pane" id="single-crystal-browser-2-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Contact AA sequence conservation</h3>
+                            <h3 class="panel-title pull-left">Contact position-AA pairs</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -286,7 +285,7 @@
                 <div class="contact-browser tab-pane" id="single-crystal-browser-4-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Helix types, bulges and constrictions</h3>
+                            <h3 class="panel-title pull-left">Residue helix types, bulges, and constrictions</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -300,7 +299,7 @@
                 <div class="contact-browser tab-pane" id="single-crystal-browser-5-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Backbone movement (Ca-7TM axis)</h3>
+                            <h3 class="panel-title pull-left">Residue backbone & sidechain movement</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -545,10 +544,10 @@
         </div>
         <ul class="nav nav-tabs nav-browsers">
             <li class="active"><a href="#single-group-browser-1-tab" data-toggle="tab" id="single-group-browser-1-tab-link">Contact position pairs</a></li>
-            <li><a href="#single-group-browser-2-tab" data-toggle="tab" id="single-group-browser-2-tab-link">Contact AA sequence conservation</a></li>
-            <li><a href="#single-group-browser-3-tab" data-toggle="tab" id="single-group-browser-3-tab-link">Contact hubs and micro-switch residues</a></li>
-            <li><a href="#single-group-browser-4-tab" data-toggle="tab" id="single-group-browser-4-tab-link">Helix types, bulges and constrictions</a></li>
-            <li><a href="#single-group-browser-5-tab" data-toggle="tab" id="single-group-browser-5-tab-link">Backbone movement (Ca-7TM axis)</a></li>
+            <li><a href="#single-group-browser-2-tab" data-toggle="tab" id="single-group-browser-2-tab-link">Contact position-AA pairs</a></li>
+            <li><a href="#single-group-browser-3-tab" data-toggle="tab" id="single-group-browser-3-tab-link">Contact hub positions</a></li>
+            <li><a href="#single-group-browser-4-tab" data-toggle="tab" id="single-group-browser-4-tab-link">Residue helix types, bulges, and constrictions</a></li>
+            <li><a href="#single-group-browser-5-tab" data-toggle="tab" id="single-group-browser-5-tab-link">Residue backbone & sidechain movement</a></li>
         </ul>
         <div class="row">
             <div class="tab-content col-md-12 ">
@@ -569,7 +568,7 @@
                 <div class="contact-browser tab-pane" id="single-group-browser-2-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Contact AA sequence conservation</h3>
+                            <h3 class="panel-title pull-left">Contact position-AA pairs</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -583,7 +582,7 @@
                 <div class="contact-browser tab-pane" id="single-group-browser-4-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Helix types, bulges and constrictions</h3>
+                            <h3 class="panel-title pull-left">Residue helix types, bulges, and constrictions</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -597,7 +596,7 @@
                 <div class="contact-browser tab-pane" id="single-group-browser-5-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Backbone movement (Ca-7TM axis)</h3>
+                            <h3 class="panel-title pull-left">Residue backbone & sidechain movement</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -852,10 +851,10 @@
         </div>
         <ul class="nav nav-tabs nav-browsers">
             <li class="active"><a href="#two-groups-browser-1-tab" data-toggle="tab" id="two-groups-browser-1-tab-link">Contact position pairs</a></li>
-            <li><a href="#two-groups-browser-2-tab" data-toggle="tab" id="two-groups-browser-2-tab-link">Contact AA sequence conservation</a></li>
-            <li><a href="#two-groups-browser-3-tab" data-toggle="tab" id="two-groups-browser-3-tab-link">Contact hubs and micro-switch residues</a></li>
-            <li><a href="#two-groups-browser-4-tab" data-toggle="tab" id="two-groups-browser-4-tab-link">Helix types, bulges and constrictions</a></li>
-            <li><a href="#two-groups-browser-5-tab" data-toggle="tab" id="two-groups-browser-5-tab-link">Backbone movement (Ca-7TM axis)</a></li>
+            <li><a href="#two-groups-browser-2-tab" data-toggle="tab" id="two-groups-browser-2-tab-link">Contact position-AA pairs</a></li>
+            <li><a href="#two-groups-browser-3-tab" data-toggle="tab" id="two-groups-browser-3-tab-link">Contact residue micro-switches</a></li>
+            <li><a href="#two-groups-browser-5-tab" data-toggle="tab" id="two-groups-browser-5-tab-link">Residue backbone & sidechain movement</a></li>
+            <li><a href="#two-groups-browser-4-tab" data-toggle="tab" id="two-groups-browser-4-tab-link">Residue helix types, bulges, and constrictions</a></li>
         </ul>
         <div class="row">
             <div class="tab-content col-md-12 ">
@@ -876,7 +875,7 @@
                 <div class="contact-browser tab-pane" id="two-groups-browser-2-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Contact AA sequence conservation</h3>
+                            <h3 class="panel-title pull-left">Contact position-AA pairs</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -890,7 +889,7 @@
                 <div class="contact-browser tab-pane" id="two-groups-browser-3-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Contact hubs and micro-switch residues</h3>
+                            <h3 class="panel-title pull-left">Contact residue micro-switches</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -904,7 +903,7 @@
                 <div class="contact-browser tab-pane" id="two-groups-browser-4-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Helix types, bulges and constrictions</h3>
+                            <h3 class="panel-title pull-left">Residue helix types, bulges, and constrictions</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -918,7 +917,7 @@
                 <div class="contact-browser tab-pane" id="two-groups-browser-5-tab">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title pull-left">Backbone movement (Ca-7TM axis)</h3>
+                            <h3 class="panel-title pull-left">Residue backbone & sidechain movement</h3>
                             <span class="pull-right">
                                 <span class="glyphicon glyphicon-download btn-download png"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                             </span>
@@ -940,7 +939,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of structures from table</h4>
+                    <h4 class="modal-title">Select a structure</h4>
                 </div>
                 <div class="modal-body">
                     <div class="col-md-12">
@@ -965,7 +964,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of structures</h4>
+                    <h4 class="modal-title">Select a set of structures</h4>
                 </div>
                 <div class="modal-body">
                     <div class="col-md-12">
@@ -991,7 +990,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of structures</h4>
+                    <h4 class="modal-title">Select a set of structures</h4>
                 </div>
                 <div class="modal-body">
                     <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
@@ -1015,7 +1014,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of structures</h4>
+                    <h4 class="modal-title">Select a set of structures</h4>
                 </div>
                 <div class="modal-body">
                     <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>

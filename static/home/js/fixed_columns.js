@@ -2,6 +2,7 @@ function update_text_in_modal() {
 
     var pdbs = [];
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
     $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
@@ -18,7 +19,7 @@ function update_text_in_modal() {
     });
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
 
-    if (mode == 'Single group of structures' || $("#single-group-tree-tab").length) {
+    if (mode == 'Single set of structures' || $("#single-group-tree-tab").length) {
         var total_selected = pdbs.length
         var selected_visible = $('.dataTables_scrollBody:visible .pdb_selected:checked').length
         var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
@@ -34,7 +35,7 @@ function update_text_in_modal() {
         $(pdbsInputSelector).val(JSON.stringify(pdbs));
         $(pdbsCountSelector).html(pdbs.length);
 
-    } else if (mode == 'Two groups of structures') {
+    } else if (mode == 'Two sets of structures') {
         var total_selected = pdbs.length;
         var selected_visible = $('.pdb_selected:checked:visible').length;
         var ModalpdbsCountSelector = '#two-crystal-group-pdbs-modal-' + group + '-text';
@@ -114,7 +115,7 @@ function check_all(elem, button) {
         }
     }
 
-    if (mode == 'Single group of structures' || $("#single-group-tree-tab").length) {
+    if (mode == 'Single set of structures' || $("#single-group-tree-tab").length) {
         var pdbs = [];
 
         // REMOVE EXISITING? Probably not, more logical that filtering adds more
@@ -125,7 +126,7 @@ function check_all(elem, button) {
         } else {
             $('.pdb_selected:visible').prop("checked", false);
         }
-    } else if (mode == 'Two groups of structures') {
+    } else if (mode == 'Two sets of structures') {
         group = $(elem).closest('.tableview').attr('group-number');
         if (group) mode = mode + group;
         var pdbs = [];
@@ -256,13 +257,13 @@ function showPDBtable(element) {
         console.log(mode);
 
         $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-        $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
-        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
+        $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
+        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
         if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
-          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
-          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
-          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
 
         oTable[mode] = $(element + ' .tableview table').DataTable({
@@ -423,14 +424,14 @@ function showPDBtable(element) {
                     column_number: 15,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "G protein",
+                    filter_default_label: "G prot",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "B arrestin",
+                    filter_default_label: "B arr",
                     filter_reset_button_text: false,
                 },
                 {

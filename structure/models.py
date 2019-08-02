@@ -29,6 +29,7 @@ class Structure(models.Model):
     annotated = models.BooleanField(default=True)
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    tm6_angle = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     sodium = models.BooleanField(default=False)
     signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.SET_NULL, related_name='signprot_complex')
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
@@ -293,6 +294,14 @@ class StructureModelRMSD(models.Model):
 class StructureType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
+
+    def type_short(self):
+        if self.name=="X-ray diffraction":
+            return "X-ray"
+        elif self.name=="Electron microscopy":
+            return "cryo-EM"
+        else:
+            return self.name
 
     def __str__(self):
         return self.name
