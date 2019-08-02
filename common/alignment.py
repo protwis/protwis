@@ -781,7 +781,7 @@ class Alignment:
                         display_generic_number = p[1]
                         amino_acid = p[2]
 
-                        ignore_list = ignore.get(display_generic_number, [])
+                        ignore_list = ignore.get(generic_number, [])
 
                         # Indicate gap and collect statistics
                         if amino_acid in self.gaps:
@@ -792,8 +792,8 @@ class Alignment:
                             continue
 
                         # skip when position is on the ignore list
-                        if entry_name in ignore_list:
-                            # print(amino_acid)
+                        if entry_name in ignore_list or amino_acid in self.gaps:
+                        # if entry_name in ignore_list:
                             continue
 
                         # Init counters

@@ -198,14 +198,26 @@ text.expand {
 }
 
 .coupling {
-    border-radius: 3px;
+    border-radius: 0px;
     color: white;
+    padding: 2px 5px;
 }
 
 .coupling.prim {
-    background-color: #000000;
+    background-color: #808080;
 }
 
 .coupling.seco {
-    background-color: #7F7F7F;
+    background-color: #bebebe;
+}
+
+.coupling.no {
+    color: black;
+    background-color: #f9f9f9
+}
+
+#amount_min, #amount_max {
+    position: relative;
+    width: 50px;
+    text-align: center;
 }
