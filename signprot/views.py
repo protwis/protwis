@@ -823,8 +823,9 @@ def IMSequenceSignature(request):
 def IMSignatureMatch(request):
     '''Take the signature stored in the session and query the db'''
     signature_data = request.session.get('signature')
-    ss_pos = request.POST.getlist('pos[]')
+    ss_pos = get_entry_names(request)
     cutoff = request.POST.get('cutoff')
+
     request.session['ss_pos'] = ss_pos
     request.session['cutoff'] = cutoff
 
@@ -839,9 +840,10 @@ def IMSignatureMatch(request):
         signature_data['diff_matrix'],
         pos_set,
         pos_set,
-        cutoff = 0
+        cutoff = 0,
+        signprot=True
     )
-
+    
     maj_pfam = Counter(pfam).most_common()[0][0]
     signature_match.score_protein_class(maj_pfam)
     # request.session['signature_match'] = signature_match
@@ -881,12 +883,12 @@ def render_IMSigMat(request):
         signature_data['diff_matrix'],
         pos_set,
         pos_set,
-        cutoff = 0
+        cutoff = 0,
+        signprot=True
     )
 
     maj_pfam = Counter(pfam).most_common()[0][0]
     signature_match.score_protein_class(maj_pfam)
-
 
     response = render(
         request,

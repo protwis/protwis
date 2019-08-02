@@ -653,7 +653,7 @@ $(document).ready(function () {
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata){
       if (pdb_sel.indexOf(int_meta['pdb_id']) != -1){
-        pos_set = [int_meta['entry_name'], ...pos_set]
+        pos_set = [int_meta['conf_id'], ...pos_set]
       }
     }
 

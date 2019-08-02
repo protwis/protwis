@@ -934,7 +934,7 @@ class SequenceSignature:
 
 class SignatureMatch():
 
-    def __init__(self, common_positions, numbering_schemes, segments, difference_matrix, protein_set_pos, protein_set_neg, cutoff=40):
+    def __init__(self, common_positions, numbering_schemes, segments, difference_matrix, protein_set_pos, protein_set_neg, cutoff=40, signprot=False):
 
         self.cutoff = cutoff
         self.norm = 0.0
@@ -968,8 +968,8 @@ class SignatureMatch():
                     self.residue_to_feat['-'].add(fidx)
 
         self._find_norm()
-        self.scores_pos, self.signatures_pos, self.scored_proteins_pos = self.score_protein_set(self.protein_set_pos)
-        self.scores_neg, self.signatures_neg, self.scored_proteins_neg = self.score_protein_set(self.protein_set_neg)
+        self.scores_pos, self.signatures_pos, self.scored_proteins_pos = self.score_protein_set(self.protein_set_pos, signprot)
+        self.scores_neg, self.signatures_neg, self.scored_proteins_neg = self.score_protein_set(self.protein_set_neg, signprot)
 
 
     def _assign_preferred_features(self, signature, segment, ref_matrix):
@@ -1109,17 +1109,24 @@ class SignatureMatch():
         print("Total time: ", end - start)
 
 
-    def score_protein_set(self, protein_set):
+    def score_protein_set(self, protein_set, signprot=False):
 
         start = time.time()
         protein_scores = {}
         protein_signature_match = {}
+
+        seq_type_slug=['wt']
+        if signprot:
+            seq_type_slug.append('mod')
+
+        print('here')
+        print(protein_set)
         pcfs = ProteinConformation.objects.order_by(
             'protein__family__slug',
             'protein__entry_name'
             ).filter(
                 protein__in=protein_set,
-                protein__sequence_type__slug='wt'
+                protein__sequence_type__slug__in=seq_type_slug
                 ).exclude(protein__entry_name__endswith='-consensus').prefetch_related('protein')
         
         relevant_gns_total = []
