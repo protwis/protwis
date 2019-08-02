@@ -67,7 +67,7 @@ const get_ignore = function(){
   // values are an array of entry_names with an
   // interaction at that position
   const data_int = data.receptor.reduce( function (acc, current) {
-    acc[current.rec_gn] = [current.entry_name].concat(acc[current.rec_gn])
+    acc[current.rec_gn] = [current.pdb_id].concat(acc[current.rec_gn])
     return acc;
   }, {});
 
@@ -76,8 +76,8 @@ const get_ignore = function(){
   // have an interaction registered in the data_int object
   const ignore_markers = data_non.reduce(function (acc, current) {
     let protein_array = data_int[current.rec_gn]
-    if ( !protein_array.includes(current.entry_name) ) {
-      acc[current.rec_gn] = [current.entry_name].concat(acc[current.rec_gn])
+    if ( !protein_array.includes(current.pdb_id) ) {
+      acc[current.rec_gn] = [current.pdb_id.toLowerCase()].concat(acc[current.rec_gn])
     }
     return acc;
   }, {});

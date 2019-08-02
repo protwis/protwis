@@ -1119,8 +1119,6 @@ class SignatureMatch():
         if signprot:
             seq_type_slug.append('mod')
 
-        print('here')
-        print(protein_set)
         pcfs = ProteinConformation.objects.order_by(
             'protein__family__slug',
             'protein__entry_name'
