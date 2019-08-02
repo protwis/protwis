@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-    
+
 <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
@@ -27,10 +27,10 @@
 
     <ul class="nav nav-tabs" id="mode_nav">
         <li class="active">
-            <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
+            <a href="#single-crystal-group-tab" data-toggle="tab">Single set of structures</a>
         </li>
         <li class="">
-            <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
+            <a href="#two-crystal-groups-tab" data-toggle="tab">Two sets of structures</a>
         </li>
     </ul>
 </div>
@@ -104,7 +104,7 @@
 
                     <div id="slider-range"></div>
                 </div>
-                
+
                 <!-- calculation status display -->
                 <!-- <div class="col-md-2">                        -->
                 <!--     <div class="col">                         -->
@@ -136,9 +136,9 @@
 
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">Select a group of structures</h4>
+                <h4 class="modal-title">Select a set of structures</h4>
             </div>
-            
+
             <div class="modal-body">
                 <div class="col-md-12">
                     <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
