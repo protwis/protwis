@@ -211,8 +211,9 @@ const initialize_consensus = function(cons_data){
     var sort_code = con_seq[gn][0]['sort_code'].replace('α', 'a')
     var gn_aa = _.uniqBy(non_interactions.filter(x => x.rec_gn === gn), "pdb_id").filter(x => pdbScale.domain().includes(x.pdb_id)).map(x => x.rec_aa)
     prop_seq_cons = 0
+    ignore_sort_code = ['-_', 'Sm_any']
     for (var aa of gn_aa){
-      if (AMINO_ACID_GROUPS[sort_code].includes(aa)){
+      if (!ignore_sort_code.includes(sort_code) && AMINO_ACID_GROUPS[sort_code].includes(aa)){
         prop_seq_cons += 1
       }
     }
