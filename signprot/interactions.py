@@ -148,6 +148,7 @@ def get_signature_features(signature_data, generic_numbers, feats):
                                 # 'expl': str(freq[2]),
                                 "aa": str(tmp[k]["aa"]),
                                 "aa_cons": int(tmp[k]["aa_cons"]),
+                                "sort_code": str(sort_code),
                             }
                         )
                     x += 1

@@ -1332,7 +1332,7 @@ var signprotmat = {
                 .append('g')
                 .attr('id', 'labels')
 
-            var gap = 20
+            var gap = 40
 
             // Labels
             label_area
@@ -1357,7 +1357,15 @@ var signprotmat = {
                 .attr('x', -2)
                 .attr('y', 75 + row_height * 3 + gap)
                 .attr("dy", row_height / 4)
-                .text('Conservation')
+                .text('Interaction Conservation')
+
+            label_area
+                .append('text')
+                .attr('class', 'con_seq_label')
+                .attr('x', -2)
+                .attr('y', 75 + row_height * 3.5 + gap)
+                .attr("dy", row_height / 4)
+                .text('Sequence Conservation')
 
             label_area
                 .append('text')
@@ -1373,7 +1381,15 @@ var signprotmat = {
                 .attr('x', -2)
                 .attr('y', 75 + row_height)
                 .attr("dy", row_height / 4)
-                .text('Conservation')
+                .text('Interaction Conservation')
+            
+            label_area
+                .append('text')
+                .attr('class', 'con_seq_label')
+                .attr('x', -2)
+                .attr('y', 75 + row_height * 1.5)
+                .attr("dy", row_height / 4)
+                .text('Sequence Conservation')
 
             // Expand Buttons
             var tmp = label_area
@@ -1567,7 +1583,7 @@ var signprotmat = {
                     .text(function (d) { return d.length; });
             }, function (exit) { return exit.remove(); });
 
-            // CONSERVATION
+            // Interaction CONSERVATION
             con_seq_mat
                 .selectAll("rect.cons_rect")
                 .data(function (d) { return d; })
@@ -1637,6 +1653,78 @@ var signprotmat = {
                     }
                 })
                     .text(function (d) { return d.freq; });
+            }, function (exit) { return exit.remove(); });
+
+            // Prooperty Sequence CONSERVATION
+            con_seq_mat
+                .selectAll("rect.prop_seq.cons_rect")
+                .data(function (d) { return d; })
+                .join(function (enter) {
+                return enter
+                    .append("rect")
+                    .attr("class", "prop_seq cons_rect")
+                    .style("fill", function (d) {
+                    if (d.cons === -1) {
+                        return "#ffffff";
+                    }
+                    else {
+                        return cScale(d.prop_seq_cons);
+                    }
+                })
+                    .style("stroke", "black")
+                    .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                    .attr('y', 75 + row_height * 3.5 + gap)
+                    .attr("width", xScale.step())
+                    .attr("height", row_height / 2);
+            }, function (update) {
+
+                return update
+                    .style("fill", function (d) {
+                    if (d.cons === -1) {
+                        return "#ffffff";
+                    }
+                    else {
+                        return cScale(d.prop_seq_cons);
+                    }
+                })
+                    .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                    .attr('y', 75 + row_height * 3.5 + gap)
+            }, function (exit) { return exit.remove(); });
+
+            con_seq_mat
+                .selectAll("text.prop_seq.cons_label")
+                .data(function (d) { return d; })
+                .join(function (enter) {
+                return enter
+                    .append("text")
+                    .attr("class", "prop_seq cons_label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", function (d) { return xScale(d.gn); })
+                    .attr('y', 75 + row_height * 3.5 + gap)
+                    .attr("dy", row_height / 4)
+                    .style("fill", function (d) {
+                    if (Math.abs(d.prop_seq_cons) >= 50) {
+                        return "#eaeaea";
+                    }
+                    else if (Math.abs(d.prop_seq_cons) < 50) {
+                        return "#000000";
+                    }
+                })
+                    .text(function (d) { return d.prop_seq_cons; });
+            }, function (update) {
+
+                return update
+                    .attr("x", function (d) { return xScale(d.gn); })
+                    .attr('y', 75 + row_height * 3.5 + gap)
+                    .style("fill", function (d) {
+                    if (Math.abs(d.prop_seq_cons) >= 50) {
+                        return "#eaeaea";
+                    }
+                    else if (Math.abs(d.prop_seq_cons) < 50) {
+                        return "#000000";
+                    }
+                })
+                    .text(function (d) { return d.prop_seq_cons; });
             }, function (exit) { return exit.remove(); });
 
 
@@ -1758,6 +1846,78 @@ var signprotmat = {
                     .text(function (d) { return d.aa_cons; });
             }, function (exit) { return exit.remove(); });
 
+
+            con_seq_mat
+                .selectAll("rect.seq.cons_rect")
+                .data(function (d) { return d; })
+                .join(function (enter) {
+                return enter
+                    .append("rect")
+                    .attr("class", "seq cons_rect")
+                    .style("fill", function (d) {
+                    if (d.cons === -1) {
+                        return "#ffffff";
+                    }
+                    else {
+                        return cScale(d.seq_cons);
+                    }
+                })
+                    .style("stroke", "black")
+                    .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                    .attr('y', 75 + row_height * 1.5)
+                    .attr("width", xScale.step())
+                    .attr("height", row_height / 2);
+            }, function (update) {
+
+                return update
+                    .style("fill", function (d) {
+                    if (d.cons === -1) {
+                        return "#ffffff";
+                    }
+                    else {
+                        return cScale(d.seq_cons);
+                    }
+                })
+                    .attr("x", function (d) { return xScale(d.gn) - xScale.step() / 2; })
+                    .attr('y', 75 + row_height * 1.5)
+            }, function (exit) { return exit.remove(); });
+
+            con_seq_mat
+                .selectAll("text.seq.cons_rect")
+                .data(function (d) { return d; })
+                .join(function (enter) {
+                return enter
+                    .append("text")
+                    .attr("class", "seq cons_label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", function (d) { return xScale(d.gn); })
+                    .attr('y', 75 + row_height * 1.5)
+                    .attr("dy", row_height / 4)
+                    .style("fill", function (d) {
+                    if (Math.abs(d.seq_cons) >= 50) {
+                        return "#eaeaea";
+                    }
+                    else if (Math.abs(d.seq_cons) < 50) {
+                        return "#000000";
+                    }
+                })
+                    .text(function (d) { return d.seq_cons; });
+            }, function (update) {
+
+                return update
+                    .attr("x", function (d) { return xScale(d.gn); })
+                    .attr('y', 75 + row_height * 1.5)
+                    .style("fill", function (d) {
+                    if (Math.abs(d.seq_cons) >= 50) {
+                        return "#eaeaea";
+                    }
+                    else if (Math.abs(d.seq_cons) < 50) {
+                        return "#000000";
+                    }
+                })
+                    .text(function (d) { return d.seq_cons; });
+            }, function (exit) { return exit.remove(); });
+
         },
 
         draw_seq_sig: function (data_in, svg, xScale) {
@@ -1829,7 +1989,7 @@ var signprotmat = {
                 .attr("class", "collapse")
                 .append("g")
                 .attr("id", "seqsig_feature")
-                .attr("transform", "translate(" + 0 + "," + 120 + ")")
+                .attr("transform", "translate(" + 0 + "," + 140 + ")")
                 .selectAll("text")
                 .data(uniq_feats)
                 .enter();
@@ -1910,7 +2070,7 @@ var signprotmat = {
             svg.select("g#seqsig_group")
                 .append("g")
                 .attr("id", "seqsig_mat")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 120 + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 140 + ")")
                 .append("rect")
                 .attr("class", "border-bg")
                 .style("fill", "#ffffff")
@@ -1990,7 +2150,7 @@ var signprotmat = {
                 .select("g")
                 .append("g")
                 .attr("class", "x axis")
-                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 130 + ")")
+                .attr("transform", "translate(" + -xScale.step() / 2 + "," + 170 + ")")
                 .call(xAxis)
                 .selectAll("text")
                 .attr("text-anchor", "end")
