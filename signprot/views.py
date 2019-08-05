@@ -839,7 +839,7 @@ def IMSignatureMatch(request):
         signature_data['common_segments'],
         signature_data['diff_matrix'],
         pos_set,
-        pos_set,
+        # pos_set,
         cutoff = 0,
         signprot=True
     )
@@ -851,10 +851,10 @@ def IMSignatureMatch(request):
     signature_match = {
         'scores': signature_match.protein_report,
         'scores_pos': signature_match.scores_pos,
-        'scores_neg': signature_match.scores_neg,
+        # 'scores_neg': signature_match.scores_neg,
         'protein_signatures': signature_match.protein_signatures,
         'signatures_pos': signature_match.signatures_pos,
-        'signatures_neg': signature_match.signatures_neg,
+        # 'signatures_neg': signature_match.signatures_neg,
         'signature_filtered': signature_match.signature_consensus,
         'relevant_gn': signature_match.relevant_gn,
         'relevant_segments': signature_match.relevant_segments,
@@ -882,7 +882,7 @@ def render_IMSigMat(request):
         signature_data['common_segments'],
         signature_data['diff_matrix'],
         pos_set,
-        pos_set,
+        # pos_set,
         cutoff = 0,
         signprot=True
     )
