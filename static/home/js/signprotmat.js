@@ -780,11 +780,11 @@ var signprotmat = {
                 .append("g")
                 .attr("class", function (d) { return "p" + d.pairs.length; })
                 .on("mouseover", function (d) {
-                tip.show(d);
-            })
+                    tip.show(d);
+                })
                 .on("mouseout", function (d) {
-                tip.hide();
-            });
+                    tip.hide();
+                });
                 // .on("click", function (d) {
                 // var index;
                 // // let rect_x = d3.event.target.getAttribute('x')
@@ -1045,11 +1045,14 @@ var signprotmat = {
                 .attr("class", function (d) { return "R_" + _.replace(d.rec_gn, ".", "p") + "_P_" + d.pdb_id; })
                 .call(recTip)
                 .on("mouseover", function (d) {
-                recTip.show(d);
-            })
+                    if (d.int_ty != null){
+                        recTip.show(d);
+                    }
+                })
                 .on("mouseout", function (d) {
-                recTip.hide();
-            });
+                    recTip.hide();
+                });
+
             each_res
                 .append("rect")
                 .attr("class", "res_rect")
@@ -1113,11 +1116,13 @@ var signprotmat = {
                 .attr("class", function (d) { return "S_" + d.sig_gn.replace(/\./gi, "p") + "_P_" + d.pdb_id; })
                 .call(sigTip)
                 .on("mouseover", function (d) {
-                sigTip.show(d);
-            })
+                    if (d.int_ty != 'undefined'){
+                        sigTip.show(d);
+                    }
+                })
                 .on("mouseout", function (d) {
-                sigTip.hide();
-            });
+                    sigTip.hide();
+                });
             each_res
                 .append("rect")
                 .style("fill", function (d) { return colScale(d.int_ty[0]); })
