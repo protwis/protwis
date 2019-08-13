@@ -42,6 +42,24 @@ function make_range_number_cols(start_column, repeat_number) {
     return repeated_from_to;
 }
 
+jQuery.extend( jQuery.fn.dataTableExt.oSort, {
+    "non-empty-string-asc": function (str1, str2) {
+        if(str1 == "")
+            return 1;
+        if(str2 == "")
+            return -1;
+        return ((str1 < str2) ? -1 : ((str1 > str2) ? 1 : 0));
+    },
+ 
+    "non-empty-string-desc": function (str1, str2) {
+        if(str1 == "")
+            return 1;
+        if(str2 == "")
+            return -1;
+        return ((str1 < str2) ? 1 : ((str1 > str2) ? -1 : 0));
+    }
+} );
+
 function renderDataTablesYadcf(element) {
 
     console.time("renderDataTablesYadcf");
@@ -88,6 +106,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -322,6 +341,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -595,6 +615,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -699,6 +720,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -932,6 +954,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
