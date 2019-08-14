@@ -48,6 +48,10 @@ jQuery.extend( jQuery.fn.dataTableExt.oSort, {
             return 1;
         if(str2 == "")
             return -1;
+        if ($.isNumeric(str1))
+            str1 = parseFloat(str1);
+        if ($.isNumeric(str2))
+            str2 = parseFloat(str2);
         return ((str1 < str2) ? -1 : ((str1 > str2) ? 1 : 0));
     },
  
@@ -56,6 +60,10 @@ jQuery.extend( jQuery.fn.dataTableExt.oSort, {
             return 1;
         if(str2 == "")
             return -1;
+        if ($.isNumeric(str1))
+            str1 = parseFloat(str1);
+        if ($.isNumeric(str2))
+            str2 = parseFloat(str2);
         return ((str1 < str2) ? 1 : ((str1 > str2) ? -1 : 0));
     }
 } );
