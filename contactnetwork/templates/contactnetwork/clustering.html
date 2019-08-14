@@ -124,8 +124,8 @@
                           <li><a href="#">Ligand type</a></li>
                           <li><a href="#">Receptor family</a></li>
                           <h6 class="dropdown-header">Structure</h6>
-                          <li><a href="#">Receptor activation state</a></li>
-                          <li class="active"><a href="#">Ligand function</a></li>
+                          <li class="active"><a href="#">Receptor activation state</a></li>
+                          <li><a href="#">Ligand function</a></li>
                           <li><a href="#">Experimental method</a></li>
                           <h6 class="dropdown-header">Coupling</h6>
                           <li><a href="#">All G-protein coupling</a></li>
@@ -142,9 +142,9 @@
                           <h6 class="dropdown-header">Classification</h6>
                           <li><a href="#">GPCR class</a></li>
                           <li><a href="#">Ligand type</a></li>
-                          <li><a href="#">Receptor family</a></li>
+                          <li class="active"><a href="#">Receptor family</a></li>
                           <h6 class="dropdown-header">Structure</h6>
-                          <li class="active"><a href="#">Receptor activation state</a></li>
+                          <li><a href="#">Receptor activation state</a></li>
                           <li><a href="#">Ligand function</a></li>
                           <li><a href="#">Experimental method</a></li>
                           <h6 class="dropdown-header">Coupling</h6>
@@ -488,7 +488,7 @@
           maximumLeafSize();
         }
 
-        var displayData = 7
+        var displayData = 0
         function toggleDataOuter(event){
           var dataName = event.target.innerText
 
@@ -577,7 +577,7 @@
           }
         }
 
-        var displayDataInner = 0
+        var displayDataInner = 3
         function toggleDataInner(event){
           var dataName = event.target.innerText
           displayDataInner = menuItem(dataName)
