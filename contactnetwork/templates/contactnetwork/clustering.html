@@ -23,7 +23,7 @@
                     <div class="col-md-2">
                         <div class="btn btn-success pull-left go-button">Go (distance pairs)</div>
                         <div class="btn btn-success pull-left go-button">Go (distance to core)</div>
-                        <div class="btn btn-success pull-left go-button">Go (distance to 5xXY)</div>
+                        <div class="btn btn-success pull-left go-button">Go (distance to most stable residue)</div>
                     </div>
                     <div class="col-md-2 hidden" id="output-group0">
                         <div class="panel panel-default">
@@ -1042,7 +1042,7 @@
                       clusterMethod = 0
                     else if (this.innerHTML == "Go (distance to core)")
                       clusterMethod = 1
-                    else if (this.innerHTML.startsWith("Go (distance to 5x"))
+                    else if (this.innerHTML.startsWith("Go (distance to most stable residue)"))
                       clusterMethod = 2
 
                     console.log(clusterMethod)

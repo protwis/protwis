@@ -1896,14 +1896,6 @@ def coreMatrix(pdbs):
                         .exclude(core_distance=None) \
                         .values('structure__pdb_code__index', 'residue__generic_number__label', 'core_distance'))
 
-    # IN some cases the 7TM distances are missing e.g. due to missing (structure or annotation) of a TM bundle
-    pdbs_present = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs)\
-                        .exclude(residue__generic_number=None) \
-                        .exclude(core_distance=None) \
-                        .distinct('structure__pdb_code__index').values('structure__pdb_code__index'))
-
-    pdbs = [pdb['structure__pdb_code__index'] for pdb in pdbs_present]
-
     # create dictionary of all structures and all distances
     core_distances = {}
     for i,d in enumerate(ds):
@@ -1911,7 +1903,15 @@ def coreMatrix(pdbs):
             core_distances[d['structure__pdb_code__index']] = {}
         core_distances[d['structure__pdb_code__index']][d['residue__generic_number__label']] = d['core_distance']
 
+    # IN some cases the 7TM distances are missing e.g. due to missing (structure or annotation) of a TM bundle
+    #pdbs_present = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs)\
+    #                    .exclude(residue__generic_number=None) \
+    #                    .exclude(core_distance=None) \
+    #                    .distinct('structure__pdb_code__index').values('structure__pdb_code__index'))
 
+    #pdbs = [pdb['structure__pdb_code__index'] for pdb in pdbs_present]
+
+    pdbs = list(core_distances.keys())
 
     distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
     for i, pdb1 in enumerate(pdbs):
@@ -1987,43 +1987,48 @@ def stableResMatrix(pdbs):
     # print(results)
 
 
-    # Most stable residues form each class
-    stable_residues = ['3x53', '1x44', '', '5x42', '1x29']
+    # Most stable residues from each class
+    stable_residues = {'001':'3x53', '002':'1x44', '003':'', '004':'5x42', '005':'1x29'}
 
-    # select all distances to selected residue
-    # DEBUG: fixed Class A residue for now
-    ds = list(Distance.objects.filter(structure__pdb_code__index__in=pdbs) \
-                             .filter(gns_pair__contains=stable_residues[0]) \
-                             .values('structure__pdb_code__index', 'gns_pair', 'distance'))
-
-    # IN some cases a structure is missing e.g. due to missing reference residue
-    pdbs_present = list(Distance.objects.filter(structure__pdb_code__index__in=pdbs) \
-                             .filter(gns_pair__contains=stable_residues[0]) \
-                             .distinct('structure__pdb_code__index').values('structure__pdb_code__index'))
-
-    pdbs = [pdb['structure__pdb_code__index'] for pdb in pdbs_present]
-
-    # create dictionary of all structures and all distances
     stable_distances = {}
-    for i,d in enumerate(ds):
-        if not d['structure__pdb_code__index'] in stable_distances:
-            stable_distances[d['structure__pdb_code__index']] = {}
+    pdb_classes = {}
+    for selclass in ['001', '002', '003', '004', '005']:
+        # select all distances to selected residue
+        reference = stable_residues[selclass]
+        ds = list(Distance.objects.filter(structure__pdb_code__index__in=pdbs) \
+                                .filter(structure__protein_conformation__protein__family__slug__startswith=selclass) \
+                                .filter(gns_pair__contains=reference) \
+                                .values('structure__pdb_code__index', 'gns_pair', 'distance'))
 
-        gn_label = d['gns_pair'].replace(stable_residues[0],"").replace("_","")
-        stable_distances[d['structure__pdb_code__index']][gn_label] = d['distance']
+        # create dictionary of all structures and all distances
+        for i,d in enumerate(ds):
+            if not d['structure__pdb_code__index'] in stable_distances:
+                stable_distances[d['structure__pdb_code__index']] = {}
+                pdb_classes[d['structure__pdb_code__index']] = selclass
+
+            gn_label = d['gns_pair'].replace(reference, "").replace("_", "")
+            stable_distances[d['structure__pdb_code__index']][gn_label] = d['distance']
+
+
+    pdbs = list(stable_distances.keys())
 
     distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
     for i, pdb1 in enumerate(pdbs):
         for j in range(i+1, len(pdbs)):
             pdb2 = pdbs[j]
 
-            # Get common GNs between two PDBs
-            common_between_pdbs = sorted(list(set(dict.keys(stable_distances[pdb1])).intersection(stable_distances[pdb2])))
-            # Get distance between cells that have both GNs.
-            distance = np.sum([ np.abs(stable_distances[pdb1][key] - stable_distances[pdb2][key]) for key in common_between_pdbs])
-            # normalize
-            distance_matrix[i, j] = pow(distance,2)/(len(common_between_pdbs)*len(common_between_pdbs))
-            distance_matrix[j, i] = distance_matrix[i, j]
+            if pdb_classes[pdb1] == pdb_classes[pdb2]:
+                # Get common GNs between two PDBs
+                common_between_pdbs = sorted(list(set(dict.keys(stable_distances[pdb1])).intersection(stable_distances[pdb2])))
+                # Get distance between cells that have both GNs.
+                distance = np.sum([ np.abs(stable_distances[pdb1][key] - stable_distances[pdb2][key]) for key in common_between_pdbs])
+                # normalize
+                distance_matrix[i, j] = pow(distance,2)/(len(common_between_pdbs)*len(common_between_pdbs))
+                distance_matrix[j, i] = distance_matrix[i, j]
+            else:
+                # Comparison accross classes - set very high distance
+                distance_matrix[i, j] = 100000
+                distance_matrix[j, i] = distance_matrix[i, j]
 
     return [distance_matrix, pdbs]
 
