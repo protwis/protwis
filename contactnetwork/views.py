@@ -262,7 +262,7 @@ def PdbTableData(request):
         r['resolution'] = "{0:.2g}".format(s.resolution)
         r['7tm_distance'] = s.distance
 
-        # TEST - overwrite with distance to 6x38
+        # DEBUGGING - overwrite with distance to 6x38
 #        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
 #        if len(tm6_distance)>0:
 #            tm6_distance = tm6_distance[0].core_distance
@@ -271,6 +271,27 @@ def PdbTableData(request):
 #        r['7tm_distance'] = tm6_distance
 
 #        r['tm6_angle'] = s.tm6_angle if s.tm6_angle != None else 0
+
+        # DEBUGGING - overwrite with distance to 6x38-2x41
+        #tm2_tm6_distance = Distance.objects.filter(structure__pdb_code__index=pdb_id.upper(), res2__generic_number__label="6x38", res1__generic_number__label="2x41")
+        # DEBUGGING - overwrite with distance to 6x37-2x46
+        # tm2_tm6_distance = Distance.objects.filter(structure__pdb_code__index=pdb_id.upper(), gns_pair="2x46_6x37")
+        # DEBUGGING - overwrite with distance to 5x59-6x37
+        # tm5_tm6_distance = Distance.objects.filter(structure__pdb_code__index=pdb_id.upper(), gns_pair="5x59_6x37")
+        # if len(tm2_tm6_distance)>0 and len(tm5_tm6_distance)>0:
+        #     r['7tm_distance'] = "{} {} {}".format(tm2_tm6_distance[0].distance/100, tm5_tm6_distance[0].distance/100, (tm2_tm6_distance[0].distance-tm5_tm6_distance[0].distance)/100)
+        # else:
+        #     r['7tm_distance'] = -1
+
+        # DEBUGGING - overwrite with distance to 3x39-6x41
+        #tm3_tm6_distance = Distance.objects.filter(structure__pdb_code__index=pdb_id.upper(), gns_pair="3x39_6x41")
+        #if len(tm3_tm6_distance)>0:
+        #    r['7tm_distance'] = tm3_tm6_distance[0].distance
+        #else:
+        #    r['7tm_distance'] = -1
+
+        # DEBUGGING - overwrite with tm6 tilt angle
+#       r['7tm_distance'] = s.tm6_angle if s.tm6_angle != None else 0
 
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin
@@ -1907,6 +1928,105 @@ def coreMatrix(pdbs):
 
     return [distance_matrix, pdbs]
 
+
+def stableResMatrix(pdbs):
+    # all classes
+    # classes = ['001', '002', '003', '004', '005']
+    # results = []
+    # for selclass in classes:
+    #     numStructs = Distance.objects.filter(structure__protein_conformation__protein__family__slug__startswith=selclass).values('structure_id').distinct().count()
+    #     conformations = Distance.objects.filter(structure__protein_conformation__protein__family__slug__startswith=selclass).values('structure__protein_conformation')
+    #
+    #     # All GNs with at least 90% presence in all structures of this class
+    #     structure_gn = Residue.objects.filter(protein_conformation__in=conformations) \
+    #         .exclude(generic_number=None) \
+    #         .exclude(generic_number__label__startswith='8x') \
+    #         .exclude(generic_number__label__startswith='12x') \
+    #         .exclude(generic_number__label__startswith='23x') \
+    #         .exclude(generic_number__label__startswith='34x') \
+    #         .exclude(generic_number__label__startswith='45x') \
+    #         .values('generic_number__label') \
+    #         .annotate(c = Count('protein_conformation', distinct=True)) \
+    #         .order_by('generic_number__label') \
+    #         .filter(c__gte=int(numStructs*0.9))
+    #
+    #     common_gn = [ entry["generic_number__label"] for entry in structure_gn ]
+    #
+    #     structure_gn = Residue.objects.filter(protein_conformation__in=conformations) \
+    #         .exclude(generic_number=None) \
+    #         .exclude(generic_number__label__startswith='8x') \
+    #         .exclude(generic_number__label__startswith='12x') \
+    #         .exclude(generic_number__label__startswith='23x') \
+    #         .exclude(generic_number__label__startswith='34x') \
+    #         .exclude(generic_number__label__startswith='45x') \
+    #         .values('generic_number__label') \
+    #         .annotate(c = Count('protein_conformation', distinct=True)) \
+    #         .order_by('generic_number__label') \
+    #         .filter(c__gte=int(numStructs))
+    #
+    #     always_gn = [ entry["generic_number__label"] for entry in structure_gn ]
+    #
+    #     print("Class {} with {} structures".format(selclass, numStructs))
+    #     print(common_gn)
+    #     print(always_gn)
+    #
+    #     for gn in always_gn:
+    #         # collect all distances merging pairs => stdev + average
+    ##         ds = list(Distance.objects.filter(structure__protein_conformation__protein__family__slug__startswith=selclass) \
+    ##                         .filter(gns_pair__contains=gn)
+    ##                         .filter(gn1__in=common_gn).filter(gn2__in=common_gn) \
+    ##                         .values('gns_pair') \
+    ##                         .annotate(mean = Avg('distance'), std = StdDev('distance'), c = Count('distance')))
+    ##
+    ##         # calculate average variation
+    ##         totalnorm = sum([ entry['std']/entry['mean'] for entry in ds])/len(ds)
+    ##         totalstd = sum([ entry['std'] for entry in ds])/len(ds)
+    ##         print("{} has a variation of {} - {}".format(gn, totalnorm, totalstd))
+    ##         results.append([selclass, gn, totalnorm, totalstd])
+    #
+    # print(results)
+
+
+    # Most stable residues form each class
+    stable_residues = ['3x53', '1x44', '', '5x42', '1x29']
+
+    # select all distances to selected residue
+    # DEBUG: fixed Class A residue for now
+    ds = list(Distance.objects.filter(structure__pdb_code__index__in=pdbs) \
+                             .filter(gns_pair__contains=stable_residues[0]) \
+                             .values('structure__pdb_code__index', 'gns_pair', 'distance'))
+
+    # IN some cases a structure is missing e.g. due to missing reference residue
+    pdbs_present = list(Distance.objects.filter(structure__pdb_code__index__in=pdbs) \
+                             .filter(gns_pair__contains=stable_residues[0]) \
+                             .distinct('structure__pdb_code__index').values('structure__pdb_code__index'))
+
+    pdbs = [pdb['structure__pdb_code__index'] for pdb in pdbs_present]
+
+    # create dictionary of all structures and all distances
+    stable_distances = {}
+    for i,d in enumerate(ds):
+        if not d['structure__pdb_code__index'] in stable_distances:
+            stable_distances[d['structure__pdb_code__index']] = {}
+
+        gn_label = d['gns_pair'].replace(stable_residues[0],"").replace("_","")
+        stable_distances[d['structure__pdb_code__index']][gn_label] = d['distance']
+
+    distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
+    for i, pdb1 in enumerate(pdbs):
+        for j in range(i+1, len(pdbs)):
+            pdb2 = pdbs[j]
+
+            # Get common GNs between two PDBs
+            common_between_pdbs = sorted(list(set(dict.keys(stable_distances[pdb1])).intersection(stable_distances[pdb2])))
+            # Get distance between cells that have both GNs.
+            distance = np.sum([ np.abs(stable_distances[pdb1][key] - stable_distances[pdb2][key]) for key in common_between_pdbs])
+            # normalize
+            distance_matrix[i, j] = pow(distance,2)/(len(common_between_pdbs)*len(common_between_pdbs))
+            distance_matrix[j, i] = distance_matrix[i, j]
+
+    return [distance_matrix, pdbs]
+
 def ClusteringData(request):
     # PDB files
     try:
@@ -1923,8 +2043,14 @@ def ClusteringData(request):
     data = {}
 
     # load all
-    if 'new_cluster' in request.GET and request.GET.get('new_cluster')=="true":
+    cluster_method = 0
+    if 'cluster-method' in request.GET:
+        cluster_method = request.GET.get('cluster-method')
+
+    if cluster_method == '1':
         [distance_matrix, pdbs] = coreMatrix(pdbs)
+    elif cluster_method == '2':
+        [distance_matrix, pdbs] = stableResMatrix(pdbs) # replace with distance to most stable residue
     else:
         dis = Distances()
         dis.load_pdbs(pdbs)

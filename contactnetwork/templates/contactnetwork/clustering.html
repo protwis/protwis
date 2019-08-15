@@ -23,6 +23,7 @@
                     <div class="col-md-2">
                         <div class="btn btn-success pull-left go-button">Go (distance pairs)</div>
                         <div class="btn btn-success pull-left go-button">Go (distance to core)</div>
+                        <div class="btn btn-success pull-left go-button">Go (distance to 5xXY)</div>
                     </div>
                     <div class="col-md-2 hidden" id="output-group0">
                         <div class="panel panel-default">
@@ -1035,11 +1036,21 @@
                     $("#clustering-tree").html("")
                     $("#svgloading").remove();
                     $(selector + ' .tree-container').append('<span id="svgloading">Loading...</span>');
-                    newCluster = (this.innerHTML=="Go (distance to core)")
+                    clusterMethod = 0
+                    console.log(this.innerHTML)
+                    if (this.innerHTML == "Go (distance pairs)")
+                      clusterMethod = 0
+                    else if (this.innerHTML == "Go (distance to core)")
+                      clusterMethod = 1
+                    else if (this.innerHTML.startsWith("Go (distance to 5x"))
+                      clusterMethod = 2
+
+                    console.log(clusterMethod)
+
                     $.getJSON( '/contactnetwork/clusteringdata',
                     {
                         'pdbs': pdbs.join(","),
-                        'new_cluster': newCluster
+                        'cluster-method': clusterMethod
                     },
                     /*$.post('/contactnetwork/clusteringdata',
                     {
