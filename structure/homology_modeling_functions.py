@@ -218,7 +218,7 @@ class GPCRDBParsingPDB(object):
             residues = residues.filter(protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']).order_by('sequence_number')
             output = OrderedDict()
             for r in residues:
-                # print(r, r.display_generic_number.label, r.protein_segment.slug)
+                print(r, r.display_generic_number.label, r.protein_segment.slug)
                 if r.protein_segment.slug==None:
                     continue
                 if r.protein_segment.slug not in output:
@@ -246,6 +246,7 @@ class GPCRDBParsingPDB(object):
                                 atom.set_bfactor(gn)
                             atom_list.append(atom)
                         output[r.protein_segment.slug][ggn(r.display_generic_number.label).replace('x','.')] = atom_list
+            pprint.pprint(output)
             return output
         else:
             assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
@@ -342,7 +343,6 @@ class GPCRDBParsingPDB(object):
                             except:
                                 found_gn = str(gn)
                             output[found_res.protein_segment.slug][found_gn] = res
-            
         return output
 
 
