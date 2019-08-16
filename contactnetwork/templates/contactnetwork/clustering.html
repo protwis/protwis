@@ -20,10 +20,11 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        <div class="btn btn-success pull-left go-button">Go (distance pairs)</div>
-                        <div class="btn btn-success pull-left go-button">Go (distance to core)</div>
-                        <div class="btn btn-success pull-left go-button">Go (distance to most stable residue)</div>
+                    <div class="col-md-3">
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs - normalized)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to core)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to most stable residue)</div></div>
                     </div>
                     <div class="col-md-2 hidden" id="output-group0">
                         <div class="panel panel-default">
@@ -706,12 +707,13 @@
           return array.filter(el => el !== element);
         }
 
+        var splitNodesize = 0
         function nodeStyler(element, node){
+            var scale = 0.8;
             if (d3.layout.phylotree.is_leafnode(node)) {
                 if (node.name in treeAnnotations) {
                     var node_label = element.select("text");
                     var font_size  = parseFloat(node_label.style("font-size"));
-                    var scale = 0.8;
 
                     // Add inner markers
                     element.selectAll("circle").remove()
@@ -729,6 +731,7 @@
                           firstColor = currentColor
                         }
 
+                        splitNodesize = (font_size*scale)/2
                         var annotation = element.append("circle")
                         annotation.attr("r", (font_size*scale)/2)
                           .style("stroke", "#000")
@@ -883,6 +886,8 @@
 
                 }
                 element.selectAll("circle").style("fill", silhouette_color)
+                                           .attr("r", splitNodesize*0.9)
+                                           .attr("stroke-width", (splitNodesize*2)/scale/20*0.9 + "px")
 
                 // Add tooltip
                 element.selectAll("circle").on("mouseover", function(d) { // add tooltip
@@ -1037,15 +1042,15 @@
                     $("#svgloading").remove();
                     $(selector + ' .tree-container').append('<span id="svgloading">Loading...</span>');
                     clusterMethod = 0
-                    console.log(this.innerHTML)
-                    if (this.innerHTML == "Go (distance pairs)")
+                    if (this.innerHTML == "Go (distance pairs - normalized)")
                       clusterMethod = 0
                     else if (this.innerHTML == "Go (distance to core)")
                       clusterMethod = 1
                     else if (this.innerHTML.startsWith("Go (distance to most stable residue)"))
                       clusterMethod = 2
+                    else if (this.innerHTML.startsWith("Go (distance pairs)"))
+                      clusterMethod = 3
 
-                    console.log(clusterMethod)
 
                     $.getJSON( '/contactnetwork/clusteringdata',
                     {

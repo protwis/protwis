@@ -2056,6 +2056,10 @@ def ClusteringData(request):
         [distance_matrix, pdbs] = coreMatrix(pdbs)
     elif cluster_method == '2':
         [distance_matrix, pdbs] = stableResMatrix(pdbs) # replace with distance to most stable residue
+    elif cluster_method == '3':
+        dis = Distances()
+        dis.load_pdbs(pdbs)
+        distance_matrix = dis.get_distance_matrix(normalize = False)
     else:
         dis = Distances()
         dis.load_pdbs(pdbs)
