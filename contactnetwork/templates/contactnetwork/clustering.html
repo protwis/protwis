@@ -315,7 +315,7 @@
               'reroot': true, // rerooting
               'hide': false, // hiding a subtree
               'zoom': false, // zooming
-              'inner_spacing': (newCluster ? 1 : 5) // extra spacing between splits in tree (own custom option)
+              'inner_spacing': (clusterMethod==1 ? 1 : 5) // extra spacing between splits in tree (own custom option)
             })
             .radial(true)
             .node_span ('equal')

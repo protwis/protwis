@@ -1988,7 +1988,8 @@ def stableResMatrix(pdbs):
 
 
     # Most stable residues from each class
-    stable_residues = {'001':'3x53', '002':'1x44', '003':'', '004':'5x42', '005':'1x29'}
+    # stable_residues = {'001':'3x53', '002':'1x44', '003':'', '004':'5x42', '005':'1x29'}
+    stable_residues = {'001':'4x50', '002':'1x44', '003':'', '004':'5x42', '005':'1x29'}
 
     stable_distances = {}
     pdb_classes = {}
@@ -1997,7 +1998,7 @@ def stableResMatrix(pdbs):
         reference = stable_residues[selclass]
         ds = list(Distance.objects.filter(structure__pdb_code__index__in=pdbs) \
                                 .filter(structure__protein_conformation__protein__family__slug__startswith=selclass) \
-                                .filter(gns_pair__contains=reference) \
+                                .filter(Q(gn1=reference) | Q(gn2=reference)) \
                                 .values('structure__pdb_code__index', 'gns_pair', 'distance'))
 
         # create dictionary of all structures and all distances
