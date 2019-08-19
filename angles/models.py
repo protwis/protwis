@@ -14,6 +14,8 @@ class ResidueAngle(models.Model):
     theta         = models.FloatField(default=0, null=True)
     tau           = models.FloatField(default=0, null=True)
     core_distance = models.FloatField(default=0, null=True)
+    ss_dssp       = models.CharField(max_length=1, null=True)
+    ss_stride     = models.CharField(max_length=1, null=True)
 
     class Meta():
         db_table = 'residue_angles'

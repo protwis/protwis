@@ -326,13 +326,13 @@ class CallHomologyModeling():
             if self.signprot:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
                 # Run remodeling
-                if len(hse.remodel_resis)>0:
-                    rm = Remodeling('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), gaps=hse.remodel_resis, receptor=self.receptor, signprot=self.signprot)
-                    rm.make_pirfile()
-                    rm.run()
-                    logger.info('Remodeled {} {} at {}'.format(self.receptor, self.signprot, hse.remodel_resis))
-                    with open('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), 'r') as remodeled_pdb:
-                        formatted_model = remodeled_pdb.read()
+                # if len(hse.remodel_resis)>0:
+                #     rm = Remodeling('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), gaps=hse.remodel_resis, receptor=self.receptor, signprot=self.signprot)
+                #     rm.make_pirfile()
+                #     rm.run()
+                #     logger.info('Remodeled {} {} at {}'.format(self.receptor, self.signprot, hse.remodel_resis))
+                #     with open('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), 'r') as remodeled_pdb:
+                #         formatted_model = remodeled_pdb.read()
             else:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, receptor=self.receptor)
             
@@ -542,12 +542,15 @@ class HomologyModeling(object):
         pos_list = []
         if self.complex:
             first_signprot_res = False
-        gpcr_segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='GPCR')]
+        gpcr_segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='GPCR') if not i.name.startswith("ECD")] #### FIX ME, for class B structures there will be issues because of same name of ECD H1 and G alpha H1
         for seg in self.template_source:
             for num in self.template_source[seg]:
                 try:
-                    num = str(Residue.objects.get(protein_conformation=self.prot_conf,
-                                                  display_generic_number__label=dgn(num,self.prot_conf)).sequence_number)
+                    if seg in gpcr_segments:
+                        num = str(Residue.objects.get(protein_conformation=self.prot_conf,
+                                                      display_generic_number__label=dgn(num,self.prot_conf)).sequence_number)
+                    else:
+                        raise AssertionError
                 except:
                     if self.complex and seg not in gpcr_segments:
                         try:
@@ -555,7 +558,7 @@ class HomologyModeling(object):
                                                           display_generic_number__label=num).sequence_number)
                             if not first_signprot_res:
                                 first_signprot_res = num
-                        except:
+                        except Exception as msg:
                             pass
                 pos_list.append(num)
         if self.complex:
@@ -564,6 +567,7 @@ class HomologyModeling(object):
 
         if self.complex:
             # first_signprot_i = [(i,j) for i,j in enumerate(pos_list) if j==first_signprot_res][-1][0]
+            print(pos_list)
             prev_p = int(pos_list[0])
             sp_first_indeces = []
             for i,p in enumerate(pos_list):
@@ -616,7 +620,11 @@ class HomologyModeling(object):
                         whitespace = (whitespace-3)*' '
                     group1 = pdb_re.group(1)
                     if 'OXT' in group1:
-                        atom_num_offset.append(int(pos_list[i]))
+                        if not self.complex:
+                            atom_num_offset.append(int(pos_list[i]))
+                        else:
+                            if i<sp_first_indeces[0]:
+                                atom_num_offset.append(int(pos_list[i])) ### only add OXT induced atom num offset from Receptor, not from sign proteins
                     if self.complex:
                         if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
@@ -1767,7 +1775,7 @@ class HomologyModeling(object):
                                             a.alignment_dict[label],main_pdb_array[label]):
                     icl3_c+=1
                     if 5<icl3_c<length-4:
-                        if self.main_structure.protein_conformation.protein.parent==ref_prot and chain_break==False:
+                        if chain_break==False and self.main_structure.protein_conformation.protein.parent==ref_prot:
                             a.reference_dict[label][r_s] = '/'
                             a.template_dict[label][t_s] = '/'
                             a.alignment_dict[label][a_s] = '/'
@@ -1792,6 +1800,11 @@ class HomologyModeling(object):
                     del main_pdb_array[i][ii]
         except:
             pass
+
+        print(chain_break)
+        print(a.reference_dict[label])
+        print(a.template_dict[label])
+        print(main_pdb_array[label])
         
         # non-conserved residue switching
         if switch_rotamers==True:
@@ -3148,7 +3161,6 @@ class HelixEndsModeling(HomologyModeling):
                                            display_generic_number__label=dgn(raw_helix_ends[raw_seg][1],
                                                                              protein_conf))
                 seq_nums = [i for i in range(e_gn.sequence_number-e_dif+1,e_gn.sequence_number+1)]
-                print(seq_nums)          
                 gns = [ggn(j.display_generic_number.label) for j in list(Residue.objects.filter(
                             protein_conformation=protein_conf, sequence_number__in=seq_nums))]
                 for gn in gns:
@@ -3232,8 +3244,6 @@ class HelixEndsModeling(HomologyModeling):
                     delete_ar.add((ref_seg, ref_res.replace('x','.')))
                 elif a.template_dict[temp_seg][temp_res]=='x' or (temp_seg[0]=='T' and temp_res.replace('x','.') not in 
                                                                                         list(main_pdb_array[temp_seg])):
-                    if ref_seg=='TM6':
-                        print(temp_res,list(full_template_dict_seg.keys()).index(temp_res), mid, offset)
                     if list(full_template_dict_seg.keys()).index(temp_res)<mid+offset:
                         modifications['added'][temp_seg][0].append(temp_res)
                     else:

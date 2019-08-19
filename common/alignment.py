@@ -1353,7 +1353,7 @@ class AlignedReferenceTemplate(Alignment):
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
-            'resolution').filter(annotated=True).exclude(refined=True)
+            'resolution').filter(annotated=True).exclude(refined=True).distinct()
         if self.revise_xtal==None:
             self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=['opsd_todpa', 'adrb1_melga'])
         self.load_proteins(
@@ -1364,8 +1364,8 @@ class AlignedReferenceTemplate(Alignment):
         '''
         if self.force_main_temp:
             st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
-            if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
-                self.overwrite_db_seq_nums(st, st.pdb_code.index)
+            # if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
+            #     self.overwrite_db_seq_nums(st, st.pdb_code.index)
             self.main_template_protein = [i for i in self.ordered_proteins if i.protein==st.protein_conformation.protein.parent][0]
             return st
         i = 1
@@ -1416,7 +1416,8 @@ class AlignedReferenceTemplate(Alignment):
                 for m in matches:
                     if m.protein_conformation.protein.parent==self.reference_protein.protein and int(protein.similarity)==0:
                         continue
-                    temp_list.append((m, int(protein.similarity), float(m.resolution), protein, m.representative))
+                    if (m, int(protein.similarity), float(m.resolution), protein, m.representative) not in temp_list:
+                        temp_list.append((m, int(protein.similarity), float(m.resolution), protein, m.representative))
             except:
                 pass
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],-x[4],x[2]))

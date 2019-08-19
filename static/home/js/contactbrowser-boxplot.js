@@ -250,7 +250,6 @@ function createBoxPlotResidue(data, element, plottype, limit_pdbs = false, aa = 
             break;
     }
 
-
     Plotly.newPlot(element, data, layout);
 }
 
