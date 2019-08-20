@@ -62,10 +62,19 @@
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Conformational clusters (tree of structures)</h3>
                                   <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen" data-toggle="tooltip" data-placement="bottom" title="Fullscreen"></span>
-                                  <span class="pull-right glyphicon glyphicon-download btn-download" data-toggle="tooltip" data-placement="bottom" title="Download raw distance data (CSV)"></span>
+                                  <div class="dropdown">
+                                    <span class="pull-right glyphicon glyphicon-download-alt btn-download-menu dropdown-toggle" type="button" data-toggle="dropdown" id="downloadDropdown" data-toggle="dropdown"></span>
+                                    <ul class="pull-right dropdown-menu" role="menu" aria-labelledby="downloadDropdown">
+                                      <li><a role="menuitem" href="#" onClick="downloadSVG('clustering-tree', 'GPCR_structure_clustering.svg')">Tree as SVG Figure</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadPNG('clustering-tree', 'GPCR_structure_clustering.png')">Tree as PNG Figure</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadNewick('GPCR_structure_clustering.tree')">Tree in Newick format</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadDistanceMatrix('GPCR_structure_clustering.csv')">Raw distance matrix in CSV</a></li>
+                                    </ul>
+                                  </div>
+<!--                                  <span class="pull-right glyphicon glyphicon-download btn-download" data-toggle="tooltip" data-placement="bottom" title="Download raw distance data (CSV)"></span>
                                   <span class="pull-right glyphicon glyphicon-tree-conifer btn-newick" data-toggle="tooltip" data-placement="bottom" title="Download tree (Newick format)"></span>
-                                  <span class="pull-right glyphicon glyphicon-download-alt btn-download-alt" data-toggle="tooltip" data-placement="bottom" title="Download figure (SVG)"></span> <!-- Use this one for figure downloads? -->
-                                  <span class="pull-right glyphicon glyphicon-picture btn-camera" data-toggle="tooltip" data-placement="bottom" title="Download figure (PNG)"></span> <!-- Use this one for PNG figure downloads? -->
+                                  <span class="pull-right glyphicon glyphicon-download-alt btn-download-alt" data-toggle="tooltip" data-placement="bottom" title="Download figure (SVG)"></span>
+                                  <span class="pull-right glyphicon glyphicon-picture btn-camera" data-toggle="tooltip" data-placement="bottom" title="Download figure (PNG)"></span>-->
                                   <div class="clearfix"></div>
                               </div>
                               <div class="panel-body">
@@ -1214,7 +1223,7 @@
             });
 
             // Dendrogram download in SVG
-            $(selector + ' .btn-download-alt').click(function() {
+/*            $(selector + ' .btn-download-alt').click(function() {
                 // svg download
                 downloadSVG("clustering-tree", "GPCR_structure_clustering.svg")
             });
@@ -1253,7 +1262,30 @@
                     // Download file
                     downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), "GPCR_structure_clustering.csv");
                 }
-            });
+            });*/
+        }
+
+        function downloadDistanceMatrix(filename){
+            // create download table
+            if (lastData != undefined){
+                var header = lastData['dm_labels']
+                header.unshift("PDB-code")
+
+                var data = [];
+                data.push(header);
+
+                for (var i = 0; i < lastData["distance_matrix"].length ; i++){
+                  var row = lastData["distance_matrix"][i]
+                  row.unshift(header[i+1])
+                  data.push(row);
+                }
+
+                // Convert to CSV
+                var csv = Papa.unparse(data);
+
+                // Download file
+                downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), filename);
+            }
         }
 
         function downloadURI(uri, name) {
@@ -1426,7 +1458,7 @@
             background-color: rgba(124, 124, 255, 0.1);
         }
 
-        .btn-download, .btn-download-alt, .btn-fullscreen, .btn-camera, .btn-newick {
+        .btn-download, .btn-download-alt, .btn-download-menu, .btn-fullscreen, .btn-camera, .btn-newick {
           margin-right: 10px;
         }
 
