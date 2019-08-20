@@ -13,6 +13,7 @@ Alignment = getattr(__import__(
 from common.definitions import AA_ZSCALES, AMINO_ACIDS, AMINO_ACID_GROUPS, AMINO_ACID_GROUP_NAMES, AMINO_ACID_GROUP_PROPERTIES, ZSCALES
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
+from signprot.models import SignprotComplex
 
 
 from collections import OrderedDict
@@ -1067,7 +1068,7 @@ class SignatureMatch():
         self.signature_consensus = signature
 
 
-    def score_protein_class(self, pclass_slug='001'):
+    def score_protein_class(self, pclass_slug='001', signprot=False):
 
         start = time.time()
         protein_scores = {}
@@ -1078,6 +1079,11 @@ class SignatureMatch():
             ).exclude(
                 id__in=[x.id for x in self.protein_set]
                 )
+
+        if signprot:
+            complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').values_list('structure__protein_conformation__protein__parent_id', flat=True)
+            class_proteins = class_proteins.exclude(id__in=complex_objs)
+
         class_a_pcf = ProteinConformation.objects.order_by(
             'protein__family__slug',
             'protein__entry_name'
