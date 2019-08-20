@@ -179,6 +179,7 @@ grid-area: isoformtable;
 .red {
   background-color: indianred !important; 
 }
+
 </style>
 {% endblock %}
 {% block addon_js %}
@@ -473,6 +474,9 @@ function build_table() {
         "bPaginate": false,
         "bInfo": false,
         "order": [],
+        columnDefs: [
+          { targets: 'no-sort', orderable: false }
+        ]
     });
     yadcf.init(dtable,
         [{
@@ -542,25 +546,25 @@ function build_table() {
                     <th>Isoform</th>
                     <th></th>
                     <th>No. tissues</th>
-                    <th>N-term</th>
-                    <th>TM1</th>
-                    <th>ICL1</th>
-                    <th>TM2</th>
-                    <th>ECL1</th>
-                    <th>TM3</th>
-                    <th>ICL2</th>
-                    <th>TM4</th>
-                    <th>ECL2</th>
-                    <th>TM5</th>
-                    <th>ICL3</th>
-                    <th>TM6</th>
-                    <th>ECL3</th>
-                    <th>TM7</th>
-                    <th>H8</th>
-                    <th>C-term</th>
+                    <th class="no-sort">N-term</th>
+                    <th class="no-sort">TM1</th>
+                    <th class="no-sort">ICL1</th>
+                    <th class="no-sort">TM2</th>
+                    <th class="no-sort">ECL1</th>
+                    <th class="no-sort">TM3</th>
+                    <th class="no-sort">ICL2</th>
+                    <th class="no-sort">TM4</th>
+                    <th class="no-sort">ECL2</th>
+                    <th class="no-sort">TM5</th>
+                    <th class="no-sort">ICL3</th>
+                    <th class="no-sort">TM6</th>
+                    <th class="no-sort">ECL3</th>
+                    <th class="no-sort">TM7</th>
+                    <th class="no-sort">H8</th>
+                    <th class="no-sort">C-term</th>
                     <th>Compl(%)</th>
                     <th></th>
-                    <th>Reference</th>
+                    <th class="no-sort">Reference</th>
                 </tr>
             </thead>
             <tbody>
