@@ -14,6 +14,7 @@ import logging
 import math
 import subprocess
 import os
+import traceback
 
 import numpy as np
 import scipy.stats as stats
@@ -307,10 +308,9 @@ class Command(BaseCommand):
                     break
             preferred_chain = reference.preferred_chain.split(',')[0]
             pdb_code = reference.pdb_code.index
-            print(pdb_code)
+#            print(pdb_code)
 
             try:
-#            if True:
                 structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 pchain = structure[0][preferred_chain]
                 state_id = reference.protein_conformation.state.id
@@ -425,6 +425,7 @@ class Command(BaseCommand):
 
                 # Calculate PCA based on the upper (extracellular) half of the GPCR (more stable, except class B)
                 pca = PCA()
+                pos_list = []
                 if extra_pca:
                     minlength = 100
                     for i,h in enumerate(hres_three):
@@ -436,7 +437,6 @@ class Command(BaseCommand):
 
                     # create PCA per helix using extracellular half
                     # Exlude the first turn if possible (often still part of loop)
-                    pos_list = []
                     for i,h in enumerate(hres_three):
                         if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
                             h = np.flip(h, 0)
@@ -476,22 +476,61 @@ class Command(BaseCommand):
                 # Select all residues before indicated residue
                 lower_tm6 = []
                 kink_start_res = None
+                kink_measure = None
                 for res in db_tmlist[5]:
                     gnlabel = gdict[res[1]].generic_number.label
                     if int(gnlabel.replace("6x","")) <= kink_start:
                         lower_tm6.append(pchain[res]["CA"].get_coord())
                         if int(gnlabel.replace("6x","")) == kink_start:
                             kink_start_res = pchain[res]["CA"].get_coord()
+                        if int(gnlabel.replace("6x","")) == 38:
+                            kink_measure = pchain[res]["CA"].get_coord()
+
                 lower_tm6 = np.asarray(lower_tm6)
 
                 # TM2 intracellular for comparison
                 lower_tm2 = []
+                ref_tm2 = None
                 for res in db_tmlist[1]:
                     gnlabel = gdict[res[1]].generic_number.label
                     gn_id = int(gnlabel.replace("2x",""))
                     if gn_id >= 40 and gn_id <= 50: # Lower well-defined half of TM2
                         lower_tm2.append(pchain[res]["CA"].get_coord())
+                        if gn_id == 41:
+                            ref_tm2 = pchain[res]["CA"].get_coord()
                 lower_tm2 = np.asarray(lower_tm2)
+
+                posb_list = []
+                # create PCA per helix using full helix
+                for i,h in enumerate(hres_three):
+                    if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
+                        h = np.flip(h, 0)
+                    posb_list.append(pca_line(PCA(), h))
+
+
+                # NOTE: Slight variations between the mid membrane residues can have a strong affect on the plane
+                # For now just use a single residue to deduce the mid membrane height (next code)
+                # if len(kink_measure) == 3:
+                #     # Use membrane middle references 1x44 - 2x52 - 4x54
+                #     membrane_mid = []
+                #     for res in gdict:
+                #         if gdict[res].generic_number.label in ["1x44", "2x52", "4x54"]:
+                #             membrane_mid.append(pchain[res]["CA"].get_coord())
+                #
+                #     if len(membrane_mid) == 3:
+                #         v1 = membrane_mid[1] - membrane_mid[0]
+                #         v2 = membrane_mid[2] - membrane_mid[0]
+                #         plane_normal = np.cross(v1 / np.linalg.norm(v1), v2 / np.linalg.norm(v2))
+                #         plane_normal = plane_normal / np.linalg.norm(plane_normal)
+                #
+                #         rayDirection = center_vector[1] - center_vector[0]
+                #         ndotu = plane_normal.dot(rayDirection)
+                #         w = center_vector[0] - membrane_mid[0]
+                #         si = -plane_normal.dot(w) / ndotu
+                #         membrane_point = w + si * rayDirection + membrane_mid[0]
+                #
+                #         # calculate distances to this point
+                #         midpoint_distances = np.round([ np.linalg.norm(membrane_point-ca) for helix in hres_list for ca in helix ],3)
 
                 # Find 5x46 (residue at membrane middle)
                 membrane_mid = None
@@ -501,29 +540,238 @@ class Command(BaseCommand):
                         membrane_mid = pchain[res]["CA"].get_coord()
                         break
 
-                # TM6 tilt compared to TM2
-                if len(lower_tm6) >= 3 and len(lower_tm2) >= 3:
-                     # Take the average of N consecutive elements of TM2
-                     tm2_lower_three = sum([lower_tm2[i:-(len(lower_tm2) % N) or None:N] for i in range(N)])/N
-                     if len(tm2_lower_three) > 2:
-                         tm2_pca_vector = pca_line(PCA(), tm2_lower_three, 1)
-                     else:
-                         tm2_pca_vector = pca_line(PCA(), lower_tm2, 1)
+                # Calculate distances to the mid of membrane plane
+                if len(membrane_mid) == 3:
+                    # 1. Find intersect of membrane mid with 7TM axis (project point to plane)
+                    membrane_mid_pca = pca.transform([membrane_mid])
+                    membrane_mid_pca[0,1:3] = 0 # project onto the same axis
+                    membrane_point = pca.inverse_transform(membrane_mid_pca)
+                    plane_normal = membrane_point - center_vector[1]
+                    plane_normal = plane_normal / np.linalg.norm(plane_normal)
 
-                     # Take the average of N consecutive elements of TM6
-                     tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
-                     if len(tm6_lower_three) > 2:
-                         tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
-                     else:
-                         tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+                    # calculate distances to the mid of membrane plane
+                    mid_membrane_distances = np.round([ np.dot(ca - membrane_point[0], plane_normal[0]) for helix in hres_list for ca in helix ],3)
 
-                     # angle between these vectors
-                     tm6_angle = np.arccos(np.clip(np.dot(tm6_pca_vector[1]-tm6_pca_vector[0], tm2_pca_vector[1]-tm2_pca_vector[0]), -1.0, 1.0))
-                     print(tm6_angle)
+                    # calculate distances to the midpoint
+                    midpoint_distances = np.round([ np.linalg.norm(membrane_point[0]-ca) for helix in hres_list for ca in helix ],3)
 
-                     # Store as structure property
-                     reference.tm6_angle = np.degrees(tm6_angle)
-                     reference.save()
+
+                # TM6 tilt with respect to 7TM bundle axis and plane through 6x44
+                # if len(lower_tm6) >= 3 and len(membrane_mid) == 3:
+                #     # Take the average of N consecutive elements
+                #     tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+                #     if len(tm6_lower_three) > 2:
+                #         tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+                #     else:
+                #         tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+                #
+                #     # 1. Find intersect of membrane mid with 7TM axis (project point to plane)
+                #     membrane_mid_pca = pca.transform([membrane_mid])
+                #     membrane_mid_pca[0,1:3] = 0 # project onto the same axis
+                #     midpoint = pca.inverse_transform(membrane_mid_pca)
+
+                # Distance TM2-3-4-5-6-7 at height of 6x38 using Mid membrane as plane
+                # if len(kink_measure) == 3:
+                #     # 1x44 - 2x52 - 4x54
+                #     membrane_mid = []
+                #     for res in gdict:
+                #         if gdict[res].generic_number.label in ["1x44", "2x52", "4x54"]:
+                #             membrane_mid.append(pchain[res]["CA"].get_coord())
+                #
+                #     if len(membrane_mid) == 3:
+                #         v1 = membrane_mid[1] - membrane_mid[0]
+                #         v2 = membrane_mid[2] - membrane_mid[0]
+                #         plane_normal = np.cross(v1 / np.linalg.norm(v1), v2 / np.linalg.norm(v2))
+                #         planeNormal = plane_normal / np.linalg.norm(plane_normal)
+                #
+                #         points = []
+                #         for i in [1,2,4,5,6]: # TM number - 1
+                #             rayDirection = posb_list[i][1] - posb_list[i][0]
+                #             ndotu = planeNormal.dot(rayDirection)
+                #             w = posb_list[i][0] - kink_measure
+                #             si = -planeNormal.dot(w) / ndotu
+                #             intersect = w + si * rayDirection + kink_measure
+                #             points.append(intersect)
+                #
+                #         distance = 0
+                #         last = points[len(points)-1]
+                #         for point in points:
+                #             distance += np.linalg.norm(last - point)
+                #             last = point
+                #
+                #         print("MIDMEM DISTANCE {} {}".format(pdb_code, distance))
+                #         #reference.tm6_angle = distance
+                #         #reference.save()
+
+                # Distance based on distance pairs
+                # if len(kink_measure) == 3:
+                #     # 1x50 2x41 3x26 4x42 5x42 6x37 7x49
+                #     points = []
+                #     for gn in ["1x50", "2x41", "3x26", "4x42", "5x42", "6x37", "7x49"]:
+                #         res = [key for (key, value) in gdict.items() if value.generic_number.label == gn]
+                #         if len(res) > 0:
+                #             points.append(pchain[res[0]]["CA"].get_coord())
+                #
+                #     if len(points) != 7:
+                #         continue
+                #
+                #     distance = 0
+                #     last = points[len(points)-1]
+                #     for point in points:
+                #         distance += np.linalg.norm(last - point)
+                #         last = point
+                #
+                #     print("PAIRS DISTANCE {} {}".format(pdb_code, distance))
+
+
+                # Distances between TM points
+                # if len(kink_measure) == 3:
+                #     minlength = 100
+                #     posb_list = []
+                #
+                #     # create PCA per helix using full helix
+                #     for i,h in enumerate(hres_three):
+                #         if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
+                #             h = np.flip(h, 0)
+                #
+                #         posb_list.append(pca_line(PCA(), h))
+                #
+                #     points = []
+                #     for i in range(7): # TM number - 1
+                #         rayDirection = posb_list[i][1] - posb_list[i][0]
+                #         ndotu = planeNormal.dot(rayDirection)
+                #         w = pos_list[i][0] - kink_measure
+                #         si = -planeNormal.dot(w) / ndotu
+                #         intersect = w + si * rayDirection + kink_measure
+                #         points.append(intersect)
+                #
+                #
+                #     hstr = ""
+                #     dstr = ""
+                #     for i in range(len(points)):
+                #         for j in range(i+1,len(points)):
+                #             hstr += "," + str(i+1) + "x" + str(j+1)
+                #             dstr += "," + str(np.linalg.norm(points[i] - points[j]))
+                #
+                #     print("HEADER {}".format(hstr))
+                #     print(pdb_code + dstr)
+
+                        #print("REFERENCE {} {}".format(pdb_code, distance))
+
+                # Distance TM2-3-4-5-6-7 at height of 6x38 using TM bundle axis as plane normal
+                # if len(kink_measure) == 3:
+                #     planeNormal = center_vector[0]-center_vector[1]
+                #
+                #     points = []
+                #     for i in [1,2,4,5,6]: # TM number - 1
+                #         rayDirection = posb_list[i][1] - posb_list[i][0]
+                #         ndotu = planeNormal.dot(rayDirection)
+                #         w = posb_list[i][0] - kink_measure
+                #         si = -planeNormal.dot(w) / ndotu
+                #         intersect = w + si * rayDirection + kink_measure
+                #         points.append(intersect)
+                #
+                #     distance = 0
+                #     last = points[len(points)-1]
+                #     for point in points:
+                #         distance += np.linalg.norm(last - point)
+                #         last = point
+                #
+                #     print("BUNDLEAXIS DISTANCE {} {}".format(pdb_code, distance))
+                #     #reference.tm6_angle = distance
+                #     #reference.save()
+                #     #print("REFERENCE {} {}".format(pdb_code, distance))
+
+                # TM6 tilt compared to lower TM2 using pca vectors
+#                 if len(lower_tm6) >= 3 and len(lower_tm2) >= 3:
+#                      # Take the average of N consecutive elements of TM2
+#                      tm2_lower_three = sum([lower_tm2[i:-(len(lower_tm2) % N) or None:N] for i in range(N)])/N
+#                      if len(tm2_lower_three) > 2:
+#                          tm2_pca_vector = pca_line(PCA(), tm2_lower_three, 1)
+#                      else:
+#                          tm2_pca_vector = pca_line(PCA(), lower_tm2, 1)
+#
+#                      # Take the average of N consecutive elements of TM6
+#                      tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+#                      if len(tm6_lower_three) > 2:
+#                          tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+#                      else:
+#                          tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+#
+#                      membrane_mid_pca = pca.transform([membrane_mid])
+#                      membrane_mid_pca[0,1:3] = 0 # project onto the same axis
+#                      midpoint = pca.inverse_transform(membrane_mid_pca)[0]
+#
+#
+#                      # Project pca vector onto plane to TM2
+#                      # Find normal of the plane through Axis and 2x41
+#                      v1 = center_vector[1] - midpoint
+#                      v2 = ref_tm2 - midpoint
+#                      plane_normal = np.cross(v1 / np.linalg.norm(v1), v2 / np.linalg.norm(v2))
+#                      plane_normal = plane_normal / np.linalg.norm(plane_normal)
+#
+#                      # Find projected tm6 angle to plane
+#                      displaced_point = tm6_pca_vector[1] - tm6_pca_vector[0]
+#                      dist = np.dot(displaced_point, plane_normal)
+#                      proj_point = (midpoint+displaced_point) - dist*plane_normal
+#                      tm6_tilt_proj = proj_point - midpoint
+# #                     tm6_tilt_proj = tm6_tilt_proj/np.linalg.norm(tm6_tilt_proj)
+#
+#                      # Find projected tm2 angle to plane
+#                      displaced_point = tm2_pca_vector[1] - tm2_pca_vector[0]
+#                      dist = np.dot(displaced_point, plane_normal)
+#                      proj_point = (midpoint[0]+displaced_point) - dist*plane_normal
+#                      tm2_tilt_proj = proj_point - midpoint[0]
+# #                     tm2_tilt_proj = tm2_tilt_proj/np.linalg.norm(tm2_tilt_proj)
+#
+#                      # angle between these vectors
+#                      tm6_angle = np.arccos(np.dot(tm6_tilt_proj, tm2_tilt_proj)/(np.linalg.norm(tm6_tilt_proj)*np.linalg.norm(tm2_tilt_proj)))
+#                      print("REFERENCE {} {}".format(pdb_code, np.degrees(tm6_angle)))
+#
+#                      # Store as structure property
+#                      reference.tm6_angle = np.degrees(tm6_angle)
+#                      reference.save()
+
+                # # Angle of 6x38 to 2x41 via midpoint in membrane
+                # if len(ref_tm2) == 3 and len(kink_start_res) == 3:
+                #     membrane_mid_pca = pca.transform([membrane_mid])
+                #     membrane_mid_pca[0,1:3] = 0 # project onto the same axis
+                #     midpoint = pca.inverse_transform(membrane_mid_pca)
+                #
+                #     v1 = ref_tm2 - midpoint[0]
+                #     v2 = kink_start_res - midpoint[0]
+                #
+                #     # angle between these vectors
+                #     tm6_angle = np.arccos(np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2)))
+                #     print(np.degrees(tm6_angle))
+                #
+                #     # Store as structure property
+                #     reference.tm6_angle = np.degrees(tm6_angle)
+                #     reference.save()
+
+                # TM6 tilt compared to lower TM2 using pca vectors
+                # if len(lower_tm6) >= 3 and len(lower_tm2) >= 3:
+                #      # Take the average of N consecutive elements of TM2
+                #      tm2_lower_three = sum([lower_tm2[i:-(len(lower_tm2) % N) or None:N] for i in range(N)])/N
+                #      if len(tm2_lower_three) > 2:
+                #          tm2_pca_vector = pca_line(PCA(), tm2_lower_three, 1)
+                #      else:
+                #          tm2_pca_vector = pca_line(PCA(), lower_tm2, 1)
+                #
+                #      # Take the average of N consecutive elements of TM6
+                #      tm6_lower_three = sum([lower_tm6[i:-(len(lower_tm6) % N) or None:N] for i in range(N)])/N
+                #      if len(tm6_lower_three) > 2:
+                #          tm6_pca_vector = pca_line(PCA(), tm6_lower_three, 1)
+                #      else:
+                #          tm6_pca_vector = pca_line(PCA(), lower_tm6, 1)
+                #
+                #      # angle between these vectors
+                #      tm6_angle = np.arccos(np.clip(np.dot(tm6_pca_vector[1]-tm6_pca_vector[0], tm2_pca_vector[1]-tm2_pca_vector[0]), -1.0, 1.0))
+                #      print(tm6_angle)
+                #
+                #      # Store as structure property
+                #      reference.tm6_angle = np.degrees(tm6_angle)
+                #      reference.save()
 
 
                 # TM6 tilt with respect to 7TM bundle axis and plane through 6x44
@@ -604,8 +852,6 @@ class Command(BaseCommand):
                 #     reference.tm6_angle = np.degrees(tm6_angle)
                 #     reference.save()
 
-                # Take the
-
                 ### ANGLES
                 # Center axis to helix axis to CA
                 a_angle = np.concatenate([axes_calc(h,p,pca) for h,p in zip(hres_list,helix_pcas)]).round(3)
@@ -684,19 +930,22 @@ class Command(BaseCommand):
                         asa_list[residue_id] = None
 
 
-                for res, angle1, angle2, distance in zip(pchain, a_angle, b_angle, core_distance):
+                for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distance, midpoint_distances, mid_membrane_distances):
                     residue_id = res.id[1]
                     # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
                     dblist.append([reference, gdict[residue_id], angle1, angle2, \
                         rsa_list[residue_id], \
                         hselist[residue_id]] + \
                         dihedrals[residue_id] + \
-                        [asa_list[residue_id], distance])
+                        [asa_list[residue_id], distance, midpoint_distance, mid_membrane_distance])
 
             except Exception as e:
-#            else:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
+                # DEBUGGING
+                if True:
+                    traceback.print_exc()
+#                    exit(0)
                 continue
 
 #        for i in range(4):
@@ -718,7 +967,7 @@ class Command(BaseCommand):
 
         # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
             try:
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
@@ -730,9 +979,9 @@ class Command(BaseCommand):
                     tau = round(np.rad2deg(tau),3)
                 if outer != None:
                     outer = round(np.rad2deg(outer),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
             except Exception as e:
-                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance])
+                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance,midpoint_distance,mid_membrane_distance])
 
         print("created list")
         print(len(object_list))

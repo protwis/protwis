@@ -23,7 +23,10 @@
                     <div class="col-md-3">
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs - normalized)</div></div>
-                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to core)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to membrane mid)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis and membrane mid)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to "origin")</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to most stable residue)</div></div>
                     </div>
                     <div class="col-md-2 hidden" id="output-group0">
@@ -128,12 +131,12 @@
                           <li><a href="#">GPCR class</a></li>
                           <li><a href="#">Ligand type</a></li>
                           <li><a href="#">Receptor family</a></li>
-                          <h6 class="dropdown-header">Coupling</h6>
-                          <li><a href="#">All G-protein coupling</a></li>
-                          <li><a href="#">Primary G-protein coupling</a></li>
-                          <li><a href="#">Secondary G-protein coupling</a></li>
+                          <h6 class="dropdown-header">G protein Coupling</h6>
+                          <li><a href="#">All G proteins</a></li>
+                          <li><a href="#">Primary G proteins</a></li>
+                          <li><a href="#">Secondary G proteins</a></li>
                           <h6 class="dropdown-header">Structure</h6>
-                          <li><a href="#">Experimental method</a></li>
+                          <li><a href="#">Structure determination method</a></li>
                         </ul>
                       </div>
                       <div class="btn-group">
@@ -149,11 +152,11 @@
                           <h6 class="dropdown-header">Structure</h6>
                           <li><a href="#">Receptor activation state</a></li>
                           <li><a href="#">Ligand function</a></li>
-                          <li><a href="#">Experimental method</a></li>
+                          <li><a href="#">Structure determination method</a></li>
                           <h6 class="dropdown-header">Coupling</h6>
-                          <li><a href="#">All G-protein coupling</a></li>
-                          <li><a href="#">Primary G-protein coupling</a></li>
-                          <li><a href="#">Secondary G-protein coupling</a></li>
+                          <li><a href="#">All G proteins</a></li>
+                          <li><a href="#">Primary G proteins</a></li>
+                          <li><a href="#">Secondary G proteins</a></li>
                         </ul>
                       </div>
                     </div>
@@ -226,7 +229,7 @@
         var labelReorder = false;
         var treeAnnotations = [];
         var couplingAnnotations = [];
-        var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Experimental method", "Ligand function", "G-protein coupling", "Primary G-protein coupling", "Secondary G-protein coupling"]
+        var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins"]
         var dataClasses, colorClasses;
         function renderTree(data) {
             dataClasses = [["active", "inactive", "intermediate"],0,0];
@@ -613,13 +616,13 @@
                 return 4
               case "Receptor family":
                 return 3
-              case "Experimental method":
+              case "Structure determination method":
                 return 6
-              case "All G-protein coupling":
+              case "All G proteins":
                 return 8
-              case "Primary G-protein coupling":
+              case "Primary G proteins":
                 return 9
-              case "Secondary G-protein coupling":
+              case "Secondary G proteins":
                 return 10
               case "Ligand function":
                 return 7
@@ -1045,13 +1048,18 @@
                     clusterMethod = 0
                     if (this.innerHTML == "Go (distance pairs - normalized)")
                       clusterMethod = 0
-                    else if (this.innerHTML == "Go (distance to core)")
+                    else if (this.innerHTML == "Go (distance to 7TM axis)")
                       clusterMethod = 1
                     else if (this.innerHTML.startsWith("Go (distance to most stable residue)"))
                       clusterMethod = 2
                     else if (this.innerHTML.startsWith("Go (distance pairs)"))
                       clusterMethod = 3
-
+                    else if (this.innerHTML.startsWith("Go (distance to membrane mid)"))
+                      clusterMethod = 4
+                    else if (this.innerHTML.startsWith("Go (distance to 7TM axis and membrane mid)"))
+                      clusterMethod = 5
+                    else if (this.innerHTML.startsWith("Go (distance to \"origin\")"))
+                      clusterMethod = 6
 
                     $.getJSON( '/contactnetwork/clusteringdata',
                     {

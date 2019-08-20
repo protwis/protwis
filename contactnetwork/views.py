@@ -1889,19 +1889,54 @@ def DistanceDataGroups(request):
     return JsonResponse(data)
 
 
-def coreMatrix(pdbs):
+def originMatrix(pdbs):
     # select all TM7 distances to core
     ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs)\
                         .exclude(residue__generic_number=None) \
                         .exclude(core_distance=None) \
-                        .values('structure__pdb_code__index', 'residue__generic_number__label', 'core_distance'))
+                        .values('structure__pdb_code__index', 'residue__generic_number__label', 'mid_distance'))
 
     # create dictionary of all structures and all distances
     core_distances = {}
     for i,d in enumerate(ds):
         if not d['structure__pdb_code__index'] in core_distances:
             core_distances[d['structure__pdb_code__index']] = {}
-        core_distances[d['structure__pdb_code__index']][d['residue__generic_number__label']] = d['core_distance']
+        core_distances[d['structure__pdb_code__index']][d['residue__generic_number__label']] = d['mid_distance']
+
+    pdbs = list(core_distances.keys())
+
+    distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
+    for i, pdb1 in enumerate(pdbs):
+        for j in range(i+1, len(pdbs)):
+            pdb2 = pdbs[j]
+
+            # Get common GNs between two PDBs
+            common_between_pdbs = sorted(list(set(dict.keys(core_distances[pdb1])).intersection(core_distances[pdb2])))
+            # Get distance between cells that have both GNs.
+            distance = np.sum([ np.abs(core_distances[pdb1][key] - core_distances[pdb2][key]) for key in common_between_pdbs])
+            # normalize
+            distance_matrix[i, j] = pow(distance,2)/(len(common_between_pdbs)*len(common_between_pdbs))
+            distance_matrix[j, i] = distance_matrix[i, j]
+
+    return [distance_matrix, pdbs]
+
+
+def coreMatrix(pdbs, core = True, middle = False):
+    # select all TM7 distances to core
+    ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs)\
+                        .exclude(residue__generic_number=None) \
+                        .exclude(core_distance=None) \
+                        .values('structure__pdb_code__index', 'residue__generic_number__label', 'core_distance', 'midplane_distance'))
+
+    # create dictionary of all structures and all distances
+    core_distances = {}
+    for i,d in enumerate(ds):
+        if not d['structure__pdb_code__index'] in core_distances:
+            core_distances[d['structure__pdb_code__index']] = {}
+        if core:
+            core_distances[d['structure__pdb_code__index']][d['residue__generic_number__label']+"_core"] = d['core_distance']
+        if middle:
+            core_distances[d['structure__pdb_code__index']][d['residue__generic_number__label']+"_mid"] = d['midplane_distance']
 
     # IN some cases the 7TM distances are missing e.g. due to missing (structure or annotation) of a TM bundle
     #pdbs_present = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs)\
@@ -2053,6 +2088,7 @@ def ClusteringData(request):
     if 'cluster-method' in request.GET:
         cluster_method = request.GET.get('cluster-method')
 
+    print(cluster_method)
     if cluster_method == '1':
         [distance_matrix, pdbs] = coreMatrix(pdbs)
     elif cluster_method == '2':
@@ -2061,6 +2097,12 @@ def ClusteringData(request):
         dis = Distances()
         dis.load_pdbs(pdbs)
         distance_matrix = dis.get_distance_matrix(normalize = False)
+    elif cluster_method == '4': # distance to membrane mid
+        [distance_matrix, pdbs] = coreMatrix(pdbs, middle = True, core = False)
+    elif cluster_method == '5': # distance to membrane mid and 7TM axis
+        [distance_matrix, pdbs] = coreMatrix(pdbs, middle = True)
+    elif cluster_method == '6': # distance to origin
+        [distance_matrix, pdbs] = originMatrix(pdbs)
     else:
         dis = Distances()
         dis.load_pdbs(pdbs)
