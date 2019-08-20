@@ -59,8 +59,9 @@ class Command(BaseCommand):
             ['build_residue_sets'],
             ['build_dynamine_annotation', {'proc': options['proc']}],
             ['build_blast_database'],
+            ['build_complex_interactions'],
             # ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
-            ['build_text'], 
+            ['build_text'],
             ['build_release_notes'],
         ]
 

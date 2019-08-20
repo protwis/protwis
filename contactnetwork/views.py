@@ -19,6 +19,7 @@ from structure.templatetags.structure_extras import *
 from construct.models import Construct
 from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResidueGenericNumber
+from signprot.models import SignprotComplex
 from interaction.models import StructureLigandInteraction
 from angles.models import ResidueAngle
 
@@ -27,6 +28,8 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 from django.http import JsonResponse, HttpResponse
 from collections import OrderedDict
 
+import math
+import cmath
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
@@ -188,16 +191,17 @@ def PdbTreeData(request):
 
 # @cache_page(60*60*24*7)
 def PdbTableData(request):
+    exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
-    constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
-    methods = {}
-    for c in constructs:
+    #constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
+    #methods = {}
+    #for c in constructs:
         # print(c.name)
-        if c.crystallization and c.crystallization.crystal_method:
-            method = c.crystallization.crystal_method.name
-        else:
-            method = "N/A"
-        methods[c.name] = method
+    #    if c.crystallization and c.crystallization.crystal_method:
+    #        method = c.crystallization.crystal_method.name
+    #    else:
+    #        method = "N/A"
+    #    methods[c.name] = method
 
     data = Structure.objects.filter(refined=False).prefetch_related(
                 "pdb_code",
@@ -205,16 +209,21 @@ def PdbTableData(request):
                 "stabilizing_agents",
                 "structureligandinteraction_set__ligand__properities__ligand_type",
                 "structureligandinteraction_set__ligand_role",
+                "structure_type",
                 "protein_conformation__protein__parent__parent__parent",
                 "protein_conformation__protein__parent__family__parent",
                 "protein_conformation__protein__parent__family__parent__parent__parent",
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
 
+    if exclude_non_interacting:
+        complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
+        data = data.filter(id__in=complex_structure_ids)
+
     data_dict = OrderedDict()
-    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \
-                                                                       <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th></tr> \
-                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></thead><tbody>\n"
+    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \
+                                                                       <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th></tr> \
+                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>\n"
 
     for s in data:
         pdb_id = s.pdb_code.index
@@ -244,13 +253,25 @@ def PdbTableData(request):
         fusion = only_fusions(a_list)
         antibody = only_antibodies(a_list)
 
-        if pdb_id in methods:
-            r['method'] = methods[pdb_id]
-        else:
-            r['method'] = "N/A"
+        #if pdb_id in methods:
+        #    r['method'] = methods[pdb_id]
+        #else:
+        #    r['method'] = "N/A"
+        r['method'] = s.structure_type.type_short()
 
         r['resolution'] = "{0:.2g}".format(s.resolution)
         r['7tm_distance'] = s.distance
+
+        # TEST - overwrite with distance to 6x38
+#        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
+#        if len(tm6_distance)>0:
+#            tm6_distance = tm6_distance[0].core_distance
+#        else:
+#            tm6_distance = -1
+#        r['7tm_distance'] = tm6_distance
+
+#        r['tm6_angle'] = s.tm6_angle if s.tm6_angle != None else 0
+
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin
         r['fusion'] = fusion
@@ -270,6 +291,7 @@ def PdbTableData(request):
 
         data_dict[pdb_id] = r
         data_table += "<tr> \
+                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' distance_representative='{}' class_consensus_based_representative='{}' long='{}'  id='{}'></td> \
                         <td>{}</td> \
                         <td><span>{}</span></td> \
                         <td>{}</td> \
@@ -291,8 +313,12 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' distance_representative='{}' class_consensus_based_representative='{}' long='{}'  id='{}'></td> \
                         </tr>\n".format(
+                                        r['contact_representative'],
+                                        r['distance_representative'],
+                                        r['class_consensus_based_representative'],
+                                        r['protein_long'],
+                                        pdb_id,
                                         r['protein'],
                                         r['protein_long'],
                                         r['protein_family'],
@@ -313,12 +339,7 @@ def PdbTableData(request):
                                         r['antibody'],
                                         r['ligand'],
                                         r['ligand_function'],
-                                        r['ligand_type'],
-                                        r['contact_representative'],
-                                        r['distance_representative'],
-                                        r['class_consensus_based_representative'],
-                                        r['protein_long'],
-                                        pdb_id
+                                        r['ligand_type']
                                         )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
@@ -447,11 +468,13 @@ def InteractionBrowserData(request):
         # Get the relevant interactions
         interactions = list(Interaction.objects.filter(
             interacting_pair__referenced_structure__pdb_code__index__in=pdbs_upper
+        ).filter(
+            interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
         ).values(
             'interaction_type',
             'interacting_pair__referenced_structure__pk',
             'interacting_pair__res1__pk',
-            'interacting_pair__res2__pk',
+            'interacting_pair__res2__pk'
         ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).filter(
             segment_filter_res1 & segment_filter_res2 #& i_types_filter
         ).distinct())
@@ -571,7 +594,7 @@ def InteractionBrowserData(request):
             segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
             r_presence_lookup[r['generic_number__label']].append(r['protein_conformation__protein__entry_name'])
             data['segments'].add(r['protein_segment__slug'])
-        
+
         data['segment_map'] = segm_lookup
 
 
@@ -947,26 +970,56 @@ def InteractionBrowserData(request):
 
         if mode == "double":
             group_1_angles = {}
-            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]) \
+            ds = ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
-            for i,d in enumerate(ds):
-                ds[i] = list(ds[i])
-                group_1_angles[d[0]] = d[1:]
+                                .annotate(a_angle = ArrayAgg('a_angle'), outer_angle = ArrayAgg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = ArrayAgg('tau'), phi = ArrayAgg('phi'), psi = ArrayAgg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = ArrayAgg('theta'), hse = Avg('hse'))
+                                #.values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+
+            # Process angle aggregates to angle averages
+            # angle names for custom averaging
+            custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+            for q in ds:
+                for angle in custom_angles:
+                    q[angle] = [ qa for qa in q[angle] if qa != None] # clean from None values
+                    if angle in q and len(q[angle]) > 1:
+                        # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
+                        q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
+                    elif len(q[angle]) == 1:
+                        q[angle] = q[angle][0]
+
+            list_order = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
+            for q in ds:
+                #ds[i] = list(ds[i])
+                #group_1_angles[d[0]] = d[1:]
+                group_1_angles[q["residue__generic_number__label"]] = list([q[key] for key in list_order])
 
             group_2_angles = {}
-            ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]) \
+            ds = ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
-            for i,d in enumerate(ds):
-                ds[i] = list(ds[i])
-                group_2_angles[d[0]] = d[1:]
+                                .annotate(a_angle = ArrayAgg('a_angle'), outer_angle = ArrayAgg('outer_angle'), core_distance = Avg('core_distance'), \
+                                          tau = ArrayAgg('tau'), phi = ArrayAgg('phi'), psi = ArrayAgg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = ArrayAgg('theta'), hse = Avg('hse'))
+                                #.values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+
+            # Process angle aggregates to angle averages
+            # angle names for custom averaging
+            custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+            for q in ds:
+                for angle in custom_angles:
+                    q[angle] = [ qa for qa in q[angle] if qa != None] # clean from None values
+                    if angle in q and len(q[angle]) > 1:
+                        # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
+                        q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
+                    elif len(q[angle]) == 1:
+                        q[angle] = q[angle][0]
+
+            list_order = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
+            for q in ds:
+                #ds[i] = list(ds[i])
+                #group_2_angles[d[0]] = d[1:]
+                group_2_angles[q["residue__generic_number__label"]] = list([q[key] for key in list_order])
 
             print('got angles values for',mode,'mode',time.time()-start_time)
 
@@ -1001,21 +1054,40 @@ def InteractionBrowserData(request):
                 # Get absolute numbers for a single structure
                 ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
                                 .exclude(residue__generic_number=None) \
-                                .values('residue__generic_number__label') \
-                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
-                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
+#                                .values('residue__generic_number__label') \
+#                                .annotate(a_angle = Avg('a_angle'), outer_angle = Avg('outer_angle'), core_distance = Avg('core_distance'), \
+#                                          tau = Avg('tau'), phi = Avg('phi'), psi = Avg('psi'), sasa = Avg('sasa'), rsa = Avg('rsa'), theta = Avg('theta'), hse = Avg('hse')) \
                                 .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+
+                for i,d in enumerate(ds):
+                    ds[i] = list(ds[i])
+                    group_angles[d[0]] = d[1:]
             else:
                 # A group, get StdDev
-                ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
+                ds = ResidueAngle.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]) \
                                 .exclude(residue__generic_number=None) \
                                 .values('residue__generic_number__label') \
-                                .annotate(a_angle = StdDev('a_angle'), outer_angle = StdDev('outer_angle'), core_distance = StdDev('core_distance'), \
-                                          tau = StdDev('tau'), phi = StdDev('phi'), psi = StdDev('psi'), sasa = StdDev('sasa'), rsa = StdDev('rsa'), theta = StdDev('theta'), hse = StdDev('hse')) \
-                                .values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
-            for i,d in enumerate(ds):
-                ds[i] = list(ds[i])
-                group_angles[d[0]] = d[1:]
+                                .annotate(a_angle = ArrayAgg('a_angle'), outer_angle = ArrayAgg('outer_angle'), core_distance = StdDev('core_distance'), \
+                                          tau = ArrayAgg('tau'), phi = ArrayAgg('phi'), psi = ArrayAgg('psi'), sasa = StdDev('sasa'), rsa = StdDev('rsa'), theta = ArrayAgg('theta'), hse = StdDev('hse'))
+                                #.values_list('residue__generic_number__label','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'))
+
+                # Process angle aggregates to angle averages
+                # angle names for custom averaging
+                custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+                for q in ds:
+                    for angle in custom_angles:
+                        q[angle] = [ qa for qa in q[angle] if qa != None] # clean from None values
+                        if angle in q and len(q[angle]) > 1:
+                            # Sensible average for multiple angles (circular statistics: https://rosettacode.org/wiki/Averages/Mean_angle)
+                            q[angle] = math.degrees(cmath.phase(sum(cmath.rect(1, math.radians(float(d))) for d in q[angle])/len(q[angle])))
+                        elif len(q[angle]) == 1:
+                            q[angle] = q[angle][0]
+
+                list_order = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
+                for q in ds:
+                    #ds[i] = list(ds[i])
+                    #group_angles[d[0]] = d[1:]
+                    group_angles[q["residue__generic_number__label"]] = list([q[key] for key in list_order])
 
             for coord in data['interactions']:
                 gn1 = coord.split(",")[0]
@@ -1060,6 +1132,8 @@ def InteractionBrowserData(request):
                 ).filter(
                     interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
                 ).filter(
+                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
+                ).filter(
                     segment_filter_res1 & segment_filter_res2 & i_types_filter
                 ).exclude(
                     interacting_pair__res1__generic_number=None,
@@ -1092,6 +1166,8 @@ def InteractionBrowserData(request):
             set_id = 'set2'
             interactions = list(Interaction.objects.filter(
                     interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]
+                ).filter(
+                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
                 ).filter(
                     interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
                 ).filter(
@@ -1182,6 +1258,8 @@ def InteractionBrowserData(request):
             aa_pair_data = data['tab2']
             interactions = list(Interaction.objects.filter(
                     interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]
+                ).filter(
+                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
                 ).filter(
                     interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
                 ).filter(
@@ -1283,7 +1361,7 @@ def InteractionBrowserData(request):
                 if key in group_1_distances and key in group_2_distances:
                     distance_diff = round(group_1_distances[key]-group_2_distances[key],2)
                 else:
-                    distance_diff = ""  
+                    distance_diff = ""
                 d['distance'] = distance_diff
             print('Done merging distance values for',mode,'mode',time.time()-start_time)
         else:
@@ -1304,9 +1382,9 @@ def InteractionBrowserData(request):
                 if key in group_distances:
                     distance_diff = round(group_distances[key],2)
                 else:
-                    distance_diff = ""  
+                    distance_diff = ""
                 d['distance'] = distance_diff
-        # del class_pair_lookup 
+        # del class_pair_lookup
         # del r_pair_lookup
         print('calculate angles per gen/aa',time.time()-start_time)
         if mode == "double":
@@ -1797,12 +1875,22 @@ def coreMatrix(pdbs):
                         .exclude(core_distance=None) \
                         .values('structure__pdb_code__index', 'residue__generic_number__label', 'core_distance'))
 
+    # IN some cases the 7TM distances are missing e.g. due to missing (structure or annotation) of a TM bundle
+    pdbs_present = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs)\
+                        .exclude(residue__generic_number=None) \
+                        .exclude(core_distance=None) \
+                        .distinct('structure__pdb_code__index').values('structure__pdb_code__index'))
+
+    pdbs = [pdb['structure__pdb_code__index'] for pdb in pdbs_present]
+
     # create dictionary of all structures and all distances
     core_distances = {}
     for i,d in enumerate(ds):
         if not d['structure__pdb_code__index'] in core_distances:
             core_distances[d['structure__pdb_code__index']] = {}
         core_distances[d['structure__pdb_code__index']][d['residue__generic_number__label']] = d['core_distance']
+
+
 
     distance_matrix = np.full((len(pdbs), len(pdbs)), 0.0)
     for i, pdb1 in enumerate(pdbs):
@@ -1817,7 +1905,7 @@ def coreMatrix(pdbs):
             distance_matrix[i, j] = pow(distance,2)/(len(common_between_pdbs)*len(common_between_pdbs))
             distance_matrix[j, i] = distance_matrix[i, j]
 
-    return distance_matrix
+    return [distance_matrix, pdbs]
 
 def ClusteringData(request):
     # PDB files
@@ -1836,7 +1924,7 @@ def ClusteringData(request):
 
     # load all
     if 'new_cluster' in request.GET and request.GET.get('new_cluster')=="true":
-        distance_matrix = coreMatrix(pdbs)
+        [distance_matrix, pdbs] = coreMatrix(pdbs)
     else:
         dis = Distances()
         dis.load_pdbs(pdbs)

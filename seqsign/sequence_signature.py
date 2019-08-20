@@ -204,7 +204,8 @@ class SequenceSignature:
             # tweaking alignment
             if ignore_in_alignment:
                 self.aln_pos.calculate_statistics(ignore_in_alignment)
-            self.aln_pos.calculate_statistics()
+            else:
+                self.aln_pos.calculate_statistics()
             self._update_alignment(self.aln_pos)
             # tweaking consensus seq
             self._update_consensus_sequence(self.aln_pos)
@@ -213,7 +214,8 @@ class SequenceSignature:
             # tweaking negative alignment
             if ignore_in_alignment:
                 self.aln_neg.calculate_statistics(ignore_in_alignment)
-            self.aln_neg.calculate_statistics()
+            else:
+                self.aln_neg.calculate_statistics()
             self._update_alignment(self.aln_neg)
             # tweaking consensus seq
             self._update_consensus_sequence(self.aln_neg)
@@ -932,7 +934,8 @@ class SequenceSignature:
 
 class SignatureMatch():
 
-    def __init__(self, common_positions, numbering_schemes, segments, difference_matrix, protein_set_pos, protein_set_neg, cutoff=40):
+    def __init__(self, common_positions, numbering_schemes, segments, difference_matrix,
+            protein_set_pos=None, protein_set_neg=None, cutoff=40, signprot=False):
 
         self.cutoff = cutoff
         self.norm = 0.0
@@ -942,7 +945,12 @@ class SignatureMatch():
         self.diff_matrix = difference_matrix
         self.signature_matrix_filtered = OrderedDict()
         self.signature_consensus = OrderedDict()
-        self.protein_set = protein_set_pos + protein_set_neg
+        if protein_set_pos and protein_set_neg:
+            self.protein_set = protein_set_pos + protein_set_neg
+        elif protein_set_pos:
+            self.protein_set = protein_set_pos
+        elif protein_set_neg:
+            self.protein_set = protein_set_neg
         self.protein_set_pos = protein_set_pos
         self.protein_set_neg = protein_set_neg
         self.relevant_gn = OrderedDict([(x[0], OrderedDict()) for x in self.schemes])
@@ -951,6 +959,10 @@ class SignatureMatch():
         self.protein_report = OrderedDict()
         self.protein_signatures = OrderedDict()
         self.feature_preference = prepare_aa_group_preference()
+
+        self.group_lengths = dict([
+            (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
+        ])
 
         print(self.schemes)
         self.find_relevant_gns()
@@ -966,36 +978,35 @@ class SignatureMatch():
                     self.residue_to_feat['-'].add(fidx)
 
         self._find_norm()
-        self.scores_pos, self.signatures_pos, self.scored_proteins_pos = self.score_protein_set(self.protein_set_pos)
-        self.scores_neg, self.signatures_neg, self.scored_proteins_neg = self.score_protein_set(self.protein_set_neg)
+        if protein_set_pos:
+            self.scores_pos, self.signatures_pos, self.scored_proteins_pos = self.score_protein_set(self.protein_set_pos, signprot)
+        if protein_set_neg:
+            self.scores_neg, self.signatures_neg, self.scored_proteins_neg = self.score_protein_set(self.protein_set_neg, signprot)
 
 
     def _assign_preferred_features(self, signature, segment, ref_matrix):
 
         new_signature = []
         for pos, argmax in enumerate(signature):
-            updated = True
-            new_feat = argmax
-            while updated:
-                tmp = self._calculate_best_feature(pos, segment, argmax, ref_matrix)
-                if tmp == new_feat:
-                    updated = False
-                else:
-                    new_feat = tmp
-            new_signature.append(new_feat)
+            new_signature.append(self._calculate_best_feature(pos, segment, argmax, ref_matrix))
         return new_signature
-
 
     def _calculate_best_feature(self, pos, segment, argmax, ref_matrix):
 
         tmp = self.feature_preference[argmax]
-        amax = ref_matrix[segment][argmax, pos]
-        equiv_feat = np.where(np.isin(ref_matrix[segment][:, pos], amax))[0]
-        for efeat in equiv_feat:
-            if efeat in tmp:
-                return efeat
-        return argmax
+        equiv_feat = np.where(np.isin(ref_matrix[segment][:, pos], ref_matrix[segment][argmax][pos]))[0]
+        pref_feat = argmax
+        min_len = self.group_lengths[argmax]
 
+        for efeat in equiv_feat:
+            if efeat in tmp and self.group_lengths[efeat] < min_len:
+                pref_feat = efeat
+                min_len = self.group_lengths[efeat]
+            # when two features have the same aa count, take the one from positive set
+            elif efeat in tmp and self.group_lengths[efeat] == min_len:
+                if ref_matrix[segment][pref_feat][pos] < 0 and ref_matrix[segment][efeat][pos] > 0:
+                    pref_feat = efeat
+        return pref_feat
 
     def _find_norm(self):
 
@@ -1107,17 +1118,22 @@ class SignatureMatch():
         print("Total time: ", end - start)
 
 
-    def score_protein_set(self, protein_set):
+    def score_protein_set(self, protein_set, signprot=False):
 
         start = time.time()
         protein_scores = {}
         protein_signature_match = {}
+
+        seq_type_slug=['wt']
+        if signprot:
+            seq_type_slug.append('mod')
+
         pcfs = ProteinConformation.objects.order_by(
             'protein__family__slug',
             'protein__entry_name'
             ).filter(
                 protein__in=protein_set,
-                protein__sequence_type__slug='wt'
+                protein__sequence_type__slug__in=seq_type_slug
                 ).exclude(protein__entry_name__endswith='-consensus').prefetch_related('protein')
         
         relevant_gns_total = []

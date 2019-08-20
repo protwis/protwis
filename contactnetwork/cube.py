@@ -122,7 +122,7 @@ def compute_interactions(pdb_name,save_to_db = False):
 
             # Convert to dictionary for water calculations
             interaction_pairs = {}
-            for pair in classified:
+            for pair in classified_complex:
                 res_1 = pair.get_residue_1()
                 res_2 = pair.get_residue_2()
                 key =  res_1.get_parent().get_id()+str(res_1.get_id()[1]) + "_" + res_2.get_parent().get_id()+str(res_2.get_id()[1])
@@ -169,6 +169,9 @@ def compute_interactions(pdb_name,save_to_db = False):
         except SignprotComplex.DoesNotExist:
 #            print("No complex definition found for", pdb_name)
             log = "No complex definition found for " + pdb_name
+        except ProteinConformation.DoesNotExist:
+            print("No protein conformation definition found for signaling protein of ", pdb_name)
+#            log = "No protein conformation definition found for signaling protein of " + pdb_name
 
     if save_to_db:
 
@@ -239,7 +242,4 @@ def compute_interactions(pdb_name,save_to_db = False):
                     bulk_distances = []
 
             pairs = Distance.objects.bulk_create(bulk_distances)
-
-
-
     return classified, distances

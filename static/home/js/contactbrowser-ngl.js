@@ -8,53 +8,6 @@ var blue_colors = ['#f0fcfa', '#D3E4EA', '#B6CDDB', '#99B5CC', '#7C9EBD', '#5F86
 var red_colors = ['#fbf0fc', '#f3dbec', '#ebc5df', '#dda8bc', '#cc7b7f', '#d3574e', '#be372b', '#ac1808', '#811808']
 var rb_colors = ['#736DA7', '#5EB7B7', '#CE9AC6', '#DD7D7E', '#E6AF7C', '#DEDB75', '#80B96F', '#000000'] // #C897B8
 
-// Reference values for table values
-// entry: display (boolean), min, max, coloring
-// Values for single residue (skipping the pairs)
-dataType = {}
-dataType["no_viewing"]     = [false, 0, 0, ""]
-dataType["core_distance"]  = [true, 0, 15, "wb"]
-dataType["rotation"]       = [true, 0, 180, "wb"]
-dataType["rotamer"]        = [true, 0, 180, "wb"]
-dataType["consensus_freq"] = [true, 0, 100, "wb"]
-dataType["consensus_SS"]   = [true, 0, 100, "ss_coloring"]
-dataType["SASA"]           = [true, 0, 200, "wb"]
-dataType["RSA"]            = [true, 0, 100, "wb"]
-dataType["HSE"]            = [true, 0, 20, "wb"]
-dataType["conservation"]   = [true, 0, 100, "wb"]
-dataType["phi"]            = [true, 0, 180, "wb"]
-dataType["psi"]            = [true, 0, 180, "wb"]
-dataType["tau"]            = [true, 0, 180, "wb"]
-dataType["theta"]          = [true, 0, 180, "wb"]
-
-// Same for differences between groups
-// TODO: finetune to relative variation per data type
-dataType["core_distance_diff"] = [true, -5, 5, "rwb"]
-dataType["rotation_diff"]      = [true, -45, 45, "rwb"]
-dataType["rotamer_diff"]       = [true, -45, 45, "rwb"]
-dataType["ss_freq_diff"]       = [true, -50, 50, "rwb"]
-dataType["SASA_diff"]          = [true, -50, 50, "rwb"]
-dataType["RSA_diff"]           = [true, -25, 25, "rwb"]
-dataType["HSE_diff"]           = [true, -10, 10, "rwb"]
-//dataType["conservation"]  = [true, 0, 100, "rwb"]
-dataType["phi_diff"]           = [true, -45, 45, "rwb"]
-dataType["psi_diff"]           = [true, -45, 45, "rwb"]
-dataType["tau_diff"]           = [true, -45, 45, "rwb"]
-dataType["theta_diff"]         = [true, -45, 45, "rwb"]
-
-// Secondary structure coloringData
-var SS_COLORING = {
-  "H": "#FF0000", // alpha helix
-  "G": "#FF00FF", // 3-10 helix
-  "I": "#00FF00", // pi helix
-  "B": "#ffd700", // isolated bridge
-  "E": "#00a8ff", // strand/extended conformation
-  "T": "#ff5700", // turn
-  "S": "#00ffff", // bend (unique to DSSP)
-  "C": "#5d8aa8", // coil/other (STRIDE)
-  "-": "#5d8aa8", // coil/other (DSSP)
-}
-
 function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false) {
     // console.log(mode, pdb, pdbs, pdbs_set2, pdb2);
     $("#ngl-" + mode).html("");
@@ -538,189 +491,6 @@ function linkNGLMouseControls(origin) {
     }
 }
 
-function colorByData(mode, tableNumber, columnNumber, type) {
-    var defaultColor = "#666";
-    var structureKey = 0; // structure number now limited to structure 1
-    // TODO: make a switch for the different data tables (or handle in the click handler function?)
-    /*     switch (mode) {
-             case "single-crystal-group":
-               break;
-             case "single-crystal":
-               break;
-             case "two-crystal-groups":
-               break;
-         }*/
-
-    // Grab data from table
-    var rows
-    if (mode.startsWith("single_") && tableNumber==1) {
-      rows = getDateFromTable(tableNumber, [2, columnNumber].flat());
-    } else {
-      rows = getDateFromTable(tableNumber, [1, columnNumber].flat());
-    }
-
-    // Residue positions
-    var residue_positions = getColumn(rows, 0);
-
-    // If residue pairs -> split and concatenate
-    if (residue_positions.length == 0)
-      return;
-
-    if (residue_positions[0].indexOf("-")>=1){
-      residue_positions1 = residue_positions.map(function(e){return e.split("-")[0]});
-      residue_positions2 = residue_positions.map(function(e){return e.split("-")[1]});
-      residue_positions = residue_positions1.concat(residue_positions2)
-    }
-
-    var residue_values = getColumn(rows, 1).map(function(e){ return parseInt(e);})
-    if (Array.isArray(columnNumber) && columnNumber.length > 1)
-       residue_values = residue_values.concat(getColumn(rows, 2).map(function(e){ return parseInt(e);}));
-
-    // Filter NaNs
-    residue_positions = residue_positions.filter( function(value, index){ return !isNaN(residue_values[index]); })
-    residue_values = residue_values.filter( function(value, index){ return !isNaN(residue_values[index]); })
-
-    // Identify range
-    var valMax = Math.max(...residue_values)
-    var valMin = Math.min(...residue_values)
-    var palette = "rwb"
-    if (type in dataType){
-      valMax = dataType[type][2]
-      valMin = dataType[type][1]
-      palette = dataType[type][3]
-    } else {
-      console.log("TYPE not found: "+type)
-    }
-
-    // Create coloring scheme
-    color_scheme = []
-
-    // Create gradient scaled by data type
-    for (var i = 0; i < residue_positions.length; i++) {
-      // Find X-ray residue number
-      gn = pdb_data[mode][structureKey]["gn_map"].indexOf(residue_positions[i])
-
-      if (gn >= 0) {
-        // create residue selector
-        var ngl_selection = ":" + pdb_data[mode][structureKey]['chain'] + " and " + pdb_data[mode][structureKey]["only_gn"][gn]
-
-        // get color
-        var newColor = defaultColor;
-        if (palette=="ss_coloring") { // coloring for SS
-            if (residue_values[i] in SS_COLORING)
-              newColor = SS_COLORING[residue_values[i]]
-        } else {
-          if (valMin < 0)
-            newColor = numberToColorGradient(residue_values[i], valMax, palette, neg_and_pos = true)
-          else
-            newColor = numberToColorGradient(residue_values[i], valMax, palette, neg_and_pos = false)
-        }
-
-        // add color + residue to scheme
-        color_scheme.push([newColor, ngl_selection])
-      }
-    }
-
-    // gray for residues not present
-    color_scheme.push([ defaultColor, "*" ]);
-    color_schemes[mode]['feature'] = NGL.ColormakerRegistry.addSelectionScheme(color_scheme)
-
-    // Assign the coloring to the 3D viewer
-    gpcr_rep[mode][structureKey].setParameters({
-        color: color_schemes[mode]['feature']
-    });
-
-}
-
-// TODO: add smart handling of minimum values (now based on max)
-function numberToColorGradient(value, max, palette, neg_and_pos = false) {
-    if (neg_and_pos) {
-      value = value + max
-      max = max*2
-    }
-
-    if (value > max)
-      value = max
-    if (value < 0)
-      value = 0
-
-    switch(palette){
-        case "rwb": // red-white-blue
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
-          break;
-        case "bwr": // blue-white-red
-          return colorGradient(value/max, {red:0, green:0, blue: 255}, {red:255, green:255, blue: 255}, {red:255, green:0, blue: 0})
-          break;
-        case "ryg": // red-yellow-green
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:0, green:255, blue: 0}, {red:0, green:255, blue: 0})
-          break;
-        case "gyr": // green-yellow-red
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 0}, {red:0, green:255, blue: 0})
-          break;
-        case "rgb":
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
-          break;
-        case "wr": // white-red
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:255, green:0, blue: 0})
-          break;
-        case "wg": // white-green
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:255, blue: 0})
-          break;
-        case "wb": // white-blue
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
-          break;
-        case "rb": // red-blue
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:0, green:0, blue: 255})
-          break;
-        // ADDON if you're missing gradient values
-        case "br": // blue-red
-        default:
-          return colorGradient(value/max, {red:0, green:0, blue: 255}, {red:255, green:0, blue: 0})
-          break;
-    }
-}
-
-function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
-    var color1 = rgbColor1;
-    var color2 = rgbColor2;
-    var fade = fadeFraction;
-
-    // Do we have 3 colors for the gradient? Need to adjust the params.
-    if (rgbColor3) {
-      fade = fade * 2;
-
-      // Find which interval to use and adjust the fade percentage
-      if (fade >= 1) {
-        fade -= 1;
-        color1 = rgbColor2;
-        color2 = rgbColor3;
-      }
-    }
-
-    var diffRed = color2.red - color1.red;
-    var diffGreen = color2.green - color1.green;
-    var diffBlue = color2.blue - color1.blue;
-
-    var gradient = {
-      red: parseInt(Math.floor(color1.red + (diffRed * fade)), 10),
-      green: parseInt(Math.floor(color1.green + (diffGreen * fade)), 10),
-      blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
-    };
-
-    return rgb2hexCG(gradient.red.toString(16),gradient.green.toString(16),gradient.blue.toString(16));
-}
-
-function rgb2hexCG(r,g,b) {
-    if (r.length == 1)
-        r = '0' + r;
-    if (g.length == 1)
-        g = '0' + g;
-    if (b.length == 1)
-        b = '0' + b;
-
-    return '#' + r + g + b;
-}
-
 var linkMap = {}
 var linkColourScheme = {}
 function createNGLRepresentations(mode, structureNumber, update = false) {
@@ -951,4 +721,37 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
 
     // update show/hide when updating representations
     if (update) updateStructureRepresentations(mode)
+}
+
+function colorNGLByData(mode, residue_positions, residue_colors, defaultColor){
+  var structureKey = 0; // structure number now limited to structure 1
+
+  // Create coloring scheme
+  color_scheme = []
+
+  // Create gradient scaled by data type
+  for (var i = 0; i < residue_positions.length; i++) {
+    // Find X-ray residue number
+    gn = pdb_data[mode][structureKey]["gn_map"].indexOf(residue_positions[i])
+
+    if (gn >= 0) {
+      // create residue selector
+      var ngl_selection = ":" + pdb_data[mode][structureKey]['chain'] + " and " + pdb_data[mode][structureKey]["only_gn"][gn]
+
+      // get color
+      var newColor = residue_colors[i]
+
+      // add color + residue to scheme
+      color_scheme.push([newColor, ngl_selection])
+    }
+  }
+
+  // gray for residues not present
+  color_scheme.push([ defaultColor, "*" ]);
+  color_schemes[mode]['feature'] = NGL.ColormakerRegistry.addSelectionScheme(color_scheme)
+
+  // Assign the coloring to the 3D viewer
+  gpcr_rep[mode][structureKey].setParameters({
+      color: color_schemes[mode]['feature']
+  });
 }

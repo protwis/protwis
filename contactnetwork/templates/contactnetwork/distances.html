@@ -6,10 +6,10 @@
 
       <ul class="nav nav-tabs" id='mode_nav'>
             <li class="{% if not pdbs1 %}active{% endif %}">
-                  <a href="#single-crystal-group-tab" data-toggle="tab">Single group of structures</a>
+                  <a href="#single-crystal-group-tab" data-toggle="tab">Single set of structures</a>
             </li>
             <li class="{% if pdbs1 and not pdbs %}active{% endif %}">
-                  <a href="#two-crystal-groups-tab" data-toggle="tab">Two groups of structures</a>
+                  <a href="#two-crystal-groups-tab" data-toggle="tab">Two sets of structures</a>
             </li>
           </ul>
 
@@ -125,7 +125,7 @@
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">Structures Group 1</h3>
+                                <h3 class="panel-title">Structures Set 1</h3>
                             </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
@@ -139,7 +139,7 @@
                     <div class="col-md-3">
                         <div class="panel panel-default">
                             <div class="panel-heading">
-                                <h3 class="panel-title">Structures Group 2</h3>
+                                <h3 class="panel-title">Structures Set 2</h3>
                             </div>
                             <div class="panel-body">
                                 <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
@@ -275,7 +275,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of structures from table</h4>
+                    <h4 class="modal-title">Select a set of structures from table</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -298,7 +298,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of structures</h4>
+                    <h4 class="modal-title">Select a set of structures</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -322,7 +322,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of structures</h4>
+                    <h4 class="modal-title">Select a set of structures</h4>
                 </div>
                 <div class="modal-body">
                         <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
@@ -345,7 +345,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a group of structures</h4>
+                    <h4 class="modal-title">Select a set of structures</h4>
                 </div>
                 <div class="modal-body">
                         <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
@@ -362,7 +362,7 @@
 {% endblock %}
 {% block addon_js %}
 
-  
+
     <script type="text/javascript" src="{% static 'home/js/canvas-toBlob.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/FileSaver.min.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactnetworkDownloadDiagrams.js' %}"> </script>
@@ -1210,7 +1210,7 @@
                             + 'Distance coefficient of variation: ' + dispersion.toFixed(2)
                             + '<br />[coefficient of variation is standard deviation over mean, giving an indication of relative flexibility of data]'
                             + '<br /> #TABLE#';
-                            
+
 
                             // cell.attr({
                             //     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
@@ -1515,7 +1515,7 @@
 
           // console.log('current_width',current_width,old_heatmap_width);
           if (current_width && current_width!=old_heatmap_width) {
-            // console.log('change zoom'); 
+            // console.log('change zoom');
           } else {
             // do nothing
             return;
@@ -2469,7 +2469,7 @@
     </style>
 
     <style type="text/css">
-        
+
         @media (min-width: 1200px) {
           .modal-wide {
             width: 1200px;

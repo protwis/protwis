@@ -195,11 +195,13 @@ function createBoxPlotResidue(data, element, plottype, limit_pdbs = false, aa = 
                     pdbs = two_sets_pdbs1.concat(two_sets_pdbs2);
                     // If only use a subset of pdbs.
                     if (limit_pdbs) pdbs = limit_pdbs;
+                    pdbs_shown = []
                     pdbs.forEach(function(pdb){
                         pdb = pdb.toUpperCase();
                         let d = data[pdb];
-                        if (d.length) {
+                        if (d.length > 0) {
                             pos = d[0];
+                            pdbs_shown.push(pdb)
                             if (two_sets_pdbs1.includes(pdb)) {
                                 x.push('Set 1');
                             } else if (two_sets_pdbs2.includes(pdb)) {
@@ -225,7 +227,7 @@ function createBoxPlotResidue(data, element, plottype, limit_pdbs = false, aa = 
                             type: 'box',
                             boxmean: true,
                             boxpoints: 'all',
-                            text: pdbs
+                            text: pdbs_shown
                         };
                         traces.push(trace);
                     }

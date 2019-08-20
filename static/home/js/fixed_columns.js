@@ -2,12 +2,15 @@ function update_text_in_modal() {
 
     var pdbs = [];
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
     $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
         if ($(this).prop("checked")) {
             $(this).closest("tr").addClass("selected");
             $(this).closest(".dataTables_scrollBody").find("#overlay_" + $(this).attr('id')).addClass("selected");
+            selector = $(this).closest(".dataTables_scrollBody").find("#overlay_" + $(this).attr('id')).find("checkbox");
+            selector.prop("checked", !selector.prop("checked"));
             pdbs.push($(this).attr('id'));
         } else {
             $(this).closest("tr").removeClass("selected");
@@ -16,7 +19,7 @@ function update_text_in_modal() {
     });
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
 
-    if (mode == 'Single group of structures' || $("#single-group-tree-tab").length) {
+    if (mode == 'Single set of structures' || $("#single-group-tree-tab").length) {
         var total_selected = pdbs.length
         var selected_visible = $('.dataTables_scrollBody:visible .pdb_selected:checked').length
         var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
@@ -32,7 +35,7 @@ function update_text_in_modal() {
         $(pdbsInputSelector).val(JSON.stringify(pdbs));
         $(pdbsCountSelector).html(pdbs.length);
 
-    } else if (mode == 'Two groups of structures') {
+    } else if (mode == 'Two sets of structures') {
         var total_selected = pdbs.length;
         var selected_visible = $('.pdb_selected:checked:visible').length;
         var ModalpdbsCountSelector = '#two-crystal-group-pdbs-modal-' + group + '-text';
@@ -54,10 +57,22 @@ function update_text_in_modal() {
 function thisPDB(elem) {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     var ReceptorName = $(elem).attr('long');
+
+    var referenceObject = $(elem).closest(".dataTables_scrollBody")
+
+    // Fixed/frozen columns check
+    if (elem.id.startsWith("overlaycheck_")){
+       elem = referenceObject.find("#" + elem.id.replace("overlaycheck_",""))[0]
+       $(elem).prop("checked", !elem.checked)
+    } else {
+      other = referenceObject.find("#overlaycheck_" + elem.id)
+      other.prop("checked", elem.checked)
+    }
+
     var pdbName = $(elem).attr('id');
-    // console.log('thisPDB',pdbName);
     if (mode == 'Single structure') {
-        $('input', oTable[mode].cells().nodes()).not(elem).prop('checked', false);
+        $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e) {referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false}) // deselect from overlay
+        $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop('checked', false); // deselect from original table
         var pdbs = [];
         if ($(elem).prop("checked")) {
             pdbs.push(pdbName);
@@ -69,10 +84,11 @@ function thisPDB(elem) {
         }
         $(".crystal-count:visible").parent().parent().find('.crystal-pdb').val(JSON.stringify(pdbs));
     }
+
     update_text_in_modal();
 }
 
-function resetselection(not_update) {
+function resetselection(not_update = false, reset_filters = false) {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
@@ -82,6 +98,8 @@ function resetselection(not_update) {
     $('input', oTable[mode].cells().nodes()).prop('checked', false);
 
     if (!not_update) update_text_in_modal();
+
+    if (reset_filters) yadcf.exResetAllFilters(oTable[mode]);
 }
 
 function check_all(elem, button) {
@@ -97,7 +115,7 @@ function check_all(elem, button) {
         }
     }
 
-    if (mode == 'Single group of structures' || $("#single-group-tree-tab").length) {
+    if (mode == 'Single set of structures' || $("#single-group-tree-tab").length) {
         var pdbs = [];
 
         // REMOVE EXISITING? Probably not, more logical that filtering adds more
@@ -108,7 +126,7 @@ function check_all(elem, button) {
         } else {
             $('.pdb_selected:visible').prop("checked", false);
         }
-    } else if (mode == 'Two groups of structures') {
+    } else if (mode == 'Two sets of structures') {
         group = $(elem).closest('.tableview').attr('group-number');
         if (group) mode = mode + group;
         var pdbs = [];
@@ -239,13 +257,13 @@ function showPDBtable(element) {
         console.log(mode);
 
         $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-        $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
-        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
+        $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
+        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
         if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
-          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
-          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
-          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
+          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
 
         oTable[mode] = $(element + ' .tableview table').DataTable({
@@ -262,43 +280,43 @@ function showPDBtable(element) {
             }],
             "aaSorting": [],
             "columns": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
                 {
-                    "orderDataType": "dom-checkbox"
-                }
+                  "orderDataType": "dom-checkbox"
+                },
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
             ]
         });
         console.log('done datatable');
         yadcf.init(oTable[mode],
             [{
-                    column_number: 0,
+                    column_number: 1,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "UniProt",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 1,
+                    column_number: 2,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     column_data_type: "html",
@@ -308,7 +326,7 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 2,
+                    column_number: 3,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     html_data_type: "text",
@@ -320,34 +338,24 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 3,
+                    column_number: 4,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Class",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 4,
+                    column_number: 5,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Species",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 5,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Method",
-                    filter_reset_button_text: false,
-                },
-                {
                     column_number: 6,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    select_type_options: {
-                        width: '70px'
-                    },
-                    filter_default_label: "PDB",
+                    filter_default_label: "Method",
                     filter_reset_button_text: false,
                 },
                 {
@@ -357,11 +365,21 @@ function showPDBtable(element) {
                     select_type_options: {
                         width: '70px'
                     },
-                    filter_default_label: "Res (Å)",
+                    filter_default_label: "PDB",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 8,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: "Res (Å)",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 9,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "State",
@@ -369,15 +387,6 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
 
                 },
-                // {
-                //     column_number : 9,
-                //     filter_type: "multi_select",
-                //     select_type: 'select2',
-                //     filter_default_label: "",
-                //     filter_match_mode : "exact",
-                //     filter_reset_button_text: false,
-
-                // },
                 // {
                 //     column_number : 10,
                 //     filter_type: "multi_select",
@@ -387,65 +396,74 @@ function showPDBtable(element) {
                 //     filter_reset_button_text: false,
 
                 // },
+                // {
+                //     column_number : 11,
+                //     filter_type: "multi_select",
+                //     select_type: 'select2',
+                //     filter_default_label: "",
+                //     filter_match_mode : "exact",
+                //     filter_reset_button_text: false,
+
+                // },
                 {
-                    column_number: 12,
+                    column_number: 13,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Contact rep.",
                     filter_reset_button_text: false,
 
                 },
-                {
+                /*{
                     column_number: 13,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "7TM Open IC (Å)",
                     filter_reset_button_text: false,
-                },
-                {
-                    column_number: 14,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "G protein",
-                    filter_reset_button_text: false,
-                },
+                },*/
                 {
                     column_number: 15,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "B arrestin",
+                    filter_default_label: "G prot",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Fusion",
+                    filter_default_label: "B arr",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Antibody",
+                    filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 18,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Ligand",
+                    filter_default_label: "Antibody",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 19,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Ligand function",
+                    filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 20,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Ligand function",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand type",
@@ -540,14 +558,19 @@ function create_overlay(table_id) {
     var $target = $(".overlay_table tbody");
     $(table_id + " tbody tr").each(function() {
         var $tds = $(this).children(),
-            $row = $("<tr id='overlay_" + $tds.eq(6).html() + "'></tr>");
+            $row = $("<tr id='overlay_" + $tds.eq(7).html() + "'></tr>");
         // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
-        $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).appendTo($target);
+        $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).appendTo($target);
     });
     $(".overlay_table .border-right").removeClass("border-right");
 
+    // rename checkboxes for overlay to link to the original and remove class
+    $(".overlay_table tbody tr :checkbox").each(function(i, e){
+      e.id = "overlaycheck_" + e.id;
+      e.classList.remove("pdb_selected");
+    });
     // rebind click event
-    $('.structure_overlay2 tr').click(function(event) {
+    /*$('.structure_overlay tr').click(function(event) {
         console.log("clicking overlay tr");
         if (event.target.type !== 'checkbox') {
             $(':checkbox', this).trigger('click');
@@ -559,7 +582,7 @@ function create_overlay(table_id) {
                 // $('#'+pdb_id+':checkbox:visible').find("tr").trigger('click');
             }
         }
-    });
+    });*/
 }
 
 function track_scrolling(element) {
@@ -576,7 +599,10 @@ function track_scrolling(element) {
             $(".structure_overlay").css({
                 left: left + 'px'
             });
-            if ($(".structure_overlay").is(":hidden")) $(".structure_overlay").show();
+            if ($(".structure_overlay").is(":hidden")){
+              // link check boxes
+              $(".structure_overlay").show();
+            }
         }
     });
 }
