@@ -88,10 +88,10 @@
                     <div class="tree-menu dropup">
                       <div class="btn-group">
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                          Options <span class="caret"></span>
+                          Tree type <span class="caret"></span>
                         </button>
-                        <ul class="dropdown-menu" role="menu">
-                            <li><a href="#">
+                        <ul class="dropdown-menu treetypes" role="menu">
+      <!--                      <li><a href="#">
                               <label>Radial layout</label>
                               <input type="checkbox" id="radial-layout" checked/>
                             </a></li>
@@ -106,7 +106,9 @@
                             <li><a href="#">
                                 <label>Switch label order</label>
                                 <input type="checkbox" id="label-order"/>
-                            </a></li>
+                            </a></li>-->
+                            <li class="active"><a href="#">Circular dendrogram</a></li>
+                            <li><a href="#">Horizontal dendrogram</a></li>
                         </ul>
                       </div>
                       <div class="btn-group">
@@ -114,8 +116,13 @@
                           Receptor names <span class="caret"></span>
                         </button>
                         <ul class="dropdown-menu names" role="menu">
-                          <li class="active"><a href="#">UniProt names</a></li>
-                          <li><a href="#">IUPHAR names</a></li>
+                          <li><a href="#">IUPHAR</a></li>
+                          <li><a href="#">IUPHAR (PDB)</a></li>
+                          <li><a href="#">IUPHAR [inner] (PDB) [outer]</a></li>
+                          <li><a href="#">UniProt</a></li>
+                          <li><a href="#">UniProt (PDB)</a></li>
+                          <li class="active"><a href="#">UniProt [inner] (PDB) [outer]</a></li>
+                          <li><a href="#">PDB</a></li>
                         </ul>
                       </div>
                       <div class="btn-group">
@@ -145,18 +152,19 @@
                         </button>
                         <ul class="dropdown-menu datainner" role="menu">
                           <li><a href="#">No data</a></li>
+                          <h6 class="dropdown-header">Activation state</h6>
+                          <li class="active"><a href="#">Receptor activation state</a></li>
+                          <li><a href="#">Ligand function</a></li>
                           <h6 class="dropdown-header">Classification</h6>
                           <li><a href="#">GPCR class</a></li>
                           <li><a href="#">Ligand type</a></li>
-                          <li class="active"><a href="#">Receptor family</a></li>
-                          <h6 class="dropdown-header">Structure</h6>
-                          <li><a href="#">Receptor activation state</a></li>
-                          <li><a href="#">Ligand function</a></li>
-                          <li><a href="#">Structure determination method</a></li>
-                          <h6 class="dropdown-header">Coupling</h6>
+                          <li><a href="#">Receptor family</a></li>
+                          <h6 class="dropdown-header">G protein Coupling</h6>
                           <li><a href="#">All G proteins</a></li>
                           <li><a href="#">Primary G proteins</a></li>
                           <li><a href="#">Secondary G proteins</a></li>
+                          <h6 class="dropdown-header">Structure</h6>
+                          <li><a href="#">Structure determination method</a></li>
                         </ul>
                       </div>
                     </div>
@@ -471,17 +479,64 @@
           d3.layout.phylotree.trigger_refresh(phylotree);
         }
 
+        function toggleTreeType(event){
+          switch(event.target.innerText){
+              case "Circular dendrogram":
+                phylotree.radial(true).placenodes().update();
+                window.zoomCluster["#clustering-tree"].zoom(1.1)
+                window.zoomCluster["#clustering-tree"].center()
+                break;
+              case "Horizontal dendrogram":
+                phylotree.radial(false).placenodes().update();
+                $("#clustering-tree g.svg-pan-zoom_viewport").css("transform", "matrix(.8, 0, 0, .8, 0, 0)")
+                break;
+            }
+
+            // update active label on menu items
+            event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
+              e.classList.remove( "active" ) );
+            event.target.parentNode.classList.add("active")
+        }
+
         var displayName = 0
         function toggleNames(event){
           switch(event.target.innerText){
-              case "UniProt names":
-                displayName = 0
-                break;
-              case "IUPHAR names":
+              case "IUPHAR":
                 displayName = 1
+                hidePDBs = true
+                labelReorder = true
+                break;
+              case "IUPHAR (PDB)":
+                displayName = 1
+                hidePDBs = false
+                labelReorder = true
+                break;
+              case "IUPHAR [inner] (PDB) [outer]":
+                displayName = 1
+                hidePDBs = false
+                labelReorder = false
+                break;
+              case "UniProt":
+                displayName = 0
+                hidePDBs = true
+                labelReorder = true
+                break;
+              case "UniProt (PDB)":
+                displayName = 0
+                hidePDBs = false
+                labelReorder = true
                 break;
               default:
+              case "UniProt [inner] (PDB) [outer]":
                 displayName = 0
+                hidePDBs = false
+                labelReorder = false
+                break;
+              case "PDB":
+                displayName = 2
+                hidePDBs = false
+                labelReorder = true
+              break;
           }
 
           // update active label on menu items
@@ -803,6 +858,8 @@
 
                     if (hidePDBs){
                       label.innerHTML = labelName
+                    } else if (displayName == 2) {
+                      label.innerHTML = node.name
                     } else {
                       label.innerHTML = labelName + " (" + node.name + ")"
                       // Extra: rotate labels when on the left half
@@ -1242,7 +1299,7 @@
 
             // init tree toggles
             // Button Toggles
-            $("#radial-layout").on("click", function(e) {
+            /*$("#radial-layout").on("click", function(e) {
               var radial = $(this).prop("checked");
               phylotree.radial(radial).placenodes().update();
               if (!radial){
@@ -1251,7 +1308,7 @@
                 window.zoomCluster["#clustering-tree"].zoom(1.1)
                 window.zoomCluster["#clustering-tree"].center()
               }
-            });
+            });*/
 
             $("#colored-edges").on("click", function(e) {
               doBranchColoring = $("#colored-edges").prop("checked")
@@ -1260,7 +1317,7 @@
               d3.layout.phylotree.trigger_refresh(phylotree);
             });
 
-            $("#hide-pdbs").on("click", function(e) {
+/*            $("#hide-pdbs").on("click", function(e) {
               // refresh layout
               hidePDBs = $("#hide-pdbs").prop("checked")
               d3.layout.phylotree.trigger_refresh(phylotree);
@@ -1271,10 +1328,11 @@
               // refresh layout
               labelReorder = $("#label-order").prop("checked")
               d3.layout.phylotree.trigger_refresh(phylotree);
-            });
+            });*/
 
             // init dropdowns
             $(".dropdown-menu.names").on("click", "li", toggleNames)
+            $(".dropdown-menu.treetypes").on("click", "li", toggleTreeType)
             $(".dropdown-menu.dataouter").on("click", "li", toggleDataOuter)
             $(".dropdown-menu.datainner").on("click", "li", toggleDataInner)
         });
