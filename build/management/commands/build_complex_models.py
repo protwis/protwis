@@ -148,10 +148,9 @@ class Command(BaseBuild):
                 if break_loop: break
 
         ###
-        # self.receptor_list = Protein.objects.filter(entry_name='drd3_human')
-        # del self.gprotein_targets['Gs']
-        # del self.gprotein_targets['Gq/11']
-        # self.gprotein_targets['Gi/o'] = ['gnat1_human']
+        del self.gprotein_targets['Gs']
+        del self.gprotein_targets['Gq/11']
+        self.gprotein_targets['Gi/o'] = ['gnat1_human']
         ###
 
         s_c = 0

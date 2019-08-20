@@ -248,11 +248,7 @@ class SignprotModeling():
                 # ref and temp length equal
                 else:
                     cr, ct = 1,1
-                    print(r_seg, temp_loop_residues)
                     for i, j in zip(list(sign_a.reference_dict[r_seg].values()), list(sign_a.template_dict[t_seg].values())):
-                        print(cr, ct,i,j)
-                        print(temp_loop_residues[ct-1])
-                        print(ref_loop_residues[cr-1])
                         ref_out[r_seg+'_'+str(cr)] = i
                         temp_out[r_seg+'_'+str(ct)] = j
                         self.template_source = compare_and_update_template_source(self.template_source, r_seg, signprot_pdb_array, ct-1, temp_loop_residues[ct-1].display_generic_number.label, 

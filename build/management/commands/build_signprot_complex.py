@@ -44,6 +44,5 @@ class Command(BaseCommand):
                                                                                       structure=structure,
                                                                                       alpha=i['alpha'], beta_chain=b_chain, gamma_chain=g_chain,
                                                                                       beta_protein=b_protein, gamma_protein=g_protein)
-                    
                     structure.signprot_complex = signprot_complex
                     structure.save()
