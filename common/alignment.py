@@ -1283,6 +1283,7 @@ class AlignedReferenceTemplate(Alignment):
         self.signprot = signprot
         self.force_main_temp = force_main_temp
         self.core_alignment = core_alignment
+        self.main_temp_ban_list = ['opsd_todpa', 'adrb1_melga']
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
             self.revise_xtal = str(reference_protein)
@@ -1355,7 +1356,11 @@ class AlignedReferenceTemplate(Alignment):
             template_family).order_by('protein_conformation__protein__parent',
             'resolution').filter(annotated=True).exclude(refined=True).distinct()
         if self.revise_xtal==None:
-            self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=['opsd_todpa', 'adrb1_melga'])
+            if self.force_main_temp:
+                main_st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
+                if main_st.protein_conformation.protein.parent.entry_name in self.main_temp_ban_list:
+                    self.main_temp_ban_list.remove(main_st.protein_conformation.protein.parent.entry_name)
+            self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=self.main_temp_ban_list)
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
 

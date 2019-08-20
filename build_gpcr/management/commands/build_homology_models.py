@@ -85,6 +85,8 @@ class Command(BaseBuild):
         parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str)
         parser.add_argument('--n_c_term', help='Model N- and C-termini', default=False, action='store_true')
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
+        parser.add_argument('--fast_refinement', help='Chose fastest refinement option in MODELLER', default=False, action='store_true')
+        parser.add_argument('--keep_hetatoms', help='Keep hetero atoms from main template, this includes ligands', default=False, action='store_true')
         
     def handle(self, *args, **options):
         self.debug = options['debug']
@@ -108,6 +110,8 @@ class Command(BaseBuild):
         else:
             self.signprot = options['signprot']
         self.force_main_temp = options['force_main_temp']
+        self.fast_refinement = options['fast_refinement']
+        self.keep_hetatoms = options['keep_hetatoms']
 
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'F':'005', 'T':'006'}
         self.modeller_iterations = options['i']
@@ -254,13 +258,13 @@ class Command(BaseBuild):
 
             mod_startTime = datetime.now()
             chm = CallHomologyModeling(receptor[0].entry_name, receptor[1], iterations=self.modeller_iterations, debug=self.debug, update=self.update, complex_model=self.complex,
-                                       signprot=self.signprot, force_main_temp=self.force_main_temp)
-            chm.run()
+                                       signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms)
+            chm.run(fast_refinement=self.fast_refinement)
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
         
 
 class CallHomologyModeling():
-    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, fast_refinement=False):
+    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False):
         self.receptor = receptor
         self.state = state
         self.modeller_iterations = iterations
@@ -269,7 +273,7 @@ class CallHomologyModeling():
         self.complex = complex_model
         self.signprot = signprot
         self.force_main_temp = force_main_temp
-        self.fast_refinement = fast_refinement
+        self.keep_hetatoms = keep_hetatoms
 
 
     def run(self, import_receptor=False, fast_refinement=False):
@@ -282,7 +286,7 @@ class CallHomologyModeling():
                 sys.stdout = open(os.devnull, 'w')
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
-                                              force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement)
+                                              force_main_temp=self.force_main_temp, fast_refinement=fast_refinement, keep_hetatoms=self.keep_hetatoms)
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor, self.signprot)
                 model, templates, similarities = ihm.find_files()
@@ -319,10 +323,10 @@ class CallHomologyModeling():
             
             # Run clash and break test
             p = PDB.PDBParser()
-            if Homology_model.revise_xtal==False:
-                post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
-            else:
-                post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
+            # if Homology_model.revise_xtal==False:
+            post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
+            # else:
+            #     post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
             if self.signprot:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
                 # Run remodeling
@@ -468,13 +472,15 @@ class HomologyModeling(object):
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
     
-    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False, force_main_temp=False, fast_refinement=False):
+    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False, 
+                 force_main_temp=False, fast_refinement=False, keep_hetatoms=False):
         self.debug = debug
         self.complex = complex_model
         self.modelname = ''
         self.signprot = signprot
         self.target_signprot = None
         self.force_main_temp = force_main_temp
+        self.keep_hetatoms = keep_hetatoms
         self.fast_refinement = fast_refinement
         self.version = build_date
         self.reference_entry_name = reference_entry_name.lower()
@@ -1153,6 +1159,7 @@ class HomologyModeling(object):
                     loop_insertion = loop.insert_loop_to_arrays(loop.loop_output_structure, main_pdb_array, loop_template, 
                                                                 a.reference_dict, a.template_dict, a.alignment_dict)
                 else:
+                    print(loop_template, loop.loop_output_structure, loop.partialECL2_1, loop.partialECL2_2)
                     loop_insertion = loop.insert_ECL2_to_arrays(loop.loop_output_structure, main_pdb_array, loop_template,
                                                                 a.reference_dict, a.template_dict, a.alignment_dict,
                                                                 loop.partialECL2_1, loop.partialECL2_2)
@@ -1800,11 +1807,6 @@ class HomologyModeling(object):
                     del main_pdb_array[i][ii]
         except:
             pass
-
-        print(chain_break)
-        print(a.reference_dict[label])
-        print(a.template_dict[label])
-        print(main_pdb_array[label])
         
         # non-conserved residue switching
         if switch_rotamers==True:
@@ -1939,14 +1941,14 @@ class HomologyModeling(object):
                                                                                                                     disulfide_pairs=self.disulfide_pairs, complex=self.complex)
         self.statistics.add_info('template_source',self.template_source)
 
-        # Adding HETATMs when revising xtal
+        # Adding HETATMs when revising xtal or keeping hetatms
         hetatm_count = 0
         water_count = 0
         if self.revise_xtal==True:
             ref_prot = self.reference_protein.parent
         else:
             ref_prot = self.reference_protein
-        if ref_prot==self.main_structure.protein_conformation.protein.parent:
+        if ref_prot==self.main_structure.protein_conformation.protein.parent or self.keep_hetatoms:
             pdb = PDB.PDBList()
             pdb.retrieve_pdb_file(str(self.main_structure), pdir='./', file_format='pdb')
             self.alternate_water_positions = OrderedDict()
@@ -2370,7 +2372,7 @@ class HomologyModeling(object):
                         main_pdb_array, template_dict, non_cons_res_templates, switched_count, no_match = self.find_and_switch_rotamer(self.similarity_table_other_states, gn, gn_, 
                                 reference_dict, ref_seg, ref_res, main_pdb_array, atom_num_dict, template_dict, temp_seg, temp_res, non_cons_res_templates, switched_count, no_match, segment)
                         if no_match==True:
-                            # try:
+                            try:
                                 if 'free' not in ref_seg:
                                     residue = main_pdb_array[ref_seg][str(ref_res).replace('x','.')]
                                     main_pdb_array[ref_seg][str(ref_res).replace('x','.')] = residue[0:5]
@@ -2388,9 +2390,9 @@ class HomologyModeling(object):
                                 elif 'free' in ref_seg:
                                     trimmed_residues.append(gn_)
                                     trimmed_res_num+=1
-                            # except:
-                            #     print("Missing atoms in {} at {}".format(self.main_structure,gn))
-                            #     logging.warning("Missing atoms in {} at {}".format(self.main_structure,gn))
+                            except:
+                                print("Missing atoms in {} at {}".format(self.main_structure,gn))
+                                logging.warning("Missing atoms in {} at {}".format(self.main_structure,gn))
                 elif alignment_dict[aligned_seg][aligned_res]=='x':
                     trimmed_residues.append(gn.replace('x','.'))
                     trimmed_res_num+=1
@@ -2686,7 +2688,7 @@ sequence:{uniprot}::::::::
             ref_prot = self.reference_protein.parent
         else:
             ref_prot = self.reference_protein
-        if ref_prot==self.main_structure.protein_conformation.protein.parent:
+        if ref_prot==self.main_structure.protein_conformation.protein.parent or self.keep_hetatoms:
             env.io.hetatm = True
             env.io.water = True
         if atom_dict==None:
@@ -4137,6 +4139,8 @@ class Loops(object):
                 ref_residues = ref_residues[:ref_x50_i+3] + list(dif*'-') + ref_residues[ref_x50_i+3:]
         elif len(ref_residues)>len(self.main_pdb_array['ECL2']):
             if loop_output_structure[0]==self.main_structure:
+                if len(seq)!=len(self.main_pdb_array['ECL2']):
+                    x50_i = list(self.main_pdb_array['ECL2'].keys()).index('45.50')
                 dif = len(ref_residues[:ref_x50_i])-len(list(self.main_pdb_array['ECL2'].keys())[:x50_i])
                 temp_array = OrderedDict()
                 for i in list(self.main_pdb_array['ECL2'])[:x50_i]:

@@ -149,9 +149,9 @@ class Command(BaseBuild):
 
         ###
         # self.receptor_list = Protein.objects.filter(entry_name='drd3_human')
-        # del self.gprotein_targets['Gi/o']
+        # del self.gprotein_targets['Gs']
         # del self.gprotein_targets['Gq/11']
-        # self.gprotein_targets['Gs'] = ['gnas2_human']
+        # self.gprotein_targets['Gi/o'] = ['gnat1_human']
         ###
 
         s_c = 0
