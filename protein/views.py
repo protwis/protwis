@@ -445,7 +445,7 @@ def AlignIsoformWildtype(request):
         else:
             data['res_correct2'][i] = data['res'][i-gaps]
 
-    for e in es:
+    for e in es[:1]:
         isoform_info = fetch_from_web_api(url, e, cache_dir)
         if (isoform_info):
             seq = isoform_info['seq']
