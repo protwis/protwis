@@ -242,6 +242,7 @@ def isoforms(request):
     temp = OrderedDict([
                     ('name',''),
                     ('number_of_variants', 0),
+                    ('avg_no_variants',0),
                     ('number_of_children', 0),
                     ('receptor_t',0),
                     ('density_of_variants', 0),
@@ -266,7 +267,7 @@ def isoforms(request):
                 receptor_isoforms[r] = int(isoforms)
                 if int(isoforms)>max_isoforms:
                     max_isoforms = int(isoforms)
-
+    max_isoforms = 5
     # Make the scaffold
     for p in class_proteins:
         e_short = p.entry_name.split("_")[0].upper()
@@ -290,8 +291,14 @@ def isoforms(request):
 
             if e_short in receptor_isoforms:
                 coverage[fid[0]]['number_of_variants'] += receptor_isoforms[e_short]
+                coverage[fid[0]]['avg_no_variants'] = coverage[fid[0]]['number_of_variants'] / coverage[fid[0]]['receptor_t']
+
                 coverage[fid[0]]['children'][fid[1]]['number_of_variants'] += receptor_isoforms[e_short]
+                coverage[fid[0]]['children'][fid[1]]['avg_no_variants'] = coverage[fid[0]]['children'][fid[1]]['number_of_variants'] / coverage[fid[0]]['children'][fid[1]]['receptor_t']
+
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants'] += receptor_isoforms[e_short]
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['avg_no_variants'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants'] / coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['number_of_variants'] = receptor_isoforms[e_short]
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['density_of_variants'] = round(receptor_isoforms[e_short]/max_isoforms,2)
 
@@ -302,13 +309,29 @@ def isoforms(request):
                 if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants']>max_level_3:
                     max_level_3 = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants']
 
+
+    max_level_1_avg = 0
+    max_level_2_avg = 0
+    max_level_3_avg = 0
     # Make the scaffold
     for p in class_proteins:
         e_short = p.entry_name.split("_")[0].upper()
         fid = p.family.slug.split("_")
-        coverage[fid[0]]['density_of_variants'] = round(coverage[fid[0]]['number_of_variants']/max_level_1,2)
-        coverage[fid[0]]['children'][fid[1]]['density_of_variants'] = round(coverage[fid[0]]['children'][fid[1]]['number_of_variants']/max_level_2,2)
-        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['density_of_variants'] = round(coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants']/max_level_3,2)
+
+        if coverage[fid[0]]['avg_no_variants']>max_level_1_avg:
+            max_level_1_avg = coverage[fid[0]]['avg_no_variants']
+        if coverage[fid[0]]['children'][fid[1]]['avg_no_variants']>max_level_2_avg:
+            max_level_2_avg = coverage[fid[0]]['children'][fid[1]]['avg_no_variants']
+        if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['avg_no_variants']>max_level_3_avg:
+            max_level_3_avg = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['avg_no_variants']
+
+    # Make the scaffold
+    for p in class_proteins:
+        e_short = p.entry_name.split("_")[0].upper()
+        fid = p.family.slug.split("_")
+        coverage[fid[0]]['density_of_variants'] = round(coverage[fid[0]]['avg_no_variants']/max_level_1_avg,2)
+        coverage[fid[0]]['children'][fid[1]]['density_of_variants'] = round(coverage[fid[0]]['children'][fid[1]]['avg_no_variants']/max_level_2_avg,2)
+        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['density_of_variants'] = round(coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['avg_no_variants']/max_level_3_avg,2)
 
 
     # MAKE THE TREE
