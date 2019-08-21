@@ -32,8 +32,8 @@
                 </div>
 
                 <div class="row">
-                  <div class="tab-content">
-                      <div class="col-md-12 tab-pane active" id="single-group-tree-tab">
+                  <div class="col-md-12 tab-content">
+                      <div class="tab-pane active" id="single-group-tree-tab">
                            <div class="panel panel-default no-top-border">
                               <div class="panel-heading">
                                   <h3 class="panel-title pull-left">Conformational clusters (tree of structures)</h3>
@@ -53,144 +53,145 @@
                                   <span class="pull-right glyphicon glyphicon-picture btn-camera" data-toggle="tooltip" data-placement="bottom" title="Download figure (PNG)"></span>-->
                                   <div class="clearfix"></div>
                               </div>
-                           </div>
-                      </div>
-                    </div>
-                </div>
-                <div class="row">
-                  <div class="col-md-2">
-                    <div class="tree-menu dropdown">
-                      <div class="row nav-row">
-                      <div class="btn-group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                          Tree type <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu treetypes" role="menu">
-      <!--                      <li><a href="#">
-                              <label>Radial layout</label>
-                              <input type="checkbox" id="radial-layout" checked/>
-                            </a></li>
-                            <li><a href="#">
-                              <label>Color edges and leaves</label>
-                              <input type="checkbox" id="colored-edges" checked/>
-                            </a></li>
-                            <li><a href="#">
-                              <label>Hide PDB-codes</label>
-                              <input type="checkbox" id="hide-pdbs"/>
-                            </a></li>
-                            <li><a href="#">
-                                <label>Switch label order</label>
-                                <input type="checkbox" id="label-order"/>
-                            </a></li>-->
-                            <li class="active"><a href="#">Circular dendrogram</a></li>
-                            <li><a href="#">Horizontal dendrogram</a></li>
-                        </ul>
-                      </div></div>
-                      <div class="row nav-row"><div class="btn-group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                          Receptor names <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu names" role="menu">
-                          <li><a href="#">IUPHAR</a></li>
-                          <li><a href="#">IUPHAR (PDB)</a></li>
-                          <li><a href="#">IUPHAR [inner] (PDB) [outer]</a></li>
-                          <li><a href="#">UniProt</a></li>
-                          <li><a href="#">UniProt (PDB)</a></li>
-                          <li class="active"><a href="#">UniProt [inner] (PDB) [outer]</a></li>
-                          <li><a href="#">PDB</a></li>
-                        </ul>
-                      </div></div>
-                      <div class="row nav-row"><div class="btn-group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                          Outer markers<span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu dataouter" role="menu">
-                          <li><a href="#">No data</a></li>
-                          <h6 class="dropdown-header">Activation state</h6>
-                          <li class="active"><a href="#">Receptor activation state</a></li>
-                          <li><a href="#">Ligand function</a></li>
-                          <h6 class="dropdown-header">Classification</h6>
-                          <li><a href="#">GPCR class</a></li>
-                          <li><a href="#">Ligand type</a></li>
-                          <li><a href="#">Receptor family</a></li>
-                          <h6 class="dropdown-header">G protein Coupling</h6>
-                          <li><a href="#">All G proteins</a></li>
-                          <li><a href="#">Primary G proteins</a></li>
-                          <li><a href="#">Secondary G proteins</a></li>
-                          <h6 class="dropdown-header">Structure</h6>
-                          <li><a href="#">Structure determination method</a></li>
-                        </ul>
-                      </div></div>
-                      <div class="row nav-row"><div class="btn-group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                          Inner markers<span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu datainner" role="menu">
-                          <li><a href="#">No data</a></li>
-                          <h6 class="dropdown-header">Activation state</h6>
-                          <li><a href="#">Receptor activation state</a></li>
-                          <li><a href="#">Ligand function</a></li>
-                          <h6 class="dropdown-header">Classification</h6>
-                          <li><a href="#">GPCR class</a></li>
-                          <li><a href="#">Ligand type</a></li>
-                          <li class="active"><a href="#">Receptor family</a></li>
-                          <h6 class="dropdown-header">G protein Coupling</h6>
-                          <li><a href="#">All G proteins</a></li>
-                          <li><a href="#">Primary G proteins</a></li>
-                          <li><a href="#">Secondary G proteins</a></li>
-                          <h6 class="dropdown-header">Structure</h6>
-                          <li><a href="#">Structure determination method</a></li>
-                        </ul>
-                      </div></div>
-                      <hr />
-                      <div class="row nav-row">
-                        <div class="hidden" id="submit-group">
-                            <div class="btn btn-success CN-button disabled" id="CN-button">Structural analysis<br/>(1 or 2 sets)</div>
-    <!--                        <div class="btn btn-success pull-left DN-button disabled" id="DN-button">Distance Network</div>-->
-                        </div>
-                      </div>
-                      <div class="row nav-row">
-                        <div class="hidden" id="output-group0">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h3 class="panel-title">Structure set 1</h3>
-                                </div>
-                                <div class="panel-body">
-                                    <textarea name="input-targets-0" id="input-targets-0" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="hidden" id="output-group1">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h3 class="panel-title">Structure set 2</h3>
-                                </div>
-                                <div class="panel-body">
-                                    <textarea name="input-targets-1" id="input-targets-1" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
-                                </div>
-                            </div>
-                        </div>
+                              <div class="panel-body">
+                                <div class="col-md-2">
+                                  <div class="tree-menu dropdown">
+                                    <div class="row nav-row">
+                                    <div class="btn-group">
+                                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                        Tree type <span class="caret"></span>
+                                      </button>
+                                      <ul class="dropdown-menu treetypes" role="menu">
+                    <!--                      <li><a href="#">
+                                            <label>Radial layout</label>
+                                            <input type="checkbox" id="radial-layout" checked/>
+                                          </a></li>
+                                          <li><a href="#">
+                                            <label>Color edges and leaves</label>
+                                            <input type="checkbox" id="colored-edges" checked/>
+                                          </a></li>
+                                          <li><a href="#">
+                                            <label>Hide PDB-codes</label>
+                                            <input type="checkbox" id="hide-pdbs"/>
+                                          </a></li>
+                                          <li><a href="#">
+                                              <label>Switch label order</label>
+                                              <input type="checkbox" id="label-order"/>
+                                          </a></li>-->
+                                          <li class="active"><a href="#">Circular dendrogram</a></li>
+                                          <li><a href="#">Horizontal dendrogram</a></li>
+                                      </ul>
+                                    </div></div>
+                                    <div class="row nav-row"><div class="btn-group">
+                                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                        Receptor names <span class="caret"></span>
+                                      </button>
+                                      <ul class="dropdown-menu names" role="menu">
+                                        <li><a href="#">IUPHAR</a></li>
+                                        <li><a href="#">IUPHAR (PDB)</a></li>
+                                        <li><a href="#">IUPHAR [inner] (PDB) [outer]</a></li>
+                                        <li><a href="#">UniProt</a></li>
+                                        <li><a href="#">UniProt (PDB)</a></li>
+                                        <li class="active"><a href="#">UniProt [inner] (PDB) [outer]</a></li>
+                                        <li><a href="#">PDB</a></li>
+                                      </ul>
+                                    </div></div>
+                                    <div class="row nav-row"><div class="btn-group">
+                                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                        Outer markers<span class="caret"></span>
+                                      </button>
+                                      <ul class="dropdown-menu dataouter" role="menu">
+                                        <li><a href="#">No data</a></li>
+                                        <h6 class="dropdown-header">Activation state</h6>
+                                        <li class="active"><a href="#">Receptor activation state</a></li>
+                                        <li><a href="#">Ligand function</a></li>
+                                        <h6 class="dropdown-header">Classification</h6>
+                                        <li><a href="#">GPCR class</a></li>
+                                        <li><a href="#">Ligand type</a></li>
+                                        <li><a href="#">Receptor family</a></li>
+                                        <h6 class="dropdown-header">G protein Coupling</h6>
+                                        <li><a href="#">All G proteins</a></li>
+                                        <li><a href="#">Primary G proteins</a></li>
+                                        <li><a href="#">Secondary G proteins</a></li>
+                                        <h6 class="dropdown-header">Structure</h6>
+                                        <li><a href="#">Structure determination method</a></li>
+                                      </ul>
+                                    </div></div>
+                                    <div class="row nav-row"><div class="btn-group">
+                                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                        Inner markers<span class="caret"></span>
+                                      </button>
+                                      <ul class="dropdown-menu datainner" role="menu">
+                                        <li><a href="#">No data</a></li>
+                                        <h6 class="dropdown-header">Activation state</h6>
+                                        <li><a href="#">Receptor activation state</a></li>
+                                        <li><a href="#">Ligand function</a></li>
+                                        <h6 class="dropdown-header">Classification</h6>
+                                        <li><a href="#">GPCR class</a></li>
+                                        <li><a href="#">Ligand type</a></li>
+                                        <li class="active"><a href="#">Receptor family</a></li>
+                                        <h6 class="dropdown-header">G protein Coupling</h6>
+                                        <li><a href="#">All G proteins</a></li>
+                                        <li><a href="#">Primary G proteins</a></li>
+                                        <li><a href="#">Secondary G proteins</a></li>
+                                        <h6 class="dropdown-header">Structure</h6>
+                                        <li><a href="#">Structure determination method</a></li>
+                                      </ul>
+                                    </div></div>
+                                    <hr />
+                                    <div class="row nav-row">
+                                      <div class="hidden" id="submit-group">
+                                          <div class="btn btn-success CN-button disabled" id="CN-button">Structural analysis<br/>(1 or 2 sets)</div>
+                  <!--                        <div class="btn btn-success pull-left DN-button disabled" id="DN-button">Distance Network</div>-->
+                                      </div>
+                                    </div>
+                                    <div class="row nav-row">
+                                      <div class="hidden" id="output-group0">
+                                          <div class="panel panel-default">
+                                              <div class="panel-heading">
+                                                  <h3 class="panel-title">Structure set 1</h3>
+                                              </div>
+                                              <div class="panel-body">
+                                                  <textarea name="input-targets-0" id="input-targets-0" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <div class="hidden" id="output-group1">
+                                          <div class="panel panel-default">
+                                              <div class="panel-heading">
+                                                  <h3 class="panel-title">Structure set 2</h3>
+                                              </div>
+                                              <div class="panel-body">
+                                                  <textarea name="input-targets-1" id="input-targets-1" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
+                                              </div>
+                                          </div>
+                                      </div>
 
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-7">
-                    <div class="panel-body">
-                      <div class="tree-container" id="tree-container">
-                          <svg id="clustering-tree"></svg>
-                      </div>
-                      </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="legend_box">
-                      <div class="outer_legend"></div>
-                      <div class="inner_legend"></div>
-                    </div>
-                  </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-md-7">
+                                  <div class="panel-body">
+                                    <div class="tree-container" id="tree-container">
+                                        <svg id="clustering-tree"></svg>
+                                    </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                  <div class="legend_box">
+                                    <div class="outer_legend"></div>
+                                    <div class="inner_legend"></div>
+                                  </div>
+                                </div>
                 </div>
             </div>
-            <!-- END SINGLE CRYSTAL GROUP TAB -->
         </div>
+      </div>
+    </div>
+
+
+            <!-- END SINGLE CRYSTAL GROUP TAB -->
+
 
     <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
     <div class="modal fade" id="single-crystal-group-pdbs-modal-table" role="dialog">
@@ -709,7 +710,7 @@
 
           // Refresh layout with updated selections
           d3.layout.phylotree.trigger_refresh(phylotree);
-          
+
           // Refresh twice to ensure correct leaf coloring
           if (doBranchColoring)
             d3.layout.phylotree.trigger_refresh(phylotree);
