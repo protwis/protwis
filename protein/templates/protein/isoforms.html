@@ -90,6 +90,9 @@ grid-area: svg;
 .isoformtable {
 grid-area: isoformtable;
 }
+.caption {
+grid-area: caption;
+}
 
 .wrapper {
   display: grid;
@@ -98,6 +101,7 @@ grid-area: isoformtable;
   grid-template-columns: 40px auto 40px;
   grid-template-areas:
   ". svg  ."
+  ". caption ."
   ". isoformtable .";
 }
 @media (min-width: 1400px) {
@@ -105,7 +109,7 @@ grid-area: isoformtable;
     grid-template-columns: 40px minmax(400px,1200px) auto 40px;
     grid-template-areas:
     ". svg isoformtable ."
-    ". . . .";
+    ". caption isoformtable .";
   }
 }
 
@@ -552,7 +556,14 @@ function build_table() {
 {% endblock %}
 {% block outcontent %}
 <div class="wrapper">
-    <div class="svg" id="svg" width="100%"></div>
+    <div class="svg" id="svg" width="100%">
+    </div>
+
+    <div class="caption">
+      The classification tree highlights the number of unique isoforms for each receptor gene.<br>
+      The structural annotation table includes all non-reference isoforms that preserve at least one segment of their reference GPCR.<br>
+      Conserved, partially conserved, and non-conserved structural segments are coloured in green, orange, and red. Purple triangles indicate insertions.<br>
+    </div>
     <div class="isoformtable">
         <table class="table table-sm display compact">
             <thead>
