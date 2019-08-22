@@ -56,7 +56,7 @@ class Command(BaseCommand):
     xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml'])
     mod_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
     xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends_bw.yaml'])
-    # ECD_annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'ECD_annotation.xlsx'])
+    ECD_annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'ECD_annotation.xlsx'])
 
     non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
     non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
@@ -66,6 +66,9 @@ class Command(BaseCommand):
 
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
 
+    ECD_wt_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_wt.yaml'])
+    ECD_B1_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_B1.yaml'])
+
 
     if not os.path.exists(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])):
         os.makedirs(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation']))
@@ -73,11 +76,32 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.data = self.parse_excel(self.annotation_source_file)
         self.dump_files()
-        # self.ECD_data = self.parse_excel(self.ECD_annotation_source_file)
+        self.ECD_data = self.parse_excel(self.ECD_annotation_source_file)
+        self.dump_ECD_files()
         # self.analyse_annotation_consistency()
         self.find_representatives()
         if options['m']:
             self.main_template_search()
+
+    def dump_ECD_files(self):
+        data_dict = OrderedDict()
+        for key, val in self.ECD_data['wt'].items():
+            if val['H1x50']=='':
+                continue
+            entry_name = val['UniProt']
+            del val['Key']
+            del val['UniProt']
+            data_dict[entry_name] = val
+        with open(self.ECD_wt_file, 'w') as outfile:
+            yaml.dump(data_dict, outfile, indent=4)
+        # B1_dict = OrderedDict()
+        # for key, val in self.ECD_data['B1'].items():
+        #     entry_name = val['protein']
+        #     del val['protein']
+        #     B1_dict[entry_name] = val
+        # with open(self.ECD_B1_file, 'w') as outfile:
+        #     yaml.dump(B1_dict, outfile, indent=4)
+
 
     def parse_excel(self,path):
         workbook = xlrd.open_workbook(path)

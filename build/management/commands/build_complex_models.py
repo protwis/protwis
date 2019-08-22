@@ -110,7 +110,6 @@ class Command(BaseBuild):
         else:
             self.signprot = options['signprot']
         self.force_main_temp = options['force_main_temp']
-        self.debug = options['debug']
         self.skip_existing = options['skip_existing']
         self.existing_list = []
         if self.skip_existing:
@@ -149,10 +148,9 @@ class Command(BaseBuild):
                 if break_loop: break
 
         ###
-        # self.receptor_list = Protein.objects.filter(entry_name='gp139_human')
-        # del self.gprotein_targets['Gi/o']
-        # del self.gprotein_targets['Gs']
-        # self.gprotein_targets['Gq/11'] = ['gna14_human', 'gna15_human']
+        del self.gprotein_targets['Gs']
+        del self.gprotein_targets['Gq/11']
+        self.gprotein_targets['Gi/o'] = ['gnat1_human']
         ###
 
         s_c = 0
@@ -197,8 +195,8 @@ class Command(BaseBuild):
                                                                                                     processor_id,i,datetime.now() - mod_startTime))
 
     def build_all_complex_models_for_receptor(self, receptor, count, i, processor_id):
-        first_in_subfam = True
         for gprotein_subfam, targets in self.gprotein_targets.items():
+            first_in_subfam = True
             # print(gprotein_subfam, targets)
             for target in targets:
                 # Only build gnat models with opsins
@@ -225,6 +223,7 @@ class Command(BaseBuild):
                         else:
                             mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
                             mod.run(fast_refinement=True)
+
 
     def purge_complex_entries(self):
         if os.path.exists('./structure/complex_models_zip/'):

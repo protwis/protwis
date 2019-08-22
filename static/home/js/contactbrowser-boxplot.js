@@ -31,75 +31,81 @@ function createBoxPlot(data, element, plottype) {
             switch (plottype) {
 
                 case "angles":
-                    var rows = getDateFromTable(1, [1, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+                    var rows = getDateFromTable(1, [1, 7, 9, 11, 13, 15, 17, 8, 10, 12, 14, 16, 18]);
 
-                    var text_array = getColumn(rows, 0).concat(getColumn(rows, 0));
-                    var y = Array(getColumn(rows, 1).length).fill('Pos 1').concat(Array(getColumn(rows, 1).length).fill('Pos 2'))
+                    var pos_titles = [];
+                    var values = [];
+                    for (var i = 0; i < rows.length; i++) {
+                        title = rows[i][0].split("-");
+                        if (!pos_titles.includes(title[0])) {
+                            values.push(rows[i].slice(1,7));
+                            pos_titles.push(title[0]);
+                        }
+                        if (!pos_titles.includes(title[1])) {
+                            values.push(rows[i].slice(7));
+                            pos_titles.push(title[1]);
+                        }
+                    }
+
+                    var y = Array(values.length).fill('Angles')
 
                     var trace1 = {
-                        y: getColumn(rows, 1).concat(getColumn(rows, 2)),
-                        x: y,
-                        name: 'Distance',
+                        y: getColumn(values, 0),
+                        name: 'Distance to 7TM axis',
                         type: 'box',
                         boxmean: false,
-                        text: text_array
+                        text: pos_titles
                     };
 
                     var trace2 = {
-                        y: getColumn(rows, 3).concat(getColumn(rows, 4)),
-                        x: y,
+                        y: getColumn(values, 1),
                         name: 'Rotation (Ca angle)',
                         type: 'box',
                         boxmean: false,
-                        text: text_array
+                        text: pos_titles
                     };
 
-
                     var trace3 = {
-                        y: getColumn(rows, 5).concat(getColumn(rows, 6)),
-                        x: y,
+                        y: getColumn(values, 2),
                         name: 'Rotamer',
                         type: 'box',
                         boxmean: false,
-                        text: text_array
+                        text: pos_titles
                     };
 
                     var trace4 = {
-                        y: getColumn(rows, 7).concat(getColumn(rows, 8)),
-                        x: y,
+                        y: getColumn(values, 3),
                         name: 'SASA',
                         type: 'box',
                         boxmean: false,
-                        text: text_array
+                        text: pos_titles
                     };
 
                     var trace5 = {
-                        y: getColumn(rows, 9).concat(getColumn(rows, 10)),
-                        x: y,
+                        y: getColumn(values, 4),
                         name: 'RSA',
                         type: 'box',
                         boxmean: false,
-                        text: text_array
+                        text: pos_titles
                     };
 
                     var trace6 = {
-                        y: getColumn(rows, 11).concat(getColumn(rows, 12)),
-                        x: y,
+                        y: getColumn(values, 5),
                         name: 'Presence',
                         type: 'box',
                         boxmean: false,
-                        text: text_array
+                        text: pos_titles
                     };
-
 
                     var data = [trace1, trace2, trace3, trace4, trace5, trace6];
 
                     var layout = {
                         title: 'Grouped Horizontal Box Plot',
                         xaxis: {
-                            title: 'Angles',
+                            // title: 'Angles',
                             zeroline: false
                         },
+                        // grid: {rows: 1, columns: 6, pattern: 'independent'},
                         boxmode: 'group'
                     };
 
@@ -154,7 +160,7 @@ function createBoxPlot(data, element, plottype) {
 
 }
 
-function createBoxPlotResidue(data, element, plottype, limit_pdbs = false, aa = false) {
+function createBoxPlotResidue(data, element, plottype, cell_index, limit_pdbs = false, aa = false) {
     var mode = get_current_mode();
     var layout = {};
     switch (mode) {
@@ -218,16 +224,41 @@ function createBoxPlotResidue(data, element, plottype, limit_pdbs = false, aa = 
 
                     names = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
 
+                    name_index = Math.floor((cell_index-6)/2);
+                    name_index = { 7: 'core_distance', 8:'core_distance',
+                                   9: 'a_angle', 10:'a_angle',
+                                   11: 'outer_angle', 12:'outer_angle',
+                                   13: 'sasa', 14:'sasa',
+                                   15: 'rsa', 16:'rsa' };
+
+                    // console.log(cell_index,name_index,name_index[cell_index]);
+
                     var traces = [];
                     for (const key in ys) {
+                        new_x = []
+                        for (var i = 0; i < x.length; i++) {
+                            new_x.push(names[key]+"<br>"+x[i]);
+                        }
+                        visible_trace = 'legendonly';
+                        if (name_index[cell_index]==names[key]) visible_trace = true;
                         trace = {
                             y: ys[key],
-                            x: x,
+                            x: new_x,
                             name: names[key],
                             type: 'box',
                             boxmean: true,
-                            boxpoints: 'all',
-                            text: pdbs_shown
+                            // boxpoints: 'all',
+                            text: pdbs_shown,
+                            jitter: 0.5,
+                            whiskerwidth: 0.2,
+                            fillcolor: 'cls',
+                            marker: {
+                                size: 2
+                            },
+                            line: {
+                                width: 1
+                            },
+                            visible: visible_trace
                         };
                         traces.push(trace);
                     }
@@ -236,13 +267,17 @@ function createBoxPlotResidue(data, element, plottype, limit_pdbs = false, aa = 
 
                     var layout = {
                         title: 'Angles data for position '+pos,
-                        xaxis: {
-                            zeroline: false
-                        },
+                        // xaxis: {
+                        //     zeroline: false
+                        // },
+                          xaxis: {
+                            showgrid: false,
+                            zeroline: false,
+                          },
                         yaxis: {
                             zeroline: false
                         },
-                        boxmode: 'group'
+                        // boxmode: 'group'
                     };
 
                     break;
@@ -252,7 +287,7 @@ function createBoxPlotResidue(data, element, plottype, limit_pdbs = false, aa = 
             break;
     }
 
-    Plotly.newPlot(element, data, layout);
+    Plotly.newPlot(element, data, layout, {showLink: true}); //editable: true,
 }
 
 

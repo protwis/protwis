@@ -42,6 +42,32 @@ function make_range_number_cols(start_column, repeat_number) {
     return repeated_from_to;
 }
 
+jQuery.extend( jQuery.fn.dataTableExt.oSort, {
+    "non-empty-string-asc": function (str1, str2) {
+        if(str1 == "")
+            return 1;
+        if(str2 == "")
+            return -1;
+        if ($.isNumeric(str1))
+            str1 = parseFloat(str1);
+        if ($.isNumeric(str2))
+            str2 = parseFloat(str2);
+        return ((str1 < str2) ? -1 : ((str1 > str2) ? 1 : 0));
+    },
+ 
+    "non-empty-string-desc": function (str1, str2) {
+        if(str1 == "")
+            return 1;
+        if(str2 == "")
+            return -1;
+        if ($.isNumeric(str1))
+            str1 = parseFloat(str1);
+        if ($.isNumeric(str2))
+            str2 = parseFloat(str2);
+        return ((str1 < str2) ? 1 : ((str1 > str2) ? -1 : 0));
+    }
+} );
+
 function renderDataTablesYadcf(element) {
 
     console.time("renderDataTablesYadcf");
@@ -88,6 +114,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -322,6 +349,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -595,6 +623,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -699,6 +728,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -932,6 +962,7 @@ function renderDataTablesYadcf(element) {
                         type: "string",
                         targets: 1
                     },
+                        {type: 'non-empty-string', targets: "_all"},
                     {
                         "width": "40px",
                         "targets": list_narrow_cols
@@ -1543,6 +1574,8 @@ function renderBrowser(data) {
     table.on('click', '.angles_modal', function(event) {
         // $(this)
 
+        // figure out which cell is selected
+        cell_index = $(this).index();
         gn_pair = $(this).closest("tr").attr('id').split(",");
         gn1 = gn_pair[0];
         gn2 = gn_pair[1];
@@ -1550,14 +1583,22 @@ function renderBrowser(data) {
         all_angles_1 = two_sets_data['all_angles'][gn1];
         all_angles_2 = two_sets_data['all_angles'][gn2];
 
-        $("#resModal").find(".modal-body").html("<div id='modal_plotly_1' style='height:100%;width:50%;display: inline-block;'></div><div id='modal_plotly_2' style='height:100%;width:50%;display: inline-block;'></div>");
+        // Commented out is if both pairs tobe shown at the same time. Probably not relevant.
+        // $("#resModal").find(".modal-body").html("<div id='modal_plotly_1' style='height:100%;width:100%;display: inline-block;'></div><div id='modal_plotly_2' style='height:100%;width:100%;display: inline-block;'></div>");
+        $("#resModal").find(".modal-body").html("<div id='modal_plotly_1' style='height:100%;width:100%;display: inline-block;'></div>");
         $("#resModal").modal();
 
         //Slight wait, to be sure modal is open.
-        if (typeof all_angles_1 !== 'undefined')
-          setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles') }, 500);
-        if (typeof all_angles_2 !== 'undefined')
-          setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles') }, 500);
+
+        if (cell_index % 2 != 0) {
+            // odd cell number is pos1
+            if (typeof all_angles_1 !== 'undefined')
+              setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',cell_index) }, 500);
+            
+        } else {
+            if (typeof all_angles_2 !== 'undefined')
+              setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_1','angles',cell_index) }, 500);
+          }
 
     });
 

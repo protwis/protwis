@@ -792,8 +792,10 @@ class Alignment:
                             continue
 
                         # skip when position is on the ignore list
-                        if entry_name in ignore_list or amino_acid in self.gaps:
-                        # if entry_name in ignore_list:
+                        if entry_name in ignore_list:
+                            continue
+
+                        if ignore and amino_acid in self.gaps:
                             continue
 
                         # Init counters
@@ -1283,6 +1285,7 @@ class AlignedReferenceTemplate(Alignment):
         self.signprot = signprot
         self.force_main_temp = force_main_temp
         self.core_alignment = core_alignment
+        self.main_temp_ban_list = ['opsd_todpa', 'adrb1_melga']
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
             self.revise_xtal = str(reference_protein)
@@ -1353,9 +1356,13 @@ class AlignedReferenceTemplate(Alignment):
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
-            'resolution').filter(annotated=True).exclude(refined=True)
+            'resolution').filter(annotated=True).exclude(refined=True).distinct()
         if self.revise_xtal==None:
-            self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=['opsd_todpa', 'adrb1_melga'])
+            if self.force_main_temp:
+                main_st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
+                if main_st.protein_conformation.protein.parent.entry_name in self.main_temp_ban_list:
+                    self.main_temp_ban_list.remove(main_st.protein_conformation.protein.parent.entry_name)
+            self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=self.main_temp_ban_list)
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
 
@@ -1364,8 +1371,8 @@ class AlignedReferenceTemplate(Alignment):
         '''
         if self.force_main_temp:
             st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
-            if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
-                self.overwrite_db_seq_nums(st, st.pdb_code.index)
+            # if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
+            #     self.overwrite_db_seq_nums(st, st.pdb_code.index)
             self.main_template_protein = [i for i in self.ordered_proteins if i.protein==st.protein_conformation.protein.parent][0]
             return st
         i = 1
@@ -1416,7 +1423,8 @@ class AlignedReferenceTemplate(Alignment):
                 for m in matches:
                     if m.protein_conformation.protein.parent==self.reference_protein.protein and int(protein.similarity)==0:
                         continue
-                    temp_list.append((m, int(protein.similarity), float(m.resolution), protein, m.representative))
+                    if (m, int(protein.similarity), float(m.resolution), protein, m.representative) not in temp_list:
+                        temp_list.append((m, int(protein.similarity), float(m.resolution), protein, m.representative))
             except:
                 pass
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],-x[4],x[2]))
