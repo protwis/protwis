@@ -1197,12 +1197,12 @@
 
             {% if pdbs %}
                 // handle post data (if present) for single group
-                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', renderHeatmap, true)
+                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', true)
             {% endif %}
 
             {% if pdbs1 and pdbs2 %}
                 // handle post data (if present) for two groups
-                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', renderHeatmap, true);
+                loadTwoPDBsView({{ pdbs1 | safe }}, {{ pdbs2 | safe}}, '#two-crystal-groups-tab', true);
             {% endif %}
         });
     </script>

@@ -243,7 +243,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a set of structures from table</h4>
+                    <h4 class="modal-title">Select a structure</h4>
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
@@ -874,21 +874,24 @@
               selectVariable += '</optgroup>';
           }
           selectVariable += '<optgroup label="Backbone movement">';
-          selectVariable += '<option value="distance" SELECTED>Distance to 7TM axis</option>';
-          selectVariable += '<option value="bb_angle">Angle of C&alpha; atom relative to GPCR core</option>';
-          selectVariable += '<option value="sc_angle">Angle of C&beta; atom relative to GPCR core</option>';
+          selectVariable += '<option value="distance" SELECTED>Distance to 7TM axis (Å)</option>';
+          selectVariable += '<option value="bb_angle">Angle of C&alpha; to helix and 7TM axis</option>';
+          selectVariable += '<option value="sc_angle">Angle of C&beta; to helix and 7TM axis</option>';
           selectVariable += '<option value="HSE">Half-sphere exposure</option>';
           selectVariable += '</optgroup>';
-          selectVariable += '<optgroup label="Helix types, bulges and constrictions">';
-          selectVariable += '<option value="phi">Phi dihedral</option>';
-          selectVariable += '<option value="psi">Psi dihedral</option>';
-          selectVariable += '<option value="tau">Tau dihedral (between 4 consecutive C&alpha;-atoms)</option>';
-          selectVariable += '<option value="theta">Theta angle (between 3 consecutive C&alpha;-atoms)</option>';
+          selectVariable += '<optgroup label="Residue angles and dihedrals">';
+          selectVariable += '<option value="phi">Phi dihedral (C(-1)-N-C&alpha;-C)</option>';
+          selectVariable += '<option value="psi">Psi dihedral (N-C&alpha;-C-N(+1))</option>';
+          selectVariable += '<option value="tau_angle">Tau angle (N-C&alpha;-C)</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Helix turn angles and dihedrals">';
+          selectVariable += '<option value="tau">Tau dihedral (C&alpha;(-1)-C&alpha;-C&alpha;(+1)-C&alpha;(+2))</option>';
+          selectVariable += '<option value="theta">Theta angle (C&alpha;(-1)-C&alpha;-C&alpha;(+1))</option>';
           selectVariable += '</optgroup>';
           selectVariable += '<optgroup label="Sidechain properties">';
-          selectVariable += '<option value="outer_angle">Angle terminal atom - helix axis - 7TM axis</option>';
+          selectVariable += '<option value="outer_angle">Rotamer (angle of terminal atom to helix and 7TM axis)</option>';
+          selectVariable += '<option value="SASA">Solvent-accessible surface area (SASA)</option>';
           selectVariable += '<option value="RSA">Relative SASA</option>';
-          selectVariable += '<option value="SASA">Solvent Accessible Surface Area (SASA)</option>';
           selectVariable += '</select>';
           cp.html(selectVariable)
 

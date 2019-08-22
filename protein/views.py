@@ -122,7 +122,7 @@ def detail(request, slug):
 def SelectionAutocomplete(request):
 
     if request.is_ajax():
-        q = request.GET.get('term')
+        q = request.GET.get('term').strip()
         type_of_selection = request.GET.get('type_of_selection')
         selection_only_receptors = request.GET.get('selection_only_receptors')
         referer = request.META.get('HTTP_REFERER')
@@ -162,6 +162,16 @@ def SelectionAutocomplete(request):
         # Try matching protein name after stripping html tags
         if ps.count() == 0:
             ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
+
+            # If count still 0 try searching for the full thing
+            if ps.count() == 0:
+                ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
+                    source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+
+                # If count still 0 try searching outside of Swissprot
+                if ps.count() == 0:
+                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)).exclude(family__slug__startswith=exclusion_slug)[:10]
+
 
         for p in ps:
             p_json = {}
@@ -423,7 +433,7 @@ def AlignIsoformWildtype(request):
     seq_filename = "protein/data/MSA_GPCR_isoforms/{}_human_isoform_MSA.fa".format(p.lower())
     with open (seq_filename, "r") as myfile:
         fasta_raw = myfile.read()
-        fasta=fasta_raw.splitlines() 
+        fasta=fasta_raw.splitlines()
     # print(aln_human)
     # print(fasta_raw)
     data['wt2']=fasta[1]
