@@ -553,6 +553,21 @@
             event.target.parentNode.classList.add("active")
         }
 
+        function windowResize(){
+          var plotsize = window.innerHeight*0.9;
+          // maximum is window height - resize if available width is less
+          if (document.getElementById('tree-container').offsetWidth*0.9 < plotsize)
+            plotsize = document.getElementById('tree-container').offsetWidth*0.9
+
+          var plot = document.getElementById("clustering-tree")
+          plot.style.height = plotsize + "px"
+          plot.style.width = plotsize + "px"
+
+          // resize plot area and fit zoom level
+          window.zoomCluster["#clustering-tree"].resize()
+          resizeTree()
+        }
+
         async function resizeTree( eval_string = ""){
           // Partial workaround for horizontal view
           if (!radialTree){
@@ -1486,6 +1501,9 @@
             $(".dropdown-menu.treetypes").on("click", "li", toggleTreeType)
             $(".dropdown-menu.dataouter").on("click", "li", toggleDataOuter)
             $(".dropdown-menu.datainner").on("click", "li", toggleDataInner)
+
+            // resize window events
+            window.onresize = windowResize
         });
 
         var class_tooltip = d3.select("body").append("div")
