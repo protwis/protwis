@@ -564,8 +564,10 @@
           plot.style.width = plotsize + "px"
 
           // resize plot area and fit zoom level
-          window.zoomCluster["#clustering-tree"].resize()
-          resizeTree()
+          if (window.zoomCluster["#clustering-tree"] != null) {
+            window.zoomCluster["#clustering-tree"].resize()
+            resizeTree()
+          }
         }
 
         async function resizeTree( eval_string = ""){
