@@ -21,13 +21,14 @@
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go</div></div>
+                        <!-- <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs - normalized)</div></div>
-                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis)</div></div>
+                        <!-- <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to membrane mid)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis and membrane mid)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to "origin")</div></div>
-                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to most stable residue)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to most stable residue)</div></div> -->
                     </div>
                 </div>
 
@@ -41,8 +42,8 @@
                                   <div class="dropdown">
                                     <span class="pull-right glyphicon glyphicon-download-alt btn-download-menu dropdown-toggle" type="button" data-toggle="dropdown" id="downloadDropdown" data-toggle="dropdown"></span>
                                     <ul class="pull-right dropdown-menu downloadmenu" role="menu" aria-labelledby="downloadDropdown">
-                                      <li><a role="menuitem" href="#" onClick="downloadSVG('clustering-tree', 'GPCR_structure_clustering.svg')">Tree as SVG Figure</a></li>
-                                      <li><a role="menuitem" href="#" onClick="downloadPNG('clustering-tree', 'GPCR_structure_clustering.png')">Tree as PNG Figure</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadSVGWait('clustering-tree', 'GPCR_structure_clustering.svg')">Tree as SVG Figure</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadPNGWait('clustering-tree', 'GPCR_structure_clustering.png')">Tree as PNG Figure</a></li>
                                       <li><a role="menuitem" href="#" onClick="downloadNewick('GPCR_structure_clustering.tree')">Tree in Newick format</a></li>
                                       <li><a role="menuitem" href="#" onClick="downloadDistanceMatrix('GPCR_structure_clustering.csv')">Raw distance matrix in CSV</a></li>
                                     </ul>
@@ -62,7 +63,7 @@
                                       </div>
                                     </div>
                                     <div class="col-md-7">
-                                      <div class="btn-group tree-toggles">
+                                      <div class="btn-group tree-toggles hidden">
                                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                                           Tree type <span class="caret"></span>
                                         </button>
@@ -87,7 +88,7 @@
                                             <li><a href="#">Horizontal dendrogram</a></li>
                                         </ul>
                                       </div>
-                                      <div class="btn-group tree-toggles">
+                                      <div class="btn-group tree-toggles hidden">
                                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                                           Receptor names <span class="caret"></span>
                                         </button>
@@ -101,7 +102,7 @@
                                           <li><a href="#">PDB</a></li>
                                         </ul>
                                       </div>
-                                      <div class="btn-group tree-toggles">
+                                      <div class="btn-group tree-toggles hidden">
                                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                                           Outer markers<span class="caret"></span>
                                         </button>
@@ -122,7 +123,7 @@
                                           <li><a href="#">Structure determination method</a></li>
                                         </ul>
                                       </div>
-                                      <div class="btn-group tree-toggles">
+                                      <div class="btn-group tree-toggles hidden">
                                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                                           Inner markers<span class="caret"></span>
                                         </button>
@@ -172,6 +173,11 @@
                                     </div>
                                   </div>
                                 <div class="col-md-7">
+                                    <span class="zoombutton-container hidden">
+                                      <span class="pull-right glyphicon glyphicon-resize-full btn-zoomsize" data-toggle="tooltip" data-placement="bottom" title="Fit" onClick="resizeTree()"></span>
+                                      <span class="pull-right glyphicon glyphicon-plus btn-zoomin" data-toggle="tooltip" data-placement="bottom" title="Zoom-in" onClick="zoomInTree()"></span>
+                                      <span class="pull-right glyphicon glyphicon-minus btn-zoomout" data-toggle="tooltip" data-placement="bottom" title="Zoom-out" onClick="zoomOutTree()"></span>
+                                    </span>
                                     <div class="tree-container" id="tree-container">
                                         <svg id="clustering-tree"></svg>
                                     </div>
@@ -274,7 +280,7 @@
                   dataClasses[i].add(treeAnnotations[key][i])
                 dataClasses[i] = Array.from(dataClasses[i]).sort();
             }
-            dataClasses[7] = ["agonist", "agonist-partial", "partial-agonist", "pam", "antagonist", "inverse-agonist", "nam"]
+            dataClasses[7] = ["agonist", "partial-agonist", "pam", "antagonist", "inverse-agonist", "nam"]
             dataClasses[8] = ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family']
             dataClasses[9] = dataClasses[8]
             dataClasses[10] = dataClasses[8]
@@ -295,12 +301,28 @@
                   }
                 }
             }
-            colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
+            colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
             colorClasses[9] = colorClasses[8]
             colorClasses[10] = colorClasses[8]
 
             // G-protein coupling
             couplingAnnotations = data["Gprot_coupling"];
+
+            // Adjust default coloring selection based on data
+            var defaultInner = "Receptor family" // By default use receptor family
+            if (dataClasses[5].length >= 2) // Use GPCR class if 2 or more
+              defaultInner = "GPCR class"
+            else if (dataClasses[4].length >= 4) // Use Ligand type if 4 or more
+              defaultInner = "Ligand type"
+
+            // select item
+            var innerMenu = d3.select(".datainner").selectAll("li")[0]
+            for (var i = 0; i < innerMenu.length; i++) {
+              if (innerMenu[i].innerText==defaultInner){
+                toggleDataInner({target: innerMenu[i]})
+                break;
+              }
+            }
 
             // Annotate and order coupling data
             for (name in treeAnnotations){
@@ -531,20 +553,32 @@
             event.target.parentNode.classList.add("active")
         }
 
-        async function resizeTree(){
-          // Partial workaround for horizontal view - TO BE REFINED
+        async function resizeTree( eval_string = ""){
+          // Partial workaround for horizontal view
           if (!radialTree){
             window.zoomCluster["#clustering-tree"].updateBBox()
             window.zoomCluster["#clustering-tree"].fit()
             window.zoomCluster["#clustering-tree"].zoom(window.zoomCluster["#clustering-tree"].getZoom()*0.9)
             window.zoomCluster["#clustering-tree"].center()
           } else {
-            await sleep(100); // slight way for fully updated SVG
+            await sleep(100); // slight wait for fully updated SVG
             window.zoomCluster["#clustering-tree"].updateBBox()
             window.zoomCluster["#clustering-tree"].fit()
             window.zoomCluster["#clustering-tree"].zoom(window.zoomCluster["#clustering-tree"].getZoom()*0.99)
             window.zoomCluster["#clustering-tree"].center()
           }
+          if (eval_string.length > 0){
+            await sleep(100); // slight wait for redraw (e.g. in case of download)
+            eval(eval_string)
+          }
+        }
+
+        function zoomInTree(){
+          window.zoomCluster["#clustering-tree"].zoom(window.zoomCluster["#clustering-tree"].getZoom()/0.9)
+        }
+
+        function zoomOutTree(){
+          window.zoomCluster["#clustering-tree"].zoom(window.zoomCluster["#clustering-tree"].getZoom()*0.9)
         }
 
         function sleep(ms) {
@@ -660,13 +694,31 @@
                     return "translate(0," + i * 20 + ")"
                 });
 
+
+            // Hide the icon if repetition of the same symbol and color
+            var opacityArray = Array(dataClasses[selectData].length).fill(1)
+            if (selectData==7){
+              var colComparison = colorClasses[selectData][0]
+              for (var i = 1; i < colorClasses[selectData].length; i++) {
+                if (colComparison==colorClasses[selectData][i]){
+                  opacityArray[i] = 0
+                } else {
+                  colComparison = colorClasses[selectData][i]
+                }
+              }
+            }
             if (div_class==".inner_legend"){
               class_legend.append("circle")
               .attr("cx", 7)
               .attr("cy", 25)
               .attr("r", 5)
               .style("stroke", "#000")
-              .style("stroke-width", "1px")
+              .style("stroke-width", function (d) {
+                  return opacityArray[dataClasses[selectData].indexOf(d)]+"px"
+              })
+              .style("fill-opacity", function (d) {
+                  return opacityArray[dataClasses[selectData].indexOf(d)]
+              })
               .style("fill", function (d) {
                   return colorClasses[selectData][dataClasses[selectData].indexOf(d)]
               });
@@ -677,7 +729,12 @@
               .attr("width", 10)
               .attr("height", 10)
               .style("stroke", "#000")
-              .style("stroke-width", "1px")
+              .style("stroke-width", function (d) {
+                  return opacityArray[dataClasses[selectData].indexOf(d)]+"px"
+              })
+              .style("fill-opacity", function (d) {
+                  return opacityArray[dataClasses[selectData].indexOf(d)]
+              })
               .style("fill", function (d) {
                   return colorClasses[selectData][dataClasses[selectData].indexOf(d)]
               });
@@ -1097,8 +1154,11 @@
           document.body.removeChild(element);
         }
 
+        function downloadSVGWait(svgSelector, name) {
+          resizeTree("downloadSVG('"+svgSelector+"', '"+name+"')")
+        }
+
         function downloadSVG(svgSelector, name) {
-          resizeTree()
           if ($("#" + svgSelector).length > 0) {
             var ContainerElements = ["svg","g"];
             var RelevantStyles = {"rect":["fill","stroke","stroke-width"],"path":["fill","stroke","stroke-width"],"circle":["fill","stroke","stroke-width"],"line":["stroke","stroke-width"],"text":["fill","font-size","text-anchor"],"polygon":["stroke","fill"]};
@@ -1137,6 +1197,10 @@
           }
         }
 
+        function downloadPNGWait(svgSelector, name) {
+          resizeTree("downloadPNG('"+svgSelector+"', '"+name+"')")
+        }
+
         function downloadPNG(pngSelector, name) {
           resizeTree()
           var SVGElem = document.getElementById(pngSelector);
@@ -1165,8 +1229,10 @@
                     // empty the SVG field and reload
                     $(selector + ' .tree-container').html('<svg id="clustering-tree"></svg><span id="svgloading">Loading...</span>');
                     clusterMethod = 0
-                    if (this.innerHTML == "Go (distance pairs - normalized)")
+                    if (this.innerHTML == "Go")
                       clusterMethod = 0
+                    else if (this.innerHTML == "Go (distance pairs - normalized)")
+                        clusterMethod = 0
                     else if (this.innerHTML == "Go (distance to 7TM axis)")
                       clusterMethod = 1
                     else if (this.innerHTML.startsWith("Go (distance to most stable residue)"))
@@ -1203,6 +1269,9 @@
                         $("#input-targets-1").val("");
                         $("#submit-group").removeClass("hidden");
                         $("#CN-button").addClass("disabled");
+                        $(".zoombutton-container").removeClass("hidden");
+                        $(".tree-toggles").removeClass("hidden");
+
 //                        $("#DN-button").addClass("disabled");
                         firstTreeClick = true;
 
@@ -1217,7 +1286,7 @@
                           delete window.zoomCluster[container];
                         }
 
-                        //
+                        // Create svg-pan-zoom container
                         window.zoomCluster[container] = svgPanZoom(container, {
                             zoomEnabled: false,
                             panEnabled: true,
@@ -1508,6 +1577,10 @@
         }
 
         .btn-download, .btn-download-alt, .btn-download-menu, .btn-fullscreen, .btn-camera, .btn-newick {
+          margin-right: 10px;
+        }
+
+        .btn-zoomsize, .btn-zoomin, .btn-zoomout {
           margin-right: 10px;
         }
 

@@ -2088,7 +2088,6 @@ def ClusteringData(request):
     if 'cluster-method' in request.GET:
         cluster_method = request.GET.get('cluster-method')
 
-    print(cluster_method)
     if cluster_method == '1':
         [distance_matrix, pdbs] = coreMatrix(pdbs)
     elif cluster_method == '2':
@@ -2129,8 +2128,12 @@ def ClusteringData(request):
         slug = pdb_annotations[an[0]][7]
         protein_slugs.add(slug)
 
+        # UGLY needs CLEANUP in data - replace agonist-partial with partial-agonist ()
+        pdb_annotations[an[0]][8] = ["partial-agonist" if x=="agonist-partial" else x for x in pdb_annotations[an[0]][8]]
+
         # Cleanup the aggregates as None values are introduced
         pdb_annotations[an[0]][7] = list(filter(None.__ne__, pdb_annotations[an[0]][8]))
+
         pdb_annotations[an[0]][8] = slug
 
     data['annotations'] = pdb_annotations
