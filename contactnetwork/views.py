@@ -2096,6 +2096,9 @@ def ClusteringData(request):
         dis = Distances()
         dis.load_pdbs(pdbs)
         distance_matrix = dis.get_distance_matrix(normalize = False)
+
+        # pdbs have been reordered -> map back to be consistent with the distance matrix
+        pdbs = dis.pdbs
     elif cluster_method == '4': # distance to membrane mid
         [distance_matrix, pdbs] = coreMatrix(pdbs, middle = True, core = False)
     elif cluster_method == '5': # distance to membrane mid and 7TM axis
