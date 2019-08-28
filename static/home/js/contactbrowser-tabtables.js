@@ -54,7 +54,7 @@ jQuery.extend( jQuery.fn.dataTableExt.oSort, {
             str2 = parseFloat(str2);
         return ((str1 < str2) ? -1 : ((str1 > str2) ? 1 : 0));
     },
- 
+
     "non-empty-string-desc": function (str1, str2) {
         if(str1 == "")
             return 1;
@@ -1594,7 +1594,7 @@ function renderBrowser(data) {
             // odd cell number is pos1
             if (typeof all_angles_1 !== 'undefined')
               setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',cell_index) }, 500);
-            
+
         } else {
             if (typeof all_angles_2 !== 'undefined')
               setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_1','angles',cell_index) }, 500);
@@ -3344,14 +3344,20 @@ function colorByData(mode, tableNumber, columnNumber, type) {
     if (residue_positions.length == 0)
       return;
 
+    // get residue_values
+    var residue_values = getColumn(rows, 1)
+
     if (residue_positions[0].indexOf("-")>=1){
       residue_positions1 = residue_positions.map(function(e){return e.split("-")[0]});
       residue_positions2 = residue_positions.map(function(e){return e.split("-")[1]});
       residue_positions = residue_positions1.concat(residue_positions2)
+      
+      // copy values from the same array
+      if (!Array.isArray(columnNumber) || columnNumber.length == 1)
+        residue_values = residue_values.concat(residue_values)
     }
 
     // Filter NaNs
-    var residue_values = getColumn(rows, 1)
     if (type!="consensus_SS"){
       residue_values = residue_values.map(function(e){ return parseInt(e);})
       if (Array.isArray(columnNumber) && columnNumber.length > 1)
@@ -3361,9 +3367,22 @@ function colorByData(mode, tableNumber, columnNumber, type) {
       residue_values = residue_values.filter( function(value, index){ return !isNaN(residue_values[index]); })
     } else {
       // remove positions with no data
-      residue_positions = residue_positions.filter( function(value, index){ return !(residue_values==""); })
-      residue_values = residue_values.filter( function(value, index){ return !(residue_values==""); })
+      residue_positions = residue_positions.filter( function(value, index){ return !(residue_values[index]==""); })
+      residue_values = residue_values.filter( function(value, index){ return !(residue_values[index]==""); })
     }
+
+    // Remove duplicates
+    var tmp_rp = []
+    var tmp_v = []
+    for (var i = 0; i < residue_positions.length; i++) {
+      if (tmp_rp.indexOf(residue_positions[i]) == -1){
+          tmp_rp.push(residue_positions[i])
+          tmp_v.push(residue_values[i])
+      }
+    }
+    residue_positions = tmp_rp
+    residue_values = tmp_v
+
 
     // Identify range
     var valMax = Math.max(...residue_values)
