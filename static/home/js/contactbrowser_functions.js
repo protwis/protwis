@@ -798,7 +798,7 @@
                         plot_div.find('.plot-container').removeClass('none');
                         plot_div.find('.plot-container').addClass('ngl-container');
                         plot_div.find('.plot-container').attr('id', 'ngl-' + plot_id);
-                        plot_div.find('.plot-container').attr('style', 'margin: auto; width: 100%; height: 500px; overflow: hidden;');
+                        plot_div.find('.plot-container').attr('style', 'margin: auto; width: 100%; overflow: hidden;');
 
                         switch (mode) {
                             case "two-crystal-groups":
@@ -973,10 +973,20 @@
             $(selector + ' .btn-fullscreen').click(function() {
                 // console.log($(this).parent().parent().next().children().first());
                 //                console.log($(this).attr('id'));
-                fullScreenElement = $(this).parent().parent().next().children().first();
+                fullScreenElement = $(this).parent().parent().next().children().first().find("canvas");
                 fullScreenElement.css('background-color', 'white');
-                console.log('who to fullscreen?', fullScreenElement.attr('id'));
+                console.log('who to fullscreen?', fullScreenElement.closest('.plot-container').attr('id'));
+                plot_id = fullScreenElement.closest('.plot-container').attr('id');
+                ngl_stage = plot_id.replace("ngl-", "");
+                if (ngl_stage in stage) {
+                    $(function() {
+                        stage[ngl_stage].toggleFullscreen()();
+                    });
+                    return
+                }
+                
                 toggleFullScreen(fullScreenElement.get(0));
+
                 if (fullScreenElement.attr('id')) {
                     if (fullScreenElement.attr('id').startsWith('DataTable')) {
                         top_height = $('div.dataTables_scrollHead:visible').outerHeight();
