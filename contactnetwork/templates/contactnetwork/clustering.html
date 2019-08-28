@@ -147,6 +147,7 @@
                                   </div>
                                   <div class="col-md-3"></div>
                                 </div>
+                                <div>
                                 <div class="col-md-2">
                                     <div class="row nav-row">
                                       <div class="hidden" id="output-group0">
@@ -187,6 +188,7 @@
                                     <div class="outer_legend"></div>
                                     <div class="inner_legend"></div>
                                   </div>
+                                </div>
                                 </div>
                 </div>
             </div>
@@ -1353,52 +1355,11 @@
         function initializeTopButtons(selector) {
             // Fullscreen SVG
             $(selector + ' .btn-fullscreen').click(function() {
-                fullScreenElement = $(this).parent().next().children().first();
+                fullScreenElement = $(this).parent().next();
                 fullScreenElement.css('background-color','white');
                 toggleFullScreen(fullScreenElement.get(0));
+                windowResize();
             });
-
-            // Dendrogram download in SVG
-/*            $(selector + ' .btn-download-alt').click(function() {
-                // svg download
-                downloadSVG("clustering-tree", "GPCR_structure_clustering.svg")
-            });
-
-            // Dendrogram download in newick
-            $(selector + ' .btn-newick').click(function() {
-                // svg download
-                downloadNewick("GPCR_structure_clustering.tree")
-            });
-
-            // Dendrogram download in PNG
-            $(selector + ' .btn-camera').click(function() {
-                // svg download
-                downloadPNG("clustering-tree", "GPCR_structure_clustering.png")
-            });
-
-            // Distance matrix download
-            $(selector + ' .btn-download').click(function() {
-                // create download table
-                if (lastData != undefined){
-                    var header = lastData['dm_labels']
-                    header.unshift("PDB-code")
-
-                    var data = [];
-                    data.push(header);
-
-                    for (var i = 0; i < lastData["distance_matrix"].length ; i++){
-                      var row = lastData["distance_matrix"][i]
-                      row.unshift(header[i+1])
-                      data.push(row);
-                    }
-
-                    // Convert to CSV
-                    var csv = Papa.unparse(data);
-
-                    // Download file
-                    downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), "GPCR_structure_clustering.csv");
-                }
-            });*/
         }
 
         function downloadDistanceMatrix(filename){
