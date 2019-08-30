@@ -872,6 +872,13 @@ class Alignment:
                             round(r[1]/num_proteins*100),
                             ""
                             ]
+                    elif num_freq_aa > 1 and ignore:
+                        self.consensus[i][p] = [
+                            r[0][0],
+                            cons_interval,
+                            round(r[1]/num_proteins*100),
+                            ", ".join(r[0])
+                            ]
                     elif num_freq_aa > 1:
                         self.consensus[i][p] = [
                             '+',

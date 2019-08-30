@@ -633,8 +633,8 @@ def interface_dataset():
     interaction_sort_order = [
         "ionic",
         "aromatic",
-        "hydrophobic",
         "polar",
+        "hydrophobic",
         "van-der-waals",    
     ]
 
@@ -845,7 +845,7 @@ def IMSignatureMatch(request):
     )
     
     maj_pfam = Counter(pfam).most_common()[0][0]
-    signature_match.score_protein_class(maj_pfam)
+    signature_match.score_protein_class(maj_pfam, signprot=True)
     # request.session['signature_match'] = signature_match
 
     signature_match = {
@@ -888,7 +888,7 @@ def render_IMSigMat(request):
     )
 
     maj_pfam = Counter(pfam).most_common()[0][0]
-    signature_match.score_protein_class(maj_pfam)
+    signature_match.score_protein_class(maj_pfam, signprot=True)
 
     response = render(
         request,

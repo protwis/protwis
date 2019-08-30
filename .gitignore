@@ -16,3 +16,4 @@ signprot/thesis_steven
 .vscode
 tsconfig.json
 tags
+signprot/notebooks/*.json
