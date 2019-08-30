@@ -655,7 +655,7 @@ var tableToExcel = (function () {
 
 
 $(document).ready(function () {
-  $.get('/contactnetwork/pdbtabledata', { exclude_non_interacting: true}, function(data) {
+  $.get('/signprot/pdbtabledata', { exclude_non_interacting: true}, function(data) {
     $('#interface-modal-table .tableview').html(data);
   })
 

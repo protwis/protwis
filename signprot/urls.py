@@ -1,6 +1,7 @@
 from django.conf.urls import url
 
 from signprot import views
+from contactnetwork.views import PdbTableData
 
 urlpatterns = [
 	url(r'^$', views.BrowseSelection.as_view(), name='index'),
@@ -17,5 +18,6 @@ urlpatterns = [
     url(r'^matrix/seqsig/', views.IMSequenceSignature, name='SequenceSignature'),
     url(r'^matrix/sigmat/', views.IMSignatureMatch, name='SignatureMatch'),
     url(r'^matrix/render_sigmat/$', views.render_IMSigMat, name='renderSignatureMatch'),
+    url(r'^pdbtabledata', PdbTableData, name='pdbtreedata'),
     url(r'^(?P<slug>[-\w]+)/$', views.signprotdetail, name='signprotdetail'),
 ]
