@@ -1048,25 +1048,25 @@ def InteractionBrowserData(request):
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
 
-                gn1_values = [''] * 10
+                gn1_values = [['','','']] * 10
                 if gn1 in group_1_angles and gn1 in group_2_angles:
                     gn1_values = []
                     for i,v in enumerate(group_1_angles[gn1]):
                         try:
-                            gn1_values.append(round(v-group_2_angles[gn1][i],0))
+                            gn1_values.append([round(v-group_2_angles[gn1][i],0),v,group_2_angles[gn1][i]])
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn1_values.append("")
+                            gn1_values.append(['','',''])
 
-                gn2_values = [''] * 10
+                gn2_values = [['','','']] * 10
                 if gn2 in group_1_angles and gn2 in group_2_angles:
                     gn2_values = []
                     for i,v in enumerate(group_1_angles[gn2]):
                         try:
-                            gn2_values.append(round(v-group_2_angles[gn2][i],0))
+                            gn2_values.append([round(v-group_2_angles[gn2][i],0),v,group_2_angles[gn2][i]])
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
-                            gn2_values.append("")
+                            gn2_values.append(['','',''])
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
             print('Done combining data',mode,'mode',time.time()-start_time)
         else:
