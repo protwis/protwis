@@ -2120,8 +2120,8 @@ def ClusteringData(request):
     # NOTE: we can probably remove the parent step and go directly via family in the query
     annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
                     .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__name','protein_conformation__protein__parent__family__parent__name', \
-                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name', 'protein_conformation__protein__family__slug') \
-                    .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True)))
+                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name', 'protein_conformation__protein__family__slug', 'tm6_angle') \
+                    .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True))) \
 
     protein_slugs = set()
     for an in annotations:
@@ -2132,12 +2132,14 @@ def ClusteringData(request):
         protein_slugs.add(slug)
 
         # UGLY needs CLEANUP in data - replace agonist-partial with partial-agonist ()
-        pdb_annotations[an[0]][8] = ["partial-agonist" if x=="agonist-partial" else x for x in pdb_annotations[an[0]][8]]
+        pdb_annotations[an[0]][9] = ["partial-agonist" if x=="agonist-partial" else x for x in pdb_annotations[an[0]][9]]
 
         # Cleanup the aggregates as None values are introduced
-        pdb_annotations[an[0]][7] = list(filter(None.__ne__, pdb_annotations[an[0]][8]))
+        pdb_annotations[an[0]][7] = list(filter(None.__ne__, pdb_annotations[an[0]][9]))
 
+        holder = pdb_annotations[an[0]][8]
         pdb_annotations[an[0]][8] = slug
+        pdb_annotations[an[0]][9] = holder
 
     data['annotations'] = pdb_annotations
 
