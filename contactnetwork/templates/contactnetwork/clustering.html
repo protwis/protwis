@@ -1075,6 +1075,9 @@
                         var percentage = treeAnnotations[node.name][displayData]
                         if (percentage > 100)
                           percentage = 100
+                        else
+                          percentage = parseInt(percentage)
+
                         //var currentColor = colorClasses[displayData][0]
                         var currentColor = colorGradient(percentage/100,  {red:255, green:0, blue: 0}, {red:255, green:136, blue: 0}, {red:0, green:187, blue: 0})
 
