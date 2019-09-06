@@ -110,6 +110,7 @@
                                           <li><a href="#">No data</a></li>
                                           <h6 class="dropdown-header">Activation state</h6>
                                           <li class="active"><a href="#">Receptor activation state</a></li>
+                                          <li><a href="#">Receptor cytosolic opening (%)</a></li>
                                           <li><a href="#">Ligand function</a></li>
                                           <h6 class="dropdown-header">Classification</h6>
                                           <li><a href="#">GPCR class</a></li>
@@ -264,11 +265,11 @@
         var labelReorder = false;
         var treeAnnotations = [];
         var couplingAnnotations = [];
-        var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins"]
+        var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "Cytosolic opening"]
         var dataClasses, colorClasses;
         function renderTree(data) {
-            dataClasses = [["active", "inactive", "intermediate"],0,0];
-            colorClasses = [["#0F0", "#F00", "#F80"], 0, 0];
+            dataClasses = [["active", "inactive", "intermediate", "unknown"],0,0];
+            colorClasses = [["#0F0", "#F00", "#F80", "#888"], 0, 0];
             treedata = data // store globally
             var tree = data["tree"]; // contains tree in Newick format
 
@@ -286,6 +287,7 @@
             dataClasses[8] = ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family']
             dataClasses[9] = dataClasses[8]
             dataClasses[10] = dataClasses[8]
+            dataClasses[11] = ['0%', '50%', '100%'] // percentage
 
             for (var i = colorClasses.length; i <= 8; i++) {
                 colorClasses[i] = []
@@ -306,6 +308,7 @@
             colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
             colorClasses[9] = colorClasses[8]
             colorClasses[10] = colorClasses[8]
+            colorClasses[11] = ["#F00","#F80","#0B0"]
 
             // G-protein coupling
             couplingAnnotations = data["Gprot_coupling"];
@@ -329,9 +332,11 @@
             // Annotate and order coupling data
             for (name in treeAnnotations){
               var slug = treeAnnotations[name][8]
+              var opening = treeAnnotations[name][9]
               treeAnnotations[name][8] = []
               treeAnnotations[name][9] = []
               treeAnnotations[name][10] = []
+              treeAnnotations[name][11] = opening
               var gproteins = dataClasses[8]
               for (g = 0; g < gproteins.length; g++) {
                 if (slug in couplingAnnotations){
@@ -489,6 +494,48 @@
 
         function menuRemoveGroup2(node) {
           return "Remove from group 2";
+        }
+
+
+        function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
+            var color1 = rgbColor1;
+            var color2 = rgbColor2;
+            var fade = fadeFraction;
+
+            // Do we have 3 colors for the gradient? Need to adjust the params.
+            if (rgbColor3) {
+              fade = fade * 2;
+
+              // Find which interval to use and adjust the fade percentage
+              if (fade >= 1) {
+                fade -= 1;
+                color1 = rgbColor2;
+                color2 = rgbColor3;
+              }
+            }
+
+            var diffRed = color2.red - color1.red;
+            var diffGreen = color2.green - color1.green;
+            var diffBlue = color2.blue - color1.blue;
+
+            var gradient = {
+              red: parseInt(Math.floor(color1.red + (diffRed * fade)), 10),
+              green: parseInt(Math.floor(color1.green + (diffGreen * fade)), 10),
+              blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
+            };
+
+            return rgb2hexCG(gradient.red.toString(16),gradient.green.toString(16),gradient.blue.toString(16));
+        }
+
+        function rgb2hexCG(r,g,b) {
+            if (r.length == 1)
+                r = '0' + r;
+            if (g.length == 1)
+                g = '0' + g;
+            if (b.length == 1)
+                b = '0' + b;
+
+            return '#' + r + g + b;
         }
 
         var group1 = []
@@ -814,6 +861,8 @@
                 return 9
               case "Secondary G proteins":
                 return 10
+              case "Receptor cytosolic opening (%)":
+                return 11
               case "Ligand function":
                 return 7
               default:
@@ -1018,7 +1067,51 @@
 
                     // Add outer markers
                     element.selectAll("rect").remove() // remove old data
-                    if (displayData >= 0){
+                    if (displayData == 11) { // Receptor cytosolic opening using growing bars
+                      if (!Array.isArray(treeAnnotations[node.name][displayData]))
+                        treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
+
+                        var currentType = typeClasses[displayData]
+                        var percentage = treeAnnotations[node.name][displayData]
+                        if (percentage > 100)
+                          percentage = 100
+                        //var currentColor = colorClasses[displayData][0]
+                        var currentColor = colorGradient(percentage/100,  {red:255, green:0, blue: 0}, {red:255, green:136, blue: 0}, {red:0, green:187, blue: 0})
+
+                        // create block
+                        var annotation = element.append("rect")
+                        annotation.attr("width", font_size*scale*0.9*5*percentage/100) // use percentage to resize bar
+                          .style("stroke", "#000")
+                          .style("stroke-width", font_size/20+"px")
+                          .attr("height", font_size*scale*0.9)
+                          .attr ("y", -(font_size*scale*0.9)/2)
+                          .attr("fill", currentColor)
+                          .on("mouseover", function(d) { // add tooltip
+                              class_tooltip.transition()
+                                .style("opacity", .9);
+                              class_tooltip.html("<b>" + currentType + ":</b> " + $(d3.event.target).data("datalabel"))
+                                .style("left", (d3.event.pageX) + "px")
+                                .style("top", (d3.event.pageY - 28) + "px");
+                            })
+                          .on("mouseout", function() {
+                              class_tooltip.transition().duration(100)
+                                  .style("opacity", 0);
+                          });
+
+                          // label
+                          var toollabel = ""
+                          annotation.attr("data-datalabel", percentage+"%")
+
+                        if (phylotree.radial ()) {
+                            var shifter_rect = phylotree.shift_tip(node)[0];
+                            var setX = shifter_rect > 0 ? shifter_rect + maxLeafNodeLenght : shifter_rect - maxLeafNodeLenght - font_size*scale*0.9*5*percentage/100;
+                            annotation.attr("transform", "rotate (" + node.text_angle + ")")
+                                .attr ("x", setX)
+                        } else {
+                            var x_shift_rect = phylotree.shift_tip(node)[0] + maxLeafNodeLenght + i*(font_size*scale+2);
+                            annotation.attr("transform", null).attr("x", function (d, i) { return  x_shift_rect + font_size * i;})
+                        }
+                    } else if (displayData >= 0){
 
                       if (!Array.isArray(treeAnnotations[node.name][displayData]))
                         treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
@@ -1035,7 +1128,7 @@
                           .style("stroke", "#000")
                           .style("stroke-width", font_size/20+"px")
                           .attr("height", font_size*scale*0.9)
-                          .attr ("y", -(font_size*scale)/2)
+                          .attr ("y", -(font_size*scale*0.9)/2)
                           .attr("fill", currentColor)
                           .on("mouseover", function(d) { // add tooltip
                               class_tooltip.transition()
