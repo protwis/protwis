@@ -1080,7 +1080,7 @@
 
                         // create block
                         var annotation = element.append("rect")
-                        annotation.attr("width", font_size*scale*0.9*5*percentage/100) // use percentage to resize bar
+                        annotation.attr("width", font_size*scale*0.9*5*(percentage+10)/110) // use percentage to resize bar
                           .style("stroke", "#000")
                           .style("stroke-width", font_size/20+"px")
                           .attr("height", font_size*scale*0.9)
@@ -1104,7 +1104,7 @@
 
                         if (phylotree.radial ()) {
                             var shifter_rect = phylotree.shift_tip(node)[0];
-                            var setX = shifter_rect > 0 ? shifter_rect + maxLeafNodeLenght : shifter_rect - maxLeafNodeLenght - font_size*scale*0.9*5*percentage/100;
+                            var setX = shifter_rect > 0 ? shifter_rect + maxLeafNodeLenght : shifter_rect - maxLeafNodeLenght - font_size*scale*0.9*5*(percentage+10)/110;
                             annotation.attr("transform", "rotate (" + node.text_angle + ")")
                                 .attr ("x", setX)
                         } else {
