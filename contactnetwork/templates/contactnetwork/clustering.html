@@ -321,7 +321,7 @@
             var innerMenu = d3.select(".datainner").selectAll("li")[0]
             for (var i = 0; i < innerMenu.length; i++) {
               if (innerMenu[i].innerText==defaultInner){
-                toggleDataInner({target: innerMenu[i]})
+                toggleDataInner({target: innerMenu[i].firstChild})
                 break;
               }
             }
