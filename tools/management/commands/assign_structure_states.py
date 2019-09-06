@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
 from django.conf import settings
 from django.db import connection
+from django.db.models import Max, Min
 
 from contactnetwork.distances import *
 from contactnetwork.models import *
@@ -39,7 +40,7 @@ class Command(BaseCommand):
 #            print(structure_ids)
 
             # Get all PDB-codes for G-protein coupled structures in this class
-            # extra: filter 6CMO (unfit reference, see hardcoded)
+            # extra: filter 6CMO (unfit reference, see hardcoded exceptions)
             active_ids = list(SignprotComplex.objects.filter(structure__pdb_code__index__in=structure_ids) \
                                 .exclude(structure__pdb_code__index="6CMO") \
                                 .values_list("structure__pdb_code__index"))
@@ -96,22 +97,26 @@ class Command(BaseCommand):
 
 #                    print("{}|{}|{}|{}".format(pdb, scoring_results[pdb], min_active_distance, min_inactive_distance))
 
-                # find smallest distance between any active structure and any inactive structure
-                lowest_inactive_distance = min([ finalMap[y+"_"+x] for y in inactive_ids for x in active_ids ])
+                # Hardcoded annotations
+                hardcoded = {
+                    "6CMO" : "active", # Complex with G prot - irregular conformation
+                    "5ZKP" : "unknown" # Unknown state (auto-inhibited with H8?)
+                }
 
                 distances = list(Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
                                     .filter(structure__pdb_code__index__in=structure_ids) \
                                     .distinct("gns_pair", "structure") \
                                     .values_list("structure__pdb_code__index", "distance"))
 
+                range_distance = Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
+                                    .filter(structure__pdb_code__index__in=structure_ids) \
+                                    .aggregate(Max('distance'), Min('distance'))
 
-                min_open = min([dist[1] for dist in distances])
-                max_open = max([dist[1] for dist in distances])
-                # Hardcoded annotations
-                hardcoded = {
-                    "6CMO" : "active", # Complex with G prot - irregular conformation
-                    "5ZKP" : "unknown" # Unknown state (auto-inhibited with H8?)
-                }
+                min_open = range_distance['distance__min']
+                max_open = range_distance['distance__max']
+
+                # find smallest distance between any active structure and any inactive structure
+                lowest_inactive_distance = min([ finalMap[y+"_"+x] for y in inactive_ids for x in active_ids ])
                 for entry in distances:
                     # Percentage score
                     percentage = int(round((entry[1]-min_open)/(max_open-min_open)*100))
@@ -139,11 +144,38 @@ class Command(BaseCommand):
                     struct.tm6_angle = percentage
                     struct.save()
 
-                    print("Class {}: structure {} to state {} and opening is {}%".format(slug, entry[0], structure_state, percentage))
+                    #print("Class {}: structure {} to state {} and opening is {}%".format(slug, entry[0], structure_state, percentage))
+            elif len(structure_ids) > 0:
+                distances = list(Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
+                                    .filter(structure__pdb_code__index__in=structure_ids) \
+                                    .distinct("gns_pair", "structure") \
+                                    .values_list("structure__pdb_code__index", "distance"))
 
-#                exit(0)
+                range_distance = Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
+                                    .aggregate(Max('distance'), Min('distance'))
 
+                min_open = range_distance['distance__min']
+                max_open = range_distance['distance__max']
+                for entry in distances:
+                    # Percentage score
+                    percentage = int(round((entry[1]-min_open)/(max_open-min_open)*100))
+                    if percentage < 0:
+                        percentage = 0
+                    elif percentage > 100:
+                        percentage = 100
 
+                    # Store for structure
+                    struct = Structure.objects.get(pdb_code__index=entry[0])
+                    struct.tm6_angle = percentage
+
+                    # Definitely an inactive state structure When distance is smaller than 13Å
+                    if entry[1] < 13:
+                        struct.state, created = ProteinState.objects.get_or_create(slug="inactive", defaults={'name': "Inactive"})
+
+                    # Save changes
+                    struct.save()
+
+                    #print("Class {}: structure {} to state ? and opening is {}%".format(slug, entry[0], percentage))
 
 def getDistanceMatrix(node, pdbs):
     if node.is_leaf():
