@@ -6,17 +6,19 @@ from protein.models import *
 from common.tools import fetch_from_web_api
 from Bio import pairwise2
 
+from structure.functions import BlastSearch
+
 import time
 import json
 import os
 
 from operator import itemgetter
 from itertools import groupby
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 class Command(BaseCommand):
 
-    help = "Find all isoforms for GPCRs"
+    help = "Find all isoform sequences"
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
@@ -123,8 +125,9 @@ class Command(BaseCommand):
 
         ## Prepare comparasion info ##
         filepath = 'protein/data/Isoform_annotation_table.txt'
-        lmb_data = {}
+        lmb_data = OrderedDict()
         total_lmb_isoforms = 0
+        all_lmb_isoforms = []
         with open(filepath, "r", encoding='UTF-8') as f:
             for i,row in enumerate(f):
                 if i>0:
@@ -136,7 +139,22 @@ class Command(BaseCommand):
                         lmb_data[entry_name] = []
                     lmb_data[entry_name] += transcripts
                     total_lmb_isoforms += 1
+                    all_lmb_isoforms += transcripts
 
+        print('all_lmb_isoforms',len(all_lmb_isoforms),'distinct',len(set(all_lmb_isoforms)))
+
+        
+        ## Get parsed gtex annotation
+        with open('protein/data/matched_gtex.json') as json_file:
+            gtex_old = json.load(json_file)
+
+        ## Need to rewrite these entries, as ensembl doesnt use the . for transcripts
+        gtex = {}
+        for key, val in gtex_old['transcripts'].items():
+            t,g = key.split("_")
+            new_key = "{}_{}".format(t.split(".")[0],g)
+            gtex[new_key] = val
+            # del gtex[new_key]['subjects']
 
 
         ## Url API to map genename to ensemble ID
@@ -173,9 +191,78 @@ class Command(BaseCommand):
         total_new_transcripts = []
         total_not_found = []
         total_not_found_due_to_skipped = []
+        new_proteins = set()
 
         lmb_compare_sequences = [0,0,0] # correct, wrong, not exists in lmb
 
+        sequence_lookup = {}
+
+        ## COMPARE SEQUENCES
+        filenames = os.listdir("protein/data/LMB_sequences/")
+        all_lmb_sequences= {}
+        for f in filenames:
+            with open ("protein/data/LMB_sequences/"+f, "r") as myfile:
+                fasta=myfile.read().splitlines()
+                for i,l in enumerate(fasta):
+                    if l[0]==">":
+                        e_id = l[2:]
+                        continue
+                    if e_id in all_lmb_sequences:
+                        print('already there!',e_id)
+                    if i>2:
+                        all_lmb_sequences[e_id]=l
+        print('all_lmb_sequences',len(all_lmb_sequences))
+
+        f = open("protein/data/20190726_transcripts.fa", "w")
+        missing_sequences = 0
+        total_lmb_sequences = 0
+        sequences_lookup = defaultdict(list)
+        for p,ts in lmb_data.items():
+            seq = Protein.objects.get(entry_name=p).sequence
+            sequences_lookup[seq].append([p,p])
+            # print(p,ts)
+            # print(seq)
+            f.write(">{} GPCRdb sequence reference\n".format(p))
+            f.write("{}\n".format(seq))
+            seq_filename = "protein/data/LMB_sequences/{}_nonstrict_transcripts.fa".format(p)
+            lmb_sequences = {}
+            try:
+                with open (seq_filename, "r") as myfile:
+                    #fasta_raw = myfile.read()
+                    fasta=myfile.read().splitlines()
+                    for i,l in enumerate(fasta):
+                        if l[0]==">":
+                            e_id = l[2:]
+                            continue
+                        lmb_sequences[e_id]=l
+                        if i>2:
+                            total_lmb_sequences += 1
+            except:
+                #print('No file for',p,' So no sequence for',ts)
+                missing_sequences += len(ts)
+            for t in ts:
+                if not t in lmb_sequences:
+                    #print('missing ',t,'in',"{}_nonstrict_transcripts.fa".format(p))
+                    missing_sequences += 1
+
+                seq = fetch_from_web_api(url_ensembl_seq, t,cache_dir_seq)['seq']
+                sequences_lookup[seq].append([t,p])
+                if t in lmb_sequences:
+                    if seq!=lmb_sequences[t]:
+                        print(t,'different from LBM - length ensembl:',len(seq),"length lmb:",len(lmb_sequences[t]))
+                f.write(">{} ({})\n".format(t,p))
+                f.write("{}\n".format(seq))
+        f.close()
+        print('total missing sequences',missing_sequences)
+        print('total lmb transcript sequences provided',total_lmb_sequences)
+        print('total lmb protein',len(lmb_data))
+        #return
+        for seq,ts in sequences_lookup.items():
+            if len(ts)>1:
+                print('Identical sequence:',ts)
+
+        sequences_lookup = defaultdict(list)
+        all_transcript_seq = {}
         for p in ps:# .filter(entry_name='gpc5b_human').all():
             transcripts = []
             transcripts_ids = []
@@ -185,11 +272,12 @@ class Command(BaseCommand):
             uniprot = p.accession
             canonical = ''
             canon_seq = p.sequence
+            # sequence_lookup[canon_seq] = p.entry_name
             grch37_canonical_seq = ''
             uniprot_canonical = ''
             grch37_canonical = ''
 
-            print(">" + p.entry_name,uniprot, 'genes:',genes)
+            # print(">" + p.entry_name,uniprot, 'genes:',genes)
             seq_filename = "protein/data/LMB_sequences/{}_nonstrict_transcripts.fa".format(p.entry_name)
             lmb_sequences = {}
             try:
@@ -236,21 +324,21 @@ class Command(BaseCommand):
             #alternative_id = self.find_ensembl_id(gene)
             # alternative_id_uniprot = self.find_ensembl_id_by_uniprot(uniprot)
             # print(ensembl_gene_id,alternative_ids_uniprot)
-            expression = fetch_from_web_api(url_expression,ensembl_gene_id,cache_dir_gtex_expression)
+            # expression = fetch_from_web_api(url_expression,ensembl_gene_id,cache_dir_gtex_expression)
             # print(expression)
             # go through expression
-            expressed_transcripts = {}
-            for e in expression['medianTranscriptExpression']:
-                if e['median']>0 or 1==1:
-                    #only if expression
-                    t_id = e['transcriptId']
-                    t_short = t_id.split(".")[0]
-                    tissue = e['tissueSiteDetailId']
-                    if t_short not in expressed_transcripts:
-                        expressed_transcripts[t_short] = {'long':t_id,'tissues':[], 'max_median':0}
-                    if expressed_transcripts[t_short]['max_median']<e['median']:
-                        expressed_transcripts[t_short]['max_median'] = e['median']
-                    expressed_transcripts[t_short]['tissues'].append([tissue,e['median']])   
+            # expressed_transcripts = {}
+            # for e in expression['medianTranscriptExpression']:
+            #     if e['median']>0 or 1==1:
+            #         #only if expression
+            #         t_id = e['transcriptId']
+            #         t_short = t_id.split(".")[0]
+            #         tissue = e['tissueSiteDetailId']
+            #         if t_short not in expressed_transcripts:
+            #             expressed_transcripts[t_short] = {'long':t_id,'tissues':[], 'max_median':0}
+            #         if expressed_transcripts[t_short]['max_median']<e['median']:
+            #             expressed_transcripts[t_short]['max_median'] = e['median']
+            #         expressed_transcripts[t_short]['tissues'].append([tissue,e['median']])   
             # print(expressed_transcripts)
             # print(ensembl_gene_id)
             gene_to_ensembl[p.entry_name] = ensembl_gene_id
@@ -283,8 +371,16 @@ class Command(BaseCommand):
                 if biotype=='protein_coding':
                     total_fetched_transcripts += 1
 
-                    if not t_id in expressed_transcripts:
+                    key = '{}_{}'.format(t_id,ensembl_gene_id)
+
+                    if not key in gtex:
                         # print('t_id', t_id, 'not in expressed_transcripts')
+                        total_transcript_skipped_no_tissue += 1
+                        transcripts_ids_skipped_total.add(t_id)
+                        transcripts_ids_skipped.append(t_id)
+                        continue
+
+                    if gtex[key]["count"]<3:
                         total_transcript_skipped_no_tissue += 1
                         transcripts_ids_skipped_total.add(t_id)
                         transcripts_ids_skipped.append(t_id)
@@ -292,8 +388,9 @@ class Command(BaseCommand):
 
                     length = t['Translation']['length']
                     seq_id = t['Translation']['id']
-                    transcript_info = OrderedDict([('display_name',display_name),('t_id',t_id),('length',length), ('seq_id',seq_id), ('expressed',expressed_transcripts[t_id])])
+                    transcript_info = OrderedDict([('display_name',display_name),('t_id',t_id),('length',length), ('seq_id',seq_id), ('expressed',gtex[key])])
                     seq = fetch_from_web_api(url_ensembl_seq, seq_id,cache_dir_seq)
+
 
                     if is_canonical:
                         grch37_canonical = t_id
@@ -305,6 +402,13 @@ class Command(BaseCommand):
                         transcript_info['uniprot_canonical'] = True
                         continue
                         # Skip canonical entries
+
+                    sequences_lookup[seq['seq']].append([t_id,p.entry_name])
+                    all_transcript_seq[t_id] = seq['seq']
+                    if seq['seq'] in sequence_lookup:
+                        print('SEQUENCE ALREADY SEEN',t_id, sequence_lookup[seq['seq']])
+                        continue
+                    sequence_lookup[seq['seq']] = t_id
 
 
                     transcript_info['seq'] = seq['seq']
@@ -344,7 +448,16 @@ class Command(BaseCommand):
                 for t in lmb_data[p.entry_name]:
                     if t not in transcripts_ids:
                         if t in transcripts_ids_skipped:
+
+                            f = open("protein/data/20190726_skipped_due_to_gtex.txt", "a")
                             not_found_due_to_skipped.append(t)
+                            key = '{}_{}'.format(t,ensembl_gene_id)
+                            if not key in gtex:
+                                reason = 'Not in GTEX'
+                            else:
+                                reason = 'Subjects low in GTEX - count is {} - subject ids {}'.format(gtex[key]['count'],", ".join(gtex[key]['subjects']))
+                            f.write("{}: {}\n".format(t,reason))
+                            f.close()
                             # print(t)
                         else:
                             not_found.append(t)
@@ -357,11 +470,39 @@ class Command(BaseCommand):
                 if p.entry_name in lmb_data and t in lmb_data[p.entry_name]:
                     pass
                 else:
-                    new.append(t)
+                    ts_check = sequences_lookup[all_transcript_seq[t]]
+                    for t_check in ts_check:
+                        if p.entry_name in lmb_data and t_check in lmb_data[p.entry_name]:
+                            print('found via duplicate',t_check,t)
+                            continue
+                    key = '{}_{}'.format(t,ensembl_gene_id)
+
+
+
+                    #blast = BlastSearch(top_results=2)
+
+                    blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']), top_results=2)
+                    blast_out = blast.run(all_transcript_seq[t])
+                    result = [(Protein.objects.get(pk=x[0]).entry_name, x[1].hsps[0].expect) for x in blast_out]
+                    #print(result)
+                    if result:
+                        if result[0][0]==p.entry_name and result[0][1]<0.05:
+                            f = open("protein/data/20190726_new_transcripts_for_consideration.txt", "a")
+                            reason = 'GTEX count: {}'.format(gtex[key]['count'])
+                            f.write(">{} ({}): {}\n".format(t,p.entry_name,reason))
+                            f.write("{}\n".format(all_transcript_seq[t]))
+                            f.close()
+                            new.append(t)
+                            if p.entry_name in lmb_data:
+                                new_proteins.add(p.entry_name)
+                        else:
+                            print('bad blast match',result)
+                    else:
+                        print('bad blast match',result)
 
             total_new_transcripts += new
 
-            print(len(alternative_ids_uniprot['transcripts']), 'uniprot transcripts found',ensembl_transcripts_count, ' ensembl transcripts found',len(transcripts), 'transcripts kept after filtering')
+            # print(len(alternative_ids_uniprot['transcripts']), 'uniprot transcripts found',ensembl_transcripts_count, ' ensembl transcripts found',len(transcripts), 'transcripts kept after filtering')
             
             # Add if transcripts found
             if len(transcripts):
@@ -380,13 +521,32 @@ class Command(BaseCommand):
             json.dump(isoforms,f, indent=4, separators=(',', ': '))
             #break
 
+        for seq,ts in sequences_lookup.items():
+            if len(ts)>1:
+                print('identical sequence',ts)
+
+        for t in total_not_found:
+            ts_check = sequences_lookup[all_transcript_seq[t]]
+            found = False
+            for t_check in ts_check:
+                if t_check[0] not in total_not_found:
+                    print(t,'found but under another id',t_check[0])
+                    found = True
+
+            if not found:
+                print('##',t,'in LMB but not in this search')
+
+
         # print small summary results
         print('total_proteins_searched',len(ps))
         print('total_proteins_with_isoforms', total_proteins_with_isoforms)
         print('Total transcripts deemed to be isoforms',total_transcripts)
         print('Amount of these not in LMB data',len(total_new_transcripts))
-        print('Amount in LBM not found',len(total_not_found))
+        print(new_proteins)
+        # print('Amount in LBM not found',len(total_not_found))
+        # print(total_not_found)
         print('Amount in LBM found but skipped due to GTEX data',len(total_not_found_due_to_skipped))
+        print(total_not_found_due_to_skipped)
         print('Sequence compare to LMB', lmb_compare_sequences)
         print('canonical_disagreement_count',canonical_disagreement_count)
         print(total_not_found)

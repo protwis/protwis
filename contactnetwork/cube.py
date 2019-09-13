@@ -74,7 +74,7 @@ def compute_interactions(pdb_name,save_to_db = False):
         # Filter all pairs containing non AA residues
         all_aa_neighbors = [pair for pair in all_neighbors if is_aa(pair[0]) and is_aa(pair[1])]
 
-        # Only include contacts between residues less that NUM_SKIP_RESIDUES sequence steps apart
+        # Only include contacts between residues more than NUM_SKIP_RESIDUES sequence steps apart
         all_aa_neighbors = [pair for pair in all_aa_neighbors if abs(pair[0].id[1] - pair[1].id[1]) > NUM_SKIP_RESIDUES]
 
         # For each pair of interacting residues, determine the type of interaction

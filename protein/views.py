@@ -122,7 +122,7 @@ def detail(request, slug):
 def SelectionAutocomplete(request):
 
     if request.is_ajax():
-        q = request.GET.get('term')
+        q = request.GET.get('term').strip()
         type_of_selection = request.GET.get('type_of_selection')
         selection_only_receptors = request.GET.get('selection_only_receptors')
         referer = request.META.get('HTTP_REFERER')
@@ -162,6 +162,16 @@ def SelectionAutocomplete(request):
         # Try matching protein name after stripping html tags
         if ps.count() == 0:
             ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
+
+            # If count still 0 try searching for the full thing
+            if ps.count() == 0:
+                ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
+                    source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+
+                # If count still 0 try searching outside of Swissprot
+                if ps.count() == 0:
+                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)).exclude(family__slug__startswith=exclusion_slug)[:10]
+
 
         for p in ps:
             p_json = {}
@@ -242,6 +252,7 @@ def isoforms(request):
     temp = OrderedDict([
                     ('name',''),
                     ('number_of_variants', 0),
+                    ('avg_no_variants',0),
                     ('number_of_children', 0),
                     ('receptor_t',0),
                     ('density_of_variants', 0),
@@ -266,7 +277,7 @@ def isoforms(request):
                 receptor_isoforms[r] = int(isoforms)
                 if int(isoforms)>max_isoforms:
                     max_isoforms = int(isoforms)
-
+    max_isoforms = 5
     # Make the scaffold
     for p in class_proteins:
         e_short = p.entry_name.split("_")[0].upper()
@@ -290,8 +301,14 @@ def isoforms(request):
 
             if e_short in receptor_isoforms:
                 coverage[fid[0]]['number_of_variants'] += receptor_isoforms[e_short]
+                coverage[fid[0]]['avg_no_variants'] = coverage[fid[0]]['number_of_variants'] / coverage[fid[0]]['receptor_t']
+
                 coverage[fid[0]]['children'][fid[1]]['number_of_variants'] += receptor_isoforms[e_short]
+                coverage[fid[0]]['children'][fid[1]]['avg_no_variants'] = coverage[fid[0]]['children'][fid[1]]['number_of_variants'] / coverage[fid[0]]['children'][fid[1]]['receptor_t']
+
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants'] += receptor_isoforms[e_short]
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['avg_no_variants'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants'] / coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['number_of_variants'] = receptor_isoforms[e_short]
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['density_of_variants'] = round(receptor_isoforms[e_short]/max_isoforms,2)
 
@@ -302,13 +319,29 @@ def isoforms(request):
                 if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants']>max_level_3:
                     max_level_3 = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants']
 
+
+    max_level_1_avg = 0
+    max_level_2_avg = 0
+    max_level_3_avg = 0
     # Make the scaffold
     for p in class_proteins:
         e_short = p.entry_name.split("_")[0].upper()
         fid = p.family.slug.split("_")
-        coverage[fid[0]]['density_of_variants'] = round(coverage[fid[0]]['number_of_variants']/max_level_1,2)
-        coverage[fid[0]]['children'][fid[1]]['density_of_variants'] = round(coverage[fid[0]]['children'][fid[1]]['number_of_variants']/max_level_2,2)
-        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['density_of_variants'] = round(coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants']/max_level_3,2)
+
+        if coverage[fid[0]]['avg_no_variants']>max_level_1_avg:
+            max_level_1_avg = coverage[fid[0]]['avg_no_variants']
+        if coverage[fid[0]]['children'][fid[1]]['avg_no_variants']>max_level_2_avg:
+            max_level_2_avg = coverage[fid[0]]['children'][fid[1]]['avg_no_variants']
+        if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['avg_no_variants']>max_level_3_avg:
+            max_level_3_avg = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['avg_no_variants']
+
+    # Make the scaffold
+    for p in class_proteins:
+        e_short = p.entry_name.split("_")[0].upper()
+        fid = p.family.slug.split("_")
+        coverage[fid[0]]['density_of_variants'] = round(coverage[fid[0]]['avg_no_variants']/max_level_1_avg,2)
+        coverage[fid[0]]['children'][fid[1]]['density_of_variants'] = round(coverage[fid[0]]['children'][fid[1]]['avg_no_variants']/max_level_2_avg,2)
+        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['density_of_variants'] = round(coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['avg_no_variants']/max_level_3_avg,2)
 
 
     # MAKE THE TREE
@@ -400,7 +433,7 @@ def AlignIsoformWildtype(request):
     seq_filename = "protein/data/MSA_GPCR_isoforms/{}_human_isoform_MSA.fa".format(p.lower())
     with open (seq_filename, "r") as myfile:
         fasta_raw = myfile.read()
-        fasta=fasta_raw.splitlines() 
+        fasta=fasta_raw.splitlines()
     # print(aln_human)
     # print(fasta_raw)
     data['wt2']=fasta[1]
@@ -422,7 +455,7 @@ def AlignIsoformWildtype(request):
         else:
             data['res_correct2'][i] = data['res'][i-gaps]
 
-    for e in es:
+    for e in es[:1]:
         isoform_info = fetch_from_web_api(url, e, cache_dir)
         if (isoform_info):
             seq = isoform_info['seq']
