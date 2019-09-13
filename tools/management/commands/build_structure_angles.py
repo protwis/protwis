@@ -852,6 +852,12 @@ class Command(BaseCommand):
                 #     reference.tm6_angle = np.degrees(tm6_angle)
                 #     reference.save()
 
+                c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
+                translation = np.array2string(-1*center_vector[0], separator=',')
+
+                sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector))
+                sv.save()
+
                 ### ANGLES
                 # Center axis to helix axis to CA
                 a_angle = np.concatenate([axes_calc(h,p,pca) for h,p in zip(hres_list,helix_pcas)]).round(3)
@@ -861,14 +867,6 @@ class Command(BaseCommand):
 
                 # Distance from center axis to CA
                 core_distance = np.concatenate([ca_distance_calc(ca,pca) for ca in hres_list]).round(3)
-
-                # STORE STRUCTURE REFERENCES
-                # center axis
-                c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
-                translation = np.array2string(-1*center_vector[0], separator=',')
-
-                sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector))
-                sv.save()
 
                 ### freeSASA (only for TM bundle)
                 # SASA calculations - results per atom
@@ -929,6 +927,12 @@ class Command(BaseCommand):
                     if not residue_id in asa_list:
                         asa_list[residue_id] = None
 
+                ### PCA space can be upside down - in that case invert the results
+                # Verify by checking the direction of the center vector
+                center_pt = pca.transform(center_vector)
+                if center_pt[0][0] < center_pt[1][0]:
+                    a_angle = -1*a_angle
+                    b_angle = -1*b_angle
 
                 for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distance, midpoint_distances, mid_membrane_distances):
                     residue_id = res.id[1]
