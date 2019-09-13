@@ -228,6 +228,7 @@ var signprotmat = {
                 var mt = 30;
             }
             else {
+                loc = "interaction";
                 h = 1000 - margin.top - margin.bottom;
                 var mt = 100;
             }

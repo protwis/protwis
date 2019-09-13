@@ -192,6 +192,7 @@ const run_seq_sig = function(){
 const initialize_consensus = function(cons_data){
   const row_height = 30;
   const AMINO_ACID_GROUPS = {"HY_any": ["A", "C", "F", "I", "L", "M", "P", "V", "W", "Y"], "HY_4-5": ["F", "M", "Y"], "HA_any": ["A", "I", "L", "M", "V"], "HA_1-2": ["A", "V"], "HA_2-3": ["I", "L", "V"], "HA_3": ["I", "L"], "HA_3-4": ["I", "L", "M"], "M_4": ["M"], "A_1": ["A"], "I_": ["I"], "L_": ["L"], "V_": ["V"], "HR_any": ["F", "H", "W", "Y"], "HR_4-5": ["F", "H", "Y"], "HR_5": ["F", "Y"], "HR_5-6": ["F", "W", "Y"], "W_6": ["W"], "Y_?": ["Y"], "F_": ["F"], "Hb_any": ["D", "E", "H", "K", "N", "Q", "R", "S", "T", "Y"], "Hb_2": ["S", "T"], "Hb_3": ["H", "N"], "N_": ["N"], "Q_": ["Q"], "S_": ["S"], "T_": ["T"], "Hu_2-3": ["N", "S", "T"], "Hu_3-4": ["H", "N", "Q"], "Ha_2-3": ["D", "N", "S", "T"], "Ha_3": ["D", "N"], "Ha_3-4": ["D", "E", "H", "N", "Q"], "Ha_4": ["E", "H", "Q"], "Hd_4": ["H", "Q"], "Hd_4-5": ["H", "K", "Q"], "Hd_5-6": ["K", "R", "Y"], "Hd_6": ["R", "Y"], "+-_any": ["D", "E", "H", "K", "R"], "+-_3-4": ["D", "E", "H"], "+-_4-5": ["E", "H", "K"], "+_any": ["H", "K", "R"], "H_4": ["H"], "+_4-5": ["H", "K"], "K_5": ["K"], "+_5-6": ["K", "R"], "R_6": ["R"], "-_any": ["D", "E"], "D_3": ["D"], "E_4": ["E"], "Sm_0-2": ["A", "C", "G", "S"], "Sm_0-1": ["A", "G"], "Sm_1-2": ["A", "C", "S"], "aH_Hig": ["A", "K", "L", "M", "R"], "aH_Low": ["G", "P"], "G_0": ["G"], "P_2": ["P"], "C_2": ["C"], "-": "-"}
+
   for (let key of Object.keys(cons_data)) {
     con_seq[key] = [cons_data[key][0]];
   };
@@ -199,28 +200,30 @@ const initialize_consensus = function(cons_data){
   non_interactions.push(...data.receptor)
   var seq_cons_data = []
   for (gn of xScale.domain()){
-    var aa = con_seq[gn][0]['aa']
-    var seq_cons = parseInt(
-      (_.uniqBy(non_interactions.filter(x => x.rec_gn === gn), "pdb_id")
-        .filter(x => pdbScale.domain().includes(x.pdb_id))
-        .filter(x => x.rec_aa === aa).length /
-        pdbScale.domain().length) *
-        100
-    );
+    if (Object.keys(con_seq).includes(gn)){
+      var aa = con_seq[gn][0]['aa']
+      var seq_cons = parseInt(
+        (_.uniqBy(non_interactions.filter(x => x.rec_gn === gn), "pdb_id")
+          .filter(x => pdbScale.domain().includes(x.pdb_id))
+          .filter(x => x.rec_aa === aa).length /
+          pdbScale.domain().length) *
+          100
+      );
 
-    var sort_code = con_seq[gn][0]['sort_code'].replace('α', 'a')
-    var gn_aa = _.uniqBy(non_interactions.filter(x => x.rec_gn === gn), "pdb_id").filter(x => pdbScale.domain().includes(x.pdb_id)).map(x => x.rec_aa)
-    prop_seq_cons = 0
-    ignore_sort_code = ['-_', 'Sm_any']
-    for (var aa of gn_aa){
-      if (!ignore_sort_code.includes(sort_code) && AMINO_ACID_GROUPS[sort_code].includes(aa)){
-        prop_seq_cons += 1
+      var sort_code = con_seq[gn][0]['sort_code'].replace('α', 'a')
+      var gn_aa = _.uniqBy(non_interactions.filter(x => x.rec_gn === gn), "pdb_id").filter(x => pdbScale.domain().includes(x.pdb_id)).map(x => x.rec_aa)
+      prop_seq_cons = 0
+      ignore_sort_code = ['-_', 'Sm_any']
+      for (var aa of gn_aa){
+        if (!ignore_sort_code.includes(sort_code) && AMINO_ACID_GROUPS[sort_code].includes(aa)){
+          prop_seq_cons += 1
+        }
       }
-    }
-    prop_seq_cons = parseInt(prop_seq_cons / pdbScale.domain().length * 100)
+      prop_seq_cons = parseInt(prop_seq_cons / pdbScale.domain().length * 100)
 
-    con_seq[gn][0]['seq_cons'] = seq_cons
-    con_seq[gn][0]['prop_seq_cons'] = prop_seq_cons
+      con_seq[gn][0]['seq_cons'] = seq_cons
+      con_seq[gn][0]['prop_seq_cons'] = prop_seq_cons
+    }
   }
   signprotmat.d3.conSeqUpdate(row_height);
 };
@@ -652,7 +655,7 @@ var tableToExcel = (function () {
 
 
 $(document).ready(function () {
-  $.get('/contactnetwork/pdbtabledata', { exclude_non_interacting: true}, function(data) {
+  $.get('/signprot/pdbtabledata', { exclude_non_interacting: true}, function(data) {
     $('#interface-modal-table .tableview').html(data);
   })
 

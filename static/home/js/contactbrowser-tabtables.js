@@ -1147,7 +1147,7 @@ function renderBrowser(data) {
 
 
 
-            // console.log(gn1,gn2);
+            // console.log(gn1,angles_1,gn2,all_angles_2);
             all_angles_1 = data['all_angles'][gn1];
             all_angles_2 = data['all_angles'][gn2];
             ss_pos1_set1 = [];
@@ -1235,16 +1235,16 @@ function renderBrowser(data) {
                       <td class="narrow_col">${diff_sfreq}</td>
                       <td>${types}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col angles_modal">${angles_1[0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[1]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[1]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[2]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[2]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[6]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[6]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[7]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[7]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[2][1]}" data-set2="${angles_2[2][2]}">${angles_2[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[6][1]}" data-set2="${angles_1[6][2]}">${angles_1[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[6][1]}" data-set2="${angles_2[6][2]}">${angles_2[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[7][1]}" data-set2="${angles_1[7][2]}">${angles_1[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[7][1]}" data-set2="${angles_2[7][2]}">${angles_2[7][0]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col">${dssp_pos1}</td>
@@ -1571,6 +1571,14 @@ function renderBrowser(data) {
         });
     }
 
+    $(".angles_tooltip").hover(function() {
+                                    hover_text = "Set1: "+Math.round($(this).data('set1')*10)/10 + " Set2: "+Math.round($(this).data('set2')*10)/10;
+                                    $(this).css('cursor','pointer').attr('title', hover_text);
+                                }, function() {
+                                    $(this).css('cursor','auto');
+                                }
+                              );
+
     table.on('click', '.angles_modal', function(event) {
         // $(this)
 
@@ -1857,16 +1865,16 @@ function renderBrowser_2(data) {
 
                       <td>${types}</td>
                       <td class="narrow_col">${distance_2}</td>
-                      <td class="narrow_col angles_modal">${angles_1[0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[1]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[1]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[2]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[2]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[6]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[6]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[7]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[7]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[0][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[0][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[1][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[1][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[2][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[2][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[6][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[6][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_1[7][0]}</td>
+                      <td class="narrow_col angles_modal">${angles_2[7][0]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col">${dssp_pos1}</td>
@@ -2399,11 +2407,11 @@ function renderBrowser_3(data) {
                       <td class="narrow_col">${class_cons_aa}</td>
                       <td class="narrow_col">${class_cons_freq}</td>
 
-                      <td class="narrow_col">${angles[0]}</td>
-                      <td class="narrow_col">${angles[1]}</td>
+                      <td class="narrow_col">${angles[0][0]}</td>
+                      <td class="narrow_col">${angles[1][0]}</td>
 
-                      <td class="narrow_col">${angles[2]}</td>
-                      <td class="narrow_col">${angles[6]}</td>
+                      <td class="narrow_col">${angles[2][0]}</td>
+                      <td class="narrow_col">${angles[6][0]}</td>
                     </tr>`;
             // tbody.append(tr);
         });
@@ -2786,11 +2794,11 @@ function renderBrowser_4(data) {
 
                       <td class="narrow_col">${angles1[4]}</td>
                       <td class="narrow_col">${angles2[4]}</td>
-                      <td class="narrow_col">${angles_diff[4]}</td>
+                      <td class="narrow_col">${angles_diff[4][0]}</td>
 
                       <td class="narrow_col">${angles1[5]}</td>
                       <td class="narrow_col">${angles2[5]}</td>
-                      <td class="narrow_col">${angles_diff[5]}</td>
+                      <td class="narrow_col">${angles_diff[5][0]}</td>
 
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
@@ -2798,7 +2806,7 @@ function renderBrowser_4(data) {
 
                       <td class="narrow_col">${angles1[3]}</td>
                       <td class="narrow_col">${angles2[3]}</td>
-                      <td class="narrow_col">${angles_diff[3]}</td>
+                      <td class="narrow_col">${angles_diff[3][0]}</td>
 
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
@@ -2806,7 +2814,7 @@ function renderBrowser_4(data) {
 
                       <td class="narrow_col">${angles1[8]}</td>
                       <td class="narrow_col">${angles2[8]}</td>
-                      <td class="narrow_col">${angles_diff[8]}</td>
+                      <td class="narrow_col">${angles_diff[8][0]}</td>
 
                       <td class="narrow_col">${set1_seq_cons_aa}</td>
                       <td class="narrow_col">${set2_seq_cons_aa}</td>
@@ -3147,9 +3155,9 @@ function renderBrowser_5(data) {
                 <tr class="clickable-row filter_rows" id="${i}">
                   <td class="dt-center">${seg}</td>
                   <td class="dt-center">${i}</td>
-                  <td class="narrow_col">${angles[0]}</td>
-                  <td class="narrow_col">${angles[1]}</td>
-                  <td class="narrow_col">${angles[9]}</td>
+                  <td class="narrow_col">${angles[0][0]}</td>
+                  <td class="narrow_col">${angles[1][0]}</td>
+                  <td class="narrow_col">${angles[9][0]}</td>
                 </tr>`;
         // tbody.append(tr);
     });

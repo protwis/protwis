@@ -52,7 +52,8 @@ def get_protein_segments(request):
     for s in segment_raw:
         try:
             gen_object = ResidueGenericNumberEquivalent.objects.filter(
-                label=s, scheme__slug__in=['gpcrdb' + slug_ending]
+                # label=s, scheme__slug__in=['gpcrdb' + slug_ending]
+                label=s, scheme__slug__in=['gpcrdba']
             ).get()
             segments.append(gen_object)
         except ObjectDoesNotExist as e:
@@ -128,9 +129,13 @@ def get_signature_features(signature_data, generic_numbers, feats):
                         dgn = str(generic_numbers[j][k])
                         dfreq = int(freq[0])
                         dcons = int(freq[1])
-
+                        
                         sort_code = dfeature_code + "_" + dlength
                         if sort_code in AMINO_ACID_GROUPS:
+                            sort_score = len(AMINO_ACID_GROUPS[sort_code])
+                        elif dfeature_code == 'Y':
+                            print('Y_?')
+                            sort_code = dfeature_code + "_" + '?'
                             sort_score = len(AMINO_ACID_GROUPS[sort_code])
                         else:
                             sort_score = 99
@@ -326,13 +331,13 @@ def prepare_coupling_data_container():
     class_names = {}
     data = {}
 
+    complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').values_list('structure__protein_conformation__protein__parent_id', flat=True)
     proteins = (
         Protein.objects.filter(
             sequence_type__slug="wt",
             family__slug__startswith="00",
-            species__common_name="Human",
-        )
-        .all()
+            species__common_name="Human")
+        # .exclude(id__in=complex_objs)
         .prefetch_related("family")
     )
 
