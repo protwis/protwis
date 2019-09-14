@@ -238,6 +238,7 @@ class Command(BaseCommand):
             b = p.transform(h)
             b[:,1:] = p.transform(a)[:,1:]
             b = p.inverse_transform(b)
+
             return calc_angle(pca.transform(b),pca.transform(h))
 
         def set_bfactor(chain,angles):
@@ -928,11 +929,22 @@ class Command(BaseCommand):
                         asa_list[residue_id] = None
 
                 ### PCA space can be upside down - in that case invert the results
-                # Verify by checking the direction of the center vector
-                center_pt = pca.transform(center_vector)
-                if center_pt[0][0] < center_pt[1][0]:
-                    a_angle = -1*a_angle
-                    b_angle = -1*b_angle
+                # Check rotation of 1x49 - 1x51
+                inversion_ref = -1
+                for res in pchain:
+                    inversion_ref += 1
+                    if gdict[res.id[1]].generic_number.label == "1x49":
+                        break
+
+                signed_diff = ( a_angle[inversion_ref + 1]+180 - a_angle[inversion_ref]+180 + 540 ) % 360 - 180
+
+                if signed_diff > 0:
+                     print("{} Rotating the wrong way".format(pdb_code))
+                     a_angle = -1*a_angle
+                     b_angle = -1*b_angle
+                else:
+                    print("{} Rotating the right way".format(pdb_code))
+
 
                 for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distance, midpoint_distances, mid_membrane_distances):
                     residue_id = res.id[1]
