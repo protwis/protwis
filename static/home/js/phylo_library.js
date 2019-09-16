@@ -2669,7 +2669,7 @@
             return d;
           });
 
-          if (shown_font_size >= 5) {
+          if (true || shown_font_size >= 5) { // always set dx
             labels.attr("dx", function(d) {
               return (
                 (d.text_align == "end" ? -1 : 1) *
@@ -2678,7 +2678,7 @@
             });
           }
         } else {
-          if (shown_font_size >= 5) {
+          if (true || shown_font_size >= 5) { // always set dx
             labels.attr("dx", function(d) {
               return (d.text_align == "end" ? -1 : 1) * shown_font_size * 0.33;
             });

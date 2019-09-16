@@ -797,8 +797,19 @@ function nodeStyler(element, node){
             label = node_label[0][0]
 
             // Space left and right of the label (instead of &nbsp/&#160 which breaks SVG)
+            /*
             label.setAttribute("margin-left", font_size+"px")
-            label.setAttribute("margin-right", font_size+"px")
+            label.setAttribute("margin-right", font_size+"px")*/
+
+            // Extra spacing of labels
+            /*var dx_label = parseFloat(label.getAttribute("dx"))
+            console.log("DX")
+            console.log(dx_label)
+            if (dx_label != null && dx_label < 0)
+              label.setAttribute("dx", -1 * font_size/2 + "px")
+            else if (dx_label != null && dx_label > 0)
+              label.setAttribute("dx", font_size/2 + "px")*/
+
 
             if (hidePDBs){
               label.innerHTML = labelName
@@ -810,6 +821,8 @@ function nodeStyler(element, node){
               if (!labelReorder && label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
                 label.innerHTML = "(" + node.name + ") " + labelName
             }
+
+
 
             // color labels
             if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1'])
