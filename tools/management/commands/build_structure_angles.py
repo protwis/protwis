@@ -929,21 +929,20 @@ class Command(BaseCommand):
                         asa_list[residue_id] = None
 
                 ### PCA space can be upside down - in that case invert the results
-                # Check rotation of 1x49 - 1x51
+                # Check rotation of 1x49 - 1x50
                 inversion_ref = -1
                 for res in pchain:
                     inversion_ref += 1
                     if gdict[res.id[1]].generic_number.label == "1x49":
                         break
 
-                signed_diff = ( a_angle[inversion_ref + 1]+180 - a_angle[inversion_ref]+180 + 540 ) % 360 - 180
-
+                signed_diff = (a_angle[inversion_ref + 1] - a_angle[inversion_ref] + 540 ) % 360 - 180
                 if signed_diff > 0:
-                     print("{} Rotating the wrong way".format(pdb_code))
+#                     print("{} Rotating the wrong way {}".format(pdb_code, signed_diff))
                      a_angle = -1*a_angle
                      b_angle = -1*b_angle
-                else:
-                    print("{} Rotating the right way".format(pdb_code))
+#                else:
+#                    print("{} Rotating the right way  {}".format(pdb_code, signed_diff))
 
 
                 for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distance, midpoint_distances, mid_membrane_distances):
