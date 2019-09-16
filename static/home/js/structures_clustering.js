@@ -109,6 +109,7 @@ function renderTree(data) {
 
 
 
+    // TODO: dynamic setting of the inner_spacing option
     phylotree = d3.layout.phylotree()
     .svg(d3.select("#clustering-tree"))
     .options({
@@ -127,7 +128,7 @@ function renderTree(data) {
       'reroot': true, // rerooting
       'hide': false, // hiding a subtree
       'zoom': false, // zooming
-      'inner_spacing': (clusterMethod==1 ? 1 : 5) // extra spacing between splits in tree (own custom option)
+      'inner_spacing': (clusterMethod==1 ? 1 : 2) // extra spacing between splits in tree (own custom option)
     })
     .radial(radialTree)
     .node_span ('equal')
@@ -705,7 +706,7 @@ function nodeStyler(element, node){
 
             // Add inner markers
             element.selectAll("circle").remove()
-            var firstColor = "#CCC";
+            var firstColor = "#888";
             if (displayDataInner >= 0) {
               if (!Array.isArray(treeAnnotations[node.name][displayDataInner]))
                 treeAnnotations[node.name][displayDataInner] = [treeAnnotations[node.name][displayDataInner]]
@@ -742,39 +743,41 @@ function nodeStyler(element, node){
                 // Shift circles according to placement label
                 if (phylotree.radial ()) {
                     var shifter_rect = phylotree.shift_tip(node)[0];
-                    var setX = shifter_rect > 0 ? shifter_rect -  font_size*scale/1.8  - i*(font_size*scale): shifter_rect + font_size*scale/1.8 + i*(font_size*scale);
+                    var spacer_rect  = (font_size*scale)/2;
+
+                    var setX = shifter_rect > 0 ? shifter_rect - spacer_rect - i*(font_size*scale): shifter_rect + spacer_rect + i*(font_size*scale);
                     annotation.attr("transform", "rotate (" + node.text_angle + ")")
                         .attr ("cx", setX)
                 }
               }
+            }
 
-              // Color branch-tracer
-              var tracer = element.select("line")[0][0];
-              tracer.setAttribute("stroke-dasharray", "3,4");
-              tracer.setAttribute("stroke-width", referenceFontSize/4);
-              tracer.className.baseVal = ""
+            // Color branch-tracer
+            var tracer = element.select("line")[0][0];
+            tracer.setAttribute("stroke-dasharray", "3,4");
+            tracer.setAttribute("stroke-width", referenceFontSize/4);
+            tracer.className.baseVal = ""
 
-              // check if in group selection or has assigned coloring
-              if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1']){
-                tracer.setAttribute("stroke", "purple");
-                tracer.setAttribute("stroke-width", referenceFontSize/3);
-              } else if ('group0' in node && node['group0']) {
-                tracer.setAttribute("stroke", "red");
-                tracer.setAttribute("stroke-width", referenceFontSize/3);
-              } else if ('group1' in node && node['group1']) {
-                tracer.setAttribute("stroke", "blue");
-                tracer.setAttribute("stroke-width", referenceFontSize/3);
-              } else if (doBranchColoring) {
-                // check length of current and if array
-                if (treeAnnotations[node.name][displayDataInner].length > 1 && 'colorClasses' in node && Array.isArray(node['colorClasses'][displayDataInner]) && node['colorClasses'][displayDataInner].length >= 1) {
-                  classIndex = dataClasses[displayDataInner].indexOf(node['colorClasses'][displayDataInner][0])
-                  firstColor = colorClasses[displayDataInner][classIndex]
-                }
-
-                tracer.setAttribute("stroke", firstColor);
-              } else {
-                tracer.setAttribute("stroke", "#CCC");
+            // check if in group selection or has assigned coloring
+            if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1']){
+              tracer.setAttribute("stroke", "purple");
+              tracer.setAttribute("stroke-width", referenceFontSize/3);
+            } else if ('group0' in node && node['group0']) {
+              tracer.setAttribute("stroke", "red");
+              tracer.setAttribute("stroke-width", referenceFontSize/3);
+            } else if ('group1' in node && node['group1']) {
+              tracer.setAttribute("stroke", "blue");
+              tracer.setAttribute("stroke-width", referenceFontSize/3);
+            } else if (doBranchColoring) {
+              // check length of current and if array
+              if (displayDataInner >= 0 && treeAnnotations[node.name][displayDataInner].length > 1 && 'colorClasses' in node && Array.isArray(node['colorClasses'][displayDataInner]) && node['colorClasses'][displayDataInner].length >= 1) {
+                classIndex = dataClasses[displayDataInner].indexOf(node['colorClasses'][displayDataInner][0])
+                firstColor = colorClasses[displayDataInner][classIndex]
               }
+
+              tracer.setAttribute("stroke", firstColor);
+            } else {
+              tracer.setAttribute("stroke", "#888");
             }
 
             var labelName
@@ -792,6 +795,7 @@ function nodeStyler(element, node){
               labelName = treeAnnotations[node.name][1].split("_")[0].toUpperCase()
 
             label = node_label[0][0]
+
             // Space left and right of the label (instead of &nbsp/&#160 which breaks SVG)
             label.setAttribute("margin-left", font_size+"px")
             label.setAttribute("margin-right", font_size+"px")
@@ -964,7 +968,7 @@ function branchStyler(element, node){
       element.style("stroke-width", referenceFontSize/3)
     } else {
       element.style("stroke-width", referenceFontSize/4)
-      element.style("stroke", "#CCC");
+      element.style("stroke", "#888");
       if (doBranchColoring && displayDataInner >= 0 && 'colorClasses' in node.target){
         // color according to shared feature
         if (node.target['colorClasses'][displayDataInner] != "-" && node.target['colorClasses'][displayDataInner].length > 0 ) {
