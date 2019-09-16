@@ -694,12 +694,14 @@ function remove(array, element) {
 }
 
 var splitNodesize = 0
+var referenceFontSize = 0
 function nodeStyler(element, node){
     var scale = 0.8;
     if (d3.layout.phylotree.is_leafnode(node)) {
         if (node.name in treeAnnotations) {
             var node_label = element.select("text");
             var font_size  = parseFloat(node_label.style("font-size"));
+            referenceFontSize = font_size;
 
             // Add inner markers
             element.selectAll("circle").remove()
@@ -749,9 +751,20 @@ function nodeStyler(element, node){
               // Color branch-tracer
               var tracer = element.select("line")[0][0];
               tracer.setAttribute("stroke-dasharray", "3,4");
-              tracer.setAttribute("stroke-width", Math.min(1.5, font_size/3*2));
+              tracer.setAttribute("stroke-width", referenceFontSize/4);
               tracer.className.baseVal = ""
-              if (doBranchColoring) {
+
+              // check if in group selection or has assigned coloring
+              if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1']){
+                tracer.setAttribute("stroke", "purple");
+                tracer.setAttribute("stroke-width", referenceFontSize/3);
+              } else if ('group0' in node && node['group0']) {
+                tracer.setAttribute("stroke", "red");
+                tracer.setAttribute("stroke-width", referenceFontSize/3);
+              } else if ('group1' in node && node['group1']) {
+                tracer.setAttribute("stroke", "blue");
+                tracer.setAttribute("stroke-width", referenceFontSize/3);
+              } else if (doBranchColoring) {
                 // check length of current and if array
                 if (treeAnnotations[node.name][displayDataInner].length > 1 && 'colorClasses' in node && Array.isArray(node['colorClasses'][displayDataInner]) && node['colorClasses'][displayDataInner].length >= 1) {
                   classIndex = dataClasses[displayDataInner].indexOf(node['colorClasses'][displayDataInner][0])
@@ -942,15 +955,15 @@ function nodeStyler(element, node){
 function branchStyler(element, node){
     if ( 'group0' in node.target && node.target['group0'] && 'group1' in node.target && node.target['group1']) {
       element.style("stroke", "purple");
-      element.style("stroke-width", 3)
+      element.style("stroke-width", referenceFontSize/3)
     } else if ('group0' in node.target && node.target['group0']) {
       element.style("stroke", "red");
-      element.style("stroke-width", 3)
+      element.style("stroke-width", referenceFontSize/3)
     } else if ('group1' in node.target && node.target['group1']) {
       element.style("stroke", "blue");
-      element.style("stroke-width", 3)
+      element.style("stroke-width", referenceFontSize/3)
     } else {
-      element.style("stroke-width", 1.5)
+      element.style("stroke-width", referenceFontSize/4)
       element.style("stroke", "#CCC");
       if (doBranchColoring && displayDataInner >= 0 && 'colorClasses' in node.target){
         // color according to shared feature
