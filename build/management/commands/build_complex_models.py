@@ -148,9 +148,9 @@ class Command(BaseBuild):
                 if break_loop: break
 
         ###
-        del self.gprotein_targets['Gs']
-        del self.gprotein_targets['Gq/11']
-        self.gprotein_targets['Gi/o'] = ['gnat1_human']
+        # del self.gprotein_targets['Gs']
+        # del self.gprotein_targets['Gq/11']
+        # self.gprotein_targets['Gi/o'] = ['gnat1_human']
         ###
 
         s_c = 0
@@ -160,7 +160,7 @@ class Command(BaseBuild):
 
         print('receptors to model: {}'.format(len(self.receptor_list)))
         print('signaling proteins per receptor: {}'.format(s_c))
-
+        
         self.processors = options['proc']
         self.prepare_input(self.processors, self.receptor_list)
 
