@@ -32,6 +32,17 @@ function renderTree(data) {
     dataClasses[10] = dataClasses[8]
     dataClasses[11] = ['0%', '50%', '100%'] // percentage
 
+    // Receptor family coloring
+    if (dataClasses[3].length > 20 && dataClasses[3].length < 32)
+      // Hybrid 32 palette: https://lospec.com/palette-list/hybrid32
+      colorClasses[3] = ["#593339", "#903d62", "#ae6253", "#dd9c68", "#edce9f", "#c2c237", "#6aba3b", "#3b8f5b", "#335a5c", "#376129", "#979ea8", "#c0c7b7", "#e4edf5", "#38c2d6", "#296291", "#353456", "#613755", "#955b8d", "#d467a2", "#e5df52", "#ec6b24", "#a83135", "#565299", "#645964", "#2e2a35", "#d96f67", "#9d5a33", "#5095e6", "#526626", "#101b21", "#f21e44"]
+    else if (dataClasses[3].length >= 32 && dataClasses[3].length < 56)
+      // Juice 56 palette: https://lospec.com/palette-list/juice-56
+      colorClasses[3] = ["#000005", "#c8e1eb", "#a5becd", "#7891a5", "#55647d", "#37415a", "#191e3c", "#14465a", "#0f7373", "#0fa569", "#41cd73", "#73ff73", "#dc9b78", "#b26247", "#8c3c32", "#5a1423", "#370a14", "#ffd2a5", "#f5a56e", "#e66e46", "#c3412d", "#8c2323", "#410041", "#7d0041", "#aa143c", "#d72d2d", "#f06923", "#ffaa32", "#ffe65a", "#bed72d", "#64a51e", "#237d14", "#0f5519", "#0f3223", "#82ffe1", "#41d7d7", "#14a0cd", "#1469c3", "#0f379b", "#0f0f69", "#3c1e8c", "#642db4", "#a041d7", "#e65ae6", "#ff8cc8", "#820a64", "#b4236e", "#e65078", "#ff8c8c", "#ffcdb4", "#e69b96", "#be6973", "#96465f", "#6e2850"]
+    else if (dataClasses[3].length >= 56)
+      // SPF 80 palette: https://lospec.com/palette-list/spf-80
+      colorClasses[3] = ["#d2ccf3", "#a392d4", "#615476", "#332f3a", "#3f0d76", "#611894", "#8f4bec", "#d291ff", "#edcaff", "#ffaffc", "#f276ff", "#d63be9", "#951cbc", "#680b76", "#30201a", "#473513", "#67541f", "#a79a5f", "#ffe22c", "#fda414", "#ff8d3e", "#f16e03", "#c3680a", "#e0a186", "#db8060", "#c37053", "#a65133", "#88512b", "#6d4734", "#452d25", "#600119", "#900c47", "#974c7a", "#c02214", "#dd3939", "#ff7693", "#ffb7b7", "#fffcdb", "#ffd887", "#f7a357", "#d7863d", "#cc7037", "#b24e2c", "#823314", "#5a260b", "#3a1603", "#0a2563", "#0d396f", "#1c8393", "#42c39c", "#4cd494", "#aaffd8", "#dafffe", "#d1ffcc", "#b6ff8c", "#5bbe61", "#4dae53", "#118448", "#1b744a", "#10594c", "#084339", "#033017", "#221478", "#2c17a5", "#321cbd", "#343af1", "#2274ff", "#39aeff", "#96daff", "#acdecd", "#90d5bd", "#4e9884", "#26795f", "#a2bcc5", "#69849c", "#435655", "#2c3233", "#101010"]
+
     for (var i = colorClasses.length; i <= 8; i++) {
         colorClasses[i] = []
         if (i != 7) {
