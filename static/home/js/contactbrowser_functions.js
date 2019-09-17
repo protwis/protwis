@@ -865,6 +865,7 @@
                 if (!$(selector + ' .interactions-input').val() == null)
                     interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
+                normalized = $(".normalized:visible input").prop("checked");
                 $.ajax({
                     url: '/contactnetwork/browserdata',
                     dataType: 'json',
@@ -872,7 +873,8 @@
                         // 'segments': segments,
                         'generic': generic,
                         'pdbs': pdb,
-                        'interaction_types': interactionTypes
+                        'interaction_types': interactionTypes,
+                        'normalized': normalized
                     },
                     async: true,
                     success: function(data) {
@@ -935,6 +937,7 @@
                 two_sets_pdbs1 = pdbs1;
                 two_sets_pdbs2 = pdbs2;
 
+                normalized = $(".normalized:visible input").prop("checked");
 
                 $.ajax({
                     url: '/contactnetwork/browserdata',
@@ -944,7 +947,8 @@
                         'generic': generic,
                         'pdbs1': pdbs1,
                         'pdbs2': pdbs2,
-                        'interaction_types': interactionTypes
+                        'interaction_types': interactionTypes,
+                        'normalized': normalized
                     },
                     async: true,
                     success: function(data) {
