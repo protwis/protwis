@@ -238,6 +238,7 @@ class Command(BaseCommand):
             b = p.transform(h)
             b[:,1:] = p.transform(a)[:,1:]
             b = p.inverse_transform(b)
+
             return calc_angle(pca.transform(b),pca.transform(h))
 
         def set_bfactor(chain,angles):
@@ -852,6 +853,12 @@ class Command(BaseCommand):
                 #     reference.tm6_angle = np.degrees(tm6_angle)
                 #     reference.save()
 
+                c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
+                translation = np.array2string(-1*center_vector[0], separator=',')
+
+                sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector))
+                sv.save()
+
                 ### ANGLES
                 # Center axis to helix axis to CA
                 a_angle = np.concatenate([axes_calc(h,p,pca) for h,p in zip(hres_list,helix_pcas)]).round(3)
@@ -861,14 +868,6 @@ class Command(BaseCommand):
 
                 # Distance from center axis to CA
                 core_distance = np.concatenate([ca_distance_calc(ca,pca) for ca in hres_list]).round(3)
-
-                # STORE STRUCTURE REFERENCES
-                # center axis
-                c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
-                translation = np.array2string(-1*center_vector[0], separator=',')
-
-                sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector))
-                sv.save()
 
                 ### freeSASA (only for TM bundle)
                 # SASA calculations - results per atom
@@ -928,6 +927,22 @@ class Command(BaseCommand):
                         dihedrals[residue_id] = None
                     if not residue_id in asa_list:
                         asa_list[residue_id] = None
+
+                ### PCA space can be upside down - in that case invert the results
+                # Check rotation of 1x49 - 1x50
+                inversion_ref = -1
+                for res in pchain:
+                    inversion_ref += 1
+                    if gdict[res.id[1]].generic_number.label == "1x49":
+                        break
+
+                signed_diff = (a_angle[inversion_ref + 1] - a_angle[inversion_ref] + 540 ) % 360 - 180
+                if signed_diff > 0:
+#                     print("{} Rotating the wrong way {}".format(pdb_code, signed_diff))
+                     a_angle = -1*a_angle
+                     b_angle = -1*b_angle
+#                else:
+#                    print("{} Rotating the right way  {}".format(pdb_code, signed_diff))
 
 
                 for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distance, midpoint_distances, mid_membrane_distances):
