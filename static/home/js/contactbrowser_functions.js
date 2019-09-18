@@ -1660,7 +1660,9 @@
             redraw_renders();
         }
 
+        var settingsSubmit = false;
         function updateInteractionSettings() {
+            settingsSubmit = false;
             // TODO modulate size of modal: display in center and resize to content?
             $("#resModal").find(".modal-dialog").removeClass("modal-wide").addClass("modal-sm")
             $("#resModal").find(".modal-title").html("Interaction settings")
@@ -1711,12 +1713,27 @@
 
             // Link to save settings when closing
             $('#resModal').on('hidden.bs.modal', closeInteractionSettings)
+
+            // Enable toggling by click on LI
+            $("#interaction_settings li").click(function (e) {
+                if ( e.target == this ) {
+                  var cb = $(this).find(":checkbox")[0];
+                  cb.checked = !cb.checked;
+                }
+            });
+
+            // Add submit button
+            $("#resModal").find(".modal-footer").prepend('<button type="button" class="btn btn-success btn-process" data-dismiss="modal">Close & Go</button>')
+            $("#resModal").find(".modal-footer .btn-process").click(function (e) {
+              settingsSubmit = true;
+            });
         }
 
-        function closeInteractionSettings(){
+        function closeInteractionSettings(e) {
           // Reset modal
+          $(e.currentTarget).unbind();
           $("#resModal").find(".modal-dialog").removeClass("modal-sm").addClass("modal-wide")
-          //$("#resModal").find(".modal-footer .btn-default").removeClass("hidden")
+          $("#resModal").find(".modal-footer .btn-process").remove()
 
           // Save settings
           var strict = []
@@ -1731,4 +1748,9 @@
           currentSettings[currentTab]["strict"] = strict;
           currentSettings[currentTab]["types"] = types;
           currentSettings[currentTab]["options"] = options;
+
+          if (settingsSubmit){
+            settingsSubmit = false
+            $("#"+ currentTab + ' .go-button').click()
+          }
         }
