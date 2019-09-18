@@ -73,7 +73,7 @@ class Distance(models.Model):
 def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, standard_deviation = False, split_by_amino_acid = False):
     matrix = {}
     group_distances = {}
-    
+
     if len(pdbs)==1:
         # Never get SD when only looking at a single pdb...
         standard_deviation = False
@@ -92,7 +92,14 @@ def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, st
 
         # Calculate the average of averages
         for key,dists in matrix.items():
-            group_distances[key] = sum(dists)/len(dists)/100
+            if standard_deviation and len(pdbs)>1:
+                if len(dists)==1:
+                    stdevdists = 0
+                else:
+                    stdevdists = statistics.stdev(dists)
+                group_distances[key] = stdevdists/100
+            else:
+                group_distances[key] = sum(dists)/len(dists)/100
     else:
         # NORMALIZE CODE
         for d in ds:
