@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q, F, Prefetch, Avg, StdDev
+from django.db.models.functions import Concat
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 from django.db import connection
@@ -423,19 +424,59 @@ def InteractionBrowserData(request):
 
     # Interaction types
     try:
-        i_types = request.GET.getlist('interaction_types[]')
+        i_types = [x.lower() for x in request.GET.getlist('interaction_types[]')]
+        # Add unknown type, so no interactions are returned, otherwise all are returned
+        if len(i_types) == 0:
+            i_types = ["DOES_NOT_EXIST"]
     except IndexError:
         i_types = []
 
-    # Use normalized results Defaults to True.
-    normalized = True
+    # Strict interaction settings
     try:
-        normalized_string = request.GET.get('normalized')
-        if normalized_string in ['false', 'False', 'FALSE', '0']:
-            normalized = False
+        strict_interactions = [x.lower() for x in request.GET.getlist('strict_interactions[]')]
     except IndexError:
-        pass
-    print(normalized)
+        strict_interactions = []
+
+    i_types_filter = Q()
+    if i_types:
+        if len(strict_interactions) == 0:
+            i_types_filter |= Q(interaction_type__in=i_types)
+        else:
+            # Merging the interaction filter with filters for the strict settings
+            for int_type in i_types:
+                if int_type in strict_interactions:
+                    if int_type == 'polar' or int_type == 'aromatic':
+                        i_types_filter = i_types_filter | (Q(interaction_type=int_type) & Q(interaction_level=0))
+                    elif int_type == 'hydrophobic' or int_type == 'van-der-waals':
+                        i_types_filter = i_types_filter | (Q(interaction_type=int_type) & Q(atompaircount__gte=4))
+                else:
+                    i_types_filter = i_types_filter | Q(interaction_type=int_type)
+
+    # Options settings
+    try:
+        contact_options = [x.lower() for x in request.GET.getlist('options[]')]
+    except IndexError:
+        contact_options = []
+
+    i_options_filter = Q()
+    if contact_options and len(contact_options) > 0:
+        # Filter out contact within the same helix
+        if "interhelical" in contact_options:
+            i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+
+    # Use normalized results Defaults to True.
+    #normalized = True
+    #try:
+    #    normalized_string = request.GET.get('normalized')
+    #    if normalized_string in ['false', 'False', 'FALSE', '0']:
+    #        normalized = False
+    #except IndexError:
+    #    pass
+
+    # DISCUSS: cache hash now takes the normalize along, is this necessary
+    normalized = "normalize" in contact_options
+
+    # Segment filters are now disabled
     segment_filter_res1 = Q()
     segment_filter_res2 = Q()
 
@@ -443,13 +484,10 @@ def InteractionBrowserData(request):
     #     segment_filter_res1 |= Q(interacting_pair__res1__protein_segment__slug__in=segments)
     #     segment_filter_res2 |= Q(interacting_pair__res2__protein_segment__slug__in=segments)
 
-    i_types_filter = Q()
-    if i_types:
-        i_types_filter |= Q(interaction_type__in=i_types)
-
-    hash_list = [pdbs1,pdbs2,i_types]
+    hash_list = [pdbs1,pdbs2,i_types, strict_interactions, contact_options]
     hash_cache_key = 'interactionbrowserdata_{}'.format(get_hash(hash_list))
     data = cache.get(hash_cache_key)
+    
     # data = None
     if data==None:
         cache_key = 'amino_acid_pair_conservation_{}'.format('001')
@@ -495,23 +533,50 @@ def InteractionBrowserData(request):
                             if p:
                                 class_pair_lookup[coord+pair] = round(100*len(p)/sum_proteins)
             cache.set(cache_key,class_pair_lookup,3600*24*7)
+
         # Get the relevant interactions
-        interactions = list(Interaction.objects.filter(
+        interactions = Interaction.objects.filter(
             interacting_pair__referenced_structure__pdb_code__index__in=pdbs_upper
         ).filter(
             interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
+        ).filter(
+            interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
+        ).filter(
+            segment_filter_res1 & segment_filter_res2
         ).values(
             'interaction_type',
             'interacting_pair__referenced_structure__pk',
             'interacting_pair__res1__pk',
+            'interacting_pair__res2__pk',
+        ).distinct(
+        ).annotate(
+             atompaircount=Count('interaction_type'),
+             arr=ArrayAgg('pk')
+        ).filter(
+            i_types_filter
+        ).filter(
+            i_options_filter
+        ).order_by(
+            'interaction_type',
+            'interacting_pair__referenced_structure__pk',
+            'interacting_pair__res1__pk',
             'interacting_pair__res2__pk'
-        ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).filter(
-            segment_filter_res1 & segment_filter_res2 #& i_types_filter
-        ).distinct())
+        )
+
+        # FOR DEBUGGING interaction + strict filters
+        #print(interactions.query)
+        interactions = list(interactions)
+
+        # Grab unique interaction_IDs
+        interaction_ids = []
+        for entry in interactions:
+            interaction_ids.extend(entry['arr'])
 
         # Interaction type sort - optimize by statically defining interaction type order
         order = ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals','None']
         interactions = sorted(interactions, key=lambda x: order.index(x['interaction_type']))
+
+
 
         data = {}
         data['segments'] = set()
@@ -949,7 +1014,7 @@ def InteractionBrowserData(request):
         ## PREPARE ADDITIONAL DATA (INTERACTIONS AND ANGLES)
         print('Prepare distance values for',mode,'mode',time.time()-start_time)
         interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
-        if mode == "double":          
+        if mode == "double":
 
             group_1_distances = get_distance_averages(data['pdbs1'],s_lookup, interaction_keys,normalized, standard_deviation = False)
             group_2_distances = get_distance_averages(data['pdbs2'],s_lookup, interaction_keys,normalized, standard_deviation = False)
@@ -1034,7 +1099,7 @@ def InteractionBrowserData(request):
                 data['interactions'][coord]['angles'] = [gn1_values,gn2_values]
             print('Done combining data',mode,'mode',time.time()-start_time)
         else:
-            
+
             # get_angle_averages gets "mean" in case of single pdb
             group_angles = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation=True)
             for coord in data['interactions']:
@@ -1078,11 +1143,7 @@ def InteractionBrowserData(request):
             interactions = list(Interaction.objects.filter(
                     interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs1']]
                 ).filter(
-                    interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
-                ).filter(
-                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
-                ).filter(
-                    segment_filter_res1 & segment_filter_res2 & i_types_filter
+                    id__in=interaction_ids
                 ).exclude(
                     interacting_pair__res1__generic_number=None,
                     interacting_pair__res2__generic_number=None
@@ -1115,11 +1176,7 @@ def InteractionBrowserData(request):
             interactions = list(Interaction.objects.filter(
                     interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs2']]
                 ).filter(
-                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
-                ).filter(
-                    interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
-                ).filter(
-                    segment_filter_res1 & segment_filter_res2 & i_types_filter
+                    id__in=interaction_ids
                 ).exclude(
                     interacting_pair__res1__generic_number=None,
                     interacting_pair__res2__generic_number=None
@@ -1202,16 +1259,11 @@ def InteractionBrowserData(request):
                 d['set1']['occurance'] = {'aa1':pdbs1_with_aa1,'aa2':pdbs1_with_aa2,'pair':pdbs1_with_pair}
                 d['set2']['occurance'] = {'aa1':pdbs2_with_aa1,'aa2':pdbs2_with_aa2,'pair':pdbs2_with_pair}
         else:
-            # Single set! TODO
+            # Single set!
+            # TODO: fix the interaction filter subselection
             aa_pair_data = data['tab2']
             interactions = list(Interaction.objects.filter(
-                    interacting_pair__referenced_structure__pdb_code__index__in=[ pdb.upper() for pdb in data['pdbs']]
-                ).filter(
-                    interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
-                ).filter(
-                    interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
-                ).filter(
-                    segment_filter_res1 & segment_filter_res2 & i_types_filter
+                    id__in=interaction_ids
                 ).exclude(
                     interacting_pair__res1__generic_number=None,
                     interacting_pair__res2__generic_number=None
@@ -1230,6 +1282,7 @@ def InteractionBrowserData(request):
                     structures=ArrayAgg('interacting_pair__referenced_structure__pdb_code__index'),
                     structuresC=Count('interacting_pair__referenced_structure',distinct=True)
                 ))
+
             for i in interactions:
                 key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
@@ -1304,7 +1357,6 @@ def InteractionBrowserData(request):
                 d['distance'] = distance_diff
             print('Done merging distance values for',mode,'mode',time.time()-start_time)
         else:
-
             group_distances = get_distance_averages(data['pdbs'],s_lookup, interaction_keys,normalized, standard_deviation = False, split_by_amino_acid = True)
 
             for key, d in data['tab2'].items():
@@ -1398,6 +1450,7 @@ def InteractionBrowserData(request):
             for key, values in d.items():
                 if type(values) is set:
                     data['tab3'][res1][key] = list(values)
+
             if mode == "double":
                 set_1_avg_freq = 0
                 set_2_avg_freq = 0
@@ -1430,7 +1483,6 @@ def InteractionBrowserData(request):
                 cons_aa_set2 = ['','']
 
                 aa_at_pos = r_pair_lookup[res1]
-
                 temp_score_dict = []
                 for aa, pdbs in aa_at_pos.items():
 
@@ -1476,7 +1528,6 @@ def InteractionBrowserData(request):
 
                 most_freq_set = sorted(temp_score_dict.copy(), key = lambda x: -x[1])
                 data['tab3'][res1]['set_seq_cons'] = most_freq_set[0]
-
             # Common for all modes
             if res1 in class_pair_lookup:
                 # print(res1,class_pair_lookup[res1])
@@ -2338,6 +2389,7 @@ def DistanceData(request):
     cache.set(cache_key,data,3600*24*7)
     return JsonResponse(data)
 
+# DEPRECATED FUNCTION?
 def InteractionData(request):
     def gpcrdb_number_comparator(e1, e2):
             t1 = e1.split('x')

@@ -854,18 +854,18 @@
             $(".main_loading_overlay").show();
             // $(".main_loading_overlay").show();
             //var segments = JSON.parse($(selector + ' .segments-input').val());
-            var segments = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8', 'ICL1', 'ECL1', 'ICL2', 'ECL2', 'ICL3', 'ECL3', 'N-term', 'C-term'];
-            if (pdb.length > 0 && segments.length > 0) {
+            //var segments = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8', 'ICL1', 'ECL1', 'ICL2', 'ECL2', 'ICL3', 'ECL3', 'N-term', 'C-term'];
+            if (pdb.length > 0 /*&& segments.length > 0*/) {
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
                 // $(".heatmap-legend").hide();
                 $(".matrix-tab:visible").click();
 
                 $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
-                if (!$(selector + ' .interactions-input').val() == null)
-                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+//                if (!$(selector + ' .interactions-input').val() == null)
+//                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
-                normalized = $(".normalized:visible input").prop("checked");
+                //normalized = $(".normalized:visible input").prop("checked");
                 $.ajax({
                     url: '/contactnetwork/browserdata',
                     dataType: 'json',
@@ -873,8 +873,10 @@
                         // 'segments': segments,
                         'generic': generic,
                         'pdbs': pdb,
-                        'interaction_types': interactionTypes,
-                        'normalized': normalized
+                        //'normalized': normalized,
+                        'interaction_types': currentSettings[currentTab]["types"],
+                        'strict_interactions': currentSettings[currentTab]["strict"],
+                        'options': currentSettings[currentTab]["options"]
                     },
                     async: true,
                     success: function(data) {
@@ -926,8 +928,8 @@
             console.time('Get loadTwoPDBsView Data');
             $(".main_loading_overlay").show();
             //var segments = JSON.parse($(selector + ' .segments-input').val());
-            var segments = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8', 'ICL1', 'ECL1', 'ICL2', 'ECL2', 'ICL3', 'ECL3', 'N-term', 'C-term'];
-            if (pdbs1.length > 0 && pdbs2.length > 0 && segments.length > 0) {
+            //var segments = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8', 'ICL1', 'ECL1', 'ICL2', 'ECL2', 'ICL3', 'ECL3', 'N-term', 'C-term'];
+            if (pdbs1.length > 0 && pdbs2.length > 0 /*&& segments.length > 0*/) {
                 var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
                 $(".heatmap").hide();
                 // $(".heatmap-legend").hide();
@@ -937,7 +939,7 @@
                 two_sets_pdbs1 = pdbs1;
                 two_sets_pdbs2 = pdbs2;
 
-                normalized = $(".normalized:visible input").prop("checked");
+                //normalized = $(".normalized:visible input").prop("checked");
 
                 $.ajax({
                     url: '/contactnetwork/browserdata',
@@ -947,8 +949,10 @@
                         'generic': generic,
                         'pdbs1': pdbs1,
                         'pdbs2': pdbs2,
-                        'interaction_types': interactionTypes,
-                        'normalized': normalized
+                        //'normalized': normalized,
+                        'interaction_types': currentSettings[currentTab]["types"],
+                        'strict_interactions': currentSettings[currentTab]["strict"],
+                        'options': currentSettings[currentTab]["options"]
                     },
                     async: true,
                     success: function(data) {
@@ -988,7 +992,7 @@
                     });
                     return
                 }
-                
+
                 toggleFullScreen(fullScreenElement.get(0));
 
                 if (fullScreenElement.attr('id')) {
@@ -1654,4 +1658,77 @@
             currentViz = now.replace(currentTab + "-", "")
             currentTab = alt;
             redraw_renders();
+        }
+
+        function updateInteractionSettings() {
+            // TODO modulate size of modal: display in center and resize to content?
+            $("#resModal").find(".modal-dialog").removeClass("modal-wide").addClass("modal-sm")
+            $("#resModal").find(".modal-title").html("Interaction settings")
+            $("#resModal").find(".modal-body").html("<div id='interaction_settings' style='height:100%;width:100%;display: inline-block;'></div>");
+            //$("#resModal").find(".modal-footer .btn-default").addClass("hidden")
+
+            // Add OTHER options
+            $("#interaction_settings").append('<h5 class="border-bottom">Options</h5>')
+            var option_content = '<ul class="list-group">'
+
+            // Normalize the data for the group analysis
+            if (currentTab.includes("group")){
+              checked = currentSettings[currentTab]["options"].indexOf("normalize") >= 0 ? "checked" : "";
+              option_content +=  '<li class="list-group-item">Normalize data<div class="material-switch pull-right"><input id="option-normalize" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-normalize" class="label-primary"></label></div></li>';
+            }
+
+            // Only between helices
+            checked = currentSettings[currentTab]["options"].indexOf("interhelical") >= 0 ? "checked" : "";
+            option_content +=  '<li class="list-group-item">Only interhelical contacts<div class="material-switch pull-right"><input id="option-interhelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-interhelical" class="label-primary"></label></div></li>';
+
+            option_content += "</ul>"
+            $("#interaction_settings").append(option_content);
+
+            // Add interaction type selection
+            $("#interaction_settings").append('<h5 class="border-bottom">Enable/disable interaction types</h5>')
+            var types_content = '<ul class="list-group">'
+            var interaction_options = ["Ionic", "Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"]
+            for (var i = 0; i < interaction_options.length; i++){
+              var checked = currentSettings[currentTab]["types"].indexOf(interaction_options[i]) >= 0 ? "checked" : "";
+              types_content +=  '<li class="list-group-item">' + interaction_options[i] + '<div class="material-switch pull-right"><input id="types-'+interaction_options[i]+'" name="types-toggles" ' + checked + ' type="checkbox"/><label for="types-'+interaction_options[i]+'" class="label-primary"></label></div></li>';
+            }
+            types_content += "</ul>"
+            $("#interaction_settings").append(types_content);
+
+            // Add strict toggles for H-bond, aromatic, Hydrophobic and VdW
+            $("#interaction_settings").append('<h5 class="border-bottom">Apply strict interaction cutoffs</h5>')
+            var strict_toggles = ["Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"];
+            var strict_toggles_tooltips = ["Hydrogen bonds with a maximum distance of 3.5Å and angle < XXX", "Face-to-face with a maximum distance of XX Å and angle .... ", "Require a minimum of 3 distinct atoms with a hydrophobic contact", "Require a minimum of 3 distinct atoms with a VdW contact"];
+            var strict_content = '<ul class="list-group">'
+            for (var i = 0; i < strict_toggles.length; i++){
+              var checked = currentSettings[currentTab]["strict"].indexOf(strict_toggles[i]) >= 0 ? "checked" : "";
+              strict_content +=  '<li class="list-group-item">' + strict_toggles[i] + '<div class="material-switch pull-right"><input id="strict-'+strict_toggles[i]+'" name="strict-toggles" ' + checked + ' type="checkbox"/><label for="strict-'+strict_toggles[i]+'" class="label-primary"></label></div></li>';
+            }
+            strict_content += "</ul>"
+            $("#interaction_settings").append(strict_content);
+
+            $("#resModal").modal();
+
+            // Link to save settings when closing
+            $('#resModal').on('hidden.bs.modal', closeInteractionSettings)
+        }
+
+        function closeInteractionSettings(){
+          // Reset modal
+          $("#resModal").find(".modal-dialog").removeClass("modal-sm").addClass("modal-wide")
+          //$("#resModal").find(".modal-footer .btn-default").removeClass("hidden")
+
+          // Save settings
+          var strict = []
+          $("#resModal input[name=strict-toggles]:checked").each( function (i, node) { strict.push(node.id.replace("strict-",""))} )
+
+          var types = []
+          $("#resModal input[name=types-toggles]:checked").each( function (i, node) { types.push(node.id.replace("types-",""))} )
+
+          var options = []
+          $("#resModal input[name=option-toggles]:checked").each( function (i, node) { options.push(node.id.replace("option-",""))} )
+
+          currentSettings[currentTab]["strict"] = strict;
+          currentSettings[currentTab]["types"] = types;
+          currentSettings[currentTab]["options"] = options;
         }
