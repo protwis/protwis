@@ -487,7 +487,7 @@ def InteractionBrowserData(request):
     hash_list = [pdbs1,pdbs2,i_types, strict_interactions, contact_options]
     hash_cache_key = 'interactionbrowserdata_{}'.format(get_hash(hash_list))
     data = cache.get(hash_cache_key)
-    
+
     # data = None
     if data==None:
         cache_key = 'amino_acid_pair_conservation_{}'.format('001')
@@ -552,6 +552,8 @@ def InteractionBrowserData(request):
         ).annotate(
              atompaircount=Count('interaction_type'),
              arr=ArrayAgg('pk')
+        ).exclude(
+            specific_type='water-mediated'
         ).filter(
             i_types_filter
         ).filter(
