@@ -1665,7 +1665,7 @@
             settingsSubmit = false;
             // TODO modulate size of modal: display in center and resize to content?
             $("#resModal").find(".modal-dialog").removeClass("modal-wide").addClass("modal-sm")
-            $("#resModal").find(".modal-title").html("Interaction settings")
+            $("#resModal").find(".modal-title").html("Settings")
             $("#resModal").find(".modal-body").html("<div id='interaction_settings' style='height:100%;width:100%;display: inline-block;'></div>");
             //$("#resModal").find(".modal-footer .btn-default").addClass("hidden")
 
@@ -1698,13 +1698,16 @@
             $("#interaction_settings").append(types_content);
 
             // Add strict toggles for H-bond, aromatic, Hydrophobic and VdW
-            $("#interaction_settings").append('<h5 class="border-bottom">Apply strict interaction cutoffs</h5>')
+            $("#interaction_settings").append('<h5 class="border-bottom">Apply strict cutoffs</h5>')
+            $(function () { $('div#interaction_settings span.glyphicon.glyphicon-info-sign').popover() })
+
             var strict_toggles = ["Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"];
-            var strict_toggles_tooltips = ["Hydrogen bonds with a maximum distance of 3.5Å and angle < XXX", "Face-to-face with a maximum distance of XX Å and angle .... ", "Require a minimum of 3 distinct atoms with a hydrophobic contact", "Require a minimum of 3 distinct atoms with a VdW contact"];
+            var strict_tooltips = ["<b>Enabled:</b><br/> donor-acceptor dist. ≤3.5Å + donor angle ≥120°<br/><b>Disabled:</b><br/> donor-acceptor dist. ≤4Å", "<b>Enabled:</b><br/>Face-to-face:<br/>dist. ≤4.4Å + angle ≤30°<br/>Face-to-edge:<br/> dist. ≤5.5Å + angle >30°<br/>Cation-π:<br/>dist. to cat. ≤6.6Å + angle ≤30°<br/><b>Disabled:</b><br/> dist. ≤5.5Å OR Cation-π<br/></br>Calculations from ring center(s)", "<b>Enabled:</b><br/> min. 3 atom pairs<br/><b>Disabled:</b><br/> min. 1 atom pair", "<b>Enabled:</b><br/> min. 3 atom pairs<br/><b>Disabled:</b><br/> min. 1 atom pair"]
             var strict_content = '<ul class="list-group">'
             for (var i = 0; i < strict_toggles.length; i++){
               var checked = currentSettings[currentTab]["strict"].indexOf(strict_toggles[i]) >= 0 ? "checked" : "";
-              strict_content +=  '<li class="list-group-item">' + strict_toggles[i] + '<div class="material-switch pull-right"><input id="strict-'+strict_toggles[i]+'" name="strict-toggles" ' + checked + ' type="checkbox"/><label for="strict-'+strict_toggles[i]+'" class="label-primary"></label></div></li>';
+              var tooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="'+ strict_tooltips[i] +'"></span>';
+              strict_content +=  '<li class="list-group-item">' + tooltip + strict_toggles[i] + '<div class="material-switch pull-right"><input id="strict-'+strict_toggles[i]+'" name="strict-toggles" ' + checked + ' type="checkbox"/><label for="strict-'+strict_toggles[i]+'" class="label-primary"></label></div></li>';
             }
             strict_content += "</ul>"
             $("#interaction_settings").append(strict_content);
@@ -1731,7 +1734,7 @@
 
         function closeInteractionSettings(e) {
           // Reset modal
-          $(e.currentTarget).unbind();
+          $(e.currentTarget).off('hidden'); //DEPRECATED: $(e.currentTarget).unbind();
           $("#resModal").find(".modal-dialog").removeClass("modal-sm").addClass("modal-wide")
           $("#resModal").find(".modal-footer .btn-process").remove()
 
