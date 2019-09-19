@@ -1099,15 +1099,17 @@ def InteractionBrowserData(request):
                 ).distinct().annotate(
                     i_types=ArrayAgg('interaction_type'),
                     structures=ArrayAgg('interacting_pair__referenced_structure__pdb_code__index'),
-                    structuresC=Count('interacting_pair__referenced_structure',distinct=True)
+                    structuresC=Count('interacting_pair__referenced_structure',distinct=True),
+                    pfsC=Count('interacting_pair__referenced_structure__protein_conformation__protein__parent__protein_family__name',distinct=True)
                 ))
             for i in interactions:
                 key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
-                    aa_pair_data[key] = {'set1':{'interaction_freq':0}, 'set2':{'interaction_freq':0}, 'types':[]}
+                    aa_pair_data[key] = {'set1':{'interaction_freq':0,'interaction_freq_pf':0}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key][set_id]
                 d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs1']),1)
+                d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs1']),1)
                 d['structures'] = i['structures']
 
 
@@ -1141,10 +1143,11 @@ def InteractionBrowserData(request):
             for i in interactions:
                 key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
-                    aa_pair_data[key] = {'set1':{'interaction_freq':0}, 'set2':{'interaction_freq':0}, 'types':[]}
+                    aa_pair_data[key] = {'set1':{'interaction_freq':0,'interaction_freq_pf':0}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key][set_id]
                 d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs2']),1)
+                d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs2']),1)
                 d['structures'] = list(set(i['structures']))
 
             ## Fill in remaining data
@@ -1492,6 +1495,7 @@ def InteractionBrowserData(request):
         data['pfs'] = list(data['pfs'])
         data['segm_lookup'] = segm_lookup
         data['segments'] = list(data['segments'])
+        data['normalized'] = normalized
         if mode == 'double':
             data['pdbs1'] = list(data['pdbs1'])
             data['pdbs2'] = list(data['pdbs2'])
