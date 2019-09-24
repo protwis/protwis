@@ -402,10 +402,21 @@ class Command(BaseCommand):
 
                       outer = Bio.PDB.calc_angle(*angle_atoms)
                   except Exception as e:
-#                      print(pdb_code, " - ANGLE ERROR - ", e)
+#                      print(pdb_code, " - OUTER ANGLE ERROR - ", e)
                       outer = None
 
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer]
+                  # Add tau (N-Ca-C) backbone angle (in addition to the tau dihedral)
+                  tau_angles = None
+                  try:
+                      angle_atoms = [r[a].get_vector() for a in ['N','CA', 'C']]
+
+                      tau_angles = Bio.PDB.calc_angle(*angle_atoms)
+                  except Exception as e:
+#                      print(pdb_code, " - TAU ANGLE ERROR - ", e)
+                      tau_angles = None
+
+
+                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -947,7 +958,7 @@ class Command(BaseCommand):
 
                 for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distance, midpoint_distances, mid_membrane_distances):
                     residue_id = res.id[1]
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "ASA", "DISTANCE"
                     dblist.append([reference, gdict[residue_id], angle1, angle2, \
                         rsa_list[residue_id], \
                         hselist[residue_id]] + \
@@ -982,7 +993,7 @@ class Command(BaseCommand):
 
         # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
             try:
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
@@ -994,9 +1005,11 @@ class Command(BaseCommand):
                     tau = round(np.rad2deg(tau),3)
                 if outer != None:
                     outer = round(np.rad2deg(outer),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
+                if tau_angle != None:
+                    tau_angle = round(np.rad2deg(tau_angle),3)
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
             except Exception as e:
-                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,asa,distance,midpoint_distance,mid_membrane_distance])
+                print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance])
 
         print("created list")
         print(len(object_list))

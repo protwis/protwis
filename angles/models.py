@@ -19,6 +19,7 @@ class ResidueAngle(models.Model):
     rsa                 = models.FloatField(default=0, null=True)
     phi                 = models.FloatField(default=0, null=True)
     psi                 = models.FloatField(default=0, null=True)
+    tau_angle           = models.FloatField(default=0, null=True)
     theta               = models.FloatField(default=0, null=True)
     tau                 = models.FloatField(default=0, null=True)
     core_distance       = models.FloatField(default=0, null=True)
@@ -213,7 +214,7 @@ def get_all_angles(pdbs,pfs,normalized):
                                         new_pf.append('H')
                                     else:
                                         # Remove - if it's not the only option, then pick the first element.
-                                        if '-' in possible: 
+                                        if '-' in possible:
                                             possible.remove('-')
                                         new_pf.append(possible[0])
                                 else:
