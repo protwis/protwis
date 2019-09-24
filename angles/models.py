@@ -6,6 +6,7 @@ from structure.models import Structure
 import time
 from scipy.stats import circmean, circstd
 import numpy as np
+from collections import Counter
 
 class ResidueAngle(models.Model):
     residue             = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
@@ -154,3 +155,81 @@ def radial_average(L):
 def radial_stddev(L):
     scipy = circstd(L, 360,0)
     return scipy
+
+def get_all_angles(pdbs,pfs,normalized):
+
+    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+    index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse', 10:'ss_dssp'}
+    all_angles = {}
+    if normalized:
+        ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs) \
+            .exclude(residue__generic_number=None) \
+            .values_list('residue__generic_number__label','structure__protein_conformation__protein__parent__family__slug','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp'))
+        for d in ds:
+            if d[0] not in all_angles:
+                all_angles[d[0]] = {}
+                for pf in pfs:
+                    all_angles[d[0]][pf] = []
+            all_angles[d[0]][d[1]].append(d)
+
+        for gn, pfs in all_angles.items():
+            for pf,Ls in pfs.items():
+                if Ls:
+                    if len(Ls)==1:
+                        new_pf = Ls[0]
+                    else:
+                        grouped = list(zip(*Ls))
+                        new_pf = [Ls[0][0],Ls[0][1]]
+                        for i,L in enumerate(grouped[2:]):
+                            l = [x for x in L if x is not None]
+                            # If after filtering there is just one, then use that number.
+                            if len(l)==1:
+                                new_pf.append(l[0])
+                                continue
+                            # if nothing is left, then put in nothing..
+                            elif len(l)==0:
+                                new_pf.append(0)
+                                continue
+
+                            # if there is something and it's a angle type, take the mean of the values in circular space
+                            if index_names[i] in custom_angles:
+                                new_pf.append(radial_average(l))
+                            # if it's the categorical then use the following code
+                            elif i==10:
+                                most_freq_dssp = Counter(l).most_common()
+                                # if there are several possibitlies
+                                if len(most_freq_dssp)>1:
+                                    test = 0
+                                    # Make a list with the most occuring possibilties
+                                    possible = []
+                                    for dssp in most_freq_dssp:
+                                        if dssp[1]>=test:
+                                            possible.append(dssp[0])
+                                            test = dssp[1]
+                                    # If only one, use that..
+                                    if len(possible)==1:
+                                        new_pf.append(possible[0])
+                                    elif 'H' in possible: #If H is in the possibile, use H
+                                        new_pf.append('H')
+                                    else:
+                                        # Remove - if it's not the only option, then pick the first element.
+                                        if '-' in possible: 
+                                            possible.remove('-')
+                                        new_pf.append(possible[0])
+                                else:
+                                    new_pf.append(most_freq_dssp[0][0])
+                            else:
+                                new_pf.append(round(sum(l)/len(l),2))
+                all_angles[gn][pf]=new_pf
+    else:
+        ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs) \
+            .exclude(residue__generic_number=None) \
+            .values_list('residue__generic_number__label','structure__pdb_code__index','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp'))
+        for d in ds:
+            if d[0] not in all_angles:
+                all_angles[d[0]] = {}
+                for pdb in pdbs:
+                    all_angles[d[0]][pdb] = []
+            all_angles[d[0]][d[1]] = d
+
+    return all_angles

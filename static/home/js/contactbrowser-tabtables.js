@@ -1121,6 +1121,10 @@ function renderBrowser(data) {
         var proteins_2 = data['proteins2'].length
         var pdbs_1 = data['pdbs1'].length
         var pdbs_2 = data['pdbs2'].length
+        var pfs_1 = data['pfs1'].length
+        var pfs_2 = data['pfs2'].length
+        var normalized = data['normalized'];
+        console.log('normalized!?',normalized);
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
@@ -1131,6 +1135,22 @@ function renderBrowser(data) {
             var sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
             var diff_sfreq = sfreq1 - sfreq2;
             var class_seq_cons = v['class_seq_cons'];
+
+            if (normalized) {
+                var pffreq1 = Math.round(100 * v['pfs1'].length / pfs_1);
+                var pffreq2 = Math.round(100 * v['pfs2'].length / pfs_2);
+
+                // DEBUG POSSIBLITY
+                // if (pffreq1!=sfreq1 || pffreq2!=sfreq2) {
+                //     console.log('diff for',i)
+                //     console.log('DEDUCE NORMALIZED',pffreq1,sfreq1, pffreq2,sfreq2);
+                //     console.table(v);
+                // }
+
+                // replace values for normalized ones
+                sfreq1 = pffreq1;
+                sfreq2 = pffreq1;
+            }
 
             var class_seq_cons_diff = class_seq_cons[0] - class_seq_cons[1];
 
@@ -1154,15 +1174,25 @@ function renderBrowser(data) {
             ss_pos1_set2 = [];
             ss_pos2_set1 = [];
             ss_pos2_set2 = [];
-            pdbs = data['pdbs1'].concat(data['pdbs2']);
+
+            if (normalized) { 
+                pdbs = data['pfs1'].concat(data['pfs2']);
+                set_1 = data['pfs1'];
+                set_2 = data['pfs2'];
+            } else {
+                pdbs = data['pdbs1'].concat(data['pdbs2']);
+                set_1 = data['pdbs1'];
+                set_2 = data['pdbs2'];
+            }
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
+                if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
                 if (all_angles_1) {
                     let d1 = all_angles_1[pdb_upper];
                     if (d1.length) {
-                        if (data['pdbs1'].includes(pdb)) {
+                        if (set_1.includes(pdb)) {
                             ss_pos1_set1.push(d1[12]);
-                        } else if (data['pdbs2'].includes(pdb)) {
+                        } else if (set_2.includes(pdb)) {
                             ss_pos1_set2.push(d1[12]);
                         }
                     }
@@ -1170,9 +1200,9 @@ function renderBrowser(data) {
                 if (all_angles_2) {
                     let d2 = all_angles_2[pdb_upper];
                     if (d2.length) {
-                        if (data['pdbs1'].includes(pdb)) {
+                        if (set_1.includes(pdb)) {
                             ss_pos2_set1.push(d2[12])
-                        } else if (data['pdbs2'].includes(pdb)) {
+                        } else if (set_2.includes(pdb)) {
                             ss_pos2_set2.push(d2[12])
                         }
                     }
@@ -1336,10 +1366,29 @@ function renderBrowser(data) {
         table.find('thead').html(thead);
         var proteins = data['proteins'].length
         var pdbs_counts = data['pdbs'].length
+        var normalized = data['normalized'];
+        var pfs = data['pfs'].length
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
             var sfreq1 = Math.round(100 * v['pdbs'].length / pdbs_counts);
+
+
+
+            if (normalized) {
+                var pffreq1 = Math.round(100 * v['pfs'].length / pfs);
+
+                // DEBUG POSSIBLITY
+                // if (pffreq1!=sfreq1 ) {
+                //     console.log('diff for',i)
+                //     console.log('DEDUCE NORMALIZED',pffreq1,sfreq1);
+                //     console.table(v);
+                // }
+
+                // replace values for normalized ones
+                sfreq1 = pffreq1;
+            }
+
             var class_seq_cons = v['class_seq_cons'];
             // var types = v['types'].join(",<br>");
             const types = v['types'].map((t) => types_to_short[t]).join('|');
@@ -1355,7 +1404,11 @@ function renderBrowser(data) {
             all_angles_2 = data['all_angles'][gn2];
             ss_pos1_set1 = [];
             ss_pos2_set1 = [];
-            pdbs = v['pdbs'];
+            if (normalized) { 
+                pdbs = data['pfs'];
+            } else {
+                pdbs = data['pdbs'];
+            }
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
                 if (all_angles_1) {
@@ -1632,6 +1685,9 @@ function renderBrowser_2(data) {
         var proteins_2 = data['proteins2'].length
         var pdbs_1 = data['pdbs1'].length
         var pdbs_2 = data['pdbs2'].length
+        var pfs_1 = data['pfs1'].length
+        var pfs_2 = data['pfs2'].length
+        var normalized = data['normalized'];
         thead = '<tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
@@ -1714,6 +1770,9 @@ function renderBrowser_2(data) {
         var proteins_2 = data['proteins2'].length
         var pdbs_1 = data['pdbs1'].length
         var pdbs_2 = data['pdbs2'].length
+        var pfs_1 = data['pfs1'].length
+        var pfs_2 = data['pfs2'].length
+        var normalized = data['normalized'];
         tr_list = ''
         $.each(data['tab2'], function(i, v2) {
 
@@ -1738,19 +1797,31 @@ function renderBrowser_2(data) {
             var angles_2 = v2['angles'][1];
 
             // TAB-2 THINGS
-            var aafreq1 = v2['set1']['interaction_freq'];
-            var aafreq2 = v2['set2']['interaction_freq'];
+            if (normalized) {
+                var aafreq1 = v2['set1']['interaction_freq_pf'];
+                var aafreq2 = v2['set2']['interaction_freq_pf'];
+            } else {
+                var aafreq1 = v2['set1']['interaction_freq'];
+                var aafreq2 = v2['set2']['interaction_freq'];
+            }
             var diff_aafreq = (aafreq1 - aafreq2).toFixed(1);
             var aa1 = v2['aa1'];
             var aa2 = v2['aa2'];
 
-            var set1_occurance_aa1 = Math.round(100 * v2['set1']['occurance']['aa1'].length / pdbs_1);
-            var set1_occurance_aa2 = Math.round(100 * v2['set1']['occurance']['aa2'].length / pdbs_1);
-            var set1_occurance_pair = Math.round(100 * v2['set1']['occurance']['pair'].length / pdbs_1);
+            if (normalized) { 
+                denominator1 =  pfs_1;
+                denominator2 =  pfs_2;
+            } else {
+                denominator1 =  pdbs_1;
+                denominator2 =  pdbs_2;
+            }
+            var set1_occurance_aa1 = Math.round(100 * v2['set1']['occurance']['aa1'].length / denominator1);
+            var set1_occurance_aa2 = Math.round(100 * v2['set1']['occurance']['aa2'].length / denominator1);
+            var set1_occurance_pair = Math.round(100 * v2['set1']['occurance']['pair'].length / denominator1);
 
-            var set2_occurance_aa1 = Math.round(100 * v2['set2']['occurance']['aa1'].length / pdbs_2);
-            var set2_occurance_aa2 = Math.round(100 * v2['set2']['occurance']['aa2'].length / pdbs_2);
-            var set2_occurance_pair = Math.round(100 * v2['set2']['occurance']['pair'].length / pdbs_2);
+            var set2_occurance_aa1 = Math.round(100 * v2['set2']['occurance']['aa1'].length / denominator2);
+            var set2_occurance_aa2 = Math.round(100 * v2['set2']['occurance']['aa2'].length / denominator2);
+            var set2_occurance_pair = Math.round(100 * v2['set2']['occurance']['pair'].length / denominator2);
             if (set1_occurance_aa1 > 100) {
                 console.log(set1_occurance_aa1, v2['set1']['occurance']['aa1'].length, v2['set1']['occurance']['aa1'], pdbs_1, data['pdbs1']);
                 console.log(set2_occurance_aa1, v2['set2']['occurance']['aa1'].length, v2['set2']['occurance']['aa1'], pdbs_2, data['pdbs2']);
@@ -1769,11 +1840,17 @@ function renderBrowser_2(data) {
             ss_pos1_set2 = [];
             ss_pos2_set1 = [];
             ss_pos2_set2 = [];
-            pdbs = data['pdbs1'].concat(data['pdbs2']);
+            if (normalized) { 
+                pdbs = data['pfs1'].concat(data['pfs2']);
+            } else {
+                pdbs = data['pdbs1'].concat(data['pdbs2']);
+            }
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
+                if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
                 if (all_angles_1) {
                     let d1 = all_angles_1[pdb_upper];
+                    // console.log(d1[12],d1);
                     if (d1.length) {
                         if (v2['set1']['occurance']['aa1'].includes(pdb)) {
                             ss_pos1_set1.push(d1[12]);
@@ -1793,7 +1870,7 @@ function renderBrowser_2(data) {
                     }
                 }
             });
-
+            // console.log([ss_pos1_set1,ss_pos1_set2,ss_pos2_set1,ss_pos2_set2]);
             dssp = [];
             [ss_pos1_set1,ss_pos1_set2,ss_pos2_set1,ss_pos2_set2].forEach(function(list){
                 if (list.length) {
@@ -1962,6 +2039,8 @@ function renderBrowser_2(data) {
         // two groups
         var proteins = data['proteins'].length
         var pdbs_count = data['pdbs'].length
+        var pfs = data['pfs'].length
+        var normalized = data['normalized'];
         tr_list = ''
         $.each(data['tab2'], function(i, v2) {
 
@@ -1999,7 +2078,13 @@ function renderBrowser_2(data) {
             all_angles_2 = data['all_angles'][gn2];
             ss_pos1_set = [];
             ss_pos2_set = [];
-            pdbs = data['pdbs'];
+
+            if (normalized) { 
+                pdbs = data['pfs'];
+            } else {
+                pdbs = data['pdbs'];
+            }
+
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
                 if (all_angles_1) {
@@ -2610,6 +2695,7 @@ function renderBrowser_4(data) {
         var proteins_2 = data['proteins2'].length
         var pdbs_1 = data['pdbs1'].length
         var pdbs_2 = data['pdbs2'].length
+        var normalized = data['normalized'];
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="2" class="selector" datatype="consensus_SS"></th> \
@@ -2722,9 +2808,16 @@ function renderBrowser_4(data) {
             all_angles_1 = data['all_angles'][i];
             ss_pos1_set1 = [];
             ss_pos1_set2 = [];
-            pdbs = data['pdbs1'].concat(data['pdbs2']);
+
+
+            if (normalized) { 
+                pdbs = data['pfs1'].concat(data['pfs2']);
+            } else {
+                pdbs = data['pdbs1'].concat(data['pdbs2']);
+            }
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
+                if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
                 if (all_angles_1) {
                     let d1 = all_angles_1[pdb_upper];
                     if (d1.length) {
@@ -2833,8 +2926,9 @@ function renderBrowser_4(data) {
 
 
     } else if (data['proteins'].length > 1) {
-        var proteins = data['proteins'].length
-        var pdbs_count = data['pdbs'].length
+        var proteins = data['proteins'].length;
+        var pdbs_count = data['pdbs'].length;
+        var normalized = data['normalized'];
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="consensus_SS"></th> \
@@ -2912,7 +3006,11 @@ function renderBrowser_4(data) {
 
             all_angles_1 = data['all_angles'][i];
             ss_pos1_set = [];
-            pdbs = data['pdbs'];
+            if (normalized) { 
+                pdbs = data['pfs'];
+            } else {
+                pdbs = data['pdbs'];
+            }
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
                 if (all_angles_1) {
