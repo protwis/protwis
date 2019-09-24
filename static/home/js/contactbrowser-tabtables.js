@@ -1175,7 +1175,7 @@ function renderBrowser(data) {
             ss_pos2_set1 = [];
             ss_pos2_set2 = [];
 
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
                 set_1 = data['pfs1'];
                 set_2 = data['pfs2'];
@@ -1404,7 +1404,7 @@ function renderBrowser(data) {
             all_angles_2 = data['all_angles'][gn2];
             ss_pos1_set1 = [];
             ss_pos2_set1 = [];
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs'];
             } else {
                 pdbs = data['pdbs'];
@@ -1808,7 +1808,7 @@ function renderBrowser_2(data) {
             var aa1 = v2['aa1'];
             var aa2 = v2['aa2'];
 
-            if (normalized) { 
+            if (normalized) {
                 denominator1 =  pfs_1;
                 denominator2 =  pfs_2;
             } else {
@@ -1840,7 +1840,7 @@ function renderBrowser_2(data) {
             ss_pos1_set2 = [];
             ss_pos2_set1 = [];
             ss_pos2_set2 = [];
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
             } else {
                 pdbs = data['pdbs1'].concat(data['pdbs2']);
@@ -2079,7 +2079,7 @@ function renderBrowser_2(data) {
             ss_pos1_set = [];
             ss_pos2_set = [];
 
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs'];
             } else {
                 pdbs = data['pdbs'];
@@ -2810,7 +2810,7 @@ function renderBrowser_4(data) {
             ss_pos1_set2 = [];
 
 
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
             } else {
                 pdbs = data['pdbs1'].concat(data['pdbs2']);
@@ -3006,7 +3006,7 @@ function renderBrowser_4(data) {
 
             all_angles_1 = data['all_angles'][i];
             ss_pos1_set = [];
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs'];
             } else {
                 pdbs = data['pdbs'];
@@ -3335,7 +3335,7 @@ function enable_hover(table){
         var tableNumber = tableNumber.substr(-1)
 
         // grab graph options
-        var plots = $('.main_option:visible').find(".plot-container");
+        var plots = $('.main_option:visible').find(".plot-container").not(".plotly");
         for (var i = 0; i < plots.length; i++){
           var plotType = plots[i].id
 
@@ -3457,7 +3457,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
       residue_positions1 = residue_positions.map(function(e){return e.split("-")[0]});
       residue_positions2 = residue_positions.map(function(e){return e.split("-")[1]});
       residue_positions = residue_positions1.concat(residue_positions2)
-      
+
       // copy values from the same array
       if (!Array.isArray(columnNumber) || columnNumber.length == 1)
         residue_values = residue_values.concat(residue_values)
@@ -3499,7 +3499,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
       valMin = dataType[type][1]
       palette = dataType[type][3]
     } else {
-      console.log("TYPE not found: "+type)
+      console.log("TYPE not found: " + type)
     }
 
     var data_colors = []
@@ -3542,6 +3542,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
 dataType = {}
 dataType["no_viewing"]     = [false, 0, 0, ""]
 dataType["core_distance"]  = [true, 0, 15, "wb"]
+dataType["frequency"]      = [true, 0, 100, "wb"]
 dataType["rotation"]       = [true, 0, 180, "wb"]
 dataType["rotamer"]        = [true, 0, 180, "wb"]
 dataType["consensus_freq"] = [true, 0, 100, "wb"]
