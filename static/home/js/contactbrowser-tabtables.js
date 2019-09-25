@@ -2893,9 +2893,9 @@ function renderBrowser_4(data) {
                       <td class="narrow_col">${angles2[5]}</td>
                       <td class="narrow_col">${angles_diff[5][0]}</td>
 
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">${angles1[10]}</td>
+                      <td class="narrow_col">${angles2[10]}</td>
+                      <td class="narrow_col">${Math.abs(Math.round(angles1[10]-angles2[10]))}</td>
 
                       <td class="narrow_col">${angles1[3]}</td>
                       <td class="narrow_col">${angles2[3]}</td>
