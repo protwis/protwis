@@ -1021,6 +1021,46 @@ function renderDataTablesYadcf(element) {
 
 const types_to_short = { 'ionic': 'Ion', 'aromatic': 'Aro', 'polar': 'Pol', 'hydrophobic': 'Hyd', 'van-der-waals': 'vDw' }
 
+var plot_options = {'tab1' : {}, 'tab2' : {}, 'tab3' : {}, 'tab4' : {}, 'tab5' : {}}
+// First array contains number of columns per property that will be visualized
+// 1,1,1 indicates three columns with individual coloring Options
+// 2,1 indicates three columns of which the first two are combined and the last is individual
+// type options: residuepair or residue from datatable or original data (for more options)
+// TAB1 plot options - double
+plot_options['tab1']['double'] = {}
+plot_options['tab1']['double']['frequency'] = [[1,1,1], ['residuepair_datatable','residuepair_datatable','residuepair_datatable']]
+plot_options['tab1']['double']['distance_diff'] = [[1], ['residuepair_original']]
+plot_options['tab1']['double']['core_distance_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['rotation_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['rotamer_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['SASA_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['RSA_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['presence_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['consensus_SS'] = [[2], ['residue_datatable']]
+plot_options['tab1']['double']['consensus_freq'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['no_gn'] = [[2], ['residue_datatable']]
+plot_options['tab1']['double']['no_3d'] = [[2], ['residue_datatable']]
+plot_options['tab1']['double']['class_conservation'] = [[1,1,1], ['residuepair_datatable','residuepair_datatable','residuepair_datatable']]
+
+// TAB1 plot options - single
+plot_options['tab1']['single'] = {}
+plot_options['tab1']['single']['frequency'] = [[1], ['residuepair_datatable']]
+plot_options['tab1']['single']['distance'] = [[1], ['residuepair_datatable']]
+plot_options['tab1']['single']['core_distance'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['rotation'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['rotamer'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['SASA'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['RSA'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['presence'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['consensus_SS'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['consensus_freq'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['no_gn'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['no_3d'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['class_conservation'] = [[1], ['residuepair_datatable']]
+
+// TAB1 plot options - single structure
+plot_options['tab1']['structure'] = plot_options['tab1']['single']
+
 function renderBrowser(data) {
     console.time("RenderBrowser");
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
@@ -2663,6 +2703,38 @@ function renderBrowser_3(data) {
     console.timeEnd("RenderBrowser3");
 }
 
+// TAB4 plot options - double
+plot_options['tab4']['double'] = {}
+plot_options['tab4']['double']['consensus_SS'] =  [[1,1], ['residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['consensus_freq'] = [[1,1,1], ['residue_datatable','residue_datatable','residue_datatable']]
+plot_options['tab4']['double']['no_gn'] =  [[1,1], ['residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['no_3d'] =  [[1,1], ['residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['phi'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['psi'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['tau_angle'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['tau'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['theta'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['conservation'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['class_conservation'] = [[1], ['residue_datatable']]
+
+// TAB4 plot options - single
+plot_options['tab4']['single'] = {}
+plot_options['tab4']['single']['consensus_SS'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['consensus_freq'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['no_gn'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['no_3d'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['phi'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['psi'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['tau_angle'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['tau'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['theta'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['conservation'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['class_conservation'] = [[1], ['residue_datatable']]
+
+// TAB4 plot options - single structure
+plot_options['tab4']['structure'] = plot_options['tab4']['single']
+
+
 function renderBrowser_4(data) {
     console.time("RenderBrowser4");
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
@@ -2684,8 +2756,8 @@ function renderBrowser_4(data) {
                       <th colspan="2" class="skip"></th> \
                       <th colspan="2" class="selector" datatype="consensus_SS"></th> \
                       <th colspan="3" class="selector" datatype="consensus_freq"></th> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="2" class="skip"></th> \
+                      <th colspan="2" class="selector" datatype="no_gn"></th> \
+                      <th colspan="2" class="selector" datatype="no_3d"></th> \
                       <th colspan="3" class="selector" datatype="phi"></th> \
                       <th colspan="3" class="selector" datatype="psi"></th> \
                       <th colspan="3" class="selector" datatype="tau_angle"></th> \
@@ -2694,7 +2766,7 @@ function renderBrowser_4(data) {
                       <th colspan="2" class="skip"></th> \
                       <th colspan="3" class="selector" datatype="conservation"></th> \
                       <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="selector" datatype="class_conservation"></th> \
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
@@ -3178,6 +3250,21 @@ function renderBrowser_4(data) {
     console.timeEnd("RenderBrowser4");
 }
 
+// TAB5 plot options - double
+plot_options['tab5']['double'] = {}
+plot_options['tab5']['double']['core_distance_diff'] = [[1], ['residue_original']]
+plot_options['tab5']['double']['rotation_diff'] = [[1], ['residue_original']]
+plot_options['tab5']['double']['HSE_diff'] = [[1], ['residue_original']]
+
+// TAB5 plot options - single
+plot_options['tab5']['single'] = {}
+plot_options['tab5']['single']['core_distance'] = [[1], ['residue_original']]
+plot_options['tab5']['single']['rotation'] = [[1], ['residue_original']]
+plot_options['tab5']['single']['HSE_diff'] = [[1], ['residue_original']]
+
+// TAB5 plot options - single structure
+plot_options['tab5']['structure'] = plot_options['tab5']['single']
+
 function renderBrowser_5(data) {
     console.time("RenderBrowser5");
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
@@ -3339,12 +3426,14 @@ function enable_hover(table){
 
           var found = true;
           if (selector.className=="pairselector") {
+              // Plots capable of showing data for residue pairs
               if (plotType.startsWith("heatmapcontainer") || plotType.startsWith("flareplot") || plotType.startsWith("boxplot")) {
                 button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
               } else {
                 found = false;
               }
           } else if (selector.className=="selector") {
+            // Plots capable of showing data for single residues
             if (plotType.startsWith("ngl") || plotType.startsWith("snakeplot")) {
               button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
             } else {
@@ -3377,6 +3466,20 @@ function enable_hover(table){
           } else {
             // Grayout button if not available
             button.className = button.className + " gray"
+
+            // TODO add graph and selector here
+
+            // Step 1 - if multiple data sets - show data selector
+
+            // Step 2 - identify data type for selected data
+
+            // Step 3 - show suitable plotting options
+
+            // Action steps
+            // 0. set plot toggle (red with keep, see above)
+            // 1. Collect data
+            // 2. Draw plot (with data or set data after drawing)
+
           }
         }
 

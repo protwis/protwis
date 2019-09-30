@@ -751,23 +751,21 @@
             });
         }
 
+        var plotting_options = [
+            ['heatmap', 'Matrix of interactions'],
+            ['flareplot', 'Flare Plot'],
+            ['ngl', '3D view'],
+            ['boxplot', 'Box-plot (Frequency)'],
+            ['boxplot_angles', 'Box-plot (Angles)'],
+            ['schematic_non', 'Schematic (Non-consecutive)'],
+            ['schematic_con', 'Schematic (Consecutive)'],
+        ];
         function generate_display_options() {
-
-            options = [
-                ['heatmap', 'Matrix of interactions'],
-                ['flareplot', 'Flare Plot'],
-                ['ngl', '3D view'],
-                ['boxplot', 'Box-plot (Frequency)'],
-                ['boxplot_angles', 'Box-plot (Angles)'],
-                ['schematic_non', 'Schematic (Non-consecutive)'],
-                ['schematic_con', 'Schematic (Consecutive)'],
-            ];
-
             dropdown_html = '<div class="dropdown" style="display: inline;"> \
                           <button class="btn btn-xs btn-primary dropdown-toggle" type="button" data-toggle="dropdown"> \
                           Select plot \
                           <span class="caret"></span></button><ul class="dropdown-menu">';
-            options.forEach(function(opt) {
+            plotting_options.forEach(function(opt) {
                 dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
             });
             dropdown_html += '</ul></div>';
