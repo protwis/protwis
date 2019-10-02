@@ -24,13 +24,14 @@
                     </div>
                 </div> -->
         <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-5">
                 <div class="panel panel-default">
                     <div class="panel-body">
                         <input type="hidden" class="interactions-input" value="[]" />
                         <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                         <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span class="crystal-count">No structure selected.</span>
+                        <span class="pull-right glyphicon glyphicon-cog btn-settings" title="Customize interaction settings"></span>
                         <div class="btn btn-success pull-right go-button"><span>Go</span></div>
                     </div>
                 </div>
@@ -323,14 +324,22 @@
                     </div>
                 </div> -->
         <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-5">
                 <div class="panel panel-default">
                     <div class="panel-body">
                         <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                         <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
                         <span class="crystal-count">No</span> structure(s) selected.
-                        <div class="btn btn-success pull-right go-button"><span>Go</span></div>
+<!--                        <div class="checkbox normalized" style="padding-left:20px;display:inline;">
+                            <label>
+                              <input type="checkbox"> Normalized
+                            </label>
+                          </div>-->
+                        <span class="pull-right glyphicon glyphicon-cog btn-settings" title="Customize interaction settings"></span>
+                        <div class="pull-right">
+                            <div class="btn btn-success go-button">Go</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -372,11 +381,11 @@
                             </div>
                         </div>
                     </div> -->
-            <div class="col-md-3">
+            <div class="col-md-3 hidden">
                 <div class="panel panel-default interactions-panel">
                     <div class="panel-body">
                         <input type="hidden" class="interactions-input" value="[]" />
-                        Interaction types:
+                        Interactions Types:
                         <div class="btn-group buttons-helices">
                             <button type="button" class="btn btn-primary all-button">All</button>
                             <button type="button" class="btn btn-primary" data-interaction-type="ionic">Ionic</button>
@@ -388,7 +397,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 hidden">
+            <!-- <div class="col-md-3 hidden">
                 <div class="panel panel-default controls-panel">
                     <div class="panel-heading">
                         <h3 class="panel-title">Controls</h3>
@@ -396,7 +405,7 @@
                     <div class="panel-body">
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
         <div class="row" style='height:500px'>
             <div class="col-md-4">
@@ -620,23 +629,26 @@
                     </div>
                 </div> -->
         <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-body">
                         <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
-                        <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures (Set 1)</button> <span class="crystal-count-1">No</span> structure(s) selected.
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="panel panel-default">
-                    <div class="panel-body">
+                        <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select (Set 1)</button> <span class="crystal-count-1">None</span> selected.
                         <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
                         <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures (Set 2)</button> <span class="crystal-count-2">No</span> structure(s) selected.
-                        <div class="btn btn-success pull-right go-button">Go</div>
-                    </div>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select (Set 2)</button> <span class="crystal-count-2">None</span> selected.
+
+<!--                          <div class="checkbox normalized" style="padding-left:20px;display:inline;">
+                            <label>
+                              <input type="checkbox"> Normalized
+                            </label>
+                          </div>-->
+                        <span class="pull-right glyphicon glyphicon-cog btn-settings" title="Customize interaction settings"></span>
+                        <div class="pull-right">
+                            <div class="btn btn-success go-button">Go</div>
+                            </div>
+                        </div>
                 </div>
             </div>
             <!--                    <div class="col-md-5">
@@ -677,7 +689,7 @@
                             </div>
                         </div>
                     </div> -->
-            <div class="col-md-3">
+            <div class="col-md-3 hidden">
                 <div class="panel panel-default interactions-panel">
                     <div class="panel-body">
                         <input type="hidden" class="interactions-input" value="[]" />
@@ -693,7 +705,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 hidden">
+<!--             <div class="col-md-1 hidden">
                 <div class="panel panel-default controls-panel">
                     <div class="panel-heading">
                         <h3 class="panel-title">Controls</h3>
@@ -703,7 +715,7 @@
                 </div>
             </div>
             <div class="col-md-offset-3 col-md-1">
-            </div>
+            </div> -->
         </div>
         <div class="row" style='height:500px'>
             <div class="col-md-4">
@@ -1037,26 +1049,27 @@
         </div>
     </div>
 
-      <!-- MODAL POP UP FOR RESIDUE INFO -->
-      <div class="modal fade" id="resModal" role="dialog">
-        <div class="modal-dialog modal-wide">
+    <!-- MODAL POP UP FOR RESIDUE INFO -->
+    <div class="modal fade" id="resModal" role="dialog">
+      <div class="modal-dialog modal-wide">
 
-          <!-- Modal content-->
-          <div class="modal-content">
-            <div class="modal-header">
-              <button type="button" class="close" data-dismiss="modal">&times;</button>
-              <h4 class="modal-title">Modal Header</h4>
-            </div>
-            <div class="modal-body" style="height:1000px;">
-              <p>Some text in the modal.</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            </div>
+        <!-- Modal content-->
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Modal Header</h4>
           </div>
-
+          <div class="modal-body">
+            <p>Some text in the modal.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
         </div>
+
       </div>
+    </div>
+
 {% endblock %}
 {% block addon_js %}
 
@@ -1124,6 +1137,24 @@
         {% endif %}
 
 
+        var defaultSettings = {}
+        //defaultSettings["strict"] = ["Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"]
+        //defaultSettings["types"] = ["Ionic", "Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"] // all enabled
+        // DEBUG settings:
+        defaultSettings["strict"] = [ "Hydrophobic", "Van-der-Waals" ]
+        defaultSettings["types"] = ["Ionic", "Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"] // all enabled
+        defaultSettings[ "options"] = ["interhelical" ] // all enabled
+
+        // Apply defaultSettings to each tab
+        var currentSettings = {}
+        currentSettings["single-crystal-tab"] = JSON.parse(JSON.stringify(defaultSettings));
+        currentSettings["single-crystal-group-tab"] = JSON.parse(JSON.stringify(defaultSettings));
+        currentSettings["two-crystal-groups-tab"] = JSON.parse(JSON.stringify(defaultSettings));
+
+        // Apply default settings for groups only
+        currentSettings["single-crystal-group-tab"]["options"].push("normalize")
+        currentSettings["two-crystal-groups-tab"]["options"].push("normalize")
+
 
         $(document).ready(function() {
             // Get PDBs for table build
@@ -1167,6 +1198,7 @@
             initializeTwoCrystalGroupsView();
 
             // window.addEventListener("resize", redraw_ngl);
+            $('.glyphicon.btn-settings').on("click", updateInteractionSettings)
 
             window.addEventListener("resize", redraw_renders);
 
@@ -1231,6 +1263,18 @@
 
         span.glyphicon.red {
           color: red;
+        }
+
+        span.glyphicon.btn-settings {
+          color: gray;
+          padding-left: 0.3em;
+          font-size: 1.6em
+        }
+
+        div#interaction_settings span.glyphicon.glyphicon-info-sign {
+          color: gray;
+          padding-right: 0.3em;
+          font-size: 1em
         }
     </style>
 

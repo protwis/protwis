@@ -1,3 +1,20 @@
+function sum(a) {
+    var s = 0;
+    for (var i = 0; i < a.length; i++) s += a[i];
+    return s;
+} 
+ 
+function degToRad(a) {
+    return Math.PI / 180 * a;
+}
+ 
+function meanAngleDeg(a) {
+    return 180 / Math.PI * Math.atan2(
+        sum(a.map(degToRad).map(Math.sin)) / a.length,
+        sum(a.map(degToRad).map(Math.cos)) / a.length
+    );
+}
+
 function createBoxPlot(data, element, plottype) {
     var mode = get_current_mode();
     var layout = {};
@@ -38,7 +55,7 @@ function createBoxPlot(data, element, plottype) {
                     for (var i = 0; i < rows.length; i++) {
                         title = rows[i][0].split("-");
                         if (!pos_titles.includes(title[0])) {
-                            values.push(rows[i].slice(1,7));
+                            values.push(rows[i].slice(1, 7));
                             pos_titles.push(title[0]);
                         }
                         if (!pos_titles.includes(title[1])) {
@@ -196,13 +213,15 @@ function createBoxPlotResidue(data, element, plottype, cell_index, limit_pdbs = 
 
                     x = [];
                     ys = {};
+                    ys1 = {};
+                    ys2 = {};
                     pdbs = [];
                     pos = '';
                     pdbs = two_sets_pdbs1.concat(two_sets_pdbs2);
                     // If only use a subset of pdbs.
                     if (limit_pdbs) pdbs = limit_pdbs;
                     pdbs_shown = []
-                    pdbs.forEach(function(pdb){
+                    pdbs.forEach(function(pdb) {
                         pdb = pdb.toUpperCase();
                         let d = data[pdb];
                         if (d.length > 0) {
@@ -214,80 +233,200 @@ function createBoxPlotResidue(data, element, plottype, cell_index, limit_pdbs = 
                                 x.push('Set 2');
                             }
                             for (var i = 2; i < d.length; i++) {
-                                if (!ys[i - 2]) ys[i - 2] = [];
+                                if (!ys[i - 2]) {
+                                    ys[i - 2] = [];
+                                    ys1[i - 2] = [];
+                                    ys2[i - 2] = [];
+                                }
                                 ys[i - 2].push(d[i]);
+
+                                if (two_sets_pdbs1.includes(pdb))
+                                    ys1[i - 2].push(d[i]);
+
+                                if (two_sets_pdbs2.includes(pdb))
+                                    ys2[i - 2].push(d[i]);
                             }
                         }
                     });
 
-                    if (aa) pos = pos+" "+aa;
+                    if (aa) pos = pos + " " + aa;
 
-                    names = ['core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse']
+                    names = [['core_distance',false], ['a_angle',true], ['outer_angle',true], ['tau',true], ['phi',true], ['psi',true], ['sasa',false], ['rsa',false], ['theta',true], ['hse',false], ['dssp',false]]
 
-                    name_index = Math.floor((cell_index-6)/2);
-                    name_index = { 7: 'core_distance', 8:'core_distance',
-                                   9: 'a_angle', 10:'a_angle',
-                                   11: 'outer_angle', 12:'outer_angle',
-                                   13: 'sasa', 14:'sasa',
-                                   15: 'rsa', 16:'rsa' };
+                    name_index = Math.floor((cell_index - 6) / 2);
+                    name_index = {
+                        7: 'core_distance',
+                        8: 'core_distance',
+                        9: 'a_angle',
+                        10: 'a_angle',
+                        11: 'outer_angle',
+                        12: 'outer_angle',
+                        13: 'sasa',
+                        14: 'sasa',
+                        15: 'rsa',
+                        16: 'rsa'
+                    };
 
                     // console.log(cell_index,name_index,name_index[cell_index]);
 
                     var traces = [];
+                    is_angle = true;
                     for (const key in ys) {
+                        if (name_index[cell_index] != names[key][0]) continue;
+                        is_angle = names[key][1]
                         new_x = []
                         for (var i = 0; i < x.length; i++) {
-                            new_x.push(names[key]+"<br>"+x[i]);
+                            new_x.push(names[key][0] + "<br>" + x[i]);
                         }
                         visible_trace = 'legendonly';
-                        if (name_index[cell_index]==names[key]) visible_trace = true;
-                        trace = {
-                            y: ys[key],
-                            x: new_x,
-                            name: names[key],
-                            type: 'box',
-                            boxmean: true,
-                            // boxpoints: 'all',
-                            text: pdbs_shown,
-                            jitter: 0.5,
-                            whiskerwidth: 0.2,
-                            fillcolor: 'cls',
-                            marker: {
-                                size: 2
-                            },
-                            line: {
-                                width: 1
-                            },
-                            visible: visible_trace
-                        };
-                        traces.push(trace);
+                        if (name_index[cell_index] == names[key][0]) visible_trace = true;
+                        if (names[key][1] == true) {
+                            mean1 = meanAngleDeg(ys1[key]);
+                            mean2 = meanAngleDeg(ys2[key]);
+                            traces = [{
+                                    type: "scatterpolar",
+                                    mode: "markers",
+                                    r: Array(ys1[key].length).fill(1),
+                                    theta: ys1[key],
+                                    name: "Set 1",
+                                    marker: {
+                                        color: "#8090c7",
+                                        symbol: "circle",
+                                        size: 15
+                                    },
+                                    opacity: 0.8,
+                                },
+                                {
+                                    type: "scatterpolar",
+                                    mode: "lines",
+                                    r: [0, 0.9],
+                                    theta: [0, mean1],
+                                    name: "Set 1 mean",
+                                    line: {
+                                        color: "#8090c7",
+                                        width: 5,
+                                    },
+                                },
+                                {
+                                    type: "scatterpolar",
+                                    mode: "markers",
+                                    r: Array(ys2[key].length).fill(1),
+                                    theta: ys2[key],
+                                    name: "Set 2",
+                                    marker: {
+                                        color: "red",
+                                        symbol: "circle",
+                                        size: 15
+                                    },
+                                    opacity: 0.8,
+                                    subplot: "polar2"
+                                },
+                                {
+                                    type: "scatterpolar",
+                                    mode: "lines",
+                                    r: [0, 0.9],
+                                    theta: [0, mean2],
+                                    name: "Set 2 mean",
+                                    line: {
+                                        color: "red",
+                                        width: 5,
+                                    },
+                                    subplot: "polar2"
+                                }];
+
+
+
+                        } else {
+                            trace = {
+                                y: ys[key],
+                                x: new_x,
+                                name: names[key][0],
+                                type: 'box',
+                                boxmean: true,
+                                // boxpoints: 'all',
+                                text: pdbs_shown,
+                                jitter: 0.5,
+                                whiskerwidth: 0.2,
+                                fillcolor: 'cls',
+                                marker: {
+                                    size: 2
+                                },
+                                line: {
+                                    width: 1
+                                },
+                                visible: visible_trace
+                            };
+                            // Only show one data type on a chart.
+                            traces.push(trace);
+
+                        }
                     }
 
                     var data = traces;
+                    if (is_angle == true) {
 
-                    var layout = {
-                        title: 'Angles data for position '+pos,
-                        // xaxis: {
-                        //     zeroline: false
-                        // },
-                          xaxis: {
-                            showgrid: false,
-                            zeroline: false,
-                          },
-                        yaxis: {
-                            zeroline: false
-                        },
-                        // boxmode: 'group'
-                    };
+                        var layout = {
+                            title: 'Angles data for position ' + pos,
+                            polar: {
+                                radialaxis: {
+                                    //autorange: true,
+                                    showgrid: true,
+                                    zeroline: false,
+                                    showline: false,
+                                    autotick: true,
+                                    ticks: '',
+                                    showticklabels: false,
+                                    range: [0, 1.1]
 
+                                },
+                                angularaxis: {
+                                    tickfont: {
+                                        size: 8
+                                    }
+                                }
+                                },
+                            polar2: {
+                                radialaxis: {
+                                    //autorange: true,
+                                    showgrid: true,
+                                    zeroline: false,
+                                    showline: false,
+                                    autotick: true,
+                                    ticks: '',
+                                    showticklabels: false,
+                                    range: [0, 1.1]
+
+                                },
+                                angularaxis: {
+                                    tickfont: {
+                                        size: 8
+                                    }
+                                }
+                                }
+                        }
+                    } else {
+                        var layout = {
+                            title: 'Angles data for position ' + pos,
+                            // xaxis: {
+                            //     zeroline: false
+                            // },
+                            xaxis: {
+                                showgrid: false,
+                                zeroline: false,
+                            },
+                            yaxis: {
+                                zeroline: false
+                            },
+                            // boxmode: 'group'
+                        };
+                    }
                     break;
                 default:
             }
 
             break;
     }
-
-    Plotly.newPlot(element, data, layout, {showLink: true}); //editable: true,
+    Plotly.newPlot(element, data, layout, { showLink: true }); //editable: true,
 }
 
 
