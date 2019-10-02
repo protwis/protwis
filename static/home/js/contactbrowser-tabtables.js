@@ -249,7 +249,7 @@ function renderDataTablesYadcf(element) {
                 );
             } else if (analys_mode == "#single-crystal") {
                 repeated_from_to_1 = make_range_number_cols(4, 11);
-                repeated_from_to_2 = make_range_number_cols(17, 5);
+                repeated_from_to_2 = make_range_number_cols(17, 1);
 
                 yadcf.init(btable,
                     [{
@@ -815,9 +815,9 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
-                repeated_from_to_1 = make_range_number_cols(3, 6);
-                repeated_from_to_2 = make_range_number_cols(10, 1);
-                repeated_from_to_3 = make_range_number_cols(12, 1);
+                repeated_from_to_1 = make_range_number_cols(3, 7);
+                repeated_from_to_2 = make_range_number_cols(11, 1);
+                repeated_from_to_3 = make_range_number_cols(13, 1);
 
                 yadcf.init(btable,
                     [{
@@ -851,7 +851,7 @@ function renderDataTablesYadcf(element) {
                             filter_reset_button_text: false,
                         }
                     ].concat(repeated_from_to_1).concat([{
-                        column_number: 9,
+                        column_number: 10,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -860,7 +860,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     }]).concat(repeated_from_to_2).concat([{
-                        column_number: 11,
+                        column_number: 12,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -874,8 +874,8 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal") {
-                repeated_from_to_1 = make_range_number_cols(3, 5);
-                repeated_from_to_2 = make_range_number_cols(10, 1);
+                repeated_from_to_1 = make_range_number_cols(3, 6);
+                repeated_from_to_2 = make_range_number_cols(11, 1);
 
                 yadcf.init(btable,
                     [{
@@ -909,7 +909,7 @@ function renderDataTablesYadcf(element) {
                             filter_reset_button_text: false,
                         }
                     ].concat(repeated_from_to_1).concat([{
-                        column_number: 8,
+                        column_number: 9,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -918,7 +918,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     }, {
-                        column_number: 9,
+                        column_number: 10,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -1021,6 +1021,46 @@ function renderDataTablesYadcf(element) {
 
 const types_to_short = { 'ionic': 'Ion', 'aromatic': 'Aro', 'polar': 'Pol', 'hydrophobic': 'Hyd', 'van-der-waals': 'vDw' }
 
+var plot_options = {'tab1' : {}, 'tab2' : {}, 'tab3' : {}, 'tab4' : {}, 'tab5' : {}}
+// First array contains number of columns per property that will be visualized
+// 1,1,1 indicates three columns with individual coloring Options
+// 2,1 indicates three columns of which the first two are combined and the last is individual
+// type options: residuepair or residue from datatable or original data (for more options)
+// TAB1 plot options - double
+plot_options['tab1']['double'] = {}
+plot_options['tab1']['double']['frequency'] = [[1,1,1], ['residuepair_datatable','residuepair_datatable','residuepair_datatable']]
+plot_options['tab1']['double']['distance_diff'] = [[1], ['residuepair_original']]
+plot_options['tab1']['double']['core_distance_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['rotation_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['rotamer_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['SASA_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['RSA_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['presence_diff'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['consensus_SS'] = [[2], ['residue_datatable']]
+plot_options['tab1']['double']['consensus_freq'] = [[2], ['residue_original']]
+plot_options['tab1']['double']['no_gn'] = [[2], ['residue_datatable']]
+plot_options['tab1']['double']['no_3d'] = [[2], ['residue_datatable']]
+plot_options['tab1']['double']['class_conservation'] = [[1,1,1], ['residuepair_datatable','residuepair_datatable','residuepair_datatable']]
+
+// TAB1 plot options - single
+plot_options['tab1']['single'] = {}
+plot_options['tab1']['single']['frequency'] = [[1], ['residuepair_datatable']]
+plot_options['tab1']['single']['distance'] = [[1], ['residuepair_datatable']]
+plot_options['tab1']['single']['core_distance'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['rotation'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['rotamer'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['SASA'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['RSA'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['presence'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['consensus_SS'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['consensus_freq'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['no_gn'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['no_3d'] = [[2], ['residue_datatable']]
+plot_options['tab1']['single']['class_conservation'] = [[1], ['residuepair_datatable']]
+
+// TAB1 plot options - single structure
+plot_options['tab1']['structure'] = plot_options['tab1']['single']
+
 function renderBrowser(data) {
     console.time("RenderBrowser");
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
@@ -1034,12 +1074,6 @@ function renderBrowser(data) {
     var tbody = table.find('tbody');
     if (data['proteins2']) {
 
-        // <th colspan="2">Ca distance from<br> 7TM axis</th> \
-        // <th colspan="2">Backbone Rotation</th> \
-        // <th colspan="2">Residue Rotamer</th> \
-        // <th colspan="2">Tau angle</th> \
-        // <th colspan="2">Phi dihedral</th> \
-        // <th colspan="2">Psi dihedral</th> \
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="3" class="pairselector" datatype="frequency"></th> \
@@ -1048,13 +1082,14 @@ function renderBrowser(data) {
                       <th colspan="2" class="selector" datatype="core_distance_diff"></th> \
                       <th colspan="2" class="selector" datatype="rotation_diff"></th> \
                       <th colspan="2" class="selector" datatype="rotamer_diff"></th> \
-                      <th colspan="2" class="selector"datatype="SASA_diff"></th> \
-                      <th colspan="2" class="selector"datatype="RSA_diff"></th> \
-                      <th colspan="2" class="selector"datatype="presence_diff"></th> \
-                      <th colspan="2" class="selector"datatype="consensus_SS"></th> \
-                      <th colspan="2" class="selector"datatype="consensus_freq"></th> \
-                      <th colspan="4" class="skip"></th> \
-                      <th colspan="3" class="skip"></th> \
+                      <th colspan="2" class="selector" datatype="SASA_diff"></th> \
+                      <th colspan="2" class="selector" datatype="RSA_diff"></th> \
+                      <th colspan="2" class="selector" datatype="presence_diff"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
+                      <th colspan="2" class="selector" datatype="consensus_freq"></th> \
+                      <th colspan="2" class="selector" datatype="no_gn"></th> \
+                      <th colspan="2" class="selector" datatype="no_3d"></th> \
+                      <th colspan="3" class="selector" datatype="class_conservation"></th> \
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
@@ -1175,7 +1210,7 @@ function renderBrowser(data) {
             ss_pos2_set1 = [];
             ss_pos2_set2 = [];
 
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
                 set_1 = data['pfs1'];
                 set_2 = data['pfs2'];
@@ -1305,8 +1340,9 @@ function renderBrowser(data) {
                       <th colspan="2" class="selector" datatype="presence"></th> \
                       <th colspan="2" class="selector" datatype="consensus_SS"></th> \
                       <th colspan="2" class="selector" datatype="consensus_freq"></th> \
-                      <th colspan="4" class="skip"></th> \
-                      <th colspan="1" class="skip"></th> \
+                      <th colspan="2" class="selector" datatype="no_gn"></th> \
+                      <th colspan="2" class="selector" datatype="no_3d"></th> \
+                      <th colspan="1" class="selector" datatype="class_conservation"></th> \
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
@@ -1404,7 +1440,7 @@ function renderBrowser(data) {
             all_angles_2 = data['all_angles'][gn2];
             ss_pos1_set1 = [];
             ss_pos2_set1 = [];
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs'];
             } else {
                 pdbs = data['pdbs'];
@@ -1514,8 +1550,7 @@ function renderBrowser(data) {
                       <th colspan="2" class="selector" datatype="SASA"></th> \
                       <th colspan="2" class="selector" datatype="RSA"></th> \
                       <th colspan="2" class="selector" datatype="consensus_SS"></th> \
-                      <th colspan="4" class="skip"></th> \
-                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="selector" datatype="class_conservation"></th> \
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
@@ -1528,7 +1563,6 @@ function renderBrowser(data) {
                           <th colspan="2"></th> \
                           <th colspan="2"></th> \
                           <th colspan="2">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
@@ -1538,8 +1572,6 @@ function renderBrowser(data) {
                           <th colspan="2">SASA</th> \
                           <th colspan="2">RSA</th> \
                           <th colspan="2">Consensus SS</th> \
-                          <th colspan="2">No generic number (gap pos)</th> \
-                          <th colspan="2">No 3D coordinates</th> \
                         </tr> \
                         <tr> \
                           <th class="dt-center"></th> \
@@ -1547,10 +1579,6 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th></th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Pos1</th> \
-                          <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
@@ -1614,10 +1642,6 @@ function renderBrowser(data) {
                       <td class="narrow_col angles_modal">${angles_2[7]}</td>
                       <td class="narrow_col">${all_angles_1}</td>
                       <td class="narrow_col">${all_angles_2}</td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
                       <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
             tbody.append(tr);
@@ -1808,7 +1832,7 @@ function renderBrowser_2(data) {
             var aa1 = v2['aa1'];
             var aa2 = v2['aa2'];
 
-            if (normalized) { 
+            if (normalized) {
                 denominator1 =  pfs_1;
                 denominator2 =  pfs_2;
             } else {
@@ -1840,7 +1864,7 @@ function renderBrowser_2(data) {
             ss_pos1_set2 = [];
             ss_pos2_set1 = [];
             ss_pos2_set2 = [];
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
             } else {
                 pdbs = data['pdbs1'].concat(data['pdbs2']);
@@ -2079,7 +2103,7 @@ function renderBrowser_2(data) {
             ss_pos1_set = [];
             ss_pos2_set = [];
 
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs'];
             } else {
                 pdbs = data['pdbs'];
@@ -2679,6 +2703,38 @@ function renderBrowser_3(data) {
     console.timeEnd("RenderBrowser3");
 }
 
+// TAB4 plot options - double
+plot_options['tab4']['double'] = {}
+plot_options['tab4']['double']['consensus_SS'] =  [[1,1], ['residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['consensus_freq'] = [[1,1,1], ['residue_datatable','residue_datatable','residue_datatable']]
+plot_options['tab4']['double']['no_gn'] =  [[1,1], ['residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['no_3d'] =  [[1,1], ['residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['phi'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['psi'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['tau_angle'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['tau'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['theta'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['conservation'] = [[1,1,1], ['residue_datatable', 'residue_datatable', 'residue_datatable']]
+plot_options['tab4']['double']['class_conservation'] = [[1], ['residue_datatable']]
+
+// TAB4 plot options - single
+plot_options['tab4']['single'] = {}
+plot_options['tab4']['single']['consensus_SS'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['consensus_freq'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['no_gn'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['no_3d'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['phi'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['psi'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['tau_angle'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['tau'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['theta'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['conservation'] = [[1], ['residue_datatable']]
+plot_options['tab4']['single']['class_conservation'] = [[1], ['residue_datatable']]
+
+// TAB4 plot options - single structure
+plot_options['tab4']['structure'] = plot_options['tab4']['single']
+
+
 function renderBrowser_4(data) {
     console.time("RenderBrowser4");
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
@@ -2700,17 +2756,17 @@ function renderBrowser_4(data) {
                       <th colspan="2" class="skip"></th> \
                       <th colspan="2" class="selector" datatype="consensus_SS"></th> \
                       <th colspan="3" class="selector" datatype="consensus_freq"></th> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="2" class="skip"></th> \
+                      <th colspan="2" class="selector" datatype="no_gn"></th> \
+                      <th colspan="2" class="selector" datatype="no_3d"></th> \
                       <th colspan="3" class="selector" datatype="phi"></th> \
                       <th colspan="3" class="selector" datatype="psi"></th> \
+                      <th colspan="3" class="selector" datatype="tau_angle"></th> \
                       <th colspan="3" class="selector" datatype="tau"></th> \
-                      <th colspan="3" class="selector" datatype="theta"></th> \
                       <th colspan="3" class="selector" datatype="theta"></th> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="3" class="selector" datatype="conservation"></th> \
                       <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="conservation"></th> \
+                      <th colspan="1" class="selector" datatype="class_conservation"></th> \
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
@@ -2810,7 +2866,7 @@ function renderBrowser_4(data) {
             ss_pos1_set2 = [];
 
 
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
             } else {
                 pdbs = data['pdbs1'].concat(data['pdbs2']);
@@ -2893,9 +2949,9 @@ function renderBrowser_4(data) {
                       <td class="narrow_col">${angles2[5]}</td>
                       <td class="narrow_col">${angles_diff[5][0]}</td>
 
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">${angles1[10]}</td>
+                      <td class="narrow_col">${angles2[10]}</td>
+                      <td class="narrow_col">${Math.abs(Math.round(angles1[10]-angles2[10]))}</td>
 
                       <td class="narrow_col">${angles1[3]}</td>
                       <td class="narrow_col">${angles2[3]}</td>
@@ -2935,8 +2991,9 @@ function renderBrowser_4(data) {
                       <th colspan="1" class="selector" datatype="consensus_freq"></th> \
                       <th colspan="1" class="selector" datatype="phi"></th> \
                       <th colspan="1" class="selector" datatype="psi"></th> \
+                      <th colspan="1" class="selector" datatype="tau_angle"></th> \
                       <th colspan="1" class="selector" datatype="tau"></th> \
-                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="selector" datatype="tau"></th> \
                       <th colspan="1" class="selector" datatype="theta"></th> \
                       <th colspan="1" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="conservation"></th> \
@@ -2947,7 +3004,7 @@ function renderBrowser_4(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="2" rowspan="1">Secondary structure</th> \
-                          <th colspan="2" rowspan="1">Residue angles</th> \
+                          <th colspan="3" rowspan="1">Residue angles</th> \
                           <th colspan="3" rowspan="1">Helix turn angle</th> \
                           <th colspan="2" rowspan="1">Seq consensus</th> \
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
@@ -2955,11 +3012,12 @@ function renderBrowser_4(data) {
                         <tr> \
                           <th colspan="1">Consensus SS</th> \
                           <th colspan="1">Frequency (%)</th> \
-                          <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
-                          <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
-                          <th colspan="1">Theta (Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Next Theta (Ca(+2)-Ca(+1)-Ca)</th> \
+                          <th colspan="1">Phi dihedral<br/>(N(+1)-C-Ca-N)</th> \
+                          <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
+                          <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
+                          <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="1">Next tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -2968,6 +3026,7 @@ function renderBrowser_4(data) {
                         <tr> \
                           <th class="dt-center"></th> \
                           <th class="dt-center"></th> \
+                          <th class="narrow_col"><br></th> \
                           <th class="narrow_col"><br></th> \
                           <th class="narrow_col"><br></th> \
                           <th class="narrow_col"><br></th> \
@@ -3006,7 +3065,7 @@ function renderBrowser_4(data) {
 
             all_angles_1 = data['all_angles'][i];
             ss_pos1_set = [];
-            if (normalized) { 
+            if (normalized) {
                 pdbs = data['pfs'];
             } else {
                 pdbs = data['pdbs'];
@@ -3055,11 +3114,13 @@ function renderBrowser_4(data) {
 
                       <td class="narrow_col">${angles[5]}</td>
 
+                      <td class="narrow_col">${angles[10]}</td>
+
                       <td class="narrow_col">${angles[3]}</td>
 
-                      <td class="narrow_col">${angles[8]}</td>
-
                       <td class="narrow_col"></td>
+
+                      <td class="narrow_col">${angles[8]}</td>
 
                       <td class="narrow_col">${set_seq_cons_aa}</td>
                       <td class="narrow_col">${set_seq_cons_freq}</td>
@@ -3080,8 +3141,9 @@ function renderBrowser_4(data) {
                       <th colspan="1" class="selector" datatype="consensus_SS"></th> \
                       <th colspan="1" class="selector" datatype="phi"></th> \
                       <th colspan="1" class="selector" datatype="psi"></th> \
+                      <th colspan="1" class="selector" datatype="tau_angle"></th> \
                       <th colspan="1" class="selector" datatype="tau"></th> \
-                      <th colspan="1" class="selector" datatype="theta"></th> \
+                      <th colspan="1" class="selector" datatype="tau"></th> \
                       <th colspan="1" class="selector" datatype="theta"></th> \
                       <th colspan="1" class="skip"></th> \
                       <th colspan="1" class="skip"></th> \
@@ -3091,18 +3153,19 @@ function renderBrowser_4(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="1">Secondary structure</th> \
-                          <th colspan="2" rowspan="1">Residue angles</th> \
+                          <th colspan="3" rowspan="1">Residue angles</th> \
                           <th colspan="3" rowspan="1">Helix turn angle</th> \
                           <th colspan="1" rowspan="1">Seq</th> \
                           <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
                           <th colspan="1">SS</th> \
-                          <th colspan="1">Phi (N(+1)-C-Ca-N)</th> \
-                          <th colspan="1">Psi (C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Tau (Ca(+1)-Ca-Ca(-1)-Ca(-2)-)</th> \
-                          <th colspan="1">Theta (Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Next Theta (Ca(+2)-Ca(+1)-Ca)</th> \
+                          <th colspan="1">Phi dihedral<br/>(N(+1)-C-Ca-N)</th> \
+                          <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
+                          <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
+                          <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="1">Next tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Cons (%)</th> \
@@ -3110,13 +3173,14 @@ function renderBrowser_4(data) {
                         <tr> \
                           <th class="dt-center"></th> \
                           <th class="dt-center"></th> \
-                          <th class="narrow_col">Set<br></th> \
-                          <th class="narrow_col">Set<br></th> \
-                          <th class="narrow_col">Set<br></th> \
-                          <th class="narrow_col">Set<br></th> \
-                          <th class="narrow_col">Set<br></th> \
-                          <th class="narrow_col">Set<br></th> \
-                          <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
                           <th class="narrow_col"></th> \
                           <th class="narrow_col"></th> \
                         </tr>';
@@ -3162,11 +3226,13 @@ function renderBrowser_4(data) {
 
                       <td class="narrow_col">${angles[5]}</td>
 
+                      <td class="narrow_col">${angles[10]}</td>
+
                       <td class="narrow_col">${angles[3]}</td>
 
-                      <td class="narrow_col">${angles[8]}</td>
-
                       <td class="narrow_col"></td>
+
+                      <td class="narrow_col">${angles[8]}</td>
 
                       <td class="narrow_col">${set_seq_cons_aa}</td>
 
@@ -3183,6 +3249,21 @@ function renderBrowser_4(data) {
     enable_hover(table);
     console.timeEnd("RenderBrowser4");
 }
+
+// TAB5 plot options - double
+plot_options['tab5']['double'] = {}
+plot_options['tab5']['double']['core_distance_diff'] = [[1], ['residue_original']]
+plot_options['tab5']['double']['rotation_diff'] = [[1], ['residue_original']]
+plot_options['tab5']['double']['HSE_diff'] = [[1], ['residue_original']]
+
+// TAB5 plot options - single
+plot_options['tab5']['single'] = {}
+plot_options['tab5']['single']['core_distance'] = [[1], ['residue_original']]
+plot_options['tab5']['single']['rotation'] = [[1], ['residue_original']]
+plot_options['tab5']['single']['HSE_diff'] = [[1], ['residue_original']]
+
+// TAB5 plot options - single structure
+plot_options['tab5']['structure'] = plot_options['tab5']['single']
 
 function renderBrowser_5(data) {
     console.time("RenderBrowser5");
@@ -3335,7 +3416,7 @@ function enable_hover(table){
         var tableNumber = tableNumber.substr(-1)
 
         // grab graph options
-        var plots = $('.main_option:visible').find(".plot-container");
+        var plots = $('.main_option:visible').find(".plot-container").not(".plotly");
         for (var i = 0; i < plots.length; i++){
           var plotType = plots[i].id
 
@@ -3345,12 +3426,14 @@ function enable_hover(table){
 
           var found = true;
           if (selector.className=="pairselector") {
+              // Plots capable of showing data for residue pairs
               if (plotType.startsWith("heatmapcontainer") || plotType.startsWith("flareplot") || plotType.startsWith("boxplot")) {
                 button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
               } else {
                 found = false;
               }
           } else if (selector.className=="selector") {
+            // Plots capable of showing data for single residues
             if (plotType.startsWith("ngl") || plotType.startsWith("snakeplot")) {
               button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
             } else {
@@ -3383,6 +3466,20 @@ function enable_hover(table){
           } else {
             // Grayout button if not available
             button.className = button.className + " gray"
+
+            // TODO add graph and selector here
+
+            // Step 1 - if multiple data sets - show data selector
+
+            // Step 2 - identify data type for selected data
+
+            // Step 3 - show suitable plotting options
+
+            // Action steps
+            // 0. set plot toggle (red with keep, see above)
+            // 1. Collect data
+            // 2. Draw plot (with data or set data after drawing)
+
           }
         }
 
@@ -3457,7 +3554,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
       residue_positions1 = residue_positions.map(function(e){return e.split("-")[0]});
       residue_positions2 = residue_positions.map(function(e){return e.split("-")[1]});
       residue_positions = residue_positions1.concat(residue_positions2)
-      
+
       // copy values from the same array
       if (!Array.isArray(columnNumber) || columnNumber.length == 1)
         residue_values = residue_values.concat(residue_values)
@@ -3499,7 +3596,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
       valMin = dataType[type][1]
       palette = dataType[type][3]
     } else {
-      console.log("TYPE not found: "+type)
+      console.log("TYPE not found: " + type)
     }
 
     var data_colors = []
@@ -3542,6 +3639,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
 dataType = {}
 dataType["no_viewing"]     = [false, 0, 0, ""]
 dataType["core_distance"]  = [true, 0, 15, "wb"]
+dataType["frequency"]      = [true, 0, 100, "wb"]
 dataType["rotation"]       = [true, 0, 180, "wb"]
 dataType["rotamer"]        = [true, 0, 180, "wb"]
 dataType["consensus_freq"] = [true, 0, 100, "wb"]

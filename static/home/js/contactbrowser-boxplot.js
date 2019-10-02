@@ -2,12 +2,12 @@ function sum(a) {
     var s = 0;
     for (var i = 0; i < a.length; i++) s += a[i];
     return s;
-} 
- 
+}
+
 function degToRad(a) {
     return Math.PI / 180 * a;
 }
- 
+
 function meanAngleDeg(a) {
     return 180 / Math.PI * Math.atan2(
         sum(a.map(degToRad).map(Math.sin)) / a.length,
@@ -171,7 +171,6 @@ function createBoxPlot(data, element, plottype) {
 
             break;
     }
-
 
     Plotly.newPlot(element, data, layout);
 

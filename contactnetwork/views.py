@@ -1055,7 +1055,7 @@ def InteractionBrowserData(request):
 
             print('got angles values for',mode,'mode',time.time()-start_time)
             custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
-            index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse'}
+            index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
 
             for coord in data['interactions']:
                 gn1 = coord.split(",")[0]
@@ -1255,7 +1255,7 @@ def InteractionBrowserData(request):
                 pdbs1_with_pair = list(set(pdbs_intersection).intersection(pdbs1))
                 pdbs2_with_pair = list(set(pdbs_intersection).intersection(pdbs2))
 
-                
+
                 if normalized:
                     pfs1_with_aa1 = list(set([ pdb_lookup[p][2] for p in pdbs1_with_aa1]))
                     pfs1_with_aa2 = list(set([ pdb_lookup[p][2] for p in pdbs1_with_aa2]))
@@ -1433,7 +1433,7 @@ def InteractionBrowserData(request):
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn2_values.append(['','',''])
-                
+
                 # print(key,gn1_values,gn2_values)
                 d['angles'] = [gn1_values,gn2_values]
 
