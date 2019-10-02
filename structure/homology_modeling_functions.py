@@ -509,7 +509,7 @@ class Remodeling():
     def __init__(self, model_file, gaps={}, receptor=None, signprot=None):
         self.model_file = model_file
         self.struct = PDB.PDBParser(QUIET=True).get_structure('structure', self.model_file)[0]
-        self.pir_file = './structure/PIR/{}'.format(self.model_file.split('/')[-1])
+        self.pir_file = './structure/PIR/{}'.format(self.model_file.split('/')[-1].replace('.pdb','.pir'))
         self.gaps = gaps
         self.remark_lines = []
         self.receptor = receptor

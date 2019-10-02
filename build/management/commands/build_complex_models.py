@@ -151,6 +151,7 @@ class Command(BaseBuild):
         # del self.gprotein_targets['Gs']
         # del self.gprotein_targets['Gq/11']
         # self.gprotein_targets['Gi/o'] = ['gnat1_human']
+        # self.receptor_list = self.receptor_list[:12]
         ###
 
         s_c = 0
@@ -160,7 +161,7 @@ class Command(BaseBuild):
 
         print('receptors to model: {}'.format(len(self.receptor_list)))
         print('signaling proteins per receptor: {}'.format(s_c))
-        
+
         self.processors = options['proc']
         self.prepare_input(self.processors, self.receptor_list)
 
@@ -211,6 +212,8 @@ class Command(BaseBuild):
                     continue
                 else:
                     if first_in_subfam:
+                        if self.debug:
+                            print('First in subfam: {} {}'.format(target, receptor))
                         mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
                         mod.run(fast_refinement=True)
                         first_in_subfam = False
