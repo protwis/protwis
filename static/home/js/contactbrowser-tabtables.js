@@ -2787,7 +2787,7 @@ function renderBrowser_4(data) {
                           <th colspan="3">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
                           <th colspan="3">Tau angle<br/>(N-Ca-C)</th> \
                           <th colspan="3">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="3">Next tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="3">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="2">AA</th> \
                           <th colspan="3">Conservation (%)</th> \
@@ -3016,7 +3016,7 @@ function renderBrowser_4(data) {
                           <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
                           <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
                           <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="1">Next tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Conservation (%)</th> \
@@ -3164,7 +3164,7 @@ function renderBrowser_4(data) {
                           <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
                           <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
                           <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="1">Next tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
