@@ -1090,7 +1090,7 @@
 
 
     <!-- NGL -->
-    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.36/dist/ngl.js"> </script>
 
     <!-- Plotly -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -1229,6 +1229,7 @@
 
             {% if pdbs %}
                 // handle post data (if present) for single group
+                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', true)
                 loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab', true)
             {% endif %}
 
