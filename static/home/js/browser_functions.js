@@ -17,7 +17,7 @@ function superposition(oTable, columns, site, hide_first_column) {
     if (site==='structure_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][6];
+            div.innerHTML = checked_data[i][7];
             if (typeof div.innerText !== "undefined") {
                 selected_ids.push(div.innerText.replace(/\s+/g, ''));
             } else {

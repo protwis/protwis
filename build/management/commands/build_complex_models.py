@@ -161,7 +161,7 @@ class Command(BaseBuild):
 
         print('receptors to model: {}'.format(len(self.receptor_list)))
         print('signaling proteins per receptor: {}'.format(s_c))
-
+        
         self.processors = options['proc']
         self.prepare_input(self.processors, self.receptor_list)
 

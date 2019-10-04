@@ -9,6 +9,30 @@ def join_attr(obj_list, attr_name, sep=', '):
     return sep.join(getattr(i, attr_name) for i in obj_list)
 
 @register.filter
+def lineformat ( objs ):
+    elements = [obj.name for obj in objs]
+    if len(elements) > 0:
+        return ", ".join(elements)
+    else:
+        return '-'
+
+@register.filter
+def ligandrole ( objs ):
+    elements = [obj.ligand_role.name for obj in objs]
+    if len(elements) > 0:
+        return "\n".join(elements)
+    else:
+        return 'N/A'
+
+@register.filter
+def ligandtype ( objs ):
+    elements = [obj.ligand.properities.ligand_type.name for obj in objs]
+    if len(elements) > 0:
+        return "\n".join(elements)
+    else:
+        return 'N/A'        
+
+@register.filter
 def only_gproteins ( objs ):
     elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*G.*", element) and not re.match(".*thase.*|PGS", element)]
     if len(elements) > 0:
