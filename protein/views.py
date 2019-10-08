@@ -373,7 +373,7 @@ def isoforms(request):
     # print(context['segments'])
     context['tree'] = json.dumps(tree)
 
-    with open('protein/data/isoforms.json') as json_file:
+    with open(os.path.join(settings.BASE_DIR, 'protein/data/isoforms.json')) as json_file:
         isoform_summary = json.load(json_file)
 
     filepath = 'protein/data/Isoform_annotation_table.txt'
@@ -425,7 +425,7 @@ def AlignIsoformWildtype(request):
     # print(iso,'iso_id')
     # 1: 3, 2, 5, 3, 7
     seq_filename = "protein/data/MSA_GPCR_isoforms/{}_human_isoform_MSA.fa".format(p.lower())
-    with open (seq_filename, "r") as myfile:
+    with open (os.path.join(settings.BASE_DIR, seq_filename), "r") as myfile:
         fasta_raw = myfile.read()
         fasta=fasta_raw.splitlines() 
     # print(aln_human)
