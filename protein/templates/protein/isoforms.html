@@ -363,30 +363,6 @@ function build_table() {
                     },
                     async: true,
                     success: function(data) {
-                        div = '<div class="alignment">'
-                        if (data['wt']) {
-                        prev_segment = '';
-                        for (var i = 0; i < data['wt'].length; i++) {
-                          wt_aa = data['wt'][i];
-                          iso_string = '';
-                          is_same = "true";
-                          Object.keys(data['isoforms']).forEach(function(key) {
-                            is_same = wt_aa!=data['isoforms'][key][i] ? 'false' : 'true';
-
-                            iso_string += `<div class='issame_${is_same}'">${data['isoforms'][key][i]}</div>`;
-                          });
-                          // iso_aa = data['isoforms'][e_id[0]][i];
-                          // console.log(wt_aa,iso_aa);
-                          number = ''
-                          wt_res = data['res_correct'][(i+1).toString()];
-                          if (wt_res[2] % 10 == 0) number = wt_res[2].toString();
-                          segment = wt_res ? wt_res[0] : ''
-                          segment = segment.toLowerCase().replace("-","");
-                          segment_name = segment;
-                          if (prev_segment!=segment_name) {
-                            show_segment = segment_name;
-                            prev_segment = segment_name;
-
                         if (data['wt'] || data['wt2']) {
                           new_div = '';
                           if (data['wt']) {
@@ -440,66 +416,6 @@ function build_table() {
                           } else {
                             new_div = '<p style="color:red;display:inline;">Error with fetching info for <a href="https://rest.ensembl.org/sequence/id/'+e_id+'?content-type=application/json&type=protein">'+d[4]+'</a></p><br>';
                           }
-                          if (data['wt2']) {
-                            if (data['same']=='true') {
-                              div2 = 'Same as provided fasta file: <div class="alignment">';
-                            } else {
-                              div2 = '<p style="color:red;display:inline;">DIFFERENT</p> from provided fasta file: <div class="alignment">';
-                            }
-                            prev_segment = '';
-                            for (var i = 0; i < data['wt2'].length; i++) {
-                              wt_aa = data['wt2'][i];
-                              iso_string = '';
-                              is_same = "true";
-                              is_same = wt_aa!=data['pre_aligned'][i] ? 'false' : 'true';
-
-                              iso_string += `<div class='issame_${is_same}'">${data['pre_aligned'][i]}</div>`;
-       
-                              // iso_aa = data['isoforms'][e_id[0]][i];
-                              // console.log(wt_aa,iso_aa);
-                              number = ''
-                              wt_res = data['res_correct2'][(i+1).toString()];
-                              if (wt_res[2] % 10 == 0) number = wt_res[2].toString();
-                              segment = wt_res ? wt_res[0] : ''
-                              segment = segment.toLowerCase().replace("-","");
-                              segment_name = segment;
-                              if (prev_segment!=segment_name) {
-                                show_segment = segment_name;
-                                prev_segment = segment_name;
-                              } else {
-                                show_segment = '';
-                              }
-                              if (['nterm','icl1','ecl1','icl2','ecl2','icl3','ecl3','cterm'].includes(segment)) {
-                                segment = 'bg-info';
-                              } else if (segment) {
-                                segment = 'bg-success';
-                              }
-                              tooltip_title = `${segment_name} - ${wt_aa}${wt_res[2]} - ${wt_res[1]}`
-                              if (!(wt_aa=='-' && is_same)) {
-                                div2 += `<div class="pos">
-                                          <div>${show_segment}</div>
-                                          <div class="line ${segment}"> </div>
-                                          <div class="wt" tooltip="${tooltip_title}">${wt_aa}</div>
-                                          ${iso_string}
-                                          <div>${number}</div>
-                                        </div>`;
-                              }
-                            }
-                            div2 += "</div>";
-                            new_div += div2;
-                          }
-                          tooltip_title = `${segment_name} - ${wt_aa}${wt_res[2]} - ${wt_res[1]}`
-                          div += `<div class="pos">
-                                    <div>${show_segment}</div>
-                                    <div class="line ${segment}"> </div>
-                                    <div class="wt" tooltip="${tooltip_title}">${wt_aa}</div>
-                                    ${iso_string}
-                                    <div>${number}</div>
-                                  </div>`;
-                        }
-                        div += "</div>";
-
-                        $("#alignment").find(".modal-body").html(div);
                           // Do not use provided sequences.
                           // if (data['wt2']) {
                           //   if (data['same']=='true') {
