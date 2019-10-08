@@ -5,6 +5,7 @@ from django.db.models import Q, F, Func, Value
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
+from django.conf import settings
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair,ProteinSegment
 from residue.models import Residue
@@ -13,7 +14,8 @@ from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.views import AbsBrowseSelection
 
-import json
+import json, os
+
 from copy import deepcopy
 from collections import OrderedDict
 
@@ -253,6 +255,7 @@ def isoforms(request):
 
     filepath = 'protein/data/Isoform_annotation_table.txt'
     filepath = 'protein/data/Phylogenetic_tree_isoform_diversity_table.txt'
+    filepath = os.path.join(settings.BASE_DIR, filepath)
     receptor_isoforms = {}
     max_isoforms = 0
     max_level_1 = 0
@@ -374,6 +377,7 @@ def isoforms(request):
         isoform_summary = json.load(json_file)
 
     filepath = 'protein/data/Isoform_annotation_table.txt'
+    filepath = os.path.join(settings.BASE_DIR, filepath)
     table_data = []
     with open(filepath, "r", encoding='UTF-8') as f:
         for i,row in enumerate(f):
