@@ -375,6 +375,35 @@ def AlignIsoformWildtype(request):
     from Bio import AlignIO
     cache_dir = ['ensembl', 'isoform']
     url = 'https://rest.ensembl.org/sequence/id/$index?content-type=application/json&type=protein'
+    url = 'https://grch37.rest.ensembl.org/sequence/id/$index?type=protein;content-type=application/json'
+
+    # print(iso,'iso_id')
+    # 1: 3, 2, 5, 3, 7
+    seq_filename = "protein/data/MSA_GPCR_isoforms/{}_human_isoform_MSA.fa".format(p.lower())
+    with open (seq_filename, "r") as myfile:
+        fasta_raw = myfile.read()
+        fasta=fasta_raw.splitlines() 
+    # print(aln_human)
+    # print(fasta_raw)
+    data['wt2']=fasta[1]
+    data['pre_aligned']=fasta[1+int(iso)*2]
+
+    new_wt2 = ''
+    new_pre_aligned = ''
+    for i,wt in enumerate(data['wt2']):
+        pa = data['pre_aligned'][i]
+        if not (wt=='-' and pa=='-'):
+            new_wt2 += wt
+            new_pre_aligned += pa
+    gaps = 0
+    data['res_correct2'] = {}
+    for i, r in enumerate(data['wt2'], 1):
+        if r == "-":
+            data['res_correct2'][i] = ['','','']
+            gaps += 1
+        else:
+            data['res_correct2'][i] = data['res'][i-gaps]
+
     for e in es:
         isoform_info = fetch_from_web_api(url, e, cache_dir)
         if (isoform_info):
