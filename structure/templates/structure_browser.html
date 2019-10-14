@@ -82,7 +82,22 @@
           overflow-x: scroll;
           overflow-y:hidden;
         }
-        
+
+        #overlay
+        {
+            top: 0px;
+            position: absolute;
+            background: #f8f8f8;
+          /*border: 1px solid #333;*/
+          -webkit-box-shadow: 5px 0 2px -2px #888;
+                  box-shadow: 5px 0 2px -2px #888;
+        }
+        #overlay tbody tr {
+             background-color: #f8f8f8; 
+        }
+        .highlight {
+            background-color: rgb(204,229,255);
+        }
     }
     </style>
 {% endblock %}
@@ -99,24 +114,14 @@
         $(document).ready(function () {
             // 'use strict';
 
-            var oTable1 = $('#structures_frozen').DataTable({
-                "scrollY":        "80vh",
-                "scrollX":        false,
-                "scrollCollapse": true,
-                "scroller": true,
-                "paging":         false,
-                "autoWidth": false,
-                "order": [[26,'desc'],[1,'asc']],
-                "bInfo" : false,
-            });
-
-
             var oTable2 = $('#structures_scrollable').DataTable({
-                "scrollY":        "80vh",
+                "scrollY":        "65vh",
                 "scrollX":        true,
                 "scrollCollapse": true,
                 "scroller": true,
                 "paging":         false,
+                // "bSortCellsTop": true,
+                "aaSorting": [],
                 "autoWidth": false,
                 "order": [[26,'desc'],[1,'asc']],
                 "columnDefs": [
@@ -152,7 +157,7 @@
                     null,
                     null
                 ],
-                "bInfo" : false,
+                "bInfo" : true,
             });
 
             var prev_ids = Array()
@@ -164,297 +169,7 @@
             $('.select-all').prop('checked',false)
             //
 
-            $("#structures_div").show();
-
-            assign_to_row1('structures_frozen','structures_scrollable');
-            assign_to_row2('structures_frozen','structures_scrollable');
             $("#loading_div").hide();
-
-            yadcf.init(oTable1,
-                [
-                    {
-                        column_number : 1,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "UniProt",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '60px',
-                        }
-                    },
-                    {
-                        column_number : 2,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "IUPHAR",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '60px',
-                        }
-                    },
-                    {
-                        column_number : 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Rec. family",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    }, 
-                    {
-                        column_number: 4,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Class",
-                        // filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    },
-                    {
-                        column_number: 5,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Species",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    }, 
-                    {
-                        column_number : 6,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        filter_default_label: "Select",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    }, 
-                    {
-                        column_number : 7,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        // filter_default_label: "Refined",
-                        column_data_type: "html",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '90px',
-                        }
-                    },
-                    {
-                        column_number : 8,
-                        filter_type: "range_number",
-                        filter_default_label: ["From", "To"],
-                    },
-                    {
-                        column_number : 9,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Pre. chain",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '70px',
-                        }
-                    },
-                    {
-                        column_number : 10,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "State",
-                        filter_reset_button_text: false,
-                        filter_match_mode : "exact",
-                        select_type_options: {
-                            width: '90px',
-                        }
-                    },
-                    
-                    {
-                        column_number : 11,
-                        filter_type: "range_number",
-                        filter_default_label: ["From", "To"],
-                    },
-                    {
-                        column_number : 12,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "G-protein",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '70px',
-                        }
-                    },
-                    {
-                        column_number : 13,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Arrestin",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '70px',
-                        }
-                    },
-                    {
-                        column_number : 14,
-                        filter_type: "text",
-                        select_type: 'select2',
-                        filter_default_label: "Fusion",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 15,
-                        filter_type: "text",
-                        select_type: 'select2',
-                        filter_default_label: "Antibodies",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 16,
-                        filter_type: "text",
-                        select_type: 'select2',
-                        filter_default_label: "Endo. ligand",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 17,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Ligand type",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 18,
-                        filter_type: "text",
-                        select_type: 'select2',
-                        html_data_type: "text",
-                        filter_default_label: "Structure ligand",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 19,
-                        filter_type: "text",
-                        select_type: 'select2',
-                        html_data_type: "text",
-                        filter_default_label: "Structure lig. function",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '120px',
-                        }
-                    },
-                    {
-                        column_number : 20,
-                        filter_type: "text",
-                        select_type: 'select2',
-                        filter_default_label: "Structure lig. type",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 21,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Method",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 22,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "D2x50-S3x39",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    },
-                    {
-                        column_number : 23,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Sodium in structure",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 24,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Senior author",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 25,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Reference",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '140px',
-                        }
-                    },
-                    {
-                        column_number : 26,
-                        filter_type: "range_date",
-                        date_format: "yyyy-mm-dd",
-                        select_type: 'select2',
-                        filter_default_label: ["From", "To"],
-                        filter_reset_button_text: false,
-                    },
-                    {
-                        column_number : 27,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Annotated",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    }
-                ],
-                {
-                    cumulative_filtering: false
-                }
-            );
 
             yadcf.init(oTable2,
                 [
@@ -490,7 +205,7 @@
                         select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
-                        filter_default_label: "Rec. family",
+                        filter_default_label: "Receptor family",
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
@@ -519,9 +234,19 @@
                         select_type_options: {
                             width: '80px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Method",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -532,50 +257,50 @@
                         }
                     }, 
                     {
-                        column_number : 7,
+                        column_number : 8,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        // filter_default_label: "Refined",
+                        filter_default_label: "Select",
                         column_data_type: "html",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '90px',
+                            width: '50px',
                         }
                     },
                     {
-                        column_number : 8,
+                        column_number : 9,
                         filter_type: "range_number",
                         filter_default_label: ["From", "To"],
                     },
                     {
-                        column_number : 9,
+                        column_number : 10,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Pre. chain",
+                        filter_default_label: "Select",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '70px',
+                            width: '50px',
                         }
                     },
                     {
-                        column_number : 10,
+                        column_number : 11,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "State",
                         filter_reset_button_text: false,
                         filter_match_mode : "exact",
                         select_type_options: {
-                            width: '90px',
+                            width: '80px',
                         }
                     },
                     
                     {
-                        column_number : 11,
+                        column_number : 12,
                         filter_type: "range_number",
                         filter_default_label: ["From", "To"],
                     },
                     {
-                        column_number : 12,
+                        column_number : 13,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "G-protein",
@@ -586,7 +311,7 @@
                         }
                     },
                     {
-                        column_number : 13,
+                        column_number : 14,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Arrestin",
@@ -597,7 +322,7 @@
                         }
                     },
                     {
-                        column_number : 14,
+                        column_number : 15,
                         filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Fusion",
@@ -607,7 +332,7 @@
                         }
                     },
                     {
-                        column_number : 15,
+                        column_number : 16,
                         filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Antibodies",
@@ -617,20 +342,11 @@
                         }
                     },
                     {
-                        column_number : 16,
+                        column_number : 17,
                         filter_type: "text",
                         select_type: 'select2',
-                        filter_default_label: "Endo. ligand",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 17,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Ligand type",
+                        html_data_type: "text",
+                        filter_default_label: "Ligand name",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -641,7 +357,8 @@
                         filter_type: "text",
                         select_type: 'select2',
                         html_data_type: "text",
-                        filter_default_label: "Structure ligand",
+                        filter_default_label: "Ligand type",
+                        // filter_match_mode : "startsWith",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -652,7 +369,9 @@
                         filter_type: "text",
                         select_type: 'select2',
                         html_data_type: "text",
-                        filter_default_label: "Structure lig. function",
+                        filter_default_label: "Ligand function",
+                        // text_data_delimiter: '\n',
+                        // filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '120px',
@@ -662,7 +381,7 @@
                         column_number : 20,
                         filter_type: "text",
                         select_type: 'select2',
-                        filter_default_label: "Structure lig. type",
+                        filter_default_label: "Ligand name",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -672,10 +391,10 @@
                         column_number : 21,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Method",
+                        filter_default_label: "Ligand type",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '100px',
+                            width: '80px',
                         }
                     },
                     {
@@ -730,7 +449,7 @@
                         column_number : 27,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Annotated",
+                        filter_default_label: "Select",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '80px',
@@ -742,59 +461,64 @@
                 }
             );
 
-            match_rowheight('structures_frozen','structures_scrollable');
-
             yadcf.exResetAllFilters(oTable2);
 
             $(function(){
                 $(".wrapper").scroll(function(){
-                    $(".dataTables_scrollBody").eq(1).scrollLeft($(".wrapper").scrollLeft());
+                    $(".dataTables_scrollBody").eq(0).scrollLeft($(".wrapper").scrollLeft());
                 });
-                $(".dataTables_scrollBody").eq(1).scroll(function(){
-                    $(".wrapper").scrollLeft($(".dataTables_scrollBody").eq(1).scrollLeft());
+                $(".dataTables_scrollBody").eq(0).scroll(function(){
+                    $(".wrapper").scrollLeft($(".dataTables_scrollBody").eq(0).scrollLeft());
                 });
             });
+            
+            $('#structures_scrollable'+' > tbody > tr').click(function(event) {
+                if (event.target.type !== 'checkbox') {
+                    $(':checkbox', this).trigger('click');
+                    $(this).eq(0).toggleClass('alt_selected');
+                    $(this).find('td').toggleClass('highlight');
+                }
+            });
 
-            $('.wrapper').find('div').width($(".yadcf-datatables-table--structures_scrollable").width());
+            // $('.wrapper').find('div').width($(".yadcf-datatables-table--structures_scrollable").width());
 
-            $("body").on("click", ".hide_columns", function(evt){
-                $('#loading_div').show();
-                var over_header = $(this).parent();
-                var over_header_row = $('.over_header_row').clone().eq(0);
-                
-                $('.over_header_row').remove();
-
-                var columns = $(this).attr('columns').split(",");
-                columns.forEach(function(column) {
-                    var column = oTable2.column( column );
-                    oTable2.column(column).visible(false);
+            $('.hide_columns').click(function(evt) {
+            var columns = $(this).attr('columns').split(",");
+            columns.forEach(function(column) {
+                var column = oTable2.column( column );
+                try {
+                    column.visible( false, false );
+                }
+                catch(err) {
+                    column.visible( false, false );
+                }
                 });
-                
                 oTable2.draw();
-
-                over_header_row.children().each(function(){
-                    var header = $(this);
-                    if (header.hasClass('hidden')){
-                        header.attr('colspan',0);
-                    }
-                    else if (over_header.attr('id')===header.attr('id')){
-                        header.attr('colspan', 0);
-                        header.addClass('hidden');
-                    }
-                });
-                $('.yadcf-datatables-table--structures_scrollable > thead').prepend(over_header_row);
-                $('.wrapper').find('div').width($(".yadcf-datatables-table--structures_scrollable").width());
-                $('#loading_div').hide();
             } );
 
+            toggle_enabled = true;
+            $('#toggle_fixed_btn').click(function() {
+                if (toggle_enabled) {
+                    toggle_enabled = false;
+                    $("#overlay").hide();
+                    $("#toggle_fixed_btn").attr('value',"Enable fixed columns");
+                    $("#toggle_fixed_btn").addClass('clicked_button');
+                } else {
+                    toggle_enabled = true;
+                    $('.dataTables_scrollBody').scroll();
+                    $("#toggle_fixed_btn").attr('value',"Disable fixed columns");
+                    $("#toggle_fixed_btn").removeClass('clicked_button');
+                }
+            });
+
             $('#superpose_btn').click(function() {
-                superposition(oTable1, [6,1,2,3,4,5,10,26], 'structure_browser');
+                superposition(oTable2, [7,1,2,3,4,5,11,26], 'structure_browser');
             });
 
             $.fn.dataTable.ext.search.push(
                 function (settings, data, dataIndex) {
                     if ($('#representative_btn').hasClass('toggled')) {
-                        if ($(oTable1.row(dataIndex).node()).hasClass("repr-st") && $(oTable1.row(dataIndex).node()).hasClass("repr-st")) {
+                        if ($(oTable2.row(dataIndex).node()).hasClass("repr-st") && $(oTable2.row(dataIndex).node()).hasClass("repr-st")) {
                             return true;
                         }
                         return false;
@@ -812,18 +536,15 @@
                 else {
                     $("#representative_btn").removeClass('clicked_button');
                 }
-                oTable1.draw();
                 oTable2.draw();
-                update_tables("structures_frozen","structures_scrollable",2);
-                update_tables("structures_frozen","structures_scrollable",1);
             });
 
             $('#download_btn').click(function () {
                 ClearSelection('targets');
-                var checked_data = oTable1.rows('.alt_selected').data();
+                var checked_data = oTable2.rows('.alt_selected').data();
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][6];
+                    div.innerHTML = checked_data[i][7];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
                     } else {
@@ -833,11 +554,11 @@
                 window.location.href = '/structure/pdb_download_index';
             });
             $('#align_btn').click(function () {
-                var checked_data = oTable1.rows('.alt_selected').data();
+                var checked_data = oTable2.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][6];
+                    div.innerHTML = checked_data[i][7];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -851,34 +572,48 @@
                 window.location.href = '/structure/'
             });
 
-            //Match scroll position
-            match_scroll_position();
-            
-            //Get rid of header padding between two tables - not working FIXME
-            // $("#structures_frozen_div > #structures_frozen_wrapper > .dataTables_scroll > .dataTables_scrollHead > .dataTables_scrollHeadInner").css("padding-right","0px");
-
-            //Match sorting
-            $('.sorting').click(function(){
-                Sort($(this), oTable1, oTable2);
-            });
-            $('.sorting_asc').click(function(){
-                Sort($(this), oTable1, oTable2);
-            });
-            $('.sorting_desc').click(function(){
-                Sort($(this), oTable1, oTable2);
+            $('.close_modal').click(function () {
+                var modal = document.getElementById('myModal');
+                modal.style.display = "none";
             });
 
-            $('yadcf-filter-reset-button').click(function(){
-                update_tables('structures_frozen', 'structures_scrollable', 2);
+            $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+            function create_overlay() {
+                // This function fires upon filtering, to update what rows to show as an overlay
+                $("#overlay_table tbody tr").remove(); 
+                var $target = $("#overlay_table tbody");
+                $("#structures_scrollable tbody tr").each(function() {
+                    var $tds = $(this).children(),
+                        $row = $("<tr></tr>");
+                    // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
+                    $row.append($tds.eq(1).clone()).append($tds.eq(2).clone()).appendTo($target);
+                    $row.height($(this).height());
+                });
+                $("#overlay_table .border-right").removeClass("border-right");
+            }
+
+            // Function that detects filtering events
+            $('#structures_scrollable').on( 'draw.dt', function (e,oSettings) {
+                create_overlay();
             });
 
-            //Match row highlight in other table
-            match_row_highlight('structures_frozen', 'structures_scrollable');
+            create_overlay();
+            $("#overlay").hide();
 
-            //Catch triggered filter and match other table
-            catch_filter('structures_frozen', 'structures_scrollable', oTable1, oTable2);
-            oTable1.draw();
-            oTable2.draw();
+            var left = 0;
+            var old_left = 0;
+            $('.dataTables_scrollBody').scroll(function(){
+                // If user scrolls and it's >100px from left, then attach fixed columns overlay
+                left = $('.dataTables_scrollBody').scrollLeft();
+                if (left!=old_left) $("#overlay").hide();
+                old_left = left;
+
+                if (left>100 && toggle_enabled) {
+                    $("#overlay").css({ left: left+'px' });
+                    if ($("#overlay").is(":hidden")) $("#overlay").show();
+                }
+            });
         });
 
     </script> 
@@ -888,7 +623,7 @@
 <div id="browser">
     <div style="display:block;">
         <div style="display:inline; float:left;">
-            <h2 style="width:auto; display:inline;">Structure Browser</h2>
+            <h2 style="width:auto; display:inline;">Structures</h2>
         </div>
         <div style="float:left; padding:4px 0px 0px 6px;">
             <div style="font-size: 10px; ">
@@ -900,6 +635,7 @@
     <br><br>
 
     <div class="btn-group">
+        <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns" href="javascript:void(0)" data-toggle="buttons"></input>
         <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">
             Align
         </label>
@@ -913,403 +649,242 @@
             Superposition
         </label>
         <label class="btn btn-default btn-s" id="reset_filters_btn" href="javascript:void(0)">
-            Reset All Filters
+            Reset All
         </label>
     </div>
-    <!-- <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div> -->
-    <!-- <div style="font-size: 10px;">For information on activity state and &#916; distance (&#8491;) please refer to the <a href="http://docs.gpcrdb.org/structures.html">documentation</a></div>
-    <div style="font-size: 10px;">On refined structures please refer to our <a href='https://academic.oup.com/nar/article/46/D1/D440/4634004'>2017 publication</a>.</div> -->
+    
     <br />
 
-    <!-- <div class="btn-group">
-      <label class="btn btn-default btn-xs" id="show_all" href="javascript:void(0)">
-        Show All Columns
-      </label>
-    </div> -->
-        <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
-        <br>Loading...
-        </div>
+    <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
+    <br>Loading...
+    </div>
 
-    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden;" id="structures_div">
-        <!-- static column -->
-        <div style='float:left; width:20%; overflox-x: scroll; overflow-y: hidden;'>
-            <div style='height:20px;'>
-            </div>
-            <div id='structures_frozen_div'>
-                <table class="display compact" id='structures_frozen'>
-                    <thead>
-                        <tr class='over_header'>
-                            <th colspan=4 class="over_header" style='text-align:right; height:35px; border-right: 0px;'></th>
-                        </tr>
-                        <tr>
-                            <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this,'structures_frozen','structures_scrollable')"></th>
-                            <th style='height: 70px;'></th>
-                            <th></th>
-                            <th></th>
-                            <th style='display:none;'></th>
-                            <th class='rightborder' style='display:none;'></th>
-                            <th style='display:none;'>PDB</th>
-                            <th style='display:none;'><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664">Refined structure</a></th>
-                            <th style='display:none;'>Resolution</th>
-                            <th style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th class='rightborder' style='display:none;'><a href="http://docs.gpcrdb.org/structures.html">Δ distance (Å)</a></th>
-                            <th style='display:none;'></th>
-                            <th class='rightborder' style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th class='rightborder' style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th class='rightborder' style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th class='rightborder' style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th class='rightborder' style='display:none;'>PDB Date</th>
-                            <th class='rightborder' style='display:none;'></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for structure in structures.all %}
-                        {% if structure.representative %}
-                            <tr class="repr-st" model_id='{{structure.pk}}'>
-                        {% else %}
-                            <tr model_id='{{structure.pk}}'>
-                        {% endif %}
-                            <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
-                            <td><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
-                            <td><span><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></span></td>
-                            <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
-                            <td style='display:none;'><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.name|cut_classname }}</span></td>
-                            <td style='display:none;'>{{ structure.protein_conformation.protein.species.common_name }}</td>
-                            <td class="text-left" style='display:none;'>
-                                <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
-                            </td>
-                            <td style='display:none;'>
-                                {% if structure.is_refined %}
-                                <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td class="text-center" style='display:none;'>{{ structure.resolution|floatformat:"1" }}</td>
-                            <td class="text-center" style='display:none;'>{{ structure.preferred_chain }}</td>
-                            <td style='display:none;'>{{ structure.state.name }}</td>
-                            <td class="text-center" style='display:none;'>{{ structure.distance|floatformat:"2" }}</td>
-                            <td style='display:none;'>
-                                {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }}
-                            </td>
-                            <td class="text-center arrestin" style='display:none;'>
-                                {{ structure.stabilizing_agents.all|only_arrestins|linebreaksbr }}
-                            </td>
-                            <td style='display:none;'>
-                                {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
-                            </td>
+    <!-- scrollable column -->
+    <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
+        <!-- <div class='wrapper' style='height:20px;width:100%;'>
+            <div style='height:20px;width:3000px;'></div>
+        </div> -->
+        <div id='structures_scrollable_div'>
+            <table class="display compact text-nowrap" id='structures_scrollable'>
+                <thead>
+                    <tr class='over_header over_header_row'>
+                        <th colspan=6 class="over_header" style='height:35px; text-align:left;'>RECEPTOR</th>
+                        <th colspan=7 class="over_header flexible_over_header" id='structure_over_header'>
+                            <!-- <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label> -->
+                            STRUCTURE
+                            <!-- <div class="hide_columns" columns="6,7,8,9,10,11,12" style="float:right;display:inline;"> -->
+                                <button type="button" class="close hide_columns" columns="6,7,8,9,10,11,12" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <!-- </div> -->
+                        </th>
+                        <th colspan=2 class="over_header flexible_over_header" id='sign_prot_over_header'>
+                            SIGNALING PROTEIN
+                            <!-- <div class="hide_columns" columns="13,14" style="float:right;display:inline;"> -->
+                                <button type="button" class="close hide_columns" columns="13,14" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <!-- </div> -->
+                        </th>
+                        <th colspan=2 class="over_header flexible_over_header" id='aux_prot_over_header'>
+                            AUXILIARY PROTEIN
+                            <!-- <div class="hide_columns" columns="15,16" style="float:right;display:inline;"> -->
+                                <button type="button" class="close hide_columns" columns="15,16" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <!-- </div> -->
+                        </th>
+                        <th colspan=3 class="over_header flexible_over_header" id='structure_ligand_over_header'>
+                            STRUCTURE LIGAND
+                            <!-- <div class="hide_columns" columns="17,18,19" style="float:right;display:inline;"> -->
+                                <button type="button" class="close hide_columns" columns="17,18,19" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <!-- </div> -->
+                        </th>
+                        <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
+                            ENDOGENOUS LIGAND
+                            <!-- <div class="hide_columns" columns="19,20" style="float:right;display:inline;"> -->
+                                <button type="button" class="close hide_columns" columns="20,21" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <!-- </div> -->
+                        </th>
+                        <th colspan=2 class="over_header flexible_over_header" id='sodium_over_header'>
+                            SODIUM ION SITE
+                            <!-- <div class="hide_columns" columns="22,23" style="float:right;display:inline;"> -->
+                                <button type="button" class="close hide_columns" columns="22,23" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <!-- </div> -->
+                        </th>
+                        <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
+                            REFERENCE
+                            <!-- <div class="hide_columns" columns="24,25,26" style="float:right;display:inline;"> -->
+                                <button type="button" class="close hide_columns" columns="24,25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <!-- </div> -->
+                        </th>
+                        <th colspan=1 class="over_header flexible_over_header" id='annotated_over_header'>
+                            ANNOTATED
+                            <!-- <div class="hide_columns" columns="27" style="float:right;display:inline;"> -->
+                                <button type="button" class="close hide_columns" columns="27," style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <!-- </div> -->
+                        </th>
+                    </tr>
+                    <tr>
+                        <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                        <th style='height: 70px;'></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th>PDB</th>
+                        <th><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664" target="_blank">Refined<br>structure</a></th>
+                        <th>Resolution</th>
+                        <th>Preferred<br>chain</th>
+                        <th></th>
+                        <th class='rightborder'><a href="http://docs.gpcrdb.org/structures.html" target="_blank">7TM Open IC (Å)</a></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'>PDB Date</th>
+                        <th class='rightborder'></th>
+                    </tr>
 
-                            <td class="text-center antibody" style='display:none;'>
-                                {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
-                            </td>
-
-                            <td style='display:none;'>
-                                {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
-                                  {{ ligand|safe }}<br />
-                                {% empty %}
-                                  -
-                                {% endfor %}
-                            </td>
-                            <td style='display:none;'>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
-                            <td style='display:none;'>
-                                {% for ligand in structure.ligands.all %}
-                                    {% if ligand.ligand.name|safe|length > 20 %}
-                                        <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
-                                    {% else %}
-                                        {{ ligand.ligand.name|safe }}
-                                    {% endif %}
-                                {% for link in ligand.ligand.properities.web_links.all %}
-                                    <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
-                                {% endfor %}
-                                    <br />
-                                {% empty %}
-                                    N/A
-                                {% endfor %}
-                            </td>
-                            <td style='display:none;'>
-                                {% for ligand in structure.ligands.all %}
-                                {{ ligand.ligand_role.name }}<br />
-                                {% empty %}
+                </thead>
+                <tbody>
+                {% for structure in structures.all %}
+                    {% if structure.representative %}
+                        <tr class="repr-st" model_id='{{structure.pk}}'>
+                    {% else %}
+                        <tr model_id='{{structure.pk}}'>
+                    {% endif %}
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
+                        <td><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
+                        <td><span><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></span></td>
+                        <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
+                        <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.name|cut_classname }}</span></td>
+                        <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
+                        <td>
+                            {% for c in structure.construct.all %}
+                             {% if c.crystallization.crystal_method %}
+                                {{c.crystallization.crystal_method.name}}
+                             {% else %}
                                 N/A
-                                {% endfor %}
-                            </td>
-                            <td style='display:none;'>
-                                {% for ligand in structure.ligands.all %}
-                                {{ ligand.ligand.properities.ligand_type }}<br />
-                                {% empty %}
+                             {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td class="text-left">
+                            <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
+                        </td>
+                        <td>
+                            {% if structure.is_refined %}
+                            <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
+                        <td class="text-center">{{ structure.preferred_chain }}</td>
+                        <td>{{ structure.state.name }}</td>
+                        <td class="text-center">{{ structure.distance|floatformat:"2" }}</td>
+                        <td>
+                            {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }}
+                        </td>
+                        <td>
+                            {{ structure.stabilizing_agents.all|only_arrestins|linebreaksbr }}
+                        </td>
+                        <td>
+                            {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
+                        </td>
+                        <td>
+                            {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
+                        </td>
+                        <td>
+                            {% for ligand in structure.ligands.all %}
+                                {% if ligand.ligand.name|safe|length > 20 %}
+                                    <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
+                                {% else %}
+                                    {{ ligand.ligand.name|safe }}
+                                {% endif %}
+                            {% for link in ligand.ligand.properities.web_links.all %}
+                                <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
+                            {% endfor %}
+                                <br />
+                            {% empty %}
                                 N/A
-                                {% endfor %}
-                            </td>
-                            <td style='display:none;'>
-                                {% for c in structure.construct.all %}
-                                 {% if c.crystallization.crystal_method %}
-                                    {{c.crystallization.crystal_method.name}}
-                                 {% else %}
-                                    N/A
-                                 {% endif %}
-                                {% endfor %}
-                            </td>
-                            <td style='display:none;'>
-                                {% if structure.protein_conformation.is_sodium %}
-                                Yes
-                                {% else %}
-                                No
-                                {% endif %}
-                            </td>
-                            <td style='display:none;'>
-                                {% if structure.sodium %}
-                                Yes
-                                {% else %}
-                                No
-                                {% endif %}
-                            </td>
-                            <td style='display:none;'>
-                                {{ structure.publication.authors|senior_author}}
-                            </td>
-                            <td style='display:none;'>
-                                <a href="{{ structure.publication.web_link }}">
-                                {{ structure.publication.web_link.index }}
-                                </a>
-                            </td>
-                            <td style='display:none;'>{{ structure.publication_date|date:"Y-m-d" }}</td>
-                            <td style='display:none;'>
-                                {% if structure.annotated %}
-                                Yes
-                                {% else %}
-                                No
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- scrollable column -->
-        <div style='display:inline-block; width:80%;'>
-            <div class='wrapper' style='height:20px;width:100%;'>
-                <div style='height:20px;width:3000px;'></div>
-            </div>
-            <div id='structures_scrollable_div'>
-                <table class="display compact" id='structures_scrollable'>
-                    <thead>
-                        <tr class='over_header over_header_row'>
-                            <th colspan=3 class="over_header" style='height:35px; text-align:left;'>RECEPTOR</th>
-                            <th colspan=6 class="over_header flexible_over_header" columns="6,7,8,9,10,11" id='structure_over_header'>
-                                <div class="hide_columns" columns="6,7,8,9,10,11" style="float:left;display:inline;">
-                                    <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label>
-                                </div>
-                                STRUCTURE
-                            </th>
-                            <th colspan=2 class="over_header flexible_over_header" columns="12,13" id='sign_prot_over_header'>
-                                <div class="hide_columns" columns="12,13" style="float:left;display:inline;">
-                                    <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label>
-                                </div>
-                                SIGNALING PROTEIN
-                            </th>
-                            <th colspan=2 class="over_header flexible_over_header" columns="14,15" id='aux_prot_over_header'>
-                                <div class="hide_columns" columns="14,15" style="float:left;display:inline;">
-                                    <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label>
-                                </div>
-                                AUXILIARY PROTEIN
-                            </th>
-                            <th colspan=6 class="over_header flexible_over_header" columns="16,17,18,19,20,21" id='ligand_over_header'>
-                                <div class="hide_columns" columns="16,17,18,19,20,21" style="float:left;display:inline;">
-                                    <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label>
-                                </div>
-                                LIGAND
-                            </th>
-                            <th colspan=2 class="over_header flexible_over_header" columns="22,23" id='sodium_over_header'>
-                                <div class="hide_columns" columns="22,23" style="float:left;display:inline;">
-                                    <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label>
-                                </div>
-                                SODIUM ION SITE
-                            </th>
-                            <th colspan=3 class="over_header flexible_over_header" columns="24,25,26" id='reference_over_header'>
-                                <div class="hide_columns" columns="24,25,26" style="float:left;display:inline;">
-                                    <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label>
-                                </div>
-                                REFERENCE
-                            </th>
-                            <th colspan=1 class="over_header flexible_over_header" columns="27" id='annotated_over_header'>
-                                <div class="hide_columns" columns="27" style="float:left;display:inline;">
-                                    <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label>
-                                </div>
-                                ANNOTATED
-                            </th>
-                        </tr>
-                        <tr>
-                            <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)" style='display:none;'></th>
-                            <th style='height: 70px; display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th style='display:none;'></th>
-                            <th></th>
-                            <th class='rightborder'></th>
-                            <th>PDB</th>
-                            <th><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664">Refined structure</a></th>
-                            <th>Resolution</th>
-                            <th></th>
-                            <th></th>
-                            <th class='rightborder'><a href="http://docs.gpcrdb.org/structures.html">Δ distance (Å)</a></th>
-                            <th></th>
-                            <th class='rightborder'></th>
-                            <th></th>
-                            <th class='rightborder'></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th class='rightborder'></th>
-                            <th></th>
-                            <th class='rightborder'></th>
-                            <th></th>
-                            <th></th>
-                            <th class='rightborder'>PDB Date</th>
-                            <th class='rightborder'></th>
-                        </tr>
-
-                    </thead>
-                    <tbody>
-                    {% for structure in structures.all %}
-                        {% if structure.representative %}
-                            <tr class="repr-st" model_id='{{structure.pk}}'>
-                        {% else %}
-                            <tr model_id='{{structure.pk}}'>
-                        {% endif %}
-                            <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}" style='display:none;'></td>
-                            <td style='display:none;'><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
-                            <td style='display:none;'><span><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></span></td>
-                            <td style='display:none;'><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
-                            <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.name|cut_classname }}</span></td>
-                            <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
-                            <td class="text-left">
-                                <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
-                            </td>
-                            <td>
-                                {% if structure.is_refined %}
-                                <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
-                            <td class="text-center">{{ structure.preferred_chain }}</td>
-                            <td>{{ structure.state.name }}</td>
-                            <td class="text-center">{{ structure.distance|floatformat:"2" }}</td>
-                            <td>
-                                {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }}
-                            </td>
-                            <td class="text-center arrestin">
-                                {{ structure.stabilizing_agents.all|only_arrestins|linebreaksbr }}
-                            </td>
-                            <td>
-                                {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
-                            </td>
-
-                            <td class="text-center antibody">
-                                {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
-                            </td>
-
-                            <td>
-                                {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
-                                  {{ ligand|safe }}<br />
-                                {% empty %}
-                                  -
-                                {% endfor %}
-                            </td>
-                            <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
-                            <td>
-                                {% for ligand in structure.ligands.all %}
-                                    {% if ligand.ligand.name|safe|length > 20 %}
-                                        <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
-                                    {% else %}
-                                        {{ ligand.ligand.name|safe }}
-                                    {% endif %}
-                                {% for link in ligand.ligand.properities.web_links.all %}
-                                    <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
-                                {% endfor %}
-                                    <br />
-                                {% empty %}
-                                    N/A
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for ligand in structure.ligands.all %}
-                                {{ ligand.ligand_role.name }}<br />
-                                {% empty %}
-                                N/A
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for ligand in structure.ligands.all %}
-                                {{ ligand.ligand.properities.ligand_type }}<br />
-                                {% empty %}
-                                N/A
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for c in structure.construct.all %}
-                                 {% if c.crystallization.crystal_method %}
-                                    {{c.crystallization.crystal_method.name}}
-                                 {% else %}
-                                    N/A
-                                 {% endif %}
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% if structure.protein_conformation.is_sodium %}
-                                Yes
-                                {% else %}
-                                No
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if structure.sodium %}
-                                Yes
-                                {% else %}
-                                No
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ structure.publication.authors|senior_author}}
-                            </td>
-                            <td>
-                                <a href="{{ structure.publication.web_link }}">
-                                {{ structure.publication.web_link.index }}
-                                </a>
-                            </td>
-                            <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
-                            <td>
-                                {% if structure.annotated %}
-                                Yes
-                                {% else %}
-                                No
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <!-- {% for ligand in structure.ligands.all %}
+                            {{ ligand.ligand.properities.ligand_type }}<br />
+                            {% empty %}
+                            N/A
+                            {% endfor %} -->
+                            {{ structure.ligands.all|ligandtype|linebreaksbr }}
+                        </td>
+                        <td>
+                            <!-- {% for ligand in structure.ligands.all %}
+                            {{ ligand.ligand_role.name }}<br />
+                            {% empty %}
+                            N/A
+                            {% endfor %} -->
+                            {{ structure.ligands.all|ligandrole|linebreaksbr }}
+                        </td>
+                        <td>
+                            <!-- {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
+                              {{ ligand|safe }}<br />
+                            {% empty %}
+                              -
+                            {% endfor %} -->
+                            {% if structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|length > 20 %}
+                                <span title="{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}">{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|cut_at_20 }}...</span>
+                            {% else %}
+                                {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
+                            {% endif %}
+                        </td>
+                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
+                        <td>
+                            {% if structure.protein_conformation.is_sodium %}
+                            Yes
+                            {% else %}
+                            No
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if structure.sodium %}
+                            Yes
+                            {% else %}
+                            No
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ structure.publication.authors|senior_author}}
+                        </td>
+                        <td>
+                            <a href="{{ structure.publication.web_link }}">
+                            {{ structure.publication.web_link.index }}
+                            </a>
+                        </td>
+                        <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
+                        <td>
+                            {% if structure.annotated %}
+                            Yes
+                            {% else %}
+                            No
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
+    <!-- </div> -->
 </div>
 <div id="myModal" class="modal">
   <!-- Modal content -->
     <div class="modal-content">
-        <span class="close">&times;</span>
+        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
         <h3>Pick reference from selection</h3>
         <br>
         <table id="modal_table" class="display compact" width="100%">
