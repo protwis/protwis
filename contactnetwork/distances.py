@@ -32,7 +32,7 @@ class Distances():
 
     def load_pdbs(self, pdbs):
         """Load a list of pdbs objects"""
-        structures = Structure.objects.filter(pdb_code__index__in=pdbs).prefetch_related('protein_conformation').all()
+        structures = Structure.objects.filter(pdb_code__index__in=pdbs).filter(refined=False).prefetch_related('protein_conformation').all()
         for s in structures:
             self.structures.append(s)
             self.pdbs.append(s.pdb_code.index)
