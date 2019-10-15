@@ -3430,6 +3430,7 @@ function enable_hover(table){
               if (plotType.startsWith("heatmapcontainer") || plotType.startsWith("flareplot") || plotType.startsWith("boxplot")) {
                 button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
               } else {
+                button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c);}})(i, tableNumber, selector.getAttribute("datatype")))
                 found = false;
               }
           } else if (selector.className=="selector") {
@@ -3437,6 +3438,7 @@ function enable_hover(table){
             if (plotType.startsWith("ngl") || plotType.startsWith("snakeplot")) {
               button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
             } else {
+              button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c);}})(i, tableNumber, selector.getAttribute("datatype")))
               found = false;
             }
           }
