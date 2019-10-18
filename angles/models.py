@@ -221,7 +221,7 @@ def get_all_angles(pdbs,pfs,normalized):
                                     new_pf.append(most_freq_dssp[0][0])
                             else:
                                 new_pf.append(round(sum(l)/len(l),2))
-                all_angles[gn][pf]=new_pf
+                    all_angles[gn][pf]=new_pf
     else:
         ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs) \
             .exclude(residue__generic_number=None) \

@@ -1215,8 +1215,8 @@ function submitToPage(destination){
   var form = $('<form action="' + url + '" method="post">' +
       '<textarea name="pdbs1" id="submit-pdbs1" />' +
       '<textarea name="pdbs2" id="submit-pdbs2" />' +
-      "{% csrf_token %}" +
-      '</form>');
+      csrf_token + '</form>');
+
   $('body').append(form);
 
   // set values
