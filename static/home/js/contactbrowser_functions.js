@@ -1756,6 +1756,89 @@
           }
         }
 
+        // Show plotting options panel
+        var selecttab = {"single-crystal-tab" : "structure", "single-crystal-group-tab" : "single", "two-crystal-groups-tab" : "double"}
+        function showVisualizationPanel(plot_destination, table_number, datatype) {
+            // TODO modulate size of modal: display in center and resize to content?
+            $("#resModal").find(".modal-dialog").removeClass("modal-wide").addClass("modal-sm")
+            $("#resModal").find(".modal-title").html("Plotting options")
+            $("#resModal").find(".modal-body").html("<div id='interaction_settings' style='height:100%;width:100%;display: inline-block;'></div>");
+            $("#resModal").find(".modal-footer").addClass("hidden");
+
+            // Link to save settings when closing
+            $('#resModal').on('hidden.bs.modal', closeVisualizationPanel)
+
+            // collect options for this column
+            var options = plot_options['tab'+table_number][selecttab[currentTab]][datatype];
+
+            // Data options : show them when multiple columns or underlying data
+            if (options[0].length > 1 || options[1][0].endsWith("_original") ){
+              // Collect options and show (button)
+              $("#interaction_settings").append('<h5 class="border-bottom">Select which data to plot:</h5>')
+              if (options[1][0].endsWith("_original")){
+                  // select underlying data options
+                  $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Set 1</button><br/>')
+                  $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Set 2</button><br/>')
+                  $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Difference</button><br/>')
+              } else {
+                  // show column options
+              }
+              $("#resModal").modal();
+            } else {
+              showPlottingPanel(plot_destination, table_number, datatype, 0);
+            }
+        }
+
+        function showPlottingPanel(plot_destination, table_number, datatype, column_number, original_option = ""){
+            // collect options for this column
+            var options = plot_options['tab'+table_number][selecttab[currentTab]][datatype];
+
+            // Show plotting options
+            $("#interaction_settings").html('<h5 class="border-bottom">Select the plot type:</h5>')
+
+            // Check current plot - use for coloring current plot type
+            var plots = $('.main_option:visible').find(".plot-container").not(".plotly");
+            var plotType = plots[plot_destination].id
+
+            // TODO: color current plot option green (success)
+            if (options[1][column_number].startsWith("residuepair")){
+              // Visualizing data for a residue pair
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Matrix of interactions</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Flare Plot</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">3D View</button><br/>')
+              //$("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Schematic (Non-consecutive)</button><br/>')
+              //$("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Schematic (Consecutive)</button><br/>')
+            } else {
+              // Visualizing data for a residue position
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">3D View</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Snake Plot</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Box Plot</button><br/>')
+            }
+            // add click event
+            $("#resModal").find(".btn-block").on('click', initiatePlotWithData)
+
+            $("#resModal").modal();
+        }
+
+        function initiatePlotWithData(e){
+            // close modal panel
+            $("#resModal").modal('hide');
+
+            // TODO: initialize plot option (if not already)
+
+            // TODO: Wait until ready and send data to visualize
+            //colorByData(mode, tableNumber, columnNumber, type)
+        }
+
+        function closeVisualizationPanel(e) {
+          // Show Close button again
+          $("#resModal").find(".modal-footer").removeClass("hidden");
+
+          // Reset modal
+          $(e.currentTarget).off('hidden');
+          $("#resModal").find(".modal-dialog").removeClass("modal-sm").addClass("modal-wide")
+          $("#resModal").find(".modal-footer .btn-process").remove()
+        }
 
         function downloadURI(uri, name) {
             var link = document.createElement("a");

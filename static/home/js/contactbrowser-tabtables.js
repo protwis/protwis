@@ -85,6 +85,8 @@ function renderDataTablesYadcf(element) {
     // Do not re init the table.
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-" + tab_number)) {
         console.timeEnd("renderDataTablesYadcf");
+        var btable = $(selector + " .browser-table-" + tab_number).DataTable();
+        btable.columns.adjust().draw();
         $(".main_loading_overlay").hide();
         return
     }
@@ -1015,6 +1017,8 @@ function renderDataTablesYadcf(element) {
     }
     // Show hidden tr now that table is rendered. (Faster rending, since less in DOM)
     table.find(".hidden").removeClass("hidden");
+    btable.columns.adjust().draw();
+
     $(".main_loading_overlay").hide();
     console.timeEnd("renderDataTablesYadcf");
 }
@@ -1094,9 +1098,9 @@ function renderBrowser(data) {
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
-                          <th colspan="3" rowspan="2"> Frequency (%)</th> \
+                          <th colspan="3" rowspan="2">Contact Frequency (%)</th> \
                           <th rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
                           <th colspan="2"></th> \
@@ -1347,9 +1351,9 @@ function renderBrowser(data) {
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
-                          <th colspan="1" rowspan="2"> Frequency (%)</th> \
+                          <th colspan="1" rowspan="2">Contact Frequency (%)</th> \
                           <th rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
                           <th colspan="2"></th> \
@@ -1557,7 +1561,7 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
                           <th rowspan="2">Interaction</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
                           <th colspan="2"></th> \
@@ -2787,7 +2791,7 @@ function renderBrowser_4(data) {
                           <th colspan="3">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
                           <th colspan="3">Tau angle<br/>(N-Ca-C)</th> \
                           <th colspan="3">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="3">Next tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="3">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="2">AA</th> \
                           <th colspan="3">Conservation (%)</th> \
@@ -3016,7 +3020,7 @@ function renderBrowser_4(data) {
                           <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
                           <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
                           <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="1">Next tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Conservation (%)</th> \
@@ -3164,7 +3168,7 @@ function renderBrowser_4(data) {
                           <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
                           <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
                           <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="1">Next tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
+                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
@@ -3430,6 +3434,7 @@ function enable_hover(table){
               if (plotType.startsWith("heatmapcontainer") || plotType.startsWith("flareplot") || plotType.startsWith("boxplot")) {
                 button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
               } else {
+                button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c);}})(i, tableNumber, selector.getAttribute("datatype")))
                 found = false;
               }
           } else if (selector.className=="selector") {
@@ -3437,6 +3442,7 @@ function enable_hover(table){
             if (plotType.startsWith("ngl") || plotType.startsWith("snakeplot")) {
               button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
             } else {
+              button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c);}})(i, tableNumber, selector.getAttribute("datatype")))
               found = false;
             }
           }
