@@ -10,7 +10,7 @@ from django.views.decorators.cache import cache_page
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
 from structure.models import (Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, 
-							 StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim)
+							 StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins)
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -72,7 +72,9 @@ class StructureBrowser(TemplateView):
 				"protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
 				"protein_conformation__site_protein_conformation__site",
 				Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-				annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')))
+				annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')),
+				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
+					'protein_conformation','wt_protein')))
 		except Structure.DoesNotExist as e:
 			pass
 

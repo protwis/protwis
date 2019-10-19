@@ -13,6 +13,7 @@ class Structure(models.Model):
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
     publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
     ligands = models.ManyToManyField('ligand.Ligand', through='interaction.StructureLigandInteraction')
+    extra_proteins = models.ManyToManyField('StructureExtraProteins', related_name='extra_proteins')
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
     preferred_chain = models.CharField(max_length=20)
@@ -308,6 +309,23 @@ class StructureType(models.Model):
 
     class Meta():
         db_table = "structure_type"
+
+
+class StructureExtraProteins(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    wt_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, null=True)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE, null=True)
+    display_name = models.CharField(max_length=20)
+    note = models.CharField(max_length=50, null=True)
+    chain = models.CharField(max_length=1)
+    category = models.CharField(max_length=20)
+    wt_coverage = models.IntegerField()
+
+    def __str__(self):
+        return self.display_name
+
+    class Meta():
+        db_table = "extra_proteins"
 
 
 class StructureStabilizingAgent(models.Model):
