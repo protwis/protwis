@@ -176,9 +176,10 @@ function createBoxPlot(data, element, plottype) {
 
 }
 
-function createBoxPlotResidue(data, element, plottype, cell_index, limit_pdbs = false, aa = false) {
+function createBoxPlotResidue(gn, element, plottype, cell_index, limit_pdbs = false, aa = false) {
     var mode = get_current_mode();
     var layout = {};
+    data = two_sets_data['all_angles'][gn];
     switch (mode) {
         case "single-crystal-group":
 
@@ -216,41 +217,90 @@ function createBoxPlotResidue(data, element, plottype, cell_index, limit_pdbs = 
                     ys2 = {};
                     pdbs = [];
                     pos = '';
-                    pdbs = two_sets_pdbs1.concat(two_sets_pdbs2);
-                    // If only use a subset of pdbs.
-                    if (limit_pdbs) pdbs = limit_pdbs;
-                    pdbs_shown = []
-                    pdbs.forEach(function(pdb) {
-                        pdb = pdb.toUpperCase();
-                        let d = data[pdb];
-                        if (d.length > 0) {
-                            pos = d[0];
-                            pdbs_shown.push(pdb)
-                            if (two_sets_pdbs1.includes(pdb)) {
-                                x.push('Set 1');
-                            } else if (two_sets_pdbs2.includes(pdb)) {
-                                x.push('Set 2');
-                            }
-                            for (var i = 2; i < d.length; i++) {
-                                if (!ys[i - 2]) {
-                                    ys[i - 2] = [];
-                                    ys1[i - 2] = [];
-                                    ys2[i - 2] = [];
+                        pdbs_shown = []
+                    if (!two_sets_data['normalized']) {
+                        var temp_two_sets_pdbs1 = two_sets_pdbs1;
+                        var temp_two_sets_pdbs2 = two_sets_pdbs2;
+                        pdbs = temp_two_sets_pdbs1.concat(temp_two_sets_pdbs2);
+                        // If only use a subset of pdbs.
+                        if (limit_pdbs) pdbs = limit_pdbs;
+                        pdbs.forEach(function(pdb) {
+                            pdb = pdb.toUpperCase();
+                            let d = data[pdb];
+                            if (d.length > 0) {
+                                pos = d[0];
+                                pdbs_shown.push(pdb)
+                                if (temp_two_sets_pdbs1.includes(pdb)) {
+                                    x.push('Set 1');
+                                } else if (temp_two_sets_pdbs2.includes(pdb)) {
+                                    x.push('Set 2');
                                 }
-                                ys[i - 2].push(d[i]);
+                                for (var i = 2; i < d.length; i++) {
+                                    if (!ys[i - 2]) {
+                                        ys[i - 2] = [];
+                                        ys1[i - 2] = [];
+                                        ys2[i - 2] = [];
+                                    }
+                                    ys[i - 2].push(d[i]);
 
-                                if (two_sets_pdbs1.includes(pdb))
-                                    ys1[i - 2].push(d[i]);
+                                    if (temp_two_sets_pdbs1.includes(pdb))
+                                        ys1[i - 2].push(d[i]);
 
-                                if (two_sets_pdbs2.includes(pdb))
-                                    ys2[i - 2].push(d[i]);
+                                    if (temp_two_sets_pdbs2.includes(pdb))
+                                        ys2[i - 2].push(d[i]);
+                                }
                             }
-                        }
-                    });
+                        });
+
+                    } else if (two_sets_data['normalized']) {
+                        temp_two_sets_pdbs1 = two_sets_data['pfs1'];
+                        temp_two_sets_pdbs2 = two_sets_data['pfs2'];
+
+                        pdbs = temp_two_sets_pdbs1.concat(temp_two_sets_pdbs2);
+
+                        temp_two_sets_pdbs1.forEach(function(pdb) {
+                            pdb = pdb.toUpperCase();
+                            let d = two_sets_data['all_angles_set1'][gn][pdb];
+                            if (d.length > 0) {
+                                pos = d[0];
+                                pdbs_shown.push(pdb)
+                                x.push('Set 1');
+                                for (var i = 2; i < d.length; i++) {
+                                    if (!ys[i - 2]) {
+                                        ys[i - 2] = [];
+                                        ys1[i - 2] = [];
+                                        ys2[i - 2] = [];
+                                    }
+                                    ys[i - 2].push(d[i]);
+                                    ys1[i - 2].push(d[i]);
+                                }
+                            }
+                        });
+
+                        temp_two_sets_pdbs2.forEach(function(pdb) {
+                            pdb = pdb.toUpperCase();
+                            let d = two_sets_data['all_angles_set2'][gn][pdb];
+                            if (d.length > 0) {
+                                pos = d[0];
+                                pdbs_shown.push(pdb)
+                                x.push('Set 2');
+                                for (var i = 2; i < d.length; i++) {
+                                    if (!ys[i - 2]) {
+                                        ys[i - 2] = [];
+                                        ys1[i - 2] = [];
+                                        ys2[i - 2] = [];
+                                    }
+                                    ys[i - 2].push(d[i]);
+                                    ys2[i - 2].push(d[i]);
+                                }
+                            }
+                        });
+
+                    }
 
                     if (aa) pos = pos + " " + aa;
 
-                    names = [['core_distance',false], ['a_angle',true], ['outer_angle',true], ['tau',true], ['phi',true], ['psi',true], ['sasa',false], ['rsa',false], ['theta',true], ['hse',false], ['dssp',false]]
+                    names = [['core_distance',false], ['a_angle',true], ['outer_angle',true], ['tau',true], ['phi',true], ['psi',true], ['sasa',false], ['rsa',false], ['theta',true], ['hse',false], ['dssp',false], ['tau_angle', true]]
 
                     name_index = Math.floor((cell_index - 6) / 2);
                     name_index = {

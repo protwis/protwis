@@ -61,7 +61,7 @@ def get_angle_averages(pdbs,s_lookup,normalized = False, standard_deviation = Fa
                         .values_list('residue__generic_number__label','structure__pk','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse', 'tau_angle') \
                         .order_by('residue__generic_number__label','residue__amino_acid')
                         #'core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'
-    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau','tau_angle']
     index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse', 10:'tau_angle'}
     # First bin all those belonging to same receptor
     matrix = {}
@@ -158,12 +158,12 @@ def radial_stddev(L):
     return scipy
 
 def get_all_angles(pdbs,pfs,normalized):
-
-    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
+    pdbs_upper = [pdb.upper() for pdb in pdbs]
+    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau','tau_angle']
     index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse', 10:'ss_dssp', 11:'tau_angle'}
     all_angles = {}
     if normalized:
-        ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs) \
+        ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs_upper) \
             .exclude(residue__generic_number=None) \
             .values_list('residue__generic_number__label','structure__protein_conformation__protein__parent__family__slug','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle'))
         for d in ds:

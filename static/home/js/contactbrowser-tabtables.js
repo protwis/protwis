@@ -1682,11 +1682,11 @@ function renderBrowser(data) {
         if (cell_index % 2 != 0) {
             // odd cell number is pos1
             if (typeof all_angles_1 !== 'undefined')
-              setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',cell_index) }, 500);
+              setTimeout(function(){ createBoxPlotResidue(gn1,'modal_plotly_1','angles',cell_index) }, 500);
 
         } else {
             if (typeof all_angles_2 !== 'undefined')
-              setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_1','angles',cell_index) }, 500);
+              setTimeout(function(){ createBoxPlotResidue(gn2,'modal_plotly_1','angles',cell_index) }, 500);
           }
 
     });
