@@ -2520,11 +2520,11 @@ function renderBrowser_3(data) {
                       <td class="narrow_col">${class_cons_aa}</td>
                       <td class="narrow_col">${class_cons_freq}</td>
 
-                      <td class="narrow_col">${angles[0][0]}</td>
-                      <td class="narrow_col">${angles[1][0]}</td>
+                      <td class="narrow_col">${angles[0]}</td>
+                      <td class="narrow_col">${angles[1]}</td>
 
-                      <td class="narrow_col">${angles[2][0]}</td>
-                      <td class="narrow_col">${angles[6][0]}</td>
+                      <td class="narrow_col">${angles[2]}</td>
+                      <td class="narrow_col">${angles[6]}</td>
                     </tr>`;
             // tbody.append(tr);
         });
