@@ -2219,13 +2219,13 @@ class ConstructBrowser(TemplateView):
 
         context = super(ConstructBrowser, self).get_context_data(**kwargs)
         try:
-            cons = Construct.objects.all().prefetch_related(
+            cons = Construct.objects.defer('schematics','snakecache').all().prefetch_related(
                 "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
 
             context['constructs'] = []
             for c in cons:
-                #c.schematics = c.schematic()
+                # c.schematics = c.schematic()
                 c.wt_schematic = c.wt_schematic()
                 c.cons_schematic = c.cons_schematic()
                 context['constructs'].append(c)
@@ -2246,7 +2246,7 @@ class ExperimentBrowser(TemplateView):
 
         context = super(ExperimentBrowser , self).get_context_data(**kwargs)
         try:
-            cons = Construct.objects.all().prefetch_related(
+            cons = Construct.objects.defer('schematics','snakecache').all().prefetch_related(
                 "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
                 "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
