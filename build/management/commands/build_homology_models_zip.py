@@ -50,7 +50,7 @@ build_date = date.today()
 import warnings
 warnings.filterwarnings("ignore")
 
-class Command(BaseBuild):  
+class Command(BaseBuild):
     help = 'Build automated chimeric GPCR homology models'
     
     def add_arguments(self, parser):

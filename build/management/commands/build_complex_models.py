@@ -72,6 +72,7 @@ class Command(BaseBuild):
         parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
         parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str, nargs='+')
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
+        parser.add_argument('--no_remodeling', help='Do not allow for remodeling loop knots', default=False, action='store_true')
         parser.add_argument('--skip_existing', help='Skip rebuilding models already in protwis/structure/complex_models_zip/', 
                             default=False, action='store_true')
         parser.add_argument('-z', help='Create zip file of complex model directory containing all built complex models', default=False,
@@ -110,6 +111,7 @@ class Command(BaseBuild):
         else:
             self.signprot = options['signprot']
         self.force_main_temp = options['force_main_temp']
+        self.no_remodeling = options['no_remodeling']
         self.skip_existing = options['skip_existing']
         self.existing_list = []
         if self.skip_existing:
@@ -214,17 +216,20 @@ class Command(BaseBuild):
                     if first_in_subfam:
                         if self.debug:
                             print('First in subfam: {} {}'.format(target, receptor))
-                        mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
+                        mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target, 
+                                                   force_main_temp=self.force_main_temp, no_remodeling=self.no_remodeling)
                         mod.run(fast_refinement=True)
                         first_in_subfam = False
                     else:
                         ihm = ImportHomologyModel(receptor.entry_name, target)
                         if ihm.find_files()!=None:
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
+                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target,
+                                                       force_main_temp=self.force_main_temp, no_remodeling=self.no_remodeling)
                             mod.run(import_receptor=True, fast_refinement=True)
                             import_receptor = True
                         else:
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target)
+                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target,
+                                                       force_main_temp=self.force_main_temp, no_remodeling=self.no_remodeling)
                             mod.run(fast_refinement=True)
 
 

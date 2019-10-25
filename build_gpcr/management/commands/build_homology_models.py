@@ -264,7 +264,7 @@ class Command(BaseBuild):
         
 
 class CallHomologyModeling():
-    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False):
+    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False, no_remodeling=False):
         self.receptor = receptor
         self.state = state
         self.modeller_iterations = iterations
@@ -274,6 +274,7 @@ class CallHomologyModeling():
         self.signprot = signprot
         self.force_main_temp = force_main_temp
         self.keep_hetatoms = keep_hetatoms
+        self.no_remodeling = no_remodeling
 
 
     def run(self, import_receptor=False, fast_refinement=False):
@@ -328,7 +329,7 @@ class CallHomologyModeling():
             if self.signprot:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
                 # Run remodeling
-                if len(hse.remodel_resis)>0:
+                if len(hse.remodel_resis)>0 and not self.no_remodeling:
                     rm = Remodeling('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), gaps=hse.remodel_resis, receptor=self.receptor, signprot=self.signprot)
                     rm.make_pirfile()
                     rm.run()
