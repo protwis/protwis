@@ -19,6 +19,8 @@ class Command(BaseBuild):
 				   'GNAI1':'Gi1', 'GNAI2':'Gi2', 'GNAI3':'Gi3', 'GNAT1':'Gt1', 'GNAT2':'Gt2', 'GNAT3':'Gt3', 'GNAZ':'Gz', 'GNAO':'Go',
 				   'GNAQ':'Gq', 'GNA11':'G11', 'GNA14':'G14', 'GNA15':'G15',
 				   'GNA12':'G12', 'GNA13':'G13'}
+	arrestin_dict = {'arrs_mouse':'S-arrestin', 'arrs_bovin':'S-arrestin'}
+
 	with open(os.sep.join([settings.DATA_DIR, 'structure_data','extra_protein_notes.yaml']), 'r') as note_file:
 		notes = yaml.load(note_file)
 
@@ -30,17 +32,7 @@ class Command(BaseBuild):
 		if options['purge']:
 			StructureExtraProteins.objects.all().delete()
 		self.build_g_protein_alpha_subunits()
-		self.build_from_notes()
-
-		sep = StructureExtraProteins.objects.all()[0]
-		l = StructureLigandInteraction.objects.get(id=98)
-		s = Structure.objects.get(pdb_code__index='5WKT')
-		seps = s.extra_proteins.all()
-		ls = s.ligands.all()
-		print(seps)
-		print(ls)
-		
-		
+		self.build_from_notes()		
 
 	def build_g_protein_alpha_subunits(self):
 		sc = SignprotComplex.objects.all()
@@ -65,23 +57,29 @@ class Command(BaseBuild):
 
 	def build_from_notes(self):
 		for struct, vals in self.notes.items():
-			if 'category' in vals and vals['category']=='G alpha':
-				print(struct, vals)
+			if 'category' in vals:
 				sep = StructureExtraProteins()
-				try:
-					wt_protein = Protein.objects.get(entry_name=vals['prot'].lower()+'_bovin')
-				except Protein.DoesNotExist:
-					wt_protein = Protein.objects.get(entry_name=vals['prot'].lower()+'_human')
+				if vals['category']=='G alpha':
+					try:
+						wt_protein = Protein.objects.get(entry_name=vals['prot'].lower()+'_bovin')
+					except Protein.DoesNotExist:
+						wt_protein = Protein.objects.get(entry_name=vals['prot'].lower()+'_human')
+					sep.display_name = self.g_prot_dict[vals['prot']]
+				elif vals['category']=='Arrestin':
+					wt_protein = Protein.objects.get(entry_name=vals['prot'].lower())
+					sep.display_name = self.arrestin_dict[vals['prot']]
+
 				sep.wt_protein = wt_protein
 				sep.structure = Structure.objects.get(pdb_code__index=struct)
 				sep.protein_conformation = None
-				sep.display_name = self.g_prot_dict[vals['prot']]
 				sep.note = vals['note']
 				sep.chain = vals['chain']
 				sep.category = vals['category']
 				wt_resis = Residue.objects.filter(protein_conformation__protein=wt_protein)
 				sep.wt_coverage = round(vals['length']/len(wt_resis)*100)
+
 				sep.save()
 				sep.structure.extra_proteins.add(sep)
 				sep.structure.save()
+
 			

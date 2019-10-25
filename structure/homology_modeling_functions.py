@@ -560,7 +560,8 @@ class Remodeling():
         for chain, gaps in self.gaps.items():
             for g in gaps:
                 for i in range(g[0],g[1]+1):
-                    self.struct[chain].detach_child(self.struct[chain][i].get_id())
+                    if i in self.struct[chain]:
+                        self.struct[chain].detach_child(self.struct[chain][i].get_id())
 
         with open(self.pir_file, 'w+') as output_file:
             template="""

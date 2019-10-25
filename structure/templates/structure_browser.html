@@ -75,12 +75,15 @@
             font-size: 100%;
             font-weight: bold;
         }
-        #yadcf-filter--structures_scrollable-from-12 {
+        /*#yadcf-filter--structures_scrollable-from-12 {
             width: 10px;
         }
         #yadcf-filter--structures_scrollable-to-12 {
             width: 10px;
         }
+        .yadcf-filter-wrapper-inner--structures_scrollable-12 {
+            width: 5px;
+        }*/
         .clicked_button {
             background-color: rgb(215,215,215);
         }
@@ -347,18 +350,18 @@
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '50px',
+                            width: '55px',
                         }
                     },
                     {
                         column_number : 15,
-                        filter_type: "multi_select",
+                        filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Note",
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '50px',
+                            width: '80px',
                         }
                     },
                     {
@@ -527,14 +530,12 @@
 
             $(".select-all").click(function() {
                 $(':checkbox', this).trigger('click');
-                console.log($(this).prop('checked'));
                 if ($(this).prop('checked')===true) {
                     $('.alt').prop('checked', true);
                     $('.alt').parent().parent().addClass('alt_selected');
                     $('.alt').parent().parent().find('td').addClass('highlight');
                 }
                 if ($(this).prop('checked')===false) {
-                    // $(this).prop('checked', false);
                     $('.alt').prop('checked', false);
                     $('.alt').parent().parent().removeClass('alt_selected');
                     $('.alt').parent().parent().find('td').removeClass('highlight');
@@ -699,7 +700,9 @@
                     if ($("#overlay").is(":hidden")) $("#overlay").show();
                 }
             });
-
+            // console.log($('#yadcf-filter--structures_scrollable-from-12').width());
+            // $('#yadcf-filter--structures_scrollable-from-12').width(10);
+            // console.log($('#yadcf-filter--structures_scrollable-from-12').width());
             
         });
 
@@ -978,7 +981,6 @@
                             {% endfor %}
                         </td>
                         <td>
-                            <!-- {{ structure.stabilizing_agents.all|only_gproteins|linebreaksbr }} -->
                             {% for ep in structure.extra_proteins.all %}
                                 {% if ep.note is None %}
                                     -
@@ -994,7 +996,6 @@
                             {% endfor %}
                         </td>
                         <td>
-                            <!-- {{ structure.stabilizing_agents.all|only_arrestins|linebreaksbr }} -->
                             {% for ep in structure.extra_proteins.all %}
                                 {{ ep.wt_coverage}}
                                 {% empty %}

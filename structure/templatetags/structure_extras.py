@@ -20,7 +20,13 @@ def lineformat ( objs ):
 def ligandrole ( objs ):
     elements = [obj.ligand_role.name for obj in objs]
     if len(elements) > 0:
-        return "\n".join(elements)
+        if len(elements) > 1:
+            if elements[0]==elements[1]:
+                return elements[0]
+            else:
+                return "\n".join(elements)
+        else:
+            return "\n".join(elements)
     else:
         return 'N/A'
 
