@@ -4,7 +4,7 @@ from django.conf import settings
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
 from protein.models import Protein, Species
 from ligand.models import Ligand
-from structure.models import Structure
+from structure.models import Structure, StructureModel, StructureComplexModel
 from mutation.models import MutationExperiment
 from interaction.models import StructureLigandInteraction, ProteinLigandInteraction, ResidueFragmentInteraction
 
@@ -63,6 +63,8 @@ class Command(BaseCommand):
             ['Species', Species.objects.all().count()],
             ['Exp. structures', Structure.objects.filter(refined=False).count()],
             ['Refined structures', Structure.objects.filter(refined=True).count()],
+            ['GPCR structure models', StructureModel.objects.all().count()],
+            ['GPCR-G protein structure models', StructureComplexModel.objects.all().count()],
             ['Ligands', Ligand.objects.filter(canonical=True).count()],
             ['Mutants', MutationExperiment.objects.all().count()],
             ['Ligand interactions', ResidueFragmentInteraction.objects.all().count()],
