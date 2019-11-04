@@ -1052,6 +1052,8 @@ def InteractionBrowserData(request):
 
             group_1_angles = get_angle_averages(data['pdbs1'],s_lookup, normalized)
             group_2_angles = get_angle_averages(data['pdbs2'],s_lookup, normalized)
+            data['all_angles_set1'] = get_all_angles(data['pdbs1'],data['pfs'],normalized)
+            data['all_angles_set2'] = get_all_angles(data['pdbs2'],data['pfs'],normalized)
 
             print('got angles values for',mode,'mode',time.time()-start_time)
             custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']

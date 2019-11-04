@@ -85,6 +85,8 @@ function renderDataTablesYadcf(element) {
     // Do not re init the table.
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-" + tab_number)) {
         console.timeEnd("renderDataTablesYadcf");
+        var btable = $(selector + " .browser-table-" + tab_number).DataTable();
+        btable.columns.adjust().draw();
         $(".main_loading_overlay").hide();
         return
     }
@@ -1015,6 +1017,8 @@ function renderDataTablesYadcf(element) {
     }
     // Show hidden tr now that table is rendered. (Faster rending, since less in DOM)
     table.find(".hidden").removeClass("hidden");
+    btable.columns.adjust().draw();
+
     $(".main_loading_overlay").hide();
     console.timeEnd("renderDataTablesYadcf");
 }
@@ -1094,9 +1098,9 @@ function renderBrowser(data) {
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
-                          <th colspan="3" rowspan="2"> Frequency (%)</th> \
+                          <th colspan="3" rowspan="2">Contact Frequency (%)</th> \
                           <th rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
                           <th colspan="2"></th> \
@@ -1347,9 +1351,9 @@ function renderBrowser(data) {
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
-                          <th colspan="1" rowspan="2"> Frequency (%)</th> \
+                          <th colspan="1" rowspan="2">Contact Frequency (%)</th> \
                           <th rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
                           <th colspan="2"></th> \
@@ -1557,7 +1561,7 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
                           <th rowspan="2">Interaction</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
                           <th colspan="2"></th> \
@@ -1678,11 +1682,11 @@ function renderBrowser(data) {
         if (cell_index % 2 != 0) {
             // odd cell number is pos1
             if (typeof all_angles_1 !== 'undefined')
-              setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',cell_index) }, 500);
+              setTimeout(function(){ createBoxPlotResidue(gn1,'modal_plotly_1','angles',cell_index) }, 500);
 
         } else {
             if (typeof all_angles_2 !== 'undefined')
-              setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_1','angles',cell_index) }, 500);
+              setTimeout(function(){ createBoxPlotResidue(gn2,'modal_plotly_1','angles',cell_index) }, 500);
           }
 
     });
@@ -2516,11 +2520,11 @@ function renderBrowser_3(data) {
                       <td class="narrow_col">${class_cons_aa}</td>
                       <td class="narrow_col">${class_cons_freq}</td>
 
-                      <td class="narrow_col">${angles[0][0]}</td>
-                      <td class="narrow_col">${angles[1][0]}</td>
+                      <td class="narrow_col">${angles[0]}</td>
+                      <td class="narrow_col">${angles[1]}</td>
 
-                      <td class="narrow_col">${angles[2][0]}</td>
-                      <td class="narrow_col">${angles[6][0]}</td>
+                      <td class="narrow_col">${angles[2]}</td>
+                      <td class="narrow_col">${angles[6]}</td>
                     </tr>`;
             // tbody.append(tr);
         });

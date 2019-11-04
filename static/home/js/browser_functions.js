@@ -2,11 +2,11 @@ function superposition(oTable, columns, site, hide_first_column) {
     // oTable: DataTable object of table of entries
     // columns: Column indeces of oTable to be extracted to build table for reference selection. First column has to be structure/model string used for superposition workflow
     // site: Structure browser or Homology model browser (add new logic when expanding to new sites)
-    if(window.location.hash === "#keepselection") {}
-    else {
-        ClearSelection('targets');
-        ClearSelection('reference');
-    }
+    // if(window.location.hash === "#keepselection") {}
+    // else {
+    ClearSelection('targets');
+    ClearSelection('reference');
+    // }
 
     var checked_data = oTable.rows('.alt_selected').data();
     if (checked_data.length===0) {
@@ -14,10 +14,11 @@ function superposition(oTable, columns, site, hide_first_column) {
         return 0;
     }
     var selected_ids = []
+    console.log(checked_data);
     if (site==='structure_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][6];
+            div.innerHTML = checked_data[i][7];
             if (typeof div.innerText !== "undefined") {
                 selected_ids.push(div.innerText.replace(/\s+/g, ''));
             } else {
@@ -25,6 +26,7 @@ function superposition(oTable, columns, site, hide_first_column) {
             }
         }
         AddToSelection('targets', 'structure_many', selected_ids.join(","));
+        console.log(selected_ids);
     } else if (site==='homology_model_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
