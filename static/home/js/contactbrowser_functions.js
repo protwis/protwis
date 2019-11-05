@@ -751,6 +751,81 @@
             });
         }
 
+        function drawPlotPanel(plot_type, plot_div){
+          plot_id = plot_div.attr('id');
+          console.log(plot_type);
+          console.log(plot_div);
+          console.log(plot_id);
+
+          // Delete whatever is already there
+          plot_div.find('.plot-container').html('');
+          var mode = get_current_mode();
+
+          console.log("SET UP PLOT", plot_type, plot_div, plot_id, mode);
+          switch (mode) {
+              case "two-crystal-groups":
+                  raw_data = two_sets_data;
+                  break;
+              case "single-crystal":
+                  raw_data = single_crystal_data;
+                  break;
+              case "single-crystal-group":
+                  raw_data = single_set_data;
+                  break;
+          }
+          switch (plot_type) {
+              case "ngl":
+                  plot_div.find('.plot-container').removeClass('none');
+                  plot_div.find('.plot-container').addClass('ngl-container');
+                  plot_div.find('.plot-container').attr('id', 'ngl-' + plot_id);
+                  plot_div.find('.plot-container').attr('style', 'margin: auto; width: 100%; overflow: hidden;');
+
+                  // TODO add method to select PDB with highest number of GNs (in set)
+
+                  switch (mode) {
+                      case "two-crystal-groups":
+                          createNGLview(plot_id, two_sets_pdbs1[0], two_sets_pdbs1, two_sets_pdbs2,two_sets_pdbs2[0]);
+                          break;
+                      case "single-crystal":
+                          createNGLview(plot_id, single_crystal_pdb);
+                          break;
+                      case "single-crystal-group":
+                          createNGLview(plot_id, single_set_pdbs[0], single_set_pdbs);
+                          break;
+                  }
+                  break;
+              case "heatmap":
+                  plot_div.find('.plot-container').removeClass('none');
+                  plot_div.find('.plot-container').addClass('heatmap-container');
+                  plot_div.find('.plot-container').attr('id', "heatmapcontainer-" + plot_id);
+                  plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-' + plot_id + '" style="height: 500px;"></svg>');
+
+                  renderHeatmap(raw_data, '#heatmapcontainer-' + plot_id);
+                  break;
+              case "flareplot":
+                  plot_div.find('.plot-container').removeClass('none');
+                  plot_div.find('.plot-container').addClass('flareplot-container');
+                  plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
+
+                  createFlareplotBox(raw_data, '#flareplot-' + plot_id);
+                  break;
+              case "boxplot":
+                  plot_div.find('.plot-container').removeClass('none');
+                  plot_div.find('.plot-container').addClass('boxplot-container');
+                  plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+
+                  createBoxPlot(raw_data, 'boxplot-' + plot_id);
+                  break;
+              case "boxplot_angles":
+                  plot_div.find('.plot-container').removeClass('none');
+                  plot_div.find('.plot-container').addClass('boxplot-container');
+                  plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+
+                  createBoxPlot(raw_data, 'boxplot-' + plot_id,'angles');
+                  break;
+            }
+        }
+
         var plotting_options = [
             ['heatmap', 'Matrix of interactions'],
             ['flareplot', 'Flare Plot'],
@@ -775,71 +850,8 @@
             $('.plot_selection').click(function() {
                 plot_type = $(this).attr('plot_type');
                 plot_div = $(this).closest('.panel');
-                plot_id = plot_div.attr('id');
-                // Delete whatever is already there
-                plot_div.find('.plot-container').html('');
-                var mode = get_current_mode();
-                console.log("SET UP PLOT", plot_type, plot_div, plot_id, mode);
-                switch (mode) {
-                    case "two-crystal-groups":
-                        raw_data = two_sets_data;
-                        break;
-                    case "single-crystal":
-                        raw_data = single_crystal_data;
-                        break;
-                    case "single-crystal-group":
-                        raw_data = single_set_data;
-                        break;
-                }
-                switch (plot_type) {
-                    case "ngl":
-                        plot_div.find('.plot-container').removeClass('none');
-                        plot_div.find('.plot-container').addClass('ngl-container');
-                        plot_div.find('.plot-container').attr('id', 'ngl-' + plot_id);
-                        plot_div.find('.plot-container').attr('style', 'margin: auto; width: 100%; overflow: hidden;');
 
-                        switch (mode) {
-                            case "two-crystal-groups":
-                                createNGLview(plot_id, two_sets_pdbs1[0], two_sets_pdbs1, two_sets_pdbs2,two_sets_pdbs2[0]);
-                                break;
-                            case "single-crystal":
-                                createNGLview(plot_id, single_crystal_pdb);
-                                break;
-                            case "single-crystal-group":
-                                createNGLview(plot_id, single_set_pdbs[0], single_set_pdbs);
-                                break;
-                        }
-                        break;
-                    case "heatmap":
-                        plot_div.find('.plot-container').removeClass('none');
-                        plot_div.find('.plot-container').addClass('heatmap-container');
-                        plot_div.find('.plot-container').attr('id', "heatmapcontainer-" + plot_id);
-                        plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-' + plot_id + '" style="height: 500px;"></svg>');
-
-                        renderHeatmap(raw_data, '#heatmapcontainer-' + plot_id);
-                        break;
-                    case "flareplot":
-                        plot_div.find('.plot-container').removeClass('none');
-                        plot_div.find('.plot-container').addClass('flareplot-container');
-                        plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
-
-                        createFlareplotBox(raw_data, '#flareplot-' + plot_id);
-                        break;
-                    case "boxplot":
-                        plot_div.find('.plot-container').removeClass('none');
-                        plot_div.find('.plot-container').addClass('boxplot-container');
-                        plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
-
-                        createBoxPlot(raw_data, 'boxplot-' + plot_id);
-                        break;
-                    case "boxplot_angles":
-                        plot_div.find('.plot-container').removeClass('none');
-                        plot_div.find('.plot-container').addClass('boxplot-container');
-                        plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
-
-                        createBoxPlot(raw_data, 'boxplot-' + plot_id,'angles');
-                        break;
-                }
+                drawPlotPanel(plot_type, plot_div);
             });
         }
 
@@ -1803,16 +1815,16 @@
             // TODO: color current plot option green (success)
             if (options[1][column_number].startsWith("residuepair")){
               // Visualizing data for a residue pair
-              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Matrix of interactions</button><br/>')
-              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Flare Plot</button><br/>')
-              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">3D View</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block" table_number="'+plot_destination+'" plot_type="heatmap">Matrix of interactions</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block" table_number="'+plot_destination+'" plot_type="flareplot">Flare Plot</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block" table_number="'+plot_destination+'" plot_type="ngl">3D View</button><br/>')
               //$("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Schematic (Non-consecutive)</button><br/>')
               //$("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Schematic (Consecutive)</button><br/>')
             } else {
               // Visualizing data for a residue position
-              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">3D View</button><br/>')
-              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Snake Plot</button><br/>')
-              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Box Plot</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block" table_number="'+plot_destination+'" plot_type="ngl">3D View</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block" table_number="'+plot_destination+'" plot_type="snakeplot">Snake Plot</button><br/>')
+              $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block" table_number="'+plot_destination+'" plot_type="boxplot">Box Plot</button><br/>')
             }
             // add click event
             $("#resModal").find(".btn-block").on('click', initiatePlotWithData)
@@ -1824,7 +1836,10 @@
             // close modal panel
             $("#resModal").modal('hide');
 
-            // TODO: initialize plot option (if not already)
+            // Initialize plot in panel
+            var origin = $(e.target);
+            var currentPanel = "single_" + (parseInt(origin.attr('table_number')) + 1);
+            drawPlotPanel(origin.attr('plot_type'), $("#"+currentPanel))
 
             // TODO: Wait until ready and send data to visualize
             //colorByData(mode, tableNumber, columnNumber, type)
