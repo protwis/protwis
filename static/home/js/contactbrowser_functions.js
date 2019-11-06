@@ -1770,7 +1770,7 @@
 
         // Show plotting options panel
         var selecttab = {"single-crystal-tab" : "structure", "single-crystal-group-tab" : "single", "two-crystal-groups-tab" : "double"}
-        function showVisualizationPanel(plot_destination, table_number, datatype) {
+        function showVisualizationPanel(plot_destination, table_number, datatype, column_number) {
             // TODO modulate size of modal: display in center and resize to content?
             $("#resModal").find(".modal-dialog").removeClass("modal-wide").addClass("modal-sm")
             $("#resModal").find(".modal-title").html("Plotting options")
@@ -1785,25 +1785,65 @@
 
             // Data options : show them when multiple columns or underlying data
             if (options[0].length > 1 || options[1][0].endsWith("_original") ){
+
               // Collect options and show (button)
-              $("#interaction_settings").append('<h5 class="border-bottom">Select which data to plot:</h5>')
               if (options[1][0].endsWith("_original")){
                   // select underlying data options
+                  $("#interaction_settings").append('<h5 class="border-bottom">Select which data to plot:</h5>')
                   $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Set 1</button><br/>')
                   $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Set 2</button><br/>')
                   $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block">Difference</button><br/>')
               } else {
                   // show column options
+                  $("#interaction_settings").append('<h5 class="border-bottom">Select which column to plot:</h5>')
+                  var header = $(".main_option:visible .browser-table-"+table_number)[0].childNodes[0].children[3];
+                  var num_columns = options[0].reduce((a, b) => a + b, 0);
+                  for (var i = 0; i < num_columns; i++){
+                    //console.log(header.children[parseInt(columnNumber) + i].innerText);
+                    $("#interaction_settings").append('<button type="button" class="btn btn-primary btn-block" column_selector="'+i+'">'+header.children[parseInt(column_number) + i].innerText+'</button><br/>')
+                  }
               }
+              // add click event
+              $("#resModal").find(".btn-block").on('click', (function(a, b, c, d){ return function(e){showPlottingPanel(a, b, c, d, e);}})(plot_destination, table_number, datatype, column_number))
               $("#resModal").modal();
+
             } else {
               showPlottingPanel(plot_destination, table_number, datatype, 0);
             }
         }
 
-        function showPlottingPanel(plot_destination, table_number, datatype, column_number, original_option = ""){
+        var plottingData = []
+        function showPlottingPanel(plot_destination, table_number, datatype, column_number, event = ""){
             // collect options for this column
             var options = plot_options['tab'+table_number][selecttab[currentTab]][datatype];
+
+            // TODO Grab plotting data
+            plottingData = []
+
+            // Option 1: all data from all columns
+            console.log(event)
+            if (event == "") {
+              // Just plot all data in the current column
+              // FOLLOW same idea as colorByData function - maybe merge function?
+              console.log("Option 1")
+              // pair or position?
+              if (options[1][column_number].startsWith("residuepair")){
+
+              } else {
+                
+              }
+            } else if (event.target.hasAttribute("column_selector")){
+              // Option 2: all data from 1 of the columns (find column number in column_selector attribute)
+              console.log("Option 2 "+selected)
+              var selected = event.target.getAttribute("column_selector");
+              // FOLLOW same idea as colorByData function - maybe merge options?
+
+            } else {
+              // Option 3: grab data from raw input (TODO: filter based on residues in list table)
+              console.log("Option 3")
+              var selected = event.target.innerText;
+
+            }
 
             // Show plotting options
             $("#interaction_settings").html('<h5 class="border-bottom">Select the plot type:</h5>')
@@ -1832,13 +1872,15 @@
             $("#resModal").modal();
         }
 
+        var prefix_list = {"single-crystal-tab" : "single_", "single-crystal-group-tab" : "single_group_", "two-crystal-groups-tab" : "two_sets_"}
         function initiatePlotWithData(e){
             // close modal panel
             $("#resModal").modal('hide');
 
             // Initialize plot in panel
+            var prefix = prefix_list[currentTab];
             var origin = $(e.target);
-            var currentPanel = "single_" + (parseInt(origin.attr('table_number')) + 1);
+            var currentPanel = prefix + (parseInt(origin.attr('table_number')) + 1);
             drawPlotPanel(origin.attr('plot_type'), $("#"+currentPanel))
 
             // TODO: Wait until ready and send data to visualize

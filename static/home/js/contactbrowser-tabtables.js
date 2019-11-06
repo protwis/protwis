@@ -1320,10 +1320,10 @@ function renderBrowser(data) {
                       <td class="narrow_col">${dssp_pos2}</td>
                       <td class="narrow_col">${dssp_pos1_freq}</td>
                       <td class="narrow_col">${dssp_pos2_freq}</td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
                       <td class="narrow_col">${class_seq_cons[0]}</td>
                       <td class="narrow_col">${class_seq_cons[1]}</td>
                       <td class="narrow_col">${class_seq_cons_diff}</td>
@@ -1536,10 +1536,10 @@ function renderBrowser(data) {
                       <td class="narrow_col">${dssp_pos2}</td>
                       <td class="narrow_col">${dssp_pos1_freq}</td>
                       <td class="narrow_col">${dssp_pos2_freq}</td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
                       <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
             tbody.append(tr);
@@ -2408,7 +2408,7 @@ function renderBrowser_3(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Position</th> \
                           <th colspan="3" rowspan="2">Avg no. contact pairs</th> \
                           <th colspan="3" rowspan="1">No distinct or shared contacts</th> \
                           <th colspan="1" rowspan="2">Avg freq difference of all set1-2 contacts</th> \
@@ -2547,7 +2547,7 @@ function renderBrowser_3(data) {
                 </tr> \
                 <tr> \
                         <th colspan="1" rowspan="2">Segment</th> \
-                        <th colspan="1" rowspan="2">Positions</th> \
+                        <th colspan="1" rowspan="2">Position</th> \
                         <th colspan="3" rowspan="2">Avg no. contact pairs</th> \
                         <th colspan="3" rowspan="1">No distinct or shared contacts</th> \
                         <th colspan="1" rowspan="2">Avg freq difference of all set1-2 contacts</th> \
@@ -2774,7 +2774,7 @@ function renderBrowser_4(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Position</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
                           <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
                           <th colspan="9" rowspan="1">Residue angles and dihedrals</th> \
@@ -3006,7 +3006,7 @@ function renderBrowser_4(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Position</th> \
                           <th colspan="2" rowspan="1">Secondary structure</th> \
                           <th colspan="3" rowspan="1">Residue angles</th> \
                           <th colspan="3" rowspan="1">Helix turn angle</th> \
@@ -3155,7 +3155,7 @@ function renderBrowser_4(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Position</th> \
                           <th colspan="1" rowspan="1">Secondary structure</th> \
                           <th colspan="3" rowspan="1">Residue angles</th> \
                           <th colspan="3" rowspan="1">Helix turn angle</th> \
@@ -3300,7 +3300,7 @@ function renderBrowser_5(data) {
 
     thead += '<tr> \
                       <th colspan="1" rowspan="2">Segment</th> \
-                      <th colspan="1" rowspan="2">Positions</th> \
+                      <th colspan="1" rowspan="2">Position</th> \
                       <th colspan="2">Backbone Ca movement</th> \
                       <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
                     </tr> \
@@ -3434,7 +3434,7 @@ function enable_hover(table){
               if (plotType.startsWith("heatmapcontainer") || plotType.startsWith("flareplot") || plotType.startsWith("boxplot")) {
                 button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
               } else {
-                button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c);}})(i, tableNumber, selector.getAttribute("datatype")))
+                button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c, d);}})(i, tableNumber, selector.getAttribute("datatype"), columnSelector))
                 found = false;
               }
           } else if (selector.className=="selector") {
@@ -3442,7 +3442,7 @@ function enable_hover(table){
             if (plotType.startsWith("ngl") || plotType.startsWith("snakeplot")) {
               button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
             } else {
-              button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c);}})(i, tableNumber, selector.getAttribute("datatype")))
+              button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c, d);}})(i, tableNumber, selector.getAttribute("datatype"), columnSelector))
               found = false;
             }
           }
