@@ -1772,6 +1772,7 @@
         var selecttab = {"single-crystal-tab" : "structure", "single-crystal-group-tab" : "single", "two-crystal-groups-tab" : "double"}
         function showVisualizationPanel(plot_destination, table_number, datatype, column_number) {
             // TODO modulate size of modal: display in center and resize to content?
+            $("#resModal").addClass("plot_settings")
             $("#resModal").find(".modal-dialog").removeClass("modal-wide").addClass("modal-sm")
             $("#resModal").find(".modal-title").html("Plotting options")
             $("#resModal").find(".modal-body").html("<div id='interaction_settings' style='height:100%;width:100%;display: inline-block;'></div>");
@@ -1830,7 +1831,7 @@
               if (options[1][column_number].startsWith("residuepair")){
 
               } else {
-                
+
               }
             } else if (event.target.hasAttribute("column_selector")){
               // Option 2: all data from 1 of the columns (find column number in column_selector attribute)
@@ -1890,6 +1891,7 @@
         function closeVisualizationPanel(e) {
           // Show Close button again
           $("#resModal").find(".modal-footer").removeClass("hidden");
+          $("#resModal").removeClass("plot_settings")
 
           // Reset modal
           $(e.currentTarget).off('hidden');
