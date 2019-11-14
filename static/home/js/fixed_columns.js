@@ -71,8 +71,10 @@ function thisPDB(elem) {
 
     var pdbName = $(elem).attr('id');
     if (mode == 'Single structure') {
-        $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e) {referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false}) // deselect from overlay
-        $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop('checked', false); // deselect from original table
+        if ($('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).length > 0) {
+          $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e) { if (referenceObject.find("#overlaycheck_" + e.id).length > 0) referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false}) // deselect from overlay
+          $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop('checked', false); // deselect from original table
+        }
         var pdbs = [];
         if ($(elem).prop("checked")) {
             pdbs.push(pdbName);
