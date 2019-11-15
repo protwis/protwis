@@ -2838,7 +2838,7 @@ function renderBrowser_4(data) {
                         </tr>';
         table.find('thead').html(thead);
         tr_list = ''
-        $.each(data['tab3'], function(i, v) {
+        $.each(data['tab4'], function(i, v) {
 
             var seg = data['segm_lookup'][i];
             if (seg == 'ECL1' || seg == 'ECL2') return true;
@@ -3317,10 +3317,10 @@ function renderBrowser_5(data) {
                     </tr>';
     table.find('thead').html(thead);
     tr_list = ''
-    $.each(data['tab3'], function(i, v) {
+    $.each(data['tab4'], function(i, v) {
 
         // console.log(i,v);
-        var seg = data['segm_lookup'][i];
+        var seg = v['ps'];
         var angles = v['angles'];
         // 0 'core_distance',
         // 1 'a_angle',
