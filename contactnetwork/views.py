@@ -488,7 +488,7 @@ def InteractionBrowserData(request):
     hash_cache_key = 'interactionbrowserdata_{}'.format(get_hash(hash_list))
     data = cache.get(hash_cache_key)
 
-    data = None
+    # data = None
     if data==None:
         cache_key = 'amino_acid_pair_conservation_{}'.format('001')
         print('Before getting class cache',time.time()-start_time)
