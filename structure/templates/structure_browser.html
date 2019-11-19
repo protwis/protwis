@@ -526,6 +526,8 @@
                     $(this).eq(0).toggleClass('alt_selected');
                     $(this).find('td').toggleClass('highlight');
                 }
+                $(this).eq(0).toggleClass('alt_selected');
+                $(this).find('td').toggleClass('highlight');
             });
 
             $(".select-all").click(function() {
@@ -968,7 +970,11 @@
                         <td class="text-center">{{ structure.distance|floatformat:"1" }}</td>
                         <td>
                             {% for ep in structure.extra_proteins.all %}
-                                {{ ep.wt_protein.family.parent.name }}
+                                {% if ep.category == "Arrestin" %}
+                                    {{ ep.wt_protein.family.parent.parent.name }}
+                                {% else %}
+                                    {{ ep.wt_protein.family.parent.name }}
+                                {% endif %}
                                 {% empty %}
                                     -
                             {% endfor %}
