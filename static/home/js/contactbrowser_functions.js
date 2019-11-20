@@ -823,6 +823,13 @@
 
                   createBoxPlot(raw_data, 'boxplot-' + plot_id,'angles');
                   break;
+              case "snakeplot":
+                  plot_div.find('.plot-container').removeClass('none');
+                  plot_div.find('.plot-container').addClass('snakeplot-container');
+                  plot_div.find('.plot-container').attr('id', 'snakeplot-' + plot_id);
+
+                  createSnakeplot(raw_data, 'snakeplot-' + plot_id);
+                  break;
             }
         }
 
