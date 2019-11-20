@@ -1189,6 +1189,20 @@ function renderBrowser(data) {
                 // replace values for normalized ones
                 sfreq1 = pffreq1;
                 sfreq2 = pffreq1;
+                pos1_missing_1 = data['pfs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs1'].length;  
+                pos1_missing_2 = data['pfs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs2'].length;  
+                pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
+                pos2_missing_1 = data['pfs1'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pfs1'].length;  
+                pos2_missing_2 = data['pfs2'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pfs2'].length;  
+                pos2_missing = Math.round(100*(pos2_missing_2-pos2_missing_1));
+            } else {
+                pos1_missing_1 = data['pdbs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pdbs1'].length;  
+                pos1_missing_2 = data['pdbs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pdbs2'].length;  
+                pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
+                pos2_missing_1 = data['pdbs1'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pdbs1'].length;  
+                pos2_missing_2 = data['pdbs2'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pdbs2'].length;  
+                pos2_missing = Math.round(100*(pos2_missing_2-pos2_missing_1));
+
             }
 
             var class_seq_cons_diff = class_seq_cons[0] - class_seq_cons[1];
@@ -1203,6 +1217,8 @@ function renderBrowser(data) {
 
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
+
+
 
 
 
@@ -1320,8 +1336,8 @@ function renderBrowser(data) {
                       <td class="narrow_col">${dssp_pos2}</td>
                       <td class="narrow_col">${dssp_pos1_freq}</td>
                       <td class="narrow_col">${dssp_pos2_freq}</td>
-                      <td class="narrow_col">-</td>
-                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">${pos1_missing}</td>
+                      <td class="narrow_col">${pos2_missing}</td>
                       <td class="narrow_col">-</td>
                       <td class="narrow_col">-</td>
                       <td class="narrow_col">${class_seq_cons[0]}</td>
@@ -2868,22 +2884,31 @@ function renderBrowser_4(data) {
             all_angles_1 = data['all_angles'][i];
             ss_pos1_set1 = [];
             ss_pos1_set2 = [];
-
-
             if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
+                dssp_set1 = data['pfs1'];
+                dssp_set2 = data['pfs2']; 
             } else {
                 pdbs = data['pdbs1'].concat(data['pdbs2']);
+                dssp_set1 = data['pdbs1'];
+                dssp_set2 = data['pdbs2'];
             }
+
+            // missing_1 = [...new Set([...data['missing'][i]['present'], ...dssp_set1])].length / dssp_set1.length; 
+            // missing_2 = [...new Set([...data['missing'][i]['present'], ...dssp_set2])].length / dssp_set2.length; 
+
+            missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);  
+            missing_2 = Math.round(100*dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);  
+
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
                 if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
                 if (all_angles_1) {
                     let d1 = all_angles_1[pdb_upper];
                     if (d1.length) {
-                        if (data['pdbs1'].includes(pdb)) {
+                        if (dssp_set1.includes(pdb)) {
                             ss_pos1_set1.push(d1[12]);
-                        } else if (data['pdbs2'].includes(pdb)) {
+                        } else if (dssp_set2.includes(pdb)) {
                             ss_pos1_set2.push(d1[12]);
                         }
                     }
@@ -2940,8 +2965,8 @@ function renderBrowser_4(data) {
                       <td class="narrow_col">${Math.round(100*dssp[1][1])}</td>
                       <td class="narrow_col">${Math.round(100*(dssp[0][1]-dssp[1][1]))}</td>
 
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">${missing_1}</td>
+                      <td class="narrow_col">${missing_2}</td>
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
 

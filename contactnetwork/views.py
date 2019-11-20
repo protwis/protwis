@@ -837,9 +837,20 @@ def InteractionBrowserData(request):
         data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
 
         ## MAKE TAB 4
+        data['missing'] = {}
         for res in distinct_gns:
             if res[0] not in data['tab4']:
                 data['tab4'][res[0]] = {'ps':res[1], 'angles':[], 'angles_set':[]}
+            if res[0] not in data['missing']:
+                data['missing'][res[0]] = {'present':set()}
+
+            for pdb in pdbs:
+                if pdb in r_presence_lookup[res[0]]:
+                    if normalized:
+                        data['missing'][res[0]]['present'].add(pdb_lookup[pdb][2])
+                    else:
+                        data['missing'][res[0]]['present'].add(pdb)
+            data['missing'][res[0]]['present'] = list(data['missing'][res[0]]['present'])
 
         print('Do Secondary data',time.time()-start_time)
         data['secondary'] = {}
@@ -1123,11 +1134,11 @@ def InteractionBrowserData(request):
                 data['tab4'][gn]['angles'] = gn_values
 
                 if gn in group_1_angles:
-                    data['tab4'][gn]['angles_set1'] = [ '%.2f' % elem if isinstance(elem, float) else '' for elem in group_1_angles[gn] ]
+                    data['tab4'][gn]['angles_set1'] = [ round(elem) if isinstance(elem, float) else '' for elem in group_1_angles[gn] ]
                 else:
                     data['tab4'][gn]['angles_set1'] = [''] * 11
                 if gn in group_2_angles:
-                    data['tab4'][gn]['angles_set2'] = [ '%.2f' % elem if isinstance(elem, float) else '' for elem in group_2_angles[gn] ]
+                    data['tab4'][gn]['angles_set2'] = [ round(elem) if isinstance(elem, float) else '' for elem in group_2_angles[gn] ]
                 else:
                     data['tab4'][gn]['angles_set2'] = [''] * 11
 
@@ -1583,11 +1594,11 @@ def InteractionBrowserData(request):
                 data['tab4'][res1]['set2_seq_cons'] = most_freq_set2[0]
 
                 if res1 in group_1_angles:
-                    data['tab4'][res1]['angles_set1'] = [ '%.2f' % elem if isinstance(elem, float) else '' for elem in group_1_angles[res1] ]
+                    data['tab4'][res1]['angles_set1'] = [ round(elem) if isinstance(elem, float) else '' for elem in group_1_angles[res1] ]
                 else:
                     data['tab4'][res1]['angles_set1'] = [''] * 11
                 if res1 in group_2_angles:
-                    data['tab4'][res1]['angles_set2'] = [ '%.2f' % elem if isinstance(elem, float) else '' for elem in group_2_angles[res1] ]
+                    data['tab4'][res1]['angles_set2'] = [ round(elem) if isinstance(elem, float) else '' for elem in group_2_angles[res1] ]
                 else:
                     data['tab4'][res1]['angles_set2'] = [''] * 11
                 # Get angle data for res1
