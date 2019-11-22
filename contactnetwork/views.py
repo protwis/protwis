@@ -746,13 +746,18 @@ def InteractionBrowserData(request):
 
             number_dict |= {res1, res2}
 
+            normalized_value = pdb_name
+            if normalized: normalized_value = pf
+
             if mode == 'double':
                 if res1 not in data['tab3']:
                     data['tab3'][res1] = {'set1':set(),'set2':set(), 'set1_count':set(), 'set2_count':set(), 'set1_aa': set(), 'set2_aa': set()}
                 if res2 not in data['tab3']:
                     data['tab3'][res2] = {'set1':set(),'set2':set(), 'set1_count':set(), 'set2_count':set(), 'set1_aa': set(), 'set2_aa': set()}
                 if coord not in data['interactions']:
-                    data['interactions'][coord] = {'pdbs1':[], 'proteins1': [], 'pfs1':[], 'pdbs2':[], 'proteins2': [], 'pfs2':[], 'secondary1' : [], 'secondary2' : [], 'class_seq_cons' : [0,0], 'types' : []}
+                    data['interactions'][coord] = {'pdbs1':[], 'proteins1': [], 'pfs1':[], 'pdbs2':[], 'proteins2': [], 'pfs2':[], 'secondary1' : [], 'secondary2' : [], 'class_seq_cons' : [0,0], 'types' : [], 'types_count' : {}}
+                    for i_type in ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']:
+                        data['interactions'][coord]['types_count'][i_type] = [[],[]] #set1, #set2
 
                 if model in i_types:
                     if model not in data['interactions'][coord]['types']:
@@ -765,6 +770,7 @@ def InteractionBrowserData(request):
                             data['interactions'][coord]['proteins1'].append(protein)
                         if pf not in data['interactions'][coord]['pfs1']:
                             data['interactions'][coord]['pfs1'].append(pf)
+
                     data['interactions'][coord]['secondary1'].append([model,res1_aa,res2_aa,pdb_name])
                     data['tab3'][res1]['set1'].add(res2)
                     data['tab3'][res2]['set1'].add(res1)
@@ -772,6 +778,10 @@ def InteractionBrowserData(request):
                     data['tab3'][res2]['set1_aa'].add(res2_aa)
                     data['tab3'][res1]['set1_count'].add('{},{}'.format(pdb_name,res2))
                     data['tab3'][res2]['set1_count'].add('{},{}'.format(pdb_name,res1))
+
+                    if normalized_value not in data['interactions'][coord]['types_count'][model][0]:
+                            data['interactions'][coord]['types_count'][model][0].append(normalized_value)
+
                 if pdb_name in pdbs2:
                     if model in i_types:
                         if pdb_name not in data['interactions'][coord]['pdbs2']:
@@ -787,6 +797,10 @@ def InteractionBrowserData(request):
                     data['tab3'][res2]['set2_aa'].add(res2_aa)
                     data['tab3'][res1]['set2_count'].add('{},{}'.format(pdb_name,res2))
                     data['tab3'][res2]['set2_count'].add('{},{}'.format(pdb_name,res1))
+
+                    if normalized_value not in data['interactions'][coord]['types_count'][model][1]:
+                            data['interactions'][coord]['types_count'][model][1].append(normalized_value)
+                            
                 ## Presence lookup
                 pdbs_with_res1 = r_presence_lookup[res1]
                 pdbs_with_res2 = r_presence_lookup[res2]

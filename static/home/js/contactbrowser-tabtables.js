@@ -128,8 +128,8 @@ function renderDataTablesYadcf(element) {
 
             if (analys_mode == "#two-crystal-groups") {
 
-                repeated_from_to_1 = make_range_number_cols(6, 13);
-                repeated_from_to_2 = make_range_number_cols(21, 9);
+                repeated_from_to_1 = make_range_number_cols(10, 13);
+                repeated_from_to_2 = make_range_number_cols(25, 9);
 
                 yadcf.init(btable,
                     [{
@@ -162,16 +162,16 @@ function renderDataTablesYadcf(element) {
                             filter_reset_button_text: false,
 
                         },
-                        {
-                            column_number: 5,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Type",
-                            text_data_delimiter: "|",
-                            filter_reset_button_text: false,
-                        }
+                        // {
+                        //     column_number: 5,
+                        //     filter_type: "multi_select",
+                        //     select_type: 'select2',
+                        //     filter_default_label: "Type",
+                        //     text_data_delimiter: "|",
+                        //     filter_reset_button_text: false,
+                        // }
                     ].concat(repeated_from_to_1).concat([{
-                        column_number: 19,
+                        column_number: 23,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -180,7 +180,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     }, {
-                        column_number: 20,
+                        column_number: 24,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -1081,7 +1081,7 @@ function renderBrowser(data) {
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="3" class="pairselector" datatype="frequency"></th> \
-                      <th colspan="1" class="skip"></th> \
+                      <th colspan="5" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="distance_diff"></th> \
                       <th colspan="2" class="selector" datatype="core_distance_diff"></th> \
                       <th colspan="2" class="selector" datatype="rotation_diff"></th> \
@@ -1099,7 +1099,7 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2">Contact Frequency (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th colspan="5" rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
@@ -1128,7 +1128,11 @@ function renderBrowser(data) {
                           <th class="narrow_col">Set 1<br></th> \
                           <th class="narrow_col">Set 2<br></th> \
                           <th class="narrow_col">Diff<br></th> \
-                          <th></th> \
+                          <th style="writing-mode: sideways-lr;">Ion</th> \
+                          <th style="writing-mode: sideways-lr;">Pol</th> \
+                          <th style="writing-mode: sideways-lr;">Aro</th> \
+                          <th style="writing-mode: sideways-lr;">Hyd</th> \
+                          <th style="writing-mode: sideways-lr;">vDw</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1172,9 +1176,7 @@ function renderBrowser(data) {
             var diff_pfreq = pfreq1 - pfreq2;
             var sfreq1 = Math.round(100 * v['pdbs1'].length / pdbs_1);
             var sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
-            var diff_sfreq = sfreq1 - sfreq2;
             var class_seq_cons = v['class_seq_cons'];
-
             if (normalized) {
                 var pffreq1 = Math.round(100 * v['pfs1'].length / pfs_1);
                 var pffreq2 = Math.round(100 * v['pfs2'].length / pfs_2);
@@ -1188,7 +1190,7 @@ function renderBrowser(data) {
 
                 // replace values for normalized ones
                 sfreq1 = pffreq1;
-                sfreq2 = pffreq1;
+                sfreq2 = pffreq2;
                 pos1_missing_1 = data['pfs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs1'].length;  
                 pos1_missing_2 = data['pfs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs2'].length;  
                 pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
@@ -1204,6 +1206,9 @@ function renderBrowser(data) {
                 pos2_missing = Math.round(100*(pos2_missing_2-pos2_missing_1));
 
             }
+            var diff_sfreq = sfreq1 - sfreq2;
+
+
 
             var class_seq_cons_diff = class_seq_cons[0] - class_seq_cons[1];
 
@@ -1239,6 +1244,14 @@ function renderBrowser(data) {
                 set_1 = data['pdbs1'];
                 set_2 = data['pdbs2'];
             }
+
+            types_count = {};
+            Object.entries(v['types_count']).forEach(([key,value])=>{
+                types_count_set1 = Math.round(100*value[0].length / set_1.length);
+                types_count_set2 = Math.round(100*value[1].length / set_2.length);
+                types_count[key] = [types_count_set1,types_count_set2,types_count_set1-types_count_set2];
+            })
+            
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
                 if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
@@ -1318,7 +1331,11 @@ function renderBrowser(data) {
                       <td class="narrow_col">${sfreq1}</td>
                       <td class="narrow_col">${sfreq2}</td>
                       <td class="narrow_col">${diff_sfreq}</td>
-                      <td>${types}</td>
+                      <td class="angles_tooltip" data-set1="${types_count['ionic'][0]}" data-set2="${types_count['ionic'][1]}">${types_count['ionic'][2]}</td>
+                      <td class="angles_tooltip" data-set1="${types_count['polar'][0]}" data-set2="${types_count['polar'][1]}">${types_count['polar'][2]}</td>
+                      <td class="angles_tooltip" data-set1="${types_count['aromatic'][0]}" data-set2="${types_count['aromatic'][1]}">${types_count['aromatic'][2]}</td>
+                      <td class="angles_tooltip" data-set1="${types_count['hydrophobic'][0]}" data-set2="${types_count['hydrophobic'][1]}">${types_count['hydrophobic'][2]}</td>
+                      <td class="angles_tooltip" data-set1="${types_count['van-der-waals'][0]}" data-set2="${types_count['van-der-waals'][1]}">${types_count['van-der-waals'][2]}</td>
                       <td class="narrow_col">${distance}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
