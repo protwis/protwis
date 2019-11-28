@@ -1171,7 +1171,7 @@ def InteractionBrowserData(request):
                     gn1_values = []
                     for i,v in enumerate(group_angles[gn1]):
                         try:
-                            gn1_values.append("{:.1f}".format(v))
+                            gn1_values.append(round(v))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn1_values.append("")
@@ -1181,7 +1181,7 @@ def InteractionBrowserData(request):
                     gn2_values = []
                     for i,v in enumerate(group_angles[gn2]):
                         try:
-                            gn2_values.append("{:.1f}".format(v))
+                            gn2_values.append(round(v))
                         except:
                             # Fails if there is a None (like gly doesnt have outer angle?)
                             gn2_values.append("")
@@ -1196,7 +1196,7 @@ def InteractionBrowserData(request):
                         gn_values = []
                         for i,v in enumerate(group_angles[gn]):
                             try:
-                                gn_values.append("{:.1f}".format(v))
+                                gn_values.append(round(v))
                             except:
                                 # Fails if there is a None (like gly doesnt have outer angle?)
                                 gn_values.append("")
