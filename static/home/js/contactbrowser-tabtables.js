@@ -1119,7 +1119,7 @@ function renderBrowser(data) {
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
                           <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
-                          <th rowspan="2" colspan="3">Sum of conservation of contact AA pairs in class (%)</th> \
+                          <th rowspan="2" colspan="3">Contact AA pair sequence conservation in class (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
@@ -1769,7 +1769,7 @@ function renderBrowser_2(data) {
                           <th colspan="3" rowspan="2">AA pair contact frequency (%)</th> \
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="9" rowspan="1">AA occurrence in structure sets (%)</th> \
-                          <th colspan="3" rowspan="2">Conservation in class (%)</th> \
+                          <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
                           <th rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
                           <th colspan="4">Backbone Ca movement</th> \
@@ -2050,7 +2050,7 @@ function renderBrowser_2(data) {
                           <th colspan="1" rowspan="2">AA pair contact frequency (%)</th> \
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="1">AA occurrence in set (%)</th> \
-                          <th colspan="3" rowspan="2">Conservation in class (%)</th> \
+                          <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
                           <th rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
                           <th colspan="4">Backbone Ca movement</th> \
@@ -2829,10 +2829,11 @@ function renderBrowser_4(data) {
                       <th colspan="3" class="selector" datatype="conservation"></th> \
                       <th colspan="1" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="class_conservation"></th> \
+                      <th colspan="3" class="skip"></th> \
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Position</th> \
+                          <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
                           <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
                           <th colspan="9" rowspan="1">Residue angles and dihedrals</th> \
@@ -2845,12 +2846,12 @@ function renderBrowser_4(data) {
                           <th colspan="3">Frequency (%)</th> \
                           <th colspan="2">No generic number (gap pos)</th> \
                           <th colspan="2">No 3D coordinates</th> \
-                          <th colspan="3">Phi dihedral<br/>(N(+1)-C-Ca-N)</th> \
-                          <th colspan="3">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
-                          <th colspan="3">Tau angle<br/>(N-Ca-C)</th> \
-                          <th colspan="3">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="3">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="3">Phi dihedral<br/><span class="small">(N(+1)-C-Ca-N)</span></th> \
+                          <th colspan="3">Psi dihedral<br/><span class="small">(C-Ca-N-C(-1))</span></th> \
+                          <th colspan="3">Tau angle<br/><span class="small">(N-Ca-C)</span></th> \
+                          <th colspan="3">Tau dihedral<br/><span class="small">(Ca(+1)-Ca-Ca(-1)-Ca(-2))</span></th> \
+                          <th colspan="3">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
+                          <th colspan="3">Theta angle<br/><span class="small">(Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="2">AA</th> \
                           <th colspan="3">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -3073,7 +3074,7 @@ function renderBrowser_4(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Position</th> \
+                          <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="2" rowspan="1">Secondary structure</th> \
                           <th colspan="3" rowspan="1">Residue angles</th> \
                           <th colspan="3" rowspan="1">Helix turn angle</th> \
@@ -3083,12 +3084,12 @@ function renderBrowser_4(data) {
                         <tr> \
                           <th colspan="1">Consensus SS</th> \
                           <th colspan="1">Frequency (%)</th> \
-                          <th colspan="1">Phi dihedral<br/>(N(+1)-C-Ca-N)</th> \
-                          <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
-                          <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Phi dihedral<br/><span class="small">(N(+1)-C-Ca-N)</span></th> \
+                          <th colspan="1">Psi dihedral<br/><span class="small">(C-Ca-N-C(-1))</span></th> \
+                          <th colspan="1">Tau angle<br/><span class="small">(N-Ca-C)</span></th> \
+                          <th colspan="1">Tau dihedral<br/><span class="small">(Ca(+1)-Ca-Ca(-1)-Ca(-2))</span></th> \
+                          <th colspan="3">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
+                          <th colspan="1">Theta angle<br/><span class="small">(Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -3222,7 +3223,7 @@ function renderBrowser_4(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Position</th> \
+                          <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="1" rowspan="1">Secondary structure</th> \
                           <th colspan="3" rowspan="1">Residue angles</th> \
                           <th colspan="3" rowspan="1">Helix turn angle</th> \
@@ -3231,12 +3232,12 @@ function renderBrowser_4(data) {
                         </tr> \
                         <tr> \
                           <th colspan="1">SS</th> \
-                          <th colspan="1">Phi dihedral<br/>(N(+1)-C-Ca-N)</th> \
-                          <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
-                          <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Phi dihedral<br/><span class="small">(N(+1)-C-Ca-N)</span></th> \
+                          <th colspan="1">Psi dihedral<br/><span class="small">(C-Ca-N-C(-1))</span></th> \
+                          <th colspan="1">Tau angle<br/><span class="small">(N-Ca-C)</span></th> \
+                          <th colspan="1">Tau dihedral<br/><span class="small">(Ca(+1)-Ca-Ca(-1)-Ca(-2))</span></th> \
+                          <th colspan="3">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
+                          <th colspan="1">Theta angle<br/><span class="small">(Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Cons (%)</th> \

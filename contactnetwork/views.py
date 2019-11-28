@@ -1641,7 +1641,7 @@ def InteractionBrowserData(request):
                     temp_score_dict.append([aa,len(pdbs1_with_aa)])
 
                 most_freq_set = sorted(temp_score_dict.copy(), key = lambda x: -x[1])
-                data['tab3'][res1]['set_seq_cons'] = most_freq_set[0]
+                data['tab4'][res1]['set_seq_cons'] = most_freq_set[0]
             # Common for all modes
             if res1 in class_pair_lookup:
                 # print(res1,class_pair_lookup[res1])
