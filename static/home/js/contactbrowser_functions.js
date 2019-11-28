@@ -921,6 +921,8 @@
                         browser_visible = $(".nav-browsers:visible li.active a").attr('id');
                         renderDataTablesYadcf(browser_visible);
                         $(".main_loading_overlay").hide();
+
+                        // Set up default visualisation
                     }
                 });
 
@@ -985,11 +987,22 @@
                         renderDataTablesYadcf(browser_visible);
                         generate_display_options();
                         $(".main_loading_overlay").hide();
-                        redraw_renders();
+
+                        // Set up default visualisation
+                        initilizeInitialPlots();
                     }
                 });
             }
             // $(".main_loading_overlay").hide();
+        }
+
+        function initilizeInitialPlots() {
+            default_plot_types = ['heatmap','flareplot','ngl'];
+            $(".plot_row:visible").find(".panel").each(function(i) {
+                plot_type = default_plot_types[i];
+                plot_div = $(this);
+                drawPlotPanel(plot_type, plot_div);
+            })
         }
 
 

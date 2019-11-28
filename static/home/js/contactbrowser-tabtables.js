@@ -1020,6 +1020,16 @@ function renderDataTablesYadcf(element) {
     btable.columns.adjust().draw();
 
     $(".main_loading_overlay").hide();
+    $('div.dataTables_scrollBody:visible').height('50vh');
+
+    // Make sure browser-tables are not too wide.
+    browser_table_div_width = $('.contact-browser:visible').width();
+    if (browser_table_div_width > 2060) {
+        browser_table_width = 2030;
+    } else {
+        browser_table_width = browser_table_div_width - 30;
+    }
+    $('.contact-browser .dataTables_wrapper').width(browser_table_width);
     console.timeEnd("renderDataTablesYadcf");
 }
 
@@ -1331,11 +1341,11 @@ function renderBrowser(data) {
                       <td class="narrow_col">${sfreq1}</td>
                       <td class="narrow_col">${sfreq2}</td>
                       <td class="narrow_col">${diff_sfreq}</td>
-                      <td class="angles_tooltip" data-set1="${types_count['ionic'][0]}" data-set2="${types_count['ionic'][1]}">${types_count['ionic'][2]}</td>
-                      <td class="angles_tooltip" data-set1="${types_count['polar'][0]}" data-set2="${types_count['polar'][1]}">${types_count['polar'][2]}</td>
-                      <td class="angles_tooltip" data-set1="${types_count['aromatic'][0]}" data-set2="${types_count['aromatic'][1]}">${types_count['aromatic'][2]}</td>
-                      <td class="angles_tooltip" data-set1="${types_count['hydrophobic'][0]}" data-set2="${types_count['hydrophobic'][1]}">${types_count['hydrophobic'][2]}</td>
-                      <td class="angles_tooltip" data-set1="${types_count['van-der-waals'][0]}" data-set2="${types_count['van-der-waals'][1]}">${types_count['van-der-waals'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['ionic'][0]}" data-set2="${types_count['ionic'][1]}">${types_count['ionic'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['polar'][0]}" data-set2="${types_count['polar'][1]}">${types_count['polar'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['aromatic'][0]}" data-set2="${types_count['aromatic'][1]}">${types_count['aromatic'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['hydrophobic'][0]}" data-set2="${types_count['hydrophobic'][1]}">${types_count['hydrophobic'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['van-der-waals'][0]}" data-set2="${types_count['van-der-waals'][1]}">${types_count['van-der-waals'][2]}</td>
                       <td class="narrow_col">${distance}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
