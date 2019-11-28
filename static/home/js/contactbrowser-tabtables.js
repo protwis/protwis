@@ -1347,16 +1347,16 @@ function renderBrowser(data) {
                       <td class="dt-center angles_tooltip" data-set1="${types_count['hydrophobic'][0]}" data-set2="${types_count['hydrophobic'][1]}">${types_count['hydrophobic'][2]}</td>
                       <td class="dt-center angles_tooltip" data-set1="${types_count['van-der-waals'][0]}" data-set2="${types_count['van-der-waals'][1]}">${types_count['van-der-waals'][2]}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[2][1]}" data-set2="${angles_2[2][2]}">${angles_2[2][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[6][1]}" data-set2="${angles_1[6][2]}">${angles_1[6][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[6][1]}" data-set2="${angles_2[6][2]}">${angles_2[6][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[7][1]}" data-set2="${angles_1[7][2]}">${angles_1[7][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[7][1]}" data-set2="${angles_2[7][2]}">${angles_2[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="0" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="1" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="0" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="1" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="0" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="1" data-set1="${angles_2[2][1]}" data-set2="${angles_2[2][2]}">${angles_2[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="sasa" data-pos="0" data-set1="${angles_1[6][1]}" data-set2="${angles_1[6][2]}">${angles_1[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="sasa" data-pos="1" data-set1="${angles_2[6][1]}" data-set2="${angles_2[6][2]}">${angles_2[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="rsa" data-pos="0" data-set1="${angles_1[7][1]}" data-set2="${angles_1[7][2]}">${angles_1[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="rsa" data-pos="1" data-set1="${angles_2[7][1]}" data-set2="${angles_2[7][2]}">${angles_2[7][0]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col">${dssp_pos1}</td>
@@ -1708,6 +1708,9 @@ function renderBrowser(data) {
 
         // figure out which cell is selected
         cell_index = $(this).index();
+        data_type = $(this).data("type");
+        data_pos = $(this).data("pos");
+
         gn_pair = $(this).closest("tr").attr('id').split(",");
         gn1 = gn_pair[0];
         gn2 = gn_pair[1];
@@ -1722,14 +1725,14 @@ function renderBrowser(data) {
 
         //Slight wait, to be sure modal is open.
 
-        if (cell_index % 2 != 0) {
+        if (data_pos == 0) {
             // odd cell number is pos1
             if (typeof all_angles_1 !== 'undefined')
-              setTimeout(function(){ createBoxPlotResidue(gn1,'modal_plotly_1','angles',cell_index) }, 500);
+              setTimeout(function(){ createBoxPlotResidue(gn1,'modal_plotly_1','angles',data_type) }, 500);
 
         } else {
             if (typeof all_angles_2 !== 'undefined')
-              setTimeout(function(){ createBoxPlotResidue(gn2,'modal_plotly_1','angles',cell_index) }, 500);
+              setTimeout(function(){ createBoxPlotResidue(gn2,'modal_plotly_1','angles',data_type) }, 500);
           }
 
     });
@@ -2013,16 +2016,16 @@ function renderBrowser_2(data) {
 
                       <td>${types}</td>
                       <td class="narrow_col">${distance_2}</td>
-                      <td class="narrow_col angles_modal">${angles_1[0][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[0][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[1][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[1][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[2][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[2][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[6][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[6][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[7][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="0" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="1" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="0" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="1" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="0" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="1" data-set1="${angles_2[2][1]}" data-set2="${angles_2[2][2]}">${angles_2[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="sasa" data-pos="0" data-set1="${angles_1[6][1]}" data-set2="${angles_1[6][2]}">${angles_1[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="sasa" data-pos="1" data-set1="${angles_2[6][1]}" data-set2="${angles_2[6][2]}">${angles_2[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="rsa" data-pos="0" data-set1="${angles_1[7][1]}" data-set2="${angles_1[7][2]}">${angles_1[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="rsa" data-pos="1" data-set1="${angles_2[7][1]}" data-set2="${angles_2[7][2]}">${angles_2[7][0]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col">${dssp_pos1}</td>
@@ -2403,6 +2406,9 @@ function renderBrowser_2(data) {
         var aa1 = v2['aa1'];
         var aa2 = v2['aa2'];
 
+        data_type = $(this).data("type");
+        data_pos = $(this).data("pos");
+
         all_angles_1 = two_sets_data['all_angles'][gn1];
         all_angles_2 = two_sets_data['all_angles'][gn2];
 
@@ -2410,9 +2416,18 @@ function renderBrowser_2(data) {
         $("#resModal").modal();
 
         //Slight wait, to be sure modal is open.
-        console.log(pdbs_aa1,pdbs_aa2);
-        setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',pdbs_aa1,aa1) }, 500);
-        setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles',pdbs_aa2,aa2) }, 500);
+        // console.log(pdbs_aa1,pdbs_aa2);
+        if (data_pos == 0) {
+            // odd cell number is pos1
+            if (typeof all_angles_1 !== 'undefined')
+              setTimeout(function(){ createBoxPlotResidue(gn1,'modal_plotly_1','angles',data_type,pdbs_aa1,aa1) }, 500);
+
+        } else {
+            if (typeof all_angles_2 !== 'undefined')
+              setTimeout(function(){ createBoxPlotResidue(gn2,'modal_plotly_1','angles',data_type,pdbs_aa2,aa2) }, 500);
+          }
+        // setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',pdbs_aa1,aa1) }, 500);
+        // setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles',pdbs_aa2,aa2) }, 500);
 
     });
 

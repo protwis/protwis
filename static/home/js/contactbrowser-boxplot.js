@@ -176,7 +176,8 @@ function createBoxPlot(data, element, plottype) {
 
 }
 
-function createBoxPlotResidue(gn, element, plottype, cell_index, limit_pdbs = false, aa = false) {
+function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = false, aa = false) {
+    console.log("createBoxPlotResidue",gn,data_type);
     var mode = get_current_mode();
     var layout = {};
     data = two_sets_data['all_angles'][gn];
@@ -302,7 +303,7 @@ function createBoxPlotResidue(gn, element, plottype, cell_index, limit_pdbs = fa
 
                     names = [['core_distance',false], ['a_angle',true], ['outer_angle',true], ['tau',true], ['phi',true], ['psi',true], ['sasa',false], ['rsa',false], ['theta',true], ['hse',false], ['dssp',false], ['tau_angle', true]]
 
-                    name_index = Math.floor((cell_index - 6) / 2);
+                    // name_index = Math.floor((cell_index - 6) / 2);
                     name_index = {
                         7: 'core_distance',
                         8: 'core_distance',
@@ -317,18 +318,19 @@ function createBoxPlotResidue(gn, element, plottype, cell_index, limit_pdbs = fa
                     };
 
                     // console.log(cell_index,name_index,name_index[cell_index]);
-
+                    // console.log(ys1,ys2);
                     var traces = [];
                     is_angle = true;
                     for (const key in ys) {
-                        if (name_index[cell_index] != names[key][0]) continue;
+                        if (data_type != names[key][0]) continue;
                         is_angle = names[key][1]
                         new_x = []
                         for (var i = 0; i < x.length; i++) {
                             new_x.push(names[key][0] + "<br>" + x[i]);
                         }
                         visible_trace = 'legendonly';
-                        if (name_index[cell_index] == names[key][0]) visible_trace = true;
+                        if (data_type == names[key][0]) visible_trace = true;
+                        // console.log(data_type,'is_angle',is_angle)
                         if (names[key][1] == true) {
                             mean1 = meanAngleDeg(ys1[key]);
                             mean2 = meanAngleDeg(ys2[key]);
