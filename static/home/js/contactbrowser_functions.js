@@ -923,6 +923,7 @@
                         $(".main_loading_overlay").hide();
 
                         // Set up default visualisation
+                        initilizeInitialPlots();
                     }
                 });
 
