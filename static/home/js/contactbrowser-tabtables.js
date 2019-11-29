@@ -3353,65 +3353,213 @@ function renderBrowser_5(data) {
     if (data['proteins2']) {
       thead = '<tr> \
                     <th colspan="2" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="pair_distance_diff"></th> \
                     <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
                     <th colspan="1" class="selector" datatype="rotation_diff"></th> \
                     <th colspan="1" class="selector" datatype="HSE_diff"></th> \
+                    <th colspan="3" class="skip"></th> \
+                    <th colspan="2" class="skip"></th> \
+                    <th colspan="3" class="selector" datatype="conservation"></th> \
+                    <th colspan="1" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="class_conservation"></th> \
                 </tr>';
     } else {
       thead = '<tr> \
                     <th colspan="2" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="pair_distance"></th> \
                     <th colspan="1" class="selector" datatype="core_distance"></th> \
                     <th colspan="1" class="selector" datatype="rotation"></th> \
                     <th colspan="1" class="selector" datatype="HSE"></th> \
+                    <th colspan="3" class="skip"></th> \
+                    <th colspan="1" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="conservation"></th> \
+                    <th colspan="1" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="class_conservation"></th> \
                 </tr>';
     }
 
-    thead += '<tr> \
-                      <th colspan="1" rowspan="2">Segment</th> \
-                      <th colspan="1" rowspan="2">Position</th> \
-                      <th colspan="2">Backbone Ca movement</th> \
-                      <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
-                    </tr> \
-                    <tr> \
-                      <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
-                      <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
-                    </tr> \
-                    <tr> \
-                      <th class="dt-center"></th> \
-                      <th class="dt-center"></th> \
-                      <th class="narrow_col"></th> \
-                      <th class="narrow_col"></th> \
-                      <th class="narrow_col"></th> \
-                    </tr>';
+    if (data['proteins2']) {
+        thead += '<tr> \
+                        <th colspan="1" rowspan="2">Seg</th> \
+                        <th colspan="1" rowspan="2">Pos</th> \
+                        <th colspan="1" rowspan="2">Pair movement</th> \
+                        <th colspan="2">Backbone Ca movement</th> \
+                        <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                        <th colspan="3">Sidechain differences</th> \
+                        <th colspan="5" rowspan="1">Seq consensus</th> \
+                        <th colspan="2" rowspan="1">Class seq consensus</th> \
+                        </tr> \
+                        <tr> \
+                        <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
+                        <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
+                        <th colspan="1">Rotamer</th> \
+                        <th colspan="1">SASA</th> \
+                        <th colspan="1">RSA</th> \
+                        <th colspan="2">AA</th> \
+                        <th colspan="3">Conservation (%)</th> \
+                        <th colspan="1">AA</th> \
+                        <th colspan="1">Cons (%)</th> \
+                        </tr> \
+                        <tr> \
+                        <th class="dt-center"></th> \
+                        <th class="dt-center"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col">Set 1<br></th> \
+                        <th class="narrow_col">Set 2<br></th> \
+                        <th class="narrow_col">Set 1<br></th> \
+                        <th class="narrow_col">Set 2<br></th> \
+                        <th class="narrow_col">Diff<br></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        </tr>';
+    } else {
+        thead += '<tr> \
+                <th colspan="1" rowspan="2">Seg</th> \
+                <th colspan="1" rowspan="2">Pos</th> \
+                <th colspan="1" rowspan="2">Pair movement</th> \
+                <th colspan="2">Backbone Ca movement</th> \
+                <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                <th colspan="3">Sidechain differences</th> \
+                <th colspan="2" rowspan="1">Seq consensus</th> \
+                <th colspan="2" rowspan="1">Class seq consensus</th> \
+                </tr> \
+                <tr> \
+                <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
+                <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
+                <th colspan="1">Rotamer</th> \
+                <th colspan="1">SASA</th> \
+                <th colspan="1">RSA</th> \
+                <th colspan="1">AA</th> \
+                <th colspan="1">Conservation (%)</th> \
+                <th colspan="1">AA</th> \
+                <th colspan="1">Cons (%)</th> \
+                </tr> \
+                <tr> \
+                <th class="dt-center"></th> \
+                <th class="dt-center"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col">Set 1<br></th> \
+                <th class="narrow_col">Set 1<br></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                </tr>';
+    }
     table.find('thead').html(thead);
     tr_list = ''
-    $.each(data['tab4'], function(i, v) {
+    if (data['proteins2']) {
+        $.each(data['tab4'], function(i, v) {
 
-        // console.log(i,v);
-        var seg = v['ps'];
-        var angles = v['angles'];
-        // 0 'core_distance',
-        // 1 'a_angle',
-        // 2 'outer_angle',
-        // 3 'tau',
-        // 4 'phi',
-        // 5 'psi',
-        // 6 'sasa',
-        // 7 'rsa',
-        // 8 'theta',
-        // 9 'hse'
+            // console.log(i,v);
+            var seg = v['ps'];
+            var angles = v['angles'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi',
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
 
-        tr = ''
-        tr_list += `
-                <tr class="clickable-row filter_rows" id="${i}">
-                  <td class="dt-center">${seg}</td>
-                  <td class="dt-center">${i}</td>
-                  <td class="narrow_col">${angles[0][0]}</td>
-                  <td class="narrow_col">${angles[1][0]}</td>
-                  <td class="narrow_col">${angles[9][0]}</td>
-                </tr>`;
-        // tbody.append(tr);
-    });
+            var pdbs_1 = data['pdbs1'].length
+            var pdbs_2 = data['pdbs2'].length
+
+            var set1_seq_cons_aa = v['set1_seq_cons'][0];
+            var set2_seq_cons_aa = v['set2_seq_cons'][0];
+            var set1_seq_cons_freq = Math.round(100 * v['set1_seq_cons'][1] / pdbs_1);
+            var set2_seq_cons_freq = Math.round(100 * v['set2_seq_cons'][2] / pdbs_2);
+            var diff_seq_cons_freq = Math.round((set1_seq_cons_freq - set2_seq_cons_freq));
+
+            var class_cons_aa = v['class_cons'][0];
+            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                    <td class="dt-center">${seg}</td>
+                    <td class="dt-center">${i}</td>
+                    <td class="narrow_col">pair</td>
+                    <td class="narrow_col">${angles[0][0]}</td>
+                    <td class="narrow_col">${angles[1][0]}</td>
+                    <td class="narrow_col">${angles[9][0]}</td>
+                    <td class="narrow_col">${angles[2][0]}</td>
+                    <td class="narrow_col">${angles[6][0]}</td>
+                    <td class="narrow_col">${angles[7][0]}</td>
+
+                    <td class="narrow_col">${set1_seq_cons_aa}</td>
+                    <td class="narrow_col">${set2_seq_cons_aa}</td>
+                    <td class="narrow_col">${set1_seq_cons_freq}</td>
+                    <td class="narrow_col">${set2_seq_cons_freq}</td>
+                    <td class="narrow_col">${diff_seq_cons_freq}</td>
+
+                    <td class="narrow_col">${class_cons_aa}</td>
+                    <td class="narrow_col">${class_cons_freq}</td>
+
+                    </tr>`;
+            // tbody.append(tr);
+        });
+    } else {
+        $.each(data['tab4'], function(i, v) {
+
+            // console.log(i,v);
+            var seg = v['ps'];
+            var angles = v['angles'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi',
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
+
+            var pdbs_count = data['pdbs'].length
+
+            var set_seq_cons_aa = v['set_seq_cons'][0];
+            var set_seq_cons_freq = Math.round(100 * v['set_seq_cons'][1] / pdbs_count);
+
+            var class_cons_aa = v['class_cons'][0];
+            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                    <td class="dt-center">${seg}</td>
+                    <td class="dt-center">${i}</td>
+                    <td class="narrow_col">pair</td>
+                    <td class="narrow_col">${angles[0]}</td>
+                    <td class="narrow_col">${angles[1]}</td>
+                    <td class="narrow_col">${angles[9]}</td>
+                    <td class="narrow_col">${angles[2]}</td>
+                    <td class="narrow_col">${angles[6]}</td>
+                    <td class="narrow_col">${angles[7]}</td>
+
+                    <td class="narrow_col">${set_seq_cons_aa}</td>
+                    <td class="narrow_col">${set_seq_cons_freq}</td>
+
+                    <td class="narrow_col">${class_cons_aa}</td>
+                    <td class="narrow_col">${class_cons_freq}</td>
+
+                    </tr>`;
+            // tbody.append(tr);
+        });
+    }
     // insert natively for speed increase on Chrome
     tbody[0].innerHTML = tr_list;
 
