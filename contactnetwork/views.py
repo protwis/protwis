@@ -1191,7 +1191,7 @@ def InteractionBrowserData(request):
                 data['tab3'][gn1]['angles'] = gn1_values
                 data['tab3'][gn2]['angles'] = gn2_values
                 for gn in data['tab4'].keys():
-                    gn_values = [['','','']] * 11
+                    gn_values = [''] * 11
                     if gn in group_angles:
                         gn_values = []
                         for i,v in enumerate(group_angles[gn]):

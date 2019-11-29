@@ -3164,10 +3164,10 @@ function renderBrowser_4(data) {
                     // get first element as [key,value]
                     most = mapSort.entries().next().value;
                     // calculate frequency
-                    freq = most[1]/list.length;
+                    freq = Math.round(100*most[1]/list.length);
                     most = most[0];
                 } else {
-                    freq = 0;
+                    freq = '';
                     most = 'N/A';
                 }
                 dssp.push([most,freq]);
@@ -3180,7 +3180,7 @@ function renderBrowser_4(data) {
                       <td class="dt-center">${i}</td>
 
                       <td class="narrow_col">${dssp[0][0]}</td>
-                      <td class="narrow_col">${Math.round(100*dssp[0][1])}</td>
+                      <td class="narrow_col">${dssp[0][1]}</td>
 
                       <td class="narrow_col">${angles[4]}</td>
 
