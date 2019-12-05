@@ -365,8 +365,8 @@ function renderDataTablesYadcf(element) {
 
                 repeated_from_to_1 = make_range_number_cols(2, 6);
                 repeated_from_to_2 = make_range_number_cols(10, 12);
-                repeated_from_to_3 = make_range_number_cols(23, 13);
-                repeated_from_to_4 = make_range_number_cols(38, 6);
+                repeated_from_to_3 = make_range_number_cols(27, 13);
+                repeated_from_to_4 = make_range_number_cols(42, 6);
 
                 yadcf.init(btable,
                     [{
@@ -405,17 +405,7 @@ function renderDataTablesYadcf(element) {
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_2).concat([{
-                        column_number: 22,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                            width: '60px'
-                        },
-                        filter_default_label: "Type",
-                        text_data_delimiter: "|",
-                        filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_3).concat([{
+                    }]).concat(repeated_from_to_2).concat(repeated_from_to_3).concat([{
                         column_number: 36,
                         filter_type: "multi_select",
                         select_type: 'select2',
@@ -1770,7 +1760,7 @@ function renderBrowser_2(data) {
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="9" rowspan="1">AA occurrence in structure sets (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
@@ -1815,7 +1805,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th></th> \
+                          <th style="writing-mode: sideways-lr;">Ion</th> \
+                          <th style="writing-mode: sideways-lr;">Pol</th> \
+                          <th style="writing-mode: sideways-lr;">Aro</th> \
+                          <th style="writing-mode: sideways-lr;">Hyd</th> \
+                          <th style="writing-mode: sideways-lr;">vDw</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1878,7 +1872,7 @@ function renderBrowser_2(data) {
                 var aafreq1 = v2['set1']['interaction_freq'];
                 var aafreq2 = v2['set2']['interaction_freq'];
             }
-            var diff_aafreq = (aafreq1 - aafreq2).toFixed(1);
+            var diff_aafreq = (aafreq1 - aafreq2).toFixed(0);
             var aa1 = v2['aa1'];
             var aa2 = v2['aa2'];
 
@@ -2014,7 +2008,11 @@ function renderBrowser_2(data) {
                       <td class="narrow_col">${v2['class_aa2']}</td>
                       <td class="narrow_col">${v2['class']}</td>
 
-                      <td>${types}</td>
+                      <td>${v2['types_freq']['ionic'][2]}</td>
+                      <td>${v2['types_freq']['polar'][2]}</td>
+                      <td>${v2['types_freq']['aromatic'][2]}</td>
+                      <td>${v2['types_freq']['hydrophobic'][2]}</td>
+                      <td>${v2['types_freq']['van-der-waals'][2]}</td>
                       <td class="narrow_col">${distance_2}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="0" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="1" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>

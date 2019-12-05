@@ -629,6 +629,14 @@ def InteractionBrowserData(request):
                     data['proteins2'] |= {protein}
                     data['pfs2'] |= {pf}
 
+        if normalized:
+            data['set1_size'] = len(data['pfs1'])
+            data['set2_size'] = len(data['pfs2'])
+        else:
+            data['set1_size'] = len(data['pdbs1'])
+            data['set2_size'] = len(data['pdbs2'])
+
+
         # Get all unique GNS to populate all residue tables (tab4)
         distinct_gns = list(Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs).exclude(generic_number=None).values_list('generic_number__label','protein_segment__slug').distinct().order_by())
 
@@ -1233,18 +1241,25 @@ def InteractionBrowserData(request):
                 ).distinct().annotate(
                     i_types=ArrayAgg('interaction_type'),
                     structures=ArrayAgg('interacting_pair__referenced_structure__pdb_code__index'),
+                    pfs=ArrayAgg('interacting_pair__referenced_structure__protein_conformation__protein__parent__family__slug'),
                     structuresC=Count('interacting_pair__referenced_structure',distinct=True),
                     pfsC=Count('interacting_pair__referenced_structure__protein_conformation__protein__parent__family__name',distinct=True)
                 ))
             for i in interactions:
                 key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
-                    aa_pair_data[key] = {'set1':{'interaction_freq':0,'interaction_freq_pf':0}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0}, 'types':[]}
+                    aa_pair_data[key] = {'set1':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key][set_id]
-                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs1']),1)
-                d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs1']),1)
-                d['structures'] = i['structures']
+                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs1']),0)
+                d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs1']),0)
+                if normalized:
+                    merged_types_structures = list(zip(i['i_types'],i['pfs']))
+                else:
+                    merged_types_structures = list(zip(i['i_types'],i['structures']))
+                d['types_count'] = defaultdict(set)
+                for key, val in merged_types_structures:
+                    d['types_count'][key].add(val)
             print('Gotten first set occurance calcs',time.time()-start_time)
 
             set_id = 'set2'
@@ -1268,18 +1283,26 @@ def InteractionBrowserData(request):
                 ).distinct().annotate(
                     i_types=ArrayAgg('interaction_type'),
                     structures=ArrayAgg('interacting_pair__referenced_structure__pdb_code__index'),
+                    pfs=ArrayAgg('interacting_pair__referenced_structure__protein_conformation__protein__parent__family__slug'),
                     structuresC=Count('interacting_pair__referenced_structure',distinct=True),
                     pfsC=Count('interacting_pair__referenced_structure__protein_conformation__protein__parent__family__name',distinct=True)
                 ))
+                
             for i in interactions:
                 key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
-                    aa_pair_data[key] = {'set1':{'interaction_freq':0,'interaction_freq_pf':0}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0}, 'types':[]}
+                    aa_pair_data[key] = {'set1':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key][set_id]
-                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs2']),1)
-                d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs2']),1)
-                d['structures'] = list(set(i['structures']))
+                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs2']),0)
+                d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs2']),0)
+                if normalized:
+                    merged_types_structures = list(zip(i['i_types'],i['pfs']))
+                else:
+                    merged_types_structures = list(zip(i['i_types'],i['structures']))
+                        
+                for key, val in merged_types_structures:
+                    d['types_count'][key].add(val)
             print('Gotten second set occurance calcs',time.time()-start_time)
 
             ## Fill in remaining data
@@ -1318,7 +1341,16 @@ def InteractionBrowserData(request):
                 else:
                     d['class_aa2'] = ""
 
-
+                # Work out the occurance of interaction types in each set..
+                d['types_freq'] = {}
+                for i_type in ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']:
+                    set1_type_freq = round(100*len(d['set1']['types_count'][i_type])/data['set1_size'])
+                    set2_type_freq = round(100*len(d['set2']['types_count'][i_type])/data['set2_size'])
+                    d['types_freq'][i_type] = [set1_type_freq,
+                                               set2_type_freq,
+                                               set1_type_freq-set2_type_freq] #set1, #set2
+                del d['set1']['types_count']
+                del d['set2']['types_count']
                 pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
                 pdbs_with_aa2 = r_pair_lookup[gen2][aa2]
 
@@ -1382,8 +1414,8 @@ def InteractionBrowserData(request):
                     aa_pair_data[key] = {'set':{'interaction_freq':0,'interaction_freq_pf':0}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key]['set']
-                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs']),1)
-                d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs']),1)
+                d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs']),0)
+                d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs']),0)
                 d['structures'] = i['structures']
 
             ## Fill in remaining data
