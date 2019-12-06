@@ -629,12 +629,19 @@ def InteractionBrowserData(request):
                     data['proteins2'] |= {protein}
                     data['pfs2'] |= {pf}
 
-        if normalized:
-            data['set1_size'] = len(data['pfs1'])
-            data['set2_size'] = len(data['pfs2'])
+        if mode == 'double':
+            if normalized:
+                data['set1_size'] = len(data['pfs1'])
+                data['set2_size'] = len(data['pfs2'])
+            else:
+                data['set1_size'] = len(data['pdbs1'])
+                data['set2_size'] = len(data['pdbs2'])
         else:
-            data['set1_size'] = len(data['pdbs1'])
-            data['set2_size'] = len(data['pdbs2'])
+            if normalized:
+                data['set_size'] = len(data['pfs'])
+            else:
+                data['set_size'] = len(data['pdbs'])
+
 
 
         # Get all unique GNS to populate all residue tables (tab4)
@@ -834,7 +841,9 @@ def InteractionBrowserData(request):
                 data['tab3'][res1]['count'].add('{},{}'.format(pdb_name,res2))
                 data['tab3'][res2]['count'].add('{},{}'.format(pdb_name,res1))
                 if coord not in data['interactions']:
-                    data['interactions'][coord] = {'pdbs':[], 'proteins': [], 'pfs': [], 'secondary': [], 'class_seq_cons' : 0, 'types' : [], 'seq_pos':[res1_seq,res2_seq]}
+                    data['interactions'][coord] = {'pdbs':[], 'proteins': [], 'pfs': [], 'secondary': [], 'class_seq_cons' : 0, 'types' : [], 'types_count' : {}, 'seq_pos':[res1_seq,res2_seq]}
+                    for i_type in ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']:
+                        data['interactions'][coord]['types_count'][i_type] = [] #set
 
                 if model in i_types or not i_types:
                     if model not in data['interactions'][coord]['types']:
@@ -846,6 +855,10 @@ def InteractionBrowserData(request):
                 if pf not in data['interactions'][coord]['pfs']:
                     data['interactions'][coord]['pfs'].append(pf)
                 data['interactions'][coord]['secondary'].append([model,res1_aa,res2_aa,pdb_name])
+
+                if normalized_value not in data['interactions'][coord]['types_count'][model]:
+                    data['interactions'][coord]['types_count'][model].append(normalized_value)
+
                 ## Presence lookup
                 pdbs_with_res1 = r_presence_lookup[res1]
                 pdbs_with_res2 = r_presence_lookup[res2]
@@ -1404,6 +1417,7 @@ def InteractionBrowserData(request):
                 ).distinct().annotate(
                     i_types=ArrayAgg('interaction_type'),
                     structures=ArrayAgg('interacting_pair__referenced_structure__pdb_code__index'),
+                    pfs=ArrayAgg('interacting_pair__referenced_structure__protein_conformation__protein__parent__family__slug'),
                     structuresC=Count('interacting_pair__referenced_structure',distinct=True),
                     pfsC=Count('interacting_pair__referenced_structure__protein_conformation__protein__parent__family__name',distinct=True)
                 ))
@@ -1411,12 +1425,19 @@ def InteractionBrowserData(request):
             for i in interactions:
                 key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
-                    aa_pair_data[key] = {'set':{'interaction_freq':0,'interaction_freq_pf':0}, 'types':[]}
+                    aa_pair_data[key] = {'set':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key]['set']
                 d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs']),0)
                 d['interaction_freq_pf'] = round(100*i['pfsC'] / len(data['pfs']),0)
                 d['structures'] = i['structures']
+                if normalized:
+                    merged_types_structures = list(zip(i['i_types'],i['pfs']))
+                else:
+                    merged_types_structures = list(zip(i['i_types'],i['structures']))
+                        
+                for key, val in merged_types_structures:
+                    d['types_count'][key].add(val)
 
             ## Fill in remaining data
             pdbs1 = data['pdbs']
@@ -1453,6 +1474,12 @@ def InteractionBrowserData(request):
                 else:
                     d['class_aa2'] = ""
 
+                # Work out the occurance of interaction types in each set..
+                d['types_freq'] = {}
+                for i_type in ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']:
+                    set_type_freq = round(100*len(d['set']['types_count'][i_type])/data['set_size'])
+                    d['types_freq'][i_type] = set_type_freq #set
+                del d['set']['types_count']
 
                 pdbs_with_aa1 = r_pair_lookup[gen1][aa1]
                 pdbs_with_aa2 = r_pair_lookup[gen2][aa2]

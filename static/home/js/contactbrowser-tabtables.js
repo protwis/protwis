@@ -194,8 +194,8 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
-                repeated_from_to_1 = make_range_number_cols(4, 13);
-                repeated_from_to_2 = make_range_number_cols(19, 7);
+                repeated_from_to_1 = make_range_number_cols(8, 13);
+                repeated_from_to_2 = make_range_number_cols(23, 7);
                 yadcf.init(btable,
                     [{
                             column_number: 0,
@@ -217,16 +217,16 @@ function renderDataTablesYadcf(element) {
                             filter_type: "range_number",
                             filter_reset_button_text: false,
                         },
+                        // {
+                        //     column_number: 3,
+                        //     filter_type: "multi_select",
+                        //     select_type: 'select2',
+                        //     filter_default_label: "Type",
+                        //     text_data_delimiter: "|",
+                        //     filter_reset_button_text: false,
+                        // },
                         {
-                            column_number: 3,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Type",
-                            text_data_delimiter: "|",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number: 17,
+                            column_number: 21,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -235,7 +235,7 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "AA",
                             filter_reset_button_text: false,
                         }, {
-                            column_number: 18,
+                            column_number: 22,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -432,8 +432,8 @@ function renderDataTablesYadcf(element) {
 
                 repeated_from_to_1 = make_range_number_cols(2, 2);
                 repeated_from_to_2 = make_range_number_cols(6, 6);
-                repeated_from_to_3 = make_range_number_cols(13, 13);
-                repeated_from_to_4 = make_range_number_cols(28, 6);
+                repeated_from_to_3 = make_range_number_cols(17, 13);
+                repeated_from_to_4 = make_range_number_cols(32, 6);
 
                 yadcf.init(btable,
                     [{
@@ -473,7 +473,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     },{
-                        column_number: 26,
+                        column_number: 30,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -482,7 +482,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     }, {
-                        column_number: 27,
+                        column_number: 31,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -490,19 +490,21 @@ function renderDataTablesYadcf(element) {
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_2).concat([{
-                        column_number: 12,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                            width: '60px'
-                        },
-                        filter_default_label: "Type",
-                        text_data_delimiter: "|",
-                        filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_3).concat(repeated_from_to_4), {
-                        cumulative_filtering: false
-                    }
+                    }]).concat(repeated_from_to_2).concat([
+                    //     {
+                    //     column_number: 12,
+                    //     filter_type: "multi_select",
+                    //     select_type: 'select2',
+                    //     select_type_options: {
+                    //         width: '60px'
+                    //     },
+                    //     filter_default_label: "Type",
+                    //     text_data_delimiter: "|",
+                    //     filter_reset_button_text: false,
+                    // }
+                    ]).concat(repeated_from_to_3).concat(repeated_from_to_4), {
+                            cumulative_filtering: false
+                     }
 
                 );
             } else if (analys_mode == "#single-crystal") {
@@ -1367,7 +1369,7 @@ function renderBrowser(data) {
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="1" class="pairselector" datatype="frequency"></th> \
-                      <th colspan="1" class="skip"></th> \
+                      <th colspan="5" class="skip"></th> \
                       <th colspan="1" class="pairselector" datatype="distance"></th> \
                       <th colspan="2" class="selector" datatype="core_distance"></th> \
                       <th colspan="2" class="selector" datatype="rotation"></th> \
@@ -1385,7 +1387,7 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Contact Frequency (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
@@ -1412,7 +1414,11 @@ function renderBrowser(data) {
                           <th class="dt-center"></th> \
                           <th class="dt-center">Pos1-Pos2</th> \
                           <th class="narrow_col">Set<br></th> \
-                          <th></th> \
+                          <th style="writing-mode: sideways-lr;">Ion</th> \
+                          <th style="writing-mode: sideways-lr;">Pol</th> \
+                          <th style="writing-mode: sideways-lr;">Aro</th> \
+                          <th style="writing-mode: sideways-lr;">Hyd</th> \
+                          <th style="writing-mode: sideways-lr;">vDw</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1445,11 +1451,13 @@ function renderBrowser(data) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
             var sfreq1 = Math.round(100 * v['pdbs'].length / pdbs_counts);
+            var set = data['pdbs'];
 
 
 
             if (normalized) {
                 var pffreq1 = Math.round(100 * v['pfs'].length / pfs);
+                var set = data['pfs'];
 
                 // DEBUG POSSIBLITY
                 // if (pffreq1!=sfreq1 ) {
@@ -1472,6 +1480,13 @@ function renderBrowser(data) {
             var angles_2 = v['angles'][1];
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
+
+
+            types_count = {};
+            Object.entries(v['types_count']).forEach(([key,value])=>{
+                types_count_set = Math.round(100*value.length / set.length);
+                types_count[key] = types_count_set;
+            })
 
             all_angles_1 = data['all_angles'][gn1];
             all_angles_2 = data['all_angles'][gn2];
@@ -1551,7 +1566,11 @@ function renderBrowser(data) {
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center">${gn1}-${gn2}</td>
                       <td class="narrow_col">${sfreq1}</td>
-                      <td>${types}</td>
+                      <td class="dt-center">${types_count['ionic']}</td>
+                      <td class="dt-center">${types_count['polar']}</td>
+                      <td class="dt-center">${types_count['aromatic']}</td>
+                      <td class="dt-center">${types_count['hydrophobic']}</td>
+                      <td class="dt-center">${types_count['van-der-waals']}</td>
                       <td class="narrow_col">${distance}</td>
                       <td class="narrow_col core_distance">${angles_1[0]}</td>
                       <td class="narrow_col core_distance">${angles_2[0]}</td>
@@ -2049,7 +2068,7 @@ function renderBrowser_2(data) {
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="1">AA occurrence in set (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
@@ -2084,7 +2103,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th></th> \
+                          <th style="writing-mode: sideways-lr;">Ion</th> \
+                          <th style="writing-mode: sideways-lr;">Pol</th> \
+                          <th style="writing-mode: sideways-lr;">Aro</th> \
+                          <th style="writing-mode: sideways-lr;">Hyd</th> \
+                          <th style="writing-mode: sideways-lr;">vDw</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -2234,7 +2257,11 @@ function renderBrowser_2(data) {
                       <td class="narrow_col">${v2['class_aa2']}</td>
                       <td class="narrow_col">${v2['class']}</td>
 
-                      <td>${types}</td>
+                      <td>${v2['types_freq']['ionic']}</td>
+                      <td>${v2['types_freq']['polar']}</td>
+                      <td>${v2['types_freq']['aromatic']}</td>
+                      <td>${v2['types_freq']['hydrophobic']}</td>
+                      <td>${v2['types_freq']['van-der-waals']}</td>
                       <td class="narrow_col">${distance_2}</td>
                       <td class="narrow_col core_distance">${angles_1[0]}</td>
                       <td class="narrow_col core_distance">${angles_2[0]}</td>
