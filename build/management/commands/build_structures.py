@@ -187,7 +187,7 @@ class Command(BaseBuild):
         # print(d['deletions'])
         deletions = []
         ## Remove WT ranges that arent in xtal (no need to try to map them)
-        #print(d)
+        # print(d)
         if 'deletions' in d:
             for del_range in d['deletions']:
                 if del_range['start']==146 and structure.pdb_code.index=='4K5Y':
@@ -222,6 +222,8 @@ class Command(BaseBuild):
             deletions = [1]+list(range(209,219))+list(range(306,413))
         elif structure.pdb_code.index in ['5WIU','5WIV']:
             removed = removed+[1001]
+        elif structure.pdb_code.index=='6QZH':
+            removed = list(range(248,252))+list(range(1001,1473))+list(range(255,260))
         # print('removed',removed)
         # removed = []
         if len(deletions)>len(d['wt_seq'])*0.9:

@@ -53,6 +53,7 @@ class Command(BaseCommand):
             ['build_arrestins'],
             ['build_signprot_complex'],
             ['build_g_protein_structures'],
+            ['build_structure_extra_proteins'],
             ['build_drugs'],
             ['build_nhs'],
             ['build_mutational_landscape'],

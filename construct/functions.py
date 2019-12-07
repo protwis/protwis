@@ -242,6 +242,8 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     if not ignore_gasper_annotation:
         ## THIS BLOCK IS DONE BY GASPAR -- IT ALSO REMOVES MISSING RESIDUES, NOT TO BE USED TO WRITE CONSTRUCTS
         # Misannotated DBREF in PDB file
+        if pdbname.upper()=='6QZH':
+            pdb_range = list(range(52,160))+list(range(165,252))+list(range(262,289))+list(range(297,342))
         if pdbname.upper()=='3SN6':
             pdb_range = list(range(30,366))
         elif pdbname.upper()=='5ZKP':
@@ -838,7 +840,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             elif receptor == False:
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
                 logger.warning('{} Protein in structure, but not part of receptor chain {} {}'.format(pdbname.lower(),seg_uniprot_ids,chain))
-        
+
         # print(sorted(pdb_resid_total))
         # print(sorted(pdb_resid_total_accounted))
         non_accounted = sorted(list(set(pdb_resid_total) - set(pdb_resid_total_accounted)))
