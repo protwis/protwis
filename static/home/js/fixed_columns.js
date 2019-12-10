@@ -8,13 +8,13 @@ function update_text_in_modal() {
     $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
         if ($(this).prop("checked")) {
             $(this).closest("tr").addClass("selected");
-            $(this).closest(".dataTables_scrollBody").find("#overlay_" + $(this).attr('id')).addClass("selected");
+            $(this).closest(".dataTables_scroll").find("#overlay_" + $(this).attr('id')).addClass("selected");
             selector = $(this).closest(".dataTables_scrollBody").find("#overlay_" + $(this).attr('id')).find("checkbox");
             selector.prop("checked", !selector.prop("checked"));
             pdbs.push($(this).attr('id'));
         } else {
             $(this).closest("tr").removeClass("selected");
-            $(this).closest(".dataTables_scrollBody").find("#overlay_" + $(this).attr('id')).removeClass("selected");
+            $(this).closest(".dataTables_scroll").find("#overlay_" + $(this).attr('id')).removeClass("selected");
         }
     });
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
@@ -58,11 +58,12 @@ function thisPDB(elem) {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     var ReceptorName = $(elem).attr('long');
 
-    var referenceObject = $(elem).closest(".dataTables_scrollBody")
+    var referenceObject = $(elem).closest(".dataTables_scroll")
 
     // Fixed/frozen columns check
     if (elem.id.startsWith("overlaycheck_")){
-       elem = referenceObject.find("#" + elem.id.replace("overlaycheck_",""))[0]
+        elem = $(".dataTables_scrollBody:visible").find("#" + elem.id.replace("overlaycheck_", ""))[0]
+
        $(elem).prop("checked", !elem.checked)
     } else {
       other = referenceObject.find("#overlaycheck_" + elem.id)
@@ -482,15 +483,20 @@ function showPDBtable(element) {
         oTable[mode].on('draw.dt', function(e, oSettings) {
             create_overlay(element + ' .structure_selection');
             update_text_in_modal();
-            $('.structure_overlay tr').css('cursor', 'pointer');
         });
 
 
-        $(element + ' .dataTables_scrollBody').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+        // $(element + ' .dataTables_scrollBody').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+        $(element + ' .dataTables_scroll').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
         $(element + " .structure_overlay").hide();
 
         $(element + ' .dataTables_scrollBody').before("<div class='top_scroll'><div>&nbsp;</div></div>");
 
+        var dataTables_scrollBody_height = $(element + ' .dataTables_scrollBody')[0].offsetHeight;
+        var bodyRect = $(element + ' .dataTables_scroll')[0].getBoundingClientRect(),
+        elemRect = $(element + ' .dataTables_scrollBody')[0].getBoundingClientRect(),
+        offset = elemRect.top - bodyRect.top;
+        
         $('.top_scroll').css({
             'width': '100%',
             'overflow-x': 'scroll',
@@ -503,19 +509,25 @@ function showPDBtable(element) {
         });
 
         $('.structure_overlay').css({
-            'top': '0px',
+            // 'top': '0px',
+            'top': offset+'px',
             'position': 'absolute',
             'background': '#f8f8f8',
             '-webkit-box-shadow': '5px 0 2px -2px #888',
             'box-shadow': '5px 0 2px -2px #888',
+            'height': (dataTables_scrollBody_height-17) + 'px',
+            'overflow-y': 'scroll',
+            'scrollbar-width': 'none',
         });
+        
 
         $('.structure_overlay tbody tr').css({
             'background-color': '#f8f8f8',
         });
 
         create_overlay(element + ' .structure_selection');
-        track_scrolling(element);
+        // track_scrolling(element);
+         new_track_scrolling(element);
         console.log('done overlays');
 
 
@@ -585,26 +597,131 @@ function create_overlay(table_id) {
             }
         }
     });*/
+    $('.structure_overlay tr').click(function(event) {
+        if (event.target.type !== 'checkbox') {
+            $(':checkbox', this).trigger('click');
+            if ($(':checkbox', this).length === 0) {
+                pdb_id = $(this).attr('id').split("_")[1];
+                console.log(pdb_id);
+                var checkbox = $(".dataTables_scrollBody").find('#' + pdb_id);
+                checkbox.trigger('click');
+            }
+        }
+    });
+    $('.structure_overlay tr').css('cursor', 'pointer');
 }
 
 function track_scrolling(element) {
     var left = 0;
     var old_left = 0;
     toggle_enabled = true;
-    $(element + ' .dataTables_scrollBody').scroll(function() {
-        // If user scrolls and it's >100px from left, then attach fixed columns overlay
-        left = $(element + ' .dataTables_scrollBody').scrollLeft();
-        if (left != old_left) $(".structure_overlay").hide();
-        old_left = left;
+    var d = new Date();
+    last_change = d.getTime();
+    $(element + ' .dataTables_scrollBody').scroll(function () {
 
-        if (left > 100 && toggle_enabled) {
-            $(".structure_overlay").css({
-                left: left + 'px'
-            });
-            if ($(".structure_overlay").is(":hidden")){
-              // link check boxes
-              $(".structure_overlay").show();
+        var d = new Date();
+        now = d.getTime();
+
+        if (now>(last_change+1000)) {
+
+            // If user scrolls and it's >100px from left, then attach fixed columns overlay
+            left = $(element + ' .dataTables_scrollBody').scrollLeft();
+            // if (left != old_left) $(".structure_overlay").hide();
+            // old_left = left;
+
+
+            console.log(now, last_change);
+
+            if (left > 100 && toggle_enabled && left != old_left) {
+                console.log('SCROLL ', left, now);
+                $(".structure_overlay").css({
+                    left: left + 'px'
+                });
+                if ($(".structure_overlay").is(":hidden")){
+                    // link check boxes
+                    $(".structure_overlay").show();
+                }
+            } else if (left < 100) {
+                if ($(".structure_overlay").is(":visible")){
+                // link check boxes
+                $(".structure_overlay").hide();
+                }
             }
+            old_left = left;
+            last_change = now;
+        }
+    });
+}
+
+function new_track_scrolling(element) {
+    var left = 0;
+    var old_left = 0;
+    toggle_enabled = true;
+    old_height = 0;
+    old_top = 0;
+    var d = new Date();
+    last_change = d.getTime();
+    scroll_visible = false;
+
+    // Init the size to begin with.. It is updated once in a while incase of window resizing.
+    var dataTables_scrollBody_height = $(element + ' .dataTables_scrollBody')[0].offsetHeight;
+    var bodyRect = $(element + ' .dataTables_scroll')[0].getBoundingClientRect(),
+        elemRect = $(element + ' .dataTables_scrollBody')[0].getBoundingClientRect(),
+        offset = elemRect.top - bodyRect.top;
+    $(".structure_overlay").css({
+        height: (dataTables_scrollBody_height - 17) + 'px',
+        top: offset + 'px'
+    });
+
+    $(element + ' .dataTables_scrollBody').scroll(function () {
+        var d = new Date();
+        now = d.getTime();
+
+        // This isnt dom heavy..
+        scrollTop = $(element + ' .dataTables_scrollBody').scrollTop();
+        if (scrollTop != old_top) {
+            $(".structure_overlay").scrollTop(scrollTop);
+            old_top = scrollTop
+        }
+
+        left = $(element + ' .dataTables_scrollBody').scrollLeft();
+        if ( left<100 && scroll_visible){
+            $(".structure_overlay").hide();
+            scroll_visible = false;
+        } else if ( left>100 && !scroll_visible){
+            $(".structure_overlay").show();
+            scroll_visible = true;
+        }
+
+        if (now > (last_change + 1000)) {
+
+            // If user scrolls and it's >100px from left, then attach fixed columns overlay
+            if (left > 100 && toggle_enabled) {
+
+                var dataTables_scrollBody_height = $(element + ' .dataTables_scrollBody')[0].offsetHeight;
+                if (dataTables_scrollBody_height != old_height) {
+                    var bodyRect = $(element + ' .dataTables_scroll')[0].getBoundingClientRect(),
+                        elemRect = $(element + ' .dataTables_scrollBody')[0].getBoundingClientRect(),
+                        offset = elemRect.top - bodyRect.top;
+                    $(".structure_overlay").css({
+                        height: (dataTables_scrollBody_height - 17) + 'px',
+                        top: offset + 'px'
+                    });
+                    old_height = dataTables_scrollBody_height;
+                }
+                if (!scroll_visible) {
+                    $(".structure_overlay").show();
+                    scroll_visible = true;
+                }
+            }
+            last_change = now;
+        }
+    });
+    $('.structure_overlay').scroll(function () {
+        scrollTop = $('.structure_overlay').scrollTop();
+        if (scrollTop != old_top) {
+            $(element + ' .dataTables_scrollBody').scrollTop(scrollTop);
+            old_top = scrollTop
         }
     });
 }
