@@ -271,7 +271,7 @@ function showPDBtable(element) {
           // $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
         $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
-        $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
+        // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
 
         oTable[mode] = $(element + ' .tableview table').DataTable({
             'scrollX': true,
@@ -292,7 +292,6 @@ function showPDBtable(element) {
                 {
                   "orderDataType": "dom-checkbox"
                 },
-                null,
                 null,
                 null,
                 null,
@@ -486,34 +485,33 @@ function showPDBtable(element) {
                     html_data_type: "text", 
                     select_type: 'select2',
                     // filter_type: "multi_select",
-                    filter_default_label: "All species",
+                    filter_default_label: "All species and structures",
                     filter_reset_button_text: false,
                     select_type_options: {
-                        width: '250px',
+                        width: '300px',
                         minimumResultsForSearch: -1 // remove search box
                     },
                 },
-                {
-                    column_number: 23, 
-                    filter_container_id: mode_without_space+'_external_filter_container_1',
-                    html_data_type: "text", 
-                    select_type: 'select2',
-                    // filter_type: "multi_select",
-                    filter_default_label: "All Structures",
-                    filter_reset_button_text: false,
-                    select_type_options: {
-                        width: '250px',
-                        minimumResultsForSearch: -1 // remove search box
-                    },
-                },
+                // {
+                //     column_number: 23, 
+                //     filter_container_id: mode_without_space+'_external_filter_container_1',
+                //     html_data_type: "text", 
+                //     select_type: 'select2',
+                //     // filter_type: "multi_select",
+                //     filter_default_label: "All Structures",
+                //     filter_reset_button_text: false,
+                //     select_type_options: {
+                //         width: '250px',
+                //         minimumResultsForSearch: -1 // remove search box
+                //     },
+                // },
             ], {
                 cumulative_filtering: false
             }
         );
         yadcf.exResetAllFilters(oTable[mode]);
         yadcf.exFilterColumn(oTable[mode], [
-            [22, "Only show mammalian receptor structures (even if the non-mammalian is the only)"],
-            [23, "Only show structures from human or the closest species (for each receptor and state)"]
+            [22, "*Only show mammalian structures and those from human or closest species"],
           ]); 
         console.log('done yadcf');
 
