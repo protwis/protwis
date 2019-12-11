@@ -256,6 +256,8 @@ function showPDBtable(element) {
     if (group) mode = mode + group;
     // console.log(element,mode,group);
 
+    mode_without_space = mode.replace(/ /g, '_');
+
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
         console.log(mode);
 
@@ -268,8 +270,8 @@ function showPDBtable(element) {
           // a$(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
           // $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
-        $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id=external_filter_container_0></span></div>');
-        $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id=external_filter_container_1></span></div>');
+        $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
+        $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
 
         oTable[mode] = $(element + ' .tableview table').DataTable({
             'scrollX': true,
@@ -480,7 +482,7 @@ function showPDBtable(element) {
                 },
                 {
                     column_number: 22, 
-                    filter_container_id: 'external_filter_container_0',
+                    filter_container_id: mode_without_space+'_external_filter_container_0',
                     html_data_type: "text", 
                     select_type: 'select2',
                     // filter_type: "multi_select",
@@ -493,7 +495,7 @@ function showPDBtable(element) {
                 },
                 {
                     column_number: 23, 
-                    filter_container_id: 'external_filter_container_1',
+                    filter_container_id: mode_without_space+'_external_filter_container_1',
                     html_data_type: "text", 
                     select_type: 'select2',
                     // filter_type: "multi_select",
