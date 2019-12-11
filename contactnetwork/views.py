@@ -190,7 +190,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-# @cache_page(60*60*24*7)
+@cache_page(60*60*24*7)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
