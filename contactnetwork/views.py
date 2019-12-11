@@ -222,9 +222,13 @@ def PdbTableData(request):
         data = data.filter(id__in=complex_structure_ids)
 
     data_dict = OrderedDict()
-    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'><thead><tr><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th><th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th><th colspan=2>Signalling protein</th> \
-                                                                       <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th></tr> \
-                  <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th><th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>\n"
+    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
+        <thead><tr><th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th> \
+        <th colspan=5>Receptor</th><th colspan=4>Structure</th><th colspan=3>State-specfic contact matches</th><th colspan=2></th> \
+        <th colspan=2>Signalling protein</th> \
+        <th colspan=2>Auxiliary protein</th><th colspan=3>Ligand</th><th></th></tr> \
+        <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th>CI inactive</th><th>CI active</th><th>Diff</th><th></th> \
+            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>\n"
 
     for s in data:
         pdb_id = s.pdb_code.index
@@ -244,7 +248,11 @@ def PdbTableData(request):
 
         r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
         r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
-        r['diff_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction-s.active_class_contacts_fraction)
+        r['diff_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction - s.active_class_contacts_fraction)
+        
+        r['mammal'] = 'Only show mammalian receptor structures (even if the non-mammalian is the only)' if s.mammal else ''
+        r['closest_to_human'] = 'Only show structures from human or the closest species (for each receptor and state)' if s.closest_to_human else ''
+
 
         a_list = []
         for a in s.stabilizing_agents.all():
@@ -335,7 +343,9 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        </tr>\n".format(
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        </tr> \n".format(
                                         r['contact_representative'],
                                         r['distance_representative'],
                                         r['class_consensus_based_representative'],
@@ -361,7 +371,9 @@ def PdbTableData(request):
                                         r['antibody'],
                                         r['ligand'],
                                         r['ligand_function'],
-                                        r['ligand_type']
+                                        r['ligand_type'],
+                                        r['mammal'],
+                                        r['closest_to_human']
                                         )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)

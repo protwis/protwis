@@ -265,9 +265,11 @@ function showPDBtable(element) {
         if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
           $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
-          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
-          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
+          // a$(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
+          // $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
+        $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id=external_filter_container_0></span></div>');
+        $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id=external_filter_container_1></span></div>');
 
         oTable[mode] = $(element + ' .tableview table').DataTable({
             'scrollX': true,
@@ -280,12 +282,16 @@ function showPDBtable(element) {
             columnDefs: [{
                 targets: 'no-sort',
                 orderable: false
-            }],
+            },
+                {"targets": [ -1, -2 ],
+                "visible": false}],
             "aaSorting": [],
             "columns": [
                 {
                   "orderDataType": "dom-checkbox"
                 },
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -472,12 +478,41 @@ function showPDBtable(element) {
                     filter_default_label: "Ligand type",
                     filter_reset_button_text: false,
                 },
+                {
+                    column_number: 22, 
+                    filter_container_id: 'external_filter_container_0',
+                    html_data_type: "text", 
+                    select_type: 'select2',
+                    // filter_type: "multi_select",
+                    filter_default_label: "All species",
+                    filter_reset_button_text: false,
+                    select_type_options: {
+                        width: '250px',
+                        minimumResultsForSearch: -1 // remove search box
+                    },
+                },
+                {
+                    column_number: 23, 
+                    filter_container_id: 'external_filter_container_1',
+                    html_data_type: "text", 
+                    select_type: 'select2',
+                    // filter_type: "multi_select",
+                    filter_default_label: "All Structures",
+                    filter_reset_button_text: false,
+                    select_type_options: {
+                        width: '250px',
+                        minimumResultsForSearch: -1 // remove search box
+                    },
+                },
             ], {
                 cumulative_filtering: false
             }
         );
-
         yadcf.exResetAllFilters(oTable[mode]);
+        yadcf.exFilterColumn(oTable[mode], [
+            [22, "Only show mammalian receptor structures (even if the non-mammalian is the only)"],
+            [23, "Only show structures from human or the closest species (for each receptor and state)"]
+          ]); 
         console.log('done yadcf');
 
         oTable[mode].on('draw.dt', function(e, oSettings) {
@@ -527,7 +562,7 @@ function showPDBtable(element) {
 
         create_overlay(element + ' .structure_selection');
         // track_scrolling(element);
-         new_track_scrolling(element);
+        new_track_scrolling(element);
         console.log('done overlays');
 
 
