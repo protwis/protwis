@@ -190,7 +190,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-@cache_page(60*60*24*7)
+# @cache_page(60*60*24*7)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
@@ -253,13 +253,13 @@ def PdbTableData(request):
         r['mammal'] = 'Only show mammalian receptor structures (even if the non-mammalian is the only)' if s.mammal else ''
         r['closest_to_human'] = 'Only show structures from human or the closest species (for each receptor and state)' if s.closest_to_human else ''
 
-        r['extra_filter'] = ''
+        r['extra_filter'] = []
         if s.mammal and s.closest_to_human:
-            r['extra_filter'] = '*Only show mammalian structures and those from human or closest species'
+            r['extra_filter'] = ['*Only show mammalian structures and those from human or closest species',r['mammal'],r['closest_to_human']]
         elif s.mammal:
-            r['extra_filter'] = r['mammal']
+            r['extra_filter'] = [r['mammal']]
         elif s.closest_to_human:
-            r['extra_filter'] = r['closest_to_human']
+            r['extra_filter'] = [r['closest_to_human']]
 
         a_list = []
         for a in s.stabilizing_agents.all():
@@ -378,7 +378,7 @@ def PdbTableData(request):
                                         r['ligand'],
                                         r['ligand_function'],
                                         r['ligand_type'],
-                                        r['extra_filter'],
+                                        ",".join(r['extra_filter']),
                                         )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)

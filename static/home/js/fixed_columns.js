@@ -487,6 +487,7 @@ function showPDBtable(element) {
                     // filter_type: "multi_select",
                     filter_default_label: "All species and structures",
                     filter_reset_button_text: false,
+                    text_data_delimiter: ",",
                     select_type_options: {
                         width: '300px',
                         minimumResultsForSearch: -1 // remove search box
