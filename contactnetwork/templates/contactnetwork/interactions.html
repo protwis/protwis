@@ -86,7 +86,7 @@
             <div class="col-md-1">
             </div>
         </div>
-        <div class="row" style='height:500px'>
+        <div class="row plot_row" style='height:500px'>
             <div class="col-md-4">
                 <div class="panel panel-default" id="single_1">
                     <div class="panel-heading">
@@ -407,7 +407,7 @@
                 </div>
             </div> -->
         </div>
-        <div class="row" style='height:500px'>
+        <div class="row plot_row" style='height:500px'>
             <div class="col-md-4">
                 <div class="panel panel-default" id="single_group_1">
                     <div class="panel-heading">
@@ -554,9 +554,9 @@
         <ul class="nav nav-tabs nav-browsers">
             <li class="active"><a href="#single-group-browser-1-tab" data-toggle="tab" id="single-group-browser-1-tab-link">Contact position pairs</a></li>
             <li><a href="#single-group-browser-2-tab" data-toggle="tab" id="single-group-browser-2-tab-link">Contact position-AA pairs</a></li>
-            <li><a href="#single-group-browser-3-tab" data-toggle="tab" id="single-group-browser-3-tab-link">Contact hub positions</a></li>
-            <li><a href="#single-group-browser-4-tab" data-toggle="tab" id="single-group-browser-4-tab-link">Residue helix types, bulges, and constrictions</a></li>
+            {% comment %} <li><a href="#single-group-browser-3-tab" data-toggle="tab" id="single-group-browser-3-tab-link">Contact hub positions</a></li> {% endcomment %}
             <li><a href="#single-group-browser-5-tab" data-toggle="tab" id="single-group-browser-5-tab-link">Residue backbone & sidechain movement</a></li>
+            <li><a href="#single-group-browser-4-tab" data-toggle="tab" id="single-group-browser-4-tab-link">Residue helix types, bulges, and constrictions</a></li>
         </ul>
         <div class="row">
             <div class="tab-content col-md-12 ">
@@ -717,7 +717,7 @@
             <div class="col-md-offset-3 col-md-1">
             </div> -->
         </div>
-        <div class="row" style='height:500px'>
+        <div class="row plot_row" style='height:500px'>
             <div class="col-md-4">
                 <div class="panel panel-default" id="two_sets_1">
                     <div class="panel-heading">
@@ -864,7 +864,7 @@
         <ul class="nav nav-tabs nav-browsers">
             <li class="active"><a href="#two-groups-browser-1-tab" data-toggle="tab" id="two-groups-browser-1-tab-link">Contact position pairs</a></li>
             <li><a href="#two-groups-browser-2-tab" data-toggle="tab" id="two-groups-browser-2-tab-link">Contact position-AA pairs</a></li>
-            <li><a href="#two-groups-browser-3-tab" data-toggle="tab" id="two-groups-browser-3-tab-link">Contact residue micro-switches</a></li>
+            {% comment %} <li><a href="#two-groups-browser-3-tab" data-toggle="tab" id="two-groups-browser-3-tab-link">Contact residue micro-switches</a></li> {% endcomment %}
             <li><a href="#two-groups-browser-5-tab" data-toggle="tab" id="two-groups-browser-5-tab-link">Residue backbone & sidechain movement</a></li>
             <li><a href="#two-groups-browser-4-tab" data-toggle="tab" id="two-groups-browser-4-tab-link">Residue helix types, bulges, and constrictions</a></li>
         </ul>
@@ -1176,7 +1176,6 @@
               // Check if datatables is rendered, otherwise do so.
               $(".main_loading_overlay").show(0);
               // console.log('switch browser',e.currentTarget.id);
-
               setTimeout("renderDataTablesYadcf('"+e.currentTarget.id+"');", 100);
               // $(".main_loading_overlay").hide();
             });
@@ -1281,6 +1280,13 @@
         div#resModal.plot_settings {
           top: 50%;
           transform: translate(0%, -50%);
+        }
+        table.compact thead th {
+            font-weight: 400; !important
+        }
+
+        th span.small {
+            font-weight: 300; !important
         }
     </style>
 

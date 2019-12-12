@@ -823,6 +823,13 @@
 
                   createBoxPlot(raw_data, 'boxplot-' + plot_id,'angles');
                   break;
+              case "snakeplot":
+                  plot_div.find('.plot-container').removeClass('none');
+                  plot_div.find('.plot-container').addClass('snakeplot-container');
+                  plot_div.find('.plot-container').attr('id', 'snakeplot-' + plot_id);
+
+                  createSnakeplot(raw_data, 'snakeplot-' + plot_id);
+                  break;
             }
         }
 
@@ -914,6 +921,9 @@
                         browser_visible = $(".nav-browsers:visible li.active a").attr('id');
                         renderDataTablesYadcf(browser_visible);
                         $(".main_loading_overlay").hide();
+
+                        // Set up default visualisation
+                        initilizeInitialPlots();
                     }
                 });
 
@@ -978,11 +988,22 @@
                         renderDataTablesYadcf(browser_visible);
                         generate_display_options();
                         $(".main_loading_overlay").hide();
-                        redraw_renders();
+
+                        // Set up default visualisation
+                        initilizeInitialPlots();
                     }
                 });
             }
             // $(".main_loading_overlay").hide();
+        }
+
+        function initilizeInitialPlots() {
+            default_plot_types = ['heatmap','flareplot','ngl'];
+            $(".plot_row:visible").find(".panel").each(function(i) {
+                plot_type = default_plot_types[i];
+                plot_div = $(this);
+                drawPlotPanel(plot_type, plot_div);
+            })
         }
 
 
