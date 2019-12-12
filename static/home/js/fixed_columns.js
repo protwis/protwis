@@ -288,33 +288,32 @@ function showPDBtable(element) {
                 {"targets": [ -1, -2 ],
                 "visible": false}],
             "aaSorting": [],
-            "columns": [
-                {
-                  "orderDataType": "dom-checkbox"
-                },
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-            ]
+            // "columns": [
+            //     {
+            //       "orderDataType": "dom-checkbox"
+            //     },
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null,
+            //     null
+            // ]
         });
         console.log('done datatable');
         yadcf.init(oTable[mode],
@@ -416,7 +415,7 @@ function showPDBtable(element) {
 
                 // },
                 {
-                    column_number: 13,
+                    column_number: 10,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Contact rep.",
@@ -431,17 +430,17 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 15,
+                    column_number: 13,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "G prot",
+                    filter_default_label: "SignalProtein",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 16,
+                    column_number: 14,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "B arr",
+                    filter_default_label: "Subfamily",
                     filter_reset_button_text: false,
                 },
                 {
