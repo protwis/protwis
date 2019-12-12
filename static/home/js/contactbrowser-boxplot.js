@@ -48,25 +48,38 @@ function createBoxPlot(data, element, plottype) {
             switch (plottype) {
 
                 case "angles":
-                    var rows = getDateFromTable(1, [1, 7, 9, 11, 13, 15, 17, 8, 10, 12, 14, 16, 18]);
-
+                    var rows = getDateFromTable(1, [1, 10, 11, 13, 15, 17, 19, 21, 12, 14, 16, 18, 20, 22]);
                     var pos_titles = [];
+                    var pair_titles = [];
                     var values = [];
+                    var pair_values = [];
                     for (var i = 0; i < rows.length; i++) {
                         title = rows[i][0].split("-");
                         if (!pos_titles.includes(title[0])) {
-                            values.push(rows[i].slice(1, 7));
+                            values.push(rows[i].slice(2, 8));
                             pos_titles.push(title[0]);
                         }
                         if (!pos_titles.includes(title[1])) {
-                            values.push(rows[i].slice(7));
+                            values.push(rows[i].slice(8));
                             pos_titles.push(title[1]);
+                        }
+                        if (!pair_titles.includes(rows[i][0])) {
+                            pair_values.push(rows[i][1]);
+                            pair_titles.push(rows[i][0]);
                         }
                     }
 
                     var y = Array(values.length).fill('Angles')
 
                     var trace1 = {
+                        y: pair_values,
+                        name: 'Distance Ca Å',
+                        type: 'box',
+                        boxmean: false,
+                        text: pair_titles
+                    };
+
+                    var trace2 = {
                         y: getColumn(values, 0),
                         name: 'Distance to 7TM axis',
                         type: 'box',
@@ -74,7 +87,7 @@ function createBoxPlot(data, element, plottype) {
                         text: pos_titles
                     };
 
-                    var trace2 = {
+                    var trace3 = {
                         y: getColumn(values, 1),
                         name: 'Rotation (Ca angle)',
                         type: 'box',
@@ -82,7 +95,7 @@ function createBoxPlot(data, element, plottype) {
                         text: pos_titles
                     };
 
-                    var trace3 = {
+                    var trace4 = {
                         y: getColumn(values, 2),
                         name: 'Rotamer',
                         type: 'box',
@@ -90,7 +103,7 @@ function createBoxPlot(data, element, plottype) {
                         text: pos_titles
                     };
 
-                    var trace4 = {
+                    var trace5 = {
                         y: getColumn(values, 3),
                         name: 'SASA',
                         type: 'box',
@@ -98,7 +111,7 @@ function createBoxPlot(data, element, plottype) {
                         text: pos_titles
                     };
 
-                    var trace5 = {
+                    var trace6 = {
                         y: getColumn(values, 4),
                         name: 'RSA',
                         type: 'box',
@@ -106,7 +119,7 @@ function createBoxPlot(data, element, plottype) {
                         text: pos_titles
                     };
 
-                    var trace6 = {
+                    var trace7 = {
                         y: getColumn(values, 5),
                         name: 'Presence',
                         type: 'box',
@@ -114,10 +127,10 @@ function createBoxPlot(data, element, plottype) {
                         text: pos_titles
                     };
 
-                    var data = [trace1, trace2, trace3, trace4, trace5, trace6];
+                    var data = [trace1, trace2, trace3, trace4, trace5, trace6, trace7];
 
                     var layout = {
-                        title: 'Grouped Horizontal Box Plot',
+                        title: 'Grouped barplot of various residue data.',
                         xaxis: {
                             // title: 'Angles',
                             zeroline: false
@@ -167,6 +180,15 @@ function createBoxPlot(data, element, plottype) {
                     };
 
                     var data = [trace1, trace2, trace3];
+                    var layout = {
+                        title: 'Occurance (%) of contact interaction in each set and the difference',
+                        xaxis: {
+                            // title: 'Angles',
+                            zeroline: false
+                        },
+                        // grid: {rows: 1, columns: 6, pattern: 'independent'},
+                        boxmode: 'group'
+                    };
             }
 
             break;
