@@ -1565,7 +1565,7 @@ function renderBrowser(data) {
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center">${gn1}-${gn2}</td>
-                      <td class="narrow_col">${sfreq1}</td>
+                      <td class="narrow_col" title="${v['pdbs']}">${sfreq1}</td>
                       <td class="dt-center">${types_count['ionic']}</td>
                       <td class="dt-center">${types_count['polar']}</td>
                       <td class="dt-center">${types_count['aromatic']}</td>
