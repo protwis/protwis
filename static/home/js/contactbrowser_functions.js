@@ -759,6 +759,7 @@
 
           // Delete whatever is already there
           plot_div.find('.plot-container').html('');
+          plot_div.find('.plot-container').attr('class', 'plot-container');
           var mode = get_current_mode();
 
           console.log("SET UP PLOT", plot_type, plot_div, plot_id, mode);
@@ -794,48 +795,64 @@
                           break;
                   }
                   break;
-              case "heatmap":
-                  plot_div.find('.plot-container').removeClass('none');
-                  plot_div.find('.plot-container').addClass('heatmap-container');
-                  plot_div.find('.plot-container').attr('id', "heatmapcontainer-" + plot_id);
-                  plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-' + plot_id + '" style="height: 500px;"></svg>');
+                    case "heatmap":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('heatmap-container');
+                        plot_div.find('.plot-container').attr('id', "heatmapcontainer-" + plot_id);
+                        plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-' + plot_id + '" style="height: 500px;"></svg>');
 
-                  renderHeatmap(raw_data, '#heatmapcontainer-' + plot_id);
-                  break;
-              case "flareplot":
-                  plot_div.find('.plot-container').removeClass('none');
-                  plot_div.find('.plot-container').addClass('flareplot-container');
-                  plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
+                        renderHeatmap(raw_data, '#heatmapcontainer-' + plot_id);
+                        break;
+                    case "flareplot":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('flareplot-container');
+                        plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
 
-                  createFlareplotBox(raw_data, '#flareplot-' + plot_id);
-                  break;
-              case "boxplot":
-                  plot_div.find('.plot-container').removeClass('none');
-                  plot_div.find('.plot-container').addClass('boxplot-container');
-                  plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+                        createFlareplotBox(raw_data, '#flareplot-' + plot_id, toggle = false);
+                        break;
+                    case "flareplot_subset":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('flareplot-container-subset');
+                        plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
 
-                  createBoxPlot(raw_data, 'boxplot-' + plot_id);
-                  break;
-              case "boxplot_angles":
-                  plot_div.find('.plot-container').removeClass('none');
-                  plot_div.find('.plot-container').addClass('boxplot-container');
-                  plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+                        createFlareplotBox(raw_data, '#flareplot-' + plot_id, toggle = false, subset = true);
+                        break;
+                    case "flareplot_segments":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('flareplot-container-segments');
+                        plot_div.find('.plot-container').attr('id', 'flareplot-' + plot_id);
 
-                  createBoxPlot(raw_data, 'boxplot-' + plot_id,'angles');
-                  break;
-              case "snakeplot":
-                  plot_div.find('.plot-container').removeClass('none');
-                  plot_div.find('.plot-container').addClass('snakeplot-container');
-                  plot_div.find('.plot-container').attr('id', 'snakeplot-' + plot_id);
+                        createFlareplot_segment(raw_data,1000,'', '#flareplot-' + plot_id);
+                        break;
+                    case "boxplot":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('boxplot-container');
+                        plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
 
-                  createSnakeplot(raw_data, 'snakeplot-' + plot_id);
-                  break;
+                        createBoxPlot(raw_data, 'boxplot-' + plot_id);
+                        break;
+                    case "boxplot_angles":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('boxplot-container');
+                        plot_div.find('.plot-container').attr('id', 'boxplot-' + plot_id);
+
+                        createBoxPlot(raw_data, 'boxplot-' + plot_id,'angles');
+                        break;
+                    case "snakeplot":
+                        plot_div.find('.plot-container').removeClass('none');
+                        plot_div.find('.plot-container').addClass('snakeplot-container');
+                        plot_div.find('.plot-container').attr('id', 'snakeplot-' + plot_id);
+
+                        createSnakeplot(raw_data, 'snakeplot-' + plot_id);
+                        break;
             }
         }
 
         var plotting_options = [
             ['heatmap', 'Matrix of interactions'],
             ['flareplot', 'Flare Plot'],
+            ['flareplot_subset', 'Flare Plot (filtered positions)'],
+            ['flareplot_segments', 'Flare Plot (Segments)'],
             ['ngl', '3D view'],
             ['boxplot', 'Box-plot (Frequency)'],
             ['boxplot_angles', 'Box-plot (Angles)'],
@@ -998,7 +1015,7 @@
         }
 
         function initilizeInitialPlots() {
-            default_plot_types = ['heatmap','flareplot','ngl'];
+            default_plot_types = ['flareplot_segments','flareplot','ngl'];
             $(".plot_row:visible").find(".panel").each(function(i) {
                 plot_type = default_plot_types[i];
                 plot_div = $(this);
@@ -1013,15 +1030,20 @@
                 // console.log($(this).parent().parent().next().children().first());
                 //                console.log($(this).attr('id'));
                 fullScreenElement = $(this).parent().parent().next().children().first().find("canvas");
-                fullScreenElement.css('background-color', 'white');
-                console.log('who to fullscreen?', fullScreenElement.closest('.plot-container').attr('id'));
-                plot_id = fullScreenElement.closest('.plot-container').attr('id');
-                ngl_stage = plot_id.replace("ngl-", "");
-                if (ngl_stage in stage) {
-                    $(function() {
-                        stage[ngl_stage].toggleFullscreen()();
-                    });
-                    return
+                if (fullScreenElement.length) {
+                    fullScreenElement.css('background-color', 'white');
+                    console.log('who to fullscreen?', fullScreenElement.closest('.plot-container').attr('id'));
+                    plot_id = fullScreenElement.closest('.plot-container').attr('id');
+                    ngl_stage = plot_id.replace("ngl-", "");
+                    if (ngl_stage in stage) {
+                        $(function() {
+                            stage[ngl_stage].toggleFullscreen()();
+                        });
+                        return
+                    }
+                } else {
+                    fullScreenElement = $(this).closest(".panel-default").find(".plot-container");
+                    fullScreenElement.css('background-color', 'white');
                 }
 
                 toggleFullScreen(fullScreenElement.get(0));
@@ -1072,8 +1094,7 @@
         var contiguous = true;
         var interactionsToggleList = [];
 
-        function createFlareplotBox(data, container, toggle = false) {
-            console.log(data);
+        function createFlareplotBox(data, container, toggle = false, subset = false) {
             // clean
             if (toggle) {
                 $(container).children().last().remove();
@@ -1092,7 +1113,7 @@
                 //                                  +'<h4>Controls</h4>';
 
                 // only possible with more than 4 segments, otherwise it will become a mess
-                if (data.segments.length > 4)
+                if (data.segments.length > 4 && !subset)
                     content += '<p>Consecutive segment contacts on outside: <input type=checkbox id="flareplot_contiguous" checked></p>';
 
                 content += '<p>Line colors: <select id="flareplot_color">' +
@@ -1218,10 +1239,10 @@
 
                 $(container).append(newDiv);
 
-                $(container + " #flareplot_contiguous").click(function(e) {
+                $(container + " #flareplot_contiguous").click(function (e) {
                     $(function() {
                         contiguous = !contiguous;
-                        createFlareplotBox(data, container, true);
+                        createFlareplotBox(data, container, toggle = true);
                         redraw_renders();
                     });
                 });
@@ -1255,7 +1276,11 @@
             }
 
             // create flareplot
-            flareplot[container] = createFlareplot(1000, parseGPCRdb2flare(data), container, contiguous);
+            if (subset) {
+                flareplot[container] = createFlareplot_subset(300, parseGPCRdb2flare(data, subset=true), container, false);
+            } else {
+                flareplot[container] = createFlareplot(1000, parseGPCRdb2flare(data), container, contiguous);
+            }
 
             // update coloring and visibility if toggled
             if (toggle) {
