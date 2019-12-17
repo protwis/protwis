@@ -1,4 +1,4 @@
-function parseGPCRdb2flare(data) {
+function parseGPCRdb2flare(data, subset=false) {
   if (typeof data == "string") {
     data = JSON.parse(data);
   }
@@ -146,23 +146,33 @@ function parseGPCRdb2flare(data) {
     return [matches[1], matches[2]];
   }
 
-  // Fill tracks and trees
-  Object.keys(data.segment_map).forEach(function(residue) {
-    dataFlare.tracks[0].trackProperties.push({
-      nodeName: residue,
-      color: assignColor(data.segment_map[residue]),
-      rainbow: assignRainbowColor(data.segment_map[residue]),
-      size: 1,
-      segment: data.segment_map[residue]
-    });
+  gns_shown = [];
+  $.each(filtered_gn_pairs, function (i, v) {
+    pairResidues = separatePair(v);
+    gns_shown.push(pairResidues[0]);
+    gns_shown.push(pairResidues[1]);
+  });
 
-    dataFlare.trees[0].treePaths.push(
-      data.segment_map[residue] + "." + residue
-    );
+  // Fill tracks and trees
+  Object.keys(data.segment_map).forEach(function (residue) {
+    if (gns_shown.includes(residue) || !subset){
+        dataFlare.tracks[0].trackProperties.push({
+          nodeName: residue,
+          color: assignColor(data.segment_map[residue]),
+          rainbow: assignRainbowColor(data.segment_map[residue]),
+          size: 1,
+          segment: data.segment_map[residue]
+        });
+
+        dataFlare.trees[0].treePaths.push(
+          data.segment_map[residue] + "." + residue
+        );
+      }
   });
 
   // Fill edges
-  Object.keys(data.interactions).forEach(function(pair) {
+  Object.keys(data.interactions).forEach(function (pair) {
+    if (!filtered_gn_pairs.includes(pair) && subset) return;
     pairResidues = separatePair(pair);
 
     var values = data.interactions[pair];

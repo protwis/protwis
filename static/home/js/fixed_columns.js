@@ -221,6 +221,46 @@ function pastePDBs() {
     oTable[mode].draw();
 }
 
+function prepopulatePDBs() {
+    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+    var mode2 = $('ul#mode_nav').find('li.active').find('a').text().trim();
+    group = $('.tableview:visible').attr('group-number');
+    if (group) mode = mode + group;
+    if (mode2 == 'Two sets of structures') {
+        var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-' + group + '-pdbs';
+        var pdbs = JSON.parse($(pdbsInputSelector).val());
+        $('.pdb_selected', oTable[mode].cells().nodes()).each(function () {
+            pdb = $(this).attr('id')
+            check = $.inArray(pdb, pdbs);
+            if (check !== -1) {
+                $(this).prop("checked", true);
+                pdbs.splice(check, 1);
+            }
+        });
+
+        oTable[mode].order([
+            [0, 'desc']
+        ]);
+        oTable[mode].draw();
+    } else if (mode2 == 'Single set of structures') {
+        var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
+        var pdbs = JSON.parse($(pdbsInputSelector).val());
+        $('.pdb_selected', oTable[mode].cells().nodes()).each(function () {
+            pdb = $(this).attr('id')
+            check = $.inArray(pdb, pdbs);
+            if (check !== -1) {
+                $(this).prop("checked", true);
+                pdbs.splice(check, 1);
+            }
+        });
+
+        oTable[mode].order([
+            [0, 'desc']
+        ]);
+        oTable[mode].draw();
+    }
+}
+
 function exportPDBs() {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $('.tableview:visible').attr('group-number');
@@ -288,32 +328,33 @@ function showPDBtable(element) {
                 {"targets": [ -1, -2 ],
                 "visible": false}],
             "aaSorting": [],
-            // "columns": [
-            //     {
-            //       "orderDataType": "dom-checkbox"
-            //     },
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null,
-            //     null
-            // ]
+            "columns": [
+                {
+                  "orderDataType": "dom-checkbox"
+                },
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            ]
         });
         console.log('done datatable');
         yadcf.init(oTable[mode],
@@ -598,7 +639,8 @@ function showPDBtable(element) {
         console.log('done click event');
 
     };
-    $(element+" .loading_overlay").hide();
+    $(element + " .loading_overlay").hide();
+    prepopulatePDBs();
 }
 
 function create_overlay(table_id) {

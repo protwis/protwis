@@ -639,7 +639,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -649,7 +649,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -742,7 +742,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -752,7 +752,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -819,7 +819,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -829,7 +829,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -877,7 +877,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -887,7 +887,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -971,7 +971,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '80px'
+                            width: '40px'
                         },
                         filter_default_label: "Seg",
                         filter_reset_button_text: false,
@@ -981,7 +981,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '80px'
+                            width: '40px'
                         },
                         filter_default_label: "Pos",
                         filter_reset_button_text: false,
@@ -1565,7 +1565,7 @@ function renderBrowser(data) {
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center">${gn1}-${gn2}</td>
-                      <td class="narrow_col">${sfreq1}</td>
+                      <td class="narrow_col" title="${v['pdbs']}">${sfreq1}</td>
                       <td class="dt-center">${types_count['ionic']}</td>
                       <td class="dt-center">${types_count['polar']}</td>
                       <td class="dt-center">${types_count['aromatic']}</td>
