@@ -824,6 +824,20 @@
 
                         createFlareplot_segment(raw_data,1000,'', '#flareplot-' + plot_id);
                         break;
+                    case "force_network":
+                            plot_div.find('.plot-container').removeClass('none');
+                            plot_div.find('.plot-container').addClass('networkPlot');
+                            plot_div.find('.plot-container').attr('id', 'network-' + plot_id);
+    
+                            createNetworkPlot(raw_data,400,'', '#network-' + plot_id, segment_view = false );
+                            break;
+                    case "force_network_segment":
+                            plot_div.find('.plot-container').removeClass('none');
+                            plot_div.find('.plot-container').addClass('networkPlot');
+                            plot_div.find('.plot-container').attr('id', 'network-' + plot_id);
+    
+                            createNetworkPlot(raw_data,400,'', '#network-' + plot_id, segment_view = true);
+                            break;
                     case "boxplot":
                         plot_div.find('.plot-container').removeClass('none');
                         plot_div.find('.plot-container').addClass('boxplot-container');
@@ -853,6 +867,8 @@
             ['flareplot', 'Flare Plot'],
             ['flareplot_subset', 'Flare Plot (filtered positions)'],
             ['flareplot_segments', 'Flare Plot (Segments)'],
+            ['force_network', 'Network'],
+            ['force_network_segment', 'Network (segments)'],
             ['ngl', '3D view'],
             ['boxplot', 'Box-plot (Frequency)'],
             ['boxplot_angles', 'Box-plot (Angles)'],
@@ -1015,7 +1031,7 @@
         }
 
         function initilizeInitialPlots() {
-            default_plot_types = ['flareplot_segments','flareplot','ngl'];
+            default_plot_types = ['force_network','flareplot','ngl'];
             $(".plot_row:visible").find(".panel").each(function(i) {
                 plot_type = default_plot_types[i];
                 plot_div = $(this);

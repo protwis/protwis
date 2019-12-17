@@ -34,6 +34,8 @@ function createFlareplot_segment(raw_data,width, inputGraph, containerSelector) 
 
     // Populate matrix for interactions between segments
     $.each(raw_data['interactions'], function (i, v) {
+
+        if (!filtered_gn_pairs.includes(i)) return;
         gns = separatePair(i);
         seg1 = raw_data['segment_map'][gns[0]];
         seg2 = raw_data['segment_map'][gns[1]];
@@ -46,12 +48,13 @@ function createFlareplot_segment(raw_data,width, inputGraph, containerSelector) 
     });
 
     // Purge segments with no counts..
-    protein_segments.forEach(function (key, index,object) {
+    protein_segments.slice().reverse().forEach(function (key, index, object) {
+        index = protein_segments.indexOf(key);
         summed = matrix[index].reduce((a, b) => a + b, 0);
         if (summed == 0) {
             matrix.splice(index, 1);
             colors.splice(index, 1);
-            object.splice(index, 1);
+            // object.splice(index, 1);
             matrix.forEach(a => a.splice(index, 1));
         }
     });
