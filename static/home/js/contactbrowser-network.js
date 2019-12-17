@@ -1,4 +1,4 @@
-function createNetworkPlot(raw_data,width, inputGraph, containerSelector, segment_view = true) {
+function createNetworkPlot(raw_data,original_width, inputGraph, containerSelector, segment_view = true) {
 // https://github.com/d3/d3-3.x-api-reference/blob/master/Force-Layout.md
 
 
@@ -10,48 +10,107 @@ function createNetworkPlot(raw_data,width, inputGraph, containerSelector, segmen
     // expand = {}, // expanded clusters
     // data, net, force, hullg, hull, linkg, link, nodeg, node;
 
-
-    // // Populate matrix for interactions between segments
-    track_gns = []
-    new_data = { "nodes": [], "links": [] }
-    $.each(raw_data['interactions'], function (i, v) {
-        if (!filtered_gn_pairs.includes(i)) return;
-        gns = separatePair(i);
-        seg1 = raw_data['segment_map'][gns[0]];
-        seg2 = raw_data['segment_map'][gns[1]];
-
-        if (!track_gns.includes(gns[0])) {
-            new_data["nodes"].push({ "name": gns[0], "group": seg1 })
-            track_gns.push(gns[0]);
-        }
-        if (!track_gns.includes(gns[1])) {
-            new_data["nodes"].push({"name":gns[1], "group":seg2})
-            track_gns.push(gns[1]);
-        }
-
-        source = new_data["nodes"].filter(obj => {return obj.name === gns[0]})[0];
-        target = new_data["nodes"].filter(obj => {return obj.name === gns[1]})[0];
-
-        new_data["links"].push({ "source": source, "target": target, "value": 1 })
-        // if (seg1 != seg2) {
-        //     new_data["links"].push({ "source": gns[0], "target": gns[1], "value": 1 })
-        // }
-    });
-
-    if (!segment_view) {
-        // resize by number of nodes if not segments
-        console.log(new_data["nodes"].length, "nodes");
-        width = width*Math.sqrt(new_data["nodes"].length/8);
-    } else {
-        width = width*0.8;
-    }
-
-
-    var w = width;
+    var w = original_width;
     var h = w;
     var height = w;
+    var width;
 
-    var expand = {},net;
+    var selected_single_cluster = false
+
+    var new_data, cluster_groups;
+    function prepare_data(single_cluster = false) {
+        selected_single_cluster = single_cluster;
+
+        new_data = { "nodes": [], "links": [] };
+        cluster_groups = [];
+        console.log('single_cluster',single_cluster);
+        // // Populate matrix for interactions between segments
+        track_gns = []
+        $.each(raw_data['interactions'], function (i, v) {
+            if (!filtered_gn_pairs.includes(i)) return;
+            gns = separatePair(i);
+
+            test1 = cluster_groups.filter(l => l.includes(gns[0]));
+            test2 = cluster_groups.filter(l => l.includes(gns[1]));
+            if (!test1.length && !test2.length) {
+                cluster_groups.push([gns[0], gns[1]]);
+            } else if (test1.length && !test2.length) {
+                i1 = cluster_groups.indexOf(test1[0])
+                cluster_groups[i1].push(gns[1]);
+            } else if (!test1.length && test2.length) {
+                i2 = cluster_groups.indexOf(test2[0])
+                cluster_groups[i2].push(gns[0]);
+            } else if (test1.length && test2.length) {
+                i1 = cluster_groups.indexOf(test1[0])
+                i2 = cluster_groups.indexOf(test2[0])
+                //i1 = cluster_groups.indexOfForArrays(test1[0]);
+                if (i1!=i2) {
+                    cluster_groups[i1] = test1[0].concat(test2[0])
+                    cluster_groups.splice(i2, 1);
+                }
+            }
+
+            // if (seg1 != seg2) {
+            //     new_data["links"].push({ "source": gns[0], "target": gns[1], "value": 1 })
+            // }
+        });
+
+        $.each(raw_data['interactions'], function (i, v) {
+            if (!filtered_gn_pairs.includes(i)) return;
+            gns = separatePair(i);
+            seg1 = raw_data['segment_map'][gns[0]];
+            seg2 = raw_data['segment_map'][gns[1]];
+
+            cg = cluster_groups.filter(l => l.includes(gns[0]));
+            cg_index1 = cluster_groups.indexOf(cg[0]);
+            cg = cluster_groups.filter(l => l.includes(gns[1]));
+            cg_index2 = cluster_groups.indexOf(cg[0]);
+
+            if (single_cluster && (cg_index1!=single_cluster || cg_index2!=single_cluster)) return;
+
+            if (!track_gns.includes(gns[0])) {
+                new_data["nodes"].push({ "name": gns[0], "group": seg1, "group2":cg_index1 })
+                track_gns.push(gns[0]);
+            }
+            if (!track_gns.includes(gns[1])) {
+                new_data["nodes"].push({ "name": gns[1], "group": seg2, "group2":cg_index2 })
+                track_gns.push(gns[1]);
+            }
+
+            source = new_data["nodes"].filter(obj => { return obj.name === gns[0] })[0];
+            target = new_data["nodes"].filter(obj => { return obj.name === gns[1] })[0];
+            new_data["links"].push({ "source": source, "target": target, "value": 1 })
+        })
+
+
+        console.log(cluster_groups);
+            // console.log(graph);
+        // new_data['nodes'].forEach(function (n) {
+        //     cg = cluster_groups.filter(l => l.includes(n.name));
+        //     cg_index = cluster_groups.indexOf(cg[0]);
+        //     console.log(n, n.size, cg_index, cg);
+        //     n.group2 = cg_index;
+        // });
+        // console.log(new_data['nodes']);
+
+        if (!segment_view) {
+            // resize by number of nodes if not segments
+            console.log(new_data["nodes"].length, "nodes");
+            width = original_width*Math.sqrt(new_data["nodes"].length/8);
+        } else {
+            width = original_width*0.8;
+        }
+        w = width;
+        h = w;
+        height = w;
+
+    }
+    prepare_data();
+
+
+
+
+    var expand = {},net, force;
 
     d3.select(containerSelector).style("position","relative");
 
@@ -59,105 +118,159 @@ function createNetworkPlot(raw_data,width, inputGraph, containerSelector, segmen
         .attr("class", "network")
         .style("width", "100%")
         .style("-webkit-backface-visibility", "hidden");
+
+    init();
     
-    svg = div.append("svg:svg")
-        .attr("viewBox", "0 0 " + w + " " + h)
-        .attr("width", "100%")
-        .attr("style", "height: 500px");
-    
-    // slightly hide the initial load
-    svg.attr("opacity", 1e-6)
-        .transition()
-        .duration(3000)
-        .attr("opacity", 1);
-
-
-
-    var graph = new_data;
-
-    if (segment_view) {
-        // Group nodes into their "groups" (segments)
-        graph = network(new_data, net, getGroup, expand);
-
-        // console.log(graph);
-        // graph['nodes'].forEach(function (n) {
-        //     console.log(n, n.size);
-        // });
-
-        max_size = Math.max.apply(Math, graph['nodes'].map(function(v) {
-            return v.size;
-        }));
-
-        max_link = Math.max.apply(Math, graph['links'].map(function(v) {
-            return v.size;
-        }));
+    function init() {
+        console.log('init',div, containerSelector);
+        div = d3.select(containerSelector).select("div");
+        div.select("svg").remove();
+        // if (force) force.stop();
+        svg = div.append("svg:svg")
+            .attr("viewBox", "0 0 " + w + " " + h)
+            .attr("width", "100%")
+            .attr("style", "height: 500px");
         
-        console.log(max_link);
+        // slightly hide the initial load
+        svg.attr("opacity", 1e-6)
+            .transition()
+            .duration(3000)
+            .attr("opacity", 1);
 
-        // var graph = new_data;
+        var graph = new_data;
 
-        // normalize
-        graph['links'].forEach(function (n) {
-            console.log(n, n.size);
-            n.size = Math.round(max_link_size*n.size/max_link)
-            console.log(n, n.size);
-        });
-    }
+        if (segment_view) {
+            // Group nodes into their "groups" (segments)
+            graph = network(new_data, net, getGroup, expand);
 
-    var force = d3.layout.force()
-    .size([w, h])
-    .gravity(0.2)
-    .charge(-1000)
-    .linkDistance(100)
-    // .friction(0.5)
-    .on("tick", tick);
+            max_size = Math.max.apply(Math, graph['nodes'].map(function(v) {
+                return v.size;
+            }));
 
-    var drag = force.drag()
-        .on("dragstart", dragstart);
+            max_link = Math.max.apply(Math, graph['links'].map(function(v) {
+                return v.size;
+            }));
 
-    var link = svg.selectAll(".link"),
-        node = svg.selectAll(".node");
-    
-    force
-        .nodes(graph.nodes)
-        .links(graph.links)
-        .start();
+            // normalize
+            graph['links'].forEach(function (n) {
+                n.size = Math.round(max_link_size*n.size/max_link);
+            });
+        }
+        if (segment_view) {
+            force = d3.layout.force()
+                .size([w, h])
+                .gravity(0.1)
+                .charge(-1000)
+                .linkStrength(0.5)
+                .linkDistance(100)
+                // .friction(0.5)
+                .on("tick", tick);
+        } else {
+            // var force = d3.layout.force()
+            //     .size([w, h])
+            //     .gravity(0.15)
+            //     .charge(-900)
+            //     .linkStrength(1)
+            //     .linkDistance(50)
+            //     // .friction(0.5)
+            //     .on("tick", tick);
+            // https://unpkg.com/force-in-a-box/dist/forceInABox.js
+            force = d3.layout.forceInABox()
+                .charge(-1020)
+                .linkDistance(20)
+                .linkStrengthInterCluster(0.2)
+                .gravityToFoci(0.4)
+                .gravityOverall(0.3)
+                .size([w, h])
+                .enableGrouping(true)
+                .groupBy("group2")
+                .on("tick", tick);
 
-    link = link.data(graph.links)
-        .enter().append("line")
-        .attr("class", "link")
-        .style("stroke-width", function(d) { return d.size || 1; });
-    
-    
-    node = svg.selectAll(".node")
-        .data(graph.nodes)
-        .enter()
-        .append("g")
-        .on("dblclick", dblclick)
-        .call(drag);
-
-                
-    node.append("circle")
-        // .attr("class", function(d) { return "node" + (d.size?"":" leaf"); })
-        .attr("class", "node")
-        .attr("r", function(d) { return d.size ? assignSize(d.group) : 20; })
-        // .attr("r", 20)
-        .style("fill", function (d) { return assignRainbowColor(d.group); })
+        }
         
-    node.append("text")
-        .attr("dy", ".35em")
-        .attr("text-anchor", 'middle')
-        .attr("fill", "#000")
-        .attr("font-size", function(d) { return d.size ? assignSize(d.group)-6 : 12; })
-        .text(function(d){return d.size?d.group:d.name});
+        rects = svg.append("g").attr("class","treemap");
 
-    function tick() {
-        link.attr("x1", function(d) { return d.source.x; })
-            .attr("y1", function(d) { return d.source.y; })
-            .attr("x2", function(d) { return d.target.x; })
-            .attr("y2", function(d) { return d.target.y; });
+        var drag = force.drag()
+            .on("dragstart", dragstart);
+
+        var link = svg.selectAll(".link"),
+            node = svg.selectAll(".node");
         
-        node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+        force
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .start();
+
+        link = link.data(graph.links)
+            .enter().append("line")
+            .attr("class", "link")
+            .style("stroke-width", function(d) { return d.size || 1; });
+        
+        
+        node = svg.selectAll(".node")
+            .data(graph.nodes)
+            .enter()
+            .append("g")
+            .on("dblclick", dblclick)
+            .call(drag);
+
+                    
+        node.append("circle")
+            // .attr("class", function(d) { return "node" + (d.size?"":" leaf"); })
+            .attr("class", "node")
+            .attr("r", function(d) { return d.size ? assignSize(d.group) : 20; })
+            // .attr("r", 20)
+            .style("fill", function (d) { return assignRainbowColor(d.group); })
+            .on('contextmenu', function(d){ 
+                d3.event.preventDefault();
+                if (selected_single_cluster) {
+                    console.log('already zoomed in')
+                    prepare_data(false);
+                } else { 
+                    prepare_data(d.group2);
+                }
+                init();
+            })
+            
+        node.append("text")
+            .attr("dy", ".35em")
+            .attr("text-anchor", 'middle')
+            .attr("fill", "#000")
+            .attr("cursor","pointer")
+            .attr("font-size", function(d) { return d.size ? assignSize(d.group)-6 : 12; })
+            .text(function(d){return d.size?d.group:d.name})
+            .on('contextmenu', function(d){ 
+                d3.event.preventDefault();
+                if (selected_single_cluster) {
+                    console.log('already zoomed in')
+                    prepare_data(false);
+                } else { 
+                    prepare_data(d.group2);
+                }
+                init();
+            });
+
+        create_overlay();
+        // if (!segment_view) {
+        //     force.drawTreemap(svg);
+        //     bindTreeMap(div);
+        // }
+
+        function tick(e) {
+            if (!segment_view) force.onTick(e);
+            console.log(width,containerSelector);
+            node.attr("transform", function (d) {
+                d.x = Math.max(circle_size, Math.min(width - circle_size, d.x));
+                d.y = Math.max(circle_size, Math.min(height - circle_size, d.y));
+                return "translate(" + d.x + "," + d.y + ")";
+            });
+
+            link.attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+        }
+
     }
 
     function dblclick(d) {
@@ -166,6 +279,31 @@ function createNetworkPlot(raw_data,width, inputGraph, containerSelector, segmen
 
     function dragstart(d) {
     d3.select(this).classed("fixed", d.fixed = true);
+    }
+
+    function bindTreeMap() {
+        // d3.selectAll(".cell").each(function (d, i) {
+        //     console.log("i", i, "d", d);
+        //     d.on("click", function(d){ console.log('clicked1')}) 
+        // })
+        div.selectAll(".cell").attr("fill", "#fff").on("click", function(d){ 
+            if (selected_single_cluster) {
+                console.log('already zoomed in')
+                prepare_data(false);
+            } else {
+                console.log('clicked tree, redraw only',d.id) 
+                prepare_data(d.id);
+            }
+            init();
+            })
+        // d3.selectAll(".node").attr("fill", "#111").on("click", function (d) { console.log('clicked1 node') })
+        
+        $(containerSelector).find(".cell").appendTo(containerSelector+" .treemap");
+        console.log('bind tree map!',containerSelector);
+        // console.log($(".cell"));
+        // $(".cell").click(function () {
+        //     console.log('clicked!');
+        // })
     }
 
     function network(data, prev, index, expand) {
@@ -337,5 +475,61 @@ function createNetworkPlot(raw_data,width, inputGraph, containerSelector, segmen
         }
         return color;
     }
+
+    function create_overlay() {
+        var newDiv = document.createElement("div");
+        newDiv.setAttribute("class", "flareplot-legend");
+
+        var content = '<div class="controls">'
+        //                                  +'<h4>Controls</h4>';
+
+
+        content += '<p>Line colors: <select id="flareplot_color">' +
+            '<option value="none">None (gray)</option>' +
+            '<option value="rainbow">GPCR rainbow</option>' +
+            '<option value="segment">GPCR segment</option>';
+
+        var mode = get_current_mode();
+        // if single structure - use interaction coloring
+        if (mode == "single-crystal") {
+            content += '<option value="interactions" selected>Interaction Type</option>';
+            // if single group of structures - use frequency coloring (gradient)
+        } else if (mode == "single-crystal-group") {
+            content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
+            // if group(s) of structures - use frequency coloring (gradient)
+        } else {
+            content += '<option value="frequency" selected>Frequency difference Gr1 - Gr2</option>';
+            content += '<option value="frequency_1">Frequency group 1</option>';
+            content += '<option value="frequency_2">Frequency group 2</option>';
+        }
+        content += '</select></p>';
+        content = '<span class="options">' +
+        '<input id="checkShowTreemap" type="checkbox">' +
+        '<span class="checkboxtext">Show Treemap' +
+        '</span>' +
+        '</input>' +
+        '</span>';
+        content = '';
+        newDiv.innerHTML = content;
+
+        $(containerSelector).append(newDiv);
+        d3.select("#checkShowTreemap").on("change", function () {
+            drawTreeMap = d3.select("#checkShowTreemap").property("checked");
+            if (drawTreeMap) {
+              force.drawTreemap(svg);
+              bindTreeMap();
+            } else {
+              force.deleteTreemap(svg);
+            }
+          });
+    }
     
 }
+
+Array.prototype.indexOfForArrays = function(search)
+{
+  var searchJson = JSON.stringify(search); // "[3,566,23,79]"
+  var arrJson = this.map(JSON.stringify); // ["[2,6,89,45]", "[3,566,23,79]", "[434,677,9,23]"]
+    console.log("hi!",arrJson, searchJson,arrJson.indexOf(searchJson));
+  return arrJson.indexOf(searchJson);
+};
