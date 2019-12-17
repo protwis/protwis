@@ -1,9 +1,14 @@
 function createNetworkPlot(raw_data,original_width, inputGraph, containerSelector, segment_view = true) {
 // https://github.com/d3/d3-3.x-api-reference/blob/master/Force-Layout.md
-
+ 
 
     circle_size = 20;
-    max_link_size = 15;
+    max_link_size = 15; 
+
+    // https://bl.ocks.org/mbostock/4600693
+    // https://stackoverflow.com/questions/13455510/curved-line-on-d3-force-directed-tree
+    // http://bl.ocks.org/mbostock/1153292
+    var curved_links = true;
 
     // var dr = 4,      // default point radius
     // off = 15,    // cluster hull offset
@@ -121,6 +126,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
     init();
     
+    var path, link, node;
     function init() {
         console.log('init',div, containerSelector);
         div = d3.select(containerSelector).select("div");
@@ -159,10 +165,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         if (segment_view) {
             force = d3.layout.force()
                 .size([w, h])
-                .gravity(0.1)
+                .gravity(0.05)
                 .charge(-1000)
-                .linkStrength(0.5)
+                .linkStrength(1)
                 .linkDistance(100)
+                .friction(0.5) 
                 // .friction(0.5)
                 .on("tick", tick);
         } else {
@@ -176,11 +183,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             //     .on("tick", tick);
             // https://unpkg.com/force-in-a-box/dist/forceInABox.js
             force = d3.layout.forceInABox()
-                .charge(-1020)
-                .linkDistance(20)
-                .linkStrengthInterCluster(0.2)
-                .gravityToFoci(0.4)
-                .gravityOverall(0.3)
+                .charge(-400)
+                .linkDistance(60)
+                // .linkStrengthInterCluster(0.2)
+                .gravityToFoci(0.1)
+                .gravityOverall(0.06)
                 .size([w, h])
                 .enableGrouping(true)
                 .groupBy("group2")
@@ -193,26 +200,49 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         var drag = force.drag()
             .on("dragstart", dragstart);
 
-        var link = svg.selectAll(".link"),
+        link = svg.selectAll(".link"),
             node = svg.selectAll(".node");
         
         force
             .nodes(graph.nodes)
             .links(graph.links)
             .start();
-
+        path = svg.selectAll("path")
+            .data(force.links());
+        
+        path.enter().insert("svg:path")
+            .attr("class", "link")
+            .style("fill", "none")
+            // .style("stroke-width", "8")
+            .style("stroke-width", function(d) { return d.size || 5; })
+            .style("stroke", "#000");
         link = link.data(graph.links)
             .enter().append("line")
             .attr("class", "link")
-            .style("stroke-width", function(d) { return d.size || 1; });
+            .style("stroke-width", function(d) { return d.size || 5; });
+
+        link.style("visibility", "hidden");
+
+
         
-        
+        var n = graph.nodes.length;
         node = svg.selectAll(".node")
             .data(graph.nodes)
             .enter()
             .append("g")
+            .attr("transform", function(d, i) {
+                var x = width / n * i;
+                return "translate(" + x + "," + x + ")";
+            })
             .on("dblclick", dblclick)
             .call(drag);
+        
+        // var n = graph.nodes.length;
+        // node.forEach(function(d, i) {
+        //     d.x = d.y = width / n * i;
+            
+        // });
+        // force.stop();
 
                     
         node.append("circle")
@@ -222,6 +252,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             // .attr("r", 20)
             .style("fill", function (d) { return assignRainbowColor(d.group); })
             .on('contextmenu', function(d){ 
+                // http://bl.ocks.org/jakosz/ce1e63d5149f64ac7ee9
                 d3.event.preventDefault();
                 if (selected_single_cluster) {
                     console.log('already zoomed in')
@@ -251,9 +282,22 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             });
 
         create_overlay();
+
+        setTimeout(function () {
+            console.log('timer!');
+
+            force.start();
+            force.friction(0.8); 
+        }, 2000)
+        
+        setTimeout(function () {
+            console.log('timer!');
+            force.start();
+            force.friction(0.5); 
+        },4000)
         // if (!segment_view) {
         //     force.drawTreemap(svg);
-        //     bindTreeMap(div);
+        //     bindTreeMap(div);    
         // }
 
         function tick(e) {
@@ -264,14 +308,22 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 return "translate(" + d.x + "," + d.y + ")";
             });
 
+            path.attr("d", function(d) {
+                var dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+                return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+            });
             link.attr("x1", function(d) { return d.source.x; })
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
-                .attr("y2", function(d) { return d.target.y; });
+                .attr("y2", function (d) { return d.target.y; });
+            
+            
         }
 
     }
-
+    // https://bl.ocks.org/mbostock/3750558
     function dblclick(d) {
     d3.select(this).classed("fixed", d.fixed = false);
     }
@@ -477,6 +529,9 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
     function create_overlay() {
         var newDiv = document.createElement("div");
+
+        $(containerSelector).find(".flareplot-legend").remove();
+
         newDiv.setAttribute("class", "flareplot-legend");
 
         var content = '<div class="controls">'
@@ -503,24 +558,48 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         }
         content += '</select></p>';
         content = '<span class="options">' +
-        '<input id="checkShowTreemap" type="checkbox">' +
-        '<span class="checkboxtext">Show Treemap' +
+        '<input id="checkCurved" type="checkbox" checked>' +
+        '<span class="checkboxtext"> Curved links' +
         '</span>' +
         '</input>' +
+        '<br><button class="btn btn-primary btn-xs" id="resetfixed">Release fixed</button>' +
+        '<br><button class="btn btn-primary btn-xs" id="freeze">Freeze all</button>' +
         '</span>';
-        content = '';
+        // content = '';
         newDiv.innerHTML = content;
 
         $(containerSelector).append(newDiv);
-        d3.select("#checkShowTreemap").on("change", function () {
-            drawTreeMap = d3.select("#checkShowTreemap").property("checked");
-            if (drawTreeMap) {
-              force.drawTreemap(svg);
-              bindTreeMap();
+
+        d3.select(containerSelector).select("#checkCurved").on("change", function () {
+            curved_links = d3.select(containerSelector).select("#checkCurved").property("checked");
+            console.log('they changed!', curved_links, containerSelector)
+            if (curved_links) {
+                link.style("visibility", "hidden");
+                path.style("visibility", "");
+
             } else {
-              force.deleteTreemap(svg);
+                path.style("visibility", "hidden");
+                link.style("visibility", "");
             }
-          });
+
+            // init();
+        });
+                
+        d3.select(containerSelector).select("#resetfixed").on("click", function () {
+            node.classed("fixed", function (d) {
+                d.fixed = false;
+            });
+            force.start();s
+        });
+
+        d3.select(containerSelector).select("#freeze").on("click", function () {
+            node.classed('fixed', function(d, i) {
+                d.fixed = true;
+            });
+        });
+
+        
+        
     }
     
 }
