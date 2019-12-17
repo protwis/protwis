@@ -258,7 +258,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         function tick(e) {
             if (!segment_view) force.onTick(e);
-            console.log(width,containerSelector);
             node.attr("transform", function (d) {
                 d.x = Math.max(circle_size, Math.min(width - circle_size, d.x));
                 d.y = Math.max(circle_size, Math.min(height - circle_size, d.y));
