@@ -71,7 +71,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             cg = cluster_groups.filter(l => l.includes(gns[1]));
             cg_index2 = cluster_groups.indexOf(cg[0]);
 
-            if (single_cluster && (cg_index1!=single_cluster || cg_index2!=single_cluster)) return;
+            if (single_cluster!==false && (cg_index1!=single_cluster || cg_index2!=single_cluster)) return;
 
             if (!track_gns.includes(gns[0])) {
                 new_data["nodes"].push({ "name": gns[0], "group": seg1, "group2":cg_index1 })
@@ -338,7 +338,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         //     d.on("click", function(d){ console.log('clicked1')}) 
         // })
         div.selectAll(".cell").attr("fill", "#fff").on("click", function(d){ 
-            if (selected_single_cluster) {
+            if (selected_single_cluster!==false) {
                 console.log('already zoomed in')
                 prepare_data(false);
             } else {
