@@ -1736,8 +1736,8 @@
             }
 
             // Only between helices
-            checked = currentSettings[currentTab]["options"].indexOf("interhelical") >= 0 ? "checked" : "";
-            option_content +=  '<li class="list-group-item">Only interhelical contacts<div class="material-switch pull-right"><input id="option-interhelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-interhelical" class="label-primary"></label></div></li>';
+            checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
+            option_content +=  '<li class="list-group-item">Intrahelical contacts<div class="material-switch pull-right"><input id="option-intrahelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intrahelical" class="label-primary"></label></div></li>';
 
             option_content += "</ul>"
             $("#interaction_settings").append(option_content);

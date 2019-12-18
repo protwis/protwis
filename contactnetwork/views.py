@@ -277,7 +277,7 @@ def PdbTableData(request):
         r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
         r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
         r['diff_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction - s.active_class_contacts_fraction)
-        
+
         r['mammal'] = 'Only show mammalian receptor structures (even if the non-mammalian is the only)' if s.mammal else ''
         r['closest_to_human'] = 'Only show structures from human or the closest species (for each receptor and state)' if s.closest_to_human else ''
 
@@ -522,11 +522,13 @@ def InteractionBrowserData(request):
     except IndexError:
         contact_options = []
 
+
+
     i_options_filter = Q()
-    if contact_options and len(contact_options) > 0:
-        # Filter out contact within the same helix
-        if "interhelical" in contact_options:
-            i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+    # Filter out contact within the same helix
+    #if contact_options and len(contact_options) > 0:
+    if not contact_options or "intrahelical" not in contact_options:
+        i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
 
     # Use normalized results Defaults to True.
     #normalized = True
@@ -879,7 +881,7 @@ def InteractionBrowserData(request):
 
                     if normalized_value not in data['interactions'][coord]['types_count'][model][1]:
                             data['interactions'][coord]['types_count'][model][1].append(normalized_value)
-                            
+
                 ## Presence lookup
                 pdbs_with_res1 = r_presence_lookup[res1]
                 pdbs_with_res2 = r_presence_lookup[res2]
@@ -1364,7 +1366,7 @@ def InteractionBrowserData(request):
                     structuresC=Count('interacting_pair__referenced_structure',distinct=True),
                     pfsC=Count('interacting_pair__referenced_structure__protein_conformation__protein__parent__family__name',distinct=True)
                 ))
-                
+
             for i in interactions:
                 key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
@@ -1377,7 +1379,7 @@ def InteractionBrowserData(request):
                     merged_types_structures = list(zip(i['i_types'],i['pfs']))
                 else:
                     merged_types_structures = list(zip(i['i_types'],i['structures']))
-                        
+
                 for key, val in merged_types_structures:
                     d['types_count'][key].add(val)
             print('Gotten second set occurance calcs',time.time()-start_time)
@@ -1499,7 +1501,7 @@ def InteractionBrowserData(request):
                     merged_types_structures = list(zip(i['i_types'],i['pfs']))
                 else:
                     merged_types_structures = list(zip(i['i_types'],i['structures']))
-                        
+
                 for key, val in merged_types_structures:
                     d['types_count'][key].add(val)
 
