@@ -14,7 +14,13 @@ from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
 from interaction.forms import PDBform
 from construct.tool import FileUploadForm
 
+from svglib.svglib import SvgRenderer
+from reportlab.graphics import renderPDF
+from lxml import etree
+
 import inspect
+import html
+import re
 from collections import OrderedDict
 from io import BytesIO
 import xlsxwriter, xlrd
@@ -1623,7 +1629,7 @@ def ExportExcelDownload(request, ts, entry_name):
 
 @csrf_exempt
 def ImportExcel(request, **response_kwargs):
-    """Recieves excel, outputs json"""
+    """Receives excel, outputs json"""
     o = []
     if request.method == 'POST':
         form = FileUploadForm(data=request.POST, files=request.FILES)
@@ -1660,3 +1666,34 @@ def ImportExcel(request, **response_kwargs):
     jsondata = json.dumps(o)
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
+
+@csrf_exempt
+def ConvertSVG(request, **response_kwargs):
+    """Receives SVG, outputs PDF"""
+
+    pdf_content = ""
+    filename = "converted.pdf"
+    if request.method == 'POST':
+        # Obtain the POST data
+        filename = request.POST.get('filename')
+        svg_content = request.POST.get('dataUrl')
+
+        # unescape the SVG string
+        svg_content = html.unescape(svg_content)
+
+        ## Removing inline tspans as super/subscript breaks the layout
+        clean = re.compile('</?tspan.*?>')
+        svg_content = re.sub(clean, '', svg_content)
+
+        # Build XML tree
+        svg = etree.fromstring(svg_content)
+
+        # Render in PDF
+        renderer = SvgRenderer("")
+        drawing = renderer.render(svg)
+        pdf_content = renderPDF.drawToString(drawing)
+
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+    response.write(pdf_content)
+    return response
