@@ -798,10 +798,10 @@ function nodeStyler(element, node){
               labelName = labelName.replace("-adrenoceptor", '')
               labelName = labelName.replace(" receptor-", '-')
 
-              labelName = labelName.replace("<sub>", '<tspan baseline-shift = "sub">')
-              labelName = labelName.replace("</sub>", '</tspan>')
-              labelName = labelName.replace("<i>", '<tspan font-style = "italic">')
-              labelName = labelName.replace("</i>", '</tspan>')
+              labelName = labelName.replace("<sub>", '</tspan><tspan baseline-shift = "sub">')
+              labelName = labelName.replace("</sub>", '</tspan><tspan>')
+              labelName = labelName.replace("<i>", '</tspan><tspan font-style = "italic">')
+              labelName = labelName.replace("</i>", '</tspan><tspan>')
             } else
               labelName = treeAnnotations[node.name][1].split("_")[0].toUpperCase()
 
@@ -821,17 +821,17 @@ function nodeStyler(element, node){
             else if (dx_label != null && dx_label > 0)
               label.setAttribute("dx", font_size/2 + "px")*/
 
-
             if (hidePDBs){
-              label.innerHTML = labelName
+              label.innerHTML = "<tspan>" + labelName + "</tspan>"
             } else if (displayName == 2) {
-              label.innerHTML = node.name
+              label.innerHTML = "<tspan>" + node.name + "</tspan>"
             } else {
-              label.innerHTML = labelName + " (" + node.name + ")"
+              label.innerHTML = "<tspan>" + labelName + " (" + node.name + ")" + "</tspan>"
               // Extra: rotate labels when on the left half
               if (!labelReorder && label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
-                label.innerHTML = "(" + node.name + ") " + labelName
+                label.innerHTML = "<tspan>" + "(" + node.name + ") " + labelName + "</tspan>"
             }
+
 
 
 

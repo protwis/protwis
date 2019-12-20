@@ -352,7 +352,6 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
-                null,
                 null
             ]
         });
@@ -463,6 +462,14 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
 
                 },
+                {
+                    column_number: 11,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Cyt. Opening.",
+                    filter_reset_button_text: false,
+
+                },
                 /*{
                     column_number: 13,
                     filter_type: "multi_select",
@@ -471,58 +478,58 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 13,
+                    column_number: 12,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "SignalProtein",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 14,
+                    column_number: 13,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Subfamily",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 17,
+                    column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 18,
+                    column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 19,
+                    column_number: 18,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 20,
+                    column_number: 19,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand function",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 21,
+                    column_number: 20,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand type",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 22, 
+                    column_number: 21,
                     filter_container_id: mode_without_space+'_external_filter_container_0',
-                    html_data_type: "text", 
+                    html_data_type: "text",
                     select_type: 'select2',
                     // filter_type: "multi_select",
                     filter_default_label: "All species and structures",
@@ -534,9 +541,9 @@ function showPDBtable(element) {
                     },
                 },
                 // {
-                //     column_number: 23, 
+                //     column_number: 23,
                 //     filter_container_id: mode_without_space+'_external_filter_container_1',
-                //     html_data_type: "text", 
+                //     html_data_type: "text",
                 //     select_type: 'select2',
                 //     // filter_type: "multi_select",
                 //     filter_default_label: "All Structures",
@@ -552,8 +559,8 @@ function showPDBtable(element) {
         );
         yadcf.exResetAllFilters(oTable[mode]);
         yadcf.exFilterColumn(oTable[mode], [
-            [22, "*Only show mammalian structures and those from human or closest species"],
-          ]); 
+            [21, "*Only show mammalian structures and those from human or closest species"],
+          ]);
         console.log('done yadcf');
 
         oTable[mode].on('draw.dt', function(e, oSettings) {
@@ -572,7 +579,7 @@ function showPDBtable(element) {
         var bodyRect = $(element + ' .dataTables_scroll')[0].getBoundingClientRect(),
         elemRect = $(element + ' .dataTables_scrollBody')[0].getBoundingClientRect(),
         offset = elemRect.top - bodyRect.top;
-        
+
         $('.top_scroll').css({
             'width': '100%',
             'overflow-x': 'scroll',
@@ -595,7 +602,7 @@ function showPDBtable(element) {
             'overflow-y': 'scroll',
             'scrollbar-width': 'none',
         });
-        
+
 
         $('.structure_overlay tbody tr').css({
             'background-color': '#f8f8f8',

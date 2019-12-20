@@ -228,8 +228,8 @@ def PdbTableData(request):
         <thead><tr> \
             <th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th> \
             <th colspan=5>Receptor</th> \
-            <th colspan=4>Structure</th> \
-            <th colspan=3></th> \
+            <th colspan=3>Structure</th> \
+            <th colspan=3>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
             <th colspan=3>Ligand</th><th></th> \
@@ -244,9 +244,11 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
-            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
-            <th>TM6 tilt (%, inactive: 0-X, intermed: X-Y, active Y-Z)</th> \
-            <th></th> \
+            <th></th>"
+#            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
+#            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
+#            <th>TM6 tilt (%, inactive: 0-X, intermed: X-Y, active Y-Z)</th> \
+    data_table += "<th></th> \
             <th></th> \
             <th>Note</th> \
             <th>% of Seq</th> \
@@ -324,6 +326,7 @@ def PdbTableData(request):
 
         r['resolution'] = "{0:.2g}".format(s.resolution)
         r['7tm_distance'] = s.distance
+        r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
 
         # DEBUGGING - overwrite with distance to 6x38
 #        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
@@ -397,7 +400,6 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td>{}</td> \
                         </tr> \n".format(
                                         r['contact_representative'],
                                         r['distance_representative'],
@@ -414,8 +416,7 @@ def PdbTableData(request):
                                         r['resolution'],
                                         r['state'],
                                         r['contact_representative_score'],
-                                        r['7tm_distance'],
-                                        '',
+                                        r['tm6_angle'],
                                         r['signal_protein'],
                                         r['signal_protein_subtype'],
                                         r['signal_protein_note'],
