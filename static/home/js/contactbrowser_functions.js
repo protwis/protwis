@@ -1970,3 +1970,11 @@
             document.body.removeChild(link);
             delete link;
         }
+    
+        function separatePair(stringPair) {
+            var regex = /([0-9x]+),([0-9x]+)/g;
+            var m;
+            matches = regex.exec(stringPair);
+        
+            return [matches[1], matches[2]];
+        }

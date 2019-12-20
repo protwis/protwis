@@ -1106,6 +1106,7 @@
 
     <!-- D3 -->
     <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/d3.v4.min.js' %}"> </script>
     <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
     <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
     <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
@@ -1126,8 +1127,9 @@
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-heatmap.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-tabtables.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-boxplot.js' %}"> </script>
-    <script type="text/javascript" src="{% static 'home/js/contactbrowser-network.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/contactbrowser-network_v4.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/forceInABoxv3.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/forceInABoxv4.js' %}"> </script>
 
     <script>
 
@@ -1300,6 +1302,11 @@
         }
 
         .network .fixed circle.node {
+            stroke: red;
+            stroke-width: 2px;
+        }
+
+        .network circle.fixed {
             stroke: red;
             stroke-width: 2px;
         }

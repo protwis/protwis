@@ -1,5 +1,5 @@
 var filtered_gn_pairs = [];
-
+var filtered_cluster_groups = [];
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
@@ -19,6 +19,36 @@ function filter_browser() {
     } else {
         updateGeneralControls();
     }
+
+    filtered_cluster_groups = [];
+    // // Populate matrix for interactions between segments
+    track_gns = []
+    $.each(filtered_gn_pairs, function (i, v) {
+        gns = separatePair(v);
+
+        test1 = filtered_cluster_groups.filter(l => l.includes(gns[0]));
+        test2 = filtered_cluster_groups.filter(l => l.includes(gns[1]));
+        if (!test1.length && !test2.length) {
+            filtered_cluster_groups.push([gns[0], gns[1]]);
+        } else if (test1.length && !test2.length) {
+            i1 = filtered_cluster_groups.indexOf(test1[0])
+            filtered_cluster_groups[i1].push(gns[1]);
+        } else if (!test1.length && test2.length) {
+            i2 = filtered_cluster_groups.indexOf(test2[0])
+            filtered_cluster_groups[i2].push(gns[0]);
+        } else if (test1.length && test2.length) {
+            i1 = filtered_cluster_groups.indexOf(test1[0])
+            i2 = filtered_cluster_groups.indexOf(test2[0])
+            //i1 = filtered_cluster_groups.indexOfForArrays(test1[0]);
+            if (i1!=i2) {
+                filtered_cluster_groups[i1] = test1[0].concat(test2[0])
+                filtered_cluster_groups.splice(i2, 1);
+            }
+        }
+
+    });
+    console.log("filtered_cluster_groups",filtered_cluster_groups);
+
 }
 
 function make_list_narrow_cols(list, start_column, end_column) {
