@@ -112,7 +112,7 @@
           // If SVG, end here.
           if (filetype=='svg') {
             downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), 'distances_'+svg_class+'.svg');
-            return 
+            return
           }
 
           var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( escapedSVG ) ) ); // Convert SVG string to data URL
@@ -126,7 +126,7 @@
             // // Requires canvas-toBlob.js
             canvas.toBlob( function(blob) {
               saveAs( blob, 'distances_'+svg_class+'.png' ); // FileSaver.js function
-            }); 
+            });
           };
           image.src = imgsrc;
 
