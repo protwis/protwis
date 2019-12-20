@@ -132,6 +132,24 @@
 
         }
 
+      var filename_prefix = {"single-crystal-tab" : "single", "single-crystal-group-tab" : "group", "two-crystal-groups-tab" : "comparison"}
+      function downloadCurrentTable(){
+          // grab all data from current table
+          var table = $("#" + currentTab + " .contact-browser.active .dataTable").DataTable();
+
+          // TODO change this function to download nice Excel/CSV including headers
+          // There is an issue in our implementation with the Datatables buttons option
+
+          // Convert current dataTable to CSV
+          csv = Papa.unparse(table.rows().data().toArray());
+
+          // remove HTML tags
+          csv = csv.replace(/(<([^>]+)>)/ig, "")
+
+          // Download file
+          downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), "Structure_analyzer-" + filename_prefix[currentTab]+".csv");
+      }
+
 
       $(document).ready(function() {
         $('.btn-download.png').click(function() {
