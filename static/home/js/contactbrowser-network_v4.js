@@ -139,7 +139,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
     init();
     
-    var path, link, node, svg;
+    var path, link, node, svg,labelText;
     function init() {
         console.log('init',div, containerSelector);
         div = d3v4.select(containerSelector).select("div");
@@ -198,7 +198,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .style("fill", "none")
             .style("stroke-width", function(d) { return d.size || 5; })
             .style("stroke", "#000")
-            .attr("id", function (d, i) { return "linkId_" + i; });
+            .attr("id", function (d, i) { return containerSelector+"linkId_" + i; });
         
             // .style("fill", "none")
             // // .style("stroke-width", "8")
@@ -262,12 +262,12 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
           .enter().append("text")
             .attr("class","labelText")
             .attr("dx",0)
-            .attr("dy",function(d,i) { return  -d.size/2;})
+            .attr("dy",function(d,i) { return  d.size ? -d.size/2 : -5/2;})
             .style("fill", "black")
             .style("opacity", 0.5)
             .attr("id", function (d, i) { return "labelText_" + i; })
             .append("textPath")
-            .attr("xlink:href", function (d, i) { return "#linkId_" + i; })
+            .attr("xlink:href", function (d, i) { return "#"+containerSelector+"linkId_" + i; })
             .attr("startOffset","50%").attr("text-anchor","Middle")
             .text(function(d,i) { return  d.links;});
         
@@ -520,6 +520,12 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             highlightNode = d3.select(containerSelector).select("#highlightNode").property("checked");
         });
 
+        d3.select(containerSelector).select("#linkLabel").on("change", function () {
+            linkLabel = d3.select(containerSelector).select("#linkLabel").property("checked");
+            labelText.attr("visibility", linkLabel ? "visible" : "hidden");
+            
+        });
+
         // init option values
 
         // console.log("set link_strength_change to", link_strength);
@@ -770,6 +776,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         // '</input>' +
         // '<br><button class="btn btn-primary btn-xs" id="resetfixed">Release fixed</button>' +
         // '<br><button class="btn btn-primary btn-xs" id="freeze">Freeze all</button>' +
+        'Link Label <input id="linkLabel" type="checkbox" checked><br>' +
         'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
         'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
