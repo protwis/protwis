@@ -116,7 +116,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             console.log(new_data["nodes"].length, "nodes");
             width = original_width*Math.sqrt(new_data["nodes"].length/2);
         } else {
-            width = original_width*0.8;
+            width = original_width*1;
         }
         w = width;
         h = w;
@@ -205,6 +205,19 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             // .style("stroke-width", function(d) { return d.size || 5; })
             // .style("stroke", "#000");
         
+        var labelText = svg.selectAll(".labelText")
+            .data(graph.links)
+          .enter().append("text")
+            .attr("class","labelText")
+            .attr("dx",0)
+            .attr("dy",function(d,i) { return  d.size ? -d.size/2 : -5/2;})
+            .style("fill", "black")
+            .style("opacity", 0.5)
+            .attr("id", function (d, i) { return "labelText_" + i; })
+            .append("textPath")
+            .attr("xlink:href", function (d, i) { return "#"+containerSelector+"linkId_" + i; })
+            .attr("startOffset","50%").attr("text-anchor","Middle")
+            .text(function(d,i) { return  d.links;});
         
         var n = graph.nodes.length;
         var node = svg.selectAll(".node")
@@ -242,10 +255,12 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 }
             });
         
+        
         node.append("circle")
             .attr("class", "node")
             .attr("r", function (d) { return d.size ? assignSize(d.group) : 20; })
             // .attr("r", function (d) { return d.links**2+20; })
+            .style("opacity", 1)
             .style("fill", function (d) { return assignRainbowColor(d.group); });
         
         node.append("text")
@@ -257,19 +272,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .text(function (d) { return d.size ? d.group : d.name });
         
         
-        var labelText = svg.selectAll(".labelText")
-            .data(graph.links)
-          .enter().append("text")
-            .attr("class","labelText")
-            .attr("dx",0)
-            .attr("dy",function(d,i) { return  d.size ? -d.size/2 : -5/2;})
-            .style("fill", "black")
-            .style("opacity", 0.5)
-            .attr("id", function (d, i) { return "labelText_" + i; })
-            .append("textPath")
-            .attr("xlink:href", function (d, i) { return "#"+containerSelector+"linkId_" + i; })
-            .attr("startOffset","50%").attr("text-anchor","Middle")
-            .text(function(d,i) { return  d.links;});
         
         
         var ticked = function() {
@@ -304,44 +306,63 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         var simulation = d3v4.forceSimulation()
             // .force("collide",d3v4.forceCollide( function(d){return 30 }).iterations(1) )
             // .force("collide",d3v4.forceCollide( function (d) { return d.links**2+10; }).strength(0.5).iterations(5))
-            
-            .force("center", d3v4.forceCenter(w / 2, h / 2))
-            // .force("y", d3v4.forceY(0.001))
-            // .force("x", d3v4.forceX(0.001))
             // .alphaDecay(0)
-            .force("charge", d3v4.forceManyBody().strength(-1200))
+            .force("charge", d3v4.forceManyBody().strength(-700))
             .force("x", d3v4.forceX(w/2).strength(0.0))
-            .force("y", d3v4.forceY(h / 2).strength(0.0));
+            .force("y", d3v4.forceY(h/2).strength(0.0));
         
-        link_distance = 20;
-        link_strength = 1;
-        gravity = 0.1;
-        charge = -1200;
+        link_distance = 70;
+        link_strength = 0.7;
+        gravity = 0;
+        charge = -700;
         var distanceMax = 0;
         collide = 0;
+        var useGroupingForce = false;
+        // simulation.alphaDecay(0.001);
         if (selected_single_cluster === false && cluster_groups.length > 1 && !segment_view) {
-            distanceMax = 200;
+
+            max_cluster_size = Math.max.apply(Math, cluster_groups.map(function(v) {
+                return v.length;
+            }));
+            
+            distanceMax = max_cluster_size*20;
             simulation.force("charge", d3v4.forceManyBody()
                 .strength(charge)
-                .distanceMax(200)
+                .distanceMax(distanceMax)
             )
             gravity = 0.1;
+            useGroupingForce = true;
+            // Instantiate the forceInABox force
+            var groupingForce = forceInABox()
+                .strength(gravity) // Strength to foci
+                .template("treemap") // Either treemap or force
+                .groupBy("group2") // Node attribute to group
+                // .links(graph.links) // The graph links. Must be called after setting the grouping attribute
+                .size([width, height]) // Size of the chart
+            simulation
+                .force("group", groupingForce)
+            simulation.force("collide", d3v4.forceCollide(function (d) { return d.links ** 2 + 20; }).strength(1).iterations(1))
         } else {
             if (segment_view) {
                 console.log('segment! collide');
-                simulation.force("collide", d3v4.forceCollide(function (d) { return 30; }).strength(1).iterations(1))
-                link_distance = 50;
-                link_strength = 0.8;
+                collide = 50;
+                simulation.force("collide", d3v4.forceCollide(function (d) { return 50; }).strength(1).iterations(1))
+                link_distance = 90;
+                link_strength = 0.7;
                 // link_strength = function (l) { return l.size / max_link_size };
-                gravity = 0.1;
+                gravity = 0.04;
+                simulation
+                .force("x", d3v4.forceX(w/2).strength(gravity))
+                .force("y", d3v4.forceY(h/2).strength(gravity));
 
                 // simulation.force("charge", d3v4.forceManyBody().strength(function (d) { return -d.size*50 }))
             } else {
-                // simulation.alphaDecay(0.001);
-                charge = -1200;
-                simulation.force("charge", d3v4.forceManyBody()
-                    .strength(charge)
-                )
+                // charge = -1200;
+                gravity = 0.05;
+                simulation.force("charge", d3v4.forceManyBody().strength(charge))
+                    .force("x", d3v4.forceX(w/2).strength(gravity))
+                    .force("y", d3v4.forceY(h / 2).strength(gravity));
+                
                 // simulation.force("charge", d3v4.forceManyBody().strength(function (d) { return -(d.links**3) }))
                 simulation.force("collide", d3v4.forceCollide(function (d) { return d.links ** 2 + 20; }).strength(1).iterations(1))
             }
@@ -349,29 +370,22 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         // console.log('distance_max', distance_max, cluster_groups.length, selected_single_cluster);
         
       
-        simulation.force("collide", d3v4.forceCollide(function (d) { return 0; }).strength(1).iterations(1))
+        // simulation.force("collide", d3v4.forceCollide(function (d) { return 0; }).strength(1).iterations(1))
         
-        // Instantiate the forceInABox force
-        var groupingForce = forceInABox()
-        .strength(gravity) // Strength to foci
-        .template("treemap") // Either treemap or force
-        .groupBy("group2") // Node attribute to group
-        .links(graph.links) // The graph links. Must be called after setting the grouping attribute
-            .size([width, height]) // Size of the chart
+
         
         // simulation
         //     .nodes(graph.nodes)
         //     .on("tick", ticked);
     
         // simulation.force("link")
-        //     .links(graph.links);   
-        
+        //     .links(graph.links);  
+
         simulation
             .nodes(graph.nodes)
-            .force("group", groupingForce)
             .force("link", d3v4.forceLink(graph.links)
                 .distance(link_distance)
-                .strength(link_strength)
+                .strength(link_strength).iterations(1)
                 // .strength(0.8).iterations(1)
             //   .strength(groupingForce.getLinkStrength) // default link force will try to join nodes in the same group stronger than if they are in different groups
             ).on("tick", ticked);
@@ -441,16 +455,18 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .on("input", link_strength_change);
         
         function link_strength_change() {
+            console.log('link strength', this.value);
             simulation.force("link").strength(+this.value);
-            simulation.alpha(1).restart();
+            if (!d3v4.event.active) simulation.alpha(1).restart();
         }
         
         d3v4.select(containerSelector).select("#link_distance_change")
             .on("input", link_distance_change);
         
         function link_distance_change() {
+            console.log('link distance', this.value);
             simulation.force("link").distance(+this.value);
-            simulation.alpha(1).restart();
+            if (!d3v4.event.active) simulation.alpha(1).restart();
         }
         
         d3v4.select(containerSelector).select("#gravity_change")
@@ -458,21 +474,28 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         
         function gravity_change() {
             gravity = this.value;
-            var groupingForce = forceInABox()
-            .strength(+this.value) // Strength to foci
-            .template("treemap") // Either treemap or force
-            .groupBy("group2") // Node attribute to group
-            .links(graph.links) // The graph links. Must be called after setting the grouping attribute
-                .size([width, height]) // Size of the chart
+            console.log('gravity', gravity);
+            if (useGroupingForce) {
+                var groupingForce = forceInABox()
+                    .strength(+this.value) // Strength to foci
+                    .template("treemap") // Either treemap or force
+                    .groupBy("group2") // Node attribute to group
+                    // .links(graph.links) // The graph links. Must be called after setting the grouping attribute
+                    .size([width, height]) // Size of the chart
             
-            simulation.force("group", groupingForce);
-            simulation.alpha(1).restart();
+                simulation.force("group", groupingForce);
+            } else {
+                simulation.force("x", d3v4.forceX(w/2).strength(gravity))
+                .force("y", d3v4.forceY(h/2).strength(gravity));    
+            }
+            if (!d3v4.event.active) simulation.alpha(1).restart();
         }
         
         d3v4.select(containerSelector).select("#charge_change")
             .on("input", charge_change);
         
         function charge_change() {
+            console.log('charge', this.value);
             if (distanceMax) {
                 simulation.force("charge", d3v4.forceManyBody()
                     .strength(+(-1 * this.value))
@@ -483,15 +506,16 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                         .strength(+(-1*this.value))
                     )
             }
-            simulation.alpha(1).restart();
+            if (!d3v4.event.active) simulation.alpha(1).restart();
         }
 
         d3v4.select(containerSelector).select("#collide_change")
             .on("input", collide_change);
         
         function collide_change() {
+            console.log('collide', this.value);
             simulation.force("collide", d3v4.forceCollide(this.value).strength(1).iterations(1))
-            simulation.alpha(1).restart();
+            if (!d3v4.event.active) simulation.alpha(1).restart();
         }
 
         d3v4.select(containerSelector).select("#size_change")
@@ -500,16 +524,20 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         function size_change() {
             width = height = w = h = this.value;
             svg.attr("viewBox", "0 0 " + w + " " + h);
-            simulation.force("center", d3v4.forceCenter(w / 2, h / 2));
-
-            var groupingForce = forceInABox()
-            .strength(gravity) // Strength to foci
-            .template("treemap") // Either treemap or force
-            .groupBy("group2") // Node attribute to group
-            .links(graph.links) // The graph links. Must be called after setting the grouping attribute
+            // simulation.force("center", d3v4.forceCenter(w / 2, h / 2));
+            if (useGroupingForce) {
+                var groupingForce = forceInABox()
+                .strength(gravity) // Strength to foci
+                .template("treemap") // Either treemap or force
+                .groupBy("group2") // Node attribute to group
+                // .links(graph.links) // The graph links. Must be called after setting the grouping attribute
                 .size([width, height]) // Size of the chart
             
-            simulation.force("group", groupingForce);
+                simulation.force("group", groupingForce);
+            }
+
+            simulation.force("x", d3v4.forceX(w/2))
+                      .force("y", d3v4.forceY(h/2));
             simulation.alpha(1).restart();
         }
         
@@ -742,9 +770,9 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     function create_overlay() {
         var newDiv = document.createElement("div");
 
-        $(containerSelector).find(".flareplot-legend").remove();
+        $(containerSelector).find(".controls-panel").remove();
 
-        newDiv.setAttribute("class", "flareplot-legend");
+        newDiv.setAttribute("class", "controls-panel");
 
         var content = '<div class="controls">'
         //                                  +'<h4>Controls</h4>';
@@ -769,7 +797,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             content += '<option value="frequency_2">Frequency group 2</option>';
         }
         content += '</select></p>';
-        content = '<span class="options">' +
+        content = '<span class="pull-right network_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">' +
         // '<input id="checkCurved" type="checkbox" checked>' +
         // '<span class="checkboxtext"> Curved links' +
         // '</span>' +
@@ -790,6 +818,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         newDiv.innerHTML = content;
 
         $(containerSelector).append(newDiv);
+        $(containerSelector).find(".options").toggle();
+
+        $(containerSelector).find(".network_controls_toggle").click(function() {
+            $(containerSelector).find(".options").toggle();
+        });
 
         d3.select(containerSelector).select("#checkCurved").on("change", function () {
             curved_links = d3.select(containerSelector).select("#checkCurved").property("checked");
