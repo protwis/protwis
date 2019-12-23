@@ -2,6 +2,9 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 // https://github.com/d3/d3-3.x-api-reference/blob/master/Force-Layout.md
  //https://archive.nytimes.com/www.nytimes.com/interactive/2013/02/20/movies/among-the-oscar-contenders-a-host-of-connections.html
 
+    // Other ideas 3D: https://bl.ocks.org/vasturiano/f59675656258d3f490e9faa40828c0e7
+    
+    
     circle_size = 20;
     max_link_size = 15; 
 
@@ -169,20 +172,39 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
             // normalize
             graph['links'].forEach(function (n) {
-                n.size = Math.round(max_link_size*n.size/max_link);
+                n.links = n.size;
+                n.size = Math.max(1,Math.round(max_link_size*n.size/max_link));
             });
         }
         
+    
+        // var link = svg.append("g")
+        //     .attr("class", "links")
+        //     .selectAll("line")
+        //     .data(graph.links)
+        //     .enter()
+        //     .append("line")
+        //     .attr("class", "link")
+        //     .style("stroke-width", function(d) { return d.size || 5; })
+        //     .attr("stroke", "black")
     
         var link = svg.append("g")
             .attr("class", "links")
             .selectAll("line")
             .data(graph.links)
             .enter()
-            .append("line")
+            .append("path")
             .attr("class", "link")
+            .style("fill", "none")
             .style("stroke-width", function(d) { return d.size || 5; })
-            .attr("stroke", "black")
+            .style("stroke", "#000")
+            .attr("id", function (d, i) { return "linkId_" + i; });
+        
+            // .style("fill", "none")
+            // // .style("stroke-width", "8")
+            // .style("stroke-width", function(d) { return d.size || 5; })
+            // .style("stroke", "#000");
+        
         
         var n = graph.nodes.length;
         var node = svg.selectAll(".node")
@@ -235,6 +257,21 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .text(function (d) { return d.size ? d.group : d.name });
         
         
+        var labelText = svg.selectAll(".labelText")
+            .data(graph.links)
+          .enter().append("text")
+            .attr("class","labelText")
+            .attr("dx",0)
+            .attr("dy",function(d,i) { return  -d.size/2;})
+            .style("fill", "black")
+            .style("opacity", 0.5)
+            .attr("id", function (d, i) { return "labelText_" + i; })
+            .append("textPath")
+            .attr("xlink:href", function (d, i) { return "#linkId_" + i; })
+            .attr("startOffset","50%").attr("text-anchor","Middle")
+            .text(function(d,i) { return  d.links;});
+        
+        
         var ticked = function() {
             node.attr("transform", function (d) {
                 size = d.size ? assignSize(d.group) : 20
@@ -247,7 +284,20 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 .attr("x1", function(d) { return d.source.x; })
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
-                .attr("y2", function(d) { return d.target.y; });
+                .attr("y2", function (d) { return d.target.y; });
+            
+            link.attr("d", function(d, i) {
+                var dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+                // return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+
+                if (dx > 0) {
+                    return "M" + d.source.x + " " + d.source.y + " L " + d.target.x + " " + d.target.y;
+                } else {
+                    return "M" + d.target.x + " " + d.target.y + " L " + d.source.x + " " + d.source.y;
+                }
+            });
         }  
         // tooltip https://observablehq.com/@skofgar/force-directed-graph-integrated-html
 
@@ -282,13 +332,17 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 simulation.force("collide", d3v4.forceCollide(function (d) { return 30; }).strength(1).iterations(1))
                 link_distance = 50;
                 link_strength = 0.8;
+                // link_strength = function (l) { return l.size / max_link_size };
                 gravity = 0.1;
+
+                // simulation.force("charge", d3v4.forceManyBody().strength(function (d) { return -d.size*50 }))
             } else {
                 // simulation.alphaDecay(0.001);
                 charge = -1200;
                 simulation.force("charge", d3v4.forceManyBody()
                     .strength(charge)
                 )
+                // simulation.force("charge", d3v4.forceManyBody().strength(function (d) { return -(d.links**3) }))
                 simulation.force("collide", d3v4.forceCollide(function (d) { return d.links ** 2 + 20; }).strength(1).iterations(1))
             }
         }
@@ -468,8 +522,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         // init option values
 
-        console.log("set link_strength_change to", link_strength);
-        d3v4.select(containerSelector).select("#link_strength_change").property("value", link_strength);
+        // console.log("set link_strength_change to", link_strength);
+        // d3v4.select(containerSelector).select("#link_strength_change").property("value", link_strength);
         console.log("set link_distance_change to", link_distance);
         d3v4.select(containerSelector).select("#link_distance_change").property("value", link_distance);
         console.log("set charge_change to", charge);

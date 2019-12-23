@@ -838,6 +838,20 @@
     
                             createNetworkPlot(raw_data,400,'', '#network-' + plot_id, segment_view = true);
                             break;
+                    case "force_network_3d":
+                            plot_div.find('.plot-container').removeClass('none');
+                            plot_div.find('.plot-container').addClass('networkPlot');
+                            plot_div.find('.plot-container').attr('id', 'network-' + plot_id);
+    
+                            createNetworkPlot3D(raw_data,400,'', '#network-' + plot_id, segment_view = false );
+                            break;
+                    case "force_network_3d_segment":
+                            plot_div.find('.plot-container').removeClass('none');
+                            plot_div.find('.plot-container').addClass('networkPlot');
+                            plot_div.find('.plot-container').attr('id', 'network-' + plot_id);
+    
+                            createNetworkPlot3D(raw_data,400,'', '#network-' + plot_id, segment_view = true );
+                            break;
                     case "boxplot":
                         plot_div.find('.plot-container').removeClass('none');
                         plot_div.find('.plot-container').addClass('boxplot-container');
@@ -869,6 +883,8 @@
             ['flareplot_segments', 'Flare Plot (Segments)'],
             ['force_network', 'Network'],
             ['force_network_segment', 'Network (segments)'],
+            ['force_network_3d', 'Network 3D'],
+            ['force_network_3d_segment', 'Network 3D  (segments)'],
             ['ngl', '3D view'],
             ['boxplot', 'Box-plot (Frequency)'],
             ['boxplot_angles', 'Box-plot (Angles)'],
@@ -1042,7 +1058,8 @@
 
         function initializeFullscreenButton(selector) {
             // var fullScreenElement = $(selector + ' .heatmap-container').get(0);
-            $(selector + ' .btn-fullscreen').click(function() {
+            $(selector + ' .btn-fullscreen').click(function () {
+                is_fullscreen = true;
                 // console.log($(this).parent().parent().next().children().first());
                 //                console.log($(this).attr('id'));
                 fullScreenElement = $(this).parent().parent().next().children().first().find("canvas");
