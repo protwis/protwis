@@ -1310,7 +1310,8 @@
 
             // create flareplot
             if (subset) {
-                flareplot[container] = createFlareplot_subset(300, parseGPCRdb2flare(data, subset=true), container, false);
+                flareplot[container] = createFlareplot_subset(300, parseGPCRdb2flare(data, subset = true), container, false);
+                $(container + " #flareplot_color").val("rainbow");
             } else {
                 flareplot[container] = createFlareplot(1000, parseGPCRdb2flare(data), container, contiguous);
             }

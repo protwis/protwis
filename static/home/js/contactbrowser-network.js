@@ -1,6 +1,6 @@
 function createNetworkPlot(raw_data,original_width, inputGraph, containerSelector, segment_view = true) {
 // https://github.com/d3/d3-3.x-api-reference/blob/master/Force-Layout.md
- 
+ //https://archive.nytimes.com/www.nytimes.com/interactive/2013/02/20/movies/among-the-oscar-contenders-a-host-of-connections.html
 
     circle_size = 20;
     max_link_size = 15; 
@@ -22,46 +22,49 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
     var selected_single_cluster = false
 
-    var new_data, cluster_groups;
+    var new_data;
+    var plot_specified_filtered = filtered_gn_pairs;
+    var cluster_groups = filtered_cluster_groups;
     function prepare_data(single_cluster = false) {
         selected_single_cluster = single_cluster;
 
         new_data = { "nodes": [], "links": [] };
-        cluster_groups = [];
-        console.log('single_cluster',single_cluster);
-        // // Populate matrix for interactions between segments
-        track_gns = []
+        var track_gns = [];
+        // cluster_groups = [];
+        // console.log('single_cluster',single_cluster);
+        // // // Populate matrix for interactions between segments
+        // 
+        // $.each(raw_data['interactions'], function (i, v) {
+        //     if (!plot_specified_filtered.includes(i)) return;
+        //     gns = separatePair(i);
+
+        //     test1 = cluster_groups.filter(l => l.includes(gns[0]));
+        //     test2 = cluster_groups.filter(l => l.includes(gns[1]));
+        //     if (!test1.length && !test2.length) {
+        //         cluster_groups.push([gns[0], gns[1]]);
+        //     } else if (test1.length && !test2.length) {
+        //         i1 = cluster_groups.indexOf(test1[0])
+        //         cluster_groups[i1].push(gns[1]);
+        //     } else if (!test1.length && test2.length) {
+        //         i2 = cluster_groups.indexOf(test2[0])
+        //         cluster_groups[i2].push(gns[0]);
+        //     } else if (test1.length && test2.length) {
+        //         i1 = cluster_groups.indexOf(test1[0])
+        //         i2 = cluster_groups.indexOf(test2[0])
+        //         //i1 = cluster_groups.indexOfForArrays(test1[0]);
+        //         if (i1!=i2) {
+        //             cluster_groups[i1] = test1[0].concat(test2[0])
+        //             cluster_groups.splice(i2, 1);
+        //         }
+        //     }
+
+        //     // if (seg1 != seg2) {
+        //     //     new_data["links"].push({ "source": gns[0], "target": gns[1], "value": 1 })
+        //     // }
+        // });
+
         $.each(raw_data['interactions'], function (i, v) {
-            if (!filtered_gn_pairs.includes(i)) return;
-            gns = separatePair(i);
-
-            test1 = cluster_groups.filter(l => l.includes(gns[0]));
-            test2 = cluster_groups.filter(l => l.includes(gns[1]));
-            if (!test1.length && !test2.length) {
-                cluster_groups.push([gns[0], gns[1]]);
-            } else if (test1.length && !test2.length) {
-                i1 = cluster_groups.indexOf(test1[0])
-                cluster_groups[i1].push(gns[1]);
-            } else if (!test1.length && test2.length) {
-                i2 = cluster_groups.indexOf(test2[0])
-                cluster_groups[i2].push(gns[0]);
-            } else if (test1.length && test2.length) {
-                i1 = cluster_groups.indexOf(test1[0])
-                i2 = cluster_groups.indexOf(test2[0])
-                //i1 = cluster_groups.indexOfForArrays(test1[0]);
-                if (i1!=i2) {
-                    cluster_groups[i1] = test1[0].concat(test2[0])
-                    cluster_groups.splice(i2, 1);
-                }
-            }
-
-            // if (seg1 != seg2) {
-            //     new_data["links"].push({ "source": gns[0], "target": gns[1], "value": 1 })
-            // }
-        });
-
-        $.each(raw_data['interactions'], function (i, v) {
-            if (!filtered_gn_pairs.includes(i)) return;
+            if (!plot_specified_filtered.includes(i)) return;
             gns = separatePair(i);
             seg1 = raw_data['segment_map'][gns[0]];
             seg2 = raw_data['segment_map'][gns[1]];
@@ -166,7 +169,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             force = d3.layout.force()
                 .size([w, h])
                 .gravity(0.05)
-                .charge(-1000)
+                // .charge(-1000)
+                .charge(function (d, i) {
+                    return ((d.weight-1) * -800) - 50;
+                })
                 .linkStrength(1)
                 .linkDistance(100)
                 .friction(0.5) 
@@ -183,11 +189,15 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             //     .on("tick", tick);
             // https://unpkg.com/force-in-a-box/dist/forceInABox.js
             force = d3.layout.forceInABox()
-                .charge(-400)
-                .linkDistance(60)
+                .charge(-100)
+                // .charge(function (d, i) {
+                //     return ((d.weight-1) * -400) - 100;
+                // })
+                .linkDistance(20)
+                .linkStrength(0.1)
                 // .linkStrengthInterCluster(0.2)
-                .gravityToFoci(0.1)
-                .gravityOverall(0.06)
+                .gravityToFoci(0.01)
+                .gravityOverall(0.01)
                 .size([w, h])
                 .enableGrouping(true)
                 .groupBy("group2")
@@ -216,6 +226,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             // .style("stroke-width", "8")
             .style("stroke-width", function(d) { return d.size || 5; })
             .style("stroke", "#000");
+        
         link = link.data(graph.links)
             .enter().append("line")
             .attr("class", "link")
@@ -223,7 +234,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         link.style("visibility", "hidden");
 
-
+        var color = d3.scale.category20();
         
         var n = graph.nodes.length;
         node = svg.selectAll(".node")
@@ -248,9 +259,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         node.append("circle")
             // .attr("class", function(d) { return "node" + (d.size?"":" leaf"); })
             .attr("class", "node")
-            .attr("r", function(d) { return d.size ? assignSize(d.group) : 20; })
+            // .attr("r", function (d) { return d.size ? assignSize(d.group) :  d.weight * 5 + 20; })
+            .attr("r", function (d) { return d.size ? assignSize(d.group) :  20; })
             // .attr("r", 20)
-            .style("fill", function (d) { return assignRainbowColor(d.group); })
+            // .style("fill", function (d) { return assignRainbowColor(d.group); })
+            .style("fill", function (d) { return color(d.weight); })
             .on('contextmenu', function(d){ 
                 // http://bl.ocks.org/jakosz/ce1e63d5149f64ac7ee9
                 d3.event.preventDefault();
@@ -283,18 +296,18 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         create_overlay();
 
-        setTimeout(function () {
-            console.log('timer!');
+        // setTimeout(function () {
+        //     console.log('timer!');
 
-            force.start();
-            force.friction(0.8); 
-        }, 2000)
+        //     force.start();
+        //     force.friction(0.8); 
+        // }, 2000)
         
-        setTimeout(function () {
-            console.log('timer!');
-            force.start();
-            force.friction(0.5); 
-        },4000)
+        // setTimeout(function () {
+        //     console.log('timer!');
+        //     force.start();
+        //     force.friction(0.5); 
+        // },4000)
         // if (!segment_view) {
         //     force.drawTreemap(svg);
         //     bindTreeMap(div);    
@@ -439,15 +452,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     }
         
     function getGroup(n) { return n.group; }
-    
-    function separatePair(stringPair) {
-        var regex = /([0-9x]+),([0-9x]+)/g;
-        var m;
-    
-        matches = regex.exec(stringPair);
-    
-        return [matches[1], matches[2]];
-    }
+
 
 
     function assignSize(segment) {
@@ -589,7 +594,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             node.classed("fixed", function (d) {
                 d.fixed = false;
             });
-            force.start();s
+            force.start();
         });
 
         d3.select(containerSelector).select("#freeze").on("click", function () {
