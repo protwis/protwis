@@ -1026,7 +1026,7 @@ function renderDataTablesYadcf(element) {
     console.timeEnd("renderDataTablesYadcf");
 }
 
-const types_to_short = { 'ionic': 'Ion', 'aromatic': 'Aro', 'polar': 'Pol', 'hydrophobic': 'Hyd', 'van-der-waals': 'vDw' }
+const types_to_short = { 'ionic': 'Ion', 'aromatic': 'Aro', 'polar': 'Pol', 'hydrophobic': 'Hyd', 'van-der-waals': 'vdW' }
 
 var plot_options = {'tab1' : {}, 'tab2' : {}, 'tab3' : {}, 'tab4' : {}, 'tab5' : {}}
 // First array contains number of columns per property that will be visualized
@@ -1135,7 +1135,7 @@ function renderBrowser(data) {
                           <th style="writing-mode: sideways-lr;">Pol</th> \
                           <th style="writing-mode: sideways-lr;">Aro</th> \
                           <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vDw</th> \
+                          <th style="writing-mode: sideways-lr;">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1419,7 +1419,7 @@ function renderBrowser(data) {
                           <th style="writing-mode: sideways-lr;">Pol</th> \
                           <th style="writing-mode: sideways-lr;">Aro</th> \
                           <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vDw</th> \
+                          <th style="writing-mode: sideways-lr;">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1829,7 +1829,7 @@ function renderBrowser_2(data) {
                           <th style="writing-mode: sideways-lr;">Pol</th> \
                           <th style="writing-mode: sideways-lr;">Aro</th> \
                           <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vDw</th> \
+                          <th style="writing-mode: sideways-lr;">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -2108,7 +2108,7 @@ function renderBrowser_2(data) {
                           <th style="writing-mode: sideways-lr;">Pol</th> \
                           <th style="writing-mode: sideways-lr;">Aro</th> \
                           <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vDw</th> \
+                          <th style="writing-mode: sideways-lr;">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
