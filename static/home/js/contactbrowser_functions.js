@@ -1732,12 +1732,14 @@
             // Normalize the data for the group analysis
             if (currentTab.includes("group")){
               checked = currentSettings[currentTab]["options"].indexOf("normalize") >= 0 ? "checked" : "";
-              option_content +=  '<li class="list-group-item">Normalize data<div class="material-switch pull-right"><input id="option-normalize" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-normalize" class="label-primary"></label></div></li>';
+              var tooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="This option merges the data of structures from same receptor and utilizes the average as a representative for that receptor. These averages of the receptors are subsequently utilized in this tool."></span>';
+              option_content +=  '<li class="list-group-item">' + tooltip + ' Normalize data<div class="material-switch pull-right"><input id="option-normalize" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-normalize" class="label-primary"></label></div></li>';
             }
 
             // Only between helices
             checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
-            option_content +=  '<li class="list-group-item">Intrasegment contacts<br/>(within a single segment,<br/>i.e. TM1-7, H8, or a loop)<div class="material-switch pull-right"><input id="option-intrahelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intrahelical" class="label-primary"></label></div></li>';
+            var heltooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions between residues within the same segment (i.e. TM1-7, H8 or a loop) are also included in the analysis."></span>';
+            option_content +=  '<li class="list-group-item">' + heltooltip + ' Intrasegment contacts<div class="material-switch pull-right"><input id="option-intrahelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intrahelical" class="label-primary"></label></div></li>';
 
             option_content += "</ul>"
             $("#interaction_settings").append(option_content);
