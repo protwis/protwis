@@ -92,6 +92,7 @@ function renderDataTablesYadcf(element) {
     }
 
     // $(".main_loading_overlay").show(0);
+    var buttonCommon = {}
     switch (tab_number) {
         case "1":
             // statements_1
@@ -1193,18 +1194,18 @@ function renderBrowser(data) {
                 // replace values for normalized ones
                 sfreq1 = pffreq1;
                 sfreq2 = pffreq2;
-                pos1_missing_1 = data['pfs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs1'].length;  
-                pos1_missing_2 = data['pfs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs2'].length;  
+                pos1_missing_1 = data['pfs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs1'].length;
+                pos1_missing_2 = data['pfs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs2'].length;
                 pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
-                pos2_missing_1 = data['pfs1'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pfs1'].length;  
-                pos2_missing_2 = data['pfs2'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pfs2'].length;  
+                pos2_missing_1 = data['pfs1'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pfs1'].length;
+                pos2_missing_2 = data['pfs2'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pfs2'].length;
                 pos2_missing = Math.round(100*(pos2_missing_2-pos2_missing_1));
             } else {
-                pos1_missing_1 = data['pdbs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pdbs1'].length;  
-                pos1_missing_2 = data['pdbs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pdbs2'].length;  
+                pos1_missing_1 = data['pdbs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pdbs1'].length;
+                pos1_missing_2 = data['pdbs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pdbs2'].length;
                 pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
-                pos2_missing_1 = data['pdbs1'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pdbs1'].length;  
-                pos2_missing_2 = data['pdbs2'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pdbs2'].length;  
+                pos2_missing_1 = data['pdbs1'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pdbs1'].length;
+                pos2_missing_2 = data['pdbs2'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pdbs2'].length;
                 pos2_missing = Math.round(100*(pos2_missing_2-pos2_missing_1));
 
             }
@@ -1253,7 +1254,7 @@ function renderBrowser(data) {
                 types_count_set2 = Math.round(100*value[1].length / set_2.length);
                 types_count[key] = [types_count_set1,types_count_set2,types_count_set1-types_count_set2];
             })
-            
+
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
                 if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
@@ -2955,18 +2956,18 @@ function renderBrowser_4(data) {
             if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
                 dssp_set1 = data['pfs1'];
-                dssp_set2 = data['pfs2']; 
+                dssp_set2 = data['pfs2'];
             } else {
                 pdbs = data['pdbs1'].concat(data['pdbs2']);
                 dssp_set1 = data['pdbs1'];
                 dssp_set2 = data['pdbs2'];
             }
 
-            // missing_1 = [...new Set([...data['missing'][i]['present'], ...dssp_set1])].length / dssp_set1.length; 
-            // missing_2 = [...new Set([...data['missing'][i]['present'], ...dssp_set2])].length / dssp_set2.length; 
+            // missing_1 = [...new Set([...data['missing'][i]['present'], ...dssp_set1])].length / dssp_set1.length;
+            // missing_2 = [...new Set([...data['missing'][i]['present'], ...dssp_set2])].length / dssp_set2.length;
 
-            missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);  
-            missing_2 = Math.round(100*dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);  
+            missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);
+            missing_2 = Math.round(100*dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
 
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();

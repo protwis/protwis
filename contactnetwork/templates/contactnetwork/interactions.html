@@ -680,6 +680,7 @@
 
       </div>
     </div>
+    <div id="excel_table"  style="display:none;"></div><a id="dlink"  style="display:none;"></a>
 
 {% endblock %}
 {% block addon_js %}
@@ -814,7 +815,7 @@
             $('.glyphicon.btn-settings').on("click", updateInteractionSettings)
 
             // Add download to Excel option for browser tables
-            $('.contact-browser .glyphicon-download').on("click", downloadCurrentTable)
+            $('.contact-browser .glyphicon-download').on("click", downloadCurrentTableExcel)
 
             window.addEventListener("resize", redraw_renders);
 
@@ -886,6 +887,16 @@
           color: gray;
           padding-right: 0.3em;
           font-size: 1.6em
+        }
+
+        span.glyphicon.btn-settings {
+          color: gray;
+          padding-right: 0.3em;
+          font-size: 1.6em
+        }
+
+        div.contact-browser span.btn-download {
+          padding-right: 0.3em;
         }
 
         div#interaction_settings span.glyphicon.glyphicon-info-sign {
