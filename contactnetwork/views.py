@@ -480,6 +480,15 @@ def InteractionBrowserData(request):
         pdbs1 = pdbs
 
     pdbs_upper = [pdb.upper() for pdb in pdbs]
+
+    # Deduce class
+    gpcr_class = Structure.objects.filter(pdb_code__index__in=pdbs_upper
+                ).values_list('protein_conformation__protein__parent__family__parent__parent__parent__slug', flat=True).distinct()
+    if len(gpcr_class)>1:
+        print('ERROR mix of classes!', gpcr_class)
+    else:
+        gpcr_class = gpcr_class[0]
+
     # Segment filters
     try:
         segments = request.GET.getlist('segments[]')
@@ -554,22 +563,24 @@ def InteractionBrowserData(request):
 
     # data = None
     if data==None:
-        cache_key = 'amino_acid_pair_conservation_{}'.format('001')
+        cache_key = 'amino_acid_pair_conservation_{}'.format(gpcr_class)
         print('Before getting class cache',time.time()-start_time)
         class_pair_lookup = cache.get(cache_key)
         print('After getting class cache',time.time()-start_time)
         # class_pair_lookup=None
         if class_pair_lookup==None or len(class_pair_lookup)==0:
             # Class pair conservation
-            sum_proteins = Protein.objects.filter(family__slug__startswith='001',sequence_type__slug='wt',species__common_name='Human').count()
-            residues = Residue.objects.filter(protein_conformation__protein__family__slug__startswith='001',
+            sum_proteins = Protein.objects.filter(family__slug__startswith=gpcr_class,sequence_type__slug='wt',species__common_name='Human').count()
+            residues = Residue.objects.filter(protein_conformation__protein__family__slug__startswith=gpcr_class,
                                               protein_conformation__protein__sequence_type__slug='wt',
                                               protein_conformation__protein__species__common_name='Human',
 
-                        ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name').all()
+                        ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','display_generic_number__label').all()
             r_pair_lookup = defaultdict(lambda: defaultdict(lambda: set()))
             for r in residues:
-                r_pair_lookup[r['generic_number__label']][r['amino_acid']].add(r['protein_conformation__protein__entry_name'])
+                # use the class specific generic number
+                r['display_generic_number__label'] = re.sub(r'\.[\d]+', '', r['display_generic_number__label'])
+                r_pair_lookup[r['display_generic_number__label']][r['amino_acid']].add(r['protein_conformation__protein__entry_name'])
             class_pair_lookup = {}
 
             gen_keys = sorted(r_pair_lookup.keys(), key=functools.cmp_to_key(gpcrdb_number_comparator))
@@ -599,6 +610,7 @@ def InteractionBrowserData(request):
             cache.set(cache_key,class_pair_lookup,3600*24*7)
 
         # Get the relevant interactions
+        # TODO MAKE SURE ITs only gpcr residues..
         interactions = Interaction.objects.filter(
             interacting_pair__referenced_structure__pdb_code__index__in=pdbs_upper
         ).filter(
@@ -733,12 +745,13 @@ def InteractionBrowserData(request):
             all_pdbs = [x.lower() for x in all_pdbs]
             #generic_number__label__in=all_interaction_residues)
             residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=all_pdbs).exclude(generic_number=None).values(
-                        'pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__slug').all()
+                        'pk','sequence_number','display_generic_number__label','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__slug').all()
 
             r_lookup = {}
             r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
             segm_lookup = {}
             r_presence_lookup = defaultdict(lambda: [])
+            r_class_translate = {}
 
             for r in residues:
                 if r['generic_number__label'] not in all_interaction_residues:
@@ -747,6 +760,8 @@ def InteractionBrowserData(request):
                 r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
                 r_presence_lookup[r['generic_number__label']].append(r['protein_conformation__protein__entry_name'])
                 segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
+                r['display_generic_number__label'] = re.sub(r'\.[\d]+', '', r['display_generic_number__label'])
+                r_class_translate[r['generic_number__label']] = r['display_generic_number__label']
 
             gen_keys = sorted(r_pair_lookup.keys(), key=functools.cmp_to_key(gpcrdb_number_comparator))
             all_pdbs_pairs = {}
@@ -772,21 +787,51 @@ def InteractionBrowserData(request):
                                 all_pdbs_pairs[coord][pair] = p
             cache.set("all_pdbs_aa_pairs",all_pdbs_pairs,60*60*24*7) #Cache results
         residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs
-                ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__slug').all()
+                ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','protein_segment__slug','display_generic_number__label').all()
         r_lookup = {}
         r_pair_lookup = defaultdict(lambda: defaultdict(lambda: []))
         segm_lookup = {}
         r_presence_lookup = defaultdict(lambda: [])
+        r_class_translate = {}
+        r_class_translate_from_classA = {}
+
+        distinct_gns = []
 
         for r in residues:
+
+            # remove .50 number from the display number format (1.50x50), so only the GPCRdb number is left
+            r['display_generic_number__label'] = re.sub(r'\.[\d]+', '', r['display_generic_number__label'])
+            r_class_translate_from_classA[r['generic_number__label']] = r['display_generic_number__label']
+            r_class_translate[r['display_generic_number__label']] = r['generic_number__label']
+            # change the generic number (class a) to the class specific one.
+            r['generic_number__label'] = r['display_generic_number__label']
+
             r_lookup[r['pk']] = r
             r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
             segm_lookup[r['generic_number__label']] = r['protein_segment__slug']
             r_presence_lookup[r['generic_number__label']].append(r['protein_conformation__protein__entry_name'])
             data['segments'].add(r['protein_segment__slug'])
 
+            # Generate all distinct (class-specific) GNs for tab4
+            if [r['generic_number__label'],r['protein_segment__slug']] not in distinct_gns:
+                distinct_gns.append([r['generic_number__label'],r['protein_segment__slug']])
+            
+            if r['generic_number__label']=='5x70':
+                print(r,r_pair_lookup[r['generic_number__label']])
+
+
         data['segment_map'] = segm_lookup
 
+        updated_all_pdbs_pairs = {}
+        for coord, d in all_pdbs_pairs.items():
+            gen1 = coord.split(",")[0]
+            gen2 = coord.split(",")[1]
+            if gen1 in r_class_translate_from_classA and gen2 in r_class_translate_from_classA:
+                # if gen1 and gen2 aren't in translate dictionary, then they're not going to be relevant later.
+                coord_new = '{},{}'.format(r_class_translate_from_classA[gen1],r_class_translate_from_classA[gen2])
+                updated_all_pdbs_pairs[coord_new] = d
+
+        all_pdbs_pairs = updated_all_pdbs_pairs
 
         # Dict to keep track of which residue numbers are in use
         number_dict = set()
@@ -812,8 +857,10 @@ def InteractionBrowserData(request):
 
             if res1 < res2 or res1_seq < res2_seq:
                 coord = str(res1) + ',' + str(res2)
+                classa_coord = str(r_class_translate[res1]) + ',' + str(r_class_translate[res2])
             else:
                 coord = str(res2) + ',' + str(res1)
+                classa_coord = str(r_class_translate[res2]) + ',' + str(r_class_translate[res1])
                 res1_aa, res2_aa = res2_aa, res1_aa
 
             # Populate the AA map
@@ -932,7 +979,7 @@ def InteractionBrowserData(request):
 
                 data['interactions'][coord]['pos1_presence'] = round(100*len(pdbs1_with_res1) / len(pdbs1))
                 data['interactions'][coord]['pos2_presence'] = round(100*len(pdbs1_with_res2) / len(pdbs1))
-
+            data['interactions'][coord]['class_a_gns'] = classa_coord
         data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
 
         ## MAKE TAB 4
@@ -1323,9 +1370,9 @@ def InteractionBrowserData(request):
                     pfsC=Count('interacting_pair__referenced_structure__protein_conformation__protein__parent__family__name',distinct=True)
                 ))
             for i in interactions:
-                key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
+                key = '{},{}{}{}'.format(r_class_translate_from_classA[i['gn1']],r_class_translate_from_classA[i['gn2']],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
-                    aa_pair_data[key] = {'set1':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
+                    aa_pair_data[key] = {'classA':'{},{}'.format(i['gn1'],i['gn2']),'set1':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key][set_id]
                 d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs1']),0)
@@ -1366,9 +1413,9 @@ def InteractionBrowserData(request):
                 ))
                 
             for i in interactions:
-                key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
+                key = '{},{}{}{}'.format(r_class_translate_from_classA[i['gn1']],r_class_translate_from_classA[i['gn2']],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
-                    aa_pair_data[key] = {'set1':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
+                    aa_pair_data[key] = {'classA':'{},{}'.format(i['gn1'],i['gn2']),'set1':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'set2':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key][set_id]
                 d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs2']),0)
@@ -1487,9 +1534,9 @@ def InteractionBrowserData(request):
                 ))
 
             for i in interactions:
-                key = '{},{}{}{}'.format(i['gn1'],i['gn2'],i['aa1'],i['aa2'])
+                key = '{},{}{}{}'.format(r_class_translate_from_classA[i['gn1']],r_class_translate_from_classA[i['gn2']],i['aa1'],i['aa2'])
                 if key not in aa_pair_data:
-                    aa_pair_data[key] = {'set':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
+                    aa_pair_data[key] = {'classA':'{},{}'.format(i['gn1'],i['gn2']),'set':{'interaction_freq':0,'interaction_freq_pf':0, 'types_count':defaultdict(set)}, 'types':[]}
                 aa_pair_data[key]['types'] += i['i_types']
                 d = aa_pair_data[key]['set']
                 d['interaction_freq'] = round(100*i['structuresC'] / len(data['pdbs']),0)
@@ -2853,13 +2900,15 @@ def ServePDB(request, pdbname):
     if structure.pdb_data is None:
         quit()
 
-    only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label').all())
+    only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label','display_generic_number__label').all())
     only_gn = []
     gn_map = []
     segments = {}
     for gn in only_gns:
         only_gn.append(gn[1])
-        gn_map.append(gn[2])
+        # Use and format the display generic number to get the shorthand class specific number.
+        gn_map.append(re.sub(r'\.[\d]+', '',gn[3]))
+        # gn_map.append(gn[2])
         if gn[0] not in segments:
             segments[gn[0]] = []
         segments[gn[0]].append(gn[1])
