@@ -164,7 +164,7 @@ class Command(BaseCommand):
         Angle.objects.all().delete()
         self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        #self.references = Structure.objects.filter(pdb_code__index="2RH1").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # self.references = Structure.objects.filter(pdb_code__index="5IUB").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         print(len(self.references),'structures')
         self.references = list(self.references)
@@ -357,7 +357,7 @@ class Command(BaseCommand):
                     if i.generic_number and re.match(r'^[1-7]x[0-9]+', i.generic_number.label):
                         tm_reslist.append(i)
 
-                full_resdict = {r.sequence_number:r for r in db_reslist}
+                full_resdict = {str(r.sequence_number):r for r in db_reslist}
 
                 #######################################################################
                 ######################### filter data from db #########################
@@ -431,7 +431,7 @@ class Command(BaseCommand):
                       tau_angles = None
 
 
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles]
+                  dihedrals[str(r.id[1])] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -904,7 +904,7 @@ class Command(BaseCommand):
                 rsa_list = {}
                 atomlist = list(pchain.get_atoms())
                 for i in range(res.nAtoms()):
-                    resnum = atomlist[i].get_parent().id[1]
+                    resnum = str(atomlist[i].get_parent().id[1])
                     if resnum not in asa_list:
                         asa_list[resnum] = 0
                         rsa_list[resnum] = 0
@@ -926,7 +926,7 @@ class Command(BaseCommand):
                 hse = pdb.HSExposure.HSExposureCB(structure[0][preferred_chain])
 
                 # x[1] contains HSE - 0 outer half, 1 - inner half, 2 - ?
-                hselist = dict([ (x[0].id[1], x[1][0]) if x[1][0] > 0 else (x[0].id[1], 0) for x in hse ])
+                hselist = dict([ (str(x[0].id[1]), x[1][0]) if x[1][0] > 0 else (str(x[0].id[1]), 0) for x in hse ])
 
                 # Few checks
                 if GN_only:
@@ -959,15 +959,17 @@ class Command(BaseCommand):
 #                else:
 #                    print("{} Rotating the right way  {}".format(pdb_code, signed_diff))
 
-                a_angle = dict(zip(tm_keys, a_angle))
-                b_angle = dict(zip(tm_keys, b_angle))
-                core_distances = dict(zip(tm_keys, core_distances))
-                midpoint_distances = dict(zip(tm_keys, midpoint_distances))
-                mid_membrane_distances = dict(zip(tm_keys, mid_membrane_distances))
+                tm_keys_str = [str(i) for i in tm_keys]
+                a_angle = dict(zip(tm_keys_str, a_angle))
+                b_angle = dict(zip(tm_keys_str, b_angle))
+                core_distances = dict(zip(tm_keys_str, core_distances))
+                midpoint_distances = dict(zip(tm_keys_str, midpoint_distances))
+                mid_membrane_distances = dict(zip(tm_keys_str, mid_membrane_distances))
 
                 # Correct for missing values
-                for res in pchain:
-                    residue_id = res.id[1]
+                for res in polychain:
+                    residue_id = str(res.id[1])
+
                     if not residue_id in a_angle:
                         a_angle[residue_id] = None
                     if not residue_id in b_angle:
@@ -988,14 +990,16 @@ class Command(BaseCommand):
                         asa_list[residue_id] = None
 
                 #for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distances, midpoint_distances, mid_membrane_distances):
-                for res in pchain:
-                    residue_id = res.id[1]
+                for res in polychain:
+                    residue_id = str(res.id[1])
+
                     # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "ASA", "DISTANCE"
-                    dblist.append([reference, full_resdict[residue_id], a_angle[residue_id], b_angle[residue_id], \
-                        rsa_list[residue_id], \
-                        hselist[residue_id]] + \
-                        dihedrals[residue_id] + \
-                        [asa_list[residue_id], core_distances[residue_id], midpoint_distances[residue_id], mid_membrane_distances[residue_id]])
+                    if residue_id in full_resdict:
+                        dblist.append([reference, full_resdict[residue_id], a_angle[residue_id], b_angle[residue_id], \
+                            rsa_list[residue_id], \
+                            hselist[residue_id]] + \
+                            dihedrals[residue_id] + \
+                            [asa_list[residue_id], core_distances[residue_id], midpoint_distances[residue_id], mid_membrane_distances[residue_id]])
             except Exception as e:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
@@ -1026,20 +1030,25 @@ class Command(BaseCommand):
         object_list = []
         for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
             try:
+                if asa != None:
+                    asa = round(asa,1)
+                if outer != None:
+                    outer = round(np.rad2deg(outer),3)
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
                 if psi != None:
                     psi = round(np.rad2deg(psi),3)
+                if rsa != None:
+                    rsa = round(rsa,1)
                 if theta != None:
                     theta = round(np.rad2deg(theta),3)
                 if tau != None:
                     tau = round(np.rad2deg(tau),3)
-                if outer != None:
-                    outer = round(np.rad2deg(outer),3)
                 if tau_angle != None:
                     tau_angle = round(np.rad2deg(tau_angle),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=asa, rsa=rsa, hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
             except Exception as e:
+                print(e)
                 print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance])
 
         print("created list")
