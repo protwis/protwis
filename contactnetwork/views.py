@@ -486,6 +486,7 @@ def InteractionBrowserData(request):
                 ).values_list('protein_conformation__protein__parent__family__parent__parent__parent__slug', flat=True).distinct()
     if len(gpcr_class)>1:
         print('ERROR mix of classes!', gpcr_class)
+        return JsonResponse({'error':list(gpcr_class)})
     else:
         gpcr_class = gpcr_class[0]
 

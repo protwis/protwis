@@ -745,8 +745,6 @@
         function initializeGoButton(selector, generic = false) {
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
-                //pdb = ["4BVN"]
-                //pdb = ["5JQH", "3SN6", "4AMJ"]
                 loadPDBsView(pdb, selector, generic)
             });
         }
@@ -947,6 +945,11 @@
                     async: true,
                     success: function(data) {
                         console.timeEnd('Get loadPDBsView Data');
+                        if (data['error']) {
+                            alert('ERROR, multiple classes selected ('+data['error']+') - Please change your selection and retry');
+                            $(".main_loading_overlay").hide();
+                            return
+                        }
                         // Re-render heatmap
                         data_browser = data;
 
@@ -1026,6 +1029,11 @@
                     async: true,
                     success: function(data) {
                         console.timeEnd('Get loadTwoPDBsView Data');
+                        if (data['error']) {
+                            alert('ERROR, multiple classes selected ('+data['error']+') - Please change your selection and retry');
+                            $(".main_loading_overlay").hide();
+                            return
+                        }
                         // Re-render heatmap
                         two_sets_data = data;
                         renderBrowser(data);
