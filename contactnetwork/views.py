@@ -1827,6 +1827,7 @@ def InteractionBrowserData(request):
         data['segm_lookup'] = segm_lookup
         data['segments'] = list(data['segments'])
         data['normalized'] = normalized
+        data['residue_table'] = r_class_translate
         if mode == 'double':
             data['pdbs1'] = list(data['pdbs1'])
             data['pdbs2'] = list(data['pdbs2'])
