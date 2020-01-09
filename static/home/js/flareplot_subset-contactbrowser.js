@@ -262,7 +262,7 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
                       var x = graph.trees[selectedTree].tree[d.nodeName].x;
                       return "rotate("+x+")" ;
                   })
-                  .style("fill", function(d){ return d.rainbow; })
+                  .style("fill", function(d){ return d.color; })
                   .attr("d", arc)
                   .on("click", function(d){
                       //Locate corresponding node
@@ -992,7 +992,7 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
                     var newMatrix = "rotate(" + (node.x) + ")";
                     return d3.interpolateString(oldMatrix, newMatrix);
                 })
-                .style("fill", function(d){ return d.rainbow; })
+                .style("fill", function(d){ return d.color; })
                 .attr("d", arc);
 
             // Add segment labels
@@ -1135,7 +1135,7 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
                 .data(graph.tracks[selectedTrack].trackProperties, function(d){ return d.nodeName; })
                 .select("path")
                 .transition()
-                .style("fill", function(d){ return d.rainbow; })
+                .style("fill", function(d){ return d.color; })
                 .attr("d", arc);
 
         }

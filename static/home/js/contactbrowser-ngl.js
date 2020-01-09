@@ -28,7 +28,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     var gn_num_set1;
     var two_structures = false;
 
-    $.getJSON("pdb/" + pdb,
+    $.getJSON("/contactnetwork/pdb/" + pdb,
         function(data) {
             var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
             var segments_sets = {}

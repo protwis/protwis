@@ -815,9 +815,6 @@ def InteractionBrowserData(request):
             # Generate all distinct (class-specific) GNs for tab4
             if [r['generic_number__label'],r['protein_segment__slug']] not in distinct_gns:
                 distinct_gns.append([r['generic_number__label'],r['protein_segment__slug']])
-            
-            if r['generic_number__label']=='5x70':
-                print(r,r_pair_lookup[r['generic_number__label']])
 
 
         data['segment_map'] = segm_lookup
