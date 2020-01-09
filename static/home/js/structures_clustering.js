@@ -1297,7 +1297,7 @@ $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
 
 $(document).ready(function() {
     // Get PDBs for table build
-    $.get('pdbtabledata', function ( data ) {
+    $.get('/contactnetwork/pdbtabledata', function ( data ) {
       $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
       pdbtabledata = data;
     });

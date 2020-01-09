@@ -1431,7 +1431,7 @@
 
 
         function initializePdbChooserTables() {
-            $.get('pdbtabledata', function(data) {
+            $.get('/contactnetwork/pdbtabledata', function(data) {
                 $('#single-crystal-pdb-modal-table .tableview').html(data);
                 $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
                 $('#two-crystal-group-pdbs-modal-1-table .tableview').html(data);
