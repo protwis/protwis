@@ -22,6 +22,7 @@ from structure.functions import BlastSearch
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinSet
 from residue.models import ResidueNumberingScheme, ResiduePositionSet
+from seqsign.sequence_signature import SequenceSignature, signature_score_excel
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -399,4 +400,46 @@ def render_csv_alignment(request):
 
     response = render(request, 'alignment/alignment_csv.html', context={'a': a}, content_type='text/csv')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
+    return response
+
+# Excel download based on seq. signature tool
+def render_alignment_excel(request):
+
+    # Grab all targets
+    targets = request.session.get('selection', False)
+
+    # create placeholder seq signature
+    signature = SequenceSignature()
+    signature.setup_alignments_from_selection(targets, targets)
+
+    # calculate the signture
+    signature.calculate_signature()
+
+    outstream = BytesIO()
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+
+    # Sequence alignment of targets
+    signature.prepare_excel_worksheet(
+        wb,
+        'Alignment',
+        'positive',
+        'alignment'
+    )
+
+    # Residue properties stats
+    signature.prepare_excel_worksheet(
+        wb,
+        'Property_conservation',
+        'positive',
+        'features'
+    )
+
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(
+        outstream.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    response['Content-Disposition'] = "attachment; filename=gpcrdb_alignment.xlsx"
+
     return response

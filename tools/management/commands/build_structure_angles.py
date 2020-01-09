@@ -14,6 +14,7 @@ import logging
 import math
 import subprocess
 import os
+import re
 import traceback
 
 import numpy as np
@@ -30,6 +31,7 @@ SASA = True
 HSE  = True
 extra_pca = True
 print_pdb = False
+GN_only = False
 
 # Empirical values as defined by Tien et al. Plos ONE 2013
 maxSASA = {
@@ -162,7 +164,7 @@ class Command(BaseCommand):
         Angle.objects.all().delete()
         self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        #self.references = Structure.objects.filter(pdb_code__index="6OT0").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # self.references = Structure.objects.filter(pdb_code__index="5IUB").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         print(len(self.references),'structures')
         self.references = list(self.references)
@@ -285,7 +287,10 @@ class Command(BaseCommand):
         pids = [ref.protein_conformation.protein.id for ref in references]
 
         qset = Residue.objects.filter(protein_conformation__protein__id__in=pids)
-        qset = qset.filter(generic_number__label__regex=r'^[1-7]x[0-9]+').order_by('-protein_conformation__protein','-generic_number__label')
+        if GN_only:
+            qset = qset.filter(generic_number__label__regex=r'^[1-7]x[0-9]+').order_by('-protein_conformation__protein','-generic_number__label')
+        else:
+            qset = qset.order_by('-protein_conformation__protein','-generic_number__label')
         qset = list(qset.prefetch_related('generic_number', 'protein_conformation__protein','protein_conformation__state'))
 
         res_dict = {ref.pdb_code.index:qgen(ref.protein_conformation.protein,qset) for ref in references}
@@ -347,21 +352,27 @@ class Command(BaseCommand):
                 ###################### prepare and evaluate query #####################
 
                 db_reslist = res_dict[pdb_code]
-                #print(db_reslist)
+                tm_reslist = []
+                for i in db_reslist:
+                    if i.generic_number and re.match(r'^[1-7]x[0-9]+', i.generic_number.label):
+                        tm_reslist.append(i)
+
+                full_resdict = {str(r.sequence_number):r for r in db_reslist}
 
                 #######################################################################
                 ######################### filter data from db #########################
 
                 def reslist_gen(x):
                     try:
-                        while db_reslist[-1].generic_number.label[0] == x:
-                            yield db_reslist.pop()
+                        while tm_reslist[-1].generic_number.label[0] == x:
+                            yield tm_reslist.pop()
                     except IndexError:
                         pass
 
                 # when gdict is not needed the helper can be removed
                 db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain] for x in ["1","2","3","4","5","6","7"]]
                 gdict = {r[1]:r[0] for hlist in db_helper for r in hlist}
+                tm_keys = [r[1] for hlist in db_helper for r in hlist]
                 db_tmlist = [[(' ',r[1],' ') for r in sl] for sl in db_helper]
                 db_set = set(db_tmlist[0]+db_tmlist[1]+db_tmlist[2]+db_tmlist[3]+db_tmlist[4]+db_tmlist[5]+db_tmlist[6])
 
@@ -380,8 +391,12 @@ class Command(BaseCommand):
                 # Definition http://www.ccp14.ac.uk/ccp/web-mirrors/garlic/garlic/commands/dihedrals.html
                 # http://biopython.org/DIST/docs/api/Bio.PDB.Polypeptide-pysrc.html#Polypeptide.get_phi_psi_list
 
-                ### clean the structure to solely the 7TM bundle
-                recurse(structure, [[0], preferred_chain, db_set])
+                ### DEPRECATED: clean the structure to solely the 7TM bundle
+                #recurse(structure, [[0], preferred_chain, db_set])
+                ### NEW: clean the structure to all protein residues in DB
+                db_fullset = set([(' ',r.sequence_number,' ') for r in db_reslist])
+                recurse(structure, [[0], preferred_chain, db_fullset])
+
                 poly.get_theta_list() # angle three consecutive Ca atoms
                 poly.get_tau_list() # dihedral four consecutive Ca atoms
                 dihedrals = {}
@@ -416,7 +431,7 @@ class Command(BaseCommand):
                       tau_angles = None
 
 
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles]
+                  dihedrals[str(r.id[1])] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -878,7 +893,7 @@ class Command(BaseCommand):
                 b_angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)]).round(3)
 
                 # Distance from center axis to CA
-                core_distance = np.concatenate([ca_distance_calc(ca,pca) for ca in hres_list]).round(3)
+                core_distances = np.concatenate([ca_distance_calc(ca,pca) for ca in hres_list]).round(3)
 
                 ### freeSASA (only for TM bundle)
                 # SASA calculations - results per atom
@@ -889,7 +904,7 @@ class Command(BaseCommand):
                 rsa_list = {}
                 atomlist = list(pchain.get_atoms())
                 for i in range(res.nAtoms()):
-                    resnum = atomlist[i].get_parent().id[1]
+                    resnum = str(atomlist[i].get_parent().id[1])
                     if resnum not in asa_list:
                         asa_list[resnum] = 0
                         rsa_list[resnum] = 0
@@ -911,14 +926,15 @@ class Command(BaseCommand):
                 hse = pdb.HSExposure.HSExposureCB(structure[0][preferred_chain])
 
                 # x[1] contains HSE - 0 outer half, 1 - inner half, 2 - ?
-                hselist = dict([ (x[0].id[1], x[1][0]) if x[1][0] > 0 else (x[0].id[1], 0) for x in hse ])
+                hselist = dict([ (str(x[0].id[1]), x[1][0]) if x[1][0] > 0 else (str(x[0].id[1]), 0) for x in hse ])
 
                 # Few checks
-                if len(pchain) != len(a_angle):
-                    raise Exception("\033[91mLength mismatch a-angles " + pdb_code + "\033[0m")
+                if GN_only:
+                    if len(pchain) != len(a_angle):
+                        raise Exception("\033[91mLength mismatch a-angles " + pdb_code + "\033[0m")
 
-                if len(pchain) != len(b_angle):
-                    raise Exception("\033[91mLength mismatch b-angles " + pdb_code + "\033[0m")
+                        if len(pchain) != len(b_angle):
+                            raise Exception("\033[91mLength mismatch b-angles " + pdb_code + "\033[0m")
 
                 ### Collect all data in database list
                 #print(a_angle) # only TM
@@ -927,24 +943,12 @@ class Command(BaseCommand):
                 #print(hselist) # only TM
                 #print(dihedrals) # HUSK: contains full protein!
 
-                # Correct for missing values
-                for res in pchain:
-                    residue_id = res.id[1]
-                    if not residue_id in rsa_list:
-                        rsa_list[residue_id] = None
-                    if not residue_id in hselist:
-                        hselist[residue_id] = None
-                    if not residue_id in dihedrals:
-                        dihedrals[residue_id] = None
-                    if not residue_id in asa_list:
-                        asa_list[residue_id] = None
-
                 ### PCA space can be upside down - in that case invert the results
                 # Check rotation of 1x49 - 1x50
                 inversion_ref = -1
-                for res in pchain:
+                for res in tm_keys:
                     inversion_ref += 1
-                    if gdict[res.id[1]].generic_number.label == "1x49":
+                    if gdict[res].generic_number.label == "1x49":
                         break
 
                 signed_diff = (a_angle[inversion_ref + 1] - a_angle[inversion_ref] + 540 ) % 360 - 180
@@ -955,16 +959,47 @@ class Command(BaseCommand):
 #                else:
 #                    print("{} Rotating the right way  {}".format(pdb_code, signed_diff))
 
+                tm_keys_str = [str(i) for i in tm_keys]
+                a_angle = dict(zip(tm_keys_str, a_angle))
+                b_angle = dict(zip(tm_keys_str, b_angle))
+                core_distances = dict(zip(tm_keys_str, core_distances))
+                midpoint_distances = dict(zip(tm_keys_str, midpoint_distances))
+                mid_membrane_distances = dict(zip(tm_keys_str, mid_membrane_distances))
 
-                for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distance, midpoint_distances, mid_membrane_distances):
-                    residue_id = res.id[1]
+                # Correct for missing values
+                for res in polychain:
+                    residue_id = str(res.id[1])
+
+                    if not residue_id in a_angle:
+                        a_angle[residue_id] = None
+                    if not residue_id in b_angle:
+                        b_angle[residue_id] = None
+                    if not residue_id in core_distances:
+                        core_distances[residue_id] = None
+                    if not residue_id in midpoint_distances:
+                        midpoint_distances[residue_id] = None
+                    if not residue_id in mid_membrane_distances:
+                        mid_membrane_distances[residue_id] = None
+                    if not residue_id in rsa_list:
+                        rsa_list[residue_id] = None
+                    if not residue_id in hselist:
+                        hselist[residue_id] = None
+                    if not residue_id in dihedrals:
+                        dihedrals[residue_id] = None
+                    if not residue_id in asa_list:
+                        asa_list[residue_id] = None
+
+                #for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distances, midpoint_distances, mid_membrane_distances):
+                for res in polychain:
+                    residue_id = str(res.id[1])
+
                     # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "ASA", "DISTANCE"
-                    dblist.append([reference, gdict[residue_id], angle1, angle2, \
-                        rsa_list[residue_id], \
-                        hselist[residue_id]] + \
-                        dihedrals[residue_id] + \
-                        [asa_list[residue_id], distance, midpoint_distance, mid_membrane_distance])
-
+                    if residue_id in full_resdict:
+                        dblist.append([reference, full_resdict[residue_id], a_angle[residue_id], b_angle[residue_id], \
+                            rsa_list[residue_id], \
+                            hselist[residue_id]] + \
+                            dihedrals[residue_id] + \
+                            [asa_list[residue_id], core_distances[residue_id], midpoint_distances[residue_id], mid_membrane_distances[residue_id]])
             except Exception as e:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
@@ -995,20 +1030,25 @@ class Command(BaseCommand):
         object_list = []
         for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
             try:
+                if asa != None:
+                    asa = round(asa,1)
+                if outer != None:
+                    outer = round(np.rad2deg(outer),3)
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
                 if psi != None:
                     psi = round(np.rad2deg(psi),3)
+                if rsa != None:
+                    rsa = round(rsa,1)
                 if theta != None:
                     theta = round(np.rad2deg(theta),3)
                 if tau != None:
                     tau = round(np.rad2deg(tau),3)
-                if outer != None:
-                    outer = round(np.rad2deg(outer),3)
                 if tau_angle != None:
                     tau_angle = round(np.rad2deg(tau_angle),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=asa, rsa=rsa, hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
             except Exception as e:
+                print(e)
                 print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance])
 
         print("created list")

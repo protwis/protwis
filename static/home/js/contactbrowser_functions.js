@@ -1774,38 +1774,40 @@
             // Normalize the data for the group analysis
             if (currentTab.includes("group")){
               checked = currentSettings[currentTab]["options"].indexOf("normalize") >= 0 ? "checked" : "";
-              option_content +=  '<li class="list-group-item">Normalize data<div class="material-switch pull-right"><input id="option-normalize" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-normalize" class="label-primary"></label></div></li>';
+              var tooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="This option merges the data of structures from same receptor and utilizes the average as a representative for that receptor. These averages of the receptors are subsequently utilized in this tool."></span>';
+              option_content +=  '<li class="list-group-item">' + tooltip + ' Normalize data<div class="material-switch pull-right"><input id="option-normalize" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-normalize" class="label-primary"></label></div></li>';
             }
 
             // Only between helices
-            checked = currentSettings[currentTab]["options"].indexOf("interhelical") >= 0 ? "checked" : "";
-            option_content +=  '<li class="list-group-item">Only interhelical contacts<div class="material-switch pull-right"><input id="option-interhelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-interhelical" class="label-primary"></label></div></li>';
+            checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
+            var heltooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions between residues within the same segment (i.e. TM1-7, H8 or a loop) are also included in the analysis."></span>';
+            option_content +=  '<li class="list-group-item">' + heltooltip + ' Intrasegment contacts<div class="material-switch pull-right"><input id="option-intrahelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intrahelical" class="label-primary"></label></div></li>';
 
             option_content += "</ul>"
             $("#interaction_settings").append(option_content);
 
             // Add interaction type selection
-            $("#interaction_settings").append('<h5 class="border-bottom">Enable/disable interaction types</h5>')
+            $("#interaction_settings").append('<h5 class="border-bottom">Interaction types</h5>')
             var types_content = '<ul class="list-group">'
-            var interaction_options = ["Ionic", "Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"]
+            var interaction_options = ["Ionic", "Polar", "Aromatic", "Hydrophobic", "van der Waals"]
             for (var i = 0; i < interaction_options.length; i++){
-              var checked = currentSettings[currentTab]["types"].indexOf(interaction_options[i]) >= 0 ? "checked" : "";
-              types_content +=  '<li class="list-group-item">' + interaction_options[i] + '<div class="material-switch pull-right"><input id="types-'+interaction_options[i]+'" name="types-toggles" ' + checked + ' type="checkbox"/><label for="types-'+interaction_options[i]+'" class="label-primary"></label></div></li>';
+              var checked = currentSettings[currentTab]["types"].indexOf(interaction_options[i].replace(/\s+/g, '-')) >= 0 ? "checked" : "";
+              types_content +=  '<li class="list-group-item">' + interaction_options[i] + '<div class="material-switch pull-right"><input id="types-'+interaction_options[i].replace(/\s+/g, '-')+'" name="types-toggles" ' + checked + ' type="checkbox"/><label for="types-'+interaction_options[i].replace(/\s+/g, '-')+'" class="label-primary"></label></div></li>';
             }
             types_content += "</ul>"
             $("#interaction_settings").append(types_content);
 
             // Add strict toggles for H-bond, aromatic, Hydrophobic and VdW
-            $("#interaction_settings").append('<h5 class="border-bottom">Apply strict cutoffs</h5>')
+            $("#interaction_settings").append('<h5 class="border-bottom">Strict interaction cut-offs</h5>')
             $(function () { $('div#interaction_settings span.glyphicon.glyphicon-info-sign').popover() })
 
-            var strict_toggles = ["Polar", "Aromatic", "Hydrophobic", "Van-der-Waals"];
-            var strict_tooltips = ["<b>Enabled:</b><br/> donor-acceptor dist. ≤3.5Å + donor angle ≥120°<br/><b>Disabled:</b><br/> donor-acceptor dist. ≤4Å", "<b>Enabled:</b><br/>Face-to-face:<br/>dist. ≤4.4Å + angle ≤30°<br/>Face-to-edge:<br/> dist. ≤5.5Å + angle >30°<br/>Cation-π:<br/>dist. to cat. ≤6.6Å + angle ≤30°<br/><b>Disabled:</b><br/> dist. ≤5.5Å OR Cation-π<br/></br>Calculations from ring center(s)", "<b>Enabled:</b><br/> min. 3 atom pairs<br/><b>Disabled:</b><br/> min. 1 atom pair", "<b>Enabled:</b><br/> min. 3 atom pairs<br/><b>Disabled:</b><br/> min. 1 atom pair"]
+            var strict_toggles = ["Polar", "Aromatic", "Hydrophobic", "van der Waals"];
+            var strict_tooltips = ["<b>Enabled:</b><br/> donor-acceptor dist. ≤3.5Å + donor angle ≥120°<br/><b>Disabled:</b><br/> donor-acceptor dist. ≤4Å", "<b>Enabled:</b><br/>Face-to-face:<br/>dist. ≤4.4Å + angle ≤30°<br/>Face-to-edge:<br/> dist. ≤5.5Å + angle >30°<br/>Cation-π:<br/>dist. to cat. ≤6.6Å + angle ≤30°<br/><b>Disabled:</b><br/> dist. ≤5.5Å OR Cation-π<br/></br>Calculated from ring center", "<b>Enabled:</b><br/> min. 3 atom pairs<br/><b>Disabled:</b><br/> min. 1 atom pair", "<b>Enabled:</b><br/> min. 3 atom pairs<br/><b>Disabled:</b><br/> min. 1 atom pair"]
             var strict_content = '<ul class="list-group">'
             for (var i = 0; i < strict_toggles.length; i++){
-              var checked = currentSettings[currentTab]["strict"].indexOf(strict_toggles[i]) >= 0 ? "checked" : "";
+              var checked = currentSettings[currentTab]["strict"].indexOf(strict_toggles[i].replace(/\s+/g, '-')) >= 0 ? "checked" : "";
               var tooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="'+ strict_tooltips[i] +'"></span>';
-              strict_content +=  '<li class="list-group-item">' + tooltip + strict_toggles[i] + '<div class="material-switch pull-right"><input id="strict-'+strict_toggles[i]+'" name="strict-toggles" ' + checked + ' type="checkbox"/><label for="strict-'+strict_toggles[i]+'" class="label-primary"></label></div></li>';
+              strict_content +=  '<li class="list-group-item">' + tooltip + strict_toggles[i] + '<div class="material-switch pull-right"><input id="strict-'+strict_toggles[i].replace(/\s+/g, '-')+'" name="strict-toggles" ' + checked + ' type="checkbox"/><label for="strict-'+strict_toggles[i].replace(/\s+/g, '-')+'" class="label-primary"></label></div></li>';
             }
             strict_content += "</ul>"
             $("#interaction_settings").append(strict_content);
