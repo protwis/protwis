@@ -876,8 +876,7 @@ function drawPlotPanel(plot_type, plot_div) {
 
 var plotting_options = {
     'Contacts between geenric residue positions': [
-        ['heatmap', 'Matrix of interactions'],
-        ['ngl', '3D view'],
+        ['ngl', '3D structure'],
         ['flareplot', 'Flare Plot'],
         ['flareplot_subset', 'Flare Plot (filtered positions)'],
         ['force_network', 'Network'],
@@ -887,15 +886,15 @@ var plotting_options = {
         // ['schematic_con', 'Schematic (Consecutive)'],
     ],
     'Contacts between segments (TM1-7, H8 and loops)': [
-        ['flareplot_segments', 'Flare Plot (Segments)'],
-        ['force_network_segment', 'Network (segments)'],
-        ['force_network_3d_segment', 'Network 3D  (segments)'],
+        ['flareplot_segments', 'Flare Plot'],
+        ['force_network_segment', 'Network'],
+        ['force_network_3d_segment', 'Network 3D'],
     ],
     'Contact frequencies': [
-        ['boxplot', 'Box-plot (Frequency)'],
+        ['boxplot', 'Box plot'],
     ],
     'Residue Properties': [
-        ['boxplot_angles', 'Box-plot (Angles)'],],
+        ['boxplot_angles', 'Box plot '],],
 };
 function generate_display_options() {
     dropdown_html = '<div class="dropdown" style="display: inline;"> \
@@ -903,7 +902,7 @@ function generate_display_options() {
                           Select plot \
                           <span class="caret"></span></button><ul class="dropdown-menu">';
     for (let key in plotting_options) {
-        dropdown_html += '<li class="dropdown-header"><a>' + key + '</a></li>'
+        dropdown_html += '<li class="dropdown-header">' + key + '</li>'
         plotting_options[key].forEach(function (opt) {
             dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
         });
