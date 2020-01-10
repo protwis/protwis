@@ -199,7 +199,7 @@ function createBoxPlot(data, element, plottype) {
 }
 
 function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = false, aa = false) {
-    console.log("createBoxPlotResidue",gn,data_type);
+    console.log("createBoxPlotResidue", gn, data_type);
     var mode = get_current_mode();
     var layout = {};
     data = two_sets_data['all_angles'][gn];
@@ -240,14 +240,14 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
                     ys2 = {};
                     pdbs = [];
                     pos = '';
-                        pdbs_shown = []
+                    pdbs_shown = []
                     if (!two_sets_data['normalized']) {
                         var temp_two_sets_pdbs1 = two_sets_pdbs1;
                         var temp_two_sets_pdbs2 = two_sets_pdbs2;
                         pdbs = temp_two_sets_pdbs1.concat(temp_two_sets_pdbs2);
                         // If only use a subset of pdbs.
                         if (limit_pdbs) pdbs = limit_pdbs;
-                        pdbs.forEach(function(pdb) {
+                        pdbs.forEach(function (pdb) {
                             pdb = pdb.toUpperCase();
                             let d = data[pdb];
                             if (d.length > 0) {
@@ -281,7 +281,7 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
 
                         pdbs = temp_two_sets_pdbs1.concat(temp_two_sets_pdbs2);
 
-                        temp_two_sets_pdbs1.forEach(function(pdb) {
+                        temp_two_sets_pdbs1.forEach(function (pdb) {
                             pdb = pdb.toUpperCase();
                             let d = two_sets_data['all_angles_set1'][gn][pdb];
                             if (d.length > 0) {
@@ -300,7 +300,7 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
                             }
                         });
 
-                        temp_two_sets_pdbs2.forEach(function(pdb) {
+                        temp_two_sets_pdbs2.forEach(function (pdb) {
                             pdb = pdb.toUpperCase();
                             let d = two_sets_data['all_angles_set2'][gn][pdb];
                             if (d.length > 0) {
@@ -323,7 +323,7 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
 
                     if (aa) pos = pos + " " + aa;
 
-                    names = [['core_distance',false], ['a_angle',true], ['outer_angle',true], ['tau',true], ['phi',true], ['psi',true], ['sasa',false], ['rsa',false], ['theta',true], ['hse',false], ['dssp',false], ['tau_angle', true]]
+                    names = [['core_distance', false], ['a_angle', true], ['outer_angle', true], ['tau', true], ['phi', true], ['psi', true], ['sasa', false], ['rsa', false], ['theta', true], ['hse', false], ['dssp', false], ['tau_angle', true]]
 
                     // name_index = Math.floor((cell_index - 6) / 2);
                     name_index = {
@@ -357,55 +357,55 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
                             mean1 = meanAngleDeg(ys1[key]);
                             mean2 = meanAngleDeg(ys2[key]);
                             traces = [{
-                                    type: "scatterpolar",
-                                    mode: "markers",
-                                    r: Array(ys1[key].length).fill(1),
-                                    theta: ys1[key],
-                                    name: "Set 1",
-                                    marker: {
-                                        color: "#8090c7",
-                                        symbol: "circle",
-                                        size: 15
-                                    },
-                                    opacity: 0.8,
+                                type: "scatterpolar",
+                                mode: "markers",
+                                r: Array(ys1[key].length).fill(1),
+                                theta: ys1[key],
+                                name: "Set 1",
+                                marker: {
+                                    color: "#8090c7",
+                                    symbol: "circle",
+                                    size: 15
                                 },
-                                {
-                                    type: "scatterpolar",
-                                    mode: "lines",
-                                    r: [0, 0.9],
-                                    theta: [0, mean1],
-                                    name: "Set 1 mean",
-                                    line: {
-                                        color: "#8090c7",
-                                        width: 5,
-                                    },
+                                opacity: 0.8,
+                            },
+                            {
+                                type: "scatterpolar",
+                                mode: "lines",
+                                r: [0, 0.9],
+                                theta: [0, mean1],
+                                name: "Set 1 mean",
+                                line: {
+                                    color: "#8090c7",
+                                    width: 5,
                                 },
-                                {
-                                    type: "scatterpolar",
-                                    mode: "markers",
-                                    r: Array(ys2[key].length).fill(1),
-                                    theta: ys2[key],
-                                    name: "Set 2",
-                                    marker: {
-                                        color: "red",
-                                        symbol: "circle",
-                                        size: 15
-                                    },
-                                    opacity: 0.8,
-                                    subplot: "polar2"
+                            },
+                            {
+                                type: "scatterpolar",
+                                mode: "markers",
+                                r: Array(ys2[key].length).fill(1),
+                                theta: ys2[key],
+                                name: "Set 2",
+                                marker: {
+                                    color: "red",
+                                    symbol: "circle",
+                                    size: 15
                                 },
-                                {
-                                    type: "scatterpolar",
-                                    mode: "lines",
-                                    r: [0, 0.9],
-                                    theta: [0, mean2],
-                                    name: "Set 2 mean",
-                                    line: {
-                                        color: "red",
-                                        width: 5,
-                                    },
-                                    subplot: "polar2"
-                                }];
+                                opacity: 0.8,
+                                subplot: "polar2"
+                            },
+                            {
+                                type: "scatterpolar",
+                                mode: "lines",
+                                r: [0, 0.9],
+                                theta: [0, mean2],
+                                name: "Set 2 mean",
+                                line: {
+                                    color: "red",
+                                    width: 5,
+                                },
+                                subplot: "polar2"
+                            }];
 
 
 
@@ -457,7 +457,7 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
                                         size: 8
                                     }
                                 }
-                                },
+                            },
                             polar2: {
                                 radialaxis: {
                                     //autorange: true,
@@ -475,7 +475,7 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
                                         size: 8
                                     }
                                 }
-                                }
+                            }
                         }
                     } else {
                         var layout = {
@@ -513,9 +513,9 @@ function getDateFromTable(browser_tab, columns) {
         var table = $(tab_id).DataTable();
         table.rows({
             filter: 'applied'
-        }).data().each(function(i) {
+        }).data().each(function (i) {
             var temp = [];
-            columns.forEach(function(c, ii) {
+            columns.forEach(function (c, ii) {
                 temp.push(i[c]);
             });
             rows.push(temp);
@@ -526,7 +526,7 @@ function getDateFromTable(browser_tab, columns) {
 }
 
 function getColumn(anArray, columnNumber) {
-    return anArray.map(function(row) {
+    return anArray.map(function (row) {
         return row[columnNumber];
     });
 }
