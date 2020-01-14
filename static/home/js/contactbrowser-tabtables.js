@@ -3715,25 +3715,37 @@ function gray_scale_table(table) {
     cols.forEach(function(col, index) {
         var max = Math.max.apply(null, col);
         var min = Math.min.apply(null, col);
-        maxmin.push([max, min]);
+        var abs_max = Math.max.apply(null, [max, min].map(Math.abs));
+        maxmin.push([max, min,abs_max]);
     });
     // console.time('Greyscale cells');
+
+    // Get the header texts to find out which are "set specific"
+    var h_cols = []
+    for (let [i, row] of [...table.find("thead")[0].rows].entries()) {
+        for (let [j, cell] of [...row.cells].entries()) {
+            // h_cols[j] = h_cols[j] || [];
+            h_cols[j] = cell.innerText;
+        }
+    }
     var cell_count = 0;
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             c_maxmin = maxmin[j];
+            c_header = h_cols[j];
             value = parseFloat(cell.innerText);
             if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
-                // console.log(`[${i},${j}] = ${cell.innerText} ${c_maxmin}`);
-                scale = 1 - (value - c_maxmin[1]) / (c_maxmin[0] - c_maxmin[1]);
-                frequency = 0.5 - scale * .5;
-                color_255 = Math.round(255 - frequency * 255);
-                var rgb = {
-                    r: color_255,
-                    g: color_255,
-                    b: color_255
-                };
-                var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+                scale = Math.abs(value) / c_maxmin[2];
+                var color = { r: 255, g: 255, b: 255 };
+                if (c_header.includes('Set 2') || value < 0) {
+                    // if the header is a set two, then make it red
+                    color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+                } else if (value > 0) {
+                    // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+                    // This is also used for single set/structure
+                    color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
+                }
+                var hex = rgb2hex(color.r, color.g, color.b);
                 cell.setAttribute("bgcolor", hex);
                 cell_count++;
             }
