@@ -875,7 +875,7 @@ function drawPlotPanel(plot_type, plot_div) {
 }
 
 var plotting_options = {
-    'Contacts between geenric residue positions': [
+    'Contacts between generic residue positions': [
         ['ngl', '3D structure'],
         ['flareplot', 'Flare Plot'],
         ['flareplot_subset', 'Flare Plot (filtered positions)'],
@@ -901,11 +901,15 @@ function generate_display_options() {
                           <button class="btn btn-xs btn-primary dropdown-toggle" type="button" data-toggle="dropdown"> \
                           Select plot \
                           <span class="caret"></span></button><ul class="dropdown-menu">';
+    var after_first = false;
     for (let key in plotting_options) {
-        dropdown_html += '<li class="dropdown-header">' + key + '</li>'
+
+        if (after_first) dropdown_html += '<li class="divider"></li>';
+        dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key + '</strong></li>'
         plotting_options[key].forEach(function (opt) {
             dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
         });
+        after_first = true;
     }
     dropdown_html += '</ul></div>';
     $('.plot-select').each(function (e) {

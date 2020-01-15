@@ -30,6 +30,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     var cluster_groups = filtered_cluster_groups;
     var stickyDrag = true;
     var highlightNode = true;
+    var max_freq = 0;
     function prepare_data(single_cluster = false) {
 
         console.log('PREPARE DATA',containerSelector,'cluster_groups',cluster_groups.length, plot_specified_filtered.length )
@@ -70,10 +71,37 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         //     //     new_data["links"].push({ "source": gns[0], "target": gns[1], "value": 1 })
         //     // }
         // });
-
+        if (raw_data['proteins2']) {
+            var pdbs_1 = raw_data['pdbs1'].length
+            var pdbs_2 = raw_data['pdbs2'].length
+            var pfs_1 = raw_data['pfs1'].length
+            var pfs_2 = raw_data['pfs2'].length
+            var normalized = raw_data['normalized'];
+        } else if (raw_data['proteins'].length > 1) {
+            var pdbs_counts = raw_data['pdbs'].length
+            var normalized = raw_data['normalized'];
+            var pfs = raw_data['pfs'].length
+        }
         $.each(raw_data['interactions'], function (i, v) {
             if (!plot_specified_filtered.includes(i)) return;
             gns = separatePair(i);
+            var freq = 0;
+            if (raw_data['proteins2']) {
+                if (normalized) {
+                    sfreq1 = Math.round(100 * v['pfs1'].length / pfs_1);
+                    sfreq2 = Math.round(100 * v['pfs2'].length / pfs_2);
+                } else {
+                    sfreq1 = Math.round(100 * v['pdbs1'].length / pdbs_1);
+                    sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
+                }
+                freq = sfreq1 - sfreq2;
+            } else if (raw_data['proteins'].length > 1) {
+                if (normalized) {
+                    freq = Math.round(100 * v['pfs'].length / pfs);
+                } else {
+                    freq = Math.round(100 * v['pdbs'].length / pdbs_counts);
+                }
+            }
             seg1 = raw_data['segment_map'][gns[0]];
             seg2 = raw_data['segment_map'][gns[1]];
 
@@ -97,11 +125,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             source.links += 1;
             target = new_data["nodes"].filter(obj => { return obj.name === gns[1] })[0];
             target.links += 1;
-            new_data["links"].push({ "source": source, "target": target, "value": 1 })
+            new_data["links"].push({ "source": source, "target": target, "value": 1, "freq": freq })
+            if (Math.abs(freq) > max_freq) max_freq = Math.abs(freq);
         })
 
-
-        console.log(cluster_groups);
+        // console.log(cluster_groups);
             // console.log(graph);
         // new_data['nodes'].forEach(function (n) {
         //     cg = cluster_groups.filter(l => l.includes(n.name));
@@ -205,16 +233,17 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             // .style("stroke-width", function(d) { return d.size || 5; })
             // .style("stroke", "#000");
         
-        var labelText = svg.selectAll(".labelText")
+        var labelParent = svg.selectAll(".labelText")
             .data(graph.links)
-          .enter().append("text")
-            .attr("class","labelText")
-            .attr("dx",0)
-            .attr("dy",function(d,i) { return  d.size ? -d.size/2 : -5/2;})
+            .enter().append("text")
+            .attr("class", "labelText")
+            .attr("dx", 0)
+            .attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
             .style("fill", "black")
             .style("opacity", 0.5)
-            .attr("id", function (d, i) { return "labelText_" + i; })
-            .append("textPath")
+            .attr("id", function (d, i) { return "labelText_" + i; });
+        
+        var labelText = labelParent.append("textPath")
             .attr("xlink:href", function (d, i) { return "#"+containerSelector+"linkId_" + i; })
             .attr("startOffset","50%").attr("text-anchor","Middle")
             .text(function(d,i) { return  d.links;});
@@ -270,8 +299,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .attr("cursor", "pointer")
             .attr("font-size", function (d) { return d.size ? assignSize(d.group) - 6 : 12; })
             .text(function (d) { return d.size ? d.group : d.name });
-        
-        
         
         
         var ticked = function() {
@@ -554,6 +581,55 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             
         });
 
+
+        d3.select(containerSelector).select("#addAA").on("change", function () {
+            addAA = d3.select(containerSelector).select("#addAA").property("checked");
+            node.select("circle").attr("r", function (d) { return addAA ? 24 : 20; })
+            node.select("text").text(
+                function (d) { return addAA ? raw_data["aa_map"][d.name]+d.name : d.name }
+            );
+        });
+
+
+        d3.select(containerSelector).select("#colorLinks").on("change", function () {
+            colorLinks = d3.select(containerSelector).select("#colorLinks").property("checked");
+            link.style("stroke", function (d) {
+                scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                // scale = Math.abs(d.freq) / 100;
+                scale = 0.2 + Math.abs(d.freq) * 0.8 / max_freq;
+                console.log(max_freq, d.freq, d.links);
+                color = { r: 200, g: 200, b: 200 }; //grey
+                if (d.freq < 0) {
+                    // if the header is a set two, then make it red
+                    // color = { r: 255*scale, g: (153)*scale, b: (153)*scale }; //red
+                    color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+                } else if (d.freq > 0) {
+                    // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+                    // This is also used for single set/structure
+                    // color = { r: (153)*scale, g: (204)*scale, b: 255*scale }; //blue
+                    color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
+                }
+                var hex = rgb2hex(color.r, color.g, color.b);
+                
+                return colorLinks ? hex : "#000";
+            });
+            link.style("stroke-width", function (d) {
+                scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                // scale = Math.abs(d.freq) / 100;
+                scale = Math.abs(d.freq) / max_freq;
+                
+                return colorLinks ? Math.round(30*scale) : d.size || 5; ;
+            });
+            link.style("stroke-opacity", function (d) { return colorLinks ? 0.8 : 0.5; })
+            if (colorLinks) {
+                svg.style("background-color", "#fff");
+                labelParent.attr("dy",function(d,i) { stroke_width = Math.round(30*Math.abs(d.freq) / max_freq); return  stroke_width ? -stroke_width/2 : -5/2;})
+            } else {
+                svg.style("background-color", "#fff");
+                labelParent.attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
+            }
+        });
+
         // init option values
 
         // console.log("set link_strength_change to", link_strength);
@@ -605,8 +681,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         // })
     }
 
-    function network(data, prev, index, expand) {
-        expand = expand || {};
+    function network(data, prev, index, expand) {        expand = expand || {};
         var gm = {},    // group map
             nm = {},    // node map
             lm = {},    // link map
@@ -614,7 +689,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             gc = {},    // previous group centroids
             nodes = [], // output nodes
             links = []; // output links
-    
+        max_freq = 0; //reset max_freq
         // process previous nodes for reuse or centroid calculation
         if (prev) {
             prev.nodes.forEach(function(n) {
@@ -671,18 +746,22 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             var e = data.links[k],
                 u = index(e.source),
                 v = index(e.target);
-        if (u != v) {
-            gm[u].link_count++;
-            gm[v].link_count++;
-        }
+            if (u != v) {
+                gm[u].link_count++;
+                gm[v].link_count++;
+            }
             u = expand[u] ? nm[e.source.name] : nm[u];
             v = expand[v] ? nm[e.target.name] : nm[v];
             var i = (u<v ? u+"|"+v : v+"|"+u),
-                l = lm[i] || (lm[i] = {source:u, target:v, size:0});
+                l = lm[i] || (lm[i] = {source:u, target:v, size:0, freq:0});
             l.size += 1;
+            l.freq += e.freq;
         }
-        for (i in lm) { links.push(lm[i]); }
-    
+        for (i in lm) {
+            // lm[i].freq /= lm[i].size; // Don't do this as the sum is more "meaningful"
+            if (Math.abs(lm[i].freq) > max_freq) max_freq = Math.abs(lm[i].freq);
+            links.push(lm[i]);
+        }
         return {nodes: nodes, links: links};
     }
         
@@ -807,6 +886,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         'Link Label <input id="linkLabel" type="checkbox" checked><br>' +
         'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
         'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
+        'Add consensus AA<input id="addAA" type="checkbox"><br>' +
+        'Color links by frequency <input id="colorLinks" type="checkbox"><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
         'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
         'Charge<input id="charge_change" style="width:80px;" type="range" min="0" max="1400" step="any" value="700">' +
@@ -821,7 +902,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         $(containerSelector).find(".options").toggle();
 
         $(containerSelector).find(".network_controls_toggle").click(function() {
-            $(containerSelector).find(".options").toggle();
+            $(containerSelector).find(".options").slideToggle();
         });
 
         d3.select(containerSelector).select("#checkCurved").on("change", function () {
