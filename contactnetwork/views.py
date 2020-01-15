@@ -2254,6 +2254,8 @@ def ClusteringData(request):
     if 'cluster-method' in request.GET:
         cluster_method = request.GET.get('cluster-method')
 
+    # DEBUG set clustering method hardcoded:
+    # cluster_method = '7'
     if cluster_method == '1':
         [distance_matrix, pdbs] = coreMatrix(pdbs)
     elif cluster_method == '2':
@@ -2271,6 +2273,15 @@ def ClusteringData(request):
         [distance_matrix, pdbs] = coreMatrix(pdbs, middle = True)
     elif cluster_method == '6': # distance to origin
         [distance_matrix, pdbs] = originMatrix(pdbs)
+    elif cluster_method == '7': # distance to origin
+        dis = Distances()
+        dis.lower_only = True
+        print("Print setting lower only")
+        dis.load_pdbs(pdbs)
+        distance_matrix = dis.get_distance_matrix(normalize = False)
+
+        # pdbs have been reordered -> map back to be consistent with the distance matrix
+        pdbs = dis.pdbs
     else:
         dis = Distances()
         dis.load_pdbs(pdbs)
