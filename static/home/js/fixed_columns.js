@@ -475,7 +475,7 @@ function showPDBtable(element) {
                     column_number: 12,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Cyt. Opening.",
+                    filter_default_label: "TM6 opening",
                     filter_reset_button_text: false,
 
                 },
