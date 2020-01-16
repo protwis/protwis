@@ -1,8 +1,12 @@
 var filtered_gn_pairs = [];
-
+var filtered_cluster_groups = [];
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
+    pos_contacts_count = {};
+    filtered_cluster_groups = [];
+    const selector = "#" + $('.main_option:visible').attr('id');
+    const analys_mode = selector.replace('-tab', '');
 
     if ($.fn.DataTable.isDataTable(".browser-table-1:visible")) {
         var table = $(".browser-table-1:visible").DataTable();
@@ -10,15 +14,88 @@ function filter_browser() {
             filter: 'applied'
         }).data().each(function(i) {
             filtered_gn_pairs.push(i['DT_RowId'])
+            gns = separatePair(i['DT_RowId']);
+
+            // see if there is a key for gns1
+            if (!(gns[0] in pos_contacts_count)) pos_contacts_count[gns[0]] = 0;
+            pos_contacts_count[gns[0]] += 1;
+            // see if there is a key for gns2
+            if (!(gns[1] in pos_contacts_count)) pos_contacts_count[gns[1]] = 0;
+            pos_contacts_count[gns[1]] += 1;
+
+            // Track network groups
+
+            test1 = filtered_cluster_groups.filter(l => l.includes(gns[0]));
+            test2 = filtered_cluster_groups.filter(l => l.includes(gns[1]));
+            if (!test1.length && !test2.length) {
+                filtered_cluster_groups.push([gns[0], gns[1]]);
+            } else if (test1.length && !test2.length) {
+                i1 = filtered_cluster_groups.indexOf(test1[0])
+                filtered_cluster_groups[i1].push(gns[1]);
+            } else if (!test1.length && test2.length) {
+                i2 = filtered_cluster_groups.indexOf(test2[0])
+                filtered_cluster_groups[i2].push(gns[0]);
+            } else if (test1.length && test2.length) {
+                i1 = filtered_cluster_groups.indexOf(test1[0])
+                i2 = filtered_cluster_groups.indexOf(test2[0])
+                //i1 = filtered_cluster_groups.indexOfForArrays(test1[0]);
+                if (i1!=i2) {
+                    filtered_cluster_groups[i1] = test1[0].concat(test2[0])
+                    filtered_cluster_groups.splice(i2, 1);
+                }
+            }
+
         })
+        console.time('Update network');
+        if (old_filtered_gn_pairs.sort().join(',') !== filtered_gn_pairs.sort().join(',')) {
+            // only update this if there are new filtered things..
+            rowIndexes = table.rows({ filter: 'applied' }).indexes();
+            table.rows({
+                filter: 'applied'
+            }).data().each(function (i, index) {
+                rowindex = rowIndexes[index];
+                gns = separatePair(i['DT_RowId']);
+
+                network_group = filtered_cluster_groups.filter(l => l.includes(gns[0]));
+                network_group_id = filtered_cluster_groups.indexOf(network_group[0])
+
+                if (analys_mode == "#two-crystal-groups") {
+                    column_ids = [5, 6, 7];
+                } else if (analys_mode == "#single-crystal-group") {
+                    column_ids = [3, 4, 5];
+
+                } else {
+                    column_ids = [3, 4, 5];
+
+                }
+                table.cell({ row: rowindex, column: column_ids[0] }).data(pos_contacts_count[gns[0]]);
+                table.cell({ row: rowindex, column: column_ids[1] }).data(pos_contacts_count[gns[1]]);
+                table.cell({ row: rowindex, column: column_ids[2] }).data("#"+(network_group_id+1));
+
+            })
+        }
+
+        console.timeEnd('Update network');
+    } else {
+        console.log('filter_browser requested, but tab-1 not visible.');
+        console.log('reset filtered.')
     }
     console.log('filtered positions! ', filtered_gn_pairs.length);
+    console.log('contact pos counts', pos_contacts_count)
+    
+
+        
+
 
     if (old_filtered_gn_pairs.sort().join(',') === filtered_gn_pairs.sort().join(',')) {
         console.log('no change in filtering');
     } else {
         updateGeneralControls();
     }
+
+    console.log("filtered_cluster_groups", filtered_cluster_groups);
+    
+
 }
 
 function make_list_narrow_cols(list, start_column, end_column) {
@@ -92,6 +169,7 @@ function renderDataTablesYadcf(element) {
     }
 
     // $(".main_loading_overlay").show(0);
+    var buttonCommon = {}
     switch (tab_number) {
         case "1":
             // statements_1
@@ -128,8 +206,8 @@ function renderDataTablesYadcf(element) {
 
             if (analys_mode == "#two-crystal-groups") {
 
-                repeated_from_to_1 = make_range_number_cols(6, 13);
-                repeated_from_to_2 = make_range_number_cols(21, 9);
+                repeated_from_to_1 = make_range_number_cols(13, 13);
+                repeated_from_to_2 = make_range_number_cols(28, 9);
 
                 yadcf.init(btable,
                     [{
@@ -162,16 +240,16 @@ function renderDataTablesYadcf(element) {
                             filter_reset_button_text: false,
 
                         },
-                        {
-                            column_number: 5,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Type",
-                            text_data_delimiter: "|",
-                            filter_reset_button_text: false,
-                        }
+                        // {
+                        //     column_number: 5,
+                        //     filter_type: "multi_select",
+                        //     select_type: 'select2',
+                        //     filter_default_label: "Type",
+                        //     text_data_delimiter: "|",
+                        //     filter_reset_button_text: false,
+                        // }
                     ].concat(repeated_from_to_1).concat([{
-                        column_number: 19,
+                        column_number: 26,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -180,7 +258,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     }, {
-                        column_number: 20,
+                        column_number: 27,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -194,8 +272,8 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
-                repeated_from_to_1 = make_range_number_cols(4, 13);
-                repeated_from_to_2 = make_range_number_cols(19, 7);
+                repeated_from_to_1 = make_range_number_cols(11, 13);
+                repeated_from_to_2 = make_range_number_cols(26, 7);
                 yadcf.init(btable,
                     [{
                             column_number: 0,
@@ -217,16 +295,16 @@ function renderDataTablesYadcf(element) {
                             filter_type: "range_number",
                             filter_reset_button_text: false,
                         },
+                        // {
+                        //     column_number: 3,
+                        //     filter_type: "multi_select",
+                        //     select_type: 'select2',
+                        //     filter_default_label: "Type",
+                        //     text_data_delimiter: "|",
+                        //     filter_reset_button_text: false,
+                        // },
                         {
-                            column_number: 3,
-                            filter_type: "multi_select",
-                            select_type: 'select2',
-                            filter_default_label: "Type",
-                            text_data_delimiter: "|",
-                            filter_reset_button_text: false,
-                        },
-                        {
-                            column_number: 17,
+                            column_number: 24,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -235,7 +313,7 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "AA",
                             filter_reset_button_text: false,
                         }, {
-                            column_number: 18,
+                            column_number: 25,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -250,8 +328,8 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal") {
-                repeated_from_to_1 = make_range_number_cols(4, 11);
-                repeated_from_to_2 = make_range_number_cols(17, 1);
+                repeated_from_to_1 = make_range_number_cols(7, 11);
+                repeated_from_to_2 = make_range_number_cols(20, 1);
 
                 yadcf.init(btable,
                     [{
@@ -286,7 +364,7 @@ function renderDataTablesYadcf(element) {
                             filter_reset_button_text: false,
                         },
                         {
-                            column_number: 3,
+                            column_number: 6,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -297,7 +375,7 @@ function renderDataTablesYadcf(element) {
                             filter_reset_button_text: false,
                         },
                         {
-                            column_number: 15,
+                            column_number: 18,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -306,7 +384,7 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "AA",
                             filter_reset_button_text: false,
                         }, {
-                            column_number: 16,
+                            column_number: 19,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -365,8 +443,8 @@ function renderDataTablesYadcf(element) {
 
                 repeated_from_to_1 = make_range_number_cols(2, 6);
                 repeated_from_to_2 = make_range_number_cols(10, 12);
-                repeated_from_to_3 = make_range_number_cols(23, 13);
-                repeated_from_to_4 = make_range_number_cols(38, 6);
+                repeated_from_to_3 = make_range_number_cols(27, 13);
+                repeated_from_to_4 = make_range_number_cols(42, 6);
 
                 yadcf.init(btable,
                     [{
@@ -405,17 +483,7 @@ function renderDataTablesYadcf(element) {
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_2).concat([{
-                        column_number: 22,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                            width: '60px'
-                        },
-                        filter_default_label: "Type",
-                        text_data_delimiter: "|",
-                        filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_3).concat([{
+                    }]).concat(repeated_from_to_2).concat(repeated_from_to_3).concat([{
                         column_number: 36,
                         filter_type: "multi_select",
                         select_type: 'select2',
@@ -442,8 +510,8 @@ function renderDataTablesYadcf(element) {
 
                 repeated_from_to_1 = make_range_number_cols(2, 2);
                 repeated_from_to_2 = make_range_number_cols(6, 6);
-                repeated_from_to_3 = make_range_number_cols(13, 13);
-                repeated_from_to_4 = make_range_number_cols(28, 6);
+                repeated_from_to_3 = make_range_number_cols(17, 13);
+                repeated_from_to_4 = make_range_number_cols(32, 6);
 
                 yadcf.init(btable,
                     [{
@@ -483,7 +551,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     },{
-                        column_number: 26,
+                        column_number: 30,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -492,7 +560,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     }, {
-                        column_number: 27,
+                        column_number: 31,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -500,19 +568,21 @@ function renderDataTablesYadcf(element) {
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_2).concat([{
-                        column_number: 12,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        select_type_options: {
-                            width: '60px'
-                        },
-                        filter_default_label: "Type",
-                        text_data_delimiter: "|",
-                        filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_3).concat(repeated_from_to_4), {
-                        cumulative_filtering: false
-                    }
+                    }]).concat(repeated_from_to_2).concat([
+                    //     {
+                    //     column_number: 12,
+                    //     filter_type: "multi_select",
+                    //     select_type: 'select2',
+                    //     select_type_options: {
+                    //         width: '60px'
+                    //     },
+                    //     filter_default_label: "Type",
+                    //     text_data_delimiter: "|",
+                    //     filter_reset_button_text: false,
+                    // }
+                    ]).concat(repeated_from_to_3).concat(repeated_from_to_4), {
+                            cumulative_filtering: false
+                     }
 
                 );
             } else if (analys_mode == "#single-crystal") {
@@ -647,7 +717,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -657,7 +727,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -750,7 +820,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -760,7 +830,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -827,7 +897,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -837,7 +907,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -885,7 +955,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -895,7 +965,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '80px'
+                                width: '40px'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -979,7 +1049,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '80px'
+                            width: '40px'
                         },
                         filter_default_label: "Seg",
                         filter_reset_button_text: false,
@@ -989,7 +1059,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '80px'
+                            width: '40px'
                         },
                         filter_default_label: "Pos",
                         filter_reset_button_text: false,
@@ -1020,10 +1090,20 @@ function renderDataTablesYadcf(element) {
     btable.columns.adjust().draw();
 
     $(".main_loading_overlay").hide();
+    $('div.dataTables_scrollBody:visible').height('50vh');
+
+    // Make sure browser-tables are not too wide.
+    browser_table_div_width = $('.contact-browser:visible').width();
+    if (browser_table_div_width > 2060) {
+        browser_table_width = 2030;
+    } else {
+        browser_table_width = browser_table_div_width - 30;
+    }
+    $('.contact-browser .dataTables_wrapper').width(browser_table_width);
     console.timeEnd("renderDataTablesYadcf");
 }
 
-const types_to_short = { 'ionic': 'Ion', 'aromatic': 'Aro', 'polar': 'Pol', 'hydrophobic': 'Hyd', 'van-der-waals': 'vDw' }
+const types_to_short = { 'ionic': 'Ion', 'aromatic': 'Aro', 'polar': 'Pol', 'hydrophobic': 'Hyd', 'van-der-waals': 'vdW' }
 
 var plot_options = {'tab1' : {}, 'tab2' : {}, 'tab3' : {}, 'tab4' : {}, 'tab5' : {}}
 // First array contains number of columns per property that will be visualized
@@ -1081,7 +1161,9 @@ function renderBrowser(data) {
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="3" class="pairselector" datatype="frequency"></th> \
+                      <th colspan="2" class="skip"></th> \
                       <th colspan="1" class="skip"></th> \
+                      <th colspan="5" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="distance_diff"></th> \
                       <th colspan="2" class="selector" datatype="core_distance_diff"></th> \
                       <th colspan="2" class="selector" datatype="rotation_diff"></th> \
@@ -1099,7 +1181,9 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2">Contact Frequency (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
+                          <th colspan="1" rowspan="2">Distinct network group</th> \
+                          <th colspan="5" rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
@@ -1109,7 +1193,7 @@ function renderBrowser(data) {
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
                           <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
-                          <th rowspan="2" colspan="3">Sum of conservation of contact AA pairs in class (%)</th> \
+                          <th rowspan="2" colspan="3">Contact AA pair sequence conservation in class (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
@@ -1128,7 +1212,14 @@ function renderBrowser(data) {
                           <th class="narrow_col">Set 1<br></th> \
                           <th class="narrow_col">Set 2<br></th> \
                           <th class="narrow_col">Diff<br></th> \
-                          <th></th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Group#</th> \
+                          <th style="writing-mode: sideways-lr;">Ion</th> \
+                          <th style="writing-mode: sideways-lr;">Pol</th> \
+                          <th style="writing-mode: sideways-lr;">Aro</th> \
+                          <th style="writing-mode: sideways-lr;">Hyd</th> \
+                          <th style="writing-mode: sideways-lr;">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1172,9 +1263,7 @@ function renderBrowser(data) {
             var diff_pfreq = pfreq1 - pfreq2;
             var sfreq1 = Math.round(100 * v['pdbs1'].length / pdbs_1);
             var sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
-            var diff_sfreq = sfreq1 - sfreq2;
             var class_seq_cons = v['class_seq_cons'];
-
             if (normalized) {
                 var pffreq1 = Math.round(100 * v['pfs1'].length / pfs_1);
                 var pffreq2 = Math.round(100 * v['pfs2'].length / pfs_2);
@@ -1188,8 +1277,25 @@ function renderBrowser(data) {
 
                 // replace values for normalized ones
                 sfreq1 = pffreq1;
-                sfreq2 = pffreq1;
+                sfreq2 = pffreq2;
+                pos1_missing_1 = data['pfs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs1'].length;
+                pos1_missing_2 = data['pfs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs2'].length;
+                pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
+                pos2_missing_1 = data['pfs1'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pfs1'].length;
+                pos2_missing_2 = data['pfs2'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pfs2'].length;
+                pos2_missing = Math.round(100*(pos2_missing_2-pos2_missing_1));
+            } else {
+                pos1_missing_1 = data['pdbs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pdbs1'].length;
+                pos1_missing_2 = data['pdbs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pdbs2'].length;
+                pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
+                pos2_missing_1 = data['pdbs1'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pdbs1'].length;
+                pos2_missing_2 = data['pdbs2'].filter(x => data['missing'][gn2]['present'].includes(x)).length / data['pdbs2'].length;
+                pos2_missing = Math.round(100*(pos2_missing_2-pos2_missing_1));
+
             }
+            var diff_sfreq = sfreq1 - sfreq2;
+
+
 
             var class_seq_cons_diff = class_seq_cons[0] - class_seq_cons[1];
 
@@ -1203,6 +1309,8 @@ function renderBrowser(data) {
 
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
+
+
 
 
 
@@ -1223,6 +1331,14 @@ function renderBrowser(data) {
                 set_1 = data['pdbs1'];
                 set_2 = data['pdbs2'];
             }
+
+            types_count = {};
+            Object.entries(v['types_count']).forEach(([key,value])=>{
+                types_count_set1 = Math.round(100*value[0].length / set_1.length);
+                types_count_set2 = Math.round(100*value[1].length / set_2.length);
+                types_count[key] = [types_count_set1,types_count_set2,types_count_set1-types_count_set2];
+            })
+
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
                 if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
@@ -1302,28 +1418,35 @@ function renderBrowser(data) {
                       <td class="narrow_col">${sfreq1}</td>
                       <td class="narrow_col">${sfreq2}</td>
                       <td class="narrow_col">${diff_sfreq}</td>
-                      <td>${types}</td>
+                      <td class="narrow_col pos1 count"></td>
+                      <td class="narrow_col pos2 count"></td>
+                      <td class="narrow_col group"></td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['ionic'][0]}" data-set2="${types_count['ionic'][1]}">${types_count['ionic'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['polar'][0]}" data-set2="${types_count['polar'][1]}">${types_count['polar'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['aromatic'][0]}" data-set2="${types_count['aromatic'][1]}">${types_count['aromatic'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['hydrophobic'][0]}" data-set2="${types_count['hydrophobic'][1]}">${types_count['hydrophobic'][2]}</td>
+                      <td class="dt-center angles_tooltip" data-set1="${types_count['van-der-waals'][0]}" data-set2="${types_count['van-der-waals'][1]}">${types_count['van-der-waals'][2]}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[2][1]}" data-set2="${angles_2[2][2]}">${angles_2[2][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[6][1]}" data-set2="${angles_1[6][2]}">${angles_1[6][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[6][1]}" data-set2="${angles_2[6][2]}">${angles_2[6][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_1[7][1]}" data-set2="${angles_1[7][2]}">${angles_1[7][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-set1="${angles_2[7][1]}" data-set2="${angles_2[7][2]}">${angles_2[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="0" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="1" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="0" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="1" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="0" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="1" data-set1="${angles_2[2][1]}" data-set2="${angles_2[2][2]}">${angles_2[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="sasa" data-pos="0" data-set1="${angles_1[6][1]}" data-set2="${angles_1[6][2]}">${angles_1[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="sasa" data-pos="1" data-set1="${angles_2[6][1]}" data-set2="${angles_2[6][2]}">${angles_2[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="rsa" data-pos="0" data-set1="${angles_1[7][1]}" data-set2="${angles_1[7][2]}">${angles_1[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="rsa" data-pos="1" data-set1="${angles_2[7][1]}" data-set2="${angles_2[7][2]}">${angles_2[7][0]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col">${dssp_pos1}</td>
                       <td class="narrow_col">${dssp_pos2}</td>
                       <td class="narrow_col">${dssp_pos1_freq}</td>
                       <td class="narrow_col">${dssp_pos2_freq}</td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">${pos1_missing}</td>
+                      <td class="narrow_col">${pos2_missing}</td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
                       <td class="narrow_col">${class_seq_cons[0]}</td>
                       <td class="narrow_col">${class_seq_cons[1]}</td>
                       <td class="narrow_col">${class_seq_cons_diff}</td>
@@ -1334,7 +1457,9 @@ function renderBrowser(data) {
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="1" class="pairselector" datatype="frequency"></th> \
+                      <th colspan="2" class="skip"></th> \
                       <th colspan="1" class="skip"></th> \
+                      <th colspan="5" class="skip"></th> \
                       <th colspan="1" class="pairselector" datatype="distance"></th> \
                       <th colspan="2" class="selector" datatype="core_distance"></th> \
                       <th colspan="2" class="selector" datatype="rotation"></th> \
@@ -1352,7 +1477,9 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Contact Frequency (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
+                          <th colspan="1" rowspan="2">Distinct network group</th> \
+                          <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="2">Sidechain differences</th> \
@@ -1379,7 +1506,14 @@ function renderBrowser(data) {
                           <th class="dt-center"></th> \
                           <th class="dt-center">Pos1-Pos2</th> \
                           <th class="narrow_col">Set<br></th> \
-                          <th></th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Group#</th> \
+                          <th style="writing-mode: sideways-lr;">Ion</th> \
+                          <th style="writing-mode: sideways-lr;">Pol</th> \
+                          <th style="writing-mode: sideways-lr;">Aro</th> \
+                          <th style="writing-mode: sideways-lr;">Hyd</th> \
+                          <th style="writing-mode: sideways-lr;">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1412,11 +1546,13 @@ function renderBrowser(data) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
             var sfreq1 = Math.round(100 * v['pdbs'].length / pdbs_counts);
+            var set = data['pdbs'];
 
 
 
             if (normalized) {
                 var pffreq1 = Math.round(100 * v['pfs'].length / pfs);
+                var set = data['pfs'];
 
                 // DEBUG POSSIBLITY
                 // if (pffreq1!=sfreq1 ) {
@@ -1439,6 +1575,13 @@ function renderBrowser(data) {
             var angles_2 = v['angles'][1];
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
+
+
+            types_count = {};
+            Object.entries(v['types_count']).forEach(([key,value])=>{
+                types_count_set = Math.round(100*value.length / set.length);
+                types_count[key] = types_count_set;
+            })
 
             all_angles_1 = data['all_angles'][gn1];
             all_angles_2 = data['all_angles'][gn2];
@@ -1517,8 +1660,15 @@ function renderBrowser(data) {
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center">${gn1}-${gn2}</td>
-                      <td class="narrow_col">${sfreq1}</td>
-                      <td>${types}</td>
+                      <td class="narrow_col" title="${v['pdbs']}">${sfreq1}</td>
+                      <td class="narrow_col pos1 count"></td>
+                      <td class="narrow_col pos2 count"></td>
+                      <td class="narrow_col group"></td>
+                      <td class="dt-center">${types_count['ionic']}</td>
+                      <td class="dt-center">${types_count['polar']}</td>
+                      <td class="dt-center">${types_count['aromatic']}</td>
+                      <td class="dt-center">${types_count['hydrophobic']}</td>
+                      <td class="dt-center">${types_count['van-der-waals']}</td>
                       <td class="narrow_col">${distance}</td>
                       <td class="narrow_col core_distance">${angles_1[0]}</td>
                       <td class="narrow_col core_distance">${angles_2[0]}</td>
@@ -1536,17 +1686,20 @@ function renderBrowser(data) {
                       <td class="narrow_col">${dssp_pos2}</td>
                       <td class="narrow_col">${dssp_pos1_freq}</td>
                       <td class="narrow_col">${dssp_pos2_freq}</td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
+                      <td class="narrow_col">-</td>
                       <td class="narrow_col">${class_seq_cons}</td>
                     </tr>`;
             tbody.append(tr);
         });
     } else {
         thead = '<tr> \
-                      <th colspan="4" class="skip"></th> \
+                      <th colspan="3" class="skip"></th> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="skip"></th> \
                       <th colspan="1" class="pairselector" datatype="distance"></th> \
                       <th colspan="2" class="selector" datatype="core_distance"></th> \
                       <th colspan="2" class="selector" datatype="rotation"></th> \
@@ -1560,6 +1713,8 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
+                          <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
+                          <th colspan="1" rowspan="2">Distinct network group</th> \
                           <th rowspan="2">Interaction</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
@@ -1581,6 +1736,9 @@ function renderBrowser(data) {
                           <th class="dt-center"></th> \
                           <th class="dt-center">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Group#</th> \
                           <th></th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
@@ -1632,6 +1790,9 @@ function renderBrowser(data) {
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center"><span>${pos1}</span>-<span>${pos2}</span></td>
                       <td class="dt-center">${gn1}-${gn2}</td>
+                      <td class="narrow_col pos1 count"></td>
+                      <td class="narrow_col pos2 count"></td>
+                      <td class="narrow_col group"></td>
                       <td>${types}</td>
                       <td class="narrow_col">${distance}</td>
                       <td class="narrow_col angles_modal">${angles_1[0]}</td>
@@ -1665,6 +1826,9 @@ function renderBrowser(data) {
 
         // figure out which cell is selected
         cell_index = $(this).index();
+        data_type = $(this).data("type");
+        data_pos = $(this).data("pos");
+
         gn_pair = $(this).closest("tr").attr('id').split(",");
         gn1 = gn_pair[0];
         gn2 = gn_pair[1];
@@ -1679,14 +1843,14 @@ function renderBrowser(data) {
 
         //Slight wait, to be sure modal is open.
 
-        if (cell_index % 2 != 0) {
+        if (data_pos == 0) {
             // odd cell number is pos1
             if (typeof all_angles_1 !== 'undefined')
-              setTimeout(function(){ createBoxPlotResidue(gn1,'modal_plotly_1','angles',cell_index) }, 500);
+              setTimeout(function(){ createBoxPlotResidue(gn1,'modal_plotly_1','angles',data_type) }, 500);
 
         } else {
             if (typeof all_angles_2 !== 'undefined')
-              setTimeout(function(){ createBoxPlotResidue(gn2,'modal_plotly_1','angles',cell_index) }, 500);
+              setTimeout(function(){ createBoxPlotResidue(gn2,'modal_plotly_1','angles',data_type) }, 500);
           }
 
     });
@@ -1723,8 +1887,8 @@ function renderBrowser_2(data) {
                           <th colspan="3" rowspan="2">AA pair contact frequency (%)</th> \
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="9" rowspan="1">AA occurrence in structure sets (%)</th> \
-                          <th colspan="3" rowspan="2">Conservation in class (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
+                          <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
@@ -1769,7 +1933,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th></th> \
+                          <th style="writing-mode: sideways-lr;">Ion</th> \
+                          <th style="writing-mode: sideways-lr;">Pol</th> \
+                          <th style="writing-mode: sideways-lr;">Aro</th> \
+                          <th style="writing-mode: sideways-lr;">Hyd</th> \
+                          <th style="writing-mode: sideways-lr;">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1832,7 +2000,7 @@ function renderBrowser_2(data) {
                 var aafreq1 = v2['set1']['interaction_freq'];
                 var aafreq2 = v2['set2']['interaction_freq'];
             }
-            var diff_aafreq = (aafreq1 - aafreq2).toFixed(1);
+            var diff_aafreq = (aafreq1 - aafreq2).toFixed(0);
             var aa1 = v2['aa1'];
             var aa2 = v2['aa2'];
 
@@ -1968,18 +2136,22 @@ function renderBrowser_2(data) {
                       <td class="narrow_col">${v2['class_aa2']}</td>
                       <td class="narrow_col">${v2['class']}</td>
 
-                      <td>${types}</td>
+                      <td>${v2['types_freq']['ionic'][2]}</td>
+                      <td>${v2['types_freq']['polar'][2]}</td>
+                      <td>${v2['types_freq']['aromatic'][2]}</td>
+                      <td>${v2['types_freq']['hydrophobic'][2]}</td>
+                      <td>${v2['types_freq']['van-der-waals'][2]}</td>
                       <td class="narrow_col">${distance_2}</td>
-                      <td class="narrow_col angles_modal">${angles_1[0][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[0][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[1][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[1][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[2][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[2][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[6][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[6][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_1[7][0]}</td>
-                      <td class="narrow_col angles_modal">${angles_2[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="0" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="1" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="0" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="1" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="0" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="1" data-set1="${angles_2[2][1]}" data-set2="${angles_2[2][2]}">${angles_2[2][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="sasa" data-pos="0" data-set1="${angles_1[6][1]}" data-set2="${angles_1[6][2]}">${angles_1[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="sasa" data-pos="1" data-set1="${angles_2[6][1]}" data-set2="${angles_2[6][2]}">${angles_2[6][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="rsa" data-pos="0" data-set1="${angles_1[7][1]}" data-set2="${angles_1[7][2]}">${angles_1[7][0]}</td>
+                      <td class="narrow_col angles_modal angles_tooltip" data-type="rsa" data-pos="1" data-set1="${angles_2[7][1]}" data-set2="${angles_2[7][2]}">${angles_2[7][0]}</td>
                       <td class="narrow_col">${pos1_presence}</td>
                       <td class="narrow_col">${pos2_presence}</td>
                       <td class="narrow_col">${dssp_pos1}</td>
@@ -2004,8 +2176,8 @@ function renderBrowser_2(data) {
                           <th colspan="1" rowspan="2">AA pair contact frequency (%)</th> \
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="1">AA occurrence in set (%)</th> \
-                          <th colspan="3" rowspan="2">Conservation in class (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
+                          <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca atoms)*</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
@@ -2040,7 +2212,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th></th> \
+                          <th style="writing-mode: sideways-lr;">Ion</th> \
+                          <th style="writing-mode: sideways-lr;">Pol</th> \
+                          <th style="writing-mode: sideways-lr;">Aro</th> \
+                          <th style="writing-mode: sideways-lr;">Hyd</th> \
+                          <th style="writing-mode: sideways-lr;">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -2190,7 +2366,11 @@ function renderBrowser_2(data) {
                       <td class="narrow_col">${v2['class_aa2']}</td>
                       <td class="narrow_col">${v2['class']}</td>
 
-                      <td>${types}</td>
+                      <td>${v2['types_freq']['ionic']}</td>
+                      <td>${v2['types_freq']['polar']}</td>
+                      <td>${v2['types_freq']['aromatic']}</td>
+                      <td>${v2['types_freq']['hydrophobic']}</td>
+                      <td>${v2['types_freq']['van-der-waals']}</td>
                       <td class="narrow_col">${distance_2}</td>
                       <td class="narrow_col core_distance">${angles_1[0]}</td>
                       <td class="narrow_col core_distance">${angles_2[0]}</td>
@@ -2360,6 +2540,9 @@ function renderBrowser_2(data) {
         var aa1 = v2['aa1'];
         var aa2 = v2['aa2'];
 
+        data_type = $(this).data("type");
+        data_pos = $(this).data("pos");
+
         all_angles_1 = two_sets_data['all_angles'][gn1];
         all_angles_2 = two_sets_data['all_angles'][gn2];
 
@@ -2367,9 +2550,18 @@ function renderBrowser_2(data) {
         $("#resModal").modal();
 
         //Slight wait, to be sure modal is open.
-        console.log(pdbs_aa1,pdbs_aa2);
-        setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',pdbs_aa1,aa1) }, 500);
-        setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles',pdbs_aa2,aa2) }, 500);
+        // console.log(pdbs_aa1,pdbs_aa2);
+        if (data_pos == 0) {
+            // odd cell number is pos1
+            if (typeof all_angles_1 !== 'undefined')
+              setTimeout(function(){ createBoxPlotResidue(gn1,'modal_plotly_1','angles',data_type,pdbs_aa1,aa1) }, 500);
+
+        } else {
+            if (typeof all_angles_2 !== 'undefined')
+              setTimeout(function(){ createBoxPlotResidue(gn2,'modal_plotly_1','angles',data_type,pdbs_aa2,aa2) }, 500);
+          }
+        // setTimeout(function(){ createBoxPlotResidue(all_angles_1,'modal_plotly_1','angles',pdbs_aa1,aa1) }, 500);
+        // setTimeout(function(){ createBoxPlotResidue(all_angles_2,'modal_plotly_2','angles',pdbs_aa2,aa2) }, 500);
 
     });
 
@@ -2408,7 +2600,7 @@ function renderBrowser_3(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Position</th> \
                           <th colspan="3" rowspan="2">Avg no. contact pairs</th> \
                           <th colspan="3" rowspan="1">No distinct or shared contacts</th> \
                           <th colspan="1" rowspan="2">Avg freq difference of all set1-2 contacts</th> \
@@ -2547,7 +2739,7 @@ function renderBrowser_3(data) {
                 </tr> \
                 <tr> \
                         <th colspan="1" rowspan="2">Segment</th> \
-                        <th colspan="1" rowspan="2">Positions</th> \
+                        <th colspan="1" rowspan="2">Position</th> \
                         <th colspan="3" rowspan="2">Avg no. contact pairs</th> \
                         <th colspan="3" rowspan="1">No distinct or shared contacts</th> \
                         <th colspan="1" rowspan="2">Avg freq difference of all set1-2 contacts</th> \
@@ -2771,10 +2963,11 @@ function renderBrowser_4(data) {
                       <th colspan="3" class="selector" datatype="conservation"></th> \
                       <th colspan="1" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="class_conservation"></th> \
+                      <th colspan="3" class="skip"></th> \
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
                           <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
                           <th colspan="9" rowspan="1">Residue angles and dihedrals</th> \
@@ -2787,12 +2980,12 @@ function renderBrowser_4(data) {
                           <th colspan="3">Frequency (%)</th> \
                           <th colspan="2">No generic number (gap pos)</th> \
                           <th colspan="2">No 3D coordinates</th> \
-                          <th colspan="3">Phi dihedral<br/>(N(+1)-C-Ca-N)</th> \
-                          <th colspan="3">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
-                          <th colspan="3">Tau angle<br/>(N-Ca-C)</th> \
-                          <th colspan="3">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="3">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="3">Phi dihedral<br/><span class="small">(N(+1)-C-Ca-N)</span></th> \
+                          <th colspan="3">Psi dihedral<br/><span class="small">(C-Ca-N-C(-1))</span></th> \
+                          <th colspan="3">Tau angle<br/><span class="small">(N-Ca-C)</span></th> \
+                          <th colspan="3">Tau dihedral<br/><span class="small">(Ca(+1)-Ca-Ca(-1)-Ca(-2))</span></th> \
+                          <th colspan="3">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
+                          <th colspan="3">Theta angle<br/><span class="small">(Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="2">AA</th> \
                           <th colspan="3">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -2838,7 +3031,7 @@ function renderBrowser_4(data) {
                         </tr>';
         table.find('thead').html(thead);
         tr_list = ''
-        $.each(data['tab3'], function(i, v) {
+        $.each(data['tab4'], function(i, v) {
 
             var seg = data['segm_lookup'][i];
             if (seg == 'ECL1' || seg == 'ECL2') return true;
@@ -2868,22 +3061,31 @@ function renderBrowser_4(data) {
             all_angles_1 = data['all_angles'][i];
             ss_pos1_set1 = [];
             ss_pos1_set2 = [];
-
-
             if (normalized) {
                 pdbs = data['pfs1'].concat(data['pfs2']);
+                dssp_set1 = data['pfs1'];
+                dssp_set2 = data['pfs2'];
             } else {
                 pdbs = data['pdbs1'].concat(data['pdbs2']);
+                dssp_set1 = data['pdbs1'];
+                dssp_set2 = data['pdbs2'];
             }
+
+            // missing_1 = [...new Set([...data['missing'][i]['present'], ...dssp_set1])].length / dssp_set1.length;
+            // missing_2 = [...new Set([...data['missing'][i]['present'], ...dssp_set2])].length / dssp_set2.length;
+
+            missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);
+            missing_2 = Math.round(100*dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
+
             pdbs.forEach(function(pdb){
                 pdb_upper = pdb.toUpperCase();
                 if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
                 if (all_angles_1) {
                     let d1 = all_angles_1[pdb_upper];
                     if (d1.length) {
-                        if (data['pdbs1'].includes(pdb)) {
+                        if (dssp_set1.includes(pdb)) {
                             ss_pos1_set1.push(d1[12]);
-                        } else if (data['pdbs2'].includes(pdb)) {
+                        } else if (dssp_set2.includes(pdb)) {
                             ss_pos1_set2.push(d1[12]);
                         }
                     }
@@ -2940,8 +3142,8 @@ function renderBrowser_4(data) {
                       <td class="narrow_col">${Math.round(100*dssp[1][1])}</td>
                       <td class="narrow_col">${Math.round(100*(dssp[0][1]-dssp[1][1]))}</td>
 
-                      <td class="narrow_col"></td>
-                      <td class="narrow_col"></td>
+                      <td class="narrow_col">${missing_1}</td>
+                      <td class="narrow_col">${missing_2}</td>
                       <td class="narrow_col"></td>
                       <td class="narrow_col"></td>
 
@@ -3006,7 +3208,7 @@ function renderBrowser_4(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="2" rowspan="1">Secondary structure</th> \
                           <th colspan="3" rowspan="1">Residue angles</th> \
                           <th colspan="3" rowspan="1">Helix turn angle</th> \
@@ -3016,12 +3218,12 @@ function renderBrowser_4(data) {
                         <tr> \
                           <th colspan="1">Consensus SS</th> \
                           <th colspan="1">Frequency (%)</th> \
-                          <th colspan="1">Phi dihedral<br/>(N(+1)-C-Ca-N)</th> \
-                          <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
-                          <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Phi dihedral<br/><span class="small">(N(+1)-C-Ca-N)</span></th> \
+                          <th colspan="1">Psi dihedral<br/><span class="small">(C-Ca-N-C(-1))</span></th> \
+                          <th colspan="1">Tau angle<br/><span class="small">(N-Ca-C)</span></th> \
+                          <th colspan="1">Tau dihedral<br/><span class="small">(Ca(+1)-Ca-Ca(-1)-Ca(-2))</span></th> \
+                          <th colspan="1">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
+                          <th colspan="1">Theta angle<br/><span class="small">(Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Conservation (%)</th> \
                           <th colspan="1">AA</th> \
@@ -3030,22 +3232,22 @@ function renderBrowser_4(data) {
                         <tr> \
                           <th class="dt-center"></th> \
                           <th class="dt-center"></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
-                          <th class="narrow_col"><br></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
+                          <th class="narrow_col"></th> \
                           <th class="narrow_col"></th> \
                           <th class="narrow_col"></th> \
                         </tr>';
         table.find('thead').html(thead);
         tr_list = ''
-        $.each(data['tab3'], function(i, v) {
+        $.each(data['tab4'], function(i, v) {
 
             var seg = data['segm_lookup'][i];
             if (seg == 'ECL1' || seg == 'ECL2') return true;
@@ -3096,10 +3298,10 @@ function renderBrowser_4(data) {
                     // get first element as [key,value]
                     most = mapSort.entries().next().value;
                     // calculate frequency
-                    freq = most[1]/list.length;
+                    freq = Math.round(100*most[1]/list.length);
                     most = most[0];
                 } else {
-                    freq = 0;
+                    freq = '';
                     most = 'N/A';
                 }
                 dssp.push([most,freq]);
@@ -3112,7 +3314,7 @@ function renderBrowser_4(data) {
                       <td class="dt-center">${i}</td>
 
                       <td class="narrow_col">${dssp[0][0]}</td>
-                      <td class="narrow_col">${Math.round(100*dssp[0][1])}</td>
+                      <td class="narrow_col">${dssp[0][1]}</td>
 
                       <td class="narrow_col">${angles[4]}</td>
 
@@ -3155,7 +3357,7 @@ function renderBrowser_4(data) {
                   </tr> \
                   <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
-                          <th colspan="1" rowspan="2">Positions</th> \
+                          <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="1" rowspan="1">Secondary structure</th> \
                           <th colspan="3" rowspan="1">Residue angles</th> \
                           <th colspan="3" rowspan="1">Helix turn angle</th> \
@@ -3164,12 +3366,12 @@ function renderBrowser_4(data) {
                         </tr> \
                         <tr> \
                           <th colspan="1">SS</th> \
-                          <th colspan="1">Phi dihedral<br/>(N(+1)-C-Ca-N)</th> \
-                          <th colspan="1">Psi dihedral<br/>(C-Ca-N-C(-1))</th> \
-                          <th colspan="1">Tau angle<br/>(N-Ca-C)</th> \
-                          <th colspan="1">Tau dihedral<br/>(Ca(+1)-Ca-Ca(-1)-Ca(-2))</th> \
-                          <th colspan="3">Next tau dihedral<br/>(Ca(+2)-Ca(+1)-Ca-Ca(-1))</th> \
-                          <th colspan="1">Theta angle<br/>(Ca(+1)-Ca-Ca(-1))</th> \
+                          <th colspan="1">Phi dihedral<br/><span class="small">(N(+1)-C-Ca-N)</span></th> \
+                          <th colspan="1">Psi dihedral<br/><span class="small">(C-Ca-N-C(-1))</span></th> \
+                          <th colspan="1">Tau angle<br/><span class="small">(N-Ca-C)</span></th> \
+                          <th colspan="1">Tau dihedral<br/><span class="small">(Ca(+1)-Ca-Ca(-1)-Ca(-2))</span></th> \
+                          <th colspan="3">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
+                          <th colspan="1">Theta angle<br/><span class="small">(Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Cons (%)</th> \
@@ -3190,7 +3392,7 @@ function renderBrowser_4(data) {
                         </tr>';
         table.find('thead').html(thead);
         tr_list = ''
-        $.each(data['tab3'], function(i, v) {
+        $.each(data['tab4'], function(i, v) {
 
             var seg = data['segm_lookup'][i];
             if (seg == 'ECL1' || seg == 'ECL2') return true;
@@ -3285,65 +3487,213 @@ function renderBrowser_5(data) {
     if (data['proteins2']) {
       thead = '<tr> \
                     <th colspan="2" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="pair_distance_diff"></th> \
                     <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
                     <th colspan="1" class="selector" datatype="rotation_diff"></th> \
                     <th colspan="1" class="selector" datatype="HSE_diff"></th> \
+                    <th colspan="3" class="skip"></th> \
+                    <th colspan="2" class="skip"></th> \
+                    <th colspan="3" class="selector" datatype="conservation"></th> \
+                    <th colspan="1" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="class_conservation"></th> \
                 </tr>';
     } else {
       thead = '<tr> \
                     <th colspan="2" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="pair_distance"></th> \
                     <th colspan="1" class="selector" datatype="core_distance"></th> \
                     <th colspan="1" class="selector" datatype="rotation"></th> \
                     <th colspan="1" class="selector" datatype="HSE"></th> \
+                    <th colspan="3" class="skip"></th> \
+                    <th colspan="1" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="conservation"></th> \
+                    <th colspan="1" class="skip"></th> \
+                    <th colspan="1" class="selector" datatype="class_conservation"></th> \
                 </tr>';
     }
 
-    thead += '<tr> \
-                      <th colspan="1" rowspan="2">Segment</th> \
-                      <th colspan="1" rowspan="2">Positions</th> \
-                      <th colspan="2">Backbone Ca movement</th> \
-                      <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
-                    </tr> \
-                    <tr> \
-                      <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
-                      <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
-                    </tr> \
-                    <tr> \
-                      <th class="dt-center"></th> \
-                      <th class="dt-center"></th> \
-                      <th class="narrow_col"></th> \
-                      <th class="narrow_col"></th> \
-                      <th class="narrow_col"></th> \
-                    </tr>';
+    if (data['proteins2']) {
+        thead += '<tr> \
+                        <th colspan="1" rowspan="2">Seg</th> \
+                        <th colspan="1" rowspan="2">Pos</th> \
+                        <th colspan="1" rowspan="2">Pair movement</th> \
+                        <th colspan="2">Backbone Ca movement</th> \
+                        <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                        <th colspan="3">Sidechain differences</th> \
+                        <th colspan="5" rowspan="1">Seq consensus</th> \
+                        <th colspan="2" rowspan="1">Class seq consensus</th> \
+                        </tr> \
+                        <tr> \
+                        <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
+                        <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
+                        <th colspan="1">Rotamer</th> \
+                        <th colspan="1">SASA</th> \
+                        <th colspan="1">RSA</th> \
+                        <th colspan="2">AA</th> \
+                        <th colspan="3">Conservation (%)</th> \
+                        <th colspan="1">AA</th> \
+                        <th colspan="1">Cons (%)</th> \
+                        </tr> \
+                        <tr> \
+                        <th class="dt-center"></th> \
+                        <th class="dt-center"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col">Set 1<br></th> \
+                        <th class="narrow_col">Set 2<br></th> \
+                        <th class="narrow_col">Set 1<br></th> \
+                        <th class="narrow_col">Set 2<br></th> \
+                        <th class="narrow_col">Diff<br></th> \
+                        <th class="narrow_col"></th> \
+                        <th class="narrow_col"></th> \
+                        </tr>';
+    } else {
+        thead += '<tr> \
+                <th colspan="1" rowspan="2">Seg</th> \
+                <th colspan="1" rowspan="2">Pos</th> \
+                <th colspan="1" rowspan="2">Pair movement</th> \
+                <th colspan="2">Backbone Ca movement</th> \
+                <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                <th colspan="3">Sidechain differences</th> \
+                <th colspan="2" rowspan="1">Seq consensus</th> \
+                <th colspan="2" rowspan="1">Class seq consensus</th> \
+                </tr> \
+                <tr> \
+                <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
+                <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
+                <th colspan="1">Rotamer</th> \
+                <th colspan="1">SASA</th> \
+                <th colspan="1">RSA</th> \
+                <th colspan="1">AA</th> \
+                <th colspan="1">Conservation (%)</th> \
+                <th colspan="1">AA</th> \
+                <th colspan="1">Cons (%)</th> \
+                </tr> \
+                <tr> \
+                <th class="dt-center"></th> \
+                <th class="dt-center"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col">Set 1<br></th> \
+                <th class="narrow_col">Set 1<br></th> \
+                <th class="narrow_col"></th> \
+                <th class="narrow_col"></th> \
+                </tr>';
+    }
     table.find('thead').html(thead);
     tr_list = ''
-    $.each(data['tab3'], function(i, v) {
+    if (data['proteins2']) {
+        $.each(data['tab4'], function(i, v) {
 
-        // console.log(i,v);
-        var seg = data['segm_lookup'][i];
-        var angles = v['angles'];
-        // 0 'core_distance',
-        // 1 'a_angle',
-        // 2 'outer_angle',
-        // 3 'tau',
-        // 4 'phi',
-        // 5 'psi',
-        // 6 'sasa',
-        // 7 'rsa',
-        // 8 'theta',
-        // 9 'hse'
+            // console.log(i,v);
+            var seg = v['ps'];
+            var angles = v['angles'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi',
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
 
-        tr = ''
-        tr_list += `
-                <tr class="clickable-row filter_rows" id="${i}">
-                  <td class="dt-center">${seg}</td>
-                  <td class="dt-center">${i}</td>
-                  <td class="narrow_col">${angles[0][0]}</td>
-                  <td class="narrow_col">${angles[1][0]}</td>
-                  <td class="narrow_col">${angles[9][0]}</td>
-                </tr>`;
-        // tbody.append(tr);
-    });
+            var pdbs_1 = data['pdbs1'].length
+            var pdbs_2 = data['pdbs2'].length
+
+            var set1_seq_cons_aa = v['set1_seq_cons'][0];
+            var set2_seq_cons_aa = v['set2_seq_cons'][0];
+            var set1_seq_cons_freq = Math.round(100 * v['set1_seq_cons'][1] / pdbs_1);
+            var set2_seq_cons_freq = Math.round(100 * v['set2_seq_cons'][2] / pdbs_2);
+            var diff_seq_cons_freq = Math.round((set1_seq_cons_freq - set2_seq_cons_freq));
+
+            var class_cons_aa = v['class_cons'][0];
+            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                    <td class="dt-center">${seg}</td>
+                    <td class="dt-center">${i}</td>
+                    <td class="narrow_col">pair</td>
+                    <td class="narrow_col">${angles[0][0]}</td>
+                    <td class="narrow_col">${angles[1][0]}</td>
+                    <td class="narrow_col">${angles[9][0]}</td>
+                    <td class="narrow_col">${angles[2][0]}</td>
+                    <td class="narrow_col">${angles[6][0]}</td>
+                    <td class="narrow_col">${angles[7][0]}</td>
+
+                    <td class="narrow_col">${set1_seq_cons_aa}</td>
+                    <td class="narrow_col">${set2_seq_cons_aa}</td>
+                    <td class="narrow_col">${set1_seq_cons_freq}</td>
+                    <td class="narrow_col">${set2_seq_cons_freq}</td>
+                    <td class="narrow_col">${diff_seq_cons_freq}</td>
+
+                    <td class="narrow_col">${class_cons_aa}</td>
+                    <td class="narrow_col">${class_cons_freq}</td>
+
+                    </tr>`;
+            // tbody.append(tr);
+        });
+    } else {
+        $.each(data['tab4'], function(i, v) {
+
+            // console.log(i,v);
+            var seg = v['ps'];
+            var angles = v['angles'];
+            // 0 'core_distance',
+            // 1 'a_angle',
+            // 2 'outer_angle',
+            // 3 'tau',
+            // 4 'phi',
+            // 5 'psi',
+            // 6 'sasa',
+            // 7 'rsa',
+            // 8 'theta',
+            // 9 'hse'
+
+            var pdbs_count = data['pdbs'].length
+
+            var set_seq_cons_aa = v['set_seq_cons'][0];
+            var set_seq_cons_freq = Math.round(100 * v['set_seq_cons'][1] / pdbs_count);
+
+            var class_cons_aa = v['class_cons'][0];
+            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+
+            tr = ''
+            tr_list += `
+                    <tr class="clickable-row filter_rows" id="${i}">
+                    <td class="dt-center">${seg}</td>
+                    <td class="dt-center">${i}</td>
+                    <td class="narrow_col">pair</td>
+                    <td class="narrow_col">${angles[0]}</td>
+                    <td class="narrow_col">${angles[1]}</td>
+                    <td class="narrow_col">${angles[9]}</td>
+                    <td class="narrow_col">${angles[2]}</td>
+                    <td class="narrow_col">${angles[6]}</td>
+                    <td class="narrow_col">${angles[7]}</td>
+
+                    <td class="narrow_col">${set_seq_cons_aa}</td>
+                    <td class="narrow_col">${set_seq_cons_freq}</td>
+
+                    <td class="narrow_col">${class_cons_aa}</td>
+                    <td class="narrow_col">${class_cons_freq}</td>
+
+                    </tr>`;
+            // tbody.append(tr);
+        });
+    }
     // insert natively for speed increase on Chrome
     tbody[0].innerHTML = tr_list;
 
@@ -3365,25 +3715,37 @@ function gray_scale_table(table) {
     cols.forEach(function(col, index) {
         var max = Math.max.apply(null, col);
         var min = Math.min.apply(null, col);
-        maxmin.push([max, min]);
+        var abs_max = Math.max.apply(null, [max, min].map(Math.abs));
+        maxmin.push([max, min,abs_max]);
     });
     // console.time('Greyscale cells');
+
+    // Get the header texts to find out which are "set specific"
+    var h_cols = []
+    for (let [i, row] of [...table.find("thead")[0].rows].entries()) {
+        for (let [j, cell] of [...row.cells].entries()) {
+            // h_cols[j] = h_cols[j] || [];
+            h_cols[j] = cell.innerText;
+        }
+    }
     var cell_count = 0;
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             c_maxmin = maxmin[j];
+            c_header = h_cols[j];
             value = parseFloat(cell.innerText);
             if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
-                // console.log(`[${i},${j}] = ${cell.innerText} ${c_maxmin}`);
-                scale = 1 - (value - c_maxmin[1]) / (c_maxmin[0] - c_maxmin[1]);
-                frequency = 0.5 - scale * .5;
-                color_255 = Math.round(255 - frequency * 255);
-                var rgb = {
-                    r: color_255,
-                    g: color_255,
-                    b: color_255
-                };
-                var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+                scale = Math.abs(value) / c_maxmin[2];
+                var color = { r: 255, g: 255, b: 255 };
+                if (c_header.includes('Set 2') || value < 0) {
+                    // if the header is a set two, then make it red
+                    color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+                } else if (value > 0) {
+                    // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+                    // This is also used for single set/structure
+                    color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
+                }
+                var hex = rgb2hex(color.r, color.g, color.b);
                 cell.setAttribute("bgcolor", hex);
                 cell_count++;
             }
@@ -3434,7 +3796,7 @@ function enable_hover(table){
               if (plotType.startsWith("heatmapcontainer") || plotType.startsWith("flareplot") || plotType.startsWith("boxplot")) {
                 button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
               } else {
-                button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c);}})(i, tableNumber, selector.getAttribute("datatype")))
+                button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c, d);}})(i, tableNumber, selector.getAttribute("datatype"), columnSelector))
                 found = false;
               }
           } else if (selector.className=="selector") {
@@ -3442,7 +3804,7 @@ function enable_hover(table){
             if (plotType.startsWith("ngl") || plotType.startsWith("snakeplot")) {
               button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
             } else {
-              button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c);}})(i, tableNumber, selector.getAttribute("datatype")))
+              button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c, d);}})(i, tableNumber, selector.getAttribute("datatype"), columnSelector))
               found = false;
             }
           }

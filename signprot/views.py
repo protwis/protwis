@@ -613,7 +613,7 @@ def signprotdetail(request, slug):
 
 def sort_a_by_b(a, b, remove_invalid=False):
     '''Sort one list based on the order of elements from another list'''
-    # https://stackoverflow.com/q/12814667    
+    # https://stackoverflow.com/q/12814667
     # a = ['alpha_mock', 'van-der-waals', 'ionic']
     # b = ['ionic', 'aromatic', 'hydrophobic', 'polar', 'van-der-waals', 'alpha_mock']
     # sort_a_by_b(a,b) -> ['ionic', 'van-der-waals', 'alpha_mock']
@@ -635,7 +635,7 @@ def interface_dataset():
         "aromatic",
         "polar",
         "hydrophobic",
-        "van-der-waals",    
+        "van-der-waals",
     ]
 
     # getting all the signal protein residues for those protein conformations
@@ -698,7 +698,7 @@ def InteractionMatrix(request):
 
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
-    
+
     struc = SignprotComplex.objects.prefetch_related(
         'structure__pdb_code',
         'structure__stabilizing_agents',
@@ -768,6 +768,8 @@ def IMSequenceSignature(request):
     pos_set_in = get_entry_names(request)
     ignore_in_alignment = get_ignore_info(request)
     segments = get_protein_segments(request)
+    if len(segments) == 0:
+        segments = list(ResidueGenericNumberEquivalent.objects.filter(scheme__slug__in=['gpcrdba']))
 
     # get pos objects
     pos_set = Protein.objects.filter(entry_name__in=pos_set_in).select_related('residue_numbering_scheme', 'species')
@@ -843,7 +845,7 @@ def IMSignatureMatch(request):
         cutoff = 0,
         signprot=True
     )
-    
+
     maj_pfam = Counter(pfam).most_common()[0][0]
     signature_match.score_protein_class(maj_pfam, signprot=True)
     # request.session['signature_match'] = signature_match

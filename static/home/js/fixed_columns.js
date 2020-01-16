@@ -8,13 +8,13 @@ function update_text_in_modal() {
     $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
         if ($(this).prop("checked")) {
             $(this).closest("tr").addClass("selected");
-            $(this).closest(".dataTables_scrollBody").find("#overlay_" + $(this).attr('id')).addClass("selected");
+            $(this).closest(".dataTables_scroll").find("#overlay_" + $(this).attr('id')).addClass("selected");
             selector = $(this).closest(".dataTables_scrollBody").find("#overlay_" + $(this).attr('id')).find("checkbox");
             selector.prop("checked", !selector.prop("checked"));
             pdbs.push($(this).attr('id'));
         } else {
             $(this).closest("tr").removeClass("selected");
-            $(this).closest(".dataTables_scrollBody").find("#overlay_" + $(this).attr('id')).removeClass("selected");
+            $(this).closest(".dataTables_scroll").find("#overlay_" + $(this).attr('id')).removeClass("selected");
         }
     });
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
@@ -58,11 +58,12 @@ function thisPDB(elem) {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     var ReceptorName = $(elem).attr('long');
 
-    var referenceObject = $(elem).closest(".dataTables_scrollBody")
+    var referenceObject = $(elem).closest(".dataTables_scroll")
 
     // Fixed/frozen columns check
     if (elem.id.startsWith("overlaycheck_")){
-       elem = referenceObject.find("#" + elem.id.replace("overlaycheck_",""))[0]
+        elem = $(".dataTables_scrollBody:visible").find("#" + elem.id.replace("overlaycheck_", ""))[0]
+
        $(elem).prop("checked", !elem.checked)
     } else {
       other = referenceObject.find("#overlaycheck_" + elem.id)
@@ -71,8 +72,10 @@ function thisPDB(elem) {
 
     var pdbName = $(elem).attr('id');
     if (mode == 'Single structure') {
-        $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e) {referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false}) // deselect from overlay
-        $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop('checked', false); // deselect from original table
+        if ($('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).length > 0) {
+          $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e) { if (referenceObject.find("#overlaycheck_" + e.id).length > 0) referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false}) // deselect from overlay
+          $('input', oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop('checked', false); // deselect from original table
+        }
         var pdbs = [];
         if ($(elem).prop("checked")) {
             pdbs.push(pdbName);
@@ -218,6 +221,46 @@ function pastePDBs() {
     oTable[mode].draw();
 }
 
+function prepopulatePDBs() {
+    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+    var mode2 = $('ul#mode_nav').find('li.active').find('a').text().trim();
+    group = $('.tableview:visible').attr('group-number');
+    if (group) mode = mode + group;
+    if (mode2 == 'Two sets of structures') {
+        var pdbsInputSelector = '#two-crystal-groups-tab .crystal-group-' + group + '-pdbs';
+        var pdbs = JSON.parse($(pdbsInputSelector).val());
+        $('.pdb_selected', oTable[mode].cells().nodes()).each(function () {
+            pdb = $(this).attr('id')
+            check = $.inArray(pdb, pdbs);
+            if (check !== -1) {
+                $(this).prop("checked", true);
+                pdbs.splice(check, 1);
+            }
+        });
+
+        oTable[mode].order([
+            [0, 'desc']
+        ]);
+        oTable[mode].draw();
+    } else if (mode2 == 'Single set of structures') {
+        var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
+        var pdbs = JSON.parse($(pdbsInputSelector).val());
+        $('.pdb_selected', oTable[mode].cells().nodes()).each(function () {
+            pdb = $(this).attr('id')
+            check = $.inArray(pdb, pdbs);
+            if (check !== -1) {
+                $(this).prop("checked", true);
+                pdbs.splice(check, 1);
+            }
+        });
+
+        oTable[mode].order([
+            [0, 'desc']
+        ]);
+        oTable[mode].draw();
+    }
+}
+
 function exportPDBs() {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $('.tableview:visible').attr('group-number');
@@ -253,6 +296,8 @@ function showPDBtable(element) {
     if (group) mode = mode + group;
     // console.log(element,mode,group);
 
+    mode_without_space = mode.replace(/ /g, '_');
+
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
         console.log(mode);
 
@@ -262,9 +307,11 @@ function showPDBtable(element) {
         if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
           $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
-          $(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
-          $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
+          // a$(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
+          // $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
+        $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
+        // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
 
         oTable[mode] = $(element + ' .tableview table').DataTable({
             'scrollX': true,
@@ -277,12 +324,15 @@ function showPDBtable(element) {
             columnDefs: [{
                 targets: 'no-sort',
                 orderable: false
-            }],
+            },
+                {"targets": [ -1, -2 ],
+                "visible": false}],
             "aaSorting": [],
             "columns": [
                 {
                   "orderDataType": "dom-checkbox"
                 },
+                null,
                 null,
                 null,
                 null,
@@ -406,10 +456,26 @@ function showPDBtable(element) {
 
                 // },
                 {
-                    column_number: 13,
+                    column_number: 10,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Contact rep.",
+                    filter_reset_button_text: false,
+
+                },
+                {
+                    column_number: 11,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Gprot-bound likeness",
+                    filter_reset_button_text: false,
+
+                },
+                {
+                    column_number: 12,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Cyt. Opening.",
                     filter_reset_button_text: false,
 
                 },
@@ -421,17 +487,17 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 15,
+                    column_number: 13,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "G prot",
+                    filter_default_label: "SignalProtein",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 16,
+                    column_number: 14,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "B arr",
+                    filter_default_label: "Subfamily",
                     filter_reset_button_text: false,
                 },
                 {
@@ -469,25 +535,59 @@ function showPDBtable(element) {
                     filter_default_label: "Ligand type",
                     filter_reset_button_text: false,
                 },
+                {
+                    column_number: 22,
+                    filter_container_id: mode_without_space+'_external_filter_container_0',
+                    html_data_type: "text",
+                    select_type: 'select2',
+                    // filter_type: "multi_select",
+                    filter_default_label: "All species and structures",
+                    filter_reset_button_text: false,
+                    text_data_delimiter: ",",
+                    select_type_options: {
+                        width: '300px',
+                        minimumResultsForSearch: -1 // remove search box
+                    },
+                },
+                // {
+                //     column_number: 23,
+                //     filter_container_id: mode_without_space+'_external_filter_container_1',
+                //     html_data_type: "text",
+                //     select_type: 'select2',
+                //     // filter_type: "multi_select",
+                //     filter_default_label: "All Structures",
+                //     filter_reset_button_text: false,
+                //     select_type_options: {
+                //         width: '250px',
+                //         minimumResultsForSearch: -1 // remove search box
+                //     },
+                // },
             ], {
                 cumulative_filtering: false
             }
         );
-
         yadcf.exResetAllFilters(oTable[mode]);
+        yadcf.exFilterColumn(oTable[mode], [
+            [21, "*Only show mammalian structures and those from human or closest species"],
+          ]);
         console.log('done yadcf');
 
         oTable[mode].on('draw.dt', function(e, oSettings) {
             create_overlay(element + ' .structure_selection');
             update_text_in_modal();
-            $('.structure_overlay tr').css('cursor', 'pointer');
         });
 
 
-        $(element + ' .dataTables_scrollBody').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+        // $(element + ' .dataTables_scrollBody').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+        $(element + ' .dataTables_scroll').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
         $(element + " .structure_overlay").hide();
 
         $(element + ' .dataTables_scrollBody').before("<div class='top_scroll'><div>&nbsp;</div></div>");
+
+        var dataTables_scrollBody_height = $(element + ' .dataTables_scrollBody')[0].offsetHeight;
+        var bodyRect = $(element + ' .dataTables_scroll')[0].getBoundingClientRect(),
+        elemRect = $(element + ' .dataTables_scrollBody')[0].getBoundingClientRect(),
+        offset = elemRect.top - bodyRect.top;
 
         $('.top_scroll').css({
             'width': '100%',
@@ -501,19 +601,25 @@ function showPDBtable(element) {
         });
 
         $('.structure_overlay').css({
-            'top': '0px',
+            // 'top': '0px',
+            'top': offset+'px',
             'position': 'absolute',
             'background': '#f8f8f8',
             '-webkit-box-shadow': '5px 0 2px -2px #888',
             'box-shadow': '5px 0 2px -2px #888',
+            'height': (dataTables_scrollBody_height-17) + 'px',
+            'overflow-y': 'scroll',
+            'scrollbar-width': 'none',
         });
+
 
         $('.structure_overlay tbody tr').css({
             'background-color': '#f8f8f8',
         });
 
         create_overlay(element + ' .structure_selection');
-        track_scrolling(element);
+        // track_scrolling(element);
+        new_track_scrolling(element);
         console.log('done overlays');
 
 
@@ -549,7 +655,8 @@ function showPDBtable(element) {
         console.log('done click event');
 
     };
-    $(element+" .loading_overlay").hide();
+    $(element + " .loading_overlay").hide();
+    prepopulatePDBs();
 }
 
 function create_overlay(table_id) {
@@ -583,26 +690,131 @@ function create_overlay(table_id) {
             }
         }
     });*/
+    $('.structure_overlay tr').click(function(event) {
+        if (event.target.type !== 'checkbox') {
+            $(':checkbox', this).trigger('click');
+            if ($(':checkbox', this).length === 0) {
+                pdb_id = $(this).attr('id').split("_")[1];
+                console.log(pdb_id);
+                var checkbox = $(".dataTables_scrollBody").find('#' + pdb_id);
+                checkbox.trigger('click');
+            }
+        }
+    });
+    $('.structure_overlay tr').css('cursor', 'pointer');
 }
 
 function track_scrolling(element) {
     var left = 0;
     var old_left = 0;
     toggle_enabled = true;
-    $(element + ' .dataTables_scrollBody').scroll(function() {
-        // If user scrolls and it's >100px from left, then attach fixed columns overlay
-        left = $(element + ' .dataTables_scrollBody').scrollLeft();
-        if (left != old_left) $(".structure_overlay").hide();
-        old_left = left;
+    var d = new Date();
+    last_change = d.getTime();
+    $(element + ' .dataTables_scrollBody').scroll(function () {
 
-        if (left > 100 && toggle_enabled) {
-            $(".structure_overlay").css({
-                left: left + 'px'
-            });
-            if ($(".structure_overlay").is(":hidden")){
-              // link check boxes
-              $(".structure_overlay").show();
+        var d = new Date();
+        now = d.getTime();
+
+        if (now>(last_change+1000)) {
+
+            // If user scrolls and it's >100px from left, then attach fixed columns overlay
+            left = $(element + ' .dataTables_scrollBody').scrollLeft();
+            // if (left != old_left) $(".structure_overlay").hide();
+            // old_left = left;
+
+
+            console.log(now, last_change);
+
+            if (left > 100 && toggle_enabled && left != old_left) {
+                console.log('SCROLL ', left, now);
+                $(".structure_overlay").css({
+                    left: left + 'px'
+                });
+                if ($(".structure_overlay").is(":hidden")){
+                    // link check boxes
+                    $(".structure_overlay").show();
+                }
+            } else if (left < 100) {
+                if ($(".structure_overlay").is(":visible")){
+                // link check boxes
+                $(".structure_overlay").hide();
+                }
             }
+            old_left = left;
+            last_change = now;
+        }
+    });
+}
+
+function new_track_scrolling(element) {
+    var left = 0;
+    var old_left = 0;
+    toggle_enabled = true;
+    old_height = 0;
+    old_top = 0;
+    var d = new Date();
+    last_change = d.getTime();
+    scroll_visible = false;
+
+    // Init the size to begin with.. It is updated once in a while incase of window resizing.
+    var dataTables_scrollBody_height = $(element + ' .dataTables_scrollBody')[0].offsetHeight;
+    var bodyRect = $(element + ' .dataTables_scroll')[0].getBoundingClientRect(),
+        elemRect = $(element + ' .dataTables_scrollBody')[0].getBoundingClientRect(),
+        offset = elemRect.top - bodyRect.top;
+    $(".structure_overlay").css({
+        height: (dataTables_scrollBody_height - 17) + 'px',
+        top: offset + 'px'
+    });
+
+    $(element + ' .dataTables_scrollBody').scroll(function () {
+        var d = new Date();
+        now = d.getTime();
+
+        // This isnt dom heavy..
+        scrollTop = $(element + ' .dataTables_scrollBody').scrollTop();
+        if (scrollTop != old_top) {
+            $(".structure_overlay").scrollTop(scrollTop);
+            old_top = scrollTop
+        }
+
+        left = $(element + ' .dataTables_scrollBody').scrollLeft();
+        if ( left<100 && scroll_visible){
+            $(".structure_overlay").hide();
+            scroll_visible = false;
+        } else if ( left>100 && !scroll_visible){
+            $(".structure_overlay").show();
+            scroll_visible = true;
+        }
+
+        if (now > (last_change + 1000)) {
+
+            // If user scrolls and it's >100px from left, then attach fixed columns overlay
+            if (left > 100 && toggle_enabled) {
+
+                var dataTables_scrollBody_height = $(element + ' .dataTables_scrollBody')[0].offsetHeight;
+                if (dataTables_scrollBody_height != old_height) {
+                    var bodyRect = $(element + ' .dataTables_scroll')[0].getBoundingClientRect(),
+                        elemRect = $(element + ' .dataTables_scrollBody')[0].getBoundingClientRect(),
+                        offset = elemRect.top - bodyRect.top;
+                    $(".structure_overlay").css({
+                        height: (dataTables_scrollBody_height - 17) + 'px',
+                        top: offset + 'px'
+                    });
+                    old_height = dataTables_scrollBody_height;
+                }
+                if (!scroll_visible) {
+                    $(".structure_overlay").show();
+                    scroll_visible = true;
+                }
+            }
+            last_change = now;
+        }
+    });
+    $('.structure_overlay').scroll(function () {
+        scrollTop = $('.structure_overlay').scrollTop();
+        if (scrollTop != old_top) {
+            $(element + ' .dataTables_scrollBody').scrollTop(scrollTop);
+            old_top = scrollTop
         }
     });
 }

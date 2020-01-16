@@ -112,7 +112,7 @@
           // If SVG, end here.
           if (filetype=='svg') {
             downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), 'distances_'+svg_class+'.svg');
-            return 
+            return
           }
 
           var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( escapedSVG ) ) ); // Convert SVG string to data URL
@@ -126,11 +126,33 @@
             // // Requires canvas-toBlob.js
             canvas.toBlob( function(blob) {
               saveAs( blob, 'distances_'+svg_class+'.png' ); // FileSaver.js function
-            }); 
+            });
           };
           image.src = imgsrc;
 
         }
+
+      var filename_prefix = {"single-crystal-tab" : "single", "single-crystal-group-tab" : "group", "two-crystal-groups-tab" : "comparison"}
+      function downloadCurrentTableCSV(){
+          // grab all data from current table
+          var table = $("#" + currentTab + " .contact-browser.active .dataTable").DataTable();
+
+          // TODO change this function to download nice Excel/CSV including headers
+          // There is an issue in our implementation with the Datatables buttons option
+
+          // Convert current dataTable to CSV
+          csv = Papa.unparse(table.rows().data().toArray());
+
+          // remove HTML tags
+          csv = csv.replace(/(<([^>]+)>)/ig, "")
+
+          // Download file
+          downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), "Structure_analyzer-" + filename_prefix[currentTab]+".csv");
+      }
+
+      function downloadCurrentTableExcel(){
+          tableToExcel(currentTab + " .contact-browser.active .dataTable", 'GPCRdb structure analyzer', "Structure_analyzer-" + filename_prefix[currentTab]+".xls")
+      }
 
 
       $(document).ready(function() {
@@ -139,3 +161,40 @@
             downloadSVG(DownloadElement,'png');
         });
       });
+
+
+      var tableToExcel = (function () {
+          var uri = 'data:application/vnd.ms-excel;base64,',
+              template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+              base64 = function (s) {
+                  return window.btoa(unescape(encodeURIComponent(s)))
+              }, format = function (s, c) {
+                  return s.replace(/{(\w+)}/g, function (m, p) {
+                      return c[p];
+                  })
+              }
+          return function (table_id, name, filename) {
+                  var table = $("#"+table_id).eq(1).clone();
+                  $("#excel_table").html(table);
+                  // Clean up table to remove yadcf stuff
+                  $("#excel_table thead tr").css('height','');
+                  $("#excel_table thead th").css('height','');
+                  $("#excel_table thead div").css('height','');
+                  $("#excel_table thead .yadcf-filter-wrapper").remove();
+                  $("#excel_table thead button").remove();
+                  var tr = $("#excel_table thead tr:eq(1)");
+                  // reattach th titles
+                  tr.find('th').each (function( column, th) {
+                    if ($(th).attr('title')) $(th).html($(th).attr('title'));
+                  });
+
+              var ctx = {
+                  worksheet: name || 'Worksheet',
+                  table: $("#excel_table").html()
+              }
+              $("#excel_table").html("");
+              document.getElementById("dlink").href = uri + base64(format(template, ctx));
+              document.getElementById("dlink").download = filename;
+              document.getElementById("dlink").click();
+          }
+      })()

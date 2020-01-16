@@ -8,7 +8,7 @@ var hidePDBs = false;
 var labelReorder = false;
 var treeAnnotations = [];
 var couplingAnnotations = [];
-var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "Cytosolic opening"]
+var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "G-prot bound likeness"]
 var dataClasses, colorClasses;
 function renderTree(data) {
     dataClasses = [["active", "inactive", "intermediate", "unknown"],0,0];
@@ -31,6 +31,7 @@ function renderTree(data) {
     dataClasses[9] = dataClasses[8]
     dataClasses[10] = dataClasses[8]
     dataClasses[11] = ['0%', '50%', '100%'] // percentage
+    dataClasses[12] = ['0%', '50%', '100%'] // percentage
 
     // Receptor family coloring
     if (dataClasses[3].length > 20 && dataClasses[3].length < 32)
@@ -63,6 +64,7 @@ function renderTree(data) {
     colorClasses[9] = colorClasses[8]
     colorClasses[10] = colorClasses[8]
     colorClasses[11] = ["#F00","#F80","#0B0"]
+    colorClasses[12] = colorClasses[11]
 
     // G-protein coupling
     couplingAnnotations = data["Gprot_coupling"];
@@ -87,10 +89,12 @@ function renderTree(data) {
     for (name in treeAnnotations){
       var slug = treeAnnotations[name][8]
       var opening = treeAnnotations[name][9]
+      var gprot_likeness = treeAnnotations[name][10]
       treeAnnotations[name][8] = []
       treeAnnotations[name][9] = []
       treeAnnotations[name][10] = []
       treeAnnotations[name][11] = opening
+      treeAnnotations[name][12] = gprot_likeness
       var gproteins = dataClasses[8]
       for (g = 0; g < gproteins.length; g++) {
         if (slug in couplingAnnotations){
@@ -617,7 +621,10 @@ function menuItem(dataName){
       case "Secondary G proteins":
         return 10
       case "Receptor cytosolic opening (%)":
+      case "TM6 opening (%)":
         return 11
+      case "G-protein bound likeness (%)":
+        return 12
       case "Ligand function":
         return 7
       default:
@@ -798,10 +805,10 @@ function nodeStyler(element, node){
               labelName = labelName.replace("-adrenoceptor", '')
               labelName = labelName.replace(" receptor-", '-')
 
-              labelName = labelName.replace("<sub>", '<tspan baseline-shift = "sub">')
-              labelName = labelName.replace("</sub>", '</tspan>')
-              labelName = labelName.replace("<i>", '<tspan font-style = "italic">')
-              labelName = labelName.replace("</i>", '</tspan>')
+              labelName = labelName.replace("<sub>", '</tspan><tspan baseline-shift = "sub">')
+              labelName = labelName.replace("</sub>", '</tspan><tspan>')
+              labelName = labelName.replace("<i>", '</tspan><tspan font-style = "italic">')
+              labelName = labelName.replace("</i>", '</tspan><tspan>')
             } else
               labelName = treeAnnotations[node.name][1].split("_")[0].toUpperCase()
 
@@ -821,17 +828,17 @@ function nodeStyler(element, node){
             else if (dx_label != null && dx_label > 0)
               label.setAttribute("dx", font_size/2 + "px")*/
 
-
             if (hidePDBs){
-              label.innerHTML = labelName
+              label.innerHTML = "<tspan>" + labelName + "</tspan>"
             } else if (displayName == 2) {
-              label.innerHTML = node.name
+              label.innerHTML = "<tspan>" + node.name + "</tspan>"
             } else {
-              label.innerHTML = labelName + " (" + node.name + ")"
+              label.innerHTML = "<tspan>" + labelName + " (" + node.name + ")" + "</tspan>"
               // Extra: rotate labels when on the left half
               if (!labelReorder && label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
-                label.innerHTML = "(" + node.name + ") " + labelName
+                label.innerHTML = "<tspan>" + "(" + node.name + ") " + labelName + "</tspan>"
             }
+
 
 
 
@@ -851,7 +858,7 @@ function nodeStyler(element, node){
 
             // Add outer markers
             element.selectAll("rect").remove() // remove old data
-            if (displayData == 11) { // Receptor cytosolic opening using growing bars
+            if (displayData >= 11) { // Receptor cytosolic opening using growing bars
               if (!Array.isArray(treeAnnotations[node.name][displayData]))
                 treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
@@ -1057,6 +1064,10 @@ function downloadSVGWait(svgSelector, name) {
   resizeTree("downloadSVG('"+svgSelector+"', '"+name+"')")
 }
 
+function downloadPDFWait(svgSelector, name) {
+  resizeTree("downloadPDF('"+svgSelector+"', '"+name+"')")
+}
+
 function downloadSVG(svgSelector, name) {
   if ($("#" + svgSelector).length > 0) {
     var ContainerElements = ["svg","g"];
@@ -1093,6 +1104,50 @@ function downloadSVG(svgSelector, name) {
     var url = URL.createObjectURL(svg);
 
     downloadURI(url, name);
+  }
+}
+
+function downloadPDF(svgSelector, name) {
+  if ($("#" + svgSelector).length > 0) {
+    var ContainerElements = ["svg","g"];
+    var RelevantStyles = {"rect":["fill","stroke","stroke-width"],"path":["fill","stroke","stroke-width"],"circle":["fill","stroke","stroke-width"],"line":["stroke","stroke-width"],"text":["fill","font-size","text-anchor"],"polygon":["stroke","fill"]};
+    function read_Element(ParentNode, OrigData){
+        var Children = ParentNode.childNodes;
+        var OrigChildDat = OrigData.childNodes;
+
+        for (var cd = 0; cd < Children.length; cd++){
+            var Child = Children[cd];
+
+            var TagName = Child.tagName;
+            if (ContainerElements.indexOf(TagName) != -1){
+                read_Element(Child, OrigChildDat[cd])
+            } else if (TagName in RelevantStyles){
+                var StyleDef = window.getComputedStyle(OrigChildDat[cd]);
+
+                var StyleString = "";
+                for (var st = 0; st < RelevantStyles[TagName].length; st++){
+                    StyleString += RelevantStyles[TagName][st] + ":" + StyleDef.getPropertyValue(RelevantStyles[TagName][st]) + "; ";
+                }
+
+                Child.setAttribute("style",StyleString);
+            }
+        }
+    }
+
+    var SVGElem = document.getElementById(svgSelector);
+    var oDOM = SVGElem.cloneNode(true);
+    read_Element(oDOM, SVGElem)
+
+    var escapedSVG = new XMLSerializer().serializeToString(oDOM);
+    $.post('/common/convertsvg', {dataUrl: escapedSVG, filename: name},  function (data) {
+            var blob = new Blob([data], { type: "application/pdf" });
+            var url = URL.createObjectURL(blob);
+            downloadURI(url, name);
+        });
+
+//    var svg = new Blob([escapedSVG], { type: "image/svg+xml;charset=utf-8" });
+//    var url = URL.createObjectURL(svg);
+//    downloadURI(url, name);
   }
 }
 
@@ -1297,7 +1352,7 @@ $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
 
 $(document).ready(function() {
     // Get PDBs for table build
-    $.get('pdbtabledata', function ( data ) {
+    $.get('/contactnetwork/pdbtabledata', function ( data ) {
       $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
       pdbtabledata = data;
     });
