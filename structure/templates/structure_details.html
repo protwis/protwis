@@ -118,15 +118,46 @@ canvas {
     </div>
 </div>
 
+{% if refined %}
 <div class="row">
-    {% if refined %}
-        <div class="col-md-3 text-right text-info">
-            <h4>REFINED STRUCTURE MODEL</h4>
-        </div>
-        <div class="col-md-9">
-            <p style="display: inline;"><a href="/structure/homology_models/{{ refined.pdb_code.index }}">{{ refined.pdb_code.index }}</a></p>
-        </div>
-    {% endif %}
+    <div class="col-md-3 text-right text-info">
+        <h4>REFINED STRUCTURE MODEL</h4>
+    </div>
+    <div class="col-md-9">
+        <p style="display: inline;"><a href="/structure/homology_models/{{ refined.pdb_code.index }}">{{ refined.pdb_code.index }}</a></p>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>LIGANDS</h4>
+    </div>
+    <div class="col-md-9">
+        {% for l in ligands %}
+            <p style="display: inline;">{{ l.ligand.name|safe }} - {{l.ligand_role.name|safe}}
+                {% for link in l.ligand.properities.web_links.all %}
+                    <a href="{{link}}" target="_blank">{{link.web_resource.slug}}</a>
+                {% endfor %}
+                {% if forloop.last %}{% else %}, {% endif %}
+            </p>
+        {% empty %}
+        No ligands
+        {% endfor %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>ENDOGENOUS LIGANDS</h4>
+    </div>
+    <div class="col-md-9">
+        {% for e in crystal.protein_conformation.protein.parent.endogenous_ligands.all %}
+        <p style="display: inline;">{{ e.name|safe }}{% if forloop.last %}{% else %}, {% endif %}</p>
+        {% empty %}
+        No endogenous ligands available
+        {% endfor %}
+    </div>
 </div>
 
 {% endblock %}

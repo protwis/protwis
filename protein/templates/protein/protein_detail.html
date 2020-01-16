@@ -109,6 +109,19 @@
 
 <div class="row">
     <div class="col-md-2 text-right text-info">
+        <h4>ENDOGENOUS LIGANDS</h4>
+    </div>
+    <div class="col-md-10">
+        {% for e in p.endogenous_ligands.all %}
+        <p style="display: inline;">{{ e.name|safe }}{% if forloop.last %}{% else %}, {% endif %}</p>
+        {% empty %}
+        No endogenous ligands available
+        {% endfor %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
         <h4>STRUCTURES</h4>
     </div>
     <div class="col-md-10">

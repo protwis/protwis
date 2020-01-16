@@ -1143,31 +1143,31 @@ class Command(BaseBuild):
                     # StructureLigandInteraction.objects.filter(structure=s).delete()
 
                     # endogenous ligand(s)
-                    default_ligand_type = 'Small molecule'
-                    if representative and 'endogenous_ligand' in sd and sd['endogenous_ligand']:
-                        if isinstance(sd['endogenous_ligand'], list):
-                            endogenous_ligands = sd['endogenous_ligand']
-                        else:
-                            endogenous_ligands = [sd['endogenous_ligand']]
-                        for endogenous_ligand in endogenous_ligands:
-                            if endogenous_ligand['type']:
-                                lt, created = LigandType.objects.get_or_create(slug=slugify(endogenous_ligand['type']),
-                                    defaults={'name': endogenous_ligand['type']})
-                            else:
-                                lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
-                                    defaults={'name': default_ligand_type})
-                            ligand = Ligand()
+                    # default_ligand_type = 'Small molecule'
+                    # if representative and 'endogenous_ligand' in sd and sd['endogenous_ligand']:
+                    #     if isinstance(sd['endogenous_ligand'], list):
+                    #         endogenous_ligands = sd['endogenous_ligand']
+                    #     else:
+                    #         endogenous_ligands = [sd['endogenous_ligand']]
+                    #     for endogenous_ligand in endogenous_ligands:
+                    #         if endogenous_ligand['type']:
+                    #             lt, created = LigandType.objects.get_or_create(slug=slugify(endogenous_ligand['type']),
+                    #                 defaults={'name': endogenous_ligand['type']})
+                    #         else:
+                    #             lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                    #                 defaults={'name': default_ligand_type})
+                    #         ligand = Ligand()
 
-                            if 'iupharId' not in endogenous_ligand:
-                                endogenous_ligand['iupharId'] = 0
+                    #         if 'iupharId' not in endogenous_ligand:
+                    #             endogenous_ligand['iupharId'] = 0
 
-                            ligand = ligand.load_by_gtop_id(endogenous_ligand['name'], endogenous_ligand['iupharId'],
-                                lt)
-                            try:
-                                s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
-                            except IntegrityError:
-                                self.logger.info('Endogenous ligand for protein {}, already added. Skipping.'.format(
-                                    s.protein_conformation.protein.parent))
+                    #         ligand = ligand.load_by_gtop_id(endogenous_ligand['name'], endogenous_ligand['iupharId'],
+                    #             lt)
+                    #         try:
+                    #             s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
+                    #         except IntegrityError:
+                    #             self.logger.info('Endogenous ligand for protein {}, already added. Skipping.'.format(
+                    #                 s.protein_conformation.protein.parent))
 
                     # ligands
                     peptide_chain = ""
