@@ -229,12 +229,13 @@ def PdbTableData(request):
             <th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th> \
             <th colspan=5>Receptor</th> \
             <th colspan=3>Structure</th> \
-            <th colspan=3>Receptor state</th> \
+            <th colspan=4>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
             <th colspan=3>Ligand</th><th></th> \
         </tr> \
         <tr><th></th> \
+            <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
@@ -327,6 +328,7 @@ def PdbTableData(request):
         r['resolution'] = "{0:.2g}".format(s.resolution)
         r['7tm_distance'] = s.distance
         r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
+        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness))+"%" if s.gprot_bound_likeness != None else '-'
 
         # DEBUGGING - overwrite with distance to 6x38
 #        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
@@ -400,6 +402,7 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
+                        <td>{}</td> \
                         </tr> \n".format(
                                         r['contact_representative'],
                                         r['distance_representative'],
@@ -416,6 +419,7 @@ def PdbTableData(request):
                                         r['resolution'],
                                         r['state'],
                                         r['contact_representative_score'],
+                                        r['gprot_bound_likeness'],
                                         r['tm6_angle'],
                                         r['signal_protein'],
                                         r['signal_protein_subtype'],
@@ -2297,7 +2301,7 @@ def ClusteringData(request):
     # NOTE: we can probably remove the parent step and go directly via family in the query
     annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
                     .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__name','protein_conformation__protein__parent__family__parent__name', \
-                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name', 'protein_conformation__protein__family__slug', 'tm6_angle') \
+                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name', 'protein_conformation__protein__family__slug', 'tm6_angle', 'gprot_bound_likeness')\
                     .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True))) \
 
     protein_slugs = set()
@@ -2309,14 +2313,17 @@ def ClusteringData(request):
         protein_slugs.add(slug)
 
         # UGLY needs CLEANUP in data - replace agonist-partial with partial-agonist ()
-        pdb_annotations[an[0]][9] = ["partial-agonist" if x=="agonist-partial" else x for x in pdb_annotations[an[0]][9]]
+        pdb_annotations[an[0]][10] = ["partial-agonist" if x=="agonist-partial" else x for x in pdb_annotations[an[0]][10]]
 
         # Cleanup the aggregates as None values are introduced
-        pdb_annotations[an[0]][7] = list(filter(None.__ne__, pdb_annotations[an[0]][9]))
+        pdb_annotations[an[0]][7] = list(filter(None.__ne__, pdb_annotations[an[0]][10]))
 
+        # SUPERUGLY - replace
         holder = pdb_annotations[an[0]][8]
+        holder2 = pdb_annotations[an[0]][9]
         pdb_annotations[an[0]][8] = slug
         pdb_annotations[an[0]][9] = holder
+        pdb_annotations[an[0]][10] = holder2
 
     data['annotations'] = pdb_annotations
 
