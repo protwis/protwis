@@ -352,6 +352,7 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
+                null,
                 null
             ]
         });
@@ -466,6 +467,14 @@ function showPDBtable(element) {
                     column_number: 11,
                     filter_type: "multi_select",
                     select_type: 'select2',
+                    filter_default_label: "Gprot-bound likeness",
+                    filter_reset_button_text: false,
+
+                },
+                {
+                    column_number: 12,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
                     filter_default_label: "Cyt. Opening.",
                     filter_reset_button_text: false,
 
@@ -478,56 +487,56 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 12,
+                    column_number: 13,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "SignalProtein",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 13,
+                    column_number: 14,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Subfamily",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 16,
+                    column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 17,
+                    column_number: 18,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 18,
+                    column_number: 19,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 19,
+                    column_number: 20,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand function",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 20,
+                    column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand type",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 21,
+                    column_number: 22,
                     filter_container_id: mode_without_space+'_external_filter_container_0',
                     html_data_type: "text",
                     select_type: 'select2',

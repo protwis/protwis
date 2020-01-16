@@ -8,7 +8,7 @@ var hidePDBs = false;
 var labelReorder = false;
 var treeAnnotations = [];
 var couplingAnnotations = [];
-var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "Cytosolic opening"]
+var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "G-prot bound likeness"]
 var dataClasses, colorClasses;
 function renderTree(data) {
     dataClasses = [["active", "inactive", "intermediate", "unknown"],0,0];
@@ -31,6 +31,7 @@ function renderTree(data) {
     dataClasses[9] = dataClasses[8]
     dataClasses[10] = dataClasses[8]
     dataClasses[11] = ['0%', '50%', '100%'] // percentage
+    dataClasses[12] = ['0%', '50%', '100%'] // percentage
 
     // Receptor family coloring
     if (dataClasses[3].length > 20 && dataClasses[3].length < 32)
@@ -63,6 +64,7 @@ function renderTree(data) {
     colorClasses[9] = colorClasses[8]
     colorClasses[10] = colorClasses[8]
     colorClasses[11] = ["#F00","#F80","#0B0"]
+    colorClasses[12] = colorClasses[11]
 
     // G-protein coupling
     couplingAnnotations = data["Gprot_coupling"];
@@ -87,10 +89,12 @@ function renderTree(data) {
     for (name in treeAnnotations){
       var slug = treeAnnotations[name][8]
       var opening = treeAnnotations[name][9]
+      var gprot_likeness = treeAnnotations[name][10]
       treeAnnotations[name][8] = []
       treeAnnotations[name][9] = []
       treeAnnotations[name][10] = []
       treeAnnotations[name][11] = opening
+      treeAnnotations[name][12] = gprot_likeness
       var gproteins = dataClasses[8]
       for (g = 0; g < gproteins.length; g++) {
         if (slug in couplingAnnotations){
@@ -617,7 +621,10 @@ function menuItem(dataName){
       case "Secondary G proteins":
         return 10
       case "Receptor cytosolic opening (%)":
+      case "TM6 opening (%)":
         return 11
+      case "G-protein bound likeness (%)":
+        return 12
       case "Ligand function":
         return 7
       default:
@@ -851,7 +858,7 @@ function nodeStyler(element, node){
 
             // Add outer markers
             element.selectAll("rect").remove() // remove old data
-            if (displayData == 11) { // Receptor cytosolic opening using growing bars
+            if (displayData >= 11) { // Receptor cytosolic opening using growing bars
               if (!Array.isArray(treeAnnotations[node.name][displayData]))
                 treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
