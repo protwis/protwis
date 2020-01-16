@@ -1,8 +1,12 @@
 var filtered_gn_pairs = [];
-
+var filtered_cluster_groups = [];
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
+    pos_contacts_count = {};
+    filtered_cluster_groups = [];
+    const selector = "#" + $('.main_option:visible').attr('id');
+    const analys_mode = selector.replace('-tab', '');
 
     if ($.fn.DataTable.isDataTable(".browser-table-1:visible")) {
         var table = $(".browser-table-1:visible").DataTable();
@@ -10,15 +14,88 @@ function filter_browser() {
             filter: 'applied'
         }).data().each(function(i) {
             filtered_gn_pairs.push(i['DT_RowId'])
+            gns = separatePair(i['DT_RowId']);
+
+            // see if there is a key for gns1
+            if (!(gns[0] in pos_contacts_count)) pos_contacts_count[gns[0]] = 0;
+            pos_contacts_count[gns[0]] += 1;
+            // see if there is a key for gns2
+            if (!(gns[1] in pos_contacts_count)) pos_contacts_count[gns[1]] = 0;
+            pos_contacts_count[gns[1]] += 1;
+
+            // Track network groups
+
+            test1 = filtered_cluster_groups.filter(l => l.includes(gns[0]));
+            test2 = filtered_cluster_groups.filter(l => l.includes(gns[1]));
+            if (!test1.length && !test2.length) {
+                filtered_cluster_groups.push([gns[0], gns[1]]);
+            } else if (test1.length && !test2.length) {
+                i1 = filtered_cluster_groups.indexOf(test1[0])
+                filtered_cluster_groups[i1].push(gns[1]);
+            } else if (!test1.length && test2.length) {
+                i2 = filtered_cluster_groups.indexOf(test2[0])
+                filtered_cluster_groups[i2].push(gns[0]);
+            } else if (test1.length && test2.length) {
+                i1 = filtered_cluster_groups.indexOf(test1[0])
+                i2 = filtered_cluster_groups.indexOf(test2[0])
+                //i1 = filtered_cluster_groups.indexOfForArrays(test1[0]);
+                if (i1!=i2) {
+                    filtered_cluster_groups[i1] = test1[0].concat(test2[0])
+                    filtered_cluster_groups.splice(i2, 1);
+                }
+            }
+
         })
+        console.time('Update network');
+        if (old_filtered_gn_pairs.sort().join(',') !== filtered_gn_pairs.sort().join(',')) {
+            // only update this if there are new filtered things..
+            rowIndexes = table.rows({ filter: 'applied' }).indexes();
+            table.rows({
+                filter: 'applied'
+            }).data().each(function (i, index) {
+                rowindex = rowIndexes[index];
+                gns = separatePair(i['DT_RowId']);
+
+                network_group = filtered_cluster_groups.filter(l => l.includes(gns[0]));
+                network_group_id = filtered_cluster_groups.indexOf(network_group[0])
+
+                if (analys_mode == "#two-crystal-groups") {
+                    column_ids = [5, 6, 7];
+                } else if (analys_mode == "#single-crystal-group") {
+                    column_ids = [3, 4, 5];
+
+                } else {
+                    column_ids = [3, 4, 5];
+
+                }
+                table.cell({ row: rowindex, column: column_ids[0] }).data(pos_contacts_count[gns[0]]);
+                table.cell({ row: rowindex, column: column_ids[1] }).data(pos_contacts_count[gns[1]]);
+                table.cell({ row: rowindex, column: column_ids[2] }).data("#"+(network_group_id+1));
+
+            })
+        }
+
+        console.timeEnd('Update network');
+    } else {
+        console.log('filter_browser requested, but tab-1 not visible.');
+        console.log('reset filtered.')
     }
     console.log('filtered positions! ', filtered_gn_pairs.length);
+    console.log('contact pos counts', pos_contacts_count)
+    
+
+        
+
 
     if (old_filtered_gn_pairs.sort().join(',') === filtered_gn_pairs.sort().join(',')) {
         console.log('no change in filtering');
     } else {
         updateGeneralControls();
     }
+
+    console.log("filtered_cluster_groups", filtered_cluster_groups);
+    
+
 }
 
 function make_list_narrow_cols(list, start_column, end_column) {
@@ -129,8 +206,8 @@ function renderDataTablesYadcf(element) {
 
             if (analys_mode == "#two-crystal-groups") {
 
-                repeated_from_to_1 = make_range_number_cols(10, 13);
-                repeated_from_to_2 = make_range_number_cols(25, 9);
+                repeated_from_to_1 = make_range_number_cols(13, 13);
+                repeated_from_to_2 = make_range_number_cols(28, 9);
 
                 yadcf.init(btable,
                     [{
@@ -172,7 +249,7 @@ function renderDataTablesYadcf(element) {
                         //     filter_reset_button_text: false,
                         // }
                     ].concat(repeated_from_to_1).concat([{
-                        column_number: 23,
+                        column_number: 26,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -181,7 +258,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                     }, {
-                        column_number: 24,
+                        column_number: 27,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
@@ -195,8 +272,8 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
-                repeated_from_to_1 = make_range_number_cols(8, 13);
-                repeated_from_to_2 = make_range_number_cols(23, 7);
+                repeated_from_to_1 = make_range_number_cols(11, 13);
+                repeated_from_to_2 = make_range_number_cols(26, 7);
                 yadcf.init(btable,
                     [{
                             column_number: 0,
@@ -227,7 +304,7 @@ function renderDataTablesYadcf(element) {
                         //     filter_reset_button_text: false,
                         // },
                         {
-                            column_number: 21,
+                            column_number: 24,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -236,7 +313,7 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "AA",
                             filter_reset_button_text: false,
                         }, {
-                            column_number: 22,
+                            column_number: 25,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -251,8 +328,8 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal") {
-                repeated_from_to_1 = make_range_number_cols(4, 11);
-                repeated_from_to_2 = make_range_number_cols(17, 1);
+                repeated_from_to_1 = make_range_number_cols(7, 11);
+                repeated_from_to_2 = make_range_number_cols(20, 1);
 
                 yadcf.init(btable,
                     [{
@@ -287,7 +364,7 @@ function renderDataTablesYadcf(element) {
                             filter_reset_button_text: false,
                         },
                         {
-                            column_number: 3,
+                            column_number: 6,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -298,7 +375,7 @@ function renderDataTablesYadcf(element) {
                             filter_reset_button_text: false,
                         },
                         {
-                            column_number: 15,
+                            column_number: 18,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -307,7 +384,7 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "AA",
                             filter_reset_button_text: false,
                         }, {
-                            column_number: 16,
+                            column_number: 19,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
@@ -1084,6 +1161,8 @@ function renderBrowser(data) {
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="3" class="pairselector" datatype="frequency"></th> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="skip"></th> \
                       <th colspan="5" class="skip"></th> \
                       <th colspan="1" class="selector" datatype="distance_diff"></th> \
                       <th colspan="2" class="selector" datatype="core_distance_diff"></th> \
@@ -1102,6 +1181,8 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2">Contact Frequency (%)</th> \
+                          <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
+                          <th colspan="1" rowspan="2">Distinct network group</th> \
                           <th colspan="5" rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
@@ -1131,6 +1212,9 @@ function renderBrowser(data) {
                           <th class="narrow_col">Set 1<br></th> \
                           <th class="narrow_col">Set 2<br></th> \
                           <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Group#</th> \
                           <th style="writing-mode: sideways-lr;">Ion</th> \
                           <th style="writing-mode: sideways-lr;">Pol</th> \
                           <th style="writing-mode: sideways-lr;">Aro</th> \
@@ -1334,6 +1418,9 @@ function renderBrowser(data) {
                       <td class="narrow_col">${sfreq1}</td>
                       <td class="narrow_col">${sfreq2}</td>
                       <td class="narrow_col">${diff_sfreq}</td>
+                      <td class="narrow_col pos1 count"></td>
+                      <td class="narrow_col pos2 count"></td>
+                      <td class="narrow_col group"></td>
                       <td class="dt-center angles_tooltip" data-set1="${types_count['ionic'][0]}" data-set2="${types_count['ionic'][1]}">${types_count['ionic'][2]}</td>
                       <td class="dt-center angles_tooltip" data-set1="${types_count['polar'][0]}" data-set2="${types_count['polar'][1]}">${types_count['polar'][2]}</td>
                       <td class="dt-center angles_tooltip" data-set1="${types_count['aromatic'][0]}" data-set2="${types_count['aromatic'][1]}">${types_count['aromatic'][2]}</td>
@@ -1370,6 +1457,8 @@ function renderBrowser(data) {
         thead = '<tr> \
                       <th colspan="2" class="skip"></th> \
                       <th colspan="1" class="pairselector" datatype="frequency"></th> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="skip"></th> \
                       <th colspan="5" class="skip"></th> \
                       <th colspan="1" class="pairselector" datatype="distance"></th> \
                       <th colspan="2" class="selector" datatype="core_distance"></th> \
@@ -1388,6 +1477,8 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Contact Frequency (%)</th> \
+                          <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
+                          <th colspan="1" rowspan="2">Distinct network group</th> \
                           <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
@@ -1415,6 +1506,9 @@ function renderBrowser(data) {
                           <th class="dt-center"></th> \
                           <th class="dt-center">Pos1-Pos2</th> \
                           <th class="narrow_col">Set<br></th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Group#</th> \
                           <th style="writing-mode: sideways-lr;">Ion</th> \
                           <th style="writing-mode: sideways-lr;">Pol</th> \
                           <th style="writing-mode: sideways-lr;">Aro</th> \
@@ -1567,6 +1661,9 @@ function renderBrowser(data) {
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center">${gn1}-${gn2}</td>
                       <td class="narrow_col" title="${v['pdbs']}">${sfreq1}</td>
+                      <td class="narrow_col pos1 count"></td>
+                      <td class="narrow_col pos2 count"></td>
+                      <td class="narrow_col group"></td>
                       <td class="dt-center">${types_count['ionic']}</td>
                       <td class="dt-center">${types_count['polar']}</td>
                       <td class="dt-center">${types_count['aromatic']}</td>
@@ -1599,7 +1696,10 @@ function renderBrowser(data) {
         });
     } else {
         thead = '<tr> \
-                      <th colspan="4" class="skip"></th> \
+                      <th colspan="3" class="skip"></th> \
+                      <th colspan="2" class="skip"></th> \
+                      <th colspan="1" class="skip"></th> \
+                      <th colspan="1" class="skip"></th> \
                       <th colspan="1" class="pairselector" datatype="distance"></th> \
                       <th colspan="2" class="selector" datatype="core_distance"></th> \
                       <th colspan="2" class="selector" datatype="rotation"></th> \
@@ -1613,6 +1713,8 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
+                          <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
+                          <th colspan="1" rowspan="2">Distinct network group</th> \
                           <th rowspan="2">Interaction</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
@@ -1634,6 +1736,9 @@ function renderBrowser(data) {
                           <th class="dt-center"></th> \
                           <th class="dt-center">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
+                          <th class="narrow_col">Pos1</th> \
+                          <th class="narrow_col">Pos2</th> \
+                          <th class="narrow_col">Group#</th> \
                           <th></th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
@@ -1685,6 +1790,9 @@ function renderBrowser(data) {
                       <td class="dt-center">${seg1}-${seg2}</td>
                       <td class="dt-center"><span>${pos1}</span>-<span>${pos2}</span></td>
                       <td class="dt-center">${gn1}-${gn2}</td>
+                      <td class="narrow_col pos1 count"></td>
+                      <td class="narrow_col pos2 count"></td>
+                      <td class="narrow_col group"></td>
                       <td>${types}</td>
                       <td class="narrow_col">${distance}</td>
                       <td class="narrow_col angles_modal">${angles_1[0]}</td>
@@ -3607,25 +3715,37 @@ function gray_scale_table(table) {
     cols.forEach(function(col, index) {
         var max = Math.max.apply(null, col);
         var min = Math.min.apply(null, col);
-        maxmin.push([max, min]);
+        var abs_max = Math.max.apply(null, [max, min].map(Math.abs));
+        maxmin.push([max, min,abs_max]);
     });
     // console.time('Greyscale cells');
+
+    // Get the header texts to find out which are "set specific"
+    var h_cols = []
+    for (let [i, row] of [...table.find("thead")[0].rows].entries()) {
+        for (let [j, cell] of [...row.cells].entries()) {
+            // h_cols[j] = h_cols[j] || [];
+            h_cols[j] = cell.innerText;
+        }
+    }
     var cell_count = 0;
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             c_maxmin = maxmin[j];
+            c_header = h_cols[j];
             value = parseFloat(cell.innerText);
             if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
-                // console.log(`[${i},${j}] = ${cell.innerText} ${c_maxmin}`);
-                scale = 1 - (value - c_maxmin[1]) / (c_maxmin[0] - c_maxmin[1]);
-                frequency = 0.5 - scale * .5;
-                color_255 = Math.round(255 - frequency * 255);
-                var rgb = {
-                    r: color_255,
-                    g: color_255,
-                    b: color_255
-                };
-                var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+                scale = Math.abs(value) / c_maxmin[2];
+                var color = { r: 255, g: 255, b: 255 };
+                if (c_header.includes('Set 2') || value < 0) {
+                    // if the header is a set two, then make it red
+                    color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+                } else if (value > 0) {
+                    // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+                    // This is also used for single set/structure
+                    color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
+                }
+                var hex = rgb2hex(color.r, color.g, color.b);
                 cell.setAttribute("bgcolor", hex);
                 cell_count++;
             }

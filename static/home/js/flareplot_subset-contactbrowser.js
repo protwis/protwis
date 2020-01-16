@@ -7,8 +7,15 @@
  * @param containerSelector
  * @returns {{getNumFrames, setFrame, framesIntersect, framesSum, setTrack, setTree, getTreeNames, getTrackNames, addNodeToggleListener, addNodeHoverListener, addEdgeToggleListener, addEdgeHoverListener, graph}}
  */
-function createFlareplot_subset(width, inputGraph, containerSelector, contiguousOutward = true){
-    var w = width;
+function createFlareplot_subset(width, inputGraph, containerSelector, contiguousOutward = true) {
+    
+    if( typeof inputGraph == "string" ){
+        inputGraph = JSON.parse(inputGraph);
+    }
+    console.log(inputGraph.edges)
+    console.log(inputGraph.edges.length)
+    scaling_factor = Math.sqrt(inputGraph.edges.length / 50);
+    var w = width*scaling_factor;
     var h = w;
     var outwardShift = 0;
     if (contiguousOutward)
@@ -18,11 +25,8 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
     var ry = rx;
 
     var rotate = 0;
-    var discRad = 50;
+    var discRad = 15 + 15 * scaling_factor;;
 
-    if( typeof inputGraph == "string" ){
-        inputGraph = JSON.parse(inputGraph);
-    }
 
     var svg;
     var div;
@@ -222,9 +226,10 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
                 .attr("id", function(d) { return "node-" + d.key; })
                 .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
                 .append("text")
-                .attr("dx", function(d) { return d.x < 180 ? 8 : -30; })
+                .attr("dx", function(d) { return d.x < 180 ? 1 : -1; })
                 .attr("dy", ".31em")
-                .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "start"; })
+                .attr("font-size", function(d) { return "5px"; })
+                .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
                 .attr("text-align", function(d) { return d.x < 180 ? "right" : "left"; })
                 .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
                 .text(function(d) { return d.key; })
@@ -237,11 +242,11 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
             //var arcW = 250.0/(graph.nodeNames.length)*Math.PI/360;
             var arcW = 360.0/(graph.nodeNames.length)*Math.PI/360;
             var arc = d3.svg.arc()
-                .innerRadius(ry-15)
+                .innerRadius(ry-15*scaling_factor)
                 .outerRadius(function(d,i){
                   var sz = d.size;
-                  if(!sz) { sz = 0.0; }
-                  var or = ry-15+sz*15;
+                    if (!sz) { sz = 0.0; }
+                  var or = ry-15*scaling_factor+sz*15*scaling_factor;
                   return or;
                 })
                 .startAngle(-arcW)
@@ -288,20 +293,28 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
                     // move to short labels if not enough nodes (i.e. space)
                     // Consider changing all labels to short if desired necesary for consistency
                     var label = key;
-                    if (segment.nodes.length < 4 && structures.indexOf(key) >= 0){
+                    var font_size = Math.round(13 * scaling_factor);
+                    if (segment.nodes.length < 4 && structures.indexOf(key) >= 0 && segment.nodes.length / inputGraph.edges.length < 0.08){
                         label = structuresShort[structures.indexOf(key)];
                     }
+                      
+                    if (segment.nodes.length / inputGraph.edges.length < 0.02) {
+                        label = structuresShort[structures.indexOf(key)];
+                        font_size = Math.round(600 * scaling_factor * (segment.nodes.length / inputGraph.edges.length ));
+                        
+                    }
 
-                    svg.selectAll("g#trackElement-" + lastDrawn)
-                      .append("text")
-                      .attr("class", "segmentElement")
-                      .attr("transform", "rotate("+x+") translate(" + (ry - 13) + ") rotate(90)") // 13 is based on width segment band of 15
-                      .text(label)
-                      .style("text-anchor", "middle")
-                      .style("fill", segmentColor)
-                      .on("click", function(d){
-                          toggleSegment(d.segment);
-                      });
+                      svg.selectAll("g#trackElement-" + lastDrawn)
+                          .append("text")
+                          .attr("class", "segmentElement")
+                          .attr("transform", "rotate(" + x + ") translate(" + (ry - 13 * scaling_factor) + ") rotate(90)") // 13 is based on width segment band of 15
+                          .text(label)
+                          .style("text-anchor", "middle")
+                          .style("font-size", font_size + "px")
+                          .style("fill", segmentColor) 
+                          .on("click", function(d){
+                            toggleSegment(d.segment);
+                          });
                   }
               };
               /*svg.selectAll("g.segmentElement")
@@ -660,7 +673,7 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
 
             path.style("stroke-width",
                 function (d, i) {
-                    return 10;
+                    return 1;
                     var count = graph.edges[i].frames.rangeCount(rangeStart, rangeEnd-1);
                     if (count>0){
                         var e = {edge:graph.edges[i], weight:count/(rangeEnd-rangeStart)};
