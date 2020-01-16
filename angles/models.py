@@ -6,6 +6,7 @@ from structure.models import Structure
 import time
 from scipy.stats import circmean, circstd
 import numpy as np
+import re
 from collections import Counter
 
 class ResidueAngle(models.Model):
@@ -36,6 +37,14 @@ def get_angle_averages(pdbs,s_lookup,normalized = False, standard_deviation = Fa
     start_time = time.time()
     pdbs_upper = [pdb.upper() for pdb in pdbs]
 
+    # Deduce class
+    gpcr_class = Structure.objects.filter(pdb_code__index__in=pdbs_upper
+                ).values_list('protein_conformation__protein__parent__family__parent__parent__parent__slug', flat=True).distinct()
+    if len(gpcr_class)>1:
+        print('ERROR mix of classes!', gpcr_class)
+    else:
+        gpcr_class = gpcr_class[0]
+
     if len(pdbs)==1:
         # Never get SD when only looking at a single pdb...
         standard_deviation = False
@@ -58,8 +67,8 @@ def get_angle_averages(pdbs,s_lookup,normalized = False, standard_deviation = Fa
 
     ds = ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs_upper) \
                         .exclude(residue__generic_number=None) \
-                        .values_list('residue__generic_number__label','structure__pk','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse', 'tau_angle') \
-                        .order_by('residue__generic_number__label','residue__amino_acid')
+                        .values_list('residue__display_generic_number__label','structure__pk','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse', 'tau_angle') \
+                        .order_by('residue__display_generic_number__label','residue__amino_acid')
                         #'core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'
     custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau','tau_angle']
     index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse', 10:'tau_angle'}
@@ -69,6 +78,7 @@ def get_angle_averages(pdbs,s_lookup,normalized = False, standard_deviation = Fa
     prev_key = ''
     for d in ds:
         d = list(d)
+        d[0] = re.sub(r'\.[\d]+', '', d[0])
         gn = d[0]
         aa = d[2]
 
@@ -165,8 +175,10 @@ def get_all_angles(pdbs,pfs,normalized):
     if normalized:
         ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs_upper) \
             .exclude(residue__generic_number=None) \
-            .values_list('residue__generic_number__label','structure__protein_conformation__protein__parent__family__slug','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle'))
+            .values_list('residue__display_generic_number__label','structure__protein_conformation__protein__parent__family__slug','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle'))
         for d in ds:
+            d = list(d)
+            d[0] = re.sub(r'\.[\d]+', '', d[0])
             if d[0] not in all_angles:
                 all_angles[d[0]] = {}
                 for pf in pfs:
@@ -225,8 +237,10 @@ def get_all_angles(pdbs,pfs,normalized):
     else:
         ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs) \
             .exclude(residue__generic_number=None) \
-            .values_list('residue__generic_number__label','structure__pdb_code__index','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle'))
+            .values_list('residue__display_generic_number__label','structure__pdb_code__index','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle'))
         for d in ds:
+            d = list(d)
+            d[0] = re.sub(r'\.[\d]+', '', d[0])
             if d[0] not in all_angles:
                 all_angles[d[0]] = {}
                 for pdb in pdbs:

@@ -323,9 +323,9 @@ def get_format_props(freq=None, freq_gs=None, res=None, feat=None):
     elif res is not None:
         return residue[res]
     elif feat is not None:
-        print(feat)
+        #print(feat)
         try:
-            print(property_group[feat])
+            #print(property_group[feat])
             return property_group[feat]
         except KeyError as msg:
             return {'bg_color': '#ffffff'}

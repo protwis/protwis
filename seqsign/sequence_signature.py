@@ -82,7 +82,7 @@ class SequenceSignature:
                 if ref_matrix[segment][pref_feat][pos] < 0 and ref_matrix[segment][efeat][pos] > 0:
                     pref_feat = efeat
         return pref_feat
-        
+
     def setup_alignments(self, segments, protein_set_positive=None, protein_set_negative=None):
         """Setup (fetch and normalize) the data necessary for calculation of the signature.
 
@@ -735,12 +735,18 @@ class SequenceSignature:
             # worksheet.write(1 + 3*row, 0, scheme[1])
             worksheet.write(1 + 3 * row, 0, 'Residue number')
             worksheet.write(2 + 3 * row, 0, 'Sequence-based ({})'.format(scheme[2]))
-            worksheet.write(3 + 3*row, 0, 'Structure-based (GPCRdb)')
+            worksheet.write(3 + 3 * row, 0, 'Structure-based (GPCRdb)')
 
         # First column, stats
         if data == 'features':
-            for offset, prop in enumerate(props):
+            worksheet.write(1 + 3 * len(numbering_schemes) - 1, 1, "Length")
+            #for offset, prop in enumerate(props):
+            offset = 0
+            for key, prop in AMINO_ACID_GROUP_NAMES.items():
                 worksheet.write(1 + 3 * len(numbering_schemes) + offset, 0, prop)
+                worksheet.write(1 + 3 * len(numbering_schemes) + offset, 1, AMINO_ACID_GROUP_PROPERTIES[key]["length"])
+                offset += 1
+
             if aln == 'signature':
                 worksheet.write(
                     1 + 3 * len(numbering_schemes) + len(props),
@@ -775,10 +781,13 @@ class SequenceSignature:
         # Second column and on
         # Segments
         offset = 0
+        col_offset = 1
+        if data == 'features':
+            col_offset = 2
         for segment in generic_numbers_set[numbering_schemes[0][0]].keys():
             worksheet.merge_range(
                 0,
-                1 + offset,
+                col_offset + offset,
                 0,
                 len(generic_numbers_set[numbering_schemes[0][0]][segment]) + offset - 1,
                 segment
@@ -789,7 +798,7 @@ class SequenceSignature:
         # for row, item in enumerate(generic_numbers_set.items()):
         for row, item in enumerate(numbering_schemes):
             scheme = item[0]
-            offset = 1
+            offset = col_offset
             for _, gn_list in generic_numbers_set[scheme].items():
                 for col, gn_pair in enumerate(gn_list.items()):
                     try:
@@ -818,7 +827,7 @@ class SequenceSignature:
             offset = 1 + 3 * len(numbering_schemes)
 
             for row, prop in enumerate(data_block):
-                col_offset = 0
+                col_offset = 1
                 for segment in prop:
                     for col, freq in enumerate(segment):
                         # if aln == 'signature':
@@ -836,7 +845,7 @@ class SequenceSignature:
                             cell_format
                         )
                     col_offset += len(segment)
-            col_offset = 0
+            col_offset = 1
             for segment, cons_feat in feat_consensus.items():
                 for col, chunk in enumerate(cons_feat):
                     if aln == 'signature':
@@ -1141,7 +1150,7 @@ class SignatureMatch():
                 protein__in=protein_set,
                 protein__sequence_type__slug__in=seq_type_slug
                 ).exclude(protein__entry_name__endswith='-consensus').prefetch_related('protein')
-        
+
         relevant_gns_total = []
         for segment in  self.relevant_segments:
             for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):
