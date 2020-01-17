@@ -32,6 +32,7 @@ HSE  = True
 extra_pca = True
 print_pdb = False
 GN_only = False
+incremental_update = False
 
 # Empirical values as defined by Tien et al. Plos ONE 2013
 maxSASA = {
@@ -160,11 +161,17 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
+        if incremental_update:
+            done_structures = Angle.objects.values('structure_id').distinct()
+            # TODO add filter here for non-processed structures
+            self.references = Structure.objects.all().exclude(refined=True).exclude(id__in=done_structures).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        else:
+            Angle.objects.all().delete()
+            self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
-        Angle.objects.all().delete()
-        self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
         # self.references = Structure.objects.filter(pdb_code__index="5IUB").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+
 
         print(len(self.references),'structures')
         self.references = list(self.references)

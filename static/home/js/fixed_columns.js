@@ -356,7 +356,8 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
-                null
+                null,
+                null,
             ]
         });
         console.log('done datatable');
@@ -408,7 +409,7 @@ function showPDBtable(element) {
                     column_number: 6,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Best",
+                    filter_default_label: "Best species",
                     select_type_options: {
                         width: '70px'
                     },
@@ -444,7 +445,7 @@ function showPDBtable(element) {
                     column_number: 12,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Best",
+                    filter_default_label: "Best res",
                     select_type_options: {
                         width: '70px'
                     },
@@ -489,7 +490,15 @@ function showPDBtable(element) {
                     column_number: 15,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Cyt. Opening.",
+                    filter_default_label: "Gprot-bound likeness",
+                    filter_reset_button_text: false,
+
+                },
+                {
+                    column_number: 16,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "TM6 tilt",
                     filter_reset_button_text: false,
 
                 },
@@ -501,56 +510,56 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 16,
+                    column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "SignalProtein",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 17,
+                    column_number: 18,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Subfamily",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 20,
+                    column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 21,
+                    column_number: 22,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 22,
+                    column_number: 23,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 23,
+                    column_number: 24,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand function",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 24,
+                    column_number: 25,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand type",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 25,
+                    column_number: 26,
                     filter_container_id: mode_without_space+'_external_filter_container_0',
                     html_data_type: "text",
                     select_type: 'select2',
