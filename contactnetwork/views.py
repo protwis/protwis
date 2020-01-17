@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q, F, Prefetch, Avg, StdDev
+from django.db.models import Q, F, Prefetch, Avg, StdDev, IntegerField, Sum, Case, When, Min, Max
 from django.db.models.functions import Concat
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
@@ -18,7 +18,7 @@ from contactnetwork.distances import *
 from structure.models import Structure, StructureVectors, StructureExtraProteins
 from structure.templatetags.structure_extras import *
 from construct.models import Construct
-from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair
+from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair, ProteinConformation
 from residue.models import Residue, ResidueGenericNumber
 from signprot.models import SignprotComplex
 from interaction.models import StructureLigandInteraction
@@ -218,17 +218,38 @@ def PdbTableData(request):
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
 					'protein_conformation','wt_protein')))
-
+    # #.order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
     if exclude_non_interacting:
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
         data = data.filter(id__in=complex_structure_ids)
 
+    # get a gn residue count for all WT proteins
+    proteins_pks = Structure.objects.filter(refined=False).values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
+    residue_counts = ProteinConformation.objects.filter(protein__pk__in=proteins_pks).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+    rcs = {}
+    for rc in residue_counts:
+        rcs[rc['protein__pk']] = rc['res_count']
+
+    # get minimum resolution for every receptor/state pair
+    resolutions = Structure.objects.filter(refined=False).values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
+    best_resolutions = {}
+    for r in resolutions:
+        key = '{}_{}'.format(r['protein_conformation__protein__parent'], r['state__name'])
+        best_resolutions[key] = r['res']
+
+    # get best signalprotein/species/receptor
+    signal_ps = StructureExtraProteins.objects.all().values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+    best_signal_p = {}
+    for ps in signal_ps:
+        key = '{}_{}'.format(ps['structure__protein_conformation__protein__parent'], ps['display_name'])
+        best_signal_p[key] = ps['coverage']
+
     data_dict = OrderedDict()
-    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
+    data_table = "<table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
         <thead><tr> \
             <th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th> \
-            <th colspan=5>Receptor</th> \
-            <th colspan=3>Structure</th> \
+            <th colspan=8>Receptor</th> \
+            <th colspan=4>Structure</th> \
             <th colspan=3>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
@@ -238,6 +259,10 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
+            <th></th> \
+            <th></th> \
+            <th>Identity % to Human</th> \
+            <th>% seq to WT</th> \
             <th></th> \
             <th></th> \
             <th></th> \
@@ -260,6 +285,7 @@ def PdbTableData(request):
             <th></th> \
         </tr></thead><tbody>\n"
 
+    identity_lookup = {}
     for s in data:
         pdb_id = s.pdb_code.index
         r = {}
@@ -282,6 +308,7 @@ def PdbTableData(request):
 
         r['mammal'] = 'Only show mammalian receptor structures (even if the non-mammalian is the only)' if s.mammal else ''
         r['closest_to_human'] = 'Only show structures from human or the closest species (for each receptor and state)' if s.closest_to_human else ''
+        r['closest_to_human_raw'] = s.closest_to_human
 
         r['extra_filter'] = []
         if s.mammal and s.closest_to_human:
@@ -291,6 +318,37 @@ def PdbTableData(request):
         elif s.closest_to_human:
             r['extra_filter'] = [r['closest_to_human']]
 
+        r['identity_to_human'] = "100"
+        if r['species'] != 'Human':
+            key = 'identity_to_human_{}_{}'.format(s.protein_conformation.protein.parent.family.slug,s.protein_conformation.protein.species.pk)
+            if key in identity_lookup:
+                  r['identity_to_human'] = identity_lookup[key]
+            else:
+                r['identity_to_human'] = cache.get(key)
+                if r['identity_to_human'] == None:
+                    try:
+                        a = Alignment()
+                        ref_p = Protein.objects.get(family = s.protein_conformation.protein.parent.family, species__common_name = 'Human', sequence_type__slug = 'wt')
+                        a.load_reference_protein(ref_p)
+                        a.load_proteins([s.protein_conformation.protein.parent])
+                        a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+                        a.build_alignment()
+                        a.calculate_similarity()
+                        a.calculate_statistics()
+                        p = a.proteins[1]
+                        r['identity_to_human'] = int(p.identity)
+                    except:
+                        r['identity_to_human'] = 0
+                    cache.set(key,r['identity_to_human'], 24*7*3600)
+                identity_lookup[key] = r['identity_to_human']
+
+
+        residues_wt = rcs[s.protein_conformation.protein.parent.pk]
+        # residues_s = s.res_count
+        residues_s = residues_wt
+        #print(pdb,"residues",protein,residues_wt,residues_s,residues_s/residues_wt)
+        r['fraction_of_wt_seq'] = int(100*residues_s/residues_wt)
+ 
         a_list = []
         for a in s.stabilizing_agents.all():
             a_list.append(a)
@@ -303,7 +361,14 @@ def PdbTableData(request):
         r['signal_protein_subtype'] = ''
         r['signal_protein_note'] = ''
         r['signal_protein_seq_cons'] = ''
+        r['signal_protein_seq_cons_color'] = ''
         for ep in s.extra_proteins.all():
+            key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep)
+            if best_signal_p[key] == ep.wt_coverage:
+                # this is the best coverage
+                r['signal_protein_seq_cons_color'] = 'green'
+            else:
+                r['signal_protein_seq_cons_color'] = 'red'
             if ep.category == "Arrestin":
                  r['signal_protein'] = ep.wt_protein.family.parent.parent.name
             else:
@@ -325,6 +390,9 @@ def PdbTableData(request):
         r['method'] = s.structure_type.type_short()
 
         r['resolution'] = "{0:.2g}".format(s.resolution)
+
+        r['resolution_best'] = s.resolution==best_resolutions['{}_{}'.format(s.protein_conformation.protein.parent.pk, s.state.name)]
+
         r['7tm_distance'] = s.distance
         r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
 
@@ -397,6 +465,10 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
+                        <td><p style='color:{}'>{}</p></td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -411,15 +483,20 @@ def PdbTableData(request):
                                         r['protein_family'],
                                         r['class'],
                                         r['species'],
+                                        r['closest_to_human_raw'],
+                                        r['identity_to_human'],
+                                        r['fraction_of_wt_seq'],
                                         r['method'],
                                         pdb_id,
                                         r['resolution'],
+                                        r['resolution_best'],
                                         r['state'],
                                         r['contact_representative_score'],
                                         r['tm6_angle'],
                                         r['signal_protein'],
                                         r['signal_protein_subtype'],
                                         r['signal_protein_note'],
+                                        r['signal_protein_seq_cons_color'],
                                         r['signal_protein_seq_cons'],
                                         r['fusion'],
                                         r['antibody'],
