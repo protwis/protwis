@@ -400,19 +400,37 @@ function showPDBtable(element) {
                 },
                 {
                     column_number: 5,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Species",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 6,
                     filter_type: "multi_select",
                     select_type: 'select2',
+                    filter_default_label: "Species",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 7,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
                     filter_default_label: "Best species",
                     select_type_options: {
                         width: '70px'
                     },
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 8,
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
                 },
                 {
@@ -445,7 +463,7 @@ function showPDBtable(element) {
                     column_number: 12,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Best res",
+                    filter_default_label: "Best res.",
                     select_type_options: {
                         width: '70px'
                     },
@@ -513,14 +531,23 @@ function showPDBtable(element) {
                     column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "SignalProtein",
+                    filter_default_label: "Sign Prot",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 18,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Subfamily",
+                    filter_default_label: "Family",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 20,
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
                 },
                 {

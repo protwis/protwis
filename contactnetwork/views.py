@@ -217,8 +217,8 @@ def PdbTableData(request):
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
-					'protein_conformation','wt_protein')))
-    # #.order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+					'protein_conformation','wt_protein'))).order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+    
     if exclude_non_interacting:
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
         data = data.filter(id__in=complex_structure_ids)
@@ -259,10 +259,10 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
+            <th>% of Seq</th> \
             <th></th> \
             <th></th> \
             <th>Identity % to Human</th> \
-            <th>% seq to WT</th> \
             <th></th> \
             <th></th> \
             <th></th> \
@@ -345,8 +345,8 @@ def PdbTableData(request):
 
 
         residues_wt = rcs[s.protein_conformation.protein.parent.pk]
-        # residues_s = s.res_count
-        residues_s = residues_wt
+        residues_s = s.res_count
+        # residues_s = residues_wt
         #print(pdb,"residues",protein,residues_wt,residues_s,residues_s/residues_wt)
         r['fraction_of_wt_seq'] = int(100*residues_s/residues_wt)
  
@@ -485,14 +485,14 @@ def PdbTableData(request):
                                         r['protein_long'],
                                         r['protein_family'],
                                         r['class'],
-                                        r['species'],
-                                        r['closest_to_human_raw'],
-                                        r['identity_to_human'],
                                         r['fraction_of_wt_seq'],
+                                        r['species'],
+                                        'Best' if r['closest_to_human_raw'] else '',
+                                        r['identity_to_human'],
                                         r['method'],
                                         pdb_id,
                                         r['resolution'],
-                                        r['resolution_best'],
+                                        'Best' if r['resolution_best'] else '',
                                         r['state'],
                                         r['contact_representative_score'],
                                         r['gprot_bound_likeness'],
