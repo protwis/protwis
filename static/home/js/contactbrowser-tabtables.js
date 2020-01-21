@@ -153,6 +153,12 @@ function renderDataTablesYadcf(element) {
     const selector = "#" + $('.main_option:visible').attr('id');
     const analys_mode = selector.replace('-tab', '');
     var table = $(selector + " .browser-table-" + tab_number);
+    console.log(table,table.attr('class'))
+    var heading = $(selector + " .tab-content .panel-title:visible");
+    if (!heading.hasClass("button_added") && analys_mode == "#two-crystal-groups") {
+        heading.append(' <button type="button"  onclick="make_abs_values(\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs">Toggle if difference values are absolute</button>');
+        heading.addClass("button_added");
+    }
     // If table is without tbody, then do not init further.
     if (!(table.find("thead").length)) {
         console.timeEnd("renderDataTablesYadcf");
@@ -3709,6 +3715,9 @@ function gray_scale_table(table) {
         for (let [j, cell] of [...row.cells].entries()) {
             cols[j] = cols[j] || [];
             cols[j].push(cell.innerText)
+            if (cell.innerText.charAt(0) == '-' && cell.innerText.length > 1) {
+                $(cell).addClass("minus");
+            }
         }
     }
     maxmin = [];
@@ -3756,6 +3765,34 @@ function gray_scale_table(table) {
     console.timeEnd('Greyscale');
 }
 
+function make_abs_values(table) {
+    $(".main_loading_overlay").show();
+    console.time('Abs values')
+    console.log(table);
+
+    myVar = setTimeout(function () {
+            var dt_table = $(table).DataTable();
+
+            c = 0;
+            dt_table.cells('.minus').every(function () {
+                d = String(this.data());
+                c += 1;
+                if (d.charAt(0) == '-' && d.length > 1) {
+                    this.data(d.substr(1));
+                    $(this.node()).addClass("minus_removed");
+                } else if ($(this.node()).hasClass("minus_removed")) {
+                    this.data("-" + d);
+                    $(this.node()).removeClass("minus_removed");
+                }
+            })
+
+            dt_table.draw(false);
+            console.timeEnd('Abs values')
+            console.log(c + ' cells changed');
+            $(".main_loading_overlay").hide();
+        }
+        , 100);
+}
 var currentHover = -1;
 function enable_hover(table){
     table[0].children[0].addEventListener("mouseover", function(e){

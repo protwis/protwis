@@ -549,6 +549,7 @@ function showPDBtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand function",
+                    filter_match_mode: "exact",
                     filter_reset_button_text: false,
                 },
                 {
