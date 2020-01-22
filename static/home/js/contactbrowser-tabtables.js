@@ -1264,26 +1264,10 @@ function renderBrowser(data) {
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
-            var pfreq1 = Math.round(100 * v['proteins1'].length / proteins_1);
-            var pfreq2 = Math.round(100 * v['proteins2'].length / proteins_2);
-            var diff_pfreq = pfreq1 - pfreq2;
-            var sfreq1 = Math.round(100 * v['pdbs1'].length / pdbs_1);
-            var sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
+            var sfreq1 = Math.round(100 * (normalized ? v['pf_freq_1'] : v['pdbs_freq_1']));
+            var sfreq2 = Math.round(100* (normalized ? v['pf_freq_2'] : v['pdbs_freq_2']));
             var class_seq_cons = v['class_seq_cons'];
             if (normalized) {
-                var pffreq1 = Math.round(100 * v['pfs1'].length / pfs_1);
-                var pffreq2 = Math.round(100 * v['pfs2'].length / pfs_2);
-
-                // DEBUG POSSIBLITY
-                // if (pffreq1!=sfreq1 || pffreq2!=sfreq2) {
-                //     console.log('diff for',i)
-                //     console.log('DEDUCE NORMALIZED',pffreq1,sfreq1, pffreq2,sfreq2);
-                //     console.table(v);
-                // }
-
-                // replace values for normalized ones
-                sfreq1 = pffreq1;
-                sfreq2 = pffreq2;
                 pos1_missing_1 = data['pfs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs1'].length;
                 pos1_missing_2 = data['pfs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs2'].length;
                 pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
@@ -1340,8 +1324,8 @@ function renderBrowser(data) {
 
             types_count = {};
             Object.entries(v['types_count']).forEach(([key,value])=>{
-                types_count_set1 = Math.round(100*value[0].length / set_1.length);
-                types_count_set2 = Math.round(100*value[1].length / set_2.length);
+                types_count_set1 = Math.round(100* (normalized ? value[0]['pf_freq'] : value[0]['pdb_freq'])); //set1
+                types_count_set2 = Math.round(100* (normalized ? value[1]['pf_freq'] : value[1]['pdb_freq'])); //set2
                 types_count[key] = [types_count_set1,types_count_set2,types_count_set1-types_count_set2];
             })
 
@@ -1551,25 +1535,7 @@ function renderBrowser(data) {
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
-            var sfreq1 = Math.round(100 * v['pdbs'].length / pdbs_counts);
-            var set = data['pdbs'];
-
-
-
-            if (normalized) {
-                var pffreq1 = Math.round(100 * v['pfs'].length / pfs);
-                var set = data['pfs'];
-
-                // DEBUG POSSIBLITY
-                // if (pffreq1!=sfreq1 ) {
-                //     console.log('diff for',i)
-                //     console.log('DEDUCE NORMALIZED',pffreq1,sfreq1);
-                //     console.table(v);
-                // }
-
-                // replace values for normalized ones
-                sfreq1 = pffreq1;
-            }
+            var sfreq1 = Math.round(100* (normalized ? v['pf_freq'] : v['pdbs_freq']));
 
             var class_seq_cons = v['class_seq_cons'];
             // var types = v['types'].join(",<br>");
@@ -1585,8 +1551,7 @@ function renderBrowser(data) {
 
             types_count = {};
             Object.entries(v['types_count']).forEach(([key,value])=>{
-                types_count_set = Math.round(100*value.length / set.length);
-                types_count[key] = types_count_set;
+                types_count[key] = Math.round(100* (normalized ? value['pf_freq'] : value['pdb_freq']));
             })
 
             all_angles_1 = data['all_angles'][gn1];
