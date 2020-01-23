@@ -152,14 +152,16 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
     /*Create and place the "blocks" containing the circle and the text */
     var elemEnter = set1.enter()
         .append("g")
+        .attr("class", "set1 tm7")
         .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")" })
-        .attr("opacity", 0.4)
+        .attr("opacity", 0)
 
     /*Create the circle for each block */
     var circle1 = elemEnter.append("circle")
         .attr("r", "30")
         .attr("stroke", "black")
-        .style("fill", set_1_color);
+        .attr("class", "set1 circle")
+        .attr("fill", set_1_color);
 
     /* Create the text for each block */
     elemEnter.append("text")
@@ -174,7 +176,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
     /*Create and place the "blocks" containing the circle and the text */
     var elemEnter2 = set2.enter()
         .append("g")
-        .attr("class", "set2 circle")
+        .attr("class", "set2 tm7")
         .attr("transform", function (d, i) {
             return "translate(" + d.x + "," + d.y + ") rotate(" + d.rotate_text + ")"
         })
@@ -183,10 +185,10 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
     /*Create the circle for each block */
     var circle2 = elemEnter2.append("circle")
         .attr("r", "30")
-        .attr("class", "node")
+        .attr("class", "set2 circle")
         .style("stroke-width", "2px")
         .attr("stroke", "#555")
-        .style("fill", set_2_color);
+        .attr("fill", set_2_color);
 
     /* Create the text for each block */
     text2 = elemEnter2.append("text")
@@ -270,8 +272,10 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         var duration = 2500;
 
         // initial
-        svgContainer.selectAll(".set2.circle")
+        svgContainer.selectAll(".set2.tm7")
             .attr("transform", function (d, i) { return "translate(" + set1_data[i].x + "," + set1_data[i].y + ") rotate(" + (d.rotate_text - d.rotation) + ")" })
+        svgContainer.selectAll(".set2.tm7").attr("opacity", 0.9);
+        svgContainer.selectAll(".set2.circle").attr("fill", set_1_color);
             
         svgContainer.selectAll(".angles").attr("d", "M 35 0 A 35 35 1 0 1 35 0").attr("opacity", 0)
 
@@ -296,9 +300,11 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         var t0 = svgContainer.transition().delay(delay).duration(duration);
 
         // move circles and rotate
-        t0.selectAll(".set2.circle")
+        t0.selectAll(".set2.tm7")
             .attr("opacity", "0.9")
             .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ") rotate(" + (d.rotate_text) + ")" })
+        t0.selectAll(".set2.circle").attr("fill", set_2_color);
+        t0.selectAll(".set1.tm7").attr("opacity", "0.4");
          // make angle arc 
         t0.selectAll(".angles")
             .attr("opacity", 1)
@@ -339,8 +345,9 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         var t1 = t0.transition().delay(delay).duration(duration);
 
         // move circles and rotate
-        t1.selectAll(".set2.circle")
+        t1.selectAll(".set2.tm7")
             .attr("transform", function (d, i) { return "translate(" + set1_data[i].x + "," + set1_data[i].y + ") rotate(" + (d.rotate_text - d.rotation) + ")" });
+        t1.selectAll(".set2.circle").attr("fill", set_1_color);
         // make angle arc small again and disapear
         t1.selectAll(".angles")
             .attr("opacity", 0)
