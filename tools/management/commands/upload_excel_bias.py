@@ -78,15 +78,15 @@ class Command(BaseBuild):
                 self.logger.error(msg)
         # import the structure data
         #self.bias_list()
-        try:
-            print('CREATING BIAS DATA')
-            print(options['filename'])
-            self.prepare_all_data(options['filename'])
-            self.logger.info('COMPLETED CREATING BIAS')
+        # try:
+        print('CREATING BIAS DATA')
+        print(options['filename'])
+        self.prepare_all_data(options['filename'])
+        self.logger.info('COMPLETED CREATING BIAS')
 
-        except Exception as msg:
-            print('--error--', msg, '\n')
-            self.logger.info("The error appeared in def handle")
+        # except Exception as msg:
+        #     print('--error--', msg, '\n')
+        #     self.logger.info("The error appeared in def handle")
 
     def loaddatafromexcel(self, excelpath):
         """
@@ -140,10 +140,10 @@ class Command(BaseBuild):
                 continue
             # if i > 58:
             #     break
-            print(i)
+            if i % 200 == 0: print(i)
             d = {}
             if r[4] != '':  # checks if the ligand field exists
-                try:
+                # try:
                     res = ''
                     mut = ''
                     d['submitting_group'] = r[0]
@@ -219,6 +219,10 @@ class Command(BaseBuild):
                     l = self.fetch_ligand(
                         d['ligand_id'], d['ligand_type'], d['ligand_name'], d['source_file'])
 
+                    if not l:
+                        print('Failed row no ligand')
+                        continue
+
                     #fetch endogenous ligand
                     end_ligand  = self.fetch_endogenous(d['receptor'])
 
@@ -229,7 +233,8 @@ class Command(BaseBuild):
 
                     #fetch ChEMBL
                     chembl = None
-                    chembl = self.fetch_chembl(l)
+                    if l:
+                        chembl = self.fetch_chembl(l)
 
                     # fetch protein
                     protein = self.fetch_protein(r[11].strip(),
@@ -248,7 +253,7 @@ class Command(BaseBuild):
 
                                                         )
                     experiment_entry.save()
-                    self.fetch_vendor(l,experiment_entry)
+                    self.fetch_vendor(l, experiment_entry)
                     # print('---bias_reference---', d['bias_reference'], '\n')
                     experiment_assay = ExperimentAssay(biased_experiment=experiment_entry,
                                                        signalling_protein=d['protein'],
@@ -276,9 +281,9 @@ class Command(BaseBuild):
                     experiment_assay.save()
                     #fetch authors
                     self.fetch_publication_authors(pub,experiment_assay)
-                except Exception as msg:
-                    print(d['source_file'], msg)
-                    continue
+                # except Exception as msg:
+                #     print(d['source_file'], msg)
+                #     continue
 
             temp.append(d)
         return temp
@@ -406,7 +411,7 @@ class Command(BaseBuild):
         for x in links:
             if x.web_resource.slug=='chembl_ligand':
                 chembl_id = [x for x in links if x.web_resource.slug=='chembl_ligand'][0].index
-        print('\n----chembl id---', chembl_id)
+        # print('\n----chembl id---', chembl_id)
         return chembl_id
 
     def fetch_mutation(self, protein, res, amino_acid, source):
