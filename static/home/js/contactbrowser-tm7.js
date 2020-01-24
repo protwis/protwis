@@ -9,13 +9,13 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
     var TMS = ["TM1", "TM2", "TM3", "TM4", "TM5", "TM6", "TM7"];
 
     var set2_data = [
-        { "label": "TM1", "x": 300, "y": 250, "rotation": 0 },
+        { "label": "TM1", "x": 300, "y": 250, "rotation": 5 },
         { "label": "TM2", "x": 190, "y": 200, "rotation": 10 },
         { "label": "TM3", "x": 120, "y": 190, "rotation": 30 },
         { "label": "TM4", "x": 70, "y": 100, "rotation": -10 },
         { "label": "TM5", "x": 30, "y": 230, "rotation": 20 },
-        { "label": "TM6", "x": 80, "y": 300, "rotation": 2 },
-        { "label": "TM7", "x": 200, "y": 350, "rotation": 90 }];
+        { "label": "TM6", "x": 80, "y": 300, "rotation": -90 },
+        { "label": "TM7", "x": 200, "y": 350, "rotation": 40 }];
 
 
     var nodes_initial = [
@@ -160,6 +160,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
     var circle1 = elemEnter.append("circle")
         .attr("r", "30")
         .attr("stroke", "black")
+        .style("stroke-dasharray","2.5")
         .attr("class", "set1 circle")
         .attr("fill", set_1_color);
 
@@ -167,7 +168,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
     elemEnter.append("text")
         .attr("dy", ".35em")
         .attr("text-anchor", 'middle')
-        .text(function (d) { return d.label })
+        // .text(function (d) { return d.label })
 
 
     var set2 = svgContainer.selectAll("set2")
@@ -186,7 +187,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
     var circle2 = elemEnter2.append("circle")
         .attr("r", "30")
         .attr("class", "set2 circle")
-        .style("stroke-width", "2px")
+        .style("stroke-width", "1px")
         .attr("stroke", "#555")
         .attr("fill", set_2_color);
 
@@ -257,6 +258,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
             return "translate(" + x + "," + y + ") rotate(" + (d.rotate_text + 180) + ")";
         })
         .attr("font-size", "8")
+        .attr("fill", "grey")
         .text(function (d, i) {
             return d.movement > 0 ? d.movement.toFixed(1) + "Å" : "";
         })
@@ -268,8 +270,8 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
     var animate_run = 0;
     var repeat_animate = true;
     function animate_movement() {
-        var delay = 2500;
-        var duration = 2500;
+        var delay = 1000;
+        var duration = 1000;
 
         // initial
         svgContainer.selectAll(".set2.tm7")
