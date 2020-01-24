@@ -41,7 +41,7 @@ class Command(BaseBuild):
     help = 'Reads bias data and imports it'
     # source file directory
     # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
-    structure_data_dir = '/protwis/sites/protwis/excel/pathways/'
+    structure_data_dir = 'excel/pathways/'
     publication_cache = {}
     ligand_cache = {}
     data_all = []
