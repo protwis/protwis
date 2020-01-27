@@ -15,6 +15,7 @@ import copy
 
 from contactnetwork.models import *
 from contactnetwork.distances import *
+from contactnetwork.functions import *
 from structure.models import Structure, StructureVectors, StructureExtraProteins
 from structure.templatetags.structure_extras import *
 from construct.models import Construct
@@ -38,6 +39,7 @@ import scipy.spatial.distance as ssd
 import time
 import hashlib
 import operator
+
 
 def get_hash(data):
     # create unique hash key for alignment combo
@@ -536,8 +538,6 @@ def InteractionBrowserData(request):
         contact_options = [x.lower() for x in request.GET.getlist('options[]')]
     except IndexError:
         contact_options = []
-
-
 
     i_options_filter = Q()
     # Filter out contact within the same helix
@@ -1825,6 +1825,17 @@ def InteractionBrowserData(request):
                 data['tab4'][res1]['class_cons'] = ['','']
                 print('no res1',res1,'in class lookup')
 
+        # calculate information for 2D helical displacement plot
+        if mode == "double":
+            pdbs1_upper = [pdb.upper() for pdb in pdbs1]
+            pdbs2_upper = [pdb.upper() for pdb in pdbs2]
+            helical_time = time.time()
+            print("Start helical movements", helical_time)
+            data['tm_movement_2D'] = {}
+            data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True)
+            data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False)
+            print("Helical movement calculations", time.time()-helical_time)
+
         data['tab3'] = {}
         data['pdbs'] = list(data['pdbs'])
         data['proteins'] = list(data['proteins'])
@@ -2325,7 +2336,7 @@ def ClusteringData(request):
         [distance_matrix, pdbs] = originMatrix(pdbs)
     elif cluster_method == '7': # distance to origin
         dis = Distances()
-        dis.lower_only = True
+        dis.filtered_gns = True
         print("Print setting lower only")
         dis.load_pdbs(pdbs)
         distance_matrix = dis.get_distance_matrix(normalize = False)
