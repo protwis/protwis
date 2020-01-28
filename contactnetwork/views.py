@@ -1985,7 +1985,7 @@ def InteractionBrowserData(request):
             pdbs1_upper = [pdb.upper() for pdb in pdbs1]
             pdbs2_upper = [pdb.upper() for pdb in pdbs2]
             helical_time = time.time()
-            print("Start helical movements", helical_time)
+            print("Start helical movements")
             data['tm_movement_2D'] = {}
             data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True)
             data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False)

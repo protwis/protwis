@@ -8,7 +8,7 @@ import numpy as np
 from numpy.linalg import norm
 
 # convert 3D points to 2D points on best fitting plane
-def convert2D_SVD(tm_points):
+def convert2D_SVD(tm_points, intracellular):
     # Find best fit plane through set of points (singular value decomposition)
     # Based on https://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
     centroid = np.sum(tm_points,0) / len(tm_points)
@@ -30,6 +30,8 @@ def convert2D_SVD(tm_points):
     # Create X and Y axes on plane
     locx = (points_plane[0] - centroid) # TM1 right side
     locy = np.cross(normal, locx)
+    if not intracellular:
+        locy = -1 * locy
     locx = locx/norm(locx)
     locy = locy/norm(locy)
     points_2d = [[np.dot(p - centroid, locx), np.dot(p - centroid, locy)] for p in points_plane]
@@ -121,11 +123,6 @@ def trilaterate(P1,P2,P3,r1,r2,r3):
     p_12_b = P1 + x*e_x + y*e_y - z*e_z
     return p_12_a,p_12_b
 
-#def tm_movement_2D(pdbs1, pdb2):
-#    print("moved here")
-#    print(pdbs1)
-#    return {"IC": calculate_movement_2D(pdbs1, pdbs2, True), "EC": calculate_movement_2D(pdbs1, pdbs2, False)}
-
 def tm_movement_2D(pdbs1, pdbs2, intracellular):
     distances_set1 = Distances()
     distances_set1.load_pdbs(pdbs1)
@@ -139,6 +136,7 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
     conserved_set2 = distances_set2.fetch_conserved_gns_tm()
 
     conserved = [x for x in conserved_set2 if x in conserved_set1]
+
     gns = [[]] * 7
     for i in range(0,7):
         tm_only = [x for x in conserved if x[0]==str(i+1)]
@@ -146,6 +144,9 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
             tm_only.reverse()
         elif not intracellular and i % 2 == 1: # all even TMs (as # i+1)
             tm_only.reverse()
+        if len(tm_only) < 3:
+            print("too few residues")
+            return []
         gns[i] = tm_only[0:3]
 
     distances_set1.filter_gns = [y for x in gns for y in x]
@@ -158,14 +159,17 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
     for i in range(0,6):
         for j in range(i+1, 7):
             filter_keys = [x+"_"+y for x in gns[i] for y in gns[j]]
+            if len(filter_keys) == 0:
+                print("no filter keys")
+                return []
             distance_data1[i][j] = sum([k for x in filter_keys for k in distances_set1.data[x]])/(len(filter_keys)*len(pdbs1))
             distance_data2[i][j] = sum([k for x in filter_keys for k in distances_set2.data[x]])/(len(filter_keys)*len(pdbs2))
 
     tms_set1 = recreate3D(distance_data1, 1)
-    plane_set1 = convert2D_SVD(tms_set1)
+    plane_set1 = convert2D_SVD(tms_set1, intracellular)
 
     tms_set2 = recreate3D(distance_data2, 1)
-    plane_set2 = convert2D_SVD(tms_set2)
+    plane_set2 = convert2D_SVD(tms_set2, intracellular)
 
     # Identify most stable TMs by ranking the variations to all other helices
     diff_distances = [x[:] for x in [[0] * 7] * 7]
@@ -220,4 +224,7 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
     plane_set2 = [r.dot(x) for x in plane_set2]
     plane_set2 = plane_set2 + new_one
 
-    return {"coordinates_set1" : plane_set1.tolist(), "coordinates_set2": plane_set2.tolist(), "rotation": [], "gns_used": gns}
+    labeled_set1 = [{"label": "TM"+str(i+1), "x": plane_set1[i][0], "y": plane_set1[i][1], "rotation" : 0} for i in range(0,7)]
+    labeled_set2 = [{"label": "TM"+str(i+1), "x": plane_set2[i][0], "y": plane_set2[i][1], "rotation" : 0} for i in range(0,7)]
+
+    return {"coordinates_set1" : labeled_set1, "coordinates_set2": labeled_set2, "rotation": [], "gns_used": gns}
