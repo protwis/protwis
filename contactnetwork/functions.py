@@ -19,6 +19,7 @@ def convert2D_SVD(tm_points, intracellular):
 
     # 3D project points onto plane -> 2D points
     points_plane = [[0]] * 7
+    points_z = [0] * 7
     for i in range(0,len(tm_points)):
         # point relative to centroid
         v = tm_points[i] - centroid
@@ -26,19 +27,20 @@ def convert2D_SVD(tm_points, intracellular):
         dist = sum(v*normal)
         # point onto plane
         points_plane[i] = tm_points[i] - dist * normal
+        points_z[i] = dist
 
     # Create X and Y axes on plane
     locx = (points_plane[0] - centroid) # TM1 right side
-    locy = np.cross(normal, locx)
-
-    locy = (points_plane[6] - centroid)
+    #locy = np.cross(normal, locx)
+    locy = (points_plane[6] - centroid) # TM7 at top or down
     if intracellular:
         locy = -1 * locy
+
     locx = locx/norm(locx)
     locy = locy/norm(locy)
     points_2d = [[np.dot(p - centroid, locx), np.dot(p - centroid, locy)] for p in points_plane]
 
-    return np.array(points_2d)
+    return np.array(points_2d), points_z
 
 # Find best fit plane through set of points (least squares)
 # Based on https://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
@@ -125,7 +127,7 @@ def trilaterate(P1,P2,P3,r1,r2,r3):
     p_12_b = P1 + x*e_x + y*e_y - z*e_z
     return p_12_a,p_12_b
 
-def tm_movement_2D(pdbs1, pdbs2, intracellular):
+def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     distances_set1 = Distances()
     distances_set1.load_pdbs(pdbs1)
     distances_set1.filtered_gns = True
@@ -168,10 +170,10 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
             distance_data2[i][j] = sum([k for x in filter_keys for k in distances_set2.data[x]])/(len(filter_keys)*len(pdbs2))
 
     tms_set1 = recreate3D(distance_data1, 1)
-    plane_set1 = convert2D_SVD(tms_set1, intracellular)
+    plane_set1, z_set1 = convert2D_SVD(tms_set1, intracellular)
 
     tms_set2 = recreate3D(distance_data2, 1)
-    plane_set2 = convert2D_SVD(tms_set2, intracellular)
+    plane_set2, z_set2 = convert2D_SVD(tms_set2, intracellular)
 
     # Identify most stable TMs by ranking the variations to all other helices
     diff_distances = [x[:] for x in [[0] * 7] * 7]
@@ -188,7 +190,8 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
     for i in range(0,7):
         diff_distances[i] = [sorted(diff_distances[i]).index(x) for x in diff_distances[i]]
         #diff_distances[i] = [sorted(diff_distances[i]).index(x) for j in range(0,7) for x in diff_distances[i]]
-        #print(i,diff_distances[i])
+        #print(i,diff_distances[i], real_differences[i])
+
 
     # TODO Make oneliner from this
     final_rank = [0] * 7
@@ -200,7 +203,6 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
     stable_one, stable_two = final_rank.index(0), final_rank.index(1)
     if stable_one > stable_two:
         stable_one, stable_two = stable_two, stable_one
-
 
     # Rescale positions to match true length
     scale = math.sqrt(math.pow(plane_set1[stable_two][0]-plane_set1[stable_one][0],2) + math.pow(plane_set1[stable_two][1]-plane_set1[stable_one][1],2))/distance_data1[stable_one][stable_two]
@@ -228,7 +230,17 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
     plane_set2 = [r.dot(x) for x in plane_set2]
     plane_set2 = plane_set2 + new_one
 
-    labeled_set1 = [{"label": "TM"+str(i+1), "x": plane_set1[i][0], "y": plane_set1[i][1], "rotation" : 0} for i in range(0,7)]
-    labeled_set2 = [{"label": "TM"+str(i+1), "x": plane_set2[i][0], "y": plane_set2[i][1], "rotation" : 0} for i in range(0,7)]
+    # Add angles
+    rotations = [0] * 7
+    for i in range(0,7):
+        # Ca-angle to axis core
+        rotations[i] = [data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1] if abs(data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1]) < 180 else -1*data['tab4'][x]['angles_set2'][1]-data['tab4'][x]['angles_set1'][1] for x in gns[i]]
+        if intracellular:
+            rotations[i] = -1*sum(rotations[i])/3
+        else:
+            rotations[i] = sum(rotations[i])/3
+
+    labeled_set1 = [{"label": "TM"+str(i+1), "x": plane_set1[i][0], "y": plane_set1[i][1], "z": z_set1[i], "rotation" : 0} for i in range(0,7)]
+    labeled_set2 = [{"label": "TM"+str(i+1), "x": plane_set2[i][0], "y": plane_set2[i][1], "z": z_set2[i], "rotation" : rotations[i]} for i in range(0,7)]
 
     return {"coordinates_set1" : labeled_set1, "coordinates_set2": labeled_set2, "rotation": [], "gns_used": gns}
