@@ -30,7 +30,9 @@ def convert2D_SVD(tm_points, intracellular):
     # Create X and Y axes on plane
     locx = (points_plane[0] - centroid) # TM1 right side
     locy = np.cross(normal, locx)
-    if not intracellular:
+
+    locy = (points_plane[6] - centroid)
+    if intracellular:
         locy = -1 * locy
     locx = locx/norm(locx)
     locy = locy/norm(locy)
@@ -184,7 +186,9 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
 
     # Ranking for each TM
     for i in range(0,7):
-        diff_distances[i] = [sorted(diff_distances[i]).index(x) for i in range(0,7) for x in diff_distances[i]]
+        diff_distances[i] = [sorted(diff_distances[i]).index(x) for x in diff_distances[i]]
+        #diff_distances[i] = [sorted(diff_distances[i]).index(x) for j in range(0,7) for x in diff_distances[i]]
+        #print(i,diff_distances[i])
 
     # TODO Make oneliner from this
     final_rank = [0] * 7
