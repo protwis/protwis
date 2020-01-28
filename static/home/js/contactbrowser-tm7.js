@@ -141,8 +141,10 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         .attr("viewBox", min_x + " " + min_y + " " + (max_x - min_x) + " " + (max_y - min_y))
         .attr("width", "100%")
         .attr("style", "height: 500px");
+    
+    var defs = svgContainer.append("defs");
 
-    svgContainer.append("defs").append("marker")
+    defs.append("marker")
         .attr("id", "arrowhead")
         .attr("refX", 2) /*must be smarter way to calculate shift*/
         .attr("refY", 2)
@@ -154,7 +156,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         .attr("d", "M 2,0 V 4 L6,2 Z")
         .attr("fill", "grey");
 
-    svgContainer.append("defs").append("marker")
+    defs.append("marker")
         .attr("id", "arrowhead-rev")
         .attr("refX", 5) 
         .attr("refY", 5)
@@ -165,6 +167,26 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         .append("path")
         .attr("d", "M 0 0 L 10 5 L 0 10 z")
         .attr("fill", "grey"); 
+    
+    
+    //Filter for the outside glow
+    var filter = defs.append("filter")
+        .attr("id","glow");
+    filter.append("feGaussianBlur")
+        .attr("stdDeviation","1.5")
+        .attr("result","coloredBlur");
+    var feMerge = filter.append("feMerge");
+    feMerge.append("feMergeNode")
+        .attr("in","coloredBlur");
+    feMerge.append("feMergeNode")
+        .attr("in", "SourceGraphic");
+    
+    var filter2 = defs.append("filter")
+        .attr("id", "shadow")
+        .append("feDropShadow")
+        .attr("dx", 0.2)
+        .attr("dy", 1)
+        .attr("stdDeviation",0.2);
 
 
     var set1 = svgContainer.selectAll("set1")
@@ -314,6 +336,11 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         .attr("display", function (d, i) {
             return d.movement > minimum_distance_to_show ? "" : "none";
         });
+    
+    d3.selectAll(".set2.circle")
+        .style("filter", "url(#glow)");
+    // d3.selectAll(".set1.circle")
+    //     .style("filter", "url(#shadow)");
 
     var animate_run = 0;
     var repeat_animate = false;
