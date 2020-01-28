@@ -1987,8 +1987,8 @@ def InteractionBrowserData(request):
             helical_time = time.time()
             print("Start helical movements")
             data['tm_movement_2D'] = {}
-            data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True)
-            data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False)
+            data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True, data)
+            data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False, data)
             print("Helical movement calculations", time.time()-helical_time)
 
         data['tab3'] = {}

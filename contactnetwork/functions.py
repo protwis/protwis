@@ -127,7 +127,7 @@ def trilaterate(P1,P2,P3,r1,r2,r3):
     p_12_b = P1 + x*e_x + y*e_y - z*e_z
     return p_12_a,p_12_b
 
-def tm_movement_2D(pdbs1, pdbs2, intracellular):
+def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     distances_set1 = Distances()
     distances_set1.load_pdbs(pdbs1)
     distances_set1.filtered_gns = True
@@ -230,7 +230,17 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular):
     plane_set2 = [r.dot(x) for x in plane_set2]
     plane_set2 = plane_set2 + new_one
 
+    # Add angles
+    rotations = [0] * 7
+    for i in range(0,7):
+        # Ca-angle to axis core
+        rotations[i] = [data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1] if abs(data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1]) < 180 else -1*data['tab4'][x]['angles_set2'][1]-data['tab4'][x]['angles_set1'][1] for x in gns[i]]
+        if intracellular:
+            rotations[i] = -1*sum(rotations[i])/3
+        else:
+            rotations[i] = sum(rotations[i])/3
+
     labeled_set1 = [{"label": "TM"+str(i+1), "x": plane_set1[i][0], "y": plane_set1[i][1], "z": z_set1[i], "rotation" : 0} for i in range(0,7)]
-    labeled_set2 = [{"label": "TM"+str(i+1), "x": plane_set2[i][0], "y": plane_set2[i][1], "z": z_set2[i], "rotation" : 0} for i in range(0,7)]
+    labeled_set2 = [{"label": "TM"+str(i+1), "x": plane_set2[i][0], "y": plane_set2[i][1], "z": z_set2[i], "rotation" : rotations[i]} for i in range(0,7)]
 
     return {"coordinates_set1" : labeled_set1, "coordinates_set2": labeled_set2, "rotation": [], "gns_used": gns}
