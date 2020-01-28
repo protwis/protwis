@@ -516,7 +516,7 @@ function showPDBtable(element) {
                     column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "TM6 tilt",
+                    filter_default_label: "TM6 opening",
                     filter_reset_button_text: false,
 
                 },

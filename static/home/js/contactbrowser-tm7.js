@@ -1,11 +1,11 @@
-function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
+function tm7_plot(containerSelector, plot_data) {
 
 
     // Ideas
     // https://en.wikipedia.org/wiki/Kabsch_algorithm <- get rotation matrix by using 3-4 least moving tms
     // Hint to record https://stackoverflow.com/questions/20864874/creating-animated-gif-files-out-of-d3-js-animations
 
-    matrix_set1 = JSON.parse(matrix_set1);
+    /*matrix_set1 = JSON.parse(matrix_set1);
     matrix_set2 = JSON.parse(matrix_set2);
 
     // Scaling factor from Å distance to pixel distance..
@@ -22,6 +22,13 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         { "label": "TM6", "x": 80, "y": 300, "rotation": -90 },
         { "label": "TM7", "x": 200, "y": 350, "rotation": 40 }];
 
+        var set1_data = [{ "label": "TM1", "x": 300, "y": 250 },
+            { "label": "TM2", "x": 215, "y": 271 },
+            { "label": "TM3", "x": 106, "y": 248 },
+            { "label": "TM4", "x": 200, "y": 185 },
+            { "label": "TM5", "x": 101, "y": 347 },
+            { "label": "TM6", "x": 190, "y": 377 },
+            { "label": "TM7", "x": 276, "y": 361 }]
 
     var nodes_initial = [
         { "label": "TM1", "x": 300, "y": 250 },
@@ -31,16 +38,9 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         { "label": "TM5", "x": 30, "y": 230 },
         { "label": "TM6", "x": 80, "y": 300 },
         { "label": "TM7", "x": 200, "y": 350 }];
+    */
 
-    var set1_data = [{ "label": "TM1", "x": 300, "y": 250 },
-        { "label": "TM2", "x": 215, "y": 271 },
-        { "label": "TM3", "x": 106, "y": 248 },
-        { "label": "TM4", "x": 200, "y": 185 },
-        { "label": "TM5", "x": 101, "y": 347 },
-        { "label": "TM6", "x": 190, "y": 377 },
-        { "label": "TM7", "x": 276, "y": 361 }]
-    
-    if (containerSelector=='#single_2'){
+    /*if (containerSelector=='#single_2'){
         for (var key of Object.keys(set1_data)) {
             set1_data[key].x -= 5;
         }
@@ -49,13 +49,21 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         for (var key of Object.keys(set1_data)) {
             set1_data[key].x -= 10;
         }
-    }
+    }*/
 
+    // Scaling factor from Å distance to pixel distance..
+    var scaling_factor = 8;
+
+    // Set colors
     set_1_color = "#99ccff";
     set_2_color = "#ff9999";
 
+    // Grab plotting data from call
+    var set1_data = plot_data["coordinates_set1"]
+    var set2_data = plot_data["coordinates_set2"]
+
     // Correct first ref2 compared to ref1
-    desired_distance = get_desired_distance(ref[0], ref[1]); //matrix_set1[ref[0]][ref[1]] * scaling_factor;
+    /*desired_distance = get_desired_distance(ref[0], ref[1]); //matrix_set1[ref[0]][ref[1]] * scaling_factor;
     current_distance = get_distance(set2_data[ref[0]], set2_data[ref[1]]);
     move_to_fit_distance(set2_data[ref[0]], set2_data[ref[1]], desired_distance)
 
@@ -79,7 +87,18 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
             set2_data[key].y = Math.round(intersections[3]);
         }
     }
-    var myJSON = JSON.stringify(set2_data);
+    var myJSON = JSON.stringify(set2_data);*/
+
+    // Scaling of the coordinates
+    set1_data.forEach(function (entry) {
+      entry.x = entry.x*scaling_factor
+      entry.y = entry.y*scaling_factor
+    });
+
+    set2_data.forEach(function (entry) {
+      entry.x = entry.x*scaling_factor
+      entry.y = entry.y*scaling_factor
+    });
 
     padding = 53; //33
     min_y = Math.min.apply(Math, set2_data.map(a => a.y)) - padding;
@@ -131,9 +150,10 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         set2_data[i].distance_sign = distance_sign;
 
         console.log(i,degrees,set2_data[i].rotation)
-        
+
     }
 
+    $(containerSelector).find(".plot-container").html('')
     $(containerSelector).find(".plot-container").addClass("tm7Plot");
     $(containerSelector).find(".plot-container").css("position","relative");
 
@@ -158,7 +178,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
 
     defs.append("marker")
         .attr("id", "arrowhead-rev")
-        .attr("refX", 5) 
+        .attr("refX", 5)
         .attr("refY", 5)
         .attr("markerWidth", 2)
         .attr("markerHeight", 2)
@@ -166,6 +186,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         .attr("orient", "auto-start-reverse")
         .append("path")
         .attr("d", "M 0 0 L 10 5 L 0 10 z")
+<<<<<<< HEAD
         .attr("fill", "grey"); 
     
     
@@ -187,6 +208,9 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         .attr("dx", 0.2)
         .attr("dy", 1)
         .attr("stdDeviation",0.2);
+=======
+        .attr("fill", "grey");
+>>>>>>> f635a1622cc83ce18c9c9c40b675e82cafd3e530
 
 
     var set1 = svgContainer.selectAll("set1")
@@ -233,7 +257,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         .style("stroke-width", "1px")
         .attr("stroke", "#555")
         .attr("fill", set_2_color);
-    
+
         // Append images
     // var images = elemEnter2.append("svg:image")
     // .attr("xlink:href",  "http://localhost:8010/static/home/images/helix.png")
@@ -286,7 +310,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
         .attr("display", function (d, i) {
             return Math.abs(d.rotation) >= 40 && Math.abs(d.rotation) > 0 ? "" : "none";
         });
-    
+
     alllines = svgContainer.append("g").selectAll("lines").data(set2_data).enter().append("g");
     var angles_text_alt = alllines.append("text")
         .attr("class","angles_text")
@@ -354,7 +378,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
             .attr("transform", function (d, i) { return "translate(" + set1_data[i].x + "," + set1_data[i].y + ") rotate(" + (d.rotate_text - d.rotation) + ")" })
         svgContainer.selectAll(".set2.tm7").attr("opacity", 0.9);
         svgContainer.selectAll(".set2.circle").attr("fill", set_1_color);
-            
+
         svgContainer.selectAll(".angles").attr("d", "M 35 0 A 35 35 1 0 1 35 0").attr("opacity", 0)
         svgContainer.selectAll(".labelText").attr("font-size",values_font_size_hiding)
         svgContainer.selectAll(".angles_text")
@@ -370,7 +394,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
             .attr("opacity", 0)
             .attr("x2", function (d, i) { return set1_data[i].x + Math.cos(toRadians(d.rotate_text + 90*d.distance_sign)) * line_distance_from_center })
             .attr("y2", function (d, i) { return set1_data[i].y + Math.sin(toRadians(d.rotate_text + 90*d.distance_sign)) * line_distance_from_center })
-        
+
         svgContainer.selectAll(".distance_text")
             .attr("opacity", 0)
             .attr("transform", function (d, i) {
@@ -378,12 +402,12 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
                 var y = (set1_data[i].y) + Math.sin(toRadians(d.rotate_text + 90*d.distance_sign)) * (line_distance_from_center + line_widths*1.5);
                 text_rotation = d.distance_sign == -1 ? 0 : 180;
                 return "translate(" + x + "," + y + ") rotate(" + (d.rotate_text + text_rotation) + ")";
-            }) 
+            })
             .attr("font-size",values_font_size_hiding)
-        
+
         svgContainer.selectAll(".set2_labels")
             .attr("transform", function (d) { return "rotate(" + (-d.rotate_text) + ")" })
-        
+
         // move out to fully extended
         // https://bl.ocks.org/d3noob/1ea51d03775b9650e8dfd03474e202fe
         var n = 10002;
@@ -395,7 +419,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
             .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ") rotate(" + (d.rotate_text) + ")" })
         t0.selectAll(".set2.circle").attr("fill", set_2_color);
         t0.selectAll(".set1.tm7").attr("opacity", "0.2");
-         // make angle arc 
+         // make angle arc
         t0.selectAll(".angles")
             .attr("opacity", 1)
             .attr("d", function (d, i) { return d.arc_path })
@@ -407,7 +431,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
                 };
             })
             .attr("font-size",values_font_size)
-        
+
         t0.selectAll(".angles_text")
             .attr("transform", function (d, i) {
                 var x = d.x + Math.cos(toRadians(d.rotate_text)) * (line_distance_from_center + 2);
@@ -445,7 +469,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
             .attr("font-size",values_font_size)
         t0.selectAll(".set2_labels")
             .attr("transform", function (d) { return "rotate(" + (-d.rotate_text) + ")" })
-        
+
         if (!repeat_animate) return
 
         // move back to initial
@@ -606,7 +630,7 @@ function tm7_plot(containerSelector, ref, matrix_set1, matrix_set2) {
 
         /* 'point 2' is the point where the line through the circle
          * intersection points crosses the line between the circle
-         * centers.  
+         * centers.
          */
 
         /* Determine the distance from point 0 to point 2. */

@@ -15,6 +15,7 @@ import copy
 
 from contactnetwork.models import *
 from contactnetwork.distances import *
+from contactnetwork.functions import *
 from structure.models import Structure, StructureVectors, StructureExtraProteins
 from structure.templatetags.structure_extras import *
 from construct.models import Construct
@@ -38,6 +39,7 @@ import scipy.spatial.distance as ssd
 import time
 import hashlib
 import operator
+
 
 def get_hash(data):
     # create unique hash key for alignment combo
@@ -218,7 +220,7 @@ def PdbTableData(request):
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
 					'protein_conformation','wt_protein'))).order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
-    
+
     if exclude_non_interacting:
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
         data = data.filter(id__in=complex_structure_ids)
@@ -349,7 +351,7 @@ def PdbTableData(request):
         # residues_s = residues_wt
         #print(pdb,"residues",protein,residues_wt,residues_s,residues_s/residues_wt)
         r['fraction_of_wt_seq'] = int(100*residues_s/residues_wt)
- 
+
         a_list = []
         for a in s.stabilizing_agents.all():
             a_list.append(a)
@@ -613,8 +615,6 @@ def InteractionBrowserData(request):
         contact_options = [x.lower() for x in request.GET.getlist('options[]')]
     except IndexError:
         contact_options = []
-
-
 
     i_options_filter = Q()
     # Filter out contact within the same helix
@@ -1106,7 +1106,7 @@ def InteractionBrowserData(request):
                 current["set2"] = pdbs2.copy()
                 v["pdbs_freq_1"] = len(v["pdbs1"]) / len(pdbs1)
                 v["pdbs_freq_2"] = len(v["pdbs2"]) / len(pdbs2)
-                
+
                 #pf freq
                 v["pf_freq_1"] = 0
                 for pf, pf_pdbs in data['pfs1_lookup'].items():
@@ -1980,7 +1980,17 @@ def InteractionBrowserData(request):
                 data['tab4'][res1]['class_cons'] = ['','']
                 print('no res1',res1,'in class lookup')
 
-        ## Clean up to allow pickle / cache
+        # calculate information for 2D helical displacement plot
+        if mode == "double":
+            pdbs1_upper = [pdb.upper() for pdb in pdbs1]
+            pdbs2_upper = [pdb.upper() for pdb in pdbs2]
+            helical_time = time.time()
+            print("Start helical movements")
+            data['tm_movement_2D'] = {}
+            data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True)
+            data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False)
+            print("Helical movement calculations", time.time()-helical_time)
+
         data['tab3'] = {}
         data['pdbs'] = list(data['pdbs'])
         data['proteins'] = list(data['proteins'])
@@ -2484,7 +2494,7 @@ def ClusteringData(request):
         [distance_matrix, pdbs] = originMatrix(pdbs)
     elif cluster_method == '7': # distance to origin
         dis = Distances()
-        dis.lower_only = True
+        dis.filtered_gns = True
         print("Print setting lower only")
         dis.load_pdbs(pdbs)
         distance_matrix = dis.get_distance_matrix(normalize = False)

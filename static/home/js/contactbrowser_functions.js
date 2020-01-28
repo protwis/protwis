@@ -1061,7 +1061,9 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
                 $(".main_loading_overlay").hide();
 
                 // Set up default visualisation
-                initilizeInitialPlots();
+                tm7_plot("#two_sets_1", data["tm_movement_2D"]["intracellular"]);
+                tm7_plot("#two_sets_2", data["tm_movement_2D"]["extracellular"]);
+                // initilizeInitialPlots();
             }
         });
     }
