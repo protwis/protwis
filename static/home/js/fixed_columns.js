@@ -353,7 +353,11 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
-                null
+                null,
+                null,
+                null,
+                null,
+                null,
             ]
         });
         console.log('done datatable');
@@ -396,20 +400,48 @@ function showPDBtable(element) {
                 },
                 {
                     column_number: 5,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Species",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 6,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Method",
+                    filter_default_label: "Species",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 7,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Best species",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 8,
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 9,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Method",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 10,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     select_type_options: {
@@ -419,17 +451,26 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 8,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
+                    column_number: 11,
+                    filter_type: "range_number",
                     select_type_options: {
                         width: '70px'
                     },
-                    filter_default_label: "Res (Å)",
+                    filter_default_label: ["Res (Å)",""],
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 9,
+                    column_number: 12,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Best res.",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 13,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "State",
@@ -456,7 +497,7 @@ function showPDBtable(element) {
 
                 // },
                 {
-                    column_number: 10,
+                    column_number: 14,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Contact rep.",
@@ -464,7 +505,7 @@ function showPDBtable(element) {
 
                 },
                 {
-                    column_number: 11,
+                    column_number: 15,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Gprot-bound likeness",
@@ -472,7 +513,7 @@ function showPDBtable(element) {
 
                 },
                 {
-                    column_number: 12,
+                    column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "TM6 opening",
@@ -487,56 +528,66 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 13,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "SignalProtein",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 14,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Subfamily",
-                    filter_reset_button_text: false,
-                },
-                {
                     column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Fusion",
+                    filter_default_label: "Sign Prot",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 18,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Antibody",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 19,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Ligand",
+                    filter_default_label: "Family",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 20,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Ligand function",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Ligand type",
+                    filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 22,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Antibody",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 23,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Ligand",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 24,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Ligand function",
+                    filter_match_mode: "exact",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 25,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Ligand type",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 26,
                     filter_container_id: mode_without_space+'_external_filter_container_0',
                     html_data_type: "text",
                     select_type: 'select2',
@@ -567,9 +618,9 @@ function showPDBtable(element) {
             }
         );
         yadcf.exResetAllFilters(oTable[mode]);
-        yadcf.exFilterColumn(oTable[mode], [
-            [21, "*Only show mammalian structures and those from human or closest species"],
-          ]);
+        // yadcf.exFilterColumn(oTable[mode], [
+        //     [21, "*Only show mammalian structures and those from human or closest species"],
+        //   ]);
         console.log('done yadcf');
 
         oTable[mode].on('draw.dt', function(e, oSettings) {

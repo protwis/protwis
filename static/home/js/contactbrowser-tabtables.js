@@ -153,6 +153,12 @@ function renderDataTablesYadcf(element) {
     const selector = "#" + $('.main_option:visible').attr('id');
     const analys_mode = selector.replace('-tab', '');
     var table = $(selector + " .browser-table-" + tab_number);
+    console.log(table,table.attr('class'))
+    var heading = $(selector + " .tab-content .panel-title:visible");
+    if (!heading.hasClass("button_added") && analys_mode == "#two-crystal-groups") {
+        heading.append(' <button type="button"  onclick="make_abs_values(\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs">Toggle if difference values are absolute</button>');
+        heading.addClass("button_added");
+    }
     // If table is without tbody, then do not init further.
     if (!(table.find("thead").length)) {
         console.timeEnd("renderDataTablesYadcf");
@@ -1258,26 +1264,10 @@ function renderBrowser(data) {
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
-            var pfreq1 = Math.round(100 * v['proteins1'].length / proteins_1);
-            var pfreq2 = Math.round(100 * v['proteins2'].length / proteins_2);
-            var diff_pfreq = pfreq1 - pfreq2;
-            var sfreq1 = Math.round(100 * v['pdbs1'].length / pdbs_1);
-            var sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
+            var sfreq1 = Math.round(100 * (normalized ? v['pf_freq_1'] : v['pdbs_freq_1']));
+            var sfreq2 = Math.round(100* (normalized ? v['pf_freq_2'] : v['pdbs_freq_2']));
             var class_seq_cons = v['class_seq_cons'];
             if (normalized) {
-                var pffreq1 = Math.round(100 * v['pfs1'].length / pfs_1);
-                var pffreq2 = Math.round(100 * v['pfs2'].length / pfs_2);
-
-                // DEBUG POSSIBLITY
-                // if (pffreq1!=sfreq1 || pffreq2!=sfreq2) {
-                //     console.log('diff for',i)
-                //     console.log('DEDUCE NORMALIZED',pffreq1,sfreq1, pffreq2,sfreq2);
-                //     console.table(v);
-                // }
-
-                // replace values for normalized ones
-                sfreq1 = pffreq1;
-                sfreq2 = pffreq2;
                 pos1_missing_1 = data['pfs1'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs1'].length;
                 pos1_missing_2 = data['pfs2'].filter(x => data['missing'][gn1]['present'].includes(x)).length / data['pfs2'].length;
                 pos1_missing = Math.round(100*(pos1_missing_2-pos1_missing_1));
@@ -1334,8 +1324,8 @@ function renderBrowser(data) {
 
             types_count = {};
             Object.entries(v['types_count']).forEach(([key,value])=>{
-                types_count_set1 = Math.round(100*value[0].length / set_1.length);
-                types_count_set2 = Math.round(100*value[1].length / set_2.length);
+                types_count_set1 = Math.round(100* (normalized ? value[0]['pf_freq'] : value[0]['pdb_freq'])); //set1
+                types_count_set2 = Math.round(100* (normalized ? value[1]['pf_freq'] : value[1]['pdb_freq'])); //set2
                 types_count[key] = [types_count_set1,types_count_set2,types_count_set1-types_count_set2];
             })
 
@@ -1545,25 +1535,7 @@ function renderBrowser(data) {
         $.each(data['interactions'], function(i, v) {
             var gn1 = i.split(",")[0]
             var gn2 = i.split(",")[1]
-            var sfreq1 = Math.round(100 * v['pdbs'].length / pdbs_counts);
-            var set = data['pdbs'];
-
-
-
-            if (normalized) {
-                var pffreq1 = Math.round(100 * v['pfs'].length / pfs);
-                var set = data['pfs'];
-
-                // DEBUG POSSIBLITY
-                // if (pffreq1!=sfreq1 ) {
-                //     console.log('diff for',i)
-                //     console.log('DEDUCE NORMALIZED',pffreq1,sfreq1);
-                //     console.table(v);
-                // }
-
-                // replace values for normalized ones
-                sfreq1 = pffreq1;
-            }
+            var sfreq1 = Math.round(100* (normalized ? v['pf_freq'] : v['pdbs_freq']));
 
             var class_seq_cons = v['class_seq_cons'];
             // var types = v['types'].join(",<br>");
@@ -1579,8 +1551,7 @@ function renderBrowser(data) {
 
             types_count = {};
             Object.entries(v['types_count']).forEach(([key,value])=>{
-                types_count_set = Math.round(100*value.length / set.length);
-                types_count[key] = types_count_set;
+                types_count[key] = Math.round(100* (normalized ? value['pf_freq'] : value['pdb_freq']));
             })
 
             all_angles_1 = data['all_angles'][gn1];
@@ -3709,6 +3680,9 @@ function gray_scale_table(table) {
         for (let [j, cell] of [...row.cells].entries()) {
             cols[j] = cols[j] || [];
             cols[j].push(cell.innerText)
+            if (cell.innerText.charAt(0) == '-' && cell.innerText.length > 1) {
+                $(cell).addClass("minus");
+            }
         }
     }
     maxmin = [];
@@ -3756,6 +3730,34 @@ function gray_scale_table(table) {
     console.timeEnd('Greyscale');
 }
 
+function make_abs_values(table) {
+    $(".main_loading_overlay").show();
+    console.time('Abs values')
+    console.log(table);
+
+    myVar = setTimeout(function () {
+            var dt_table = $(table).DataTable();
+
+            c = 0;
+            dt_table.cells('.minus').every(function () {
+                d = String(this.data());
+                c += 1;
+                if (d.charAt(0) == '-' && d.length > 1) {
+                    this.data(d.substr(1));
+                    $(this.node()).addClass("minus_removed");
+                } else if ($(this.node()).hasClass("minus_removed")) {
+                    this.data("-" + d);
+                    $(this.node()).removeClass("minus_removed");
+                }
+            })
+
+            dt_table.draw(false);
+            console.timeEnd('Abs values')
+            console.log(c + ' cells changed');
+            $(".main_loading_overlay").hide();
+        }
+        , 100);
+}
 var currentHover = -1;
 function enable_hover(table){
     table[0].children[0].addEventListener("mouseover", function(e){

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q, F, Prefetch, Avg, StdDev
+from django.db.models import Q, F, Prefetch, Avg, StdDev, IntegerField, Sum, Case, When, Min, Max
 from django.db.models.functions import Concat
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
@@ -19,7 +19,7 @@ from contactnetwork.functions import *
 from structure.models import Structure, StructureVectors, StructureExtraProteins
 from structure.templatetags.structure_extras import *
 from construct.models import Construct
-from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair
+from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair, ProteinConformation
 from residue.models import Residue, ResidueGenericNumber
 from signprot.models import SignprotComplex
 from interaction.models import StructureLigandInteraction
@@ -219,18 +219,39 @@ def PdbTableData(request):
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
-					'protein_conformation','wt_protein')))
+					'protein_conformation','wt_protein'))).order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
 
     if exclude_non_interacting:
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
         data = data.filter(id__in=complex_structure_ids)
 
+    # get a gn residue count for all WT proteins
+    proteins_pks = Structure.objects.filter(refined=False).values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
+    residue_counts = ProteinConformation.objects.filter(protein__pk__in=proteins_pks).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+    rcs = {}
+    for rc in residue_counts:
+        rcs[rc['protein__pk']] = rc['res_count']
+
+    # get minimum resolution for every receptor/state pair
+    resolutions = Structure.objects.filter(refined=False).values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
+    best_resolutions = {}
+    for r in resolutions:
+        key = '{}_{}'.format(r['protein_conformation__protein__parent'], r['state__name'])
+        best_resolutions[key] = r['res']
+
+    # get best signalprotein/species/receptor
+    signal_ps = StructureExtraProteins.objects.all().values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+    best_signal_p = {}
+    for ps in signal_ps:
+        key = '{}_{}'.format(ps['structure__protein_conformation__protein__parent'], ps['display_name'])
+        best_signal_p[key] = ps['coverage']
+
     data_dict = OrderedDict()
-    data_table = "<table id2='structure_selection' class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
+    data_table = "<table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
         <thead><tr> \
-            <th rowspan=2><input class='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'></th> \
-            <th colspan=5>Receptor</th> \
-            <th colspan=3>Structure</th> \
+            <th rowspan=2> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
+            <th colspan=8>Receptor</th> \
+            <th colspan=4>Structure</th> \
             <th colspan=4>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
@@ -240,6 +261,10 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
+            <th>% of Seq</th> \
+            <th></th> \
+            <th></th> \
+            <th>Identity % to Human</th> \
             <th></th> \
             <th></th> \
             <th></th> \
@@ -263,6 +288,7 @@ def PdbTableData(request):
             <th></th> \
         </tr></thead><tbody>\n"
 
+    identity_lookup = {}
     for s in data:
         pdb_id = s.pdb_code.index
         r = {}
@@ -285,6 +311,7 @@ def PdbTableData(request):
 
         r['mammal'] = 'Only show mammalian receptor structures (even if the non-mammalian is the only)' if s.mammal else ''
         r['closest_to_human'] = 'Only show structures from human or the closest species (for each receptor and state)' if s.closest_to_human else ''
+        r['closest_to_human_raw'] = s.closest_to_human
 
         r['extra_filter'] = []
         if s.mammal and s.closest_to_human:
@@ -293,6 +320,37 @@ def PdbTableData(request):
             r['extra_filter'] = [r['mammal']]
         elif s.closest_to_human:
             r['extra_filter'] = [r['closest_to_human']]
+
+        r['identity_to_human'] = "100"
+        if r['species'] != 'Human':
+            key = 'identity_to_human_{}_{}'.format(s.protein_conformation.protein.parent.family.slug,s.protein_conformation.protein.species.pk)
+            if key in identity_lookup:
+                  r['identity_to_human'] = identity_lookup[key]
+            else:
+                r['identity_to_human'] = cache.get(key)
+                if r['identity_to_human'] == None:
+                    try:
+                        a = Alignment()
+                        ref_p = Protein.objects.get(family = s.protein_conformation.protein.parent.family, species__common_name = 'Human', sequence_type__slug = 'wt')
+                        a.load_reference_protein(ref_p)
+                        a.load_proteins([s.protein_conformation.protein.parent])
+                        a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+                        a.build_alignment()
+                        a.calculate_similarity()
+                        a.calculate_statistics()
+                        p = a.proteins[1]
+                        r['identity_to_human'] = int(p.identity)
+                    except:
+                        r['identity_to_human'] = 0
+                    cache.set(key,r['identity_to_human'], 24*7*3600)
+                identity_lookup[key] = r['identity_to_human']
+
+
+        residues_wt = rcs[s.protein_conformation.protein.parent.pk]
+        residues_s = s.res_count
+        # residues_s = residues_wt
+        #print(pdb,"residues",protein,residues_wt,residues_s,residues_s/residues_wt)
+        r['fraction_of_wt_seq'] = int(100*residues_s/residues_wt)
 
         a_list = []
         for a in s.stabilizing_agents.all():
@@ -306,7 +364,14 @@ def PdbTableData(request):
         r['signal_protein_subtype'] = ''
         r['signal_protein_note'] = ''
         r['signal_protein_seq_cons'] = ''
+        r['signal_protein_seq_cons_color'] = ''
         for ep in s.extra_proteins.all():
+            key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep)
+            if best_signal_p[key] == ep.wt_coverage:
+                # this is the best coverage
+                r['signal_protein_seq_cons_color'] = 'green'
+            else:
+                r['signal_protein_seq_cons_color'] = 'red'
             if ep.category == "Arrestin":
                  r['signal_protein'] = ep.wt_protein.family.parent.parent.name
             else:
@@ -328,6 +393,9 @@ def PdbTableData(request):
         r['method'] = s.structure_type.type_short()
 
         r['resolution'] = "{0:.2g}".format(s.resolution)
+
+        r['resolution_best'] = s.resolution==best_resolutions['{}_{}'.format(s.protein_conformation.protein.parent.pk, s.state.name)]
+
         r['7tm_distance'] = s.distance
         r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
         r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness))+"%" if s.gprot_bound_likeness != None else '-'
@@ -402,6 +470,10 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
+                        <td><p style='color:{}'>{}</p></td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -415,10 +487,14 @@ def PdbTableData(request):
                                         r['protein_long'],
                                         r['protein_family'],
                                         r['class'],
+                                        r['fraction_of_wt_seq'],
                                         r['species'],
+                                        'Best' if r['closest_to_human_raw'] else '',
+                                        r['identity_to_human'],
                                         r['method'],
                                         pdb_id,
                                         r['resolution'],
+                                        'Best' if r['resolution_best'] else '',
                                         r['state'],
                                         r['contact_representative_score'],
                                         r['gprot_bound_likeness'],
@@ -426,6 +502,7 @@ def PdbTableData(request):
                                         r['signal_protein'],
                                         r['signal_protein_subtype'],
                                         r['signal_protein_note'],
+                                        r['signal_protein_seq_cons_color'],
                                         r['signal_protein_seq_cons'],
                                         r['fusion'],
                                         r['antibody'],
@@ -671,6 +748,7 @@ def InteractionBrowserData(request):
         data['pdbs'] = set()
         data['proteins'] = set()
         data['pfs'] = set()
+        data['pfs_lookup'] = defaultdict(lambda: [])
         data['tab3'] = {}
         data['tab4'] = {}
         data['aa_map'] = {}
@@ -684,6 +762,8 @@ def InteractionBrowserData(request):
             data['proteins2'] = set()
             data['pfs1'] = set()
             data['pfs2'] = set()
+            data['pfs1_lookup'] = defaultdict(lambda: [])
+            data['pfs2_lookup'] = defaultdict(lambda: [])
 
         structures = Structure.objects.filter(pdb_code__index__in=pdbs_upper
                      ).select_related('protein_conformation__protein'
@@ -697,6 +777,7 @@ def InteractionBrowserData(request):
             protein, pdb_name,pf  = [s['protein_conformation__protein__parent__entry_name'],s['protein_conformation__protein__entry_name'],s['protein_conformation__protein__parent__family__slug']]
             s_lookup[s['pk']] = [protein, pdb_name,pf]
             pdb_lookup[pdb_name] = [protein, s['pk'],pf]
+            data['pfs_lookup'][pf].append(pdb_name)
             # List PDB files that were found in dataset.
             data['pdbs'] |= {pdb_name}
             data['proteins'] |= {protein}
@@ -708,10 +789,12 @@ def InteractionBrowserData(request):
                     data['pdbs1'] |= {pdb_name}
                     data['proteins1'] |= {protein}
                     data['pfs1'] |= {pf}
+                    data['pfs1_lookup'][pf].append(pdb_name)
                 if pdb_name in pdbs2:
                     data['pdbs2'] |= {pdb_name}
                     data['proteins2'] |= {protein}
                     data['pfs2'] |= {pf}
+                    data['pfs2_lookup'][pf].append(pdb_name)
 
         if mode == 'double':
             if normalized:
@@ -888,7 +971,7 @@ def InteractionBrowserData(request):
                 if coord not in data['interactions']:
                     data['interactions'][coord] = {'pdbs1':[], 'proteins1': [], 'pfs1':[], 'pdbs2':[], 'proteins2': [], 'pfs2':[], 'secondary1' : [], 'secondary2' : [], 'class_seq_cons' : [0,0], 'types' : [], 'types_count' : {}}
                     for i_type in ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']:
-                        data['interactions'][coord]['types_count'][i_type] = [[],[]] #set1, #set2
+                        data['interactions'][coord]['types_count'][i_type] = [{'pdbs':[],'pdb_freq':0,'pf_freq':0},{'pdbs':[],'pdb_freq':0,'pf_freq':0}] #set1, #set2
 
                 if model in i_types:
                     if model not in data['interactions'][coord]['types']:
@@ -910,8 +993,8 @@ def InteractionBrowserData(request):
                     data['tab3'][res1]['set1_count'].add('{},{}'.format(pdb_name,res2))
                     data['tab3'][res2]['set1_count'].add('{},{}'.format(pdb_name,res1))
 
-                    if normalized_value not in data['interactions'][coord]['types_count'][model][0]:
-                            data['interactions'][coord]['types_count'][model][0].append(normalized_value)
+                    if normalized_value not in data['interactions'][coord]['types_count'][model][0]['pdbs']:
+                            data['interactions'][coord]['types_count'][model][0]['pdbs'].append(pdb_name)
 
                 if pdb_name in pdbs2:
                     if model in i_types:
@@ -929,8 +1012,8 @@ def InteractionBrowserData(request):
                     data['tab3'][res1]['set2_count'].add('{},{}'.format(pdb_name,res2))
                     data['tab3'][res2]['set2_count'].add('{},{}'.format(pdb_name,res1))
 
-                    if normalized_value not in data['interactions'][coord]['types_count'][model][1]:
-                            data['interactions'][coord]['types_count'][model][1].append(normalized_value)
+                    if normalized_value not in data['interactions'][coord]['types_count'][model][1]['pdbs']:
+                            data['interactions'][coord]['types_count'][model][1]['pdbs'].append(pdb_name)
 
                 ## Presence lookup
                 pdbs_with_res1 = r_presence_lookup[res1]
@@ -959,7 +1042,7 @@ def InteractionBrowserData(request):
                 if coord not in data['interactions']:
                     data['interactions'][coord] = {'pdbs':[], 'proteins': [], 'pfs': [], 'secondary': [], 'class_seq_cons' : 0, 'types' : [], 'types_count' : {}, 'seq_pos':[res1_seq,res2_seq]}
                     for i_type in ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']:
-                        data['interactions'][coord]['types_count'][i_type] = [] #set
+                        data['interactions'][coord]['types_count'][i_type] = {'pdbs':[],'pdb_freq':0,'pf_freq':0} #set
 
                 if model in i_types or not i_types:
                     if model not in data['interactions'][coord]['types']:
@@ -972,8 +1055,8 @@ def InteractionBrowserData(request):
                     data['interactions'][coord]['pfs'].append(pf)
                 data['interactions'][coord]['secondary'].append([model,res1_aa,res2_aa,pdb_name])
 
-                if normalized_value not in data['interactions'][coord]['types_count'][model]:
-                    data['interactions'][coord]['types_count'][model].append(normalized_value)
+                if normalized_value not in data['interactions'][coord]['types_count'][model]['pdbs']:
+                    data['interactions'][coord]['types_count'][model]['pdbs'].append(pdb_name)
 
                 ## Presence lookup
                 pdbs_with_res1 = r_presence_lookup[res1]
@@ -1021,6 +1104,51 @@ def InteractionBrowserData(request):
                 current = {}
                 current["set1"] = pdbs1.copy()
                 current["set2"] = pdbs2.copy()
+                v["pdbs_freq_1"] = len(v["pdbs1"]) / len(pdbs1)
+                v["pdbs_freq_2"] = len(v["pdbs2"]) / len(pdbs2)
+
+                #pf freq
+                v["pf_freq_1"] = 0
+                for pf, pf_pdbs in data['pfs1_lookup'].items():
+                    pf_contribution = 0
+                    for pdb in pf_pdbs:
+                        # if pdb from pf has an interaction, add the fraction of the pf set
+                        if pdb in v["pdbs1"]:
+                            pf_contribution += 1 / len(pf_pdbs)
+                    v["pf_freq_1"] += pf_contribution
+                v["pf_freq_1"] /= len(data['pfs1'])
+
+                v["pf_freq_2"] = 0
+                for pf, pf_pdbs in data['pfs2_lookup'].items():
+                    pf_contribution = 0
+                    for pdb in pf_pdbs:
+                        # if pdb from pf has an interaction, add the fraction of the pf set
+                        if pdb in v["pdbs2"]:
+                            pf_contribution += 1 / len(pf_pdbs)
+                    v["pf_freq_2"] += pf_contribution
+                v["pf_freq_2"] /= len(data['pfs2'])
+
+                for i_t, vals in v['types_count'].items():
+                    vals[0]['pdb_freq'] = len(vals[0]["pdbs"]) / len(pdbs1)
+                    vals[1]['pdb_freq'] = len(vals[1]["pdbs"]) / len(pdbs2)
+
+                    for pf, pf_pdbs in data['pfs1_lookup'].items():
+                        pf_contribution = 0
+                        for pdb in pf_pdbs:
+                            # if pdb from pf has an interaction, add the fraction of the pf set
+                            if pdb in vals[0]["pdbs"]:
+                                pf_contribution += 1 / len(pf_pdbs)
+                        vals[0]["pf_freq"] += pf_contribution
+                    vals[0]["pf_freq"] /= len(data['pfs1'])
+
+                    for pf, pf_pdbs in data['pfs2_lookup'].items():
+                        pf_contribution = 0
+                        for pdb in pf_pdbs:
+                            # if pdb from pf has an interaction, add the fraction of the pf set
+                            if pdb in vals[1]["pdbs"]:
+                                pf_contribution += 1 / len(pf_pdbs)
+                        vals[1]["pf_freq"] += pf_contribution
+                    vals[1]["pf_freq"] /= len(data['pfs2'])
 
                 for setname,iset in [['set1','secondary1'],['set2','secondary2']]:
                     distinct_aa_pairs = set()
@@ -1114,6 +1242,33 @@ def InteractionBrowserData(request):
                 current["set"] = pdbs1.copy()
                 setname = "set"
                 distinct_aa_pairs = set()
+
+                #Calculate pdb_freqs
+                v["pdbs_freq"] = len(v["pdbs"]) / len(pdbs1)
+
+                #pf freq
+                v["pf_freq"] = 0
+                for pf, pf_pdbs in data['pfs_lookup'].items():
+                    pf_contribution = 0
+                    for pdb in pf_pdbs:
+                        # if pdb from pf has an interaction, add the fraction of the pf set
+                        if pdb in v["pdbs"]:
+                            pf_contribution += 1 / len(pf_pdbs)
+                    v["pf_freq"] += pf_contribution
+                v["pf_freq"] /= len(data['pfs'])
+
+                for i_t, vals in v['types_count'].items():
+                    vals['pdb_freq'] = len(vals["pdbs"]) / len(pdbs1)
+                    for pf, pf_pdbs in data['pfs_lookup'].items():
+                        pf_contribution = 0
+                        for pdb in pf_pdbs:
+                            # if pdb from pf has an interaction, add the fraction of the pf set
+                            if pdb in vals["pdbs"]:
+                                pf_contribution += 1 / len(pf_pdbs)
+                        vals["pf_freq"] += pf_contribution
+                    vals["pf_freq"] /= len(data['pfs'])
+
+
                 for s in v['secondary']:
                     i = s[0]
                     aa_pair = ''.join(s[1:3])
@@ -1840,6 +1995,7 @@ def InteractionBrowserData(request):
         data['pdbs'] = list(data['pdbs'])
         data['proteins'] = list(data['proteins'])
         data['pfs'] = list(data['pfs'])
+        data['pfs_lookup'] = dict(data['pfs_lookup'])
         data['segm_lookup'] = segm_lookup
         data['segments'] = list(data['segments'])
         data['normalized'] = normalized
@@ -1851,6 +2007,8 @@ def InteractionBrowserData(request):
             data['proteins2'] = list(data['proteins2'])
             data['pfs1'] = list(data['pfs1'])
             data['pfs2'] = list(data['pfs2'])
+            data['pfs1_lookup'] = dict(data['pfs1_lookup'])
+            data['pfs2_lookup'] = dict(data['pfs2_lookup'])
         else:
             data['pdbs'] = list(data['pdbs'])
         cache.set(hash_cache_key,data,3600*24)
