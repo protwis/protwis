@@ -101,11 +101,11 @@ function tm7_plot(containerSelector, plot_data) {
     });
 
     padding = 53; //33
-    min_y = Math.min.apply(Math, set2_data.map(a => a.y)) - padding;
-    max_y = Math.max.apply(Math, set2_data.map(a => a.y)) + padding;
+    min_y = Math.min.apply(Math, [...set1_data, ...set2_data].map(a => a.y)) - padding;
+    max_y = Math.max.apply(Math, [...set1_data, ...set2_data].map(a => a.y)) + padding;
 
-    min_x = Math.min.apply(Math, set2_data.map(a => a.x)) - padding;
-    max_x = Math.max.apply(Math, set2_data.map(a => a.x)) + padding;
+    min_x = Math.min.apply(Math, [...set1_data, ...set2_data].map(a => a.x)) - padding;
+    max_x = Math.max.apply(Math, [...set1_data, ...set2_data].map(a => a.x)) + padding;
 
     circle_r = 33;
     line_widths = 3;
@@ -153,11 +153,11 @@ function tm7_plot(containerSelector, plot_data) {
 
     }
 
-    $(containerSelector).find(".plot-container").html('')
-    $(containerSelector).find(".plot-container").addClass("tm7Plot");
-    $(containerSelector).find(".plot-container").css("position","relative");
+    $(containerSelector).html('')
+    $(containerSelector).addClass("tm7Plot");
+    $(containerSelector).css("position","relative");
 
-    var svgContainer = d3v4.select(containerSelector).select(".plot-container").append("svg")
+    var svgContainer = d3v4.select(containerSelector).append("svg")
         .attr("viewBox", min_x + " " + min_y + " " + (max_x - min_x) + " " + (max_y - min_y))
         .attr("width", "100%")
         .attr("style", "height: 500px");
@@ -186,7 +186,6 @@ function tm7_plot(containerSelector, plot_data) {
         .attr("orient", "auto-start-reverse")
         .append("path")
         .attr("d", "M 0 0 L 10 5 L 0 10 z")
-<<<<<<< HEAD
         .attr("fill", "grey"); 
     
     
@@ -208,9 +207,6 @@ function tm7_plot(containerSelector, plot_data) {
         .attr("dx", 0.2)
         .attr("dy", 1)
         .attr("stdDeviation",0.2);
-=======
-        .attr("fill", "grey");
->>>>>>> f635a1622cc83ce18c9c9c40b675e82cafd3e530
 
 
     var set1 = svgContainer.selectAll("set1")
@@ -541,7 +537,7 @@ function tm7_plot(containerSelector, plot_data) {
     function create_overlay() {
         var newDiv = document.createElement("div");
 
-        $(containerSelector+" .plot-container").find(".controls-panel").remove();
+        $(containerSelector).find(".controls-panel").remove();
 
         newDiv.setAttribute("class", "controls-panel");
         content = '<span class="pull-right network_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">' +
@@ -550,7 +546,7 @@ function tm7_plot(containerSelector, plot_data) {
         '</span>';
         newDiv.innerHTML = content;
 
-        $(containerSelector+" .plot-container").prepend(newDiv);
+        $(containerSelector).prepend(newDiv);
         $(containerSelector).find(".options").toggle();
 
         $(containerSelector).find(".network_controls_toggle").click(function() {

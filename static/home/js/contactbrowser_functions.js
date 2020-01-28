@@ -871,6 +871,18 @@ function drawPlotPanel(plot_type, plot_div) {
 
             createSnakeplot(raw_data, 'snakeplot-' + plot_id);
             break;
+        case "tm7_plot_intra":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["intracellular"]);
+            break;
+        case "tm7_plot_extra":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"]);
+            break;
     }
 }
 
@@ -889,6 +901,8 @@ var plotting_options = {
         ['flareplot_segments', 'Flare Plot'],
         ['force_network_segment', 'Network'],
         ['force_network_3d_segment', 'Network 3D'],
+        ['tm7_plot_intra', '7 TM movement (intracellular) (only for two-sets)'],
+        ['tm7_plot_extra', '7 TM movement (extracellular) (only for two-sets)'],
     ],
     'Contact frequencies': [
         ['boxplot', 'Box plot'],
@@ -1061,9 +1075,7 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
                 $(".main_loading_overlay").hide();
 
                 // Set up default visualisation
-                tm7_plot("#two_sets_1", data["tm_movement_2D"]["intracellular"]);
-                tm7_plot("#two_sets_2", data["tm_movement_2D"]["extracellular"]);
-                // initilizeInitialPlots();
+                initilizeInitialPlots();
             }
         });
     }
