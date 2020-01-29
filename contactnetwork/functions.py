@@ -59,7 +59,7 @@ def convert2D_PLS(tm_points):
     return fit
 
 # 3D reconstruction based on average distances
-def recreate3D(distance_matrix, intracellular = True):
+def recreate3D(distance_matrix):
     tms = [[0]] * 7
     tms[0] = np.array([0, 0, 0])
     tms[1] = np.array([distance_matrix[0][1], 0, 0])
@@ -71,13 +71,7 @@ def recreate3D(distance_matrix, intracellular = True):
     x2 = a*tms[1][0]/d
     y2 = a*tms[1][1]/d
     x3 = x2+h*tms[1][1]/d
-    y3 = y2-h*tms[1][0]/d
-
-    # Either positive or negative (switch for IC/EC)
-    if intracellular:
-        y3 = abs(y3)
-    else:
-        y3 = -1*abs(y3)
+    y3 = abs(y2-h*tms[1][0]/d)
 
     tms[2] = np.array([x3, y3, 0])
 
@@ -100,6 +94,50 @@ def recreate3D(distance_matrix, intracellular = True):
             #print(changes)
             lowest = changes.index(min(changes))
             tms[i] = tms[i][lowest]
+
+    return tms
+
+
+# 3D reconstruction based on average distances
+def recreate3Dorder(distance_matrix, tm_ranking):
+    print(tm_ranking)
+    tms = [[0]] * 7
+    tms[0] = np.array([0, 0, 0])
+    tms[1] = np.array([distance_matrix[tm_ranking[0]][tm_ranking[1]], 0, 0])
+
+    # place TM3 - relative to TM1 and TM2
+    d = tms[1][0]
+    print(d)
+    a = (math.pow(distance_matrix[tm_ranking[0]][tm_ranking[2]],2) - math.pow(distance_matrix[tm_ranking[1]][tm_ranking[2]],2) + math.pow(d,2)) / (2*d)
+    h = math.sqrt(math.pow(distance_matrix[tm_ranking[0]][tm_ranking[2]],2) - math.pow(a,2))
+    x2 = a*tms[1][0]/d
+    y2 = a*tms[1][1]/d
+    x3 = x2+h*tms[1][1]/d
+    y3 = abs(y2-h*tms[1][0]/d)
+
+    tms[2] = np.array([x3, y3, 0])
+    for i in range(3,7):
+        #print("calculating for TM", str(i+1))
+        tms[i] = trilaterate(tms[0], tms[1], tms[2], distance_matrix[tm_ranking[0]][tm_ranking[i]], distance_matrix[tm_ranking[1]][tm_ranking[i]], distance_matrix[tm_ranking[2]][tm_ranking[i]])
+        if i == 4:
+            # Determine placement TM4 and TM5 using each other
+            ref_dist = distance_matrix[tm_ranking[i-1]][tm_ranking[i]]
+            changes = [abs(math.sqrt(sum([math.pow(x,2) for x in tms[4][j]-tms[3][k]]))-ref_dist) for j in range(0,2) for k in range(0,2)]
+            #print("Differences for TM", str(i+1))
+            #print(changes)
+            lowest = changes.index(min(changes))
+            tms[3] = tms[3][math.floor(lowest/2)]
+            tms[4] = tms[4][lowest%2]
+        elif i > 4:
+            ref_dist = distance_matrix[tm_ranking[3]][tm_ranking[i]]
+            changes = [abs(math.sqrt(sum([math.pow(x,2) for x in tms[i][j]-tms[3]]))-ref_dist) for j in range(0,2)]
+            #print("Differences for TM", str(i+1))
+            #print(changes)
+            lowest = changes.index(min(changes))
+            tms[i] = tms[i][lowest]
+
+    # Rearrange to correct order
+    tms = [tms[tm_ranking.index(i)] for i in range(0,7)]
 
     return tms
 
@@ -167,13 +205,9 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
                 print("no filter keys")
                 return []
             distance_data1[i][j] = sum([k for x in filter_keys for k in distances_set1.data[x]])/(len(filter_keys)*len(pdbs1))
+            distance_data1[j][i] = distance_data1[i][j]
             distance_data2[i][j] = sum([k for x in filter_keys for k in distances_set2.data[x]])/(len(filter_keys)*len(pdbs2))
-
-    tms_set1 = recreate3D(distance_data1, 1)
-    plane_set1, z_set1 = convert2D_SVD(tms_set1, intracellular)
-
-    tms_set2 = recreate3D(distance_data2, 1)
-    plane_set2, z_set2 = convert2D_SVD(tms_set2, intracellular)
+            distance_data2[j][i] = distance_data2[i][j]
 
     # Identify most stable TMs by ranking the variations to all other helices
     diff_distances = [x[:] for x in [[0] * 7] * 7]
@@ -192,17 +226,30 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
         #diff_distances[i] = [sorted(diff_distances[i]).index(x) for j in range(0,7) for x in diff_distances[i]]
         #print(i,diff_distances[i], real_differences[i])
 
-
-    # TODO Make oneliner from this
+    # TODO Simplify
     final_rank = [0] * 7
     for i in range(0,7):
         final_rank[i] = sum([diff_distances[j][i] for j in range(0,7)])
 
     # Grab stable TMs
-    final_rank = [sorted(final_rank).index(x) for x in final_rank]
-    stable_one, stable_two = final_rank.index(0), final_rank.index(1)
+    tm_ranking = [0] * 7
+    sorted_rank = sorted(final_rank)
+    for i in range(0,7):
+        tm_ranking[i] = final_rank.index(sorted_rank[i])
+        final_rank[tm_ranking[i]] = 100 # make sure this TM isn't repeated
+
+    stable_one, stable_two = tm_ranking[0], tm_ranking[1]
     if stable_one > stable_two:
         stable_one, stable_two = stable_two, stable_one
+
+    # Recalculate 3D network and populate 2D views
+    tms_set1 = recreate3Dorder(distance_data1, tm_ranking)
+    #tms_set1 = recreate3D(distance_data1)
+    plane_set1, z_set1 = convert2D_SVD(tms_set1, intracellular)
+
+    tms_set2 = recreate3Dorder(distance_data2, tm_ranking)
+    #tms_set2 = recreate3D(distance_data2)
+    plane_set2, z_set2 = convert2D_SVD(tms_set2, intracellular)
 
     # Rescale positions to match true length
     scale = math.sqrt(math.pow(plane_set1[stable_two][0]-plane_set1[stable_one][0],2) + math.pow(plane_set1[stable_two][1]-plane_set1[stable_one][1],2))/distance_data1[stable_one][stable_two]
@@ -220,10 +267,11 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     new_two = new_one + vector * length_stable2
     plane_set2 = plane_set2 - plane_set2[stable_one] + new_one
 
+
     # Apply rotation
     old_vector = plane_set2[stable_two] - plane_set2[stable_one]
     old_vector = old_vector/np.linalg.norm(old_vector)
-    theta = np.arctan2(np.linalg.norm(np.cross(old_vector, vector)), np.dot(old_vector, vector))
+    theta = -1*np.arctan2(np.linalg.norm(np.cross(old_vector, vector)), np.dot(old_vector, vector))
     r = np.array(( (np.cos(theta), -np.sin(theta)),
                    (np.sin(theta),  np.cos(theta)) ))
     plane_set2 = plane_set2 - new_one
@@ -239,6 +287,11 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
             rotations[i] = -1*sum(rotations[i])/3
         else:
             rotations[i] = sum(rotations[i])/3
+
+    # TODO: check z-coordinates orientation
+    # Step 1: collect movement relative to membrane mid
+    # Step 2: find min and max TM
+    # Step 3: check if orientation of min/max TM matches the z-scales + intra/extra - if not invert z-coordinates
 
     labeled_set1 = [{"label": "TM"+str(i+1), "x": plane_set1[i][0], "y": plane_set1[i][1], "z": z_set1[i], "rotation" : 0} for i in range(0,7)]
     labeled_set2 = [{"label": "TM"+str(i+1), "x": plane_set2[i][0], "y": plane_set2[i][1], "z": z_set2[i], "rotation" : rotations[i]} for i in range(0,7)]
