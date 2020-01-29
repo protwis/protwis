@@ -4,6 +4,7 @@ A set of utility functions for processing distances
 from contactnetwork.distances import *
 
 import math
+import scipy
 import numpy as np
 from numpy.linalg import norm
 
@@ -82,16 +83,16 @@ def recreate3Dorder(distance_matrix, tm_ranking):
             # Determine placement TM4 and TM5 using each other
             ref_dist = distance_matrix[tm_ranking[i-1]][tm_ranking[i]]
             changes = [abs(math.sqrt(sum([math.pow(x,2) for x in tms[4][j]-tms[3][k]]))-ref_dist) for j in range(0,2) for k in range(0,2)]
-            #print("Differences for TM", str(i+1))
-            #print(changes)
+#            print("Differences for TM", str(i+1))
+#            print(changes)
             lowest = changes.index(min(changes))
             tms[3] = tms[3][math.floor(lowest/2)]
             tms[4] = tms[4][lowest%2]
         elif i > 4:
             ref_dist = distance_matrix[tm_ranking[3]][tm_ranking[i]]
             changes = [abs(math.sqrt(sum([math.pow(x,2) for x in tms[i][j]-tms[3]]))-ref_dist) for j in range(0,2)]
-            #print("Differences for TM", str(i+1))
-            #print(changes)
+#            print("Differences for TM", str(i+1))
+#            print(changes)
             lowest = changes.index(min(changes))
             tms[i] = tms[i][lowest]
 
@@ -102,6 +103,7 @@ def recreate3Dorder(distance_matrix, tm_ranking):
     # for i in range(0,6):
     #     for j in range(i+1, 7):
     #         ref_dist = distance_matrix[i][j]
+    #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist))
     #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
 
     return tms
@@ -174,6 +176,14 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
             distance_data2[i][j] = sum([k for x in filter_keys for k in distances_set2.data[x]])/(len(filter_keys)*len(pdbs2))
             distance_data2[j][i] = distance_data2[i][j]
 
+    # print ("Set 1",intracellular)
+    # for i in range(0,7):
+    #     print(distance_data1[i])
+    #
+    # print ("Set 2",intracellular)
+    # for i in range(0,7):
+    #     print(distance_data2[i])
+
     # Identify most stable TMs by ranking the variations to all other helices
     diff_distances = [x[:] for x in [[0] * 7] * 7]
     real_differences = [x[:] for x in [[0] * 7] * 7]
@@ -204,10 +214,18 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
         final_rank[tm_ranking[i]] = 100 # make sure this TM isn't repeated
 
     stable_one, stable_two = tm_ranking[0], tm_ranking[1]
-    if stable_one > stable_two:
-        stable_one, stable_two = stable_two, stable_one
+
+    # Possible workaround for two consecutive helices if combined with rotation/translation
+    # if abs(stable_two-stable_one) == 1 or abs(stable_two-stable_one) == 6:
+    #     if abs(tm_ranking[2]-stable_one) > 1:
+    #         stable_two = tm_ranking[2]
+    #     else:
+    #         stable_one = tm_ranking[2]
+    # if stable_one > stable_two:
+    #     stable_one, stable_two = stable_two, stable_one
 
     # Recalculate 3D network and populate 2D views
+    # Note: rebuilding in order stable helices resulted in lower quality reconstruction, therefore back to TM order (1-7)
     #tms_set1 = recreate3Dorder(distance_data1, tm_ranking)
     tms_set1 = recreate3Dorder(distance_data1, range(0,7))
     plane_set1, z_set1 = convert2D_SVD(tms_set1, intracellular)
@@ -217,35 +235,66 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     plane_set2, z_set2 = convert2D_SVD(tms_set2, intracellular)
 
     # Rescale positions to match true length
-    scale = math.sqrt(math.pow(plane_set1[stable_two][0]-plane_set1[stable_one][0],2) + math.pow(plane_set1[stable_two][1]-plane_set1[stable_one][1],2))/distance_data1[stable_one][stable_two]
-    plane_set1 = plane_set1/scale
-    plane_set2 = plane_set2/scale
-    z_set1 = [x/scale for x in z_set1]
-    z_set2 = [x/scale for x in z_set2]
+    # scale = math.sqrt(math.pow(plane_set1[stable_two][0]-plane_set1[stable_one][0],2) + math.pow(plane_set1[stable_two][1]-plane_set1[stable_one][1],2))/distance_data1[stable_one][stable_two]
+    # plane_set1 = plane_set1/scale
+    # plane_set2 = plane_set2/scale
+    # z_set1 = [x/scale for x in z_set1]
+    # z_set2 = [x/scale for x in z_set2]
+    #
+    # vector = plane_set1[stable_two] - plane_set1[stable_one]
+    # vector = vector/np.linalg.norm(vector)
+    # length_stable2 = math.sqrt(math.pow(plane_set2[stable_two][0]-plane_set2[stable_one][0],2) + math.pow(plane_set2[stable_two][1]-plane_set2[stable_one][1],2))
+    #
+    # diff_correction = (length_stable2 - distance_data1[stable_one][stable_two])/2
+    #
+    # # Apply the translation
+    # new_one = plane_set1[stable_one] - vector * diff_correction
+    # new_two = new_one + vector * length_stable2
+    # plane_set2 = plane_set2 - plane_set2[stable_one] + new_one
+    #
+    #
+    # # Apply rotation
+    # old_vector = plane_set2[stable_two] - plane_set2[stable_one]
+    # old_vector = old_vector/np.linalg.norm(old_vector)
+    # theta = -1*np.arctan2(np.linalg.norm(np.cross(old_vector, vector)), np.dot(old_vector, vector))
+    # r = np.array(( (np.cos(theta), -np.sin(theta)),
+    #                (np.sin(theta),  np.cos(theta)) ))
+    # plane_set2 = plane_set2 - new_one
+    # plane_set2 = [r.dot(x) for x in plane_set2]
+    # plane_set2 = plane_set2 + new_one
 
-    vector = plane_set1[stable_two] - plane_set1[stable_one]
-    vector = vector/np.linalg.norm(vector)
-    length_stable2 = math.sqrt(math.pow(plane_set2[stable_two][0]-plane_set2[stable_one][0],2) + math.pow(plane_set2[stable_two][1]-plane_set2[stable_one][1],2))
+    ### NEW ROTATION
+    # length_stable = np.linalg.norm(plane_set1[stable_two] - plane_set1[stable_one])
+    # length_stable2 = np.linalg.norm(plane_set2[stable_two] - plane_set2[stable_one])
+    # new_one = plane_set2[stable_one]
+    # new_two = new_one + (plane_set2[stable_two] - plane_set2[stable_one])/length_stable2 * length_stable
+    # #origin = np.array([plane_set1[stable_one], plane_set1[stable_two]])
+    # #comparison = np.array([new_one, new_two])
+    # vector_orig = (plane_set1[stable_two] - plane_set1[stable_one])/length_stable
+    # vector_now = (new_two - new_one)/length_stable
+    # direction = np.cross(vector_orig, vector_now)
+    # angle = np.arccos(np.clip(np.dot(vector_orig, vector_now), -1.0, 1.0))
+    #
+    # r = np.array(( (np.cos(angle), -np.sin(angle)),
+    #                 (np.sin(angle),  np.cos(angle)) ))
+    #
+    # # change direction if necessary
+    # if direction >= 0:
+    #     r = np.linalg.inv(r)
+    #
+    # ref_set1 = plane_set1[stable_one]
+    # ref_set2 = plane_set2[stable_one]
+    #
+    # plane_set2 = [r.dot(x) for x in plane_set2 - ref_set2]
+    # plane_set2 = plane_set2 + ref_set1  (length_stable-length_stable2) * vector_orig
 
-    diff_correction = (length_stable2 - distance_data1[stable_one][stable_two])/2
 
-    # Apply the translation
-    new_one = plane_set1[stable_one] - vector * diff_correction
-    new_two = new_one + vector * length_stable2
-    plane_set2 = plane_set2 - plane_set2[stable_one] + new_one
-
-
-    # Apply rotation
-    old_vector = plane_set2[stable_two] - plane_set2[stable_one]
-    old_vector = old_vector/np.linalg.norm(old_vector)
-    theta = -1*np.arctan2(np.linalg.norm(np.cross(old_vector, vector)), np.dot(old_vector, vector))
-    r = np.array(( (np.cos(theta), -np.sin(theta)),
-                   (np.sin(theta),  np.cos(theta)) ))
-    plane_set2 = plane_set2 - new_one
-    plane_set2 = [r.dot(x) for x in plane_set2]
-    plane_set2 = plane_set2 + new_one
+    # find translation matrix between two sets
+    #align, scale = scipy.linalg.orthogonal_procrustes(plane_set1[tm_ranking[0:2]],plane_set2[tm_ranking[0:2]])
+    #plane_set1 = plane_set1.dot(align)
 
     # Add angles
+    # TODO: fix for other GPCR classes
     rotations = [0] * 7
     for i in range(0,7):
         # Ca-angle to axis core
