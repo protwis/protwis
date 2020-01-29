@@ -59,55 +59,14 @@ def convert2D_PLS(tm_points):
     return fit
 
 # 3D reconstruction based on average distances
-def recreate3D(distance_matrix):
-    tms = [[0]] * 7
-    tms[0] = np.array([0, 0, 0])
-    tms[1] = np.array([distance_matrix[0][1], 0, 0])
-
-    # place TM3 - relative to TM1 and TM2
-    d = tms[1][0]
-    a = (math.pow(distance_matrix[0][2],2) - math.pow(distance_matrix[1][2],2) + math.pow(d,2)) / (2*d)
-    h = math.sqrt(math.pow(distance_matrix[0][2],2) - math.pow(a,2))
-    x2 = a*tms[1][0]/d
-    y2 = a*tms[1][1]/d
-    x3 = x2+h*tms[1][1]/d
-    y3 = abs(y2-h*tms[1][0]/d)
-
-    tms[2] = np.array([x3, y3, 0])
-
-    for i in range(3,7):
-        #print("calculating for TM", str(i+1))
-        tms[i] = trilaterate(tms[0], tms[1], tms[2], distance_matrix[0][i], distance_matrix[1][i], distance_matrix[2][i])
-        if i == 4:
-            # Determine placement TM4 and TM5 using each other
-            ref_dist = distance_matrix[(i-1)][i]
-            changes = [abs(math.sqrt(sum([math.pow(x,2) for x in tms[4][j]-tms[3][k]]))-ref_dist) for j in range(0,2) for k in range(0,2)]
-            #print("Differences for TM", str(i+1))
-            #print(changes)
-            lowest = changes.index(min(changes))
-            tms[3] = tms[3][math.floor(lowest/2)]
-            tms[4] = tms[4][lowest%2]
-        elif i > 4:
-            ref_dist = distance_matrix[3][i]
-            changes = [abs(math.sqrt(sum([math.pow(x,2) for x in tms[i][j]-tms[3]]))-ref_dist) for j in range(0,2)]
-            #print("Differences for TM", str(i+1))
-            #print(changes)
-            lowest = changes.index(min(changes))
-            tms[i] = tms[i][lowest]
-
-    return tms
-
-
-# 3D reconstruction based on average distances
 def recreate3Dorder(distance_matrix, tm_ranking):
-    print(tm_ranking)
     tms = [[0]] * 7
     tms[0] = np.array([0, 0, 0])
     tms[1] = np.array([distance_matrix[tm_ranking[0]][tm_ranking[1]], 0, 0])
 
     # place TM3 - relative to TM1 and TM2
     d = tms[1][0]
-    print(d)
+
     a = (math.pow(distance_matrix[tm_ranking[0]][tm_ranking[2]],2) - math.pow(distance_matrix[tm_ranking[1]][tm_ranking[2]],2) + math.pow(d,2)) / (2*d)
     h = math.sqrt(math.pow(distance_matrix[tm_ranking[0]][tm_ranking[2]],2) - math.pow(a,2))
     x2 = a*tms[1][0]/d
@@ -138,6 +97,12 @@ def recreate3Dorder(distance_matrix, tm_ranking):
 
     # Rearrange to correct order
     tms = [tms[tm_ranking.index(i)] for i in range(0,7)]
+
+    # DEBUG distances
+    # for i in range(0,6):
+    #     for j in range(i+1, 7):
+    #         ref_dist = distance_matrix[i][j]
+    #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
 
     return tms
 
@@ -243,18 +208,20 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
         stable_one, stable_two = stable_two, stable_one
 
     # Recalculate 3D network and populate 2D views
-    tms_set1 = recreate3Dorder(distance_data1, tm_ranking)
-    #tms_set1 = recreate3D(distance_data1)
+    #tms_set1 = recreate3Dorder(distance_data1, tm_ranking)
+    tms_set1 = recreate3Dorder(distance_data1, range(0,7))
     plane_set1, z_set1 = convert2D_SVD(tms_set1, intracellular)
 
-    tms_set2 = recreate3Dorder(distance_data2, tm_ranking)
-    #tms_set2 = recreate3D(distance_data2)
+    #tms_set2 = recreate3Dorder(distance_data2, tm_ranking)
+    tms_set2 = recreate3Dorder(distance_data2, range(0,7))
     plane_set2, z_set2 = convert2D_SVD(tms_set2, intracellular)
 
     # Rescale positions to match true length
     scale = math.sqrt(math.pow(plane_set1[stable_two][0]-plane_set1[stable_one][0],2) + math.pow(plane_set1[stable_two][1]-plane_set1[stable_one][1],2))/distance_data1[stable_one][stable_two]
     plane_set1 = plane_set1/scale
     plane_set2 = plane_set2/scale
+    z_set1 = [x/scale for x in z_set1]
+    z_set2 = [x/scale for x in z_set2]
 
     vector = plane_set1[stable_two] - plane_set1[stable_one]
     vector = vector/np.linalg.norm(vector)
