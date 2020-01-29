@@ -900,13 +900,19 @@ function drawPlotPanel(plot_type, plot_div) {
 }
 
 var plotting_options = {
+    'TM1-7 segment': [
+        ['tm7_plot_intra', '2D plot – cytosolic (only for two-sets)'],
+        ['tm7_plot_extra', '2D plot – extracellular (only for two-sets)'],
+        ['tm7_plot_3d_intra','3D plot – cytosolic (only for two-sets)'],
+        ['tm7_plot_3d_extra','3D plot – extracellular (only for two-sets)']
+    ],
     'Contacts between generic residue positions': [
         ['ngl', '3D structure'],
         ['flareplot', 'Flare Plot'],
         ['flareplot_subset', 'Flare Plot (filtered positions)'],
         ['force_network', 'Network'],
         ['force_network_3d', 'Network 3D'],
-        ['heatmap', 'Matrix']
+        ['heatmap', 'Heatmap']
         // ['schematic_non', 'Schematic (Non-consecutive)'],
         // ['schematic_con', 'Schematic (Consecutive)'],
     ],
@@ -914,10 +920,6 @@ var plotting_options = {
         ['flareplot_segments', 'Flare Plot'],
         ['force_network_segment', 'Network'],
         ['force_network_3d_segment', 'Network 3D'],
-        ['tm7_plot_intra', '7 TM movement (intracellular) (only for two-sets)'],
-        ['tm7_plot_extra', '7 TM movement (extracellular) (only for two-sets)'],
-        ['tm7_plot_3d_intra',' 7 TM 3D (intracellular) (only for two-sets)'],
-        ['tm7_plot_3d_extra',' 7 TM 3D (extracellular) (only for two-sets)']
     ],
     'Contact frequencies': [
         ['boxplot', 'Box plot'],
