@@ -751,16 +751,16 @@ function initializeGoButton(selector, generic = false) {
 
 function drawPlotPanel(plot_type, plot_div) {
     plot_id = plot_div.attr('id');
-    console.log(plot_type);
-    console.log(plot_div);
-    console.log(plot_id);
+    // console.log(plot_type);
+    // console.log(plot_div);
+    // console.log(plot_id);
 
     // Delete whatever is already there
     plot_div.find('.plot-container').html('');
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
-    console.log("SET UP PLOT", plot_type, plot_div, plot_id, mode);
+    console.log("SET UP PLOT", plot_type, plot_id, mode);
     switch (mode) {
         case "two-crystal-groups":
             raw_data = two_sets_data;
@@ -883,7 +883,20 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
             tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"]);
             break;
+        case "tm7_plot_3d_intra":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["intracellular"]);
+            break;
+        case "tm7_plot_3d_extra":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"]);
+            break;
     }
+    
 }
 
 var plotting_options = {
@@ -903,6 +916,8 @@ var plotting_options = {
         ['force_network_3d_segment', 'Network 3D'],
         ['tm7_plot_intra', '7 TM movement (intracellular) (only for two-sets)'],
         ['tm7_plot_extra', '7 TM movement (extracellular) (only for two-sets)'],
+        ['tm7_plot_3d_intra',' 7 TM 3D (intracellular) (only for two-sets)'],
+        ['tm7_plot_3d_extra',' 7 TM 3D (extracellular) (only for two-sets)']
     ],
     'Contact frequencies': [
         ['boxplot', 'Box plot'],

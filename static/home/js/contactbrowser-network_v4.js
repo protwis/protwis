@@ -141,7 +141,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         if (!segment_view) {
             // resize by number of nodes if not segments
-            console.log(new_data["nodes"].length, "nodes");
             width = original_width*Math.sqrt(new_data["nodes"].length/2);
         } else {
             width = original_width*1;
@@ -169,7 +168,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     
     var path, link, node, svg,labelText;
     function init() {
-        console.log('init',div, containerSelector);
         div = d3v4.select(containerSelector).select("div");
         div.select("svg").remove();
         // if (force) force.stop();
