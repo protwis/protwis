@@ -39,15 +39,15 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
             });
 
             pdb_data[mode][0] = data;
-            color_schemes[mode][0]['red'] = NGL.ColormakerRegistry.addSelectionScheme([
-                [red_colors[1], segments_sets[highlight[0]]],
-                [red_colors[2], segments_sets[highlight[1]]],
-                [red_colors[3], segments_sets[highlight[2]]],
-                [red_colors[4], segments_sets[highlight[3]]],
-                [red_colors[5], segments_sets[highlight[4]]],
-                [red_colors[6], segments_sets[highlight[5]]],
-                [red_colors[7], segments_sets[highlight[6]]],
-                [red_colors[8], segments_sets[highlight[7]]],
+            color_schemes[mode][0]['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
+                [blue_colors[1], segments_sets[highlight[0]]],
+                [blue_colors[2], segments_sets[highlight[1]]],
+                [blue_colors[3], segments_sets[highlight[2]]],
+                [blue_colors[4], segments_sets[highlight[3]]],
+                [blue_colors[5], segments_sets[highlight[4]]],
+                [blue_colors[6], segments_sets[highlight[5]]],
+                [blue_colors[7], segments_sets[highlight[6]]],
+                [blue_colors[8], segments_sets[highlight[7]]],
                 ["white", "*"]
             ])
 
@@ -225,14 +225,14 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                     });
 
                     color_schemes[mode][1]['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
-                        [blue_colors[1], segments_sets[highlight[0]]],
-                        [blue_colors[2], segments_sets[highlight[1]]],
-                        [blue_colors[3], segments_sets[highlight[2]]],
-                        [blue_colors[4], segments_sets[highlight[3]]],
-                        [blue_colors[5], segments_sets[highlight[4]]],
-                        [blue_colors[6], segments_sets[highlight[5]]],
-                        [blue_colors[7], segments_sets[highlight[6]]],
-                        [blue_colors[8], segments_sets[highlight[7]]],
+                        [red_colors[1], segments_sets[highlight[0]]],
+                        [red_colors[2], segments_sets[highlight[1]]],
+                        [red_colors[3], segments_sets[highlight[2]]],
+                        [red_colors[4], segments_sets[highlight[3]]],
+                        [red_colors[5], segments_sets[highlight[4]]],
+                        [red_colors[6], segments_sets[highlight[5]]],
+                        [red_colors[7], segments_sets[highlight[6]]],
+                        [red_colors[8], segments_sets[highlight[7]]],
                         ["white", "*"]
                     ])
 
@@ -347,7 +347,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
         if (two_structures)
             controls += '<p>Hide: <input type=checkbox id="hide_pdb1"></p>';
     }
-    controls += '<p>Colors: <select id="ngl_color"><option value="red">red</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
+    controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
 
 
     if (two_structures) {
@@ -364,7 +364,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
         controls += '</select></p>';
         if (two_structures)
             controls += '<p>Hide: <input type=checkbox id="hide_pdb2"></p>';
-        controls += '<p>Colors: <select id="ngl_color2"><option value="blue">blue</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
+        controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
     }
 
     controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>' +
