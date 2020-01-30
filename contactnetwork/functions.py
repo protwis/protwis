@@ -6,6 +6,8 @@ from contactnetwork.distances import *
 import math
 import scipy
 import numpy as np
+
+from Bio.SVDSuperimposer import SVDSuperimposer
 from numpy.linalg import norm
 
 # convert 3D points to 2D points on best fitting plane
@@ -18,6 +20,16 @@ def convert2D_SVD(tm_points, intracellular):
     # the corresponding left singular vector is the normal vector of the best-fitting plane
     normal = np.transpose(svd[0])[2]
 
+    return convert3D_to_2D_plane(tm_points, intracellular, normal, centroid)
+
+
+# convert 3D points to 2D points on best fitting plane
+def convert2D_given_plane(tm_points, intracellular, normal, centroid):
+    points_2d, points_z, empty, empty2 = convert3D_to_2D_plane(tm_points, intracellular, normal, centroid)
+    return points_2d, points_z
+
+# convert 3D points to 2D points on best fitting plane
+def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
     # 3D project points onto plane -> 2D points
     points_plane = [[0]] * 7
     points_z = [0] * 7
@@ -32,8 +44,7 @@ def convert2D_SVD(tm_points, intracellular):
 
     # Create X and Y axes on plane
     locx = (points_plane[0] - centroid) # TM1 right side
-    #locy = np.cross(normal, locx)
-    locy = (points_plane[6] - centroid) # TM7 at top or down
+    locy = np.cross(normal, locx)
     if intracellular:
         locy = -1 * locy
 
@@ -41,7 +52,7 @@ def convert2D_SVD(tm_points, intracellular):
     locy = locy/norm(locy)
     points_2d = [[np.dot(p - centroid, locx), np.dot(p - centroid, locy)] for p in points_plane]
 
-    return np.array(points_2d), points_z
+    return np.array(points_2d), points_z, normal, centroid
 
 # Find best fit plane through set of points (least squares)
 # Based on https://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
@@ -106,7 +117,7 @@ def recreate3Dorder(distance_matrix, tm_ranking):
     #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist))
     #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
 
-    return tms
+    return np.array(tms)
 
 # Find the intersection of three spheres
 # Based on https://stackoverflow.com/questions/1406375/finding-intersection-points-between-3-spheres
@@ -214,6 +225,8 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
         final_rank[tm_ranking[i]] = 100 # make sure this TM isn't repeated
 
     stable_one, stable_two = tm_ranking[0], tm_ranking[1]
+    print("TM stable ranking")
+    print(tm_ranking)
 
     # Possible workaround for two consecutive helices if combined with rotation/translation
     # if abs(stable_two-stable_one) == 1 or abs(stable_two-stable_one) == 6:
@@ -226,13 +239,25 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
 
     # Recalculate 3D network and populate 2D views
     # Note: rebuilding in order stable helices resulted in lower quality reconstruction, therefore back to TM order (1-7)
-    #tms_set1 = recreate3Dorder(distance_data1, tm_ranking)
-    tms_set1 = recreate3Dorder(distance_data1, range(0,7))
-    plane_set1, z_set1 = convert2D_SVD(tms_set1, intracellular)
+    tms_set1 = recreate3Dorder(distance_data1, tm_ranking)
+    #tms_set1 = recreate3Dorder(distance_data1, range(0,7))
+    plane_set1, z_set1, normal_set1, mid_set1 = convert2D_SVD(tms_set1, intracellular)
 
-    #tms_set2 = recreate3Dorder(distance_data2, tm_ranking)
-    tms_set2 = recreate3Dorder(distance_data2, range(0,7))
-    plane_set2, z_set2 = convert2D_SVD(tms_set2, intracellular)
+    tms_set2 = recreate3Dorder(distance_data2, tm_ranking)
+    #tms_set2 = recreate3Dorder(distance_data2, range(0,7))
+    #plane_set2, z_set2, normal_set2, mid_set2 = convert2D_SVD(tms_set2, intracellular)
+
+    # Align 3D points of set2 with 3D points of set1
+    imposer = SVDSuperimposer()
+    imposer.set(tms_set1[tm_ranking[0:3]], tms_set2[tm_ranking[0:3]])
+    imposer.run()
+    rot, trans = imposer.get_rotran()
+    tms_set2 = np.dot(tms_set2, rot) + trans
+    print("RMSD")
+    print(imposer.get_rms())
+
+    # Convert the 3D points of set2 to 2D for the plane of set1
+    plane_set2, z_set2 = convert2D_given_plane(tms_set2, intracellular, normal_set1, mid_set1)
 
     # Rescale positions to match true length
     # scale = math.sqrt(math.pow(plane_set1[stable_two][0]-plane_set1[stable_one][0],2) + math.pow(plane_set1[stable_two][1]-plane_set1[stable_one][1],2))/distance_data1[stable_one][stable_two]
@@ -286,8 +311,8 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     # ref_set2 = plane_set2[stable_one]
     #
     # plane_set2 = [r.dot(x) for x in plane_set2 - ref_set2]
-    # plane_set2 = plane_set2 + ref_set1  (length_stable-length_stable2) * vector_orig
-
+    # plane_set2 = plane_set2 + ref_set1 + (length_stable-length_stable2)/2 * vector_orig
+    # ### END NEW ROTATION
 
     # find translation matrix between two sets
     #align, scale = scipy.linalg.orthogonal_procrustes(plane_set1[tm_ranking[0:2]],plane_set2[tm_ranking[0:2]])
@@ -296,13 +321,13 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     # Add angles
     # TODO: fix for other GPCR classes
     rotations = [0] * 7
-    for i in range(0,7):
-        # Ca-angle to axis core
-        rotations[i] = [data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1] if abs(data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1]) < 180 else -1*data['tab4'][x]['angles_set2'][1]-data['tab4'][x]['angles_set1'][1] for x in gns[i]]
-        if intracellular:
-            rotations[i] = -1*sum(rotations[i])/3
-        else:
-            rotations[i] = sum(rotations[i])/3
+    # for i in range(0,7):
+    #     # Ca-angle to axis core
+    #     rotations[i] = [data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1] if abs(data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1]) < 180 else -1*data['tab4'][x]['angles_set2'][1]-data['tab4'][x]['angles_set1'][1] for x in gns[i]]
+    #     if intracellular:
+    #         rotations[i] = -1*sum(rotations[i])/3
+    #     else:
+    #         rotations[i] = sum(rotations[i])/3
 
     # TODO: check z-coordinates orientation
     # Step 1: collect movement relative to membrane mid
