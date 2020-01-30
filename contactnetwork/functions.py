@@ -45,12 +45,14 @@ def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
     # Create X and Y axes on plane
     locx = (points_plane[0] - centroid) # TM1 right side
     locy = np.cross(normal, locx)
-    if intracellular:
-        locy = -1 * locy
 
     locx = locx/norm(locx)
     locy = locy/norm(locy)
     points_2d = [[np.dot(p - centroid, locx), np.dot(p - centroid, locy)] for p in points_plane]
+
+    # Needs flipping?
+    if (intracellular and (points_2d[3][1]-points_2d[0][1]) < 0) or (not intracellular and (points_2d[3][1]-points_2d[0][1]) > 0):
+        points_2d = np.array([[x[0], -1*x[1]] for x in points_2d])
 
     return np.array(points_2d), points_z, normal, centroid
 
