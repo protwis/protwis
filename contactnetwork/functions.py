@@ -91,7 +91,7 @@ def recreate3Dorder(distance_matrix, tm_ranking):
             tms[3] = tms[3][0]
         else:
             ref_dist = distance_matrix[tm_ranking[3]][tm_ranking[i]]
-            changes = [np.linalg.norm(tms[i][j]-tms[3])-ref_dist for j in range(0,2)]
+            changes = [abs(np.linalg.norm(tms[i][j]-tms[3])-ref_dist) for j in range(0,2)]
             lowest = changes.index(min(changes))
             tms[i] = tms[i][lowest]
 
