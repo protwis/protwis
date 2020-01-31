@@ -86,20 +86,12 @@ def recreate3Dorder(distance_matrix, tm_ranking):
     for i in range(3,7):
         #print("calculating for TM", str(i+1))
         tms[i] = trilaterate(tms[0], tms[1], tms[2], distance_matrix[tm_ranking[0]][tm_ranking[i]], distance_matrix[tm_ranking[1]][tm_ranking[i]], distance_matrix[tm_ranking[2]][tm_ranking[i]])
-        if i == 4:
-            # Determine placement TM4 and TM5 using each other
-            ref_dist = distance_matrix[tm_ranking[i-1]][tm_ranking[i]]
-            changes = [abs(math.sqrt(sum([math.pow(x,2) for x in tms[4][j]-tms[3][k]]))-ref_dist) for j in range(0,2) for k in range(0,2)]
-#            print("Differences for TM", str(i+1))
-#            print(changes)
-            lowest = changes.index(min(changes))
-            tms[3] = tms[3][math.floor(lowest/2)]
-            tms[4] = tms[4][lowest%2]
-        elif i > 4:
+        if i == 3:
+            # just take the first
+            tms[3] = tms[3][0]
+        else:
             ref_dist = distance_matrix[tm_ranking[3]][tm_ranking[i]]
-            changes = [abs(math.sqrt(sum([math.pow(x,2) for x in tms[i][j]-tms[3]]))-ref_dist) for j in range(0,2)]
-#            print("Differences for TM", str(i+1))
-#            print(changes)
+            changes = [np.linalg.norm(tms[i][j]-tms[3])-ref_dist for j in range(0,2)]
             lowest = changes.index(min(changes))
             tms[i] = tms[i][lowest]
 
@@ -107,10 +99,11 @@ def recreate3Dorder(distance_matrix, tm_ranking):
     tms = [tms[tm_ranking.index(i)] for i in range(0,7)]
 
     # DEBUG distances
-    # for i in range(0,6):
-    #     for j in range(i+1, 7):
-    #         ref_dist = distance_matrix[i][j]
-    #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist), (math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
+    for i in range(0,6):
+        for j in range(i+1, 7):
+            ref_dist = distance_matrix[i][j]
+            print (i+1,j+1, round(np.linalg.norm(tms[i] - tms[j]),1), round(ref_dist,1), round(np.linalg.norm(tms[i] - tms[j]) - ref_dist,1))
+            # print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist), (math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
             # print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
 
     return np.array(tms)
