@@ -11,7 +11,7 @@ from Bio.SVDSuperimposer import SVDSuperimposer
 from numpy.linalg import norm
 
 # convert 3D points to 2D points on best fitting plane
-def convert2D_SVD(tm_points, intracellular):
+def calculatePlane(tm_points, intracellular):
     # Find best fit plane through set of points (singular value decomposition)
     # Based on https://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
     centroid = np.sum(tm_points,0) / len(tm_points)
@@ -20,13 +20,7 @@ def convert2D_SVD(tm_points, intracellular):
     # the corresponding left singular vector is the normal vector of the best-fitting plane
     normal = np.transpose(svd[0])[2]
 
-    return convert3D_to_2D_plane(tm_points, intracellular, normal, centroid)
-
-
-# convert 3D points to 2D points on best fitting plane
-def convert2D_given_plane(tm_points, intracellular, normal, centroid):
-    points_2d, points_z, empty, empty2 = convert3D_to_2D_plane(tm_points, intracellular, normal, centroid)
-    return points_2d, points_z
+    return normal, centroid
 
 # convert 3D points to 2D points on best fitting plane
 def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
@@ -54,7 +48,7 @@ def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
     if (intracellular and (points_2d[3][1]-points_2d[0][1]) < 0) or (not intracellular and (points_2d[3][1]-points_2d[0][1]) > 0):
         points_2d = np.array([[x[0], -1*x[1]] for x in points_2d])
 
-    return np.array(points_2d), points_z, normal, centroid
+    return np.array(points_2d), points_z
 
 # Find best fit plane through set of points (least squares)
 # Based on https://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
@@ -116,8 +110,8 @@ def recreate3Dorder(distance_matrix, tm_ranking):
     # for i in range(0,6):
     #     for j in range(i+1, 7):
     #         ref_dist = distance_matrix[i][j]
-    #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist))
-    #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
+    #         print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist), (math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
+            # print (i+1,j+1,(math.sqrt(sum([math.pow(x,2) for x in tms[i]-tms[j]]))-ref_dist)/ref_dist*100)
 
     return np.array(tms)
 
@@ -145,7 +139,11 @@ def trilaterate(P1,P2,P3,r1,r2,r3):
     p_12_b = P1 + x*e_x + y*e_y - z*e_z
     return p_12_a,p_12_b
 
-def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
+def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
+    print("COMPARISON")
+    print(pdbs1)
+    print("VS")
+    print(pdbs2)
     distances_set1 = Distances()
     distances_set1.load_pdbs(pdbs1)
     distances_set1.filtered_gns = True
@@ -203,13 +201,21 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     for i in range(0,6):
         for j in range(i+1, 7):
             # Calculate movements for each TM relative to their "normal" distance
-            diff_distances[i][j] = abs(distance_data2[i][j] - distance_data1[i][j])/distance_data1[i][j]*100
+            #diff_distances[i][j] = abs(distance_data2[i][j] - distance_data1[i][j])/distance_data1[i][j]*100
+            diff_distances[i][j] = abs(distance_data2[i][j] - distance_data1[i][j])/((distance_data1[i][j]+distance_data2[i][j])/2)*100
             diff_distances[j][i] = diff_distances[i][j]
             real_differences[i][j] = distance_data2[i][j] - distance_data1[i][j]
             real_differences[j][i] = real_differences[i][j]
 
+
+
     # Ranking for each TM
+    sum_differences = [sum(x) for x in diff_distances]
+    normalized_differences = [((sum_differences[i]-min(sum_differences))/(max(sum_differences)-min(sum_differences)))**2 for i in range(0,7)]
+    print("Measured diff")
     for i in range(0,7):
+        print(diff_distances[i])
+        # Real variations
         diff_distances[i] = [sorted(diff_distances[i]).index(x) for x in diff_distances[i]]
         #diff_distances[i] = [sorted(diff_distances[i]).index(x) for j in range(0,7) for x in diff_distances[i]]
         #print(i,diff_distances[i], real_differences[i])
@@ -230,6 +236,7 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     print("TM stable ranking")
     print(tm_ranking)
 
+
     # Possible workaround for two consecutive helices if combined with rotation/translation
     # if abs(stable_two-stable_one) == 1 or abs(stable_two-stable_one) == 6:
     #     if abs(tm_ranking[2]-stable_one) > 1:
@@ -243,23 +250,63 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     # Note: rebuilding in order stable helices resulted in lower quality reconstruction, therefore back to TM order (1-7)
     tms_set1 = recreate3Dorder(distance_data1, tm_ranking)
     #tms_set1 = recreate3Dorder(distance_data1, range(0,7))
-    plane_set1, z_set1, normal_set1, mid_set1 = convert2D_SVD(tms_set1, intracellular)
-
     tms_set2 = recreate3Dorder(distance_data2, tm_ranking)
     #tms_set2 = recreate3Dorder(distance_data2, range(0,7))
-    #plane_set2, z_set2, normal_set2, mid_set2 = convert2D_SVD(tms_set2, intracellular)
+
+    #normal_set1, mid_set1 = calculatePlane(tms_set1, intracellular)
+    normal_set1, mid_set1 = calculatePlane(np.concatenate((tms_set1, tms_set2)), intracellular)
+    #plane_set1, z_set1, normal_set1, mid_set1 = convert2D_SVD(tms_set1, intracellular)
+    plane_set1, z_set1 = convert3D_to_2D_plane(tms_set1, intracellular, normal_set1, mid_set1)
 
     # Align 3D points of set2 with 3D points of set1
-    imposer = SVDSuperimposer()
-    imposer.set(tms_set1[tm_ranking[0:3]], tms_set2[tm_ranking[0:3]])
-    imposer.run()
-    rot, trans = imposer.get_rotran()
+    # imposer = SVDSuperimposer()
+    # imposer.set(tms_set1[tm_ranking[0:3]], tms_set2[tm_ranking[0:3]])
+    # imposer.run()
+    # rot, trans = imposer.get_rotran()
+    # Based on Biopython SVDSuperimposer
+    coords = tms_set2
+    reference_coords = tms_set1
+
+    # OLD centroid calcalation
+    # av1 = sum(coords) / len(coords)
+    # av2 = sum(reference_coords) / len(reference_coords)
+
+    # NEW weighted centroid calculation
+    print(normalized_differences)
+    av1, av2 = 0, 0
+    totalweight = 0
+    for i in range(0,7):
+        # print("Round",i)
+        #weight = 1+(7-tm_ranking.index(i))/7
+        weight = (1-normalized_differences[i]+0.1)/1.1
+        totalweight += weight
+        print("TM", str(i+1), "weight",weight)
+        av1 += coords[i]*weight
+        av2 += reference_coords[i]*weight
+
+    av1 = av1/totalweight
+    av2 = av2/totalweight
+
+    coords = coords - av1
+    reference_coords = reference_coords - av2
+
+    # correlation matrix
+    a = np.dot(np.transpose(coords), reference_coords)
+    u, d, vt = np.linalg.svd(a)
+    rot = np.transpose(np.dot(np.transpose(vt), np.transpose(u)))
+    # check if we have found a reflection
+    if np.linalg.det(rot) < 0:
+        vt[2] = -vt[2]
+        rot = np.transpose(np.dot(np.transpose(vt), np.transpose(u)))
+    trans = av2 - np.dot(av1, rot)
+
+    # Apply
     tms_set2 = np.dot(tms_set2, rot) + trans
     print("RMSD")
-    print(imposer.get_rms())
+    #print(imposer.get_rms())
 
     # Convert the 3D points of set2 to 2D for the plane of set1
-    plane_set2, z_set2 = convert2D_given_plane(tms_set2, intracellular, normal_set1, mid_set1)
+    plane_set2, z_set2 = convert3D_to_2D_plane(tms_set2, intracellular, normal_set1, mid_set1)
 
     # Rescale positions to match true length
     # scale = math.sqrt(math.pow(plane_set1[stable_two][0]-plane_set1[stable_one][0],2) + math.pow(plane_set1[stable_two][1]-plane_set1[stable_one][1],2))/distance_data1[stable_one][stable_two]
@@ -321,15 +368,14 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data):
     #plane_set1 = plane_set1.dot(align)
 
     # Add angles
-    # TODO: fix for other GPCR classes
     rotations = [0] * 7
-    # for i in range(0,7):
-    #     # Ca-angle to axis core
-    #     rotations[i] = [data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1] if abs(data['tab4'][x]['angles_set1'][1]-data['tab4'][x]['angles_set2'][1]) < 180 else -1*data['tab4'][x]['angles_set2'][1]-data['tab4'][x]['angles_set1'][1] for x in gns[i]]
-    #     if intracellular:
-    #         rotations[i] = -1*sum(rotations[i])/3
-    #     else:
-    #         rotations[i] = sum(rotations[i])/3
+    for i in range(0,7):
+        # Ca-angle to axis core
+        rotations[i] = [data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1] if abs(data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1]) < 180 else -1*data['tab4'][gn_dictionary[x]]['angles_set2'][1]-data['tab4'][gn_dictionary[x]]['angles_set1'][1] for x in gns[i]]
+        if intracellular:
+            rotations[i] = -1*sum(rotations[i])/3
+        else:
+            rotations[i] = sum(rotations[i])/3
 
     # TODO: check z-coordinates orientation
     # Step 1: collect movement relative to membrane mid

@@ -224,7 +224,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                         }
                     });
 
-                    color_schemes[mode][1]['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
+                    color_schemes[mode][1]['red'] = NGL.ColormakerRegistry.addSelectionScheme([
                         [red_colors[1], segments_sets[highlight[0]]],
                         [red_colors[2], segments_sets[highlight[1]]],
                         [red_colors[3], segments_sets[highlight[2]]],
