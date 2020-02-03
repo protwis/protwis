@@ -140,43 +140,43 @@ def recreate3Dorder(distance_matrix, tm_ranking):
     # then use this optimization below, and evaluate error -> take best coordinate set
 
     # Optimize
-    for optim_round in range(0,1):
-        print("Optimization round:",optim_round+1)
-        for i in range(0,7):
-            reference_tms = [x for x in range(0,7) if x != i]
-            reference_points = [ comb for comb in combinations(reference_tms, 3)]
-            pos = np.array([0,0,0], dtype='f')
-            ref_worked = 0
-            for x in reference_points:
-                # Find any TM not in list
-                check_tm = [j for j in reference_tms if j not in x][0]
-
-                # Find best coordinate matching the fourth reference point
-                ref_dist = distance_matrix[tm_ranking[check_tm]][tm_ranking[i]]
-                try:
-                    combi_pos = trilaterate(tms[x[0]], tms[x[1]], tms[x[2]], distance_matrix[tm_ranking[x[0]]][tm_ranking[i]], distance_matrix[tm_ranking[x[1]]][tm_ranking[i]], distance_matrix[tm_ranking[x[2]]][tm_ranking[i]])
-                    changes = [abs(np.linalg.norm(combi_pos[j]-tms[check_tm])-ref_dist) for j in range(0,2)]
-                    lowest = changes.index(min(changes))
-
-                    # take coordinate and add to average
-                    pos += combi_pos[lowest]
-                    ref_worked += 1
-                except:
-                    skip=1
-                    # try:
-                    #     combi_pos = trilaterate(tms[x[0]], tms[x[1]], tms[x[2]], distance_matrix[tm_ranking[x[0]]][tm_ranking[i]], distance_matrix[tm_ranking[x[1]]][tm_ranking[i]]*1.01, distance_matrix[tm_ranking[x[2]]][tm_ranking[i]])
-                    #     changes = [abs(np.linalg.norm(combi_pos[j]-tms[check_tm])-ref_dist) for j in range(0,2)]
-                    #     lowest = changes.index(min(changes))
-                    #
-                    #     # take coordinate and add to average
-                    #     pos += combi_pos[lowest]
-                    #     ref_worked += 1
-                    # except:
-                    #     #print("Not matching for",x)
-                    #     a=1
-
-            if ref_worked > 1:
-                tms[i] = pos/ref_worked
+    # for optim_round in range(0,1):
+    #     print("Optimization round:",optim_round+1)
+    #     for i in range(0,7):
+    #         reference_tms = [x for x in range(0,7) if x != i]
+    #         reference_points = [ comb for comb in combinations(reference_tms, 3)]
+    #         pos = np.array([0,0,0], dtype='f')
+    #         ref_worked = 0
+    #         for x in reference_points:
+    #             # Find any TM not in list
+    #             check_tm = [j for j in reference_tms if j not in x][0]
+    #
+    #             # Find best coordinate matching the fourth reference point
+    #             ref_dist = distance_matrix[tm_ranking[check_tm]][tm_ranking[i]]
+    #             try:
+    #                 combi_pos = trilaterate(tms[x[0]], tms[x[1]], tms[x[2]], distance_matrix[tm_ranking[x[0]]][tm_ranking[i]], distance_matrix[tm_ranking[x[1]]][tm_ranking[i]], distance_matrix[tm_ranking[x[2]]][tm_ranking[i]])
+    #                 changes = [abs(np.linalg.norm(combi_pos[j]-tms[check_tm])-ref_dist) for j in range(0,2)]
+    #                 lowest = changes.index(min(changes))
+    #
+    #                 # take coordinate and add to average
+    #                 pos += combi_pos[lowest]
+    #                 ref_worked += 1
+    #             except:
+    #                 skip=1
+    #                 # try:
+    #                 #     combi_pos = trilaterate(tms[x[0]], tms[x[1]], tms[x[2]], distance_matrix[tm_ranking[x[0]]][tm_ranking[i]], distance_matrix[tm_ranking[x[1]]][tm_ranking[i]]*1.01, distance_matrix[tm_ranking[x[2]]][tm_ranking[i]])
+    #                 #     changes = [abs(np.linalg.norm(combi_pos[j]-tms[check_tm])-ref_dist) for j in range(0,2)]
+    #                 #     lowest = changes.index(min(changes))
+    #                 #
+    #                 #     # take coordinate and add to average
+    #                 #     pos += combi_pos[lowest]
+    #                 #     ref_worked += 1
+    #                 # except:
+    #                 #     #print("Not matching for",x)
+    #                 #     a=1
+    #
+    #         if ref_worked > 1:
+    #             tms[i] = pos/ref_worked
 
 
     # Rearrange to correct order
