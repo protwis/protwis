@@ -751,16 +751,16 @@ function initializeGoButton(selector, generic = false) {
 
 function drawPlotPanel(plot_type, plot_div) {
     plot_id = plot_div.attr('id');
-    console.log(plot_type);
-    console.log(plot_div);
-    console.log(plot_id);
+    // console.log(plot_type);
+    // console.log(plot_div);
+    // console.log(plot_id);
 
     // Delete whatever is already there
     plot_div.find('.plot-container').html('');
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
-    console.log("SET UP PLOT", plot_type, plot_div, plot_id, mode);
+    console.log("SET UP PLOT", plot_type, plot_id, mode);
     switch (mode) {
         case "two-crystal-groups":
             raw_data = two_sets_data;
@@ -871,17 +871,48 @@ function drawPlotPanel(plot_type, plot_div) {
 
             createSnakeplot(raw_data, 'snakeplot-' + plot_id);
             break;
+        case "tm7_plot_intra":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["intracellular"]);
+            break;
+        case "tm7_plot_extra":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"]);
+            break;
+        case "tm7_plot_3d_intra":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["intracellular"]);
+            break;
+        case "tm7_plot_3d_extra":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"]);
+            break;
     }
+    
 }
 
 var plotting_options = {
+    'TM1-7 segment': [
+        ['tm7_plot_intra', '2D plot – cytosolic (only for two-sets)'],
+        ['tm7_plot_extra', '2D plot – extracellular (only for two-sets)'],
+        ['tm7_plot_3d_intra','3D plot – cytosolic (only for two-sets)'],
+        ['tm7_plot_3d_extra','3D plot – extracellular (only for two-sets)']
+    ],
     'Contacts between generic residue positions': [
         ['ngl', '3D structure'],
         ['flareplot', 'Flare Plot'],
         ['flareplot_subset', 'Flare Plot (filtered positions)'],
         ['force_network', 'Network'],
         ['force_network_3d', 'Network 3D'],
-        ['heatmap', 'Matrix']
+        ['heatmap', 'Heatmap']
         // ['schematic_non', 'Schematic (Non-consecutive)'],
         // ['schematic_con', 'Schematic (Consecutive)'],
     ],
@@ -1061,9 +1092,7 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
                 $(".main_loading_overlay").hide();
 
                 // Set up default visualisation
-                tm7_plot("#two_sets_1", data["tm_movement_2D"]["intracellular"]);
-                tm7_plot("#two_sets_2", data["tm_movement_2D"]["extracellular"]);
-                // initilizeInitialPlots();
+                initilizeInitialPlots();
             }
         });
     }

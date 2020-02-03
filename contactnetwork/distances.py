@@ -10,6 +10,8 @@ from collections import OrderedDict
 
 import numpy as np
 
+scaling_factor = 10000
+
 class Distances():
     """A class to do distances"""
     def __init__(self):
@@ -267,7 +269,7 @@ class Distances():
             for i,l in enumerate(labels):
                 if l not in d:
                     d[l] = {}
-                d[l][pdbs[i]] = means[i]/100
+                d[l][pdbs[i]] = means[i]/scaling_factor
             bin_pairs[label].append(d)
 
             pdbs_per_line = 8
@@ -345,7 +347,7 @@ class Distances():
             label = d[1]
             if label not in self.data:
                 self.data[label] = []
-            self.data[label].append(d[0]/100)
+            self.data[label].append(d[0]/scaling_factor)
 
     def fetch_distances_tm(self):
 #                .filter(gn1__in=self.filter_gns).filter(gn2__in=self.filter_gns) \
@@ -361,7 +363,7 @@ class Distances():
             label = d[1]
             if label not in self.data:
                 self.data[label] = []
-            self.data[label].append(d[0]/100)
+            self.data[label].append(d[0]/scaling_factor)
 
     def calculate(self):
         self.stats = {}

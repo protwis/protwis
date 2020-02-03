@@ -235,7 +235,7 @@ def compute_interactions(pdb_name,save_to_db = False):
             # Distance.objects.filter(structure=struc).all().delete()
             bulk_distances = []
             for i,d in enumerate(distances):
-                distance = Distance(distance=int(100*d[2]),res1=d[0], res2=d[1],gn1=d[3], gn2=d[4], gns_pair='_'.join([d[3],d[4]]), structure=struc)
+                distance = Distance(distance=int(10000*d[2]),res1=d[0], res2=d[1],gn1=d[3], gn2=d[4], gns_pair='_'.join([d[3],d[4]]), structure=struc)
                 bulk_distances.append(distance)
                 if len(bulk_distances)>1000:
                     pairs = Distance.objects.bulk_create(bulk_distances)
