@@ -250,9 +250,10 @@ def PdbTableData(request):
     data_table = "<table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
         <thead><tr> \
             <th rowspan=2> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
-            <th colspan=8>Receptor</th> \
+            <th colspan=5>Receptor</th> \
+            <th colspan=3>Species</th> \
             <th colspan=4>Structure</th> \
-            <th colspan=4>Receptor state</th> \
+            <th colspan=3>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
             <th colspan=3>Ligand</th><th></th> \
@@ -262,17 +263,16 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th>% of Seq</th> \
+            <th id=species></th> \
             <th></th> \
-            <th></th> \
-            <th>Identity % to Human</th> \
-            <th></th> \
-            <th></th> \
+            <th>Identity %<br>to Human</th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
-            <th></th>"
+            <th>Cytosolic<br> opening (%)</th> \
+            <th>TM6 tilt</th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
 #            <th>TM6 tilt (%, inactive: 0-X, intermed: X-Y, active Y-Z)</th> \
@@ -286,6 +286,13 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
+        </tr> \
+        <tr> \
+            <th colspan=6></th> \
+            <th colspan=1 id=best_species></th> \
+            <th colspan=4></th> \
+            <th colspan=1 id=best_res></th> \
+            <th colspan=13></th> \
         </tr></thead><tbody>\n"
 
     identity_lookup = {}
@@ -398,7 +405,7 @@ def PdbTableData(request):
 
         r['7tm_distance'] = s.distance
         r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
-        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness))+"%" if s.gprot_bound_likeness != None else '-'
+        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness)) if s.gprot_bound_likeness != None else ''
 
         # DEBUGGING - overwrite with distance to 6x38
 #        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
@@ -456,6 +463,12 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -463,14 +476,7 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td><p style='color:{}'>{}</p></td> \
+                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -488,15 +494,16 @@ def PdbTableData(request):
                                         r['protein_family'],
                                         r['class'],
                                         r['fraction_of_wt_seq'],
+                                        'green' if r['closest_to_human_raw'] else 'red',
                                         r['species'],
                                         'Best' if r['closest_to_human_raw'] else '',
                                         r['identity_to_human'],
                                         r['method'],
                                         pdb_id,
+                                        'green' if r['resolution_best'] else 'red',
                                         r['resolution'],
                                         'Best' if r['resolution_best'] else '',
                                         r['state'],
-                                        r['contact_representative_score'],
                                         r['gprot_bound_likeness'],
                                         r['tm6_angle'],
                                         r['signal_protein'],

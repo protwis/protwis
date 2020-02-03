@@ -300,6 +300,11 @@ function showPDBtable(element) {
 
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
         console.log(mode);
+
+        $(element + " #species").prop('id', mode_without_space + "_species");
+        $(element + " #best_species").prop('id', mode_without_space + "_best_species");
+        $(element + " #best_res").prop('id', mode_without_space + "_best_res");
+
         if (mode!="Single structure"){
           $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
           $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
@@ -316,7 +321,7 @@ function showPDBtable(element) {
         }
         $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
-
+        
         oTable[mode] = $(element + ' .tableview table').DataTable({
             'scrollX': true,
             // 'paging': true,
@@ -325,18 +330,18 @@ function showPDBtable(element) {
             scrollY: '75vh',
             // scrollCollapse: true,
             paging: false,
+            "bSortCellsTop": true,
             columnDefs: [{
                 targets: 'no-sort',
                 orderable: false
             },
-                {"targets": [ -1, -2 ],
+                {"targets": [ 7, 12, -1, -2 ],
                 "visible": false}],
             "aaSorting": [],
             "columns": [
                 {
                   "orderDataType": "dom-checkbox"
                 },
-                null,
                 null,
                 null,
                 null,
@@ -379,7 +384,7 @@ function showPDBtable(element) {
                     select_type: 'select2',
                     column_data_type: "html",
                     html_data_type: "text",
-                    filter_default_label: "Receptor",
+                    filter_default_label: "IUPHAR",
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
                 },
@@ -399,7 +404,10 @@ function showPDBtable(element) {
                     column_number: 4,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Class",
+                    filter_default_label: "Cl",
+                    select_type_options: {
+                        width: '30px'
+                    },
                     filter_reset_button_text: false,
                 },
                 {
@@ -414,18 +422,22 @@ function showPDBtable(element) {
                 {
                     column_number: 6,
                     filter_type: "multi_select",
+                    filter_container_id: mode_without_space + '_species',
                     select_type: 'select2',
+                    column_data_type: "html",
                     filter_default_label: "Species",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 7,
-                    filter_type: "multi_select",
+                    filter_container_id: mode_without_space + '_best_species',
+                    filter_type: "select",
                     select_type: 'select2',
-                    filter_default_label: "Best species",
                     select_type_options: {
-                        width: '70px'
+                        width: '90px',
+                        minimumResultsForSearch: -1 // remove search box
                     },
+                    filter_default_label: "All",
                     filter_reset_button_text: false,
                 },
                 {
@@ -463,14 +475,26 @@ function showPDBtable(element) {
                     filter_default_label: ["Res (Å)",""],
                     filter_reset_button_text: false,
                 },
+                // {
+                //     column_number: 12,
+                //     filter_type: "multi_select",
+                //     select_type: 'select2',
+                //     filter_default_label: "Best res.",
+                //     select_type_options: {
+                //         width: '70px'
+                //     },
+                //     filter_reset_button_text: false,
+                // },
                 {
                     column_number: 12,
-                    filter_type: "multi_select",
+                    filter_container_id: mode_without_space + '_best_res',
+                    filter_type: "select",
                     select_type: 'select2',
-                    filter_default_label: "Best res.",
                     select_type_options: {
-                        width: '70px'
+                        width: '90px',
+                        minimumResultsForSearch: -1 // remove search box
                     },
+                    filter_default_label: "All",
                     filter_reset_button_text: false,
                 },
                 {
@@ -502,25 +526,21 @@ function showPDBtable(element) {
                 // },
                 {
                     column_number: 14,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Contact rep.",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
+                    // filter_default_label: "Gprot-bound likeness",
                     filter_reset_button_text: false,
-
                 },
                 {
                     column_number: 15,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Gprot-bound likeness",
-                    filter_reset_button_text: false,
-
-                },
-                {
-                    column_number: 16,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "TM6 opening",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
 
                 },
@@ -532,51 +552,52 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 17,
+                    column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Sign Prot",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 18,
+                    column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Family",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 20,
+                    column_number: 19,
                     filter_type: "range_number",
                     select_type_options: {
                         width: '70px'
                     },
+                    column_data_type: "html",
                     filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 21,
+                    column_number: 20,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 22,
+                    column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 23,
+                    column_number: 22,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 24,
+                    column_number: 23,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand function",
@@ -584,14 +605,14 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 25,
+                    column_number: 24,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Ligand type",
+                    filter_default_label: "Modality",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 26,
+                    column_number: 25,
                     filter_container_id: mode_without_space+'_external_filter_container_0',
                     html_data_type: "text",
                     select_type: 'select2',
@@ -618,7 +639,8 @@ function showPDBtable(element) {
                 //     },
                 // },
             ], {
-                cumulative_filtering: false
+                cumulative_filtering: false,
+                // filters_tr_index: 1
             }
         );
         yadcf.exResetAllFilters(oTable[mode]);
