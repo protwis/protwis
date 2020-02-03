@@ -749,6 +749,7 @@ def InteractionBrowserData(request):
 
 
         data = {}
+        data['gpcr_class'] = gpcr_class
         data['segments'] = set()
         data['segment_map'] = {}
         data['interactions'] = {}
