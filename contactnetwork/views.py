@@ -15,6 +15,7 @@ import copy
 
 from contactnetwork.models import *
 from contactnetwork.distances import *
+from contactnetwork.functions import *
 from structure.models import Structure, StructureVectors, StructureExtraProteins
 from structure.templatetags.structure_extras import *
 from construct.models import Construct
@@ -38,6 +39,7 @@ import scipy.spatial.distance as ssd
 import time
 import hashlib
 import operator
+
 
 def get_hash(data):
     # create unique hash key for alignment combo
@@ -218,7 +220,7 @@ def PdbTableData(request):
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
 					'protein_conformation','wt_protein'))).order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
-    
+
     if exclude_non_interacting:
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
         data = data.filter(id__in=complex_structure_ids)
@@ -248,9 +250,10 @@ def PdbTableData(request):
     data_table = "<table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
         <thead><tr> \
             <th rowspan=2> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
-            <th colspan=8>Receptor</th> \
+            <th colspan=5>Receptor</th> \
+            <th colspan=3>Species</th> \
             <th colspan=4>Structure</th> \
-            <th colspan=4>Receptor state</th> \
+            <th colspan=3>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
             <th colspan=3>Ligand</th><th></th> \
@@ -260,17 +263,16 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th>% of Seq</th> \
+            <th id=species></th> \
             <th></th> \
-            <th></th> \
-            <th>Identity % to Human</th> \
-            <th></th> \
-            <th></th> \
+            <th>Identity %<br>to Human</th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
-            <th></th>"
+            <th>Cytosolic<br> opening (%)</th> \
+            <th>TM6 tilt</th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
 #            <th>TM6 tilt (%, inactive: 0-X, intermed: X-Y, active Y-Z)</th> \
@@ -284,6 +286,13 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
+        </tr> \
+        <tr> \
+            <th colspan=6></th> \
+            <th colspan=1 id=best_species></th> \
+            <th colspan=4></th> \
+            <th colspan=1 id=best_res></th> \
+            <th colspan=13></th> \
         </tr></thead><tbody>\n"
 
     identity_lookup = {}
@@ -349,7 +358,7 @@ def PdbTableData(request):
         # residues_s = residues_wt
         #print(pdb,"residues",protein,residues_wt,residues_s,residues_s/residues_wt)
         r['fraction_of_wt_seq'] = int(100*residues_s/residues_wt)
- 
+
         a_list = []
         for a in s.stabilizing_agents.all():
             a_list.append(a)
@@ -396,7 +405,7 @@ def PdbTableData(request):
 
         r['7tm_distance'] = s.distance
         r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
-        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness))+"%" if s.gprot_bound_likeness != None else '-'
+        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness)) if s.gprot_bound_likeness != None else ''
 
         # DEBUGGING - overwrite with distance to 6x38
 #        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
@@ -454,6 +463,12 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -461,14 +476,7 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td><p style='color:{}'>{}</p></td> \
+                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -486,15 +494,16 @@ def PdbTableData(request):
                                         r['protein_family'],
                                         r['class'],
                                         r['fraction_of_wt_seq'],
+                                        'green' if r['closest_to_human_raw'] else 'red',
                                         r['species'],
                                         'Best' if r['closest_to_human_raw'] else '',
                                         r['identity_to_human'],
                                         r['method'],
                                         pdb_id,
+                                        'green' if r['resolution_best'] else 'red',
                                         r['resolution'],
                                         'Best' if r['resolution_best'] else '',
                                         r['state'],
-                                        r['contact_representative_score'],
                                         r['gprot_bound_likeness'],
                                         r['tm6_angle'],
                                         r['signal_protein'],
@@ -613,8 +622,6 @@ def InteractionBrowserData(request):
         contact_options = [x.lower() for x in request.GET.getlist('options[]')]
     except IndexError:
         contact_options = []
-
-
 
     i_options_filter = Q()
     # Filter out contact within the same helix
@@ -742,6 +749,7 @@ def InteractionBrowserData(request):
 
 
         data = {}
+        data['gpcr_class'] = gpcr_class
         data['segments'] = set()
         data['segment_map'] = {}
         data['interactions'] = {}
@@ -1106,7 +1114,7 @@ def InteractionBrowserData(request):
                 current["set2"] = pdbs2.copy()
                 v["pdbs_freq_1"] = len(v["pdbs1"]) / len(pdbs1)
                 v["pdbs_freq_2"] = len(v["pdbs2"]) / len(pdbs2)
-                
+
                 #pf freq
                 v["pf_freq_1"] = 0
                 for pf, pf_pdbs in data['pfs1_lookup'].items():
@@ -1980,7 +1988,17 @@ def InteractionBrowserData(request):
                 data['tab4'][res1]['class_cons'] = ['','']
                 print('no res1',res1,'in class lookup')
 
-        ## Clean up to allow pickle / cache
+        # calculate information for 2D helical displacement plot
+        if mode == "double":
+            pdbs1_upper = [pdb.upper() for pdb in pdbs1]
+            pdbs2_upper = [pdb.upper() for pdb in pdbs2]
+            helical_time = time.time()
+            print("Start helical movements")
+            data['tm_movement_2D'] = {}
+            data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True, data, r_class_translate_from_classA)
+            data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False, data, r_class_translate_from_classA)
+            print("Helical movement calculations", time.time()-helical_time)
+
         data['tab3'] = {}
         data['pdbs'] = list(data['pdbs'])
         data['proteins'] = list(data['proteins'])
@@ -2484,7 +2502,7 @@ def ClusteringData(request):
         [distance_matrix, pdbs] = originMatrix(pdbs)
     elif cluster_method == '7': # distance to origin
         dis = Distances()
-        dis.lower_only = True
+        dis.filtered_gns = True
         print("Print setting lower only")
         dis.load_pdbs(pdbs)
         distance_matrix = dis.get_distance_matrix(normalize = False)

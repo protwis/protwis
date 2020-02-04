@@ -27,8 +27,8 @@ class Command(BaseCommand):
     help = "Output all uniprot mappings"
 
     update = True
-    purge = False
-    processes = 4
+    purge = True
+    processes = 8
 
     def prepare_input(self, proc, items, iteration=1):
         q = Queue()

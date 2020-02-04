@@ -80,21 +80,13 @@ function filter_browser() {
         console.log('filter_browser requested, but tab-1 not visible.');
         console.log('reset filtered.')
     }
-    console.log('filtered positions! ', filtered_gn_pairs.length);
-    console.log('contact pos counts', pos_contacts_count)
-    
-
-        
-
-
+   
     if (old_filtered_gn_pairs.sort().join(',') === filtered_gn_pairs.sort().join(',')) {
         console.log('no change in filtering');
     } else {
         updateGeneralControls();
     }
 
-    console.log("filtered_cluster_groups", filtered_cluster_groups);
-    
 
 }
 
@@ -153,7 +145,6 @@ function renderDataTablesYadcf(element) {
     const selector = "#" + $('.main_option:visible').attr('id');
     const analys_mode = selector.replace('-tab', '');
     var table = $(selector + " .browser-table-" + tab_number);
-    console.log(table,table.attr('class'))
     var heading = $(selector + " .tab-content .panel-title:visible");
     if (!heading.hasClass("button_added") && analys_mode == "#two-crystal-groups") {
         heading.append(' <button type="button"  onclick="make_abs_values(\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs">Toggle if difference values are absolute</button>');

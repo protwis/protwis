@@ -68,7 +68,7 @@ class Command(BaseCommand):
 
                 # create distance matrix for given structures on lower half TM + G-Prot only residues
                 dis = Distances()
-                dis.lower_only = True # only lower half TM + G-prot only helices
+                dis.filtered_gns = True # only lower half TM + G-prot only helices
                 dis.load_pdbs(structure_ids)
                 distance_matrix = dis.get_distance_matrix(True, False) # normalize, but don't use the cache
                 distance_matrix = pd.DataFrame(distance_matrix, columns=dis.pdbs, index=dis.pdbs)

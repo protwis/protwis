@@ -10,6 +10,8 @@ from collections import OrderedDict
 
 import numpy as np
 
+scaling_factor = 10000
+
 class Distances():
     """A class to do distances"""
     def __init__(self):
@@ -19,7 +21,7 @@ class Distances():
         self.generic_numbers = OrderedDict()
         self.segments = OrderedDict()
         self.distances = {}
-        self.lower_only = False
+        self.filtered_gns = False
 
         # Lower half membrane GNs (all TMs)
         self.lower_membrane_full = ["1x44", "1x45", "1x46", "1x47", "1x48", "1x49", "1x50", "1x51", "1x52", "1x53", "1x54", "1x55", "1x56", "1x57", "1x58", "1x59", "1x60", "1x61", "1x62", "1x63", "1x64", "2x34", "2x35", "2x36", "2x37", "2x38", "2x39", "2x40", "2x41", "2x42", "2x43", "2x44", "2x45", "2x46", "2x47", "2x48", "2x49", "2x50", "2x51", "2x52", "3x36", "3x37", "3x38", "3x39", "3x40", "3x41", "3x42", "3x43", "3x44", "3x45", "3x46", "3x47", "3x48", "3x49", "3x50", "3x51", "3x52", "3x53", "3x54", "3x55", "3x56", "3x57", "3x58", "3x59", "3x60", "4x33", "4x34", "4x35", "4x36", "4x37", "4x38", "4x39", "4x40", "4x41", "4x42", "4x43", "4x44", "4x45", "4x46", "4x47", "4x48", "4x49", "4x491", "4x50", "4x51", "4x52", "4x53", "4x54", "5x46", "5x461", "5x47", "5x48", "5x49", "5x50", "5x51", "5x52", "5x53", "5x54", "5x55", "5x56", "5x57", "5x58", "5x59", "5x60", "5x61", "5x62", "5x63", "5x64", "5x65", "5x66", "5x67", "5x68", "5x69", "5x70", "5x71", "5x72", "5x73", "5x74", "5x75", "5x76", "5x77", "6x18", "6x19", "6x20", "6x21", "6x22", "6x23", "6x24", "6x25", "6x26", "6x27", "6x28", "6x29", "6x30", "6x31", "6x32", "6x33", "6x34", "6x35", "6x36", "6x37", "6x38", "6x39", "6x40", "6x41", "6x42", "6x43", "6x44", "6x45", "6x46", "6x461", "6x47", "6x48", "7x43", "7x44", "7x45", "7x46", "7x47", "7x48", "7x49", "7x50", "7x51", "7x52", "7x521", "7x53", "7x54", "7x55", "7x56", "7x57", "7x58", "7x59", "7x60", "7x61", "7x62", "7x63"]
@@ -27,8 +29,11 @@ class Distances():
         # Lower half of membrane GNs without TM1 and TM4 (only G-prot interfacing TMs)
         self.lower_membrane_gprot = ["2x34", "2x35", "2x36", "2x37", "2x38", "2x39", "2x40", "2x41", "2x42", "2x43", "2x44", "2x45", "2x46", "2x47", "2x48", "2x49", "2x50", "2x51", "2x52", "3x36", "3x37", "3x38", "3x39", "3x40", "3x41", "3x42", "3x43", "3x44", "3x45", "3x46", "3x47", "3x48", "3x49", "3x50", "3x51", "3x52", "3x53", "3x54", "3x55", "3x56", "3x57", "3x58", "3x59", "3x60", "5x46", "5x461", "5x47", "5x48", "5x49", "5x50", "5x51", "5x52", "5x53", "5x54", "5x55", "5x56", "5x57", "5x58", "5x59", "5x60", "5x61", "5x62", "5x63", "5x64", "5x65", "5x66", "5x67", "5x68", "5x69", "5x70", "5x71", "5x72", "5x73", "5x74", "5x75", "5x76", "5x77", "6x18", "6x19", "6x20", "6x21", "6x22", "6x23", "6x24", "6x25", "6x26", "6x27", "6x28", "6x29", "6x30", "6x31", "6x32", "6x33", "6x34", "6x35", "6x36", "6x37", "6x38", "6x39", "6x40", "6x41", "6x42", "6x43", "6x44", "6x45", "6x46", "6x461", "6x47", "6x48", "7x43", "7x44", "7x45", "7x46", "7x47", "7x48", "7x49", "7x50", "7x51", "7x52", "7x521", "7x53", "7x54", "7x55", "7x56", "7x57", "7x58", "7x59", "7x60", "7x61", "7x62", "7x63"]
 
+        self.intracell = ["1x60", "2x40", "3x56", "4x39", "5x68", "6x29", "7x55"]
+        self.extracell = ["1x30", "2x66", "3x23", "4x64", "5x37", "6x61", "7x31"]
+
         # To be replaced with automated selection of lower half TM residues
-        self.lower_membrane = self.lower_membrane_gprot
+        self.filter_gns = self.lower_membrane_gprot
 
     def load_pdbs(self, pdbs):
         """Load a list of pdbs objects"""
@@ -128,12 +133,27 @@ class Distances():
                         .values('generic_number__label') \
                         .annotate(c = Count('generic_number__label')).filter(c__gte=int(len(self.structures)*0.9)).values_list('generic_number__label',flat=True).order_by('c') #.values_list('generic_number__label') #.filter(c__gte=int(len(self.structures)*0.9))
 
-        if self.lower_only:
-            res = res.filter(generic_number__label__in=self.lower_membrane)
+        if self.filtered_gns:
+            res = res.filter(generic_number__label__in=self.filter_gns)
 
         common_gn = sorted(res)
 
         return common_gn
+
+    def fetch_conserved_gns_tm(self):
+        res = Residue.objects.filter(protein_conformation__in=self.pconfs) \
+                        .exclude(generic_number=None) \
+                        .exclude(generic_number__label__contains='8x') \
+                        .exclude(generic_number__label__contains='12x') \
+                        .exclude(generic_number__label__contains='23x') \
+                        .exclude(generic_number__label__contains='34x') \
+                        .exclude(generic_number__label__contains='45x') \
+                        .values('generic_number__label') \
+                        .annotate(c = Count('generic_number__label')).filter(c=len(self.structures)).values_list('generic_number__label',flat=True).order_by('c')
+
+        conserved_gn = sorted(res)
+
+        return conserved_gn
 
     def calculate_window(self, list_of_gns = None):
 
@@ -249,7 +269,7 @@ class Distances():
             for i,l in enumerate(labels):
                 if l not in d:
                     d[l] = {}
-                d[l][pdbs[i]] = means[i]/100
+                d[l][pdbs[i]] = means[i]/scaling_factor
             bin_pairs[label].append(d)
 
             pdbs_per_line = 8
@@ -327,23 +347,23 @@ class Distances():
             label = d[1]
             if label not in self.data:
                 self.data[label] = []
-            self.data[label].append(d[0]/100)
+            self.data[label].append(d[0]/scaling_factor)
 
     def fetch_distances_tm(self):
-#                .filter(gn1__in=self.lower_membrane).filter(gn2__in=self.lower_membrane) \
+#                .filter(gn1__in=self.filter_gns).filter(gn2__in=self.filter_gns) \
         ds = Distance.objects.filter(structure__in=self.structures) \
                 .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                 .values_list('distance','gns_pair')
 
-        if self.lower_only:
-            ds = ds.filter(gn1__in=self.lower_membrane).filter(gn2__in=self.lower_membrane) \
+        if self.filtered_gns:
+            ds = ds.filter(gn1__in=self.filter_gns).filter(gn2__in=self.filter_gns) \
 
         self.data = {}
         for d in ds:
             label = d[1]
             if label not in self.data:
                 self.data[label] = []
-            self.data[label].append(d[0]/100)
+            self.data[label].append(d[0]/scaling_factor)
 
     def calculate(self):
         self.stats = {}
@@ -366,7 +386,7 @@ class Distances():
         # common GNs
         common_gn = self.fetch_common_gns_tm()
 
-#            .filter(label__in=self.lower_membrane) \
+#            .filter(label__in=self.filter_gns) \
         all_gns = ResidueGenericNumber.objects.filter(scheme__slug='gpcrdb')\
             .exclude(label__startswith='8x') \
             .exclude(label__startswith='12x') \
@@ -375,8 +395,8 @@ class Distances():
             .exclude(label__startswith='45x') \
             .values_list('label',flat=True)
 
-        if self.lower_only:
-            all_gns = all_gns.filter(label__in=self.lower_membrane)
+        if self.filtered_gns:
+            all_gns = all_gns.filter(label__in=self.filter_gns)
 
         all_gns = sorted(list(all_gns))
 
@@ -396,7 +416,7 @@ class Distances():
                 temp.load_pdbs([pdb])
                 temp.fetch_distances_tm()
 
-#                    .filter(generic_number__label__in=self.lower_membrane) \
+#                    .filter(generic_number__label__in=self.filter_gns) \
                 structure_gn = Residue.objects.filter(protein_conformation__in=temp.pconfs) \
                     .exclude(generic_number=None) \
                     .exclude(generic_number__label__startswith='8x') \
@@ -406,8 +426,8 @@ class Distances():
                     .exclude(generic_number__label__startswith='45x') \
                     .values_list('generic_number__label',flat=True)
 
-                if self.lower_only:
-                    structure_gn = structure_gn.filter(generic_number__label__in=self.lower_membrane)
+                if self.filtered_gns:
+                    structure_gn = structure_gn.filter(generic_number__label__in=self.filter_gns)
 
                 structure_gn = list(structure_gn)
 

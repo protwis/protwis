@@ -290,6 +290,13 @@ function exportPDBs() {
 
 var oTable = [];
 
+function toggle_best(mode, index, value) {
+    filter_value = value == 'On' ? "Best" : "";
+    console.log('filter best!', mode, index, value, filter_value);
+    console.log(oTable, oTable[mode]);
+    yadcf.exFilterColumn(oTable[mode], [[index, filter_value]]);
+}
+
 function showPDBtable(element) {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $(element + ' .tableview').attr('group-number');
@@ -301,38 +308,75 @@ function showPDBtable(element) {
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
         console.log(mode);
 
-        $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-        $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
-        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
+        $(element + " #best_species").html('<div class2="pull-right">Best only <div class="btn-group btn-toggle" column="7" mode="'+mode+'"> \
+                                            <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
+                                            <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
+                                            </div> \
+                                            </div>');
+
+        $(element + " #best_res").html('<div class2="pull-right">Best only <div class="btn-group btn-toggle" column="12" mode="'+mode+'"> \
+                                            <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
+                                            <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
+                                            </div> \
+                                            </div>');
+        
+
+        $(element + ' .btn-toggle').click(function() {
+            $(this).find('.btn').toggleClass('active');  
+            $(this).find('.btn').toggleClass('btn-primary');
+            $(this).find('.btn').toggleClass('btn-default');
+            $(this).find('.active').html($(this).find('.active').attr("value"));  
+            $(this).find('.btn-default').html('&nbsp;');  
+            toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find('.active').attr("value"))
+        })
+
+
+
+        $(element + " #species").prop('id', mode_without_space + "_species");
+        $(element + " #best_species").prop('id', mode_without_space + "_best_species");
+        $(element + " #best_res").prop('id', mode_without_space + "_best_res");
+
+        $(element + " .modal-title").css("display", "inline");
+        $(element + " .modal-title").hide();
+
+        if (mode!="Single structure"){
+          $(element + ' .modal-header').append('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
+          $(element + ' .modal-header').append(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
+        } else {
+          $(element + ' .modal-header').append('<span><input type=text class="pastePDBs" placeholder="Paste pdb"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB code</button></span>');
+        }
+
+        $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
+        // $(element + ' .modal-header').append(' | <span><button type="button" onclick="toggle_best(\''+mode+'\',7);" class="btn btn-xs btn-primary">Best</button></span>');
         if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
-          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
+          $(element + ' .modal-header').append(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
           // a$(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
           // $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
-        $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
+        // $(element + ' .modal-header').append(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
-
+        
         oTable[mode] = $(element + ' .tableview table').DataTable({
             'scrollX': true,
             // 'paging': true,
             // 'autoWidth': true,
 
-            scrollY: '75vh',
+            scrollY: '65vh',
             // scrollCollapse: true,
             paging: false,
+            "bSortCellsTop": true,
             columnDefs: [{
                 targets: 'no-sort',
                 orderable: false
             },
-                {"targets": [ -1, -2 ],
+                {"targets": [ 7, 12, -1, -2 ],
                 "visible": false}],
             "aaSorting": [],
             "columns": [
                 {
                   "orderDataType": "dom-checkbox"
                 },
-                null,
                 null,
                 null,
                 null,
@@ -375,7 +419,7 @@ function showPDBtable(element) {
                     select_type: 'select2',
                     column_data_type: "html",
                     html_data_type: "text",
-                    filter_default_label: "Receptor",
+                    filter_default_label: "IUPHAR",
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
                 },
@@ -395,7 +439,10 @@ function showPDBtable(element) {
                     column_number: 4,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Class",
+                    filter_default_label: "Cl",
+                    select_type_options: {
+                        width: '30px'
+                    },
                     filter_reset_button_text: false,
                 },
                 {
@@ -410,18 +457,21 @@ function showPDBtable(element) {
                 {
                     column_number: 6,
                     filter_type: "multi_select",
+                    filter_container_id: mode_without_space + '_species',
                     select_type: 'select2',
+                    column_data_type: "html",
                     filter_default_label: "Species",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 7,
-                    filter_type: "multi_select",
+                    filter_type: "select",
                     select_type: 'select2',
-                    filter_default_label: "Best species",
                     select_type_options: {
-                        width: '70px'
+                        width: '90px',
+                        minimumResultsForSearch: -1 // remove search box
                     },
+                    filter_default_label: "All",
                     filter_reset_button_text: false,
                 },
                 {
@@ -459,14 +509,26 @@ function showPDBtable(element) {
                     filter_default_label: ["Res (Å)",""],
                     filter_reset_button_text: false,
                 },
+                // {
+                //     column_number: 12,
+                //     filter_type: "multi_select",
+                //     select_type: 'select2',
+                //     filter_default_label: "Best res.",
+                //     select_type_options: {
+                //         width: '70px'
+                //     },
+                //     filter_reset_button_text: false,
+                // },
                 {
                     column_number: 12,
-                    filter_type: "multi_select",
+                    // filter_container_id: mode_without_space + '_best_res',
+                    filter_type: "select",
                     select_type: 'select2',
-                    filter_default_label: "Best res.",
                     select_type_options: {
-                        width: '70px'
+                        width: '90px',
+                        minimumResultsForSearch: -1 // remove search box
                     },
+                    filter_default_label: "All",
                     filter_reset_button_text: false,
                 },
                 {
@@ -498,25 +560,21 @@ function showPDBtable(element) {
                 // },
                 {
                     column_number: 14,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Contact rep.",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
+                    // filter_default_label: "Gprot-bound likeness",
                     filter_reset_button_text: false,
-
                 },
                 {
                     column_number: 15,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Gprot-bound likeness",
-                    filter_reset_button_text: false,
-
-                },
-                {
-                    column_number: 16,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "TM6 tilt",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
 
                 },
@@ -528,51 +586,52 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 17,
+                    column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Sign Prot",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 18,
+                    column_number: 17,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Family",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 20,
+                    column_number: 19,
                     filter_type: "range_number",
                     select_type_options: {
                         width: '70px'
                     },
+                    column_data_type: "html",
                     filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 21,
+                    column_number: 20,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 22,
+                    column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 23,
+                    column_number: 22,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 24,
+                    column_number: 23,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand function",
@@ -580,26 +639,26 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 25,
+                    column_number: 24,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Ligand type",
+                    filter_default_label: "Modality",
                     filter_reset_button_text: false,
                 },
-                {
-                    column_number: 26,
-                    filter_container_id: mode_without_space+'_external_filter_container_0',
-                    html_data_type: "text",
-                    select_type: 'select2',
-                    // filter_type: "multi_select",
-                    filter_default_label: "All species and structures",
-                    filter_reset_button_text: false,
-                    text_data_delimiter: ",",
-                    select_type_options: {
-                        width: '300px',
-                        minimumResultsForSearch: -1 // remove search box
-                    },
-                },
+                // {
+                //     column_number: 25,
+                //     filter_container_id: mode_without_space+'_external_filter_container_0',
+                //     html_data_type: "text",
+                //     select_type: 'select2',
+                //     // filter_type: "multi_select",
+                //     filter_default_label: "All species and structures",
+                //     filter_reset_button_text: false,
+                //     text_data_delimiter: ",",
+                //     select_type_options: {
+                //         width: '300px',
+                //         minimumResultsForSearch: -1 // remove search box
+                //     },
+                // },
                 // {
                 //     column_number: 23,
                 //     filter_container_id: mode_without_space+'_external_filter_container_1',
@@ -614,7 +673,8 @@ function showPDBtable(element) {
                 //     },
                 // },
             ], {
-                cumulative_filtering: false
+                cumulative_filtering: false,
+                // filters_tr_index: 1
             }
         );
         yadcf.exResetAllFilters(oTable[mode]);
@@ -622,6 +682,8 @@ function showPDBtable(element) {
         //     [21, "*Only show mammalian structures and those from human or closest species"],
         //   ]);
         console.log('done yadcf');
+
+
 
         oTable[mode].on('draw.dt', function(e, oSettings) {
             create_overlay(element + ' .structure_selection');
