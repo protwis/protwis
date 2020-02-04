@@ -52,15 +52,15 @@ class Command(BaseBuild):
 
     non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
     with open(non_xtal_seg_end_file, 'r') as f:
-        non_xtal_seg_end = yaml.load(f)
+        non_xtal_seg_end = yaml.load(f, Loader=yaml.FullLoader)
 
     all_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
     with open(all_anomalities_file, 'r') as f:
-        all_anomalities = yaml.load(f)
+        all_anomalities = yaml.load(f, Loader=yaml.FullLoader)
 
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
     with open(sequence_file, 'r') as f:
-        gpcr_sequences = yaml.load(f)
+        gpcr_sequences = yaml.load(f, Loader=yaml.FullLoader)
 
     xtal_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_anomalities.yaml'])
     non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])

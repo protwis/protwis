@@ -90,7 +90,7 @@ class Command(BuildHumanProteins):
 
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
-                    sd = yaml.load(f)
+                    sd = yaml.load(f, Loader=yaml.FullLoader)
 
                 # check whether protein is specified
                 if 'protein' not in sd:

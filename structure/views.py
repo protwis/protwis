@@ -215,7 +215,7 @@ def ComplexModelDetails(request, modelname, signprot):
 														 'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1), 
 														 'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 
 														 'template_list': template_list, 'model_main_template': model_main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
-														 'signprot_color_residues': segments_out2, 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
+														 'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
 
 def format_model_details(rotamers, model_main_template, color_palette, chain=None, used_colors=None):
 	backbone_templates, rotamer_templates = [],[]
@@ -275,7 +275,7 @@ def format_model_details(rotamers, model_main_template, color_palette, chain=Non
 	for s, nums in segments_formatted.items():
 		if len(nums)>1:
 			if chain:
-				text = '{} and ('.format(chain)
+				text = ':{} and ('.format(chain)
 			else:
 				text = ''
 			for n in nums:
@@ -286,7 +286,7 @@ def format_model_details(rotamers, model_main_template, color_palette, chain=Non
 				segments_formatted[s] = text[:-4]
 		else:
 			if chain:
-				segments_formatted[s] = '{} and ({})'.format(chain, segments_formatted[s][0])
+				segments_formatted[s] = ':{} and ({})'.format(chain, segments_formatted[s][0])
 			else:
 				segments_formatted[s] = segments_formatted[s][0]
 		if s==model_main_template:

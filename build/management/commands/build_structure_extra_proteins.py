@@ -22,7 +22,7 @@ class Command(BaseBuild):
 	arrestin_dict = {'arrs_mouse':'S-arrestin', 'arrs_bovin':'S-arrestin'}
 
 	with open(os.sep.join([settings.DATA_DIR, 'structure_data','extra_protein_notes.yaml']), 'r') as note_file:
-		notes = yaml.load(note_file)
+		notes = yaml.load(note_file, Loader=yaml.FullLoader)
 
 	def add_arguments(self, parser):
 		super(Command, self).add_arguments(parser=parser)

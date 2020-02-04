@@ -65,7 +65,7 @@ class Command(BaseCommand):
                 self.logger.info('Reading file {}'.format(source_file_path))
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
-                    sd = yaml.load(f)
+                    sd = yaml.load(f, Loader=yaml.FullLoader)
 
                     # is a protein specified?
                     if 'protein' not in sd:

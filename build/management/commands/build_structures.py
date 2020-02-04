@@ -97,11 +97,11 @@ class Command(BaseBuild):
     ### USE below to fix seg ends
     xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
     with open(xtal_seg_end_file, 'r') as f:
-        xtal_seg_ends = yaml.load(f)
+        xtal_seg_ends = yaml.load(f, Loader=yaml.FullLoader)
 
     xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
     with open(xtal_anomalies_file, 'r') as f2:
-        xtal_anomalies = yaml.load(f2)
+        xtal_anomalies = yaml.load(f2, Loader=yaml.FullLoader)
 
     s = ProteinSegment.objects.all()
     segments = {}
@@ -902,7 +902,7 @@ class Command(BaseBuild):
             #     continue
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 with open(source_file_path, 'r') as f:
-                    sd = yaml.load(f)
+                    sd = yaml.load(f, Loader=yaml.FullLoader)
                     # is this a representative structure (will be used to guide structure-based alignments)?
                     representative = False
                     if 'representative' in sd and sd['representative']:

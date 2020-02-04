@@ -65,10 +65,10 @@ class Command(BaseBuild):
 
 	def build_residues(self):
 		with open(self.wt_annotation_file, 'r') as f:
-			wt_annotation = yaml.load(f)
+			wt_annotation = yaml.load(f, Loader=yaml.FullLoader)
 		# wt_annotation = OrderedDict([('sctr_human', wt_annotation['sctr_human'])])
 		with open(self.B1_annotation_file, 'r') as fB1:
-			B1_annotation = yaml.load(fB1)
+			B1_annotation = yaml.load(fB1, Loader=yaml.FullLoader)
 		
 		for entry_name, val in wt_annotation.items():
 			protein = Protein.objects.get(entry_name=entry_name)

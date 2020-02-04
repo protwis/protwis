@@ -143,7 +143,7 @@ class Command(BaseCommand):
                 self.logger.info('Parsing file {}'.format(source_file_path))
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
-                    ano = yaml.load(f)
+                    ano = yaml.load(f, Loader=yaml.FullLoader)
 
                     # anomaly type
                     if 'anomaly_type' in ano and ano['anomaly_type']:

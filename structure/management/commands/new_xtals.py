@@ -250,7 +250,7 @@ class QueryPDB():
                             Structure.objects.filter(pdb_code__index=pdb_code.index).update(state=pi.state)
                             print(pi.state, pi.activation_value)
                             with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'r') as yf:
-                                struct_yaml = yaml.load(yf)
+                                struct_yaml = yaml.load(yf, Loader=yaml.FullLoader)
                             struct_yaml['state'] = pi.state.name
                             try:
                                 struct_yaml['distance'] = round(float(pi.activation_value), 2)

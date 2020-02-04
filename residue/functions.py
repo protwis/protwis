@@ -38,7 +38,7 @@ def parse_scheme_tables(path):
 def load_reference_positions(path):
     try:
         with open(path, 'r') as ref_position_file:
-            ref_positions = yaml.load(ref_position_file)
+            ref_positions = yaml.load(ref_position_file, Loader=yaml.FullLoader)
         return ref_positions
     except:
         return False

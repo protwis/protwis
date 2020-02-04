@@ -102,7 +102,7 @@ class Command(BaseCommand):
             source_file_path = os.sep.join([self.structure_data_dir, s.pdb_code.index.upper() + ".yaml"])
             if os.path.isfile(source_file_path):
                 with open(source_file_path, 'r') as f:
-                    sd = yaml.load(f)
+                    sd = yaml.load(f, Loader=yaml.FullLoader)
                     
             peptide_chain = ""
             if 'ligand' in sd and sd['ligand'] and sd['ligand']!='None':
