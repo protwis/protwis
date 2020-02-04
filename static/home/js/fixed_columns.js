@@ -308,16 +308,20 @@ function showPDBtable(element) {
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
         console.log(mode);
 
-        $(element + " #best_species").html('<div class2="pull-right">Best only <div class="btn-group btn-toggle" column="7" mode="'+mode+'"> \
+        $(element + " #best_species").html('<div class2="pull-right">\
+                                            <div class="btn-group btn-toggle" column="7" mode="'+ mode +'"> \
                                             <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
                                             <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
                                             </div> \
+                                            <span class="pull-right glyphicon glyphicon-info-sign" title="Human or closest species (for each receptor and state)" style="font-size: 15px;cursor: pointer;"></span> \
                                             </div>');
 
-        $(element + " #best_res").html('<div class2="pull-right">Best only <div class="btn-group btn-toggle" column="12" mode="'+mode+'"> \
+        $(element + " #best_res").html('<div class2="pull-right"> \
+        <div class="btn-group btn-toggle" column="12" mode="'+ mode +'"> \
                                             <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
                                             <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
                                             </div> \
+                                            <span class="pull-right glyphicon glyphicon-info-sign" title="Highest resolution (for each receptor, species and state)" style="font-size: 15px;cursor: pointer;"></span> \
                                             </div>');
         
 
@@ -358,6 +362,26 @@ function showPDBtable(element) {
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
         
         oTable[mode] = $(element + ' .tableview table').DataTable({
+            "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                filtered = iMax - iEnd;
+                filtered_text = filtered ? " (" + filtered + " structures filtered out)" : "";
+                var cols = []
+                var table = $(element + ' .dataTables_scrollBody .structure_selection');
+                cols_of_interest = [1, 11];
+                for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                    for (let [j, cell] of [...row.cells].entries()) {
+                        if (cols_of_interest.includes(j)) {
+                            cols[j] = cols[j] || [];
+                            cols[j].push(cell.innerText)
+                        }
+                    }
+                }
+                distinctReceptors = [...new Set(cols[1])];
+                distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                
+                return "Showing " + iEnd + " structures for "+distinctReceptors.length+" receptors and "+distinctReceptorState.length+" distinct receptor-state pairs"+filtered_text;
+              },
             'scrollX': true,
             // 'paging': true,
             // 'autoWidth': true,

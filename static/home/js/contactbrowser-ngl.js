@@ -23,6 +23,8 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     pdb_data[mode] = [];
     int_labels[mode] = []
 
+    forced_class_a = raw_data['forced_class_a'];
+
     var first_structure;
     var num_set1;
     var gn_num_set1;
@@ -77,7 +79,11 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
             chain_set1 = pdb_data[mode][0]['chain'];
             num_set1 = pdb_data[mode][0]['only_gn'];
-            gn_num_set1 = pdb_data[mode][0]['gn_map'];
+            if (forced_class_a == 'false') {
+                gn_num_set1 = pdb_data[mode][0]['gn_map'];
+            } else {
+                gn_num_set1 = pdb_data[mode][0]['gn_map_classa'];
+            }
 
             var stringBlob = new Blob([pdb_data[mode][0]['pdb']], {
                 type: 'text/plain'
@@ -108,8 +114,13 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                 stage[mode].mouseControls.remove("hoverPick")
 
                 // Add residue labels for GN residues
-                pdb_data[mode][0]['only_gn'].forEach(function(resNo, index) {
-                    var genNo = pdb_data[mode][0]['gn_map'][index]
+                pdb_data[mode][0]['only_gn'].forEach(function (resNo, index) {
+                    
+                    if (forced_class_a == 'false') {
+                        var genNo = pdb_data[mode][0]['gn_map'][index]
+                    } else {
+                        var genNo = pdb_data[mode][0]['gn_map_classa'][index]
+                    }
                     int_labels[mode][0][o.structure.id + "|" + resNo] = genNo
                 })
 
@@ -210,7 +221,11 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                     pdb_data[mode][1] = data;
                     num_set2 = pdb_data[mode][1]['only_gn'];
-                    gn_num_set2 = pdb_data[mode][1]['gn_map'];
+                    if (forced_class_a == 'false') {
+                        gn_num_set2 = pdb_data[mode][1]['gn_map'];
+                    } else {
+                        gn_num_set2 = pdb_data[mode][1]['gn_map_classa'];
+                    }
 
                     // intersect GN-numbering
                     var matching_TM_residues = [];
@@ -309,7 +324,11 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                         // Add residue labels for GN residues
                         pdb_data[mode][1]['only_gn'].forEach(function(resNo, index) {
-                            var genNo = pdb_data[mode][1]['gn_map'][index]
+                            if (forced_class_a == 'false') {
+                                var genNo = pdb_data[mode][0]['gn_map'][index]
+                            } else {
+                                var genNo = pdb_data[mode][0]['gn_map_classa'][index]
+                            }
                             int_labels[mode][1][o.structure.id + "|" + resNo] = genNo
                         })
 

@@ -289,9 +289,9 @@ def PdbTableData(request):
         </tr> \
         <tr> \
             <th colspan=6></th> \
-            <th colspan=1 id=best_species></th> \
+            <th colspan=1 id=best_species class='text-center'></th> \
             <th colspan=4></th> \
-            <th colspan=1 id=best_res></th> \
+            <th colspan=1 id=best_res class='text-center'></th> \
             <th colspan=13></th> \
         </tr></thead><tbody>\n"
 
@@ -641,6 +641,9 @@ def InteractionBrowserData(request):
     # DISCUSS: cache hash now takes the normalize along, is this necessary
     normalized = "normalize" in contact_options
 
+
+    forced_class_a = "classa" in contact_options
+
     # Segment filters are now disabled
     segment_filter_res1 = Q()
     segment_filter_res2 = Q()
@@ -900,10 +903,15 @@ def InteractionBrowserData(request):
 
             # remove .50 number from the display number format (1.50x50), so only the GPCRdb number is left
             r['display_generic_number__label'] = re.sub(r'\.[\d]+', '', r['display_generic_number__label'])
-            r_class_translate_from_classA[r['generic_number__label']] = r['display_generic_number__label']
-            r_class_translate[r['display_generic_number__label']] = r['generic_number__label']
-            # change the generic number (class a) to the class specific one.
-            r['generic_number__label'] = r['display_generic_number__label']
+            if forced_class_a:
+                r_class_translate[r['generic_number__label']] = r['display_generic_number__label']
+                r_class_translate_from_classA[r['generic_number__label']] = r['generic_number__label']
+            else:
+                # If not, then use the class relevant numbers
+                r_class_translate[r['display_generic_number__label']] = r['generic_number__label']
+                r_class_translate_from_classA[r['generic_number__label']] = r['display_generic_number__label']
+                # change the generic number (class a) to the class specific one.
+                r['generic_number__label'] = r['display_generic_number__label']
 
             r_lookup[r['pk']] = r
             r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
@@ -2007,6 +2015,7 @@ def InteractionBrowserData(request):
         data['segm_lookup'] = segm_lookup
         data['segments'] = list(data['segments'])
         data['normalized'] = normalized
+        data['forced_class_a'] = forced_class_a
         data['residue_table'] = r_class_translate
         if mode == 'double':
             data['pdbs1'] = list(data['pdbs1'])
@@ -3100,12 +3109,13 @@ def ServePDB(request, pdbname):
     only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label','display_generic_number__label').all())
     only_gn = []
     gn_map = []
+    gn_map_classa = []
     segments = {}
     for gn in only_gns:
         only_gn.append(gn[1])
         # Use and format the display generic number to get the shorthand class specific number.
-        gn_map.append(re.sub(r'\.[\d]+', '',gn[3]))
-        # gn_map.append(gn[2])
+        gn_map.append(re.sub(r'\.[\d]+', '', gn[3]))
+        gn_map_classa.append(gn[2])
         if gn[0] not in segments:
             segments[gn[0]] = []
         segments[gn[0]].append(gn[1])
@@ -3114,6 +3124,7 @@ def ServePDB(request, pdbname):
     data['pdb'] = structure.pdb_data.pdb
     data['only_gn'] = only_gn
     data['gn_map'] = gn_map
+    data['gn_map_classa'] = gn_map_classa
     data['segments'] = segments
     data['chain'] = structure.preferred_chain
     # positioning data
