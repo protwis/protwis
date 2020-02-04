@@ -894,9 +894,9 @@
                         <!-- pathways -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if forloop.first %}
-                        <td style="border-left: 1px solid black;">{{ex.family}}</td>
+                        <td style="border-left: 1px solid black;">{{ex.signalling_protein}}</td>
                         {% else %}
-                        <td>{{ex.family}}</td>
+                        <td>{{ex.signalling_protein}}</td>
                         {%endif%}
                         {%endfor%}
 

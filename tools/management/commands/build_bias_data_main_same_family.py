@@ -209,7 +209,7 @@ class Command(BaseBuild):
         return send
 
 
-    def process_dublicates(self, context):
+    def process_refs(self, context):
         '''
         Recieve data from "process_data"
         search for objects with same publication ligand receptor
@@ -222,7 +222,7 @@ class Command(BaseBuild):
 
             ref = list()
             for data in j[1]:
-                if data['assay'][0]['bias_reference'].lower() != "" and data['assay'][0]['bias_reference'] !='None reported':
+                if data['assay'][0]['bias_reference'].lower() != "" and data['assay'][0]['bias_reference'] =='Reference':
                     if data in ref:
                         print('already in list')
                     else:
@@ -237,8 +237,7 @@ class Command(BaseBuild):
                         data['assay'][0]['signalling_protein'] == i['assay'][0]['signalling_protein'] and
                         data['assay'][0]['cell_line'] == i['assay'][0]['cell_line'] and
                         data['assay'][0]['assay_measure_method'] == i['assay'][0]['assay_measure_method'] and
-                        data['assay'][0]['bias_reference'].lower() == ''):
-
+                        data['assay'][0]['bias_reference'] == 'Tested'):
                         data['assay'][0]['reference_quantitive_activity'] = i['assay'][0]['quantitive_activity']
                         data['assay'][0]['reference_quantitive_efficacy'] = i['assay'][0]['quantitive_efficacy']
                         data['assay'][0]['reference_t_coefficient_initial'] = i['assay'][0]['t_coefficient_initial']
@@ -248,12 +247,11 @@ class Command(BaseBuild):
 
 
             for data in j[1]:
-                if data['assay'][0]['bias_reference'].lower() == "" and data['assay'][0]['bias_reference'] !='None reported':
+                if data['assay'][0]['bias_reference'] =='Tested':
                     send[increment] = data
-                    #print('\n---data---', data)
                     increment += 1
 
-
+        print('---counter at process_refs---', increment,'\n')
         results_temp = self.process_group(send)
 
         return results_temp
@@ -261,42 +259,33 @@ class Command(BaseBuild):
 
     def process_calculation(self, context):
         countq = 0
+        increment = 0
         counter = 0
         counter1 = 0
         for i in context.items():
             test = dict()
             temp_obj = list()
-
-            # i[1]['assay'][:] = [d for d in i[1]['assay']
-            #                     if d.get('bias_reference').lower() != 'yes']
-            # checking for dublicates
             for j in i[1]['assay']:
                 if j not in temp_obj:
                     temp_obj.append(j)
+                    increment = increment+1
                 else:
                     print('passing dublicate___-')
             i[1]['assay'] = temp_obj
-            # TODO: Change 9999999 to normal method that skips None value
-            # self.convert_activity(i[1]['assay'])
             test = sorted(i[1]['assay'], key=lambda k: k['quantitive_activity']
                           if k['quantitive_activity'] else 999999,  reverse=False)
-            # except Exception as msg:
-            #     print('error---', msg, i[1],'\n')
-            #     continue
             for x in enumerate(test):
                 x[1]['order_no'] = x[0]
 
             i[1]['biasdata'] = test
 
             i[1].pop('assay')
-            # TODO: CHECK VARIABLES FOR CALCULATIONS
-            # TODO: ASSIGN QUALITATIVE VALUE FOR IC50 OR PIC50
-            # TODO: Change COLOR DEPENDING IC50
+
             for j in i[1]['biasdata']:
                 counter += 1
-            # TODO: reconsider verify calc
 
-            #self.calc_t_coefficient(i[1]['biasdata'])
+
+            # self.calc_t_coefficient(i[1]['biasdata'])
             self.calc_potency(i[1]['biasdata'])
             for j in i[1]['biasdata']:
                 counter1 += 1
@@ -402,7 +391,7 @@ class Command(BaseBuild):
             context[name][0]['publication'] == name
         print('---context[name]s---', len(context), '\n')
         print('---counter of data at process_references---', counter)
-        send = self.process_dublicates(context)
+        send = self.process_refs(context)
 
         return send
 
@@ -415,7 +404,7 @@ class Command(BaseBuild):
         doubles = list()
         result = list()
         context = dict()
-
+        increment = 0
         for j in send.items():
 
             name = str(j[1]['publication']) + \
@@ -432,8 +421,8 @@ class Command(BaseBuild):
 
             context[name] = j[1]
             context[name]['assay'] = temp_obj
-
-            # print('---counter of process_dublicates---',context[name],'\n' )
+            increment=increment+1
+        print('---counter of process_group---',increment,'\n' )
 
         self.process_calculation(context)
 

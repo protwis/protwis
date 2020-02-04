@@ -175,6 +175,7 @@ class Command(BaseBuild):
             else:
                 temp_dict['signalling_protein'] = j['children'][0].signalling_protein
                 temp_dict['cell_line'] = j['children'][0].cell_line
+                temp_dict['family'] = j['children'][0].family
                 temp_dict['assay_type'] = j['children'][0].assay_type
                 temp_dict['assay_measure_method'] = j['children'][0].assay_measure
                 temp_dict['assay_time_resolved'] = j['children'][0].assay_time_resolved
@@ -206,102 +207,6 @@ class Command(BaseBuild):
         print('---counter of assays at change---', counter)
         return send
 
-    def limit_family(self,send):
-        for item in send.items():
-
-            assay = list()
-            families = list()
-
-            for i in item[1]['assay']:
-                print(i)
-                if i['family'] == 'β-arr':
-                    if i['family'] not in families:
-                        families.append('β-arr')
-                        assay.append(i)
-                    # else:
-                    #     assay[:] = [d for d in assay if d.get('family') == 'B-arr' and d.get('quantitive_activity') > i['quantitive_activity']]
-                    #     assay.append(i)
-                elif i['family'] == 'Gi/o':
-                    if i['family'] not in families:
-                        families.append('Gi/o')
-                        assay.append(i)
-                    # else:
-                    #     print('---begore---', assay)
-                    #     print([d for d in assay if d['quantitive_activity'] != None and  d['quantitive_activity'] >i['quantitive_activity']])
-                    #     assay[:] = [d for d in assay if d.get('family') == 'Gi/o' and d.get('quantitive_activity') >i['quantitive_activity']]
-                    #     assay.append(i)
-                elif i['family'] == 'Gq/11':
-                    if i['family'] not in families:
-                        families.append('Gq/11')
-                        assay.append(i)
-                #     else:
-                #         assay[:] = [d for d in assay if d.get('family') == 'Gq/11' and d.get('quantitive_activity') > i['quantitive_activity']]
-                #         assay.append()
-                # elif i['family'] == 'G12/13':
-                    if i['family'] not in families:
-                        families.append('G12/13')
-                        assay.append(i)
-                    # else:
-                    #     assay[:] = [d for d in assay if d.get('family') == 'G12/13' and d.get('quantitive_activity') > i['quantitive_activity']]
-                    #     assay.append(i)
-                elif i['family'] == 'Gs':
-                    if i['family'] not in families:
-                        families.append('Gs')
-                        assay.append(i)
-                #     else:
-                #         assay[:] = [d for d in assay if d.get('family') == 'Gs' and d.get('quantitive_activity') > i['quantitive_activity']]
-                #         assay.append(i)
-                else:
-                    continue
-
-            item[1]['assay'] = assay
-
-                #item[1]['assay'] = assay
-
-                #item[1]['family'] = context
-
-    def group_family(self, send):
-        count = 0
-        for item in send.items():
-            context = dict()
-            for i in item[1]['assay']:
-                if (i['signalling_protein'] == 'β-arrestin' or
-                    i['signalling_protein'] == 'β-arrestin-1 (non-visual arrestin-2)' or
-                        i['signalling_protein'] == 'β-arrestin-2 (non-visual arrestin-3)'):
-                    i['family'] = 'β-arr'
-
-                elif (i['signalling_protein'] == 'gi/o-family' or
-                      i['signalling_protein'] == 'gαi1' or
-                      i['signalling_protein'] == 'gαi2' or
-                      i['signalling_protein'] == 'gαi3' or
-                      i['signalling_protein'] == 'gαo' or
-                      i['signalling_protein'] == 'gαoA' or
-                      i['signalling_protein'] == 'gαoB'):
-                    i['family'] = 'Gi/o'
-
-                elif (i['signalling_protein'] == 'gq-family' or
-                        i['signalling_protein'] == 'gαq' or
-                        i['signalling_protein'] == 'gαq11' or
-                        i['signalling_protein'] == 'gαq14' or
-                        i['signalling_protein'] == 'gαq14' or
-                        i['signalling_protein'] == 'gαq16' or
-                        i['signalling_protein'] == 'gαq14 (gαq16)'):
-                    i['family'] = 'Gq/11'
-
-                elif (i['signalling_protein'] == 'g12/13-family' or
-                      i['signalling_protein'] == 'gα12' or
-                      i['signalling_protein'] == 'gα13'):
-                    i['family'] = 'G12/13'
-
-                elif (i['signalling_protein'] == 'gs-family' or
-                      i['signalling_protein'] == 'gαs' or
-                      i['signalling_protein'] == 'gαolf'):
-                    i['family'] = 'Gs'
-                else:
-                    i['family'] = 'No data'
-                count += 1
-
-        print('---assays after family----', count)
 
     def process_dublicates(self, context):
         '''
@@ -316,7 +221,7 @@ class Command(BaseBuild):
 
             ref = list()
             for data in j[1]:
-                if data['assay'][0]['bias_reference'].lower() != "" and data['assay'][0]['bias_reference'] !='None reported':
+                if data['assay'][0]['bias_reference'].lower() != "" and data['assay'][0]['bias_reference'] =='Reference':
                     if data in ref:
                         print('already in list')
                     else:
@@ -331,8 +236,7 @@ class Command(BaseBuild):
                         data['assay'][0]['signalling_protein'] == i['assay'][0]['signalling_protein'] and
                         data['assay'][0]['cell_line'] == i['assay'][0]['cell_line'] and
                         data['assay'][0]['assay_measure_method'] == i['assay'][0]['assay_measure_method'] and
-                        data['assay'][0]['bias_reference'].lower() == ''):
-
+                        data['assay'][0]['bias_reference'] == 'Tested'):
                         data['assay'][0]['reference_quantitive_activity'] = i['assay'][0]['quantitive_activity']
                         data['assay'][0]['reference_quantitive_efficacy'] = i['assay'][0]['quantitive_efficacy']
                         data['assay'][0]['reference_t_coefficient_initial'] = i['assay'][0]['t_coefficient_initial']
@@ -342,17 +246,14 @@ class Command(BaseBuild):
 
 
             for data in j[1]:
-                if data['assay'][0]['bias_reference'].lower() == "" and data['assay'][0]['bias_reference'] !='None reported':
+                if data['assay'][0]['bias_reference'] =='Tested':
                     send[increment] = data
-                    #print('\n---data---', data)
                     increment += 1
 
-        self.group_family(send)
+        print('---counter at process_refs---', increment,'\n')
         results_temp = self.process_group(send)
 
         return results_temp
-
-        # TODO: shorten names of signalling proteins - DONE
 
     def process_calculation(self, context):
         countq = 0
@@ -526,12 +427,72 @@ class Command(BaseBuild):
 
             context[name] = j[1]
             context[name]['assay'] = temp_obj
-
+            self.limit_family(context[name]['assay'])
             # print('---counter of process_dublicates---',context[name],'\n' )
-        self.limit_family(context)
+
         self.process_calculation(context)
         self.count_publications(context)
         return context
+
+    def limit_family(self,send):
+
+        assay = list()
+        families = list()
+        G12 = dict()
+        Gio = dict()
+        Gq = dict()
+        GS = dict()
+        Barr = dict()
+        for i in send:
+            try:
+                if i['family'] == 'B-arr':
+                    if bool(Barr) == False:
+                        Barr = i
+                    else:
+                        if i['quantitive_activity'] < Barr['quantitive_activity']:
+                            Barr = i
+
+                if i['family'] == 'G12/13':
+                    if bool(G12) == False:
+                        G12 = i
+                    else:
+                        if i['quantitive_activity'] < G12['quantitive_activity']:
+                            G12 = i
+
+                if i['family'] == 'Gi/o':
+                    if bool(Gio) == False:
+                        Gio = i
+                    else:
+                        if i['quantitive_activity'] < Gio['quantitive_activity']:
+                            Gio = i
+
+                if i['family'] == 'Gq/11':
+                    if bool(Gq) == False:
+                        Gq = i
+                    else:
+                        if i['quantitive_activity'] < Gq['quantitive_activity']:
+                            Gq = i
+
+                if i['family'] == 'Gs':
+                    if bool(GS) == False:
+                        GS = i
+                    else:
+                        if i['quantitive_activity'] < GS['quantitive_activity']:
+                            GS = i
+            except:
+                continue
+        if Barr:
+            families.append(Barr)
+        if G12:
+            families.append(G12)
+        if Gio:
+            families.append(Gio)
+        if Gq:
+            families.append(Gq)
+        if GS:
+            families.append(GS)
+
+        send = families
 
     def count_publications(self, context):
         temp = dict()
@@ -567,8 +528,6 @@ class Command(BaseBuild):
             if(name in temp):
                 i[1]['article_quantity'] = temp[name]
 
-
-
     def fetch_vendor(self, ligand):
         temp = ligand
         links = LigandVendorLink.objects.filter(lp=ligand.properities.id)
@@ -576,7 +535,6 @@ class Command(BaseBuild):
         for x in links:
             vendor_count = vendor_count + 1
         return vendor_count
-
 
     def fetch_receptor_trunsducers(self, receptor):
         primary = ""
@@ -588,7 +546,6 @@ class Command(BaseBuild):
             elif x.transduction and x.transduction == 'secondary':
                 secondary += str(x.g_protein.name)
         return primary, secondary
-
 
     def bias_list(self):
         print('i am in')
@@ -655,10 +612,9 @@ class Command(BaseBuild):
                                                      emax_ligand_reference=emax_ligand
                                                      )
                     experiment_assay.save()
-                    # print('saved')
+
             else:
                 pass
-                # print("already defined")
             # except Exception as msg:
             #     print('\n---saving error---', msg)
             #     continue
