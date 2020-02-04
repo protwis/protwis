@@ -290,6 +290,13 @@ function exportPDBs() {
 
 var oTable = [];
 
+function toggle_best(mode, index, value) {
+    filter_value = value == 'On' ? "Best" : "";
+    console.log('filter best!', mode, index, value, filter_value);
+    console.log(oTable, oTable[mode]);
+    yadcf.exFilterColumn(oTable[mode], [[index, filter_value]]);
+}
+
 function showPDBtable(element) {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $(element + ' .tableview').attr('group-number');
@@ -301,25 +308,53 @@ function showPDBtable(element) {
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
         console.log(mode);
 
+        $(element + " #best_species").html('<div class2="pull-right">Best only <div class="btn-group btn-toggle" column="7" mode="'+mode+'"> \
+                                            <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
+                                            <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
+                                            </div> \
+                                            </div>');
+
+        $(element + " #best_res").html('<div class2="pull-right">Best only <div class="btn-group btn-toggle" column="12" mode="'+mode+'"> \
+                                            <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
+                                            <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
+                                            </div> \
+                                            </div>');
+        
+
+        $(element + ' .btn-toggle').click(function() {
+            $(this).find('.btn').toggleClass('active');  
+            $(this).find('.btn').toggleClass('btn-primary');
+            $(this).find('.btn').toggleClass('btn-default');
+            $(this).find('.active').html($(this).find('.active').attr("value"));  
+            $(this).find('.btn-default').html('&nbsp;');  
+            toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find('.active').attr("value"))
+        })
+
+
+
         $(element + " #species").prop('id', mode_without_space + "_species");
         $(element + " #best_species").prop('id', mode_without_space + "_best_species");
         $(element + " #best_res").prop('id', mode_without_space + "_best_res");
 
+        $(element + " .modal-title").css("display", "inline");
+        $(element + " .modal-title").hide();
+
         if (mode!="Single structure"){
-          $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-          $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
+          $(element + ' .modal-header').append('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
+          $(element + ' .modal-header').append(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
         } else {
-          $(element + ' .tableview').before('<span><input type=text class="pastePDBs" placeholder="Paste pdb"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB code</button></span>');
+          $(element + ' .modal-header').append('<span><input type=text class="pastePDBs" placeholder="Paste pdb"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB code</button></span>');
         }
 
-        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
+        $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
+        // $(element + ' .modal-header').append(' | <span><button type="button" onclick="toggle_best(\''+mode+'\',7);" class="btn btn-xs btn-primary">Best</button></span>');
         if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
-          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
+          $(element + ' .modal-header').append(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
           // a$(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
           // $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
         }
-        $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
+        // $(element + ' .modal-header').append(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
         
         oTable[mode] = $(element + ' .tableview table').DataTable({
@@ -327,7 +362,7 @@ function showPDBtable(element) {
             // 'paging': true,
             // 'autoWidth': true,
 
-            scrollY: '75vh',
+            scrollY: '65vh',
             // scrollCollapse: true,
             paging: false,
             "bSortCellsTop": true,
@@ -430,7 +465,6 @@ function showPDBtable(element) {
                 },
                 {
                     column_number: 7,
-                    filter_container_id: mode_without_space + '_best_species',
                     filter_type: "select",
                     select_type: 'select2',
                     select_type_options: {
@@ -487,7 +521,7 @@ function showPDBtable(element) {
                 // },
                 {
                     column_number: 12,
-                    filter_container_id: mode_without_space + '_best_res',
+                    // filter_container_id: mode_without_space + '_best_res',
                     filter_type: "select",
                     select_type: 'select2',
                     select_type_options: {
@@ -611,20 +645,20 @@ function showPDBtable(element) {
                     filter_default_label: "Modality",
                     filter_reset_button_text: false,
                 },
-                {
-                    column_number: 25,
-                    filter_container_id: mode_without_space+'_external_filter_container_0',
-                    html_data_type: "text",
-                    select_type: 'select2',
-                    // filter_type: "multi_select",
-                    filter_default_label: "All species and structures",
-                    filter_reset_button_text: false,
-                    text_data_delimiter: ",",
-                    select_type_options: {
-                        width: '300px',
-                        minimumResultsForSearch: -1 // remove search box
-                    },
-                },
+                // {
+                //     column_number: 25,
+                //     filter_container_id: mode_without_space+'_external_filter_container_0',
+                //     html_data_type: "text",
+                //     select_type: 'select2',
+                //     // filter_type: "multi_select",
+                //     filter_default_label: "All species and structures",
+                //     filter_reset_button_text: false,
+                //     text_data_delimiter: ",",
+                //     select_type_options: {
+                //         width: '300px',
+                //         minimumResultsForSearch: -1 // remove search box
+                //     },
+                // },
                 // {
                 //     column_number: 23,
                 //     filter_container_id: mode_without_space+'_external_filter_container_1',
@@ -648,6 +682,8 @@ function showPDBtable(element) {
         //     [21, "*Only show mammalian structures and those from human or closest species"],
         //   ]);
         console.log('done yadcf');
+
+
 
         oTable[mode].on('draw.dt', function(e, oSettings) {
             create_overlay(element + ' .structure_selection');
