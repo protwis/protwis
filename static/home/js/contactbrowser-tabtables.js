@@ -1183,9 +1183,7 @@ function renderBrowser(data) {
                           <th colspan="5" rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
-                          <th colspan="2">Sidechain differences</th> \
-                          <th colspan="2"></th> \
-                          <th colspan="2"></th> \
+                          <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
@@ -1295,9 +1293,15 @@ function renderBrowser(data) {
 
 
 
-            // console.log(gn1,angles_1,gn2,all_angles_2);
             all_angles_1 = data['all_angles'][gn1];
             all_angles_2 = data['all_angles'][gn2];
+
+            all_angles_1_set1 = data['all_angles_set1'][gn1];
+            all_angles_1_set2 = data['all_angles_set2'][gn1];
+            all_angles_2_set1 = data['all_angles_set1'][gn2];
+            all_angles_2_set2 = data['all_angles_set2'][gn2];
+
+            all_angles_1 = data['all_angles'][gn1];
             ss_pos1_set1 = [];
             ss_pos1_set2 = [];
             ss_pos2_set1 = [];
@@ -1320,31 +1324,43 @@ function renderBrowser(data) {
                 types_count[key] = [types_count_set1,types_count_set2,types_count_set1-types_count_set2];
             })
 
-            pdbs.forEach(function(pdb){
-                pdb_upper = pdb.toUpperCase();
-                if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
-                if (all_angles_1) {
-                    let d1 = all_angles_1[pdb_upper];
-                    if (d1.length) {
-                        if (set_1.includes(pdb)) {
-                            ss_pos1_set1.push(d1[12]);
-                        } else if (set_2.includes(pdb)) {
-                            ss_pos1_set2.push(d1[12]);
-                        }
-                    }
-                }
-                if (all_angles_2) {
-                    let d2 = all_angles_2[pdb_upper];
-                    if (d2.length) {
-                        if (set_1.includes(pdb)) {
-                            ss_pos2_set1.push(d2[12])
-                        } else if (set_2.includes(pdb)) {
-                            ss_pos2_set2.push(d2[12])
-                        }
-                    }
-                }
-            });
+            // console.log(gn1, all_angles_1_set1, all_angles_1_set2)
+            
+            
+            if (all_angles_1_set1) ss_pos1_set1 = Object.entries(all_angles_1_set1).filter(x => x[1].length > 6).map(x => x[1][12]);
+            if (all_angles_1_set2) ss_pos1_set2 = Object.entries(all_angles_1_set2).filter(x => x[1].length > 6).map(x => x[1][12]);
+            if (all_angles_2_set1) ss_pos2_set1 = Object.entries(all_angles_2_set1).filter(x => x[1].length > 6).map(x => x[1][12]);
+            if (all_angles_2_set2) ss_pos2_set2 = Object.entries(all_angles_2_set2).filter(x => x[1].length > 6).map(x => x[1][12]);
 
+            // pdbs.forEach(function(pdb){
+            //     pdb_upper = pdb.toUpperCase();
+            //     if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
+            //     console.log(gn1,gn2,pdb_upper)
+            //     if (all_angles_1_set1) {
+
+            //         if (all_angles_1_set1.includes())
+
+            //         let d1 = all_angles_1_set1[pdb_upper];
+            //         if (d1.length) {
+            //             if (set_1.includes(pdb)) {
+            //                 ss_pos1_set1.push(d1[12]);
+            //             } else if (set_2.includes(pdb)) {
+            //                 ss_pos1_set2.push(d1[12]);
+            //             }
+            //         }
+            //     }
+            //     if (all_angles_2) {
+            //         let d2 = all_angles_2[pdb_upper];
+            //         if (d2.length) {
+            //             if (set_1.includes(pdb)) {
+            //                 ss_pos2_set1.push(d2[12])
+            //             } else if (set_2.includes(pdb)) {
+            //                 ss_pos2_set2.push(d2[12])
+            //             }
+            //         }
+            //     }
+            // });
+            // console.log(gn1,gn2,ss_pos1_set1,ss_pos1_set2,ss_pos2_set1,ss_pos2_set2)
             dssp = [];
             [ss_pos1_set1,ss_pos1_set2,ss_pos2_set1,ss_pos2_set2].forEach(function(list){
                 if (list.length) {
@@ -1365,7 +1381,7 @@ function renderBrowser(data) {
                 }
                 dssp.push([most,freq]);
             })
-            // console.table(dssp);
+            // console.table(gn1,gn2,dssp);
             dssp_pos1 = '';
             dssp_pos1_freq = '';
             if (dssp[0][0]==dssp[1][0]){
@@ -1463,9 +1479,7 @@ function renderBrowser(data) {
                           <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
-                          <th colspan="2">Sidechain differences</th> \
-                          <th colspan="2"></th> \
-                          <th colspan="2"></th> \
+                          <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
@@ -1680,9 +1694,7 @@ function renderBrowser(data) {
                           <th rowspan="2">Interaction</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
-                          <th colspan="2">Sidechain differences</th> \
-                          <th colspan="2"></th> \
-                          <th colspan="2"></th> \
+                          <th colspan="6">Sidechain differences</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
