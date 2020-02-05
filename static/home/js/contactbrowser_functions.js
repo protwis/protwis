@@ -1823,6 +1823,12 @@ function updateInteractionSettings() {
         option_content += '<li class="list-group-item">' + tooltip + ' Normalize data<div class="material-switch pull-right"><input id="option-normalize" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-normalize" class="label-primary"></label></div></li>';
     }
 
+    // Only use class A
+    checked = currentSettings[currentTab]["options"].indexOf("classa") >= 0 ? "checked" : "";
+    var classtooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, generic numbers will be in Class A regardless of class of selection"></span>';
+    option_content += '<li class="list-group-item">' + classtooltip + ' Class A numbering<div class="material-switch pull-right"><input id="option-classa" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-classa" class="label-primary"></label></div></li>';
+    
+
     // Only between helices
     checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
     var heltooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions between residues within the same segment (i.e. TM1-7, H8 or a loop) are also included in the analysis."></span>';

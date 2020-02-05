@@ -192,7 +192,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-# @cache_page(60*60*24*7)
+@cache_page(60*60)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
@@ -250,29 +250,29 @@ def PdbTableData(request):
     data_table = "<table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
         <thead><tr> \
             <th rowspan=2> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
-            <th colspan=8>Receptor</th> \
+            <th colspan=5>Receptor</th> \
+            <th colspan=3>Species</th> \
             <th colspan=4>Structure</th> \
-            <th colspan=4>Receptor state</th> \
+            <th colspan=3>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
-            <th colspan=3>Ligand</th><th></th> \
+            <th colspan=2>Ligand</th> \
         </tr> \
         <tr><th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th>% of Seq</th> \
+            <th id=species></th> \
             <th></th> \
-            <th></th> \
-            <th>Identity % to Human</th> \
-            <th></th> \
-            <th></th> \
+            <th>Identity %<br>to Human</th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
-            <th></th>"
+            <th>Cytosolic<br> opening (%)</th> \
+            <th>TM6 tilt</th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
 #            <th>TM6 tilt (%, inactive: 0-X, intermed: X-Y, active Y-Z)</th> \
@@ -284,8 +284,13 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
-            <th></th> \
-            <th></th> \
+        </tr> \
+        <tr> \
+            <th colspan=6></th> \
+            <th colspan=1 id=best_species class='text-center'></th> \
+            <th colspan=4></th> \
+            <th colspan=1 id=best_res class='text-center'></th> \
+            <th colspan=12></th> \
         </tr></thead><tbody>\n"
 
     identity_lookup = {}
@@ -397,8 +402,8 @@ def PdbTableData(request):
         r['resolution_best'] = s.resolution==best_resolutions['{}_{}'.format(s.protein_conformation.protein.parent.pk, s.state.name)]
 
         r['7tm_distance'] = s.distance
-        r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
-        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness))+"%" if s.gprot_bound_likeness != None else '-'
+        r['tm6_angle'] = str(round(s.tm6_angle)) if s.tm6_angle != None else ''
+        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness)) if s.gprot_bound_likeness != None else ''
 
         # DEBUGGING - overwrite with distance to 6x38
 #        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
@@ -434,6 +439,8 @@ def PdbTableData(request):
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin
         r['fusion'] = fusion
+        if len(antibody) > 20:
+            antibody = "<span title='{}'>{}</span>".format(antibody, antibody[:20] + "..")
         r['antibody'] = antibody
 
         r['ligand'] = "-"
@@ -456,6 +463,12 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -463,16 +476,7 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td><p style='color:{}'>{}</p></td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -488,15 +492,16 @@ def PdbTableData(request):
                                         r['protein_family'],
                                         r['class'],
                                         r['fraction_of_wt_seq'],
+                                        'green' if r['closest_to_human_raw'] else 'red',
                                         r['species'],
                                         'Best' if r['closest_to_human_raw'] else '',
                                         r['identity_to_human'],
                                         r['method'],
                                         pdb_id,
+                                        'green' if r['resolution_best'] else 'red',
                                         r['resolution'],
                                         'Best' if r['resolution_best'] else '',
                                         r['state'],
-                                        r['contact_representative_score'],
                                         r['gprot_bound_likeness'],
                                         r['tm6_angle'],
                                         r['signal_protein'],
@@ -508,8 +513,6 @@ def PdbTableData(request):
                                         r['antibody'],
                                         r['ligand'],
                                         r['ligand_function'],
-                                        r['ligand_type'],
-                                        ",".join(r['extra_filter']),
                                         )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
@@ -634,6 +637,9 @@ def InteractionBrowserData(request):
     # DISCUSS: cache hash now takes the normalize along, is this necessary
     normalized = "normalize" in contact_options
 
+
+    forced_class_a = "classa" in contact_options
+
     # Segment filters are now disabled
     segment_filter_res1 = Q()
     segment_filter_res2 = Q()
@@ -648,7 +654,7 @@ def InteractionBrowserData(request):
 
     # data = None
     if data==None:
-        cache_key = 'amino_acid_pair_conservation_{}'.format(gpcr_class)
+        cache_key = 'amino_acid_pair_conservation_{}_{}'.format(gpcr_class,forced_class_a)
         print('Before getting class cache',time.time()-start_time)
         class_pair_lookup = cache.get(cache_key)
         print('After getting class cache',time.time()-start_time)
@@ -665,7 +671,10 @@ def InteractionBrowserData(request):
             for r in residues:
                 # use the class specific generic number
                 r['display_generic_number__label'] = re.sub(r'\.[\d]+', '', r['display_generic_number__label'])
-                r_pair_lookup[r['display_generic_number__label']][r['amino_acid']].add(r['protein_conformation__protein__entry_name'])
+                if forced_class_a:
+                    r_pair_lookup[r['generic_number__label']][r['amino_acid']].add(r['protein_conformation__protein__entry_name'])
+                else:
+                    r_pair_lookup[r['display_generic_number__label']][r['amino_acid']].add(r['protein_conformation__protein__entry_name'])
             class_pair_lookup = {}
 
             gen_keys = sorted(r_pair_lookup.keys(), key=functools.cmp_to_key(gpcrdb_number_comparator))
@@ -813,7 +822,8 @@ def InteractionBrowserData(request):
 
 
         # Get all unique GNS to populate all residue tables (tab4)
-        distinct_gns = list(Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs).exclude(generic_number=None).values_list('generic_number__label','protein_segment__slug').distinct().order_by())
+        # TODO, check if can be deleted... it is regenerated later with class_specific numbers
+        # distinct_gns = list(Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs).exclude(generic_number=None).values_list('generic_number__label','protein_segment__slug').distinct().order_by())
 
         all_pdbs_pairs = cache.get("all_pdbs_aa_pairs")
         # all_pdbs_pairs = None
@@ -893,10 +903,15 @@ def InteractionBrowserData(request):
 
             # remove .50 number from the display number format (1.50x50), so only the GPCRdb number is left
             r['display_generic_number__label'] = re.sub(r'\.[\d]+', '', r['display_generic_number__label'])
-            r_class_translate_from_classA[r['generic_number__label']] = r['display_generic_number__label']
-            r_class_translate[r['display_generic_number__label']] = r['generic_number__label']
-            # change the generic number (class a) to the class specific one.
-            r['generic_number__label'] = r['display_generic_number__label']
+            if forced_class_a:
+                r_class_translate[r['generic_number__label']] = r['generic_number__label']
+                r_class_translate_from_classA[r['generic_number__label']] = r['generic_number__label']
+            else:
+                # If not, then use the class relevant numbers
+                r_class_translate[r['display_generic_number__label']] = r['generic_number__label']
+                r_class_translate_from_classA[r['generic_number__label']] = r['display_generic_number__label']
+                # change the generic number (class a) to the class specific one.
+                r['generic_number__label'] = r['display_generic_number__label']
 
             r_lookup[r['pk']] = r
             r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
@@ -1346,6 +1361,7 @@ def InteractionBrowserData(request):
         ## PREPARE ADDITIONAL DATA (INTERACTIONS AND ANGLES)
         print('Prepare distance values for',mode,'mode',time.time()-start_time)
         interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
+        interaction_keys = [v['class_a_gns'].replace(",","_") for k,v in data['interactions'].items()]
         if mode == "double":
 
             group_1_distances = get_distance_averages(data['pdbs1'],s_lookup, interaction_keys,normalized, standard_deviation = False)
@@ -1353,7 +1369,9 @@ def InteractionBrowserData(request):
 
             print('got distance values for',mode,'mode',time.time()-start_time)
             for coord in data['interactions']:
-                distance_coord = coord.replace(",","_")
+                distance_coord = coord.replace(",", "_")
+                # Replace coord to ensure using classA as distances are indexed with those
+                distance_coord = data['interactions'][coord]['class_a_gns'].replace(",", "_")
                 if distance_coord in group_1_distances and distance_coord in group_2_distances:
                     distance_diff = round(group_1_distances[distance_coord]-group_2_distances[distance_coord],0)
                 else:
@@ -1364,6 +1382,8 @@ def InteractionBrowserData(request):
             group_distances = get_distance_averages(data['pdbs'],s_lookup, interaction_keys,normalized, standard_deviation = True)
             for coord in data['interactions']:
                 distance_coord = coord.replace(",","_")
+                # Replace coord to ensure using classA as distances are indexed with those
+                distance_coord = data['interactions'][coord]['class_a_gns'].replace(",", "_")
                 if distance_coord in group_distances:
                     distance = round(group_distances[distance_coord],0)
                 else:
@@ -1373,15 +1393,15 @@ def InteractionBrowserData(request):
         # del class_pair_lookup
         # del r_pair_lookup
         print('Prepare all angles values for',mode,'mode',time.time()-start_time)
-        data['all_angles'] = get_all_angles(pdbs_upper,data['pfs'],normalized)
+        data['all_angles'] = get_all_angles(pdbs_upper,data['pfs'],normalized, forced_class_a = forced_class_a)
         print('Prepare angles values for',mode,'mode',time.time()-start_time)
-
+        
         if mode == "double":
 
-            group_1_angles = get_angle_averages(data['pdbs1'],s_lookup, normalized)
-            group_2_angles = get_angle_averages(data['pdbs2'],s_lookup, normalized)
-            data['all_angles_set1'] = get_all_angles(data['pdbs1'],data['pfs'],normalized)
-            data['all_angles_set2'] = get_all_angles(data['pdbs2'],data['pfs'],normalized)
+            group_1_angles = get_angle_averages(data['pdbs1'],s_lookup, normalized, forced_class_a = forced_class_a)
+            group_2_angles = get_angle_averages(data['pdbs2'],s_lookup, normalized, forced_class_a = forced_class_a)
+            data['all_angles_set1'] = get_all_angles(data['pdbs1'],data['pfs'],normalized, forced_class_a = forced_class_a)
+            data['all_angles_set2'] = get_all_angles(data['pdbs2'],data['pfs'],normalized, forced_class_a = forced_class_a)
 
             print('got angles values for',mode,'mode',time.time()-start_time)
             custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
@@ -1454,7 +1474,7 @@ def InteractionBrowserData(request):
         else:
 
             # get_angle_averages gets "mean" in case of single pdb
-            group_angles = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation=True)
+            group_angles = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation=True, forced_class_a = forced_class_a)
             for coord in data['interactions']:
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
@@ -1773,6 +1793,7 @@ def InteractionBrowserData(request):
 
         print('Prepare distance values for aa/gen for',mode,'mode',time.time()-start_time)
         interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
+        interaction_keys = [v['class_a_gns'].replace(",","_") for k,v in data['interactions'].items()]
         if mode == "double":
 
 
@@ -1782,18 +1803,19 @@ def InteractionBrowserData(request):
 
             print('got distance values for',mode,'mode',time.time()-start_time)
             for key, d in data['tab2'].items():
-                if key in group_1_distances and key in group_2_distances:
-                    distance_diff = round(group_1_distances[key]-group_2_distances[key],2)
+                class_a_key = '{}{}'.format(d['classA'], key[-2:])
+                if class_a_key in group_1_distances and class_a_key in group_2_distances:
+                    distance_diff = round(group_1_distances[class_a_key]-group_2_distances[class_a_key],2)
                 else:
                     distance_diff = ""
                 d['distance'] = distance_diff
             print('Done merging distance values for',mode,'mode',time.time()-start_time)
         else:
             group_distances = get_distance_averages(data['pdbs'],s_lookup, interaction_keys,normalized, standard_deviation = False, split_by_amino_acid = True)
-
             for key, d in data['tab2'].items():
-                if key in group_distances:
-                    distance_diff = round(group_distances[key],2)
+                class_a_key = '{}{}'.format(d['classA'], key[-2:])
+                if class_a_key in group_distances:
+                    distance_diff = round(group_distances[class_a_key],2)
                 else:
                     distance_diff = ""
                 d['distance'] = distance_diff
@@ -1802,8 +1824,8 @@ def InteractionBrowserData(request):
         print('calculate angles per gen/aa',time.time()-start_time)
         if mode == "double":
 
-            group_1_angles_aa = get_angle_averages(data['pdbs1'],s_lookup, normalized, standard_deviation = False, split_by_amino_acid = True)
-            group_2_angles_aa = get_angle_averages(data['pdbs2'],s_lookup, normalized, standard_deviation = False, split_by_amino_acid = True)
+            group_1_angles_aa = get_angle_averages(data['pdbs1'],s_lookup, normalized, standard_deviation = False, split_by_amino_acid = True, forced_class_a = forced_class_a)
+            group_2_angles_aa = get_angle_averages(data['pdbs2'],s_lookup, normalized, standard_deviation = False, split_by_amino_acid = True, forced_class_a = forced_class_a)
 
             for key, d in data['tab2'].items():
                 gen1 = key.split(',')[0]
@@ -1851,7 +1873,7 @@ def InteractionBrowserData(request):
             del group_2_angles_aa
         else:
 
-            group_angles_aa = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation = True, split_by_amino_acid = True)
+            group_angles_aa = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation = True, split_by_amino_acid = True, forced_class_a = forced_class_a)
 
             for key, d in data['tab2'].items():
                 gen1 = key.split(',')[0]
@@ -2000,6 +2022,7 @@ def InteractionBrowserData(request):
         data['segm_lookup'] = segm_lookup
         data['segments'] = list(data['segments'])
         data['normalized'] = normalized
+        data['forced_class_a'] = forced_class_a
         data['residue_table'] = r_class_translate
         if mode == 'double':
             data['pdbs1'] = list(data['pdbs1'])
@@ -3093,12 +3116,13 @@ def ServePDB(request, pdbname):
     only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label','display_generic_number__label').all())
     only_gn = []
     gn_map = []
+    gn_map_classa = []
     segments = {}
     for gn in only_gns:
         only_gn.append(gn[1])
         # Use and format the display generic number to get the shorthand class specific number.
-        gn_map.append(re.sub(r'\.[\d]+', '',gn[3]))
-        # gn_map.append(gn[2])
+        gn_map.append(re.sub(r'\.[\d]+', '', gn[3]))
+        gn_map_classa.append(gn[2])
         if gn[0] not in segments:
             segments[gn[0]] = []
         segments[gn[0]].append(gn[1])
@@ -3107,6 +3131,7 @@ def ServePDB(request, pdbname):
     data['pdb'] = structure.pdb_data.pdb
     data['only_gn'] = only_gn
     data['gn_map'] = gn_map
+    data['gn_map_classa'] = gn_map_classa
     data['segments'] = segments
     data['chain'] = structure.preferred_chain
     # positioning data
