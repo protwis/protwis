@@ -292,8 +292,6 @@ var oTable = [];
 
 function toggle_best(mode, index, value) {
     filter_value = value == 'On' ? "Best" : "";
-    console.log('filter best!', mode, index, value, filter_value);
-    console.log(oTable, oTable[mode]);
     yadcf.exFilterColumn(oTable[mode], [[index, filter_value]]);
 }
 
@@ -345,12 +343,12 @@ function showPDBtable(element) {
 
         if (mode!="Single structure"){
           $(element + ' .modal-header').append('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-          $(element + ' .modal-header').append(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
+          $(element + ' .modal-header').append(' | PDB code: <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
         } else {
-          $(element + ' .modal-header').append('<span><input type=text class="pastePDBs" placeholder="Paste pdb"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB code</button></span>');
+          $(element + ' .modal-header').append('PDB code: <span><input type=text class="pastePDBs" placeholder="Paste pdb"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
         }
 
-        $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
+        $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export</button></span>');
         // $(element + ' .modal-header').append(' | <span><button type="button" onclick="toggle_best(\''+mode+'\',7);" class="btn btn-xs btn-primary">Best</button></span>');
         if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
           $(element + ' .modal-header').append(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
@@ -361,6 +359,7 @@ function showPDBtable(element) {
         // $(element + ' .modal-header').append(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
         
+        console.time('DataTable');
         oTable[mode] = $(element + ' .tableview table').DataTable({
             "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
                 filtered = iMax - iEnd;
@@ -394,7 +393,7 @@ function showPDBtable(element) {
                 targets: 'no-sort',
                 orderable: false
             },
-                {"targets": [ 7, 12, -1, -2 ],
+                {"targets": [ 7, 12 ],
                 "visible": false}],
             "aaSorting": [],
             "columns": [
@@ -424,11 +423,10 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
-                null,
-                null,
             ]
         });
-        console.log('done datatable');
+        console.timeEnd('DataTable');
+        console.time('yadcf');
         yadcf.init(oTable[mode],
             [{
                     column_number: 1,
@@ -512,6 +510,9 @@ function showPDBtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Method",
+                    select_type_options: {
+                        width: '70px'
+                    },
                     filter_reset_button_text: false,
                 },
                 {
@@ -560,6 +561,9 @@ function showPDBtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "State",
+                    select_type_options: {
+                        width: '70px'
+                    },
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
 
@@ -614,6 +618,9 @@ function showPDBtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Sign Prot",
+                    select_type_options: {
+                        width: '70px'
+                    },
                     filter_reset_button_text: false,
                 },
                 {
@@ -621,13 +628,16 @@ function showPDBtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Family",
+                    select_type_options: {
+                        width: '70px'
+                    },
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 19,
                     filter_type: "range_number",
                     select_type_options: {
-                        width: '70px'
+                        width: '50px'
                     },
                     column_data_type: "html",
                     filter_default_label: ["From","to"],
@@ -645,6 +655,7 @@ function showPDBtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
+                    column_data_type: "html",
                     filter_reset_button_text: false,
                 },
                 {
@@ -658,17 +669,17 @@ function showPDBtable(element) {
                     column_number: 23,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Ligand function",
+                    filter_default_label: "Modality",
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
                 },
-                {
-                    column_number: 24,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Modality",
-                    filter_reset_button_text: false,
-                },
+                // {
+                //     column_number: 24,
+                //     filter_type: "multi_select",
+                //     select_type: 'select2',
+                //     filter_default_label: "Modality",
+                //     filter_reset_button_text: false,
+                // },
                 // {
                 //     column_number: 25,
                 //     filter_container_id: mode_without_space+'_external_filter_container_0',
@@ -701,17 +712,23 @@ function showPDBtable(element) {
                 // filters_tr_index: 1
             }
         );
-        yadcf.exResetAllFilters(oTable[mode]);
+        console.timeEnd('yadcf');
+        // console.time('yadcf_reset');
+        // yadcf.exResetAllFilters(oTable[mode]);
+        // console.timeEnd('yadcf_reset');
         // yadcf.exFilterColumn(oTable[mode], [
         //     [21, "*Only show mammalian structures and those from human or closest species"],
         //   ]);
-        console.log('done yadcf');
 
 
 
         oTable[mode].on('draw.dt', function(e, oSettings) {
+            console.time('create_overlay');
             create_overlay(element + ' .structure_selection');
+            console.timeEnd('create_overlay');
+            console.time('update_text_in_modal');
             update_text_in_modal();
+            console.timeEnd('update_text_in_modal');
         });
 
 

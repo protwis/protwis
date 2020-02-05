@@ -192,7 +192,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-# @cache_page(60*60*24*7)
+@cache_page(60*60)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
@@ -256,7 +256,7 @@ def PdbTableData(request):
             <th colspan=3>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
-            <th colspan=3>Ligand</th><th></th> \
+            <th colspan=2>Ligand</th> \
         </tr> \
         <tr><th></th> \
             <th></th> \
@@ -284,15 +284,13 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
-            <th></th> \
-            <th></th> \
         </tr> \
         <tr> \
             <th colspan=6></th> \
             <th colspan=1 id=best_species class='text-center'></th> \
             <th colspan=4></th> \
             <th colspan=1 id=best_res class='text-center'></th> \
-            <th colspan=13></th> \
+            <th colspan=12></th> \
         </tr></thead><tbody>\n"
 
     identity_lookup = {}
@@ -404,7 +402,7 @@ def PdbTableData(request):
         r['resolution_best'] = s.resolution==best_resolutions['{}_{}'.format(s.protein_conformation.protein.parent.pk, s.state.name)]
 
         r['7tm_distance'] = s.distance
-        r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
+        r['tm6_angle'] = str(round(s.tm6_angle)) if s.tm6_angle != None else ''
         r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness)) if s.gprot_bound_likeness != None else ''
 
         # DEBUGGING - overwrite with distance to 6x38
@@ -441,6 +439,8 @@ def PdbTableData(request):
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin
         r['fusion'] = fusion
+        if len(antibody) > 20:
+            antibody = "<span title='{}'>{}</span>".format(antibody, antibody[:20] + "..")
         r['antibody'] = antibody
 
         r['ligand'] = "-"
@@ -481,8 +481,6 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
                         </tr> \n".format(
                                         r['contact_representative'],
                                         r['distance_representative'],
@@ -515,8 +513,6 @@ def PdbTableData(request):
                                         r['antibody'],
                                         r['ligand'],
                                         r['ligand_function'],
-                                        r['ligand_type'],
-                                        ",".join(r['extra_filter']),
                                         )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
