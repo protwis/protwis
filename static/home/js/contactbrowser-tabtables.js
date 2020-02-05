@@ -1863,7 +1863,7 @@ function renderBrowser_2(data) {
                           <th colspan="9" rowspan="1">AA occurrence in structure sets (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
                           <th rowspan="2" colspan="5">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
@@ -2152,7 +2152,7 @@ function renderBrowser_2(data) {
                           <th colspan="3" rowspan="1">AA occurrence in set (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
                           <th rowspan="2" colspan="5">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
@@ -2379,7 +2379,7 @@ function renderBrowser_2(data) {
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="2">Conservation in class (%)</th> \
                           <th rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2">Secondary structure</th> \
@@ -3049,22 +3049,14 @@ function renderBrowser_4(data) {
             // missing_2 = [...new Set([...data['missing'][i]['present'], ...dssp_set2])].length / dssp_set2.length;
 
             missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);
-            missing_2 = Math.round(100*dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
+            missing_2 = Math.round(100 * dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
+            
 
-            pdbs.forEach(function(pdb){
-                pdb_upper = pdb.toUpperCase();
-                if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
-                if (all_angles_1) {
-                    let d1 = all_angles_1[pdb_upper];
-                    if (d1.length) {
-                        if (dssp_set1.includes(pdb)) {
-                            ss_pos1_set1.push(d1[12]);
-                        } else if (dssp_set2.includes(pdb)) {
-                            ss_pos1_set2.push(d1[12]);
-                        }
-                    }
-                }
-            });
+            all_angles_1_set1 = data['all_angles_set1'][i];
+            all_angles_1_set2 = data['all_angles_set2'][i];
+            if (all_angles_1_set1) ss_pos1_set1 = Object.entries(all_angles_1_set1).filter(x => x[1].length > 6).map(x => x[1][12]);
+            if (all_angles_1_set2) ss_pos1_set2 = Object.entries(all_angles_1_set2).filter(x => x[1].length > 6).map(x => x[1][12]);
+
 
             dssp = [];
             [ss_pos1_set1,ss_pos1_set2].forEach(function(list){
@@ -3488,11 +3480,11 @@ function renderBrowser_5(data) {
 
     if (data['proteins2']) {
         thead += '<tr> \
-                        <th colspan="1" rowspan="2">Seg</th> \
+                        <th colspan="1" rowspan="2">Seg-<br>ment</th> \
                         <th colspan="1" rowspan="2">Pos</th> \
                         <th colspan="1" rowspan="2">Pair movement</th> \
                         <th colspan="2">Backbone Ca movement</th> \
-                        <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                        <th colspan="1" rowspan="2">Ca half-sphere exposure (Å&sup2;)</th> \
                         <th colspan="3">Sidechain differences</th> \
                         <th colspan="5" rowspan="1">Seq consensus</th> \
                         <th colspan="2" rowspan="1">Class seq consensus</th> \
@@ -3501,8 +3493,8 @@ function renderBrowser_5(data) {
                         <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
                         <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
                         <th colspan="1">Rotamer</th> \
-                        <th colspan="1">SASA</th> \
-                        <th colspan="1">RSA</th> \
+                        <th colspan="1">SASA (Å&sup2;)</th> \
+                        <th colspan="1">RSA (Å&sup2;)</th> \
                         <th colspan="2">AA</th> \
                         <th colspan="3">Conservation (%)</th> \
                         <th colspan="1">AA</th> \
@@ -3528,11 +3520,11 @@ function renderBrowser_5(data) {
                         </tr>';
     } else {
         thead += '<tr> \
-                <th colspan="1" rowspan="2">Seg</th> \
+                <th colspan="1" rowspan="2">Seg-<br>ment</th> \
                 <th colspan="1" rowspan="2">Pos</th> \
                 <th colspan="1" rowspan="2">Pair movement</th> \
                 <th colspan="2">Backbone Ca movement</th> \
-                <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                <th colspan="1" rowspan="2">Ca half-sphere exposure (Å&sup2;)</th> \
                 <th colspan="3">Sidechain differences</th> \
                 <th colspan="2" rowspan="1">Seq consensus</th> \
                 <th colspan="2" rowspan="1">Class seq consensus</th> \
@@ -3541,8 +3533,8 @@ function renderBrowser_5(data) {
                 <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
                 <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
                 <th colspan="1">Rotamer</th> \
-                <th colspan="1">SASA</th> \
-                <th colspan="1">RSA</th> \
+                <th colspan="1">SASA (Å&sup2;)</th> \
+                <th colspan="1">RSA (Å&sup2;)</th> \
                 <th colspan="1">AA</th> \
                 <th colspan="1">Conservation (%)</th> \
                 <th colspan="1">AA</th> \
