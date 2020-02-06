@@ -26,8 +26,8 @@ def calculatePlane(tm_points, intracellular):
 # convert 3D points to 2D points on best fitting plane
 def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
     # 3D project points onto plane -> 2D points
-    points_plane = [[0]] * 7
-    points_z = [0] * 7
+    points_plane = [[0]] * len(tm_points)
+    points_z = [0] * len(tm_points)
     for i in range(0,len(tm_points)):
         # point relative to centroid
         v = tm_points[i] - centroid
@@ -43,11 +43,11 @@ def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
 
     locx = locx/norm(locx)
     locy = locy/norm(locy)
-    points_2d = [[np.dot(p - centroid, locx), np.dot(p - centroid, locy)] for p in points_plane]
+    points_2d = [np.array([np.dot(p - centroid, locx), np.dot(p - centroid, locy)]) for p in points_plane]
 
     # Needs flipping?
     if (intracellular and (points_2d[3][1]-points_2d[0][1]) < 0) or (not intracellular and (points_2d[3][1]-points_2d[0][1]) > 0):
-        points_2d = np.array([[x[0], -1*x[1]] for x in points_2d])
+        points_2d = np.array([np.array([x[0], -1*x[1]]) for x in points_2d])
 
     return np.array(points_2d), points_z
 
@@ -225,7 +225,7 @@ def recreate3Dorder(distance_matrix, gn_grouping):
     #     for j in range(i+1, len(tm_centroids)):
     #         print (i+1,j+1, round(np.linalg.norm(tm_centroids[i] - tm_centroids[j]),3))
 
-    return np.array(tm_centroids)
+    return np.array(tm_centroids), np.array(tms)
 
 # Find the intersection of three spheres
 # Based on https://stackoverflow.com/questions/1406375/finding-intersection-points-between-3-spheres
@@ -350,8 +350,8 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
         final_rank[tm_ranking[i]] = 100 # make sure this TM isn't repeated
 
     # Calculate 3D coordinates from distance matrix
-    tms_centroids_set1 = recreate3Dorder(membrane_data1, ends_and_middle_grouping)
-    tms_centroids_set2 = recreate3Dorder(membrane_data2, ends_and_middle_grouping)
+    tms_centroids_set1, tms_set1 = recreate3Dorder(membrane_data1, ends_and_middle_grouping)
+    tms_centroids_set2, tms_set2 = recreate3Dorder(membrane_data2, ends_and_middle_grouping)
 
     # Align 3D points of set2 with 3D points of set1 using the most stable reference points
     tms_reference_set1 = tms_centroids_set1[[x for x in range(0,len(segment_order)) if segment_order[x] in tm_ranking[0:3]]]
@@ -362,6 +362,7 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
     imposer.run()
     rot, trans = imposer.get_rotran()
     tms_centroids_set2 = np.dot(tms_centroids_set2, rot) + trans
+    tms_set2 = np.dot(tms_set2, rot) + trans
 
     # Calculate optimal plane through points in both sets and convert to 2D
     # Try normal based on TM7
@@ -373,13 +374,14 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
         normal, midpoint = calculatePlane(np.concatenate((tms_centroids_set1[7:], tms_centroids_set2[7:])), intracellular)
 
     midpoint = tms_centroids_set1.mean(axis=0)
-    
+
     plane_set1, z_set1 = convert3D_to_2D_plane(tms_centroids_set1[:7], intracellular, normal, midpoint)
     plane_set2, z_set2 = convert3D_to_2D_plane(tms_centroids_set2[:7], intracellular, normal, midpoint)
 
+    # DO NOT REMOVE: possibly we want to upgrade to weighted superposing
     # Based on Biopython SVDSuperimposer
-    # coords = tms_set2
-    # reference_coords = tms_set1
+    # coords = tms_centroids_set2
+    # reference_coords = tms_centroids_set1
 
     # OLD centroid calcalation
     # av1 = sum(coords) / len(coords)
@@ -416,16 +418,40 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
     # rot, trans = imposer.get_rotran()
     # tms_set2 = np.dot(tms_set2, rot) + trans
 
-    # Add angles
+    # CURRENT: Ca-angle to axis core
     rotations = [0] * 7
     for i in range(0,7):
-        # Ca-angle to axis core
-
         rotations[i] = [data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1] if abs(data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1]) < 180 else -1*data['tab4'][gn_dictionary[x]]['angles_set2'][1]-data['tab4'][gn_dictionary[x]]['angles_set1'][1] for x in gns[i]]
         if intracellular:
             rotations[i] = -1*sum(rotations[i])/3
         else:
             rotations[i] = sum(rotations[i])/3
+
+    # ALTERNATIVE: utilize TM tip alignment (needs debugging as some angles seem off, e.g. GLP-1 active vs inactive TM2)
+    # Add rotation angle based on TM point placement
+    # tms_2d_set1, junk = convert3D_to_2D_plane(tms_set1, intracellular, normal, midpoint)
+    # tms_2d_set2, junk = convert3D_to_2D_plane(tms_set2, intracellular, normal, midpoint)
+
+    # rotations = [0] * 7
+    # for i in range(0,7):
+    #     positions = [x for x in range(0, len(ends_and_middle_grouping)) if ends_and_middle_grouping[x] == i]
+    #     turn_set1 = tms_2d_set1[positions]
+    #     turn_set2 = tms_2d_set2[positions]
+    #
+    #     # set to middle
+    #     turn_set1 = turn_set1 - turn_set1.mean(axis=0)
+    #     turn_set2 = turn_set2 - turn_set2.mean(axis=0)
+    #
+    #     # Calculate shift per residue and take average for this TM
+    #     for j in range(0,len(turn_set1)):
+    #         v1 = turn_set1[j]/np.linalg.norm(turn_set1[j])
+    #         v2 = turn_set2[j]/np.linalg.norm(turn_set2[j])
+    #         angle = np.degrees(np.arctan2(v2[1], v2[0]) - np.arctan2(v1[1],v1[0]))
+    #
+    #         if abs(angle) > 180:
+    #             angle = 360 - abs(angle)
+    #
+    #         rotations[i] += angle/len(turn_set1)
 
     # TODO: check z-coordinates orientation
     # Step 1: collect movement relative to membrane mid
