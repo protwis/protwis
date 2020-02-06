@@ -122,7 +122,7 @@ def recreate3Dorder(distance_matrix, gn_grouping):
     # Reorder with respect to distances
     #to = determine_order_group(distance_matrix, gn_grouping) # based on distance
     to = consecutive_group_order(gn_grouping) # based on groups - same initial four points, same plane
-    print(to)
+
     reorder_dist = np.array([np.array(x)[to] for x in distance_matrix])[to]
 
     tms = [[0]] * len(gn_grouping)
@@ -202,11 +202,11 @@ def recreate3Dorder(distance_matrix, gn_grouping):
     # Rearrange to correct order
     tms = [tms[to.index(i)] for i in range(0,len(gn_grouping))]
 
-    # DEBUG distances
-    for i in range(0,len(gn_grouping)-1):
-        for j in range(i+1, len(gn_grouping)):
-            ref_dist = distance_matrix[i][j]
-            print (i+1,j+1, round(np.linalg.norm(tms[i] - tms[j]),3), round(ref_dist,3), round(np.linalg.norm(tms[i] - tms[j]) - ref_dist,3))
+    # # DEBUG residue-pair distances
+    # for i in range(0,len(gn_grouping)-1):
+    #     for j in range(i+1, len(gn_grouping)):
+    #         ref_dist = distance_matrix[i][j]
+    #         print (i+1,j+1, round(np.linalg.norm(tms[i] - tms[j]),3), round(ref_dist,3), round(np.linalg.norm(tms[i] - tms[j]) - ref_dist,3))
 
     total_error, point_error = reconstruction_error(distance_matrix,tms)
     print("Total error for", len(tms), "points:", total_error, "averaging", round(point_error, 4), "Å per distance")
@@ -287,7 +287,7 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
     ref_membrane_mid = {}
     ref_membrane_mid["001"] = [['1x43', '1x44','1x45'], ['2x51', '2x52','2x53'], ['3x35', '3x36', '3x37'], ['4x53', '4x54', '4x55'], ['5x45', '5x46', '5x47'], ['6x47', '6x48', '6x49'], ['7x42', '7x43', '7x44']] # A
     #ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x53', '4x54', '4x55'], ['5x44', '5x45', '5x46'], ['6x48', '6x49', '6x50'], ['7x49', '7x50', '7x51']] # B1
-    ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x53', '4x54', '4x55'], ['5x44', '5x45', '5x46'], ['7x49', '7x50', '7x51']] # B1
+    ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x55', '4x56'], ['5x42', '5x43', '5x44'], ['7x47', '7x49']] # B1
     ref_membrane_mid["003"] = ref_membrane_mid["002"] # B2
     ref_membrane_mid["004"] = [['1x48', '1x49', '1x50'], ['2x47', '2x48', '2x49'], ['3x39', '3x40', '3x41'], ['4x40', '4x41', '4x42'], ['5x47', '5x48', '5x49'], ['6x47', '6x48', '6x49'], ['7x39', '7x40', '7x41']] # C
     ref_membrane_mid["005"] = [['1x42', '1x43', '1x44'], ['2x52', '2x53', '2x54'], ['3x37', '3x38', '3x39'], ['4x52', '4x53', '4x54'], ['5x52', '5x53', '5x54'], ['6x42', '6x43', '6x44'], ['7x46', '7x47', '7x48']] # F
@@ -364,11 +364,18 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
     tms_centroids_set2 = np.dot(tms_centroids_set2, rot) + trans
 
     # Calculate optimal plane through points in both sets and convert to 2D
-    # Using TM mid as reference plane
-    normal, midpoint = calculatePlane(np.concatenate((tms_centroids_set1[7:], tms_centroids_set2[7:])), intracellular)
+    # Try normal based on TM7
+    tm7_centroids = tms_centroids_set1[[x for x in range(0,len(segment_order)) if segment_order[x] == 6]]
+    if len(tm7_centroids) == 2:
+        normal = (tm7_centroids[1] - tm7_centroids[0])/np.linalg.norm(tm7_centroids[1] - tm7_centroids[0])
+    else:
+        # Using TM mid as reference plane
+        normal, midpoint = calculatePlane(np.concatenate((tms_centroids_set1[7:], tms_centroids_set2[7:])), intracellular)
+
+    midpoint = tms_centroids_set1.mean(axis=0)
+    
     plane_set1, z_set1 = convert3D_to_2D_plane(tms_centroids_set1[:7], intracellular, normal, midpoint)
     plane_set2, z_set2 = convert3D_to_2D_plane(tms_centroids_set2[:7], intracellular, normal, midpoint)
-
 
     # Based on Biopython SVDSuperimposer
     # coords = tms_set2
