@@ -541,30 +541,27 @@ def InteractionBrowserData(request):
                 return 1
 
     mode = 'single'
-    # PDB files
-    try:
-        pdbs1 = request.GET.getlist('pdbs1[]')
-        pdbs2 = request.GET.getlist('pdbs2[]')
-    except IndexError:
-        pdbs1 = []
-    if pdbs1 and pdbs2:
+    request_method = request.GET
+    if request.POST and (request.POST.get("pdbs[]") or request.POST.get("pdbs1[]")):
+        request_method = request.POST
+
+    if request_method.get("pdbs[]"):
+        pdbs = request_method.getlist('pdbs[]')
+    elif request_method.get("pdbs1[]") and request_method.get("pdbs2[]"):
+        pdbs1 = request_method.getlist('pdbs1[]')
+        pdbs2 = request_method.getlist('pdbs2[]')
         mode = 'double'
-    # PDB files
-    try:
-        pdbs = request.GET.getlist('pdbs[]')
-    except IndexError:
-        pdbs = []
+    else:
+        return "No selection"
 
-    pdbs = [pdb.lower() for pdb in pdbs]
-
-    pdbs1 = [pdb.lower() for pdb in pdbs1]
-    pdbs2 = [pdb.lower() for pdb in pdbs2]
-
-    if pdbs1 and pdbs2:
+    if mode == 'double':
+        pdbs1 = [pdb.lower() for pdb in pdbs1]
+        pdbs2 = [pdb.lower() for pdb in pdbs2]
         pdbs = pdbs1 + pdbs2
-
-    if mode == 'single':
+    else:
+        pdbs = [pdb.lower() for pdb in pdbs]
         pdbs1 = pdbs
+        pdbs2 = []
 
     pdbs_upper = [pdb.upper() for pdb in pdbs]
 
@@ -579,13 +576,13 @@ def InteractionBrowserData(request):
 
     # Segment filters
     try:
-        segments = request.GET.getlist('segments[]')
+        segments = request_method.getlist('segments[]')
     except IndexError:
         segments = []
 
     # Interaction types
     try:
-        i_types = [x.lower() for x in request.GET.getlist('interaction_types[]')]
+        i_types = [x.lower() for x in request_method.getlist('interaction_types[]')]
         # Add unknown type, so no interactions are returned, otherwise all are returned
         if len(i_types) == 0:
             i_types = ["DOES_NOT_EXIST"]
@@ -594,7 +591,7 @@ def InteractionBrowserData(request):
 
     # Strict interaction settings
     try:
-        strict_interactions = [x.lower() for x in request.GET.getlist('strict_interactions[]')]
+        strict_interactions = [x.lower() for x in request_method.getlist('strict_interactions[]')]
     except IndexError:
         strict_interactions = []
 
@@ -615,7 +612,7 @@ def InteractionBrowserData(request):
 
     # Options settings
     try:
-        contact_options = [x.lower() for x in request.GET.getlist('options[]')]
+        contact_options = [x.lower() for x in request_method.getlist('options[]')]
     except IndexError:
         contact_options = []
 
@@ -625,18 +622,8 @@ def InteractionBrowserData(request):
     if not contact_options or "intrahelical" not in contact_options:
         i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
 
-    # Use normalized results Defaults to True.
-    #normalized = True
-    #try:
-    #    normalized_string = request.GET.get('normalized')
-    #    if normalized_string in ['false', 'False', 'FALSE', '0']:
-    #        normalized = False
-    #except IndexError:
-    #    pass
-
     # DISCUSS: cache hash now takes the normalize along, is this necessary
     normalized = "normalize" in contact_options
-
 
     forced_class_a = "classa" in contact_options
 
@@ -644,10 +631,7 @@ def InteractionBrowserData(request):
     segment_filter_res1 = Q()
     segment_filter_res2 = Q()
 
-    # if segments:
-    #     segment_filter_res1 |= Q(interacting_pair__res1__protein_segment__slug__in=segments)
-    #     segment_filter_res2 |= Q(interacting_pair__res2__protein_segment__slug__in=segments)
-
+    # Cache
     hash_list = [pdbs1,pdbs2,i_types, strict_interactions, contact_options]
     hash_cache_key = 'interactionbrowserdata_{}'.format(get_hash(hash_list))
     data = cache.get(hash_cache_key)
@@ -1395,7 +1379,7 @@ def InteractionBrowserData(request):
         print('Prepare all angles values for',mode,'mode',time.time()-start_time)
         data['all_angles'] = get_all_angles(pdbs_upper,data['pfs'],normalized, forced_class_a = forced_class_a)
         print('Prepare angles values for',mode,'mode',time.time()-start_time)
-        
+
         if mode == "double":
 
             group_1_angles = get_angle_averages(data['pdbs1'],s_lookup, normalized, forced_class_a = forced_class_a)
