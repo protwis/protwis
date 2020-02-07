@@ -117,7 +117,7 @@ function tm7_plot(containerSelector, plot_data) {
     values_font_size_hiding = 6;
     tm_font_size = 8;
 
-    minimum_angle_to_show = 10;
+    minimum_angle_to_show = 30;
     minimum_distance_to_show = 1;
 
     for (var i of Object.keys(set1_data)) {
@@ -163,7 +163,7 @@ function tm7_plot(containerSelector, plot_data) {
         .attr("viewBox", min_x + " " + min_y + " " + (max_x - min_x) + " " + (max_y - min_y))
         .attr("width", "100%")
         .attr("style", "height: 500px");
-    
+
     var defs = svgContainer.append("defs");
 
     defs.append("marker")
@@ -188,9 +188,9 @@ function tm7_plot(containerSelector, plot_data) {
         .attr("orient", "auto-start-reverse")
         .append("path")
         .attr("d", "M 0 0 L 10 5 L 0 10 z")
-        .attr("fill", "grey"); 
-    
-    
+        .attr("fill", "grey");
+
+
     //Filter for the outside glow
     var filter = defs.append("filter")
         .attr("id","glow");
@@ -202,7 +202,7 @@ function tm7_plot(containerSelector, plot_data) {
         .attr("in","coloredBlur");
     feMerge.append("feMergeNode")
         .attr("in", "SourceGraphic");
-    
+
     var filter2 = defs.append("filter")
         .attr("id", "shadow")
         .append("feDropShadow")
@@ -358,7 +358,7 @@ function tm7_plot(containerSelector, plot_data) {
         .attr("display", function (d, i) {
             return d.movement > minimum_distance_to_show ? "" : "none";
         });
-    
+
     d3.selectAll(".set2.circle")
         .style("filter", "url(#glow)");
     // d3.selectAll(".set1.circle")

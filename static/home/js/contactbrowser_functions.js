@@ -896,15 +896,19 @@ function drawPlotPanel(plot_type, plot_div) {
             tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"]);
             break;
     }
-    
+
 }
 
 var plotting_options = {
-    'TM1-7 segment': [
-        ['tm7_plot_intra', '2D plot – cytosolic (only for two-sets)'],
-        ['tm7_plot_extra', '2D plot – extracellular (only for two-sets)'],
-        ['tm7_plot_3d_intra','3D plot – cytosolic (only for two-sets)'],
-        ['tm7_plot_3d_extra','3D plot – extracellular (only for two-sets)']
+    'TM1-7 segment (cytosolic)': [
+        ['tm7_plot_intra', '2D plot'],
+        ['tm7_plot_3d_intra','3D plot'],
+        ['tm7_heatmap_intra','Heatmap']
+    ],
+    'TM1-7 segment (extracellular)': [
+        ['tm7_plot_extra', '2D plot'],
+        ['tm7_plot_3d_extra','3D plot'],
+        ['tm7_heatmap_extra','Heatmap']
     ],
     'Contacts between generic residue positions': [
         ['ngl', '3D structure'],
@@ -980,6 +984,7 @@ function loadPDBsView(pdb, selector, generic) {
             dataType: 'json',
             data: {
                 // 'segments': segments,
+                'csrfmiddlewaretoken': csrf_token,
                 'generic': generic,
                 'pdbs': pdb,
                 //'normalized': normalized,
@@ -988,6 +993,7 @@ function loadPDBsView(pdb, selector, generic) {
                 'options': currentSettings[currentTab]["options"]
             },
             async: true,
+            method: "POST",
             success: function (data) {
                 console.timeEnd('Get loadPDBsView Data');
                 if (data['error']) {
@@ -1063,6 +1069,7 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
             dataType: 'json',
             data: {
                 // 'segments': segments,
+                'csrfmiddlewaretoken': csrf_token,
                 'generic': generic,
                 'pdbs1': pdbs1,
                 'pdbs2': pdbs2,
@@ -1072,6 +1079,7 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
                 'options': currentSettings[currentTab]["options"]
             },
             async: true,
+            method: "POST",
             success: function (data) {
                 console.timeEnd('Get loadTwoPDBsView Data');
                 if (data['error']) {
@@ -1100,7 +1108,8 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
 }
 
 function initilizeInitialPlots() {
-    default_plot_types = ['force_network', 'flareplot', 'ngl'];
+    //default_plot_types = ['force_network', 'flareplot', 'ngl'];
+    default_plot_types = ['tm7_plot_intra', 'tm7_plot_extra', 'ngl'];
     $(".plot_row:visible").find(".panel").each(function (i) {
         plot_type = default_plot_types[i];
         plot_div = $(this);
@@ -1827,7 +1836,7 @@ function updateInteractionSettings() {
     checked = currentSettings[currentTab]["options"].indexOf("classa") >= 0 ? "checked" : "";
     var classtooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, generic numbers will be in Class A regardless of class of selection"></span>';
     option_content += '<li class="list-group-item">' + classtooltip + ' Class A numbering<div class="material-switch pull-right"><input id="option-classa" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-classa" class="label-primary"></label></div></li>';
-    
+
 
     // Only between helices
     checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
