@@ -533,10 +533,13 @@ class BiasBrowser(TemplateView):
             temp['publication_quantity'] = instance.article_quantity
             temp['lab_quantity'] = instance.labs_quantity
             temp['reference_ligand'] = instance.reference_ligand
-            temp['primary'] =   instance.primary
-            temp['secondary'] = instance.secondary
+            temp['primary'] =   instance.primary.replace('family','').strip()
+            temp['secondary'] = instance.secondary.replace('family','').strip()
             if instance.receptor:
+                temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
                 temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             temp['biasdata'] = list()
@@ -674,7 +677,10 @@ class BiasBrowserGSubbtype(TemplateView):
             temp['primary'] =   instance.primary
             temp['secondary'] = instance.secondary
             if instance.receptor:
+                temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
                 temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             temp['biasdata'] = list()
@@ -908,6 +914,8 @@ class BiasPathways(TemplateView):
 
             if instance.receptor:
                 temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             # at the moment, there is only 1 pathways for every biased_pathway

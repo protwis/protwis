@@ -12,6 +12,18 @@
 <script src="https://cdn.datatables.net/buttons/1.0.3/js/buttons.colVis.js"></script>
 
 <script type="text/javascript" charset="utf-8">
+function getCookie(c_name) {
+    if (document.cookie.length > 0) {
+        c_start = document.cookie.indexOf(c_name + "=");
+        if (c_start != -1) {
+            c_start = c_start + c_name.length + 1;
+            c_end = document.cookie.indexOf(";", c_start);
+            if (c_end == -1) c_end = document.cookie.length;
+            return unescape(document.cookie.substring(c_start, c_end));
+        }
+    }
+    return "";
+}
     // main table load
     $(document).ready(function() {
         oTable = $('#structures_scrollable').DataTable({
@@ -51,6 +63,9 @@
                     action: function(e, dt, node, config) {
                         var id = read_ids()
                         var result
+                        $.ajaxSetup({
+                            headers: { "X-CSRFToken": getCookie("csrftoken") }
+                        });
                         $.ajax({
                             type: 'POST',
                             url: '/ligand/browservendors/',
@@ -510,35 +525,35 @@
                     column_number: 56,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Time resolved",
+                    filter_default_label: "",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 57,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Time resolved",
+                    filter_default_label: "",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 58,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Time resolved",
+                    filter_default_label: "",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 59,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Time resolved",
+                    filter_default_label: "",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 60,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Time resolved",
+                    filter_default_label: "",
                     filter_reset_button_text: false,
                 },
                 //Article
@@ -569,23 +584,6 @@
 
         function reset_filters() {
             yadcf.exResetAllFilters(oTable);
-            setTimeout(function() {
-                oTable.columns().flatten().each(function(colIdx) {
-                    var columnData = [];
-                    oTable.rows({
-                        filter: 'applied'
-                    }).data().each(function(i) {
-                        columnData.push(i[colIdx]);
-                    })
-                    if (columnData.join('').length == 0 && colIdx != 0) {
-                        oTable.column(colIdx).visible(false);
-                    }
-                });
-                oTable.columns.adjust();
-                $('#loadingSpinner').hide();
-                $('#structures_scrollable_body').show();
-            }, 5);
-
         }
 
         $('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
@@ -720,7 +718,7 @@
 <div id="excel_table" style2="display:none;"></div>
 <div style="display:block;">
     <div style="display:inline; float:left;">
-        <h2 style="width:auto; display:inline;">Biased Ligands</h2>
+        <h2 style="width:auto; display:inline;">Ligand bias for G protein subtype</h2>
     </div>
     <div style="float:left; padding:4px 0px 0px 6px;">
         <div style="font-size: 10px; ">
@@ -755,7 +753,7 @@
                         <th style="border-left: 1px solid black;" id="col_Operational" colspan="4">Operational model <br> &#916;&#916;(Tau/Ka)</th>
                         <th style="border-left: 1px solid black;" id="col_Log" colspan="4">Intrinsic relative activity<br> (&#916;&#916;Log(Emax/EC50))</th>
                         <th style="border-left: 1px solid black;" id="col_Potency" colspan="4">Potency ratio</th>
-                        <th style="border-left: 1px solid black;" id="col_ec50" colspan="5">Potency EC50 or <font color="#FF0000">IC50</font>
+                        <th style="border-left: 1px solid black;" id="col_ec50" colspan="5">Potency (EC50 or <font color="#FF0000">IC50)</font>
                         </th>
                         <th style="border-left: 1px solid black;" id="col_Emax" colspan="5">Emax (% of ref ligand)</th>
                         <th style="border-left: 1px solid black;" id="col_Transduction" colspan="5">Transduction coefficient</th>
@@ -858,15 +856,15 @@
                             <span style='display: none'> {{e.1.ligand.id}}</span>
                             <a href="#">
                                 <!-- <span class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.1.ligand.id}}/detail', 'Detail View', window, 1500, 1000)">Details</span> -->
-                                <span class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"> Details</span>
+                                <span style="margin-left: 35%;" class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span>
                             </a>
                         </td>
 
                         <!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
-                        <td>{{e.1.receptor.family.parent.parent.parent.name}}</td>
+                        <td>{{e.1.class}}</td>
                         <td>{{e.1.receptor.family.parent}}</td>
-                        <td>{{e.1.receptor.accession}}</td>
-                        <td>{{e.1.receptor.entry_short}}</td>
+                        <td>{{e.1.uniprot}}</td>
+                        <td>{{e.1.IUPHAR}}</td>
                         <td>{{e.1.receptor.species.common_name}}</td>
                         {% if e.1.endogenous_ligand == None %}
                         <td>Not available</td>

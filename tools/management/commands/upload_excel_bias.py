@@ -41,7 +41,7 @@ class Command(BaseBuild):
     help = 'Reads bias data and imports it'
     # source file directory
     # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
-    structure_data_dir = '/excel/'
+    structure_data_dir = '/protwis/sites/protwis/excel/'
     publication_cache = {}
     ligand_cache = {}
     data_all = []
@@ -143,8 +143,8 @@ class Command(BaseBuild):
             # code to skip rows in excel for faster testing
             # if i < 15:
             #     continue
-            # if i > 15:
-            #     break
+            if i > 58:
+                break
             if i % 100 == 0:
                 print(i)
             d = dict()
@@ -226,7 +226,7 @@ class Command(BaseBuild):
             if not l:
                 continue
             #fetch endogenous ligand
-            end_ligand  = self.fetch_endogenous(d['receptor'])
+
 
             # fetch reference_ligand
             reference_ligand = self.fetch_ligand(
@@ -241,7 +241,7 @@ class Command(BaseBuild):
             protein = self.fetch_protein(d['receptor'], d['source_file'])
             if protein == None:
                 continue
-
+            end_ligand  = self.fetch_endogenous(protein)
 ## TODO:  check if it was already uploaded
             experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
                                                 publication=pub,
@@ -386,14 +386,12 @@ class Command(BaseBuild):
             family == protein
         return family
 
-    def fetch_endogenous(self, protein_from_excel):
+    def fetch_endogenous(self, protein):
         try:
             with connection.cursor() as cursor:
-                protein = Protein.objects.filter(entry_name=protein_from_excel)
-                test = protein.get()
-                cursor.execute("SELECT * FROM protein_endogenous_ligands WHERE protein_id =%s", [test.pk])
-                row = cursor.fetchone()
-                end_ligand = Ligand.objects.filter(id=row[0])
+                cursor.execute("SELECT * FROM protein_endogenous_ligands WHERE protein_id =%s", [protein.pk])
+                row = cursor.fetchone()                
+                end_ligand = Ligand.objects.filter(id=row[2])
                 test = end_ligand.get()
 
             return test
