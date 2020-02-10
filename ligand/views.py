@@ -430,17 +430,18 @@ class PathwayExperimentEntryView(DetailView):
     template_name = 'biased_pathways_data.html'
 
 def test_link(request):
-    request.session['data'] = ''
+    request.session['ids'] = ''
     # try:
-    request.session['data']
+    request.session['ids']
     if request.POST.get('action') == 'post':
-        print('i am here' )
+        # print('i am here' )
         request.session.modified = True
-        data = request.POST.get('data')
+        data = request.POST.get('ids')
         data = filter(lambda char: char not in " \"?.!/;:[]", data)
         datum = "".join(data)
-        request.session['data'] = datum
-        print('datum',datum )
+        request.session['ids'] = datum
+        request.session.set_expiry(15)
+        # print('datum',datum )
 
     return HttpResponse(request)
     # except OSError as exc:
@@ -454,8 +455,8 @@ class BiasVendorBrowser(TemplateView):
     def get_context_data(self, **kwargs):
         # try:
         context = dict()
-        datum = self.request.session.get('data')
-        print('vendirlist',datum )
+        datum = self.request.session.get('ids')
+
         self.request.session.modified = True
         rd = list()
         for i in datum.split(','):
@@ -474,7 +475,7 @@ class BiasVendorBrowser(TemplateView):
 
                     rd.append(temp)
             context['data'] = rd
-            # del self.request.session['data']
+        del self.request.session['ids']
         return context
         # except:
         #     raise
