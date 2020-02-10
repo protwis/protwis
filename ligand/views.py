@@ -431,19 +431,20 @@ class PathwayExperimentEntryView(DetailView):
 
 def test_link(request):
     request.session['data'] = ''
-    try:
-        request.session['data']
-        if request.POST.get('action') == 'post':
-            request.session.modified = True
-            data = request.POST.get('data')
-            data = filter(lambda char: char not in " \"?.!/;:[]", data)
-            datum = "".join(data)
-            request.session['data'] = datum
-            print('saved',datum)
+    # try:
+    request.session['data']
+    if request.POST.get('action') == 'post':
+        print('i am here' )
+        request.session.modified = True
+        data = request.POST.get('data')
+        data = filter(lambda char: char not in " \"?.!/;:[]", data)
+        datum = "".join(data)
+        request.session['data'] = datum
+        print('datum',datum )
 
-        return HttpResponse(request)
-    except OSError as exc:
-        raise
+    return HttpResponse(request)
+    # except OSError as exc:
+    #     raise
 
 
 class BiasVendorBrowser(TemplateView):
@@ -454,7 +455,7 @@ class BiasVendorBrowser(TemplateView):
         # try:
         context = dict()
         datum = self.request.session.get('data')
-        # print('fetched',datum)
+        print('vendirlist',datum )
         self.request.session.modified = True
         rd = list()
         for i in datum.split(','):
@@ -487,7 +488,7 @@ class BiasBrowser(TemplateView):
     template_name = 'bias_browser.html'
     #@cache_page(50000)
     def get_context_data(self, *args, **kwargs  ):
-        print('i am herelol')
+
         content = AnalyzedExperiment.objects.filter(source='different_family').prefetch_related(
         'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
         'endogenous_ligand' ,'ligand__properities','receptor','receptor','receptor__family',
@@ -520,7 +521,7 @@ class BiasBrowser(TemplateView):
             fin_obj = {}
             fin_obj['main'] = instance
             temp = dict()
-            doubles = []            
+            doubles = []
             temp['experiment_id'] = instance.id
             temp['publication'] = instance.publication
             temp['ligand'] = instance.ligand
@@ -593,7 +594,7 @@ class BiasBrowser(TemplateView):
 
             rd[increment] = temp
             increment+=1
-        print('---increment---', increment,'\n')
+
 
         return rd
 
@@ -626,7 +627,7 @@ class BiasBrowserGSubbtype(TemplateView):
     template_name = 'bias_browser_g.html'
     #@cache_page(50000)
     def get_context_data(self, *args, **kwargs  ):
-        print('i am here')
+
         content = AnalyzedExperiment.objects.filter(source='same_family').prefetch_related(
     'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
     'endogenous_ligand' ,'ligand__properities','receptor','receptor__family__parent','receptor__family__parent__parent__parent',
@@ -731,7 +732,7 @@ class BiasBrowserGSubbtype(TemplateView):
 
             rd[increment] = temp
             increment+=1
-        print('---increment---', increment,'\n')
+
 
         return rd
 
@@ -839,7 +840,7 @@ class BiasBrowserChembl(TemplateView):
 
             rd[increment] = temp
             increment+=1
-        print('---increment---', increment,'\n')
+
 
         return rd
 
@@ -920,7 +921,7 @@ class BiasPathways(TemplateView):
 
             rd[increment] = temp
             increment+=1
-        print('---increment---', increment,'\n')
+
 
         return rd
 
