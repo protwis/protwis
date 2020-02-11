@@ -584,7 +584,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                             if pos<min_pos: min_pos = pos
                         elif source=='PDB':
                             #if above fails, it's probably cos its missing residue, still should capture pdb_aa
-                            pdb_aa = AA_three[node.attrib['dbResName'].upper()]
+                            if node.attrib['dbResName'].upper() in AA_three:
+                                pdb_aa = AA_three[node.attrib['dbResName'].upper()]
+                            else:
+                                pdb_aa ="X"
 
                     elif pdb_aa and node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
                         # print(node.text)
