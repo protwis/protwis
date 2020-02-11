@@ -13,6 +13,7 @@ urlpatterns = [
     url(r'^segmentselectiongprot', views.SegmentSelectionGprotein.as_view(), name='segmentselectiongprot'),
     url(r'^segmentselectionarrestin', views.SegmentSelectionArrestin.as_view(), name='segmentselectionarrestin'),
     url(r'^segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
+    url(r'^render_alignment_excel', views.render_alignment_excel, name='render_alignment_excel'),
     url(r'^render/(?P<slug>[^/]+)/$', views.render_family_alignment, name='render-family'),
     url(r'^render', views.render_alignment, name='render'),
     url(r'^fasta/(?P<slug>[^/]+)/$', views.render_fasta_family_alignment, name='fasta-family'),

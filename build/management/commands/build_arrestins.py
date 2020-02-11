@@ -42,20 +42,20 @@ class Command(BaseCommand):
         else:
             filenames = False
 
-        try:
-            self.purge_can_residues()
-            self.purge_can_proteins()
+        # try:
+        self.purge_can_residues()
+        self.purge_can_proteins()
 
-            # add proteins
-            self.can_create_families()
-            self.can_add_proteins()
+        # add proteins
+        self.can_create_families()
+        self.can_add_proteins()
 
-            # add residues
-            self.add_can_residues()
+        # add residues
+        self.add_can_residues()
 
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
+        # except Exception as msg:
+        #     print(msg)
+        #     self.logger.error(msg)
 
     def purge_can_residues(self):
         """Purge residues."""
@@ -267,21 +267,15 @@ class Command(BaseCommand):
 
         # structures
         for i, structure in enumerate(uniprot['structures']):
-            try:
-                res = structure[1]
-                if res == '-':
-                    res = 0
+            # try:
+            res = structure[1]
+            if res == '-':
+                res = 0
 
-                structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res)
-                if created:
-                    self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
-            except IntegrityError:
-                self.logger.error('Failed creating structure ' + structure.PDB_code + ' for protein ' + p.name)
+            structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein = p)
+            if created:
+                self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
 
-            if g:
-                pcan = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
-                structure.origin.add(pcan)
-                structure.save()
 
     def create_can_rns(self):
         """Add new numbering scheme entry_name."""

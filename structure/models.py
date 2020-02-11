@@ -13,6 +13,7 @@ class Structure(models.Model):
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
     publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
     ligands = models.ManyToManyField('ligand.Ligand', through='interaction.StructureLigandInteraction')
+    extra_proteins = models.ManyToManyField('StructureExtraProteins', related_name='extra_proteins')
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
     preferred_chain = models.CharField(max_length=20)
@@ -30,9 +31,12 @@ class Structure(models.Model):
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     tm6_angle = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    gprot_bound_likeness = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     sodium = models.BooleanField(default=False)
     signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.SET_NULL, related_name='signprot_complex')
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
+    mammal = models.BooleanField(default=False) #whether the species of the structure is mammal
+    closest_to_human = models.BooleanField(default=False) # A boolean to say if the receptor/state of this structure is the closest structure to human
 
     def __str__(self):
         return self.pdb_code.index
@@ -308,6 +312,23 @@ class StructureType(models.Model):
 
     class Meta():
         db_table = "structure_type"
+
+
+class StructureExtraProteins(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    wt_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, null=True)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE, null=True)
+    display_name = models.CharField(max_length=20)
+    note = models.CharField(max_length=50, null=True)
+    chain = models.CharField(max_length=1)
+    category = models.CharField(max_length=20)
+    wt_coverage = models.IntegerField()
+
+    def __str__(self):
+        return self.display_name
+
+    class Meta():
+        db_table = "extra_proteins"
 
 
 class StructureStabilizingAgent(models.Model):

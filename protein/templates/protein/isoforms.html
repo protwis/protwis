@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
   <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
@@ -90,6 +90,9 @@ grid-area: svg;
 .isoformtable {
 grid-area: isoformtable;
 }
+.caption {
+grid-area: caption;
+}
 
 .wrapper {
   display: grid;
@@ -98,6 +101,7 @@ grid-area: isoformtable;
   grid-template-columns: 40px auto 40px;
   grid-template-areas:
   ". svg  ."
+  ". caption ."
   ". isoformtable .";
 }
 @media (min-width: 1400px) {
@@ -105,7 +109,7 @@ grid-area: isoformtable;
     grid-template-columns: 40px minmax(400px,1200px) auto 40px;
     grid-template-areas:
     ". svg isoformtable ."
-    ". . . .";
+    ". caption isoformtable .";
   }
 }
 
@@ -180,6 +184,21 @@ grid-area: isoformtable;
   background-color: indianred !important; 
 }
 
+.protein {
+    border: 0px !important; 
+    border-top: 0px !important; 
+    display: inline-block;
+    width:100%;
+    -moz-border-radius:5px;  /* for Firefox */
+    -webkit-border-radius:5px; /* for Webkit-Browsers */
+    border-radius:5px; /* regular */
+}
+
+.no-sort {
+  text-align: center;
+  /*padding: 4px 4px 4px 4px !important;*/
+}
+
 </style>
 {% endblock %}
 {% block addon_js %}
@@ -241,7 +260,7 @@ function build_table() {
         summary = v[v.length-1];
         inserts = {};
         total_completeness = [];
-        console.log(id,v[1],summary['inserts']);
+        // console.log(id,v[1],summary['inserts']);
         if (summary['inserts']) {
           if (summary['inserts'].length) {
             for (var i = 0; i < summary['inserts'].length; i++) {
@@ -255,34 +274,34 @@ function build_table() {
               inserts[seg] += 1;
             }
           }
-          console.log(v[1],inserts);
+          // console.log(v[1],inserts);
           for (var i = 0; i < segments.length; i++) {
             seg = segments[i];
             if (inserts[seg]) {
               count = inserts[seg];
-              count = '<p style="color:Orchid;margin: 0px;">&#9660;</p>';
+              count = '<p style="display:inline;color:Orchid;margin: 0px;">&#9660;</p>';
             } else {
-              count = '';
+              count = '&nbsp;';
             }
             if (Object.keys(summary['segments_altered']).includes(seg)) {
               opacity = Math.max(1- summary['segments_altered'][seg][0],0.5);
               if (opacity<1){
                 color = "background: rgba(244,164,96,"+opacity+");";
                 completeness_text = "Completeness: "+summary['segments_altered'][seg][0]*100+"% ("+summary['segments_altered'][seg][1]+"/"+summary['segments_altered'][seg][2]+")";
-                completeness += '<td class="popovertooltip protein" style="'+color+'" html_content="'+summary['segments_altered'][seg]+'" content="'+completeness_text+'"  popover-title="Completeness">'+count+'</td>';
+                completeness += '<td class="popovertooltip" html_content="'+summary['segments_altered'][seg]+'" content="'+completeness_text+'"  popover-title="Completeness"><span class="protein" style="'+color+'">'+count+'</span></td>';
                 total_completeness.push(summary['segments_altered'][seg][0])
               } else {
-                completeness += '<td class="red protein"></td>';
+                completeness += '<td><span class="red protein">&nbsp;</span></td>';
                 total_completeness.push(0)
               }
             } else {
-              completeness += '<td class="green protein">'+count+'</td>';
+              completeness += '<td><span class="green protein">'+count+'</span></td>';
               total_completeness.push(1)
             }
           }
         } else {
           for (var i = 0; i < segments.length; i++) {
-            completeness += '<td class="green"></td>';
+            completeness += '<td class="green">&nbsp;</td>';
           }
         }
         // console.log(total_completeness);
@@ -325,7 +344,7 @@ function build_table() {
     })
 
     $('.protein').on('click', function(e) {
-      id = $(this).parent('tr').attr('id');
+      id = $(this).closest('tr').attr('id');
       d = table_data[id];
       e_id = d[4].split(', ');
       p = d[1];
@@ -492,7 +511,7 @@ function build_table() {
                 column_number: 2,
                 filter_type: "select",
                 // select_type: 'select2',
-                filter_default_label: "Function",
+                filter_default_label: "Topology",
                 filter_reset_button_text: false,
                 // select_type_options: {
                 //     width: '80px'
@@ -537,7 +556,14 @@ function build_table() {
 {% endblock %}
 {% block outcontent %}
 <div class="wrapper">
-    <div class="svg" id="svg" width="100%"></div>
+    <div class="svg" id="svg" width="100%">
+    </div>
+
+    <div class="caption">
+      The classification tree highlights the number of unique isoforms for each receptor gene.<br>
+      The structural annotation table includes all non-reference isoforms that preserve at least one segment of their reference GPCR.<br>
+      Conserved, partially conserved, and non-conserved structural segments are coloured in green, orange, and red. Purple triangles indicate insertions.<br>
+    </div>
     <div class="isoformtable">
         <table class="table table-sm display compact">
             <thead>
@@ -545,24 +571,24 @@ function build_table() {
                     <th ></th>
                     <th>Isoform</th>
                     <th></th>
-                    <th>No. tissues</th>
-                    <th class="no-sort">N-term</th>
-                    <th class="no-sort">TM1</th>
-                    <th class="no-sort">ICL1</th>
-                    <th class="no-sort">TM2</th>
-                    <th class="no-sort">ECL1</th>
-                    <th class="no-sort">TM3</th>
-                    <th class="no-sort">ICL2</th>
-                    <th class="no-sort">TM4</th>
-                    <th class="no-sort">ECL2</th>
-                    <th class="no-sort">TM5</th>
-                    <th class="no-sort">ICL3</th>
-                    <th class="no-sort">TM6</th>
-                    <th class="no-sort">ECL3</th>
-                    <th class="no-sort">TM7</th>
-                    <th class="no-sort">H8</th>
-                    <th class="no-sort">C-term</th>
-                    <th>Compl(%)</th>
+                    <th>No.tissues</th>
+                    <th class="no-sort" style="padding: 4px;">Nterm</th>
+                    <th class="no-sort" style="padding: 4px;">TM1</th>
+                    <th class="no-sort" style="padding: 4px;">ICL1</th>
+                    <th class="no-sort" style="padding: 4px;">TM2</th>
+                    <th class="no-sort" style="padding: 4px;">ECL1</th>
+                    <th class="no-sort" style="padding: 4px;">TM3</th>
+                    <th class="no-sort" style="padding: 4px;">ICL2</th>
+                    <th class="no-sort" style="padding: 4px;">TM4</th>
+                    <th class="no-sort" style="padding: 4px;">ECL2</th>
+                    <th class="no-sort" style="padding: 4px;">TM5</th>
+                    <th class="no-sort" style="padding: 4px;">ICL3</th>
+                    <th class="no-sort" style="padding: 4px;">TM6</th>
+                    <th class="no-sort" style="padding: 4px;">ECL3</th>
+                    <th class="no-sort" style="padding: 4px;">TM7</th>
+                    <th class="no-sort" style="padding: 4px;">H8</th>
+                    <th class="no-sort" style="padding: 4px;">Cterm</th>
+                    <th>Ref(%)</th>
                     <th></th>
                     <th class="no-sort">Reference</th>
                 </tr>

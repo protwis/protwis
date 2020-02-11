@@ -257,14 +257,14 @@ class Command(BaseBuild):
             # then check db
 
             mod_startTime = datetime.now()
-            chm = CallHomologyModeling(receptor[0].entry_name, receptor[1], iterations=self.modeller_iterations, debug=self.debug, update=self.update, complex_model=self.complex,
-                                       signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms)
+            chm = CallHomologyModeling(receptor[0].entry_name, receptor[1], iterations=self.modeller_iterations, debug=self.debug, 
+                                       update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms)
             chm.run(fast_refinement=self.fast_refinement)
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
         
 
 class CallHomologyModeling():
-    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False):
+    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False, no_remodeling=False):
         self.receptor = receptor
         self.state = state
         self.modeller_iterations = iterations
@@ -274,6 +274,7 @@ class CallHomologyModeling():
         self.signprot = signprot
         self.force_main_temp = force_main_temp
         self.keep_hetatoms = keep_hetatoms
+        self.no_remodeling = no_remodeling
 
 
     def run(self, import_receptor=False, fast_refinement=False):
@@ -287,6 +288,7 @@ class CallHomologyModeling():
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug, 
                                               force_main_temp=self.force_main_temp, fast_refinement=fast_refinement, keep_hetatoms=self.keep_hetatoms)
+            
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor, self.signprot)
                 model, templates, similarities = ihm.find_files()
@@ -323,20 +325,18 @@ class CallHomologyModeling():
             
             # Run clash and break test
             p = PDB.PDBParser()
-            # if Homology_model.revise_xtal==False:
             post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
-            # else:
-            #     post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
             if self.signprot:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
                 # Run remodeling
-                # if len(hse.remodel_resis)>0:
-                #     rm = Remodeling('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), gaps=hse.remodel_resis, receptor=self.receptor, signprot=self.signprot)
-                #     rm.make_pirfile()
-                #     rm.run()
-                #     logger.info('Remodeled {} {} at {}'.format(self.receptor, self.signprot, hse.remodel_resis))
-                #     with open('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), 'r') as remodeled_pdb:
-                #         formatted_model = remodeled_pdb.read()
+                if len(hse.remodel_resis)>0 and not self.no_remodeling:
+                    rm = Remodeling('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), gaps=hse.remodel_resis, receptor=self.receptor, signprot=self.signprot)
+                    rm.make_pirfile()
+                    rm.run()
+                    logger.info('Remodeled {} {} at {}'.format(self.receptor, self.signprot, hse.remodel_resis))
+                    with open('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), 'r') as remodeled_pdb:
+                        formatted_model = remodeled_pdb.read()
+                    formatted_model = Homology_model.format_final_model()
             else:
                 hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, receptor=self.receptor)
             
@@ -573,7 +573,6 @@ class HomologyModeling(object):
 
         if self.complex:
             # first_signprot_i = [(i,j) for i,j in enumerate(pos_list) if j==first_signprot_res][-1][0]
-            print(pos_list)
             prev_p = int(pos_list[0])
             sp_first_indeces = []
             for i,p in enumerate(pos_list):
@@ -591,7 +590,7 @@ class HomologyModeling(object):
         with open (path+self.modelname+'.pdb', 'r+') as f:
             pdblines = f.readlines()
             out_list = []
-            prev_num = None
+            prev_num, prev_chain = None, None
             first_hetatm = False
             water_count = 0
             first_signprot_res_found = False
@@ -599,16 +598,20 @@ class HomologyModeling(object):
             atom_num_offset = []
 
             if self.debug:
+                if self.complex:
+                    print('sp_first_indeces:', sp_first_indeces)
                 print('pos_list:\n', pos_list)
             for line in pdblines:
                 try:
                     if prev_num==None:
-                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCD]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCDRG]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                         prev_num = int(pdb_re.group(3))
-                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCD]+)(\d+)([A-Z\s\d.-]{49,53})',line)
-                    if int(pdb_re.group(3))>prev_num:
+                        prev_chain = pdb_re.group(2).strip()
+                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCDRG]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                    if int(pdb_re.group(3))>prev_num or (int(pdb_re.group(3))<prev_num and prev_chain!=pdb_re.group(2).strip()):
                         i+=1
                         prev_num = int(pdb_re.group(3))
+                        prev_chain = pdb_re.group(2).strip()
                     whitespace = len(pdb_re.group(2))
                     if len(pos_list[i])-len(pdb_re.group(3))==0:
                         whitespace = whitespace*' '
@@ -653,11 +656,14 @@ class HomologyModeling(object):
                             else:
                                 whitespace = whitespace[0]+'G'+whitespace[2:]
                     out_line = group1+whitespace+pos_list[i]+pdb_re.group(4)
+                    ### Needed when complex remodel is run
+                    if out_line[-1]!='\n':
+                        out_line+='\n'
                     out_list.append(out_line)
                 except Exception as msg:
                     try:
                         if line.startswith('TER'):
-                            pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sABCD]+)(\d+)',line)
+                            pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sABCDRG]+)(\d+)',line)
                             out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
                             atom_num+=1
                         else:
@@ -667,7 +673,7 @@ class HomologyModeling(object):
                             pref_chain = str(self.main_structure.preferred_chain)
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
-                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sABCD]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
+                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sABCDRG]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
                             
                             alternate_water = False 
                             whitespace3 = len(pdb_re.group(3))*' '
@@ -728,6 +734,7 @@ class HomologyModeling(object):
 
         with open (path+self.modelname+'.pdb', 'r') as f:
             pdb_struct = f.read()
+
         pdb_struct = StringIO(pdb_struct)
         assign_gn = as_gn.GenericNumbering(pdb_file=pdb_struct, sequence_parser=True)
         pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
@@ -779,7 +786,10 @@ class HomologyModeling(object):
                     c1 = Residue.objects.get(protein_conformation=self.prot_conf, sequence_number=int(j[0]))
                     c2 = Residue.objects.get(protein_conformation=self.prot_conf, sequence_number=int(j[1]))
                 for c in pdb_struct:
-                    chain = c[c1.sequence_number].get_parent().get_id()
+                    if self.debug:
+                        for res in c:
+                            print(res)
+                    chain = c[int(c1.sequence_number)].get_parent().get_id()
                     break
                 ws1 = ' '*(5-len(str(c1.sequence_number)))
                 ws2 = ' '*(5-len(str(c2.sequence_number)))
@@ -2556,7 +2566,6 @@ class HomologyModeling(object):
                         continue
                     for atom in main_pdb_array[seg_id][key]: 
                         atom_num+=1
-                        print(key, atom)
                         coord = list(atom.get_coord())
                         coord1 = "%8.3f"% (coord[0])
                         coord2 = "%8.3f"% (coord[1])

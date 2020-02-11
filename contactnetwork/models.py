@@ -1,6 +1,8 @@
 from structure.models import Structure
 
 from django.db import models
+import numpy as np
+import statistics
 
 class InteractingResiduePair(models.Model):
     referenced_structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
@@ -67,3 +69,69 @@ class Distance(models.Model):
 
     class Meta():
         db_table = 'distance'
+
+def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, standard_deviation = False, split_by_amino_acid = False):
+    ## Returned dataset is in ClassA GNs...
+    matrix = {}
+    group_distances = {}
+
+    if len(pdbs)==1:
+        # Never get SD when only looking at a single pdb...
+        standard_deviation = False
+
+    ds = list(Distance.objects.filter(structure__pdb_code__index__in=[ pdb.upper() for pdb in pdbs], gns_pair__in=interaction_keys) \
+                         .values('gns_pair','distance','res1__amino_acid','res2__amino_acid','structure__pk'))
+    if not normalized:
+        for d in ds:
+            if split_by_amino_acid: 
+                key = '{}{}{}'.format(d['gns_pair'],d['res1__amino_acid'],d['res2__amino_acid']).replace("_",",")
+            else:
+                key = d['gns_pair']
+            if key not in matrix:
+                matrix[key] = []
+            matrix[key].append(d['distance'])
+
+        # Calculate the average of averages
+        for key,dists in matrix.items():
+            if standard_deviation and len(pdbs)>1:
+                if len(dists)==1:
+                    stdevdists = 0
+                else:
+                    stdevdists = statistics.stdev(dists)
+                group_distances[key] = stdevdists/100
+            else:
+                group_distances[key] = sum(dists)/len(dists)/100
+    else:
+        # NORMALIZE CODE
+        for d in ds:
+            if split_by_amino_acid: 
+                key = '{}{}{}'.format(d['gns_pair'],d['res1__amino_acid'],d['res2__amino_acid']).replace("_",",")
+            else:
+                key = d['gns_pair']
+            dist = d['distance']
+            pf = s_lookup[d['structure__pk']][2] # get the "receptor" level of the structure to group these regardless of species
+
+            if key not in matrix:
+                matrix[key] = {}
+            if pf not in matrix[key]:
+                matrix[key][pf] = []
+            matrix[key][pf].append(dist)
+
+        # Calculate the average of averages
+        for key,pfs in matrix.items():
+            # if key=='3x50_5x50':
+            #     print(pfs)
+            means = [sum(dists)/len(dists) for pf,dists in pfs.items() ]
+            if standard_deviation and len(pdbs)>1:
+                if len(means)==1:
+                    stdevofmeans = 0
+                else:
+                    # stdevofmeans = np.std(means, ddof=1)
+                    stdevofmeans = statistics.stdev(means)
+
+                group_distances[key] = stdevofmeans/100
+            else:
+                meanofmeans = sum(means)/len(means)
+                group_distances[key] = meanofmeans/100
+
+    return group_distances

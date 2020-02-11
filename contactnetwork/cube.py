@@ -74,7 +74,7 @@ def compute_interactions(pdb_name,save_to_db = False):
         # Filter all pairs containing non AA residues
         all_aa_neighbors = [pair for pair in all_neighbors if is_aa(pair[0]) and is_aa(pair[1])]
 
-        # Only include contacts between residues less that NUM_SKIP_RESIDUES sequence steps apart
+        # Only include contacts between residues more than NUM_SKIP_RESIDUES sequence steps apart
         all_aa_neighbors = [pair for pair in all_aa_neighbors if abs(pair[0].id[1] - pair[1].id[1]) > NUM_SKIP_RESIDUES]
 
         # For each pair of interacting residues, determine the type of interaction
@@ -235,7 +235,7 @@ def compute_interactions(pdb_name,save_to_db = False):
             # Distance.objects.filter(structure=struc).all().delete()
             bulk_distances = []
             for i,d in enumerate(distances):
-                distance = Distance(distance=int(100*d[2]),res1=d[0], res2=d[1],gn1=d[3], gn2=d[4], gns_pair='_'.join([d[3],d[4]]), structure=struc)
+                distance = Distance(distance=int(10000*d[2]),res1=d[0], res2=d[1],gn1=d[3], gn2=d[4], gns_pair='_'.join([d[3],d[4]]), structure=struc)
                 bulk_distances.append(distance)
                 if len(bulk_distances)>1000:
                     pairs = Distance.objects.bulk_create(bulk_distances)

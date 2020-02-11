@@ -570,14 +570,18 @@ class Command(BaseCommand):
                 continue
 
             for gprotein, values in couplings.items():
+                if gprotein=='GNAS':
+                    gprotein = 'GNAS2'
+                if gprotein=='GNAO1':
+                    gprotein = 'GNAO'
                 if gprotein not in lookup:
-                    gp = Protein.objects.filter(genes__name=gprotein, species__common_name="Human")[0]
+                    gp = Protein.objects.filter(family__name=gprotein, species__common_name="Human")[0]
                     lookup[gprotein] = gp
                 else:
                     gp = lookup[gprotein]
                 # Assume there are there.
                 if gp.family.slug not in lookup:
-                    g = ProteinGProtein.objects.get(slug=gp.family.slug)
+                    g = ProteinGProtein.objects.get(slug="_".join(gp.family.slug.split("_")[:3]))
                     lookup[gp.family.slug] = g
                 else:
                     g = lookup[gp.family.slug]

@@ -50,7 +50,7 @@ build_date = date.today()
 import warnings
 warnings.filterwarnings("ignore")
 
-class Command(BaseBuild):  
+class Command(BaseBuild):
     help = 'Build automated chimeric GPCR homology models'
     
     def add_arguments(self, parser):
@@ -231,7 +231,7 @@ class Command(BaseBuild):
             signprot_complex = SignprotComplex.objects.get(structure__pdb_code__index=main_structure)
             
             try:
-                pair = ProteinGProteinPair.objects.get(protein=r_prot, g_protein__slug=s_prot.family.slug)
+                pair = ProteinGProteinPair.objects.get(protein=r_prot, g_protein__slug=s_prot.family.parent.slug)
             except:
                 pair = None
             try:

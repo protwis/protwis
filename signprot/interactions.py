@@ -23,6 +23,7 @@ def get_entry_names(request):
     prot_confs = request.POST.getlist("pos[]")
     complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').filter(structure__protein_conformation__in=prot_confs)
     entry_names = [complex_obj.structure.protein_conformation.protein.entry_name for complex_obj in complex_objs]
+
     return entry_names
 
 
@@ -52,7 +53,8 @@ def get_protein_segments(request):
     for s in segment_raw:
         try:
             gen_object = ResidueGenericNumberEquivalent.objects.filter(
-                label=s, scheme__slug__in=['gpcrdb' + slug_ending]
+                # label=s, scheme__slug__in=['gpcrdb' + slug_ending]
+                label=s, scheme__slug__in=['gpcrdba']
             ).get()
             segments.append(gen_object)
         except ObjectDoesNotExist as e:
@@ -131,6 +133,10 @@ def get_signature_features(signature_data, generic_numbers, feats):
 
                         sort_code = dfeature_code + "_" + dlength
                         if sort_code in AMINO_ACID_GROUPS:
+                            sort_score = len(AMINO_ACID_GROUPS[sort_code])
+                        elif dfeature_code == 'Y':
+                            print('Y_?')
+                            sort_code = dfeature_code + "_" + '?'
                             sort_score = len(AMINO_ACID_GROUPS[sort_code])
                         else:
                             sort_score = 99
@@ -217,7 +223,7 @@ def prepare_signature_match(signature_match):
     coupling_data = prepare_coupling_data_container()
     coupling_data = fill_coupling_data_container(coupling_data)
     coupling_data = process_coupling_data(coupling_data)
-    
+
     coupling_data_dict = {}
     for e in coupling_data:
         coupling_data_dict[e['rec_obj'].entry_name] = e
@@ -238,7 +244,7 @@ def prepare_signature_match(signature_match):
     for elem in signature_match["scores"].items():
         entry = elem[0].protein.entry_name
         coupling_entry = coupling_data_dict.get(entry)
-        
+
         sources = ["GuideToPharma", "Aska", "Merged"]
 
         for source in sources:
@@ -326,13 +332,13 @@ def prepare_coupling_data_container():
     class_names = {}
     data = {}
 
+    complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').values_list('structure__protein_conformation__protein__parent_id', flat=True)
     proteins = (
         Protein.objects.filter(
             sequence_type__slug="wt",
             family__slug__startswith="00",
-            species__common_name="Human",
-        )
-        .all()
+            species__common_name="Human")
+        # .exclude(id__in=complex_objs)
         .prefetch_related("family")
     )
 
@@ -434,7 +440,7 @@ def process_coupling_data(data):
 
         c_merg = extract_coupling_bool(i, "Merged")
         p_merg = extract_coupling_primary(c_merg[1])
-        
+
         e['coupling'] = {}
         e["GuideToPharma"] = {}
         e["Aska"] = {}
@@ -443,21 +449,21 @@ def process_coupling_data(data):
         e["rec_class"] = i["rec_class"]
         e["rec_obj"] = i["rec_obj"]
         e["key"] = entry
-        
+
         e["coupling"]["GuideToPharma"] = i["GuideToPharma"]
         e["coupling"]["Aska"] = c_aska[1]
         e["coupling"]["Merged"] = c_merg[1]
-        
+
         e["GuideToPharma"]["Gi/Go"] = c_gtop["Gi/Go"]
         e["GuideToPharma"]["Gs"] = c_gtop["Gs"]
         e["GuideToPharma"]["Gq/G11"] = c_gtop["Gq/G11"]
         e["GuideToPharma"]["G12/G13"] = c_gtop["G12/G13"]
-        
+
         e["Aska"]["Gi/Go"] = c_aska[0]["Gi/Go"]
         e["Aska"]["Gs"] = c_aska[0]["Gs"]
         e["Aska"]["Gq/G11"] = c_aska[0]["Gq/G11"]
         e["Aska"]["G12/G13"] = c_aska[0]["G12/G13"]
-        
+
         e["Merged"]["Gi/Go"] = c_merg[0]["Gi/Go"]
         e["Merged"]["Gs"] = c_merg[0]["Gs"]
         e["Merged"]["Gq/G11"] = c_merg[0]["Gq/G11"]

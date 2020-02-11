@@ -69,7 +69,7 @@
                 </button>
 
                 </a></li>
-                <li><a href="/alignment/targetselection">Structure-based alignments
+                <li><a href="/alignment/targetselection">Sequence alignments
 
                         <button  mp4="http://files.gpcrdb.org/video/sequences1.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
                           <span class="glyphicon glyphicon-film"></span>
@@ -113,8 +113,8 @@
                           <span class="glyphicon glyphicon-film"></span>
                     </button>
                 </a></li>
-                <li><a href="/structure">Structure browser</a></li>
-                <li><a href="/structure/homology_models">Structure model browser</a></li>
+                <li><a href="/structure">Structures</a></li>
+                <li><a href="/structure/homology_models">Structure models</a></li>
                 <li class="divider"></li>
                 <!-- STRUCTURAL TOOLS -->
                 <li class="nav-header disabled text-left"><a>STRUCTURAL TOOLS</a></li>
@@ -206,7 +206,7 @@
         <!-- SITES -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                Signal Proteins<span class="caret"></span>
+                G Proteins<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled text-left"><a>Proteins<button
@@ -215,8 +215,11 @@
                  data-toggle="tooltip" data-placement="right" title="Nature">
                           <span class="glyphicon glyphicon-book"></span>
                 </button></a></li>
-                <li><a href="/signprot/">Signal protein page</a></li>
-                <li><a href="/signprot/statistics">GPCR-G protein coupling</a></li>
+                <li><a href="/signprot/">G protein page</a></li>
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>GPCR-G Protein coupling </a></li>
+                <li><a href="/signprot/couplings">GPCR-G protein couplings</a></li>
+                <li><a href="/signprot/statistics">GPCR-G protein profiles</a></li>
                 <li class="divider"></li>
                 <li class="nav-header disabled text-left"><a>Sequences<button
                 url='http://dx.doi.org/10.1038/nature22070'
@@ -225,22 +228,49 @@
                           <span class="glyphicon glyphicon-book"></span>
                 </button></a></li>
                 <li><a href="/alignment/gproteinselection">G protein alignments</a></li>
-                <li><a href="/alignment/arrestinselection">Arrestin alignments</a></li>
                 <li class="divider"></li>
-                <li class="nav-header disabled text-left"><a>Structure Models</a></li>
-                <li><a href="/structure/complex_models">GPCR - G protein complex browser</a></li>
+                <li class="nav-header disabled text-left"><a>Structures</a></li>
+                <li><a href="/structure/complex_models">GPCR - G protein structure models</a></li>
                 <li class="divider"></li>
-                <li class="nav-header disabled text-left"><a>Structure sites<button
+                <li class="nav-header disabled text-left"><a>Structure sites (interface)<button
                 url='http://dx.doi.org/10.1038/nature22070'
                 class="refLink pull-right btn btn-xs btn-default"
                  data-toggle="tooltip" data-placement="right" title="Nature">
                           <span class="glyphicon glyphicon-book"></span>
                 </button></a></li>
-                <li><a href="/signprot/ginterface">Interface mapping</a></li>
-                <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
+                <li><a href="/signprot/matrix">GPCR- G protein interactions</a></li>
+                <!-- <li><a href="/signprot/ginterface">Interface mapping</a></li>
+                <li><a href="/sitesearch/targetselection">Site search - manual</a></li> -->
                 <li class="divider"></li>
-                <li class="nav-header disabled text-left"><a>Mutations</a></li>
-                <li><a href="http://files.gpcrdb.org/GPCR-Gprotein_Mutations.xlsx">Mutations affecting signalling</a></li>
+                <li class="nav-header disabled text-left"><a>Mutations (Interface)</a></li>
+                <li><a href="http://files.gpcrdb.org/GPCR-Gprotein_Mutations.xlsx">GPCR-G protein interface mutations</a></li>
+            </ul>
+        </li>
+
+        <!-- ARRESIN -->
+        <li>
+            <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                B-arrestins<span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+                <li class="nav-header disabled text-left"><a>Proteins<button
+                url='http://dx.doi.org/10.1038/nature22070'
+                class="refLink pull-right btn btn-xs btn-default"
+                 data-toggle="tooltip" data-placement="right" title="Nature">
+                          <span class="glyphicon glyphicon-book"></span>
+                </button></a></li>
+                <li><a href="/signprot/">Arrestin page</a></li>
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Sequences<button
+                url='http://dx.doi.org/10.1038/nature22070'
+                class="refLink pull-right btn btn-xs btn-default"
+                 data-toggle="tooltip" data-placement="right" title="Nature">
+                          <span class="glyphicon glyphicon-book"></span>
+                </button></a></li>
+                <li><a href="/alignment/arrestinselection">Arrestin alignments</a></li>
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Structures</a></li>
+                <li><a href="/structure/">Structure browser</a></li>
             </ul>
         </li>
 
@@ -322,6 +352,33 @@
                 <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data submission</a></li>
             </ul>
         </li>
+
+        <!-- Biased ligands -->
+        <!--  Biased signalling -->
+        <li class="dropdown">
+            <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" data-submenu>
+                Biased signalling<span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+                <li class="nav-header disabled"><a>LIGAND BIAS</a></li>
+                <li><a href="/ligand/biasedbrowser">Ligand bias for G protein family or arrestin</a></li>
+                <li><a href="/ligand/biasedgbrowser">Ligand bias for G protein subtype</a></li>
+                <li><a href="/ligand/browserchembl">Predicted ligand bias (potency ratios)</a></li>
+
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>PATHWAYS EFFECTS</a></li>                
+                <li><a href="/ligand/biasedpathways">Pathway effects</a></li>
+
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Determinants of G protein or arrestin bias
+                    </a></li>
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Submit data to GPCRdb
+                    </a></li>
+
+            </ul>
+        </li>
+
 
         <!-- DRUGS -->
         <li>
