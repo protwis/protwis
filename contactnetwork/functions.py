@@ -26,8 +26,8 @@ def calculatePlane(tm_points, intracellular):
 # convert 3D points to 2D points on best fitting plane
 def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
     # 3D project points onto plane -> 2D points
-    points_plane = [[0]] * 7
-    points_z = [0] * 7
+    points_plane = [[0]] * len(tm_points)
+    points_z = [0] * len(tm_points)
     for i in range(0,len(tm_points)):
         # point relative to centroid
         v = tm_points[i] - centroid
@@ -43,11 +43,11 @@ def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
 
     locx = locx/norm(locx)
     locy = locy/norm(locy)
-    points_2d = [[np.dot(p - centroid, locx), np.dot(p - centroid, locy)] for p in points_plane]
+    points_2d = [np.array([np.dot(p - centroid, locx), np.dot(p - centroid, locy)]) for p in points_plane]
 
     # Needs flipping?
     if (intracellular and (points_2d[3][1]-points_2d[0][1]) < 0) or (not intracellular and (points_2d[3][1]-points_2d[0][1]) > 0):
-        points_2d = np.array([[x[0], -1*x[1]] for x in points_2d])
+        points_2d = np.array([np.array([x[0], -1*x[1]]) for x in points_2d])
 
     return np.array(points_2d), points_z
 
@@ -67,128 +67,165 @@ def convert2D_PLS(tm_points):
     #residual = norm(errors)
     return fit
 
+def determine_order(distance_matrix):
+    ref_distances = np.triu(np.array([np.array(x) for x in distance_matrix]))
+    ranking = []
+    while len(ranking) < 7:
+        max_ref = np.unravel_index(ref_distances.argmax(), ref_distances.shape)
+
+        ref_distances[max_ref[0]][max_ref[1]] = 0
+        filtered_ref = [ x for x in max_ref if x not in ranking ]
+        ranking.extend(filtered_ref)
+
+    return ranking
+
+def determine_order_group(distance_matrix, gn_grouping):
+    first_index_group = [gn_grouping.index(x) for x in range(0,max(gn_grouping)+1)]
+    ref_distances = np.triu(np.array([np.array(x)[first_index_group] for x in distance_matrix])[first_index_group])
+
+    ranking = []
+    while len(ranking) <= max(gn_grouping):
+        max_ref = np.unravel_index(ref_distances.argmax(), ref_distances.shape)
+
+        ref_distances[max_ref[0]][max_ref[1]] = 0
+        filtered_ref = [ x for x in max_ref if x not in ranking ]
+        ranking.extend(filtered_ref)
+
+    ranking = [first_index_group[i] for i in ranking]
+    ranking_groups = ranking[:]
+    for looping in range(0,2):
+        for i in ranking:
+            add = [x for x in range(0,len(gn_grouping)) if gn_grouping[x] == gn_grouping[i] and x not in ranking_groups]
+            if len(add) > 0:
+                ranking_groups.append(add[0])
+
+    return ranking_groups
+
+def consecutive_group_order(gn_grouping):
+    first_index_group = [gn_grouping.index(x) for x in range(0,max(gn_grouping)+1)]
+    ranking = [first_index_group[i] for i in range(0,max(gn_grouping)+1)]
+    ranking_groups = ranking[:]
+    for looping in range(0,2):
+        for i in ranking:
+            add = [x for x in range(0,len(gn_grouping)) if gn_grouping[x] == gn_grouping[i] and x not in ranking_groups]
+            if len(add) > 0:
+                ranking_groups.append(add[0])
+
+    return ranking_groups
+
+def reconstruction_error(distance_matrix, tm_points):
+    error = sum([abs(np.linalg.norm(tm_points[i] - tm_points[j]) - distance_matrix[i][j]) for i in range(0,len(tm_points)-1) for j in range(i+1, len(tm_points))])
+    return error, error/(len(tm_points)*(len(tm_points)-1))
+
 # 3D reconstruction based on average distances
-def recreate3Dorder(distance_matrix, tm_ranking):
-    tms = [[0]] * 7
+def recreate3Dorder(distance_matrix, gn_grouping):
+    # Reorder with respect to distances
+    #to = determine_order_group(distance_matrix, gn_grouping) # based on distance
+    to = consecutive_group_order(gn_grouping) # based on groups - same initial four points, same plane
+
+    reorder_dist = np.array([np.array(x)[to] for x in distance_matrix])[to]
+
+    tms = [[0]] * len(gn_grouping)
     tms[0] = np.array([0, 0, 0])
-    tms[1] = np.array([distance_matrix[tm_ranking[0]][tm_ranking[1]], 0, 0])
+    tms[1] = np.array([reorder_dist[0][1], 0, 0])
 
     # place TM3 - relative to TM1 and TM2
     d = tms[1][0]
-    a = (math.pow(distance_matrix[tm_ranking[0]][tm_ranking[2]],2) - math.pow(distance_matrix[tm_ranking[1]][tm_ranking[2]],2) + math.pow(d,2)) / (2*d)
-    h = math.sqrt(math.pow(distance_matrix[tm_ranking[0]][tm_ranking[2]],2) - math.pow(a,2))
+    a = (math.pow(reorder_dist[0][2],2) - math.pow(reorder_dist[1][2],2) + math.pow(d,2)) / (2*d)
+    h = math.sqrt(math.pow(reorder_dist[0][2],2) - math.pow(a,2))
     x3 = a+h*tms[1][1]/d
     y3 = abs(0-h*tms[1][0]/d)
 
     tms[2] = np.array([x3, y3, 0])
-    for i in range(3,7):
+    for i in range(3,len(gn_grouping)):
         #print("calculating for TM", str(i+1))
-        tms[i] = trilaterate(tms[0], tms[1], tms[2], distance_matrix[tm_ranking[0]][tm_ranking[i]], distance_matrix[tm_ranking[1]][tm_ranking[i]], distance_matrix[tm_ranking[2]][tm_ranking[i]])
         if i == 3:
-            # just take the first
-            tms[i] = tms[3][0]
+            # just take the first solution (mirrored solution)
+            tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[0]
         else:
-            # ref_dist = distance_matrix[tm_ranking[3]][tm_ranking[i]]
-            # changes = [abs(np.linalg.norm(tms[i][j]-tms[3])-ref_dist) for j in range(0,2)]
-            # lowest = changes.index(min(changes))
-            # print("OLD", tms[i][lowest])
+            # Alternative 1: Place point using just the previous three points
+            # sr = [i-3,i-2,i-1]
+            # ref_dist = reorder_dist[i-4][i]
+            # scaler = 1
+            # while True:
+            #     try:
+            #         tms[i] = trilaterate(tms[sr[0]], tms[sr[1]], tms[sr[2]], reorder_dist[sr[0]][i]*scaler, reorder_dist[sr[1]][i]*scaler, reorder_dist[sr[2]][i]*scaler)
+            #         changes = [abs(np.linalg.norm(tms[i][j]-tms[i-4]) - ref_dist) for j in range(0,2)]
+            #         print("CHANGES", i, changes)
+            #         tms[i] = tms[i][changes.index(min(changes))]
+            #         break
+            #     except:
+            #         scaler += 0.01
+            #         print("Scaling up", scaler)
+            #         if scaler > 1.1: # Way off, only if DB data is wrong (TODO: throw and handle error )
+            #             break
+            #         pass
 
-            reference_tms = range(0,i)
-            reference_points = [ comb for comb in combinations(reference_tms, 3)]
-            pos = np.array([0,0,0], dtype='f')
-            ref_worked = 0
-            for x in reference_points:
-                # Find TM not in list
-                check_tm = [j for j in reference_tms if j not in x][0]
-
-                # Find best coordinate matching the fourth reference point
-                ref_dist = distance_matrix[tm_ranking[check_tm]][tm_ranking[i]]
+            # Alternative 2: Place point using just 1-3
+            sr = [0,1,2]
+            ref_dist = reorder_dist[3][i]
+            scaler = 1
+            while True:
                 try:
-                    combi_pos = trilaterate(tms[x[0]], tms[x[1]], tms[x[2]], distance_matrix[tm_ranking[x[0]]][tm_ranking[i]], distance_matrix[tm_ranking[x[1]]][tm_ranking[i]], distance_matrix[tm_ranking[x[2]]][tm_ranking[i]])
-                    changes = [abs(np.linalg.norm(combi_pos[j]-tms[check_tm])-ref_dist) for j in range(0,2)]
-                    lowest = changes.index(min(changes))
-
-                    # take coordinate and add to average
-                    pos += combi_pos[lowest]
-                    ref_worked += 1
+                    tms[i] = trilaterate(tms[sr[0]], tms[sr[1]], tms[sr[2]], reorder_dist[sr[0]][i]*scaler, reorder_dist[sr[1]][i]*scaler, reorder_dist[sr[2]][i]*scaler)
+                    changes = [abs(np.linalg.norm(tms[i][j]-tms[3]) - ref_dist) for j in range(0,2)]
+                    # print("CHANGES", i, changes)
+                    tms[i] = tms[i][changes.index(min(changes))]
+                    break
                 except:
-                    skip=1
-                    # try:
-                    #     ref_dist = ref_dist*0.99
-                    #     combi_pos = trilaterate(tms[x[0]], tms[x[1]], tms[x[2]], distance_matrix[tm_ranking[x[0]]][tm_ranking[i]], distance_matrix[tm_ranking[x[1]]][tm_ranking[i]]*1.01, distance_matrix[tm_ranking[x[2]]][tm_ranking[i]])
-                    #     changes = [abs(np.linalg.norm(combi_pos[j]-tms[check_tm])-ref_dist) for j in range(0,2)]
-                    #     lowest = changes.index(min(changes))
-                    #
-                    #     # take coordinate and add to average
-                    #     pos += combi_pos[lowest]
-                    #     ref_worked += 1
-                    # except:
-                    #     print("Not matching for",i,x)
+                    scaler += 0.01
+                    # print("Scaling up", scaler)
+                    if scaler > 1.1: # Way off, only if DB data is wrong (TODO: throw and handle error )
+                        break
+                    pass
 
-            # print("NEW", pos/ref_worked)
-            tms[i] = pos/ref_worked
-
-    # DEBUG distances
-    for i in range(0,6):
-        for j in range(i+1, 7):
-            ref_dist = distance_matrix[tm_ranking[i]][tm_ranking[j]]
-            print (i+1,j+1, round(np.linalg.norm(tms[i] - tms[j]),3), round(ref_dist,3), round(np.linalg.norm(tms[i] - tms[j]) - ref_dist,3))
-
-
-    # TODO:
-    # save coordinate right now and evaluate error
-    # then use this optimization below, and evaluate error -> take best coordinate set
-
-    # Optimize
-    # for optim_round in range(0,1):
-    #     print("Optimization round:",optim_round+1)
-    #     for i in range(0,7):
-    #         reference_tms = [x for x in range(0,7) if x != i]
-    #         reference_points = [ comb for comb in combinations(reference_tms, 3)]
-    #         pos = np.array([0,0,0], dtype='f')
-    #         ref_worked = 0
-    #         for x in reference_points:
-    #             # Find any TM not in list
-    #             check_tm = [j for j in reference_tms if j not in x][0]
-    #
-    #             # Find best coordinate matching the fourth reference point
-    #             ref_dist = distance_matrix[tm_ranking[check_tm]][tm_ranking[i]]
-    #             try:
-    #                 combi_pos = trilaterate(tms[x[0]], tms[x[1]], tms[x[2]], distance_matrix[tm_ranking[x[0]]][tm_ranking[i]], distance_matrix[tm_ranking[x[1]]][tm_ranking[i]], distance_matrix[tm_ranking[x[2]]][tm_ranking[i]])
-    #                 changes = [abs(np.linalg.norm(combi_pos[j]-tms[check_tm])-ref_dist) for j in range(0,2)]
-    #                 lowest = changes.index(min(changes))
-    #
-    #                 # take coordinate and add to average
-    #                 pos += combi_pos[lowest]
-    #                 ref_worked += 1
-    #             except:
-    #                 skip=1
-    #                 # try:
-    #                 #     combi_pos = trilaterate(tms[x[0]], tms[x[1]], tms[x[2]], distance_matrix[tm_ranking[x[0]]][tm_ranking[i]], distance_matrix[tm_ranking[x[1]]][tm_ranking[i]]*1.01, distance_matrix[tm_ranking[x[2]]][tm_ranking[i]])
-    #                 #     changes = [abs(np.linalg.norm(combi_pos[j]-tms[check_tm])-ref_dist) for j in range(0,2)]
-    #                 #     lowest = changes.index(min(changes))
-    #                 #
-    #                 #     # take coordinate and add to average
-    #                 #     pos += combi_pos[lowest]
-    #                 #     ref_worked += 1
-    #                 # except:
-    #                 #     #print("Not matching for",x)
-    #                 #     a=1
-    #
-    #         if ref_worked > 1:
-    #             tms[i] = pos/ref_worked
-
+            # Alternative 3: place point using the most distant references (should minimize placement rounding error)
+            # ref_distances = [reorder_dist[i][x] for x in range(0,min(i,max(gn_grouping)+1))]
+            # distance_order = [sorted(ref_distances, reverse=True).index(x) for x in ref_distances[:(max(gn_grouping)+1)]]
+            #
+            # sr = [distance_order.index(0), distance_order.index(1), distance_order.index(2)]
+            # ref_point = distance_order.index(3)
+            # try:
+            #     # tms[i] = trilaterate(tms[sr[0]], tms[sr[1]], tms[sr[2]], reorder_dist[sr[0]][i]*scaler, reorder_dist[sr[1]][i]*scaler, reorder_dist[sr[2]][i]*scaler)
+            #     tms[i] = trilaterate(tms[sr[0]], tms[sr[1]], tms[sr[2]], reorder_dist[sr[0]][i], reorder_dist[sr[1]][i], reorder_dist[sr[2]][i])
+            # except:
+            #     print("Using backup scenario") # Scaler could also be used, increased error
+            #     sr = [0,1,2]
+            #     ref_point = 3
+            #     tms[i] = trilaterate(tms[sr[0]], tms[sr[1]], tms[sr[2]], reorder_dist[sr[0]][i], reorder_dist[sr[1]][i], reorder_dist[sr[2]][i])
+            #
+            # ref_dist = reorder_dist[ref_point][i]
+            # changes = [abs(np.linalg.norm(tms[i][j]-tms[ref_point]) - ref_dist) for j in range(0,2)]
+            # print("CHANGES", i, changes)
+            # tms[i] = tms[i][changes.index(min(changes))]
 
     # Rearrange to correct order
-    tms = [tms[tm_ranking.index(i)] for i in range(0,7)]
+    tms = [tms[to.index(i)] for i in range(0,len(gn_grouping))]
 
-    # DEBUG distances
-    for i in range(0,6):
-        for j in range(i+1, 7):
-            ref_dist = distance_matrix[i][j]
-            print (i+1,j+1, round(np.linalg.norm(tms[i] - tms[j]),3), round(ref_dist,3), round(np.linalg.norm(tms[i] - tms[j]) - ref_dist,3))
+    # # DEBUG residue-pair distances
+    # for i in range(0,len(gn_grouping)-1):
+    #     for j in range(i+1, len(gn_grouping)):
+    #         ref_dist = distance_matrix[i][j]
+    #         print (i+1,j+1, round(np.linalg.norm(tms[i] - tms[j]),3), round(ref_dist,3), round(np.linalg.norm(tms[i] - tms[j]) - ref_dist,3))
 
-    return np.array(tms)
+    total_error, point_error = reconstruction_error(distance_matrix,tms)
+    print("Total error for", len(tms), "points:", total_error, "averaging", round(point_error, 4), "Å per distance")
+    print("------")
+
+    # Create centroids for points in the same group
+    tm_centroids = [[0.0,0.0,0.0]] * (max(gn_grouping)+1)
+    for group in range(0, max(gn_grouping)+1):
+        # Grab points from same group
+        ref_points = [x for x in range(0,len(gn_grouping)) if gn_grouping[x] == group]
+        for ref_point in ref_points:
+            tm_centroids[group] += np.array(tms[ref_point])/np.float(len(ref_points))
+
+    # DEBUG centroid distances
+    # for i in range(0,len(tm_centroids)-1):
+    #     for j in range(i+1, len(tm_centroids)):
+    #         print (i+1,j+1, round(np.linalg.norm(tm_centroids[i] - tm_centroids[j]),3))
+
+    return np.array(tm_centroids), np.array(tms)
 
 # Find the intersection of three spheres
 # Based on https://stackoverflow.com/questions/1406375/finding-intersection-points-between-3-spheres
@@ -244,66 +281,66 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
             print("too few residues")
             return []
         gns[i] = tm_only[0:3]
-        # gns[i] = tm_only[0:2]
+    gns_flat = [y for x in gns for y in x]
 
     # INCLUDING References points from membrane middle of GPCR
     ref_membrane_mid = {}
-    ref_membrane_mid["001"] = [['1x43', '1x44','1x45'], ['2x51', '2x52','2x53'], ['3x35', '3x36', '3x37'], ['4x53', '4x54', '4x55'], ['5x45', '5x46', '5x47'], ['6x47', '6x48', '6x49'], ['7x42', '7x43', '7x44']]
-    ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x53', '4x54', '4x55'], ['5x44', '5x45', '5x46'], ['6x48', '6x49', '6x50'], ['7x49', '7x50', '7x51']]
-    ref_membrane_mid["003"] = ref_membrane_mid["002"]
-    ref_membrane_mid["004"] = [['1x48', '1x49', '1x50'], ['2x47', '2x48', '2x49'], ['3x39', '3x40', '3x41'], ['4x40', '4x41', '4x42'], ['5x47', '5x48', '5x49'], ['6x47', '6x48', '6x49'], ['7x39', '7x40', '7x41']]
-    ref_membrane_mid["005"] = [['1x42', '1x43', '1x44'], ['2x52', '2x53', '2x54'], ['3x37', '3x38', '3x39'], ['4x52', '4x53', '4x54'], ['5x52', '5x53', '5x54'], ['6x42', '6x43', '6x44'], ['7x46', '7x47', '7x48']]
+    ref_membrane_mid["001"] = [['1x43', '1x44','1x45'], ['2x51', '2x52','2x53'], ['3x35', '3x36', '3x37'], ['4x53', '4x54', '4x55'], ['5x45', '5x46', '5x47'], ['6x47', '6x48', '6x49'], ['7x42', '7x43', '7x44']] # A
+    #ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x53', '4x54', '4x55'], ['5x44', '5x45', '5x46'], ['6x48', '6x49', '6x50'], ['7x49', '7x50', '7x51']] # B1
+    ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x55', '4x56'], ['5x42', '5x43', '5x44'], ['7x47', '7x49']] # B1
+    ref_membrane_mid["003"] = ref_membrane_mid["002"] # B2
+    ref_membrane_mid["004"] = [['1x48', '1x49', '1x50'], ['2x47', '2x48', '2x49'], ['3x39', '3x40', '3x41'], ['4x40', '4x41', '4x42'], ['5x47', '5x48', '5x49'], ['6x47', '6x48', '6x49'], ['7x39', '7x40', '7x41']] # C
+    ref_membrane_mid["005"] = [['1x42', '1x43', '1x44'], ['2x52', '2x53', '2x54'], ['3x37', '3x38', '3x39'], ['4x52', '4x53', '4x54'], ['5x52', '5x53', '5x54'], ['6x42', '6x43', '6x44'], ['7x46', '7x47', '7x48']] # F
 
     # FILTER not conserved GNs
-    middle_gpcr = [list(filter(lambda x: x in conserved, tm_list)) for tm_list in ref_membrane_mid[data['gpcr_class']]]
+    middle_gpcr = [list(filter(lambda x: x in conserved and x not in gns_flat, tm_list)) for tm_list in ref_membrane_mid[data['gpcr_class']]]
     ends_and_middle = gns[:]
-    ends_and_middle.extend(middle_gpcr)
 
+    ends_and_middle.extend(middle_gpcr)
+    ends_and_middle_flat = [y for x in ends_and_middle for y in x]
+    ends_and_middle_grouping = [x for x in range(0, len(ends_and_middle)) for y in ends_and_middle[x]]
+    segment_order = [int(ends_and_middle[x][0][0])-1 for x in range(0, len(ends_and_middle))]
 
     distances_set1.filter_gns.extend([y for x in ends_and_middle for y in x])
     distances_set2.filter_gns = distances_set1.filter_gns
     distances_set1.fetch_distances_tm()
     distances_set2.fetch_distances_tm()
 
-    membrane_data1 = [x[:] for x in [[0] * 14] * 14]
-    membrane_data2 = [x[:] for x in [[0] * 14] * 14]
-    for i in range(0,13):
-        for j in range(i+1, 14):
-            filter_keys = [x+"_"+y if right_gn_order(x,y) else y+"_"+x for x in ends_and_middle[i] for y in ends_and_middle[j] if x != y]
-            if len(filter_keys) == 0:
-                print("no filter keys")
-                return []
-            membrane_data1[i][j] = sum([k for x in filter_keys for k in distances_set1.data[x]])/(len(filter_keys)*len(pdbs1))
+    membrane_data1 = [x[:] for x in [[0] * len(ends_and_middle_flat)] * len(ends_and_middle_flat)]
+    membrane_data2 = [x[:] for x in [[0] * len(ends_and_middle_flat)] * len(ends_and_middle_flat)]
+    for i in range(0,len(ends_and_middle_flat)-1):
+        for j in range(i+1, len(ends_and_middle_flat)):
+            if right_gn_order(ends_and_middle_flat[i], ends_and_middle_flat[j]):
+                filter_key = ends_and_middle_flat[i] + "_" + ends_and_middle_flat[j]
+            else:
+                filter_key = ends_and_middle_flat[j] + "_" + ends_and_middle_flat[i]
+
+            membrane_data1[i][j] = sum(distances_set1.data[filter_key])/len(pdbs1)
             membrane_data1[j][i] = membrane_data1[i][j]
-            membrane_data2[i][j] = sum([k for x in filter_keys for k in distances_set2.data[x]])/(len(filter_keys)*len(pdbs2))
+            membrane_data2[i][j] = sum(distances_set2.data[filter_key])/len(pdbs2)
             membrane_data2[j][i] = membrane_data2[i][j]
 
     # Identify most stable TMs by ranking the variations to all other helices
+    membrane_data1 = np.array([np.array(x) for x in membrane_data1])
+    membrane_data2 = np.array([np.array(x) for x in membrane_data2])
     diff_distances = [x[:] for x in [[0] * len(ends_and_middle)] * len(ends_and_middle)]
-    # real_differences = [x[:] for x in [[0] * 7] * 7]
-    for i in range(0,13):
-        for j in range(i+1, 14):
+    for i in range(0,max(ends_and_middle_grouping)):
+        for j in range(i+1, max(ends_and_middle_grouping)+1):
             # Calculate movements for each TM relative to their "normal" distance
-            diff_distances[i][j] = abs(membrane_data1[i][j] - membrane_data2[i][j])/((membrane_data1[i][j]+membrane_data2[i][j])/2)*100
+            # selected residues for group 1 and 2
+            group_1 = [x for x in range(0,len(ends_and_middle_grouping)) if ends_and_middle_grouping[x] == i]
+            group_2 = [x for x in range(0,len(ends_and_middle_grouping)) if ends_and_middle_grouping[x] == j]
+
+            diff_distances[i][j] = np.sum(abs(membrane_data1[group_1][:, group_2] - membrane_data2[group_1][:, group_2]))/(np.sum(membrane_data1[group_1][:, group_2]+membrane_data2[group_1][:, group_2])/2)*100
             diff_distances[j][i] = diff_distances[i][j]
-            # real_differences[i][j] = membrane_data2[i][j] - membrane_data1[i][j]
-            # real_differences[j][i] = real_differences[i][j]
 
     # Ranking for each TM
     sum_differences = [sum(x) for x in diff_distances]
-    normalized_differences = [((sum_differences[i]-min(sum_differences[0:7]))/(max(sum_differences[0:7])-min(sum_differences[0:7])))**2 for i in range(0,7)]
-#    print("Measured diff")
+    # normalized_differences = [((sum_differences[i]-min(sum_differences[0:7]))/(max(sum_differences[0:7])-min(sum_differences[0:7])))**2 for i in range(0,7)]
     for i in range(0,7):
-#        print(diff_distances[i])
-        # Real variations
         diff_distances[i] = [sorted(diff_distances[i]).index(x) for x in diff_distances[i]]
-        #diff_distances[i] = [sorted(diff_distances[i]).index(x) for j in range(0,7) for x in diff_distances[i]]
-        #print(i,diff_distances[i], real_differences[i])
-
-    # TODO Simplify
-    final_rank = [0] * 7
-    for i in range(0,7):
-        final_rank[i] = sum([diff_distances[j][i] for j in range(0,7)])
+    final_rank = [sum([diff_distances[j][i] for j in range(0,7)]) for i in range(0,7)]
+    print(final_rank)
 
     # Grab stable TMs
     tm_ranking = [0] * 7
@@ -312,41 +349,39 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
         tm_ranking[i] = final_rank.index(sorted_rank[i])
         final_rank[tm_ranking[i]] = 100 # make sure this TM isn't repeated
 
-    stable_one, stable_two = tm_ranking[0], tm_ranking[1]
-    print("TM stable ranking")
-    print(tm_ranking)
+    # Calculate 3D coordinates from distance matrix
+    tms_centroids_set1, tms_set1 = recreate3Dorder(membrane_data1, ends_and_middle_grouping)
+    tms_centroids_set2, tms_set2 = recreate3Dorder(membrane_data2, ends_and_middle_grouping)
 
+    # Align 3D points of set2 with 3D points of set1 using the most stable reference points
+    tms_reference_set1 = tms_centroids_set1[[x for x in range(0,len(segment_order)) if segment_order[x] in tm_ranking[0:3]]]
+    tms_reference_set2 = tms_centroids_set2[[x for x in range(0,len(segment_order)) if segment_order[x] in tm_ranking[0:3]]]
 
-    # Possible workaround for two consecutive helices if combined with rotation/translation
-    # if abs(stable_two-stable_one) == 1 or abs(stable_two-stable_one) == 6:
-    #     if abs(tm_ranking[2]-stable_one) > 1:
-    #         stable_two = tm_ranking[2]
-    #     else:
-    #         stable_one = tm_ranking[2]
-    # if stable_one > stable_two:
-    #     stable_one, stable_two = stable_two, stable_one
-
-    # Recalculate 3D network and populate 2D views
-    # Note: rebuilding in order stable helices resulted in lower quality reconstruction, therefore back to TM order (1-7)
-    tms_set1 = recreate3Dorder([x[:7] for x in membrane_data1[:7]], range(0,7))
-    # tms_set1 = recreate3Dorder([x[:7] for x in membrane_data1[:7]], tm_ranking)
-    tms_set2 = recreate3Dorder([x[:7] for x in membrane_data2[:7]], range(0,7))
-    # tms_set2 = recreate3Dorder([x[:7] for x in membrane_data2[:7]], tm_ranking)
-
-    #normal_set1, mid_set1 = calculatePlane(tms_set1, intracellular)
-    normal_set1, mid_set1 = calculatePlane(np.concatenate((tms_set1, tms_set2)), intracellular)
-    #plane_set1, z_set1, normal_set1, mid_set1 = convert2D_SVD(tms_set1, intracellular)
-    plane_set1, z_set1 = convert3D_to_2D_plane(tms_set1, intracellular, normal_set1, mid_set1)
-
-    # Align 3D points of set2 with 3D points of set1
     imposer = SVDSuperimposer()
-    imposer.set(tms_set1[tm_ranking[0:3]], tms_set2[tm_ranking[0:3]])
+    imposer.set(tms_reference_set1, tms_reference_set2)
     imposer.run()
     rot, trans = imposer.get_rotran()
+    tms_centroids_set2 = np.dot(tms_centroids_set2, rot) + trans
+    tms_set2 = np.dot(tms_set2, rot) + trans
 
+    # Calculate optimal plane through points in both sets and convert to 2D
+    # Try normal based on TM7
+    tm7_centroids = tms_centroids_set1[[x for x in range(0,len(segment_order)) if segment_order[x] == 6]]
+    if len(tm7_centroids) == 2:
+        normal = (tm7_centroids[1] - tm7_centroids[0])/np.linalg.norm(tm7_centroids[1] - tm7_centroids[0])
+    else:
+        # Using TM mid as reference plane
+        normal, midpoint = calculatePlane(np.concatenate((tms_centroids_set1[7:], tms_centroids_set2[7:])), intracellular)
+
+    midpoint = tms_centroids_set1.mean(axis=0)
+
+    plane_set1, z_set1 = convert3D_to_2D_plane(tms_centroids_set1[:7], intracellular, normal, midpoint)
+    plane_set2, z_set2 = convert3D_to_2D_plane(tms_centroids_set2[:7], intracellular, normal, midpoint)
+
+    # DO NOT REMOVE: possibly we want to upgrade to weighted superposing
     # Based on Biopython SVDSuperimposer
-    coords = tms_set2
-    reference_coords = tms_set1
+    # coords = tms_centroids_set2
+    # reference_coords = tms_centroids_set1
 
     # OLD centroid calcalation
     # av1 = sum(coords) / len(coords)
@@ -380,90 +415,48 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
     #     vt[2] = -vt[2]
     #     rot = np.transpose(np.dot(np.transpose(vt), np.transpose(u)))
     # trans = av2 - np.dot(av1, rot)
+    # rot, trans = imposer.get_rotran()
+    # tms_set2 = np.dot(tms_set2, rot) + trans
 
-    # Apply
-    tms_set2 = np.dot(tms_set2, rot) + trans
-    print("RMSD")
-    #print(imposer.get_rms())
-
-    # Convert the 3D points of set2 to 2D for the plane of set1
-    plane_set2, z_set2 = convert3D_to_2D_plane(tms_set2, intracellular, normal_set1, mid_set1)
-
-    # Rescale positions to match true length
-    # scale = math.sqrt(math.pow(plane_set1[stable_two][0]-plane_set1[stable_one][0],2) + math.pow(plane_set1[stable_two][1]-plane_set1[stable_one][1],2))/distance_data1[stable_one][stable_two]
-    # plane_set1 = plane_set1/scale
-    # plane_set2 = plane_set2/scale
-    # z_set1 = [x/scale for x in z_set1]
-    # z_set2 = [x/scale for x in z_set2]
-    #
-    # vector = plane_set1[stable_two] - plane_set1[stable_one]
-    # vector = vector/np.linalg.norm(vector)
-    # length_stable2 = math.sqrt(math.pow(plane_set2[stable_two][0]-plane_set2[stable_one][0],2) + math.pow(plane_set2[stable_two][1]-plane_set2[stable_one][1],2))
-    #
-    # diff_correction = (length_stable2 - distance_data1[stable_one][stable_two])/2
-    #
-    # # Apply the translation
-    # new_one = plane_set1[stable_one] - vector * diff_correction
-    # new_two = new_one + vector * length_stable2
-    # plane_set2 = plane_set2 - plane_set2[stable_one] + new_one
-    #
-    #
-    # # Apply rotation
-    # old_vector = plane_set2[stable_two] - plane_set2[stable_one]
-    # old_vector = old_vector/np.linalg.norm(old_vector)
-    # theta = -1*np.arctan2(np.linalg.norm(np.cross(old_vector, vector)), np.dot(old_vector, vector))
-    # r = np.array(( (np.cos(theta), -np.sin(theta)),
-    #                (np.sin(theta),  np.cos(theta)) ))
-    # plane_set2 = plane_set2 - new_one
-    # plane_set2 = [r.dot(x) for x in plane_set2]
-    # plane_set2 = plane_set2 + new_one
-
-    ### NEW ROTATION
-    # length_stable = np.linalg.norm(plane_set1[stable_two] - plane_set1[stable_one])
-    # length_stable2 = np.linalg.norm(plane_set2[stable_two] - plane_set2[stable_one])
-    # new_one = plane_set2[stable_one]
-    # new_two = new_one + (plane_set2[stable_two] - plane_set2[stable_one])/length_stable2 * length_stable
-    # #origin = np.array([plane_set1[stable_one], plane_set1[stable_two]])
-    # #comparison = np.array([new_one, new_two])
-    # vector_orig = (plane_set1[stable_two] - plane_set1[stable_one])/length_stable
-    # vector_now = (new_two - new_one)/length_stable
-    # direction = np.cross(vector_orig, vector_now)
-    # angle = np.arccos(np.clip(np.dot(vector_orig, vector_now), -1.0, 1.0))
-    #
-    # r = np.array(( (np.cos(angle), -np.sin(angle)),
-    #                 (np.sin(angle),  np.cos(angle)) ))
-    #
-    # # change direction if necessary
-    # if direction >= 0:
-    #     r = np.linalg.inv(r)
-    #
-    # ref_set1 = plane_set1[stable_one]
-    # ref_set2 = plane_set2[stable_one]
-    #
-    # plane_set2 = [r.dot(x) for x in plane_set2 - ref_set2]
-    # plane_set2 = plane_set2 + ref_set1 + (length_stable-length_stable2)/2 * vector_orig
-    # ### END NEW ROTATION
-
-    # find translation matrix between two sets
-    #align, scale = scipy.linalg.orthogonal_procrustes(plane_set1[tm_ranking[0:2]],plane_set2[tm_ranking[0:2]])
-    #plane_set1 = plane_set1.dot(align)
-
-    # Add angles
+    # CURRENT: Ca-angle to axis core
     rotations = [0] * 7
     for i in range(0,7):
-        # Ca-angle to axis core
-
         rotations[i] = [data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1] if abs(data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1]) < 180 else -1*data['tab4'][gn_dictionary[x]]['angles_set2'][1]-data['tab4'][gn_dictionary[x]]['angles_set1'][1] for x in gns[i]]
         if intracellular:
             rotations[i] = -1*sum(rotations[i])/3
         else:
             rotations[i] = sum(rotations[i])/3
 
+    # ALTERNATIVE: utilize TM tip alignment (needs debugging as some angles seem off, e.g. GLP-1 active vs inactive TM2)
+    # Add rotation angle based on TM point placement
+    # tms_2d_set1, junk = convert3D_to_2D_plane(tms_set1, intracellular, normal, midpoint)
+    # tms_2d_set2, junk = convert3D_to_2D_plane(tms_set2, intracellular, normal, midpoint)
+
+    # rotations = [0] * 7
+    # for i in range(0,7):
+    #     positions = [x for x in range(0, len(ends_and_middle_grouping)) if ends_and_middle_grouping[x] == i]
+    #     turn_set1 = tms_2d_set1[positions]
+    #     turn_set2 = tms_2d_set2[positions]
+    #
+    #     # set to middle
+    #     turn_set1 = turn_set1 - turn_set1.mean(axis=0)
+    #     turn_set2 = turn_set2 - turn_set2.mean(axis=0)
+    #
+    #     # Calculate shift per residue and take average for this TM
+    #     for j in range(0,len(turn_set1)):
+    #         v1 = turn_set1[j]/np.linalg.norm(turn_set1[j])
+    #         v2 = turn_set2[j]/np.linalg.norm(turn_set2[j])
+    #         angle = np.degrees(np.arctan2(v2[1], v2[0]) - np.arctan2(v1[1],v1[0]))
+    #
+    #         if abs(angle) > 180:
+    #             angle = 360 - abs(angle)
+    #
+    #         rotations[i] += angle/len(turn_set1)
+
     # TODO: check z-coordinates orientation
     # Step 1: collect movement relative to membrane mid
     # Step 2: find min and max TM
     # Step 3: check if orientation of min/max TM matches the z-scales + intra/extra - if not invert z-coordinates
-
     labeled_set1 = [{"label": "TM"+str(i+1), "x": float(plane_set1[i][0]), "y": float(plane_set1[i][1]), "z": float(z_set1[i]), "rotation" : 0} for i in range(0,7)]
     labeled_set2 = [{"label": "TM"+str(i+1), "x": float(plane_set2[i][0]), "y": float(plane_set2[i][1]), "z": float(z_set2[i]), "rotation" : rotations[i]} for i in range(0,7)]
 

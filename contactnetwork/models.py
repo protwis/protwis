@@ -71,6 +71,7 @@ class Distance(models.Model):
         db_table = 'distance'
 
 def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, standard_deviation = False, split_by_amino_acid = False):
+    ## Returned dataset is in ClassA GNs...
     matrix = {}
     group_distances = {}
 

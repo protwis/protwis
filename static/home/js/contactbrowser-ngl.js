@@ -23,6 +23,9 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     pdb_data[mode] = [];
     int_labels[mode] = []
 
+    forced_class_a = raw_data['forced_class_a'];
+    gn_label_to_use = forced_class_a ? 'gn_map_classa' : 'gn_map';
+
     var first_structure;
     var num_set1;
     var gn_num_set1;
@@ -77,7 +80,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
             chain_set1 = pdb_data[mode][0]['chain'];
             num_set1 = pdb_data[mode][0]['only_gn'];
-            gn_num_set1 = pdb_data[mode][0]['gn_map'];
+            gn_num_set1 = pdb_data[mode][0][gn_label_to_use];
 
             var stringBlob = new Blob([pdb_data[mode][0]['pdb']], {
                 type: 'text/plain'
@@ -108,8 +111,9 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                 stage[mode].mouseControls.remove("hoverPick")
 
                 // Add residue labels for GN residues
-                pdb_data[mode][0]['only_gn'].forEach(function(resNo, index) {
-                    var genNo = pdb_data[mode][0]['gn_map'][index]
+                pdb_data[mode][0]['only_gn'].forEach(function (resNo, index) {
+                    
+                    var genNo = pdb_data[mode][0][gn_label_to_use][index]
                     int_labels[mode][0][o.structure.id + "|" + resNo] = genNo
                 })
 
@@ -169,7 +173,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                     // calculate H8 position (based on TM1)
                     var tm1_vector
-                    var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                    var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0][gn_label_to_use].indexOf("1x46")]
                     o.structure.eachAtom(function(ap) {
                         tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
                         tm1_vector.applyMatrix4(o.matrix)
@@ -210,7 +214,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                     pdb_data[mode][1] = data;
                     num_set2 = pdb_data[mode][1]['only_gn'];
-                    gn_num_set2 = pdb_data[mode][1]['gn_map'];
+                    gn_num_set2 = pdb_data[mode][1][gn_label_to_use];
 
                     // intersect GN-numbering
                     var matching_TM_residues = [];
@@ -309,7 +313,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                         // Add residue labels for GN residues
                         pdb_data[mode][1]['only_gn'].forEach(function(resNo, index) {
-                            var genNo = pdb_data[mode][1]['gn_map'][index]
+                            var genNo = pdb_data[mode][0][gn_label_to_use][index]
                             int_labels[mode][1][o.structure.id + "|" + resNo] = genNo
                         })
 
@@ -595,8 +599,8 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
             }
 
             // Adjust GN numbering to the shown structure
-            var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo1)];
-            var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo2)];
+            var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(genNo1)];
+            var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(genNo2)];
 
             if ((typeof resNo1 == 'undefined') || (typeof resNo2 == 'undefined')) return
 
@@ -626,8 +630,8 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
             if ((genNo1 == '-') || (genNo2 == '-')) return
 
             // Link GN numbering to the shown structure
-            var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo1)];
-            var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo2)];
+            var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(genNo1)];
+            var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(genNo2)];
             if ((typeof resNo1 == 'undefined') || (typeof resNo2 == 'undefined')) return
 
             var f1 = Math.round(100 * v['pdbs1'].length / pdbs_1);
@@ -732,7 +736,7 @@ function colorNGLByData(mode, residue_positions, residue_colors, defaultColor){
   // Create gradient scaled by data type
   for (var i = 0; i < residue_positions.length; i++) {
     // Find X-ray residue number
-    gn = pdb_data[mode][structureKey]["gn_map"].indexOf(residue_positions[i])
+    gn = pdb_data[mode][structureKey][gn_label_to_use].indexOf(residue_positions[i])
 
     if (gn >= 0) {
       // create residue selector

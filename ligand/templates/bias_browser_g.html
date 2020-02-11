@@ -606,22 +606,22 @@
                 var $clone = [$tr];
 
                 $row.append($tds.eq(0).clone()).append($tds.eq(4).clone()).append($tds.eq(5).clone()).append($tds.eq(8).clone());
-                console.log('$tds' + $tds);
-                if ($tds[10].innerText !== '') {
+
+                if ($tds[14].id = "pathways") {
                     $row.append($tds.eq(14).clone());
                 }
-                if ($tds[11].innerText !== '') {
+                if ($tds[15].id = "pathways") {
                     $row.append($tds.eq(15).clone());
-                }
-                if ($tds[12].innerText !== '') {
+                }// && isNaN($tds[15].innerText)
+                if ($tds[16].id = "pathways" && isNaN($tds[16].innerText) && $tds[16].innerText !="No activity" && $tds[16].innerText != "Not quantifiable"  && $tds[16].innerText != "Low activity") {
                     $row.append($tds.eq(16).clone());
                 }
-                if ($tds[13].innerText !== '') {
+                if ($tds[17].id = "pathways" && isNaN($tds[17].innerText) && $tds[16].innerText !="No activity" && $tds[17].innerText != "Not quantifiable"  && $tds[17].innerText != "Low activity") {
                     $row.append($tds.eq(17).clone());
                 }
-                // if ($tds[14].innerText !== '') {
-                //     $row.append($tds.eq(18).clone());
-                // }
+                if ($tds[18].id = "pathways" && isNaN($tds[18].innerText) && $tds[16].innerText !="No activity" && $tds[18].innerText != "Not quantifiable"  && $tds[18].innerText != "Low activity") {
+                    $row.append($tds.eq(18).clone());
+                }
                 $row.appendTo($target)
                 $row.height($(this).height());
             });
@@ -754,7 +754,7 @@
                         <th style="border-left: 1px solid black;" id="col_Pathway" colspan="5">Pathway Bias Rank Order </th>
                         <th style="border-left: 1px solid black;" id="col_Operational" colspan="4">Operational model <br> &#916;&#916;(Tau/Ka)</th>
                         <th style="border-left: 1px solid black;" id="col_Log" colspan="4">Intrinsic relative activity<br> (&#916;&#916;Log(Emax/EC50))</th>
-                        <th style="border-left: 1px solid black;" id="col_Potency" colspan="4">Potency ratio <br>(&#916;&#916;log(EC50))</th>
+                        <th style="border-left: 1px solid black;" id="col_Potency" colspan="4">Potency ratio</th>
                         <th style="border-left: 1px solid black;" id="col_ec50" colspan="5">Potency EC50 or <font color="#FF0000">IC50</font>
                         </th>
                         <th style="border-left: 1px solid black;" id="col_Emax" colspan="5">Emax (% of ref ligand)</th>
@@ -869,7 +869,7 @@
                         <td>{{e.1.receptor.entry_short}}</td>
                         <td>{{e.1.receptor.species.common_name}}</td>
                         {% if e.1.endogenous_ligand == None %}
-                        <td></td>
+                        <td>Not available</td>
                         {%else%}
                         <td title='{{e.1.endogenous_ligand}}'>{{e.1.endogenous_ligand}}</td>
                         {%endif%}
@@ -894,9 +894,9 @@
                         <!-- pathways -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if forloop.first %}
-                        <td style="border-left: 1px solid black;">{{ex.signalling_protein}}</td>
+                        <td id="pathways" style="border-left: 1px solid black;">{{ex.signalling_protein}}</td>
                         {% else %}
-                        <td>{{ex.signalling_protein}}</td>
+                        <td id="pathways">{{ex.signalling_protein}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -905,7 +905,7 @@
                         {% if not forloop.first %}
                         {% widthratio forloop.counter 1 20 as outer_counter%}
                         {% with outer_counter|add:"140" as var1 %}
-                        <td style="background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})">{{ex.t_factor}}</td>
+                        <td id="false" style="background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})">{{ex.t_factor}}</td>
                         {% endwith %}
                         {%endif%}
                         {%endfor%}
@@ -915,7 +915,7 @@
                         {% if not forloop.first %}
                         {% widthratio forloop.counter 1 20 as outer_counter%}
                         {% with outer_counter|add:"140" as var1 %}
-                        <td style="background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})"> {{ex.log_bias_factor }}</td>
+                        <td  id="false" style="background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})"> {{ex.log_bias_factor }}</td>
                         {% endwith %}
                         {%endif%}
                         {%endfor%}

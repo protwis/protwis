@@ -41,7 +41,7 @@ class Command(BaseBuild):
     help = 'Reads bias data and imports it'
     # source file directory
     # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
-    structure_data_dir = '/protwis/sites/protwis/excel/'
+    structure_data_dir = '/excel/'
     publication_cache = {}
     ligand_cache = {}
     data_all = []
@@ -72,21 +72,27 @@ class Command(BaseBuild):
         # delete any existing structure data
         if options['purge']:
             try:
+                print('Started purging bias data')
                 self.purge_bias_data()
+                print('Ended purging bias data')
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
-        #self.bias_list()
         try:
             print('CREATING BIAS DATA')
             print(options['filename'])
             self.prepare_all_data(options['filename'])
             self.logger.info('COMPLETED CREATING BIAS')
-
         except Exception as msg:
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
+
+    def purge_bias_data(self):
+        delete_bias_excel = BiasedExperiment.objects.all()
+        delete_bias_excel.delete()
+        delete_bias_experiment = AnalyzedExperiment.objects.all()
+        delete_bias_experiment.delete()
 
     def loaddatafromexcel(self, excelpath):
         """
@@ -133,12 +139,10 @@ class Command(BaseBuild):
         skipped = 0
         # Analyse the rows from excel and assign the right headers
         temp = []
-        print("start")
-
         for i, r in enumerate(rows, 1):
             # code to skip rows in excel for faster testing
-            if i < 15:
-                continue
+            # if i < 15:
+            #     continue
             # if i > 15:
             #     break
             if i % 100 == 0:
@@ -210,7 +214,7 @@ class Command(BaseBuild):
 
 
             #define G family
-            family = self.define_g_family(d['protein'])
+            family = self.define_g_family(d['protein'],d['protein_assay'])
 
 
             # fetch publicaition
@@ -326,42 +330,60 @@ class Command(BaseBuild):
                 pass
         return potency,p_type
 
-    def define_g_family(self, protein):
+    def define_g_family(self, protein, assay_type):
+        family = None
         if (protein == 'β-arrestin' or
             protein == 'β-arrestin-1 (non-visual arrestin-2)' or
-                protein == 'β-arrestin-2 (non-visual arrestin-3)'):
+            protein == 'β-arrestin-2 (non-visual arrestin-3)'):
             family = 'B-arr'
 
         elif (protein == 'gi/o-family' or
-              protein == 'gαi1' or
-              protein == 'gαi2' or
-              protein == 'gαi3' or
-              protein == 'gαo' or
-              protein == 'gαoA' or
-              protein == 'gαoB'):
+                protein == 'gαi1' or
+                protein == 'gαi2' or
+                protein == 'gαi3' or
+                protein == 'gαo' or
+                protein == 'gαoA' or
+                protein == 'gαi' or
+                protein == 'gαi1' or
+                protein == 'gαi2' or
+                protein == 'gαi3' or
+                protein == 'gαi1/2' or
+                protein == 'gαo' or
+                protein == 'gαoA' or
+                protein == 'gαoB' or
+                protein == 'gαo1' or
+                protein == 'gαt1' or
+                protein == 'gαt2' or
+                protein == 'gαt3' or
+                protein == 'gαz' or
+                protein == 'gαoB'):
             family = 'Gi/o'
 
         elif (protein == 'gq-family' or
-                protein == 'gαq' or
-                protein == 'gαq11' or
-                protein == 'gαq14' or
-                protein == 'gαq14' or
-                protein == 'gαq16' or
-                protein == 'gαq14 (gαq16)'):
+                protein == 'gα12' or
+                protein==' gαq' or
+                protein=='gαq/11' or
+                protein=='gαq/14' or
+                protein=='gαq/15' or
+                protein=='gαq/16'):
             family = 'Gq/11'
 
         elif (protein == 'g12/13-family' or
-              protein == 'gα12' or
-              protein == 'gα13'):
+                protein == 'gα12' or
+                protein == 'gα13'):
             family = 'G12/13'
 
         elif (protein == 'gs-family' or
               protein == 'gαs' or
               protein == 'gαolf'):
             family = 'Gs'
-        else:
-            family = 'No data'
 
+        elif (protein == '' or
+              protein == None):
+            if assay_type == 'pERK1/2 activation' or assay_type =="pERK1-2":
+                family = 'pERK1-2'
+        else:
+            family == protein
         return family
 
     def fetch_endogenous(self, protein_from_excel):
