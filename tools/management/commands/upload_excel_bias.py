@@ -4,7 +4,7 @@ from django.db import connection
 from django.db import IntegrityError
 from django.utils.text import slugify
 from django.http import HttpResponse, JsonResponse
-
+from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from residue.models import Residue
@@ -143,8 +143,8 @@ class Command(BaseBuild):
             # code to skip rows in excel for faster testing
             # if i < 15:
             #     continue
-            if i > 58:
-                break
+            # if i > 58:
+            #     break
             if i % 100 == 0:
                 print(i)
             d = dict()
@@ -193,7 +193,8 @@ class Command(BaseBuild):
                 d['protein_activity_quantity'] = None
             if d['protein_efficacy_quantity'] == "":
                 d['protein_efficacy_quantity'] = None
-
+            elif d['protein_efficacy_quantity'] !=None:
+                d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)    
             if not isinstance(d['pathway_bias'], float):
                 d['pathway_bias'] = None
             if not isinstance(d['pathway_bias_initial'], float):
@@ -328,6 +329,8 @@ class Command(BaseBuild):
                 potency = potency* 10**(-6)
             else:
                 pass
+        if potency:
+            potency = "{:.2E}".format(Decimal(potency))
         return potency,p_type
 
     def define_g_family(self, protein, assay_type):
@@ -390,7 +393,7 @@ class Command(BaseBuild):
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT * FROM protein_endogenous_ligands WHERE protein_id =%s", [protein.pk])
-                row = cursor.fetchone()                
+                row = cursor.fetchone()
                 end_ligand = Ligand.objects.filter(id=row[2])
                 test = end_ligand.get()
 

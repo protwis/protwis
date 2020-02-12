@@ -539,7 +539,7 @@ class BiasBrowser(TemplateView):
                 temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
                 temp['receptor'] = instance.receptor
                 temp['uniprot'] = instance.receptor.entry_short
-                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].split('-adrenoceptor', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             temp['biasdata'] = list()
