@@ -30,7 +30,6 @@
             StateSave: true,
             dom: 'Bftrip<>',
 
-
             buttons: [{
                     text: 'Excel',
                     className: 'btn btn-primary',
@@ -79,7 +78,6 @@
                                 myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
                             }
                         });
-
                     },
                 },
             ],
@@ -87,7 +85,7 @@
             scrollY: '170vh',
             scrollCollapse: true,
             "order": [
-                [40, "desc"]
+                [3, "desc"]
             ],
             AutoWidth: false,
             paging: true,
@@ -139,10 +137,7 @@
                     oTable.columns.adjust();
                 }, 1);
             }
-
-
         });
-
 
         yadcf.init(oTable,
             [{
@@ -978,7 +973,7 @@
                         <!-- potency ratio -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_potency">{{ex.potency }}</td>
+                        <td>{{ex.potency }}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -986,14 +981,14 @@
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {%if ex.quantitive_activity %}
                         {%if ex.quantitive_measure_type == 'EC50' %}
-                        <td class="greyscale_normal">{{ex.quantitive_activity}} </td>
+                        <td>{{ex.quantitive_activity}} </td>
                         {%else%}
-                        <td class="greyscale_normal">
+                        <td>
                             <font color="#FF0000">{{ex.quantitive_activity}} </font>
                         </td>
                         {%endif%}
                         {%else%}
-                        <td class="greyscale_normal">{{ex.qualitative_activity }}</td>
+                        <td>{{ex.qualitative_activity }}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1002,7 +997,7 @@
                         {% if ex.quantitive_efficacy == None %}
                         <td></td>
                         {%else%}
-                        <td class="greyscale">{{ex.quantitive_efficacy}}</td>
+                        <td>{{ex.quantitive_efficacy}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1218,6 +1213,9 @@ width: 150px;
     background-color: #337ab7;
     /* #a5dc86; */
     box-shadow: none;
+    }
+    .border-left{
+        padding-left: 3px;
     }
 
     .switch-field label:first-of-type {

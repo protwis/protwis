@@ -562,7 +562,10 @@ class BiasBrowser(TemplateView):
                     temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
                     temp_dict['quantitive_unit'] = entry.quantitive_unit
                     temp_dict['qualitative_activity'] = entry.qualitative_activity
-                    temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
+                    if entry.quantitive_efficacy != None:
+                        temp_dict['quantitive_efficacy'] = round(entry.quantitive_efficacy,0)
+                    else:
+                        temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
                     temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
                     temp_dict['efficacy_unit'] = entry.efficacy_unit
                     temp_dict['order_no'] =  int(entry.order_no)
