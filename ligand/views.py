@@ -430,20 +430,22 @@ class PathwayExperimentEntryView(DetailView):
     template_name = 'biased_pathways_data.html'
 
 def test_link(request):
-    request.session['data'] = ''
-    try:
-        request.session['data']
-        if request.POST.get('action') == 'post':
-            request.session.modified = True
-            data = request.POST.get('data')
-            data = filter(lambda char: char not in " \"?.!/;:[]", data)
-            datum = "".join(data)
-            request.session['data'] = datum
-            print('saved',datum)
+    request.session['ids'] = ''
+    # try:
+    request.session['ids']
+    if request.POST.get('action') == 'post':
+        # print('i am here' )
+        request.session.modified = True
+        data = request.POST.get('ids')
+        data = filter(lambda char: char not in " \"?.!/;:[]", data)
+        datum = "".join(data)
+        request.session['ids'] = datum
+        request.session.set_expiry(15)
+        # print('datum',datum )
 
-        return HttpResponse(request)
-    except OSError as exc:
-        raise
+    return HttpResponse(request)
+    # except OSError as exc:
+    #     raise
 
 
 class BiasVendorBrowser(TemplateView):
@@ -453,8 +455,8 @@ class BiasVendorBrowser(TemplateView):
     def get_context_data(self, **kwargs):
         # try:
         context = dict()
-        datum = self.request.session.get('data')
-        # print('fetched',datum)
+        datum = self.request.session.get('ids')
+
         self.request.session.modified = True
         rd = list()
         for i in datum.split(','):
@@ -473,7 +475,7 @@ class BiasVendorBrowser(TemplateView):
 
                     rd.append(temp)
             context['data'] = rd
-            # del self.request.session['data']
+        del self.request.session['ids']
         return context
         # except:
         #     raise
@@ -487,7 +489,7 @@ class BiasBrowser(TemplateView):
     template_name = 'bias_browser.html'
     #@cache_page(50000)
     def get_context_data(self, *args, **kwargs  ):
-        print('i am herelol')
+
         content = AnalyzedExperiment.objects.filter(source='different_family').prefetch_related(
         'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
         'endogenous_ligand' ,'ligand__properities','receptor','receptor','receptor__family',
@@ -520,7 +522,7 @@ class BiasBrowser(TemplateView):
             fin_obj = {}
             fin_obj['main'] = instance
             temp = dict()
-            doubles = []            
+            doubles = []
             temp['experiment_id'] = instance.id
             temp['publication'] = instance.publication
             temp['ligand'] = instance.ligand
@@ -531,10 +533,13 @@ class BiasBrowser(TemplateView):
             temp['publication_quantity'] = instance.article_quantity
             temp['lab_quantity'] = instance.labs_quantity
             temp['reference_ligand'] = instance.reference_ligand
-            temp['primary'] =   instance.primary
-            temp['secondary'] = instance.secondary
+            temp['primary'] =   instance.primary.replace('family','').strip()
+            temp['secondary'] = instance.secondary.replace('family','').strip()
             if instance.receptor:
+                temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
                 temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].split('-adrenoceptor', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             temp['biasdata'] = list()
@@ -557,7 +562,10 @@ class BiasBrowser(TemplateView):
                     temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
                     temp_dict['quantitive_unit'] = entry.quantitive_unit
                     temp_dict['qualitative_activity'] = entry.qualitative_activity
-                    temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
+                    if entry.quantitive_efficacy != None:
+                        temp_dict['quantitive_efficacy'] = round(entry.quantitive_efficacy,0)
+                    else:
+                        temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
                     temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
                     temp_dict['efficacy_unit'] = entry.efficacy_unit
                     temp_dict['order_no'] =  int(entry.order_no)
@@ -593,7 +601,7 @@ class BiasBrowser(TemplateView):
 
             rd[increment] = temp
             increment+=1
-        print('---increment---', increment,'\n')
+
 
         return rd
 
@@ -626,7 +634,7 @@ class BiasBrowserGSubbtype(TemplateView):
     template_name = 'bias_browser_g.html'
     #@cache_page(50000)
     def get_context_data(self, *args, **kwargs  ):
-        print('i am here')
+
         content = AnalyzedExperiment.objects.filter(source='same_family').prefetch_related(
     'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
     'endogenous_ligand' ,'ligand__properities','receptor','receptor__family__parent','receptor__family__parent__parent__parent',
@@ -672,7 +680,10 @@ class BiasBrowserGSubbtype(TemplateView):
             temp['primary'] =   instance.primary
             temp['secondary'] = instance.secondary
             if instance.receptor:
+                temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
                 temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             temp['biasdata'] = list()
@@ -731,7 +742,7 @@ class BiasBrowserGSubbtype(TemplateView):
 
             rd[increment] = temp
             increment+=1
-        print('---increment---', increment,'\n')
+
 
         return rd
 
@@ -839,7 +850,7 @@ class BiasBrowserChembl(TemplateView):
 
             rd[increment] = temp
             increment+=1
-        print('---increment---', increment,'\n')
+
 
         return rd
 
@@ -906,6 +917,8 @@ class BiasPathways(TemplateView):
 
             if instance.receptor:
                 temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             # at the moment, there is only 1 pathways for every biased_pathway
@@ -920,7 +933,7 @@ class BiasPathways(TemplateView):
 
             rd[increment] = temp
             increment+=1
-        print('---increment---', increment,'\n')
+
 
         return rd
 

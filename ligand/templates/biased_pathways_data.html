@@ -15,7 +15,7 @@
       <h3>Ligand</h3>
       <table class="table table-striped table-bordered">
         <tr>
-          <td>Name</td>
+          <td>Biased Ligand</td>
           <td>{{experiment.ligand.name}}</td>
         </tr>
         <tr>
@@ -37,6 +37,11 @@
           <td>Type</td>
           <td>{{experiment.ligand.properities.ligand_type}}</td>
         </tr>
+        <tr>
+          <td>Reference Ligand</td>
+          <td>
+              {{experiment.reference_ligand}}</td>
+        </tr>
       </table>
     </div>
 
@@ -44,30 +49,33 @@
       <h3>Receptor</h3>
       <table class="table table-striped table-bordered">
         <tr>
-          <td>Name</td>
+          <td>Receptor</td>
           <td>{{experiment.receptor}}</td>
         </tr>
         <tr>
+          <td>Class</td>
+          <td>{{experiment.receptor.family.parent.parent.parent.name}}</td>
+        </tr>
+        <tr>
           <td>Family</td>
-          <td>{{experiment.receptor.family}}</td>
+          <td>{{experiment.receptor.family.parent}}</td>
+        </tr>
+        <tr>
+          <td>UniProt</td>
+          <td>{{experiment.receptor.entry_short}}</td>
+        </tr>
+        <tr>
+          <td>IUPHAR</td>
+          <td>{{experiment.receptor.name}}</td>
         </tr>
         <tr>
           <td>Species</td>
           <td>{{experiment.receptor.species}}</td>
         </tr>
         <tr>
-          <td>Source</td>
-          <td>{{experiment.receptor.endogenous_ligands.parent.parent}}</td>
-        </tr>
-        <tr>
           <td>Endogenous Ligand</td>
           <td>{{experiment.endogenous_ligand}}</td>
         </tr>
-        <tr>
-          <td>Class</td>
-          <td>{{experiment.receptor.family.parent.parent.parent.name}}</td>
-        </tr>
-
       </table>
     </div>
 
