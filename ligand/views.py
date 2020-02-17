@@ -434,7 +434,7 @@ def test_link(request):
     # try:
     request.session['ids']
     if request.POST.get('action') == 'post':
-        # print('i am here' )
+        
         request.session.modified = True
         data = request.POST.get('ids')
         data = filter(lambda char: char not in " \"?.!/;:[]", data)
@@ -562,10 +562,7 @@ class BiasBrowser(TemplateView):
                     temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
                     temp_dict['quantitive_unit'] = entry.quantitive_unit
                     temp_dict['qualitative_activity'] = entry.qualitative_activity
-                    if entry.quantitive_efficacy != None:
-                        temp_dict['quantitive_efficacy'] = round(entry.quantitive_efficacy,0)
-                    else:
-                        temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
+                    temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
                     temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
                     temp_dict['efficacy_unit'] = entry.efficacy_unit
                     temp_dict['order_no'] =  int(entry.order_no)
