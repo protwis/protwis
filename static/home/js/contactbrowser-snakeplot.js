@@ -10,9 +10,9 @@ function createSnakeplot(data,containerSelector) {
     //     .attr("width", "100%")
     //     .attr("style", "height: 500px");
     
-    console.log('making snakeplot!')
-    console.log(containerSelector)
-    console.log(data['snakeplot'])
+    // console.log('making snakeplot!')
+    // console.log(containerSelector)
+    // console.log(data['snakeplot'])
 
     $(containerSelector).html(data['snakeplot']);
 
@@ -52,11 +52,6 @@ function createSnakeplot(data,containerSelector) {
 
 // Override "normal max min"
 function maxmin() {
-    console.log('maxmin start 2');
-
-
-  
-
 
     if (!$('#snake').length) return
 
