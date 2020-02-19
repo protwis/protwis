@@ -2008,6 +2008,23 @@ def InteractionBrowserData(request):
         data['normalized'] = normalized
         data['forced_class_a'] = forced_class_a
         data['residue_table'] = r_class_translate
+
+
+        excluded_segment = ['C-term','N-term'] #'ICL1','ECL1','ECL2','ICL2'
+        segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
+        proteins =  Protein.objects.filter(entry_name__in=list(data['proteins'])).distinct().all()
+        a = Alignment()
+        a.ignore_alternative_residue_numbering_schemes = True;
+        a.load_proteins(proteins)
+        a.load_segments(segments) #get all segments to make correct diagrams
+        # build the alignment data matrix
+        a.build_alignment()
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+        consensus = a.full_consensus
+        from common.diagrams_gpcr import DrawSnakePlot
+        snakeplot = DrawSnakePlot(consensus, 'Class A', 'family_diagram_preloaded_data',nobuttons = True)
+        data['snakeplot'] = str(snakeplot)
         if mode == 'double':
             data['pdbs1'] = list(data['pdbs1'])
             data['pdbs2'] = list(data['pdbs2'])

@@ -3680,7 +3680,7 @@ function gray_scale_table(table) {
             }
         }
     }
-    maxmin = [];
+    var maxmin = [];
     cols.forEach(function(col, index) {
         var max = Math.max.apply(null, col);
         var min = Math.min.apply(null, col);
