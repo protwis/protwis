@@ -47,6 +47,25 @@ function createSnakeplot(data,containerSelector) {
         $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + 'px')
     });
 
+    $.each(data['distances'], function (gn, dis) {
+        seq_pos = data['snakeplot_lookup'][gn];
+        // console.log(gn, dis['avg'], seq_pos);
+        value = dis['avg'];
+        scale = Math.abs(value) / data['ngl_max_diff_distance'];
+        var color = { r: 255, g: 255, b: 255 };
+        if (value < 0) {
+            // if the header is a set two, then make it red
+            color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+        } else if (value > 0) {
+            // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+            // This is also used for single set/structure
+            color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
+        }
+        var hex = rgb2hex(color.r, color.g, color.b);
+        $(containerSelector).find('#'+seq_pos).css("fill", hex);
+
+    });
+
     
 }
 

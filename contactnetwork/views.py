@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.db.models import Q, F, Prefetch, Avg, StdDev, IntegerField, Sum, Case, When, Min, Max
 from django.db.models.functions import Concat
 from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 from django.db import connection
 
@@ -519,6 +520,7 @@ def PdbTableData(request):
 
     # return render(request, 'contactnetwork/test.html', {'data_table':data_table})
 
+@csrf_exempt
 def InteractionBrowserData(request):
 
     start_time = time.time()
@@ -1996,7 +1998,92 @@ def InteractionBrowserData(request):
             data['tm_movement_2D'] = {}
             data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True, data, r_class_translate_from_classA)
             data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False, data, r_class_translate_from_classA)
-            print("Helical movement calculations", time.time()-helical_time)
+            print("Helical movement calculations", time.time() - helical_time)
+            
+        # calculate distance movements
+        if mode == "double":
+            pdbs1_upper = [pdb.upper() for pdb in pdbs1]
+            pdbs2_upper = [pdb.upper() for pdb in pdbs2]
+            print('Start 1')
+            start = time.time()
+            dis1 = Distances()
+            dis1.load_pdbs(pdbs1_upper)
+            dis1.fetch_and_calculate(with_arr = True)
+            print('done fetching set 1',time.time()-start)
+            # dis1.calculate_window(list_of_gns)
+        #    dis1.calculate()
+
+            start = time.time()
+            dis2 = Distances()
+            dis2.load_pdbs(pdbs2_upper)
+            dis2.fetch_and_calculate(with_arr = True)
+            # dis2.calculate_window(list_of_gns)
+            #dis2.calculate()
+            print('done fetching set 2',time.time()-start)
+
+            diff = OrderedDict()
+            from math import sqrt
+            from scipy import stats
+
+            # for d1 in dis1.stats_window_reduced:
+            # for d1 in dis1.stats_window:
+
+            start = time.time()
+            total = {}
+            common_labels = list(set(dis1.stats_key.keys()).intersection(dis2.stats_key.keys()))
+            for label in common_labels:
+
+                # Get variables
+                d1, d2 = dis1.stats_key[label],dis2.stats_key[label]
+                # Correct decimal
+                mean1, mean2 = d1[1]/1000,d2[1]/1000
+                std1,std2 = d1[2]/1000,d2[2]/1000
+                var1,var2 = std1**2,std2**2
+                n1, n2 = d1[4],d2[4]
+
+                mean_diff = mean2-mean1
+
+                # Save values for NGL calcs
+                gn1,gn2 = label.split("_")
+                if gn1 not in total:
+                    total[gn1] = {}
+                if gn2 not in total:
+                    total[gn2] = {}
+                total[gn1][gn2] = total[gn2][gn1] = round(mean_diff,1)
+                # Make easier readable output
+                d1[5] = [x / 1000 for x in d1[5]]
+                d2[5] = [x / 1000 for x in d2[5]]
+                individual_pdbs_1 = dict(zip(d1[6], d1[5]))
+                individual_pdbs_2 = dict(zip(d2[6], d2[5]))
+
+                if n1>1 and n2>1 and var1>0 and var2>0:
+                    ## T test to assess seperation of data (only if N>1 and there is variance)
+                    t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+                    df = n1+n2 - 2
+                    p = 1 - stats.t.cdf(t_stat_welch,df=df)
+                else:
+                    p = 0
+
+                diff[label] = [round(mean_diff,1),[std1,std2],[mean1,mean2],[n1,n2],p,[individual_pdbs_1,individual_pdbs_2]]
+
+            diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1][0])))
+            # print(diff)
+            print('done diff',time.time()-start)
+            start = time.time()
+            ngl_max_diff = 0
+            for gn1 in total.keys():
+                vals = []
+                for gn,val in total[gn1].items():
+                    if gn[0]!=gn1[0]:
+                        #if not same segment
+                        vals.append(val)
+                total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),1)
+                if abs(total[gn1]['avg'])>ngl_max_diff:
+                    ngl_max_diff = round(abs(total[gn1]['avg']),1)
+
+            print('done ngl', time.time() - start)
+            data['distances'] = total
+            data['ngl_max_diff_distance'] = ngl_max_diff
 
         data['tab3'] = {}
         data['pdbs'] = list(data['pdbs'])
@@ -2010,7 +2097,7 @@ def InteractionBrowserData(request):
         data['residue_table'] = r_class_translate
 
 
-        excluded_segment = ['C-term','N-term'] #'ICL1','ECL1','ECL2','ICL2'
+        excluded_segment = ['C-term','N-term','H8'] #'ICL1','ECL1','ECL2','ICL2'
         segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
         proteins =  Protein.objects.filter(entry_name__in=list(data['proteins'])).distinct().all()
         a = Alignment()
@@ -2022,6 +2109,9 @@ def InteractionBrowserData(request):
         # calculate consensus sequence + amino acid and feature frequency
         a.calculate_statistics()
         consensus = a.full_consensus
+        data['snakeplot_lookup'] = {}
+        for a in consensus:
+            data['snakeplot_lookup'][a.family_generic_number] = a.sequence_number
         from common.diagrams_gpcr import DrawSnakePlot
         snakeplot = DrawSnakePlot(consensus, 'Class A', 'family_diagram_preloaded_data',nobuttons = True)
         data['snakeplot'] = str(snakeplot)

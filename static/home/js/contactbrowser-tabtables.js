@@ -3585,14 +3585,21 @@ function renderBrowser_5(data) {
             var diff_seq_cons_freq = Math.round((set1_seq_cons_freq - set2_seq_cons_freq));
 
             var class_cons_aa = v['class_cons'][0];
-            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+            var class_cons_freq = Math.round(100 * v['class_cons'][1])
+
+            if (i in data['distances']) {
+                distance = data['distances'][i]['avg'];
+            } else {
+                console.log('no ', i, 'in distances');
+                distance = '';
+            }
 
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
                     <td class="dt-center">${seg}</td>
                     <td class="dt-center">${i}</td>
-                    <td class="narrow_col">pair</td>
+                    <td class="narrow_col">${distance}</td>
                     <td class="narrow_col">${angles[0][0]}</td>
                     <td class="narrow_col">${angles[1][0]}</td>
                     <td class="narrow_col">${angles[9][0]}</td>
