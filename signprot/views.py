@@ -146,13 +146,16 @@ def Couplings(request):
                                       species__common_name='Human').all().prefetch_related('family')
     data = {}
     class_names = {}
+    family_names = {}
 
     for p in proteins:
         p_class = p.family.slug.split('_')[0]
         if p_class not in class_names:
-            class_names[p_class] = re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
+            class_names[p_class] = p.family.parent.parent.parent.name
+            family_names[p_class] = p.family.parent.name
         p_class_name = class_names[p_class].replace('Class','').strip()
-        data[p.entry_short()] = {'class': p_class_name, 'pretty': p.short()[:15], 'GuideToPharma': {}, 'Aska': {}}
+        p_family_name = family_names[p_class].replace('receptors','').strip()
+        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'pretty': p.short()[:25], 'GuideToPharma': {}, 'Aska': {}}
     distinct_g_families = []
     distinct_g_subunit_families = {}
     distinct_sources = ['GuideToPharma', 'Aska']
@@ -164,7 +167,6 @@ def Couplings(request):
         t = c.transduction
         m = c.log_rai_mean
         gf = c.g_protein.name
-        # print(gf)
         gf = gf.replace(" family", "")
 
         if gf not in distinct_g_families:
@@ -174,7 +176,6 @@ def Couplings(request):
         if c.g_protein_subunit:
             g = c.g_protein_subunit.entry_name
             g = g.replace("_human", "")
-            # print("g",g)
             if g not in distinct_g_subunit_families[gf]:
                 distinct_g_subunit_families[gf].append(g)
                 distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
@@ -206,7 +207,7 @@ def Couplings(request):
     # This for loop, which perhaps should be a function in itself, perhaps an instance of a Couplings class, does
     # the job of merging together two data-sets, that of the GuideToPharma and Aska's results.
     for p, v in data.items():
-        fd[p] = [v['class'], p, v['pretty']]
+        fd[p] = [v['class'], v['family'], p, v['pretty']]
         s = 'GuideToPharma'
         # Merge
         for gf in distinct_g_families:
