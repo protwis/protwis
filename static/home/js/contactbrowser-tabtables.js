@@ -3013,6 +3013,7 @@ function renderBrowser_4(data) {
             var angles1 = v['angles_set1'];
             var angles2 = v['angles_set2'];
             var angles_diff = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3219,6 +3220,7 @@ function renderBrowser_4(data) {
             if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles = v['angles_set'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3364,6 +3366,7 @@ function renderBrowser_4(data) {
             if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles = v['angles_set'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3564,6 +3567,7 @@ function renderBrowser_5(data) {
             // console.log(i,v);
             var seg = v['ps'];
             var angles = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3590,7 +3594,7 @@ function renderBrowser_5(data) {
             if (i in data['distances']) {
                 distance = data['distances'][i]['avg'];
             } else {
-                console.log('no ', i, 'in distances');
+                // console.log('no ', i, 'in distances');
                 distance = '';
             }
 
@@ -3625,6 +3629,7 @@ function renderBrowser_5(data) {
             // console.log(i,v);
             var seg = v['ps'];
             var angles = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3713,7 +3718,7 @@ function gray_scale_table(table) {
             if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
                 scale = Math.abs(value) / c_maxmin[2];
                 var color = { r: 255, g: 255, b: 255 };
-                if (c_header.includes('Set 2') || value < 0) {
+                if ((c_header.includes('Set 2') || value < 0) && !(c_header.includes('Set 1'))) {
                     // if the header is a set two, then make it red
                     color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
                 } else if (value > 0) {

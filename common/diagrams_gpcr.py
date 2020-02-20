@@ -58,9 +58,9 @@ class DrawSnakePlot(Diagram):
             elif hasattr(r, 'family_generic_number'):
                 label = r.family_generic_number
             if r.display_generic_number: displaylabel = r.display_generic_number.label
-            displaylabel = r.amino_acid + str(r.sequence_number) + " \n " + displaylabel
+            displaylabel = r.amino_acid + str(r.sequence_number) + " " + displaylabel
             if hasattr(r, 'frequency'):
-                displaylabel = displaylabel + "\n" + str(r.frequency)
+                displaylabel = displaylabel + " " + str(r.frequency)
             self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
             i += 1
 
