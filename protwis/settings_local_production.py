@@ -19,7 +19,6 @@ GOOGLE_ANALYTICS_KEY = False
 GOOGLE_ANALYTICS_API = False
 
 # Database
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
