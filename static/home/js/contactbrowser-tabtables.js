@@ -3207,7 +3207,7 @@ function renderBrowser_4(data) {
                           <th colspan="1">Psi dihedral<br/><span class="small">(C-Ca-N-C(-1))</span></th> \
                           <th colspan="1">Tau angle<br/><span class="small">(N-Ca-C)</span></th> \
                           <th colspan="1">Tau dihedral<br/><span class="small">(Ca(+1)-Ca-Ca(-1)-Ca(-2))</span></th> \
-                          <th colspan="3">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
+                          <th colspan="1">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="1">Theta angle<br/><span class="small">(Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
