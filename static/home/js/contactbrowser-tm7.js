@@ -109,7 +109,7 @@ function tm7_plot(containerSelector, plot_data) {
     min_x = Math.min.apply(Math, [...set1_data, ...set2_data].map(a => a.x)) - padding;
     max_x = Math.max.apply(Math, [...set1_data, ...set2_data].map(a => a.x)) + padding;
 
-    circle_r = 33;
+    circle_r = 23;
     line_widths = 3;
     path_r = circle_r + 3 + line_widths;
     line_distance_from_center = path_r;
