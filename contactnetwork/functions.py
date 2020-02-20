@@ -366,15 +366,32 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
 
     # Calculate optimal plane through points in both sets and convert to 2D
     # Try normal based on TM7
-    tm7_centroids = tms_centroids_set1[[x for x in range(0,len(segment_order)) if segment_order[x] == 6]]
-    if len(tm7_centroids) == 2:
-        normal = (tm7_centroids[1] - tm7_centroids[0])/np.linalg.norm(tm7_centroids[1] - tm7_centroids[0])
-    else:
-        # Using TM mid as reference plane
-        normal, midpoint = calculatePlane(np.concatenate((tms_centroids_set1[7:], tms_centroids_set2[7:])), intracellular)
+    # tm7_centroids = tms_centroids_set1[[x for x in range(0,len(segment_order)) if segment_order[x] == 6]]
+    # if len(tm7_centroids) == 2:
+    #     normal = (tm7_centroids[1] - tm7_centroids[0])/np.linalg.norm(tm7_centroids[1] - tm7_centroids[0])
+    # else:
+    #     # Using TM mid as reference plane
+    #     normal, midpoint = calculatePlane(np.concatenate((tms_centroids_set1[7:], tms_centroids_set2[7:])), intracellular)
 
-    midpoint = tms_centroids_set1.mean(axis=0)
+    # Alternative: use center of helical ends and center of helical middle
+    #    normal = tms_centroids_set1[:7].mean(axis=0)  - tms_centroids_set1[7:].mean(axis=0)
+    #    normal = normal/np.linalg.norm(normal)
 
+    # 7TM references
+    tm_centroids = {y:[] for y in range(0,7)}
+    [tm_centroids[y].append(tms_centroids_set1[x]) for y in range(0,7) for x in range(0,len(segment_order)) if segment_order[x] == y]
+    count = 0
+    normal = np.array([0.0,0.0,0.0])
+    print(tm_centroids)
+    for y in range(0,7):
+    #for y in [3,4]:
+        if len(tm_centroids[y]) == 2:
+            print(y)
+            normal += np.array((tm_centroids[y][1] - tm_centroids[y][0])/np.linalg.norm(tm_centroids[y][1] - tm_centroids[y][0]))
+            count += 1
+    normal = normal/count
+
+    midpoint = tms_centroids_set1[:7].mean(axis=0)
     plane_set1, z_set1 = convert3D_to_2D_plane(tms_centroids_set1[:7], intracellular, normal, midpoint)
     plane_set2, z_set2 = convert3D_to_2D_plane(tms_centroids_set2[:7], intracellular, normal, midpoint)
 
