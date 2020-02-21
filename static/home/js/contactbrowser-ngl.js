@@ -389,12 +389,16 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     $("#ngl-" + mode).append(newDiv);
     $("#ngl-" + mode + " .ngl_control").hide();
     $('.ngl_controls_toggle').css('cursor', 'pointer');
-    $("#ngl-" + mode + " .ngl_controls_toggle").click(function() {
+    $("#ngl-" + mode + " .ngl_controls_toggle").click(function(e) {
+      e.stopPropagation();
       if ($("#ngl-" + mode + " .ngl_control").is(":hidden")) {
           $("#ngl-" + mode + " .ngl_control").show();
 
           // close when click outside of div
-          $(document).on("mouseup", {ngl_mode : mode}, hideNGLSettings);
+          $(document).on("mousedown", {ngl_mode : mode}, hideNGLSettings);
+      } else {
+        $("#ngl-" + mode + " .ngl_control").hide();
+        $(document).off("mousedown", hideNGLSettings);
       }
     });
 
@@ -501,8 +505,9 @@ function hideNGLSettings(e) {
   var mode = e.data.ngl_mode;
   var container = $("#ngl-" + mode + " .ngl_control");
   var toggle = $("#ngl-" + mode + " .ngl_controls_toggle");
-  if ((!container.is(e.target) && container.has(e.target).length === 0) || toggle.is(e.target)){
-    $(document).off("mouseup", hideNGLSettings);
+  if ((!container.is(e.target) && container.has(e.target).length === 0)){
+    e.stopPropagation();
+    $(document).off("mousedown", hideNGLSettings);
     container.hide();
   }
 }

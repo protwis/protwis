@@ -1448,7 +1448,8 @@ function updateStructureRepresentations(mode) {
         reps[mode][key].ball_int.setVisibility($("#ngl-" + mode + " #toggle_sidechains_int").prop('checked'));
 
         // toggle segment movement spheres
-        reps[mode][key].movement_spheres.setVisibility($("#ngl-" + mode + " #toggle_movement").prop('checked'));
+        if (mode_short == 'two-groups')
+          reps[mode][key].movement_spheres.setVisibility($("#ngl-" + mode + " #toggle_movement").prop('checked'));
 
         // Update cartoon using selection
         checked = $("#ngl-" + mode + " #ngl_only_gns").prop('checked');
