@@ -46,7 +46,10 @@ def convert3D_to_2D_plane(tm_points, intracellular, normal, centroid):
     points_2d = [np.array([np.dot(p - centroid, locx), np.dot(p - centroid, locy)]) for p in points_plane]
 
     # Needs flipping?
-    if (intracellular and (points_2d[3][1]-points_2d[0][1]) < 0) or (not intracellular and (points_2d[3][1]-points_2d[0][1]) > 0):
+    #if (intracellular and (points_2d[3][1]-points_2d[0][1]) < 0) or (not intracellular and (points_2d[3][1]-points_2d[0][1]) > 0):
+    #    points_2d = np.array([np.array([x[0], -1*x[1]]) for x in points_2d])
+    # UPDATE 21-02-2020 - no mirroring for intracellular side, top-down slicing through GPCR
+    if (intracellular and (points_2d[3][1]-points_2d[0][1]) > 0) or (not intracellular and (points_2d[3][1]-points_2d[0][1]) > 0):
         points_2d = np.array([np.array([x[0], -1*x[1]]) for x in points_2d])
 
     return np.array(points_2d), points_z
@@ -439,10 +442,12 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
     rotations = [0] * 7
     for i in range(0,7):
         rotations[i] = [data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1] if abs(data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1]) < 180 else -1*data['tab4'][gn_dictionary[x]]['angles_set2'][1]-data['tab4'][gn_dictionary[x]]['angles_set1'][1] for x in gns[i]]
-        if intracellular:
-            rotations[i] = -1*sum(rotations[i])/3
-        else:
-            rotations[i] = sum(rotations[i])/3
+        # UPDATE 20-02-2020 No mirroring but top-down through GPCR
+        rotations[i] = sum(rotations[i])/3
+        # if intracellular:
+        #     rotations[i] = -1*sum(rotations[i])/3
+        # else:
+        #     rotations[i] = sum(rotations[i])/3
 
     # ALTERNATIVE: utilize TM tip alignment (needs debugging as some angles seem off, e.g. GLP-1 active vs inactive TM2)
     # Add rotation angle based on TM point placement
