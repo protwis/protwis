@@ -1439,13 +1439,16 @@ function updateStructureRepresentations(mode) {
             o.setVisibility(true);
         }
         // toggle edges
-        reps[mode][key].links.setVisibility(!$("#ngl-" + mode + " #toggle_interactions").prop('checked'));
+        reps[mode][key].links.setVisibility($("#ngl-" + mode + " #toggle_interactions").prop('checked'));
 
         // toggle CA spheres
         reps[mode][key].int_res.setVisibility($("#ngl-" + mode + " #highlight_res").prop('checked'));
 
         // toggle interacting toggle_sidechains
         reps[mode][key].ball_int.setVisibility($("#ngl-" + mode + " #toggle_sidechains_int").prop('checked'));
+
+        // toggle segment movement spheres
+        reps[mode][key].movement_spheres.setVisibility($("#ngl-" + mode + " #toggle_movement").prop('checked'));
 
         // Update cartoon using selection
         checked = $("#ngl-" + mode + " #ngl_only_gns").prop('checked');
