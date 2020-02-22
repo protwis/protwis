@@ -482,7 +482,12 @@ def tm_movement_2D(pdbs1, pdbs2, intracellular, data, gn_dictionary):
     labeled_set1 = [{"label": "TM"+str(i+1), "x": float(plane_set1[i][0]), "y": float(plane_set1[i][1]), "z": float(z_set1[i]), "rotation" : 0} for i in range(0,7)]
     labeled_set2 = [{"label": "TM"+str(i+1), "x": float(plane_set2[i][0]), "y": float(plane_set2[i][1]), "z": float(z_set2[i]), "rotation" : rotations[i]} for i in range(0,7)]
 
-    return {"coordinates_set1" : labeled_set1, "coordinates_set2": labeled_set2, "gns_used": gns}
+    # Convert used GNs to right numbering
+    gns_used = gns[:]
+    for i in range(0,len(gns)):
+        for j in range(0,len(gns[i])):
+            gns_used[i][j] = gn_dictionary[gns[i][j]]
+    return {"coordinates_set1" : labeled_set1, "coordinates_set2": labeled_set2, "gns_used": gns_used}
 
 
 def right_gn_order(pos1, pos2):
