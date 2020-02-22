@@ -871,6 +871,12 @@ function drawPlotPanel(plot_type, plot_div) {
 
             createSnakeplot(raw_data, '#snakeplot-' + plot_id);
             break;
+        case "tm7_plot_major":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"]);
+            break;
         case "tm7_plot_intra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
@@ -900,15 +906,19 @@ function drawPlotPanel(plot_type, plot_div) {
 }
 
 var plotting_options = {
-    'TM1-7 segment (cytosolic)': [
-        ['tm7_plot_intra', '2D plot'],
-        ['tm7_plot_3d_intra','3D plot'],
-        ['tm7_heatmap_intra','Heatmap']
-    ],
     'TM1-7 segment (extracellular)': [
         ['tm7_plot_extra', '2D plot'],
         ['tm7_plot_3d_extra','3D plot'],
         ['tm7_heatmap_extra','Heatmap']
+    ],
+    'TM1-7 segment (class A major pocket)': [
+        ['tm7_plot_major', '2D plot'],
+        ['tm7_heatmap_major','Heatmap']
+    ],
+    'TM1-7 segment (cytosolic)': [
+        ['tm7_plot_intra', '2D plot'],
+        ['tm7_plot_3d_intra','3D plot'],
+        ['tm7_heatmap_intra','Heatmap']
     ],
     'Contacts between generic residue positions': [
         ['ngl', '3D structure'],
@@ -1440,13 +1450,17 @@ function updateStructureRepresentations(mode) {
             o.setVisibility(true);
         }
         // toggle edges
-        reps[mode][key].links.setVisibility(!$("#ngl-" + mode + " #toggle_interactions").prop('checked'));
+        reps[mode][key].links.setVisibility($("#ngl-" + mode + " #toggle_interactions").prop('checked'));
 
         // toggle CA spheres
         reps[mode][key].int_res.setVisibility($("#ngl-" + mode + " #highlight_res").prop('checked'));
 
         // toggle interacting toggle_sidechains
         reps[mode][key].ball_int.setVisibility($("#ngl-" + mode + " #toggle_sidechains_int").prop('checked'));
+
+        // toggle segment movement spheres
+        if (mode_short == 'two-groups')
+          reps[mode][key].movement_spheres.setVisibility($("#ngl-" + mode + " #toggle_movement").prop('checked'));
 
         // Update cartoon using selection
         checked = $("#ngl-" + mode + " #ngl_only_gns").prop('checked');
