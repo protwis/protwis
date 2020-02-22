@@ -4,7 +4,7 @@ from django.db import connection
 from django.db import IntegrityError
 from django.utils.text import slugify
 from django.http import HttpResponse, JsonResponse
-
+from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from residue.models import Residue
@@ -72,21 +72,27 @@ class Command(BaseBuild):
         # delete any existing structure data
         if options['purge']:
             try:
+                print('Started purging bias data')
                 self.purge_bias_data()
+                print('Ended purging bias data')
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
-        #self.bias_list()
         try:
             print('CREATING BIAS DATA')
             print(options['filename'])
             self.prepare_all_data(options['filename'])
             self.logger.info('COMPLETED CREATING BIAS')
-
         except Exception as msg:
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
+
+    def purge_bias_data(self):
+        delete_bias_excel = BiasedExperiment.objects.all()
+        delete_bias_excel.delete()
+        delete_bias_experiment = AnalyzedExperiment.objects.all()
+        delete_bias_experiment.delete()
 
     def loaddatafromexcel(self, excelpath):
         """
@@ -133,13 +139,11 @@ class Command(BaseBuild):
         skipped = 0
         # Analyse the rows from excel and assign the right headers
         temp = []
-        print("start")
-
         for i, r in enumerate(rows, 1):
             # code to skip rows in excel for faster testing
-            if i < 15:
-                continue
-            # if i > 15:
+            # if i < 15:
+            #     continue
+            # if i > 58:
             #     break
             if i % 100 == 0:
                 print(i)
@@ -189,7 +193,8 @@ class Command(BaseBuild):
                 d['protein_activity_quantity'] = None
             if d['protein_efficacy_quantity'] == "":
                 d['protein_efficacy_quantity'] = None
-
+            elif d['protein_efficacy_quantity'] !=None:
+                d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)    
             if not isinstance(d['pathway_bias'], float):
                 d['pathway_bias'] = None
             if not isinstance(d['pathway_bias_initial'], float):
@@ -210,7 +215,7 @@ class Command(BaseBuild):
 
 
             #define G family
-            family = self.define_g_family(d['protein'])
+            family = self.define_g_family(d['protein'],d['protein_assay'])
 
 
             # fetch publicaition
@@ -222,7 +227,7 @@ class Command(BaseBuild):
             if not l:
                 continue
             #fetch endogenous ligand
-            end_ligand  = self.fetch_endogenous(d['receptor'])
+
 
             # fetch reference_ligand
             reference_ligand = self.fetch_ligand(
@@ -237,7 +242,7 @@ class Command(BaseBuild):
             protein = self.fetch_protein(d['receptor'], d['source_file'])
             if protein == None:
                 continue
-
+            end_ligand  = self.fetch_endogenous(protein)
 ## TODO:  check if it was already uploaded
             experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
                                                 publication=pub,
@@ -324,54 +329,72 @@ class Command(BaseBuild):
                 potency = potency* 10**(-6)
             else:
                 pass
+        if potency:
+            potency = "{:.2E}".format(Decimal(potency))
         return potency,p_type
 
-    def define_g_family(self, protein):
+    def define_g_family(self, protein, assay_type):
+        family = None
         if (protein == 'β-arrestin' or
             protein == 'β-arrestin-1 (non-visual arrestin-2)' or
-                protein == 'β-arrestin-2 (non-visual arrestin-3)'):
+            protein == 'β-arrestin-2 (non-visual arrestin-3)'):
             family = 'B-arr'
 
         elif (protein == 'gi/o-family' or
-              protein == 'gαi1' or
-              protein == 'gαi2' or
-              protein == 'gαi3' or
-              protein == 'gαo' or
-              protein == 'gαoA' or
-              protein == 'gαoB'):
+                protein == 'gαi1' or
+                protein == 'gαi2' or
+                protein == 'gαi3' or
+                protein == 'gαo' or
+                protein == 'gαoA' or
+                protein == 'gαi' or
+                protein == 'gαi1' or
+                protein == 'gαi2' or
+                protein == 'gαi3' or
+                protein == 'gαi1/2' or
+                protein == 'gαo' or
+                protein == 'gαoA' or
+                protein == 'gαoB' or
+                protein == 'gαo1' or
+                protein == 'gαt1' or
+                protein == 'gαt2' or
+                protein == 'gαt3' or
+                protein == 'gαz' or
+                protein == 'gαoB'):
             family = 'Gi/o'
 
         elif (protein == 'gq-family' or
-                protein == 'gαq' or
-                protein == 'gαq11' or
-                protein == 'gαq14' or
-                protein == 'gαq14' or
-                protein == 'gαq16' or
-                protein == 'gαq14 (gαq16)'):
+                protein == 'gα12' or
+                protein==' gαq' or
+                protein=='gαq/11' or
+                protein=='gαq/14' or
+                protein=='gαq/15' or
+                protein=='gαq/16'):
             family = 'Gq/11'
 
         elif (protein == 'g12/13-family' or
-              protein == 'gα12' or
-              protein == 'gα13'):
+                protein == 'gα12' or
+                protein == 'gα13'):
             family = 'G12/13'
 
         elif (protein == 'gs-family' or
               protein == 'gαs' or
               protein == 'gαolf'):
             family = 'Gs'
-        else:
-            family = 'No data'
 
+        elif (protein == '' or
+              protein == None):
+            if assay_type == 'pERK1/2 activation' or assay_type =="pERK1-2":
+                family = 'pERK1-2'
+        else:
+            family == protein
         return family
 
-    def fetch_endogenous(self, protein_from_excel):
+    def fetch_endogenous(self, protein):
         try:
             with connection.cursor() as cursor:
-                protein = Protein.objects.filter(entry_name=protein_from_excel)
-                test = protein.get()
-                cursor.execute("SELECT * FROM protein_endogenous_ligands WHERE protein_id =%s", [test.pk])
+                cursor.execute("SELECT * FROM protein_endogenous_ligands WHERE protein_id =%s", [protein.pk])
                 row = cursor.fetchone()
-                end_ligand = Ligand.objects.filter(id=row[0])
+                end_ligand = Ligand.objects.filter(id=row[2])
                 test = end_ligand.get()
 
             return test

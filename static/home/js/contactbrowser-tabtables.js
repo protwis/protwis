@@ -1,8 +1,10 @@
 var filtered_gn_pairs = [];
 var filtered_cluster_groups = [];
+var filtered_gns = [];
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
+    filtered_gns = [];
     pos_contacts_count = {};
     filtered_cluster_groups = [];
     const selector = "#" + $('.main_option:visible').attr('id');
@@ -15,6 +17,8 @@ function filter_browser() {
         }).data().each(function(i) {
             filtered_gn_pairs.push(i['DT_RowId'])
             gns = separatePair(i['DT_RowId']);
+            filtered_gns.push(gns[0]);
+            filtered_gns.push(gns[1]);
 
             // see if there is a key for gns1
             if (!(gns[0] in pos_contacts_count)) pos_contacts_count[gns[0]] = 0;
@@ -1164,9 +1168,7 @@ function renderBrowser(data) {
                           <th colspan="5" rowspan="2">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
-                          <th colspan="2">Sidechain differences</th> \
-                          <th colspan="2"></th> \
-                          <th colspan="2"></th> \
+                          <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
@@ -1276,9 +1278,15 @@ function renderBrowser(data) {
 
 
 
-            // console.log(gn1,angles_1,gn2,all_angles_2);
             all_angles_1 = data['all_angles'][gn1];
             all_angles_2 = data['all_angles'][gn2];
+
+            all_angles_1_set1 = data['all_angles_set1'][gn1];
+            all_angles_1_set2 = data['all_angles_set2'][gn1];
+            all_angles_2_set1 = data['all_angles_set1'][gn2];
+            all_angles_2_set2 = data['all_angles_set2'][gn2];
+
+            all_angles_1 = data['all_angles'][gn1];
             ss_pos1_set1 = [];
             ss_pos1_set2 = [];
             ss_pos2_set1 = [];
@@ -1301,31 +1309,43 @@ function renderBrowser(data) {
                 types_count[key] = [types_count_set1,types_count_set2,types_count_set1-types_count_set2];
             })
 
-            pdbs.forEach(function(pdb){
-                pdb_upper = pdb.toUpperCase();
-                if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
-                if (all_angles_1) {
-                    let d1 = all_angles_1[pdb_upper];
-                    if (d1.length) {
-                        if (set_1.includes(pdb)) {
-                            ss_pos1_set1.push(d1[12]);
-                        } else if (set_2.includes(pdb)) {
-                            ss_pos1_set2.push(d1[12]);
-                        }
-                    }
-                }
-                if (all_angles_2) {
-                    let d2 = all_angles_2[pdb_upper];
-                    if (d2.length) {
-                        if (set_1.includes(pdb)) {
-                            ss_pos2_set1.push(d2[12])
-                        } else if (set_2.includes(pdb)) {
-                            ss_pos2_set2.push(d2[12])
-                        }
-                    }
-                }
-            });
+            // console.log(gn1, all_angles_1_set1, all_angles_1_set2)
+            
+            
+            if (all_angles_1_set1) ss_pos1_set1 = Object.entries(all_angles_1_set1).filter(x => x[1].length > 6).map(x => x[1][12]);
+            if (all_angles_1_set2) ss_pos1_set2 = Object.entries(all_angles_1_set2).filter(x => x[1].length > 6).map(x => x[1][12]);
+            if (all_angles_2_set1) ss_pos2_set1 = Object.entries(all_angles_2_set1).filter(x => x[1].length > 6).map(x => x[1][12]);
+            if (all_angles_2_set2) ss_pos2_set2 = Object.entries(all_angles_2_set2).filter(x => x[1].length > 6).map(x => x[1][12]);
 
+            // pdbs.forEach(function(pdb){
+            //     pdb_upper = pdb.toUpperCase();
+            //     if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
+            //     console.log(gn1,gn2,pdb_upper)
+            //     if (all_angles_1_set1) {
+
+            //         if (all_angles_1_set1.includes())
+
+            //         let d1 = all_angles_1_set1[pdb_upper];
+            //         if (d1.length) {
+            //             if (set_1.includes(pdb)) {
+            //                 ss_pos1_set1.push(d1[12]);
+            //             } else if (set_2.includes(pdb)) {
+            //                 ss_pos1_set2.push(d1[12]);
+            //             }
+            //         }
+            //     }
+            //     if (all_angles_2) {
+            //         let d2 = all_angles_2[pdb_upper];
+            //         if (d2.length) {
+            //             if (set_1.includes(pdb)) {
+            //                 ss_pos2_set1.push(d2[12])
+            //             } else if (set_2.includes(pdb)) {
+            //                 ss_pos2_set2.push(d2[12])
+            //             }
+            //         }
+            //     }
+            // });
+            // console.log(gn1,gn2,ss_pos1_set1,ss_pos1_set2,ss_pos2_set1,ss_pos2_set2)
             dssp = [];
             [ss_pos1_set1,ss_pos1_set2,ss_pos2_set1,ss_pos2_set2].forEach(function(list){
                 if (list.length) {
@@ -1346,7 +1366,7 @@ function renderBrowser(data) {
                 }
                 dssp.push([most,freq]);
             })
-            // console.table(dssp);
+            // console.table(gn1,gn2,dssp);
             dssp_pos1 = '';
             dssp_pos1_freq = '';
             if (dssp[0][0]==dssp[1][0]){
@@ -1425,9 +1445,7 @@ function renderBrowser(data) {
                           <th rowspan="2" colspan="5">Interactions</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
-                          <th colspan="2">Sidechain differences</th> \
-                          <th colspan="2"></th> \
-                          <th colspan="2"></th> \
+                          <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
@@ -1628,9 +1646,7 @@ function renderBrowser(data) {
                           <th rowspan="2">Interaction</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
-                          <th colspan="2">Sidechain differences</th> \
-                          <th colspan="2"></th> \
-                          <th colspan="2"></th> \
+                          <th colspan="6">Sidechain differences</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
@@ -1799,7 +1815,7 @@ function renderBrowser_2(data) {
                           <th colspan="9" rowspan="1">AA occurrence in structure sets (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
                           <th rowspan="2" colspan="5">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
@@ -2088,7 +2104,7 @@ function renderBrowser_2(data) {
                           <th colspan="3" rowspan="1">AA occurrence in set (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
                           <th rowspan="2" colspan="5">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
@@ -2315,7 +2331,7 @@ function renderBrowser_2(data) {
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="2">Conservation in class (%)</th> \
                           <th rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca atoms)*</th> \
+                          <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2">Secondary structure</th> \
@@ -2904,6 +2920,7 @@ function renderBrowser_4(data) {
             var angles1 = v['angles_set1'];
             var angles2 = v['angles_set2'];
             var angles_diff = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -2940,22 +2957,14 @@ function renderBrowser_4(data) {
             // missing_2 = [...new Set([...data['missing'][i]['present'], ...dssp_set2])].length / dssp_set2.length;
 
             missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);
-            missing_2 = Math.round(100*dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
+            missing_2 = Math.round(100 * dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
+            
 
-            pdbs.forEach(function(pdb){
-                pdb_upper = pdb.toUpperCase();
-                if (normalized) pdb_upper = pdb; //using pfs.. do not uppercase
-                if (all_angles_1) {
-                    let d1 = all_angles_1[pdb_upper];
-                    if (d1.length) {
-                        if (dssp_set1.includes(pdb)) {
-                            ss_pos1_set1.push(d1[12]);
-                        } else if (dssp_set2.includes(pdb)) {
-                            ss_pos1_set2.push(d1[12]);
-                        }
-                    }
-                }
-            });
+            all_angles_1_set1 = data['all_angles_set1'][i];
+            all_angles_1_set2 = data['all_angles_set2'][i];
+            if (all_angles_1_set1) ss_pos1_set1 = Object.entries(all_angles_1_set1).filter(x => x[1].length > 6).map(x => x[1][12]);
+            if (all_angles_1_set2) ss_pos1_set2 = Object.entries(all_angles_1_set2).filter(x => x[1].length > 6).map(x => x[1][12]);
+
 
             dssp = [];
             [ss_pos1_set1,ss_pos1_set2].forEach(function(list){
@@ -3103,6 +3112,7 @@ function renderBrowser_4(data) {
             if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles = v['angles_set'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3235,6 +3245,7 @@ function renderBrowser_4(data) {
             if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles = v['angles_set'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3323,11 +3334,11 @@ function renderBrowser_5(data) {
     var thead = "";
     if (data['proteins2']) {
         thead += '<tr> \
-                        <th colspan="1" rowspan="2">Seg</th> \
+                        <th colspan="1" rowspan="2">Seg-<br>ment</th> \
                         <th colspan="1" rowspan="2">Pos</th> \
                         <th colspan="1" rowspan="2">Pair movement</th> \
                         <th colspan="2">Backbone Ca movement</th> \
-                        <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                        <th colspan="1" rowspan="2">Ca half-sphere exposure (Å&sup2;)</th> \
                         <th colspan="3">Sidechain differences</th> \
                         <th colspan="5" rowspan="1">Seq consensus</th> \
                         <th colspan="2" rowspan="1">Class seq consensus</th> \
@@ -3336,8 +3347,8 @@ function renderBrowser_5(data) {
                         <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
                         <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
                         <th colspan="1">Rotamer</th> \
-                        <th colspan="1">SASA</th> \
-                        <th colspan="1">RSA</th> \
+                        <th colspan="1">SASA (Å&sup2;)</th> \
+                        <th colspan="1">RSA (Å&sup2;)</th> \
                         <th colspan="2">AA</th> \
                         <th colspan="3">Conservation (%)</th> \
                         <th colspan="1">AA</th> \
@@ -3363,11 +3374,11 @@ function renderBrowser_5(data) {
                         </tr>';
     } else {
         thead += '<tr> \
-                <th colspan="1" rowspan="2">Seg</th> \
+                <th colspan="1" rowspan="2">Seg-<br>ment</th> \
                 <th colspan="1" rowspan="2">Pos</th> \
                 <th colspan="1" rowspan="2">Pair movement</th> \
                 <th colspan="2">Backbone Ca movement</th> \
-                <th colspan="1" rowspan="2">Ca half-sphere exposure</th> \
+                <th colspan="1" rowspan="2">Ca half-sphere exposure (Å&sup2;)</th> \
                 <th colspan="3">Sidechain differences</th> \
                 <th colspan="2" rowspan="1">Seq consensus</th> \
                 <th colspan="2" rowspan="1">Class seq consensus</th> \
@@ -3376,8 +3387,8 @@ function renderBrowser_5(data) {
                 <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
                 <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
                 <th colspan="1">Rotamer</th> \
-                <th colspan="1">SASA</th> \
-                <th colspan="1">RSA</th> \
+                <th colspan="1">SASA (Å&sup2;)</th> \
+                <th colspan="1">RSA (Å&sup2;)</th> \
                 <th colspan="1">AA</th> \
                 <th colspan="1">Conservation (%)</th> \
                 <th colspan="1">AA</th> \
@@ -3407,6 +3418,7 @@ function renderBrowser_5(data) {
             // console.log(i,v);
             var seg = v['ps'];
             var angles = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3428,14 +3440,21 @@ function renderBrowser_5(data) {
             var diff_seq_cons_freq = Math.round((set1_seq_cons_freq - set2_seq_cons_freq));
 
             var class_cons_aa = v['class_cons'][0];
-            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+            var class_cons_freq = Math.round(100 * v['class_cons'][1])
+
+            if (i in data['distances']) {
+                distance = data['distances'][i]['avg'];
+            } else {
+                // console.log('no ', i, 'in distances');
+                distance = '';
+            }
 
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
                     <td class="dt-center">${seg}</td>
                     <td class="dt-center">${i}</td>
-                    <td class="narrow_col">pair</td>
+                    <td class="narrow_col">${distance}</td>
                     <td class="narrow_col">${angles[0][0]}</td>
                     <td class="narrow_col">${angles[1][0]}</td>
                     <td class="narrow_col">${angles[9][0]}</td>
@@ -3461,6 +3480,7 @@ function renderBrowser_5(data) {
             // console.log(i,v);
             var seg = v['ps'];
             var angles = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3523,7 +3543,7 @@ function gray_scale_table(table) {
             }
         }
     }
-    maxmin = [];
+    var maxmin = [];
     cols.forEach(function(col, index) {
         var max = Math.max.apply(null, col);
         var min = Math.min.apply(null, col);
@@ -3549,7 +3569,7 @@ function gray_scale_table(table) {
             if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
                 scale = Math.abs(value) / c_maxmin[2];
                 var color = { r: 255, g: 255, b: 255 };
-                if (c_header.includes('Set 2') || value < 0) {
+                if ((c_header.includes('Set 2') || value < 0) && !(c_header.includes('Set 1'))) {
                     // if the header is a set two, then make it red
                     color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
                 } else if (value > 0) {

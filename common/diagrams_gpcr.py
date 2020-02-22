@@ -58,9 +58,9 @@ class DrawSnakePlot(Diagram):
             elif hasattr(r, 'family_generic_number'):
                 label = r.family_generic_number
             if r.display_generic_number: displaylabel = r.display_generic_number.label
-            displaylabel = r.amino_acid + str(r.sequence_number) + " \n " + displaylabel
+            displaylabel = r.amino_acid + str(r.sequence_number) + " " + displaylabel
             if hasattr(r, 'frequency'):
-                displaylabel = displaylabel + "\n" + str(r.frequency)
+                displaylabel = displaylabel + " " + str(r.frequency)
             self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
             i += 1
 
@@ -418,8 +418,8 @@ class DrawSnakePlot(Diagram):
             # Make line and box for short version
             points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+30)+" "+str(y2)+" "+str(x2)+" "+str(y2)
             self.output += "<path class='"+name+" short' d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
-            self.output += "<rect class='"+name+" short segment' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2-25)+" y="+str(y2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-            self.output += str("<text class='"+name+" short segment' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2)+" y="+str(y2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+            self.output += "<rect class='"+name+" short segment' onclick='toggleLoop(\"."+name+"\",\"short\",false,this);' x="+str(x2-25)+" y="+str(y2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+            self.output += str("<text class='"+name+" short segment' onclick='toggleLoop(\"."+name+"\",\"short\",false,this);' x="+str(x2)+" y="+str(y2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
             x2 = x1-90*orientation
             y2 = y_max
@@ -478,8 +478,8 @@ class DrawSnakePlot(Diagram):
 
             if name=='N-term': drawn_residues = drawn_residues[::-1]
             self.output += ''.join(drawn_residues)
-            self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation-25)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-            self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+            self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation-25)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+            self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
     def drawSnakePlotLoops(self):
 
@@ -544,8 +544,8 @@ class DrawSnakePlot(Diagram):
 
             #JUST SIMPLE
             self.output += "<path class='"+name+" short' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
-            self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short segment' x="+str(Fx-18)+" y="+str(Fy-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-            self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short segment' x="+str(Fx)+" y="+str(Fy)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+            self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"short\",false,this);' class='"+name+" short segment' x="+str(Fx-18)+" y="+str(Fy-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+            self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"short\",false,this);' class='"+name+" short segment' x="+str(Fx)+" y="+str(Fy)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
             if name=="ICL1" and len(res_helix)>3:
                 self.drawSnakePlotLoop(1)
@@ -695,8 +695,8 @@ class DrawSnakePlot(Diagram):
 
                 box_y = temp_max_y+100*orientation+bend*distance_between_rows*orientation+5*orientation
 
-                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str((x2+x1)/2-18)+" y="+str(box_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str((x2+x1)/2)+" y="+str(box_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str((x2+x1)/2-18)+" y="+str(box_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str((x2+x1)/2)+" y="+str(box_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
                 if box_y>self.high: self.high = box_y
@@ -747,8 +747,8 @@ class DrawSnakePlot(Diagram):
                     max_y = max_y+25
                 else:
                     max_y = max_y-20
-                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(x_at_max_y-18)+" y="+str(max_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(x_at_max_y)+" y="+str(max_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str(x_at_max_y-18)+" y="+str(max_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str(x_at_max_y)+" y="+str(max_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
     def drawSnakePlotLoop(self,number):
         name = "ICL"+str(number)
@@ -874,8 +874,8 @@ class DrawSnakePlot(Diagram):
 
         self.output += output_trace+output_residue_in+output_residue_out
 
-        self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)-18)+" y="+str(max_y-13+30)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-        self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)+" y="+str(max_y+30)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+        self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str(((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)-18)+" y="+str(max_y-13+30)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+        self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)+" y="+str(max_y+30)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
 class DrawHelixBox(Diagram):

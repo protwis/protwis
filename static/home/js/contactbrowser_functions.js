@@ -869,7 +869,7 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').addClass('snakeplot-container');
             plot_div.find('.plot-container').attr('id', 'snakeplot-' + plot_id);
 
-            createSnakeplot(raw_data, 'snakeplot-' + plot_id);
+            createSnakeplot(raw_data, '#snakeplot-' + plot_id);
             break;
         case "tm7_plot_major":
             plot_div.find('.plot-container').removeClass('none');
@@ -939,6 +939,7 @@ var plotting_options = {
         ['boxplot', 'Box plot'],
     ],
     'Residue Properties': [
+        ['snakeplot', 'Snake plot'],
         ['boxplot_angles', 'Box plot '],],
 };
 function generate_display_options() {

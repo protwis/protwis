@@ -2,7 +2,7 @@
 
 {% load static %}
 
-
+{%csrf_token%}
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
