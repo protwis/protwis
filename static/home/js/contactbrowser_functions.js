@@ -1119,8 +1119,13 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
 }
 
 function initilizeInitialPlots() {
-    //default_plot_types = ['force_network', 'flareplot', 'ngl'];
-    default_plot_types = ['tm7_plot_intra', 'tm7_plot_extra', 'ngl'];
+    default_plot_types = ['force_network', 'flareplot', 'ngl'];
+    var mode = get_current_mode();
+    // if single structure - use interaction coloring
+    if (mode == "two-crystal-groups") {
+        default_plot_types = ['tm7_plot_extra', 'tm7_plot_major', 'tm7_plot_intra'];
+    }
+
     $(".plot_row:visible").find(".panel").each(function (i) {
         plot_type = default_plot_types[i];
         plot_div = $(this);
