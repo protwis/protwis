@@ -871,6 +871,13 @@ function drawPlotPanel(plot_type, plot_div) {
 
             createSnakeplot(raw_data, '#snakeplot-' + plot_id);
             break;
+        case "scatterplot":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('scatterplot-container');
+            plot_div.find('.plot-container').attr('id', 'scatterplot-' + plot_id);
+
+            createScatterplot(raw_data, 'scatterplot-' + plot_id);
+            break;
         case "tm7_plot_major":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
@@ -940,6 +947,7 @@ var plotting_options = {
     ],
     'Residue Properties': [
         ['snakeplot', 'Snake plot'],
+        ['scatterplot', 'Scatter-plot'],
         ['boxplot_angles', 'Box plot '],],
 };
 function generate_display_options() {
