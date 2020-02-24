@@ -1,8 +1,10 @@
 var filtered_gn_pairs = [];
 var filtered_cluster_groups = [];
+var filtered_gns = [];
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
+    filtered_gns = [];
     pos_contacts_count = {};
     filtered_cluster_groups = [];
     const selector = "#" + $('.main_option:visible').attr('id');
@@ -15,6 +17,8 @@ function filter_browser() {
         }).data().each(function(i) {
             filtered_gn_pairs.push(i['DT_RowId'])
             gns = separatePair(i['DT_RowId']);
+            filtered_gns.push(gns[0]);
+            filtered_gns.push(gns[1]);
 
             // see if there is a key for gns1
             if (!(gns[0] in pos_contacts_count)) pos_contacts_count[gns[0]] = 0;
