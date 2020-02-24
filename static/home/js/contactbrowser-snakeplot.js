@@ -56,6 +56,7 @@ function createSnakeplot(data,containerSelector) {
         value = dis['avg'];
         scale = Math.abs(value) / data['ngl_max_diff_distance'];
         var color = { r: 255, g: 255, b: 255 };
+        var color2 = { r: 255, g: 255, b: 255 };
         if (value < 0) {
             // if the header is a set two, then make it red
             color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
@@ -93,6 +94,7 @@ function createSnakeplot(data,containerSelector) {
             value = a[0];
             scale = Math.abs(value) / max_values[i];
             var color = { r: 255, g: 255, b: 255 };
+            var color2 = { r: 255, g: 255, b: 255 };
             if (value < 0) {
                 // if the header is a set two, then make it red
                 color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red

@@ -7,7 +7,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
         entry.id = entry.label
         entry.color = "set1"
     });
-    
+
     set2_data.forEach(function (entry) {
         entry.id = entry.label
         entry.color = "set2"
@@ -20,7 +20,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
     set_1_color = "#99ccff";
     set_2_color = "#ff9999";
 
-    circle_r = 33;
+    circle_r = 23;
     line_widths = 3;
     path_r = circle_r + 3 + line_widths;
     line_distance_from_center = path_r;
@@ -48,7 +48,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
         .attr("width", "100%")
         .attr("style", "height: 500px");
 
-     
+
     var defs = svgContainer.append("defs");
 
     defs.append("marker")
@@ -73,9 +73,9 @@ function tm7_plot_3d(containerSelector, plot_data) {
         .attr("orient", "auto-start-reverse")
         .append("path")
         .attr("d", "M 0 0 L 10 5 L 0 10 z")
-        .attr("fill", "grey"); 
-    
-    
+        .attr("fill", "grey");
+
+
     //Filter for the outside glow
     var filter = defs.append("filter")
         .attr("id","glow");
@@ -87,14 +87,14 @@ function tm7_plot_3d(containerSelector, plot_data) {
         .attr("in","coloredBlur");
     feMerge.append("feMergeNode")
         .attr("in", "SourceGraphic");
-    
+
     var filter2 = defs.append("filter")
         .attr("id", "shadow")
         .append("feDropShadow")
         .attr("dx", 0.2)
         .attr("dy", 1)
         .attr("stdDeviation",0.2);
-    
+
     var filter3 = defs.append('filter').attr('id', 'lightMe');
 
     filter3.append('feDiffuseLighting')
@@ -114,7 +114,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
         .attr('k2', '0')
         .attr('k3', '0')
         .attr('k4', '0');
-    
+
     var origin = [250, 250],
      j = 10,
      scale = 10,
@@ -151,7 +151,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
         .rotateY( startAngle)
         .rotateX(-startAngle)
         .scale(scale);
-    
+
     var lines;
 
     var latest_data;
@@ -167,25 +167,25 @@ function tm7_plot_3d(containerSelector, plot_data) {
             rad = Math.atan2(direction[1], direction[0]);
             degrees = -rad * (180 / Math.PI);
             degrees = degrees ? -degrees : 0;
-    
+
             // scaled_rotation = Math.abs(set2_data[i].rotation) < 20 ? 20 : Math.abs(set2_data[i].rotation);
             // from = - scaled_rotation / 2;
             // to = scaled_rotation / 2;
             // cos1 = parseInt(Math.cos(toRadians(from)) * path_r);
             // sin1 = parseInt(Math.sin(toRadians(from)) * path_r);
-    
+
             // cos2 = parseInt(Math.cos(toRadians(to)) * path_r);
             // sin2 = parseInt(Math.sin(toRadians(to)) * path_r);
-    
+
             // arc_flag = Math.sign(set2_data[i].rotation) > 0 ? 1 : 0;
             // arc_flag = 1;
-    
+
             // arc_path = "M" + cos1 + " " + sin1 + " A "+path_r+" "+path_r+" 1 0 " + arc_flag + " " + cos2 + " " + sin2; //Q-32,-32
-    
+
             set2_data[i].rotate_text = degrees;
             set2_data[i].movement = distance;
             // set2_data[i].arc_path = arc_path;
-    
+
             distance_sign = -1;
             if (degrees < -90 && degrees > -180) distance_sign = 1;
             if (degrees > 90 && degrees < 180) distance_sign = 1;
@@ -195,13 +195,13 @@ function tm7_plot_3d(containerSelector, plot_data) {
             set1_data[i].dis_y1 = data[1][i].projected.y + Math.sin(toRadians(degrees + 90*distance_sign)) * line_distance_from_center;
             set1_data[i].dis_x2 = data[1][ii].projected.x + Math.cos(toRadians(degrees + 90*distance_sign)) * line_distance_from_center;
             set1_data[i].dis_y2 = data[1][ii].projected.y + Math.sin(toRadians(degrees + 90 * distance_sign)) * line_distance_from_center;
-            
+
 
 
             set1_data[i].i = parseInt(i);
             set2_data[i].i = parseInt(i)+7;
 
-    
+
         }
 
 
@@ -223,7 +223,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
         xGrid.exit().remove();
 
     /* ----------- POINTS ----------- */
-        
+
         if (initial) {
             sets = svgContainer.selectAll('test').data(data[1], key);
             g_sets = sets
@@ -247,7 +247,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
                 .attr("stroke", "#555")
                 .style("stroke-dasharray", function (d,i) { return d.color=="set1" ? 4 : 0; })
                 .attr('filter', 'url(#lightMe)')
-            
+
             texts = g_sets.append("text")
                 .attr("class","sets_labels")
                 .attr("dy", ".35em")
@@ -256,7 +256,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
         } else {
             g_sets.attr("transform", function (d, i) { dd = data[1][i]; return "translate(" + dd.projected.x + "," + dd.projected.y + ")";})
         }
-        
+
     /* ----------- distance-lines ----------- */
         line_distance_from_center = 35;
         if (initial) {
@@ -278,12 +278,12 @@ function tm7_plot_3d(containerSelector, plot_data) {
                 .attr("y1", function (d, i) { return d.dis_y1 })
                 .attr("x2", function (d, i) { return d.dis_x2 })
                 .attr("y2", function (d, i) { return d.dis_y2 })
-        
+
         }
-    
+
 
         /* ----------- y-Scale ----------- */
-        
+
         // var yScale = svg.selectAll('path.yScale').data(data[2]);
 
         // yScale
@@ -491,7 +491,7 @@ function tm7_plot_3d(containerSelector, plot_data) {
         .attr("viewBox", min_x + " " + min_y + " " + (max_x - min_x) + " " + (max_y - min_y))
         .attr("width", "100%")
         .attr("style", "height: 500px");
-   
+
 
 
 
