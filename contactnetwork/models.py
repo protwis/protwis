@@ -4,6 +4,9 @@ from django.db import models
 import numpy as np
 import statistics
 
+
+distance_scaling_factor = 10000
+
 class InteractingResiduePair(models.Model):
     referenced_structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     res1 = models.ForeignKey('residue.Residue', related_name='residue1', on_delete=models.CASCADE)
@@ -98,9 +101,9 @@ def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, st
                     stdevdists = 0
                 else:
                     stdevdists = statistics.stdev(dists)
-                group_distances[key] = stdevdists/100
+                group_distances[key] = stdevdists/distance_scaling_factor
             else:
-                group_distances[key] = sum(dists)/len(dists)/100
+                group_distances[key] = sum(dists)/len(dists)/distance_scaling_factor
     else:
         # NORMALIZE CODE
         for d in ds:
@@ -129,9 +132,9 @@ def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, st
                     # stdevofmeans = np.std(means, ddof=1)
                     stdevofmeans = statistics.stdev(means)
 
-                group_distances[key] = stdevofmeans/100
+                group_distances[key] = stdevofmeans/distance_scaling_factor
             else:
                 meanofmeans = sum(means)/len(means)
-                group_distances[key] = meanofmeans/100
+                group_distances[key] = meanofmeans/distance_scaling_factor
 
     return group_distances

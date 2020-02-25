@@ -1999,6 +1999,22 @@ def InteractionBrowserData(request):
             data['tm_movement_2D']["classA_ligands"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, 2, data, r_class_translate_from_classA)
             data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True, data, r_class_translate_from_classA)
             data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False, data, r_class_translate_from_classA)
+
+            # viewbox
+            diff_x = 0
+            diff_y = 0
+            for x in data['tm_movement_2D']: # 2D set
+                setx = [z["x"] for y in ["coordinates_set1", "coordinates_set2"] for z in data['tm_movement_2D'][x][y]]
+                sety = [z["y"] for y in ["coordinates_set1", "coordinates_set2"] for z in data['tm_movement_2D'][x][y]]
+
+                if diff_x < (max(setx) - min(setx)):
+                    diff_x = max(setx) - min(setx)
+
+                if diff_y < (max(sety) - min(sety)):
+                    diff_y = max(sety) - min(sety)
+
+            data['tm_movement_2D']["viewbox_size"] = {"diff_x": diff_x, "diff_y" : diff_y}
+
             print("Helical movement calculations", time.time() - helical_time)
 
         # calculate distance movements
@@ -2037,8 +2053,8 @@ def InteractionBrowserData(request):
                 # Get variables
                 d1, d2 = dis1.stats_key[label],dis2.stats_key[label]
                 # Correct decimal
-                mean1, mean2 = d1[1]/1000,d2[1]/1000
-                std1,std2 = d1[2]/1000,d2[2]/1000
+                mean1, mean2 = d1[1],d2[1]
+                std1,std2 = d1[2],d2[2]
                 var1,var2 = std1**2,std2**2
                 n1, n2 = d1[4],d2[4]
 
@@ -2051,23 +2067,21 @@ def InteractionBrowserData(request):
                 if gn2 not in total:
                     total[gn2] = {}
                 total[gn1][gn2] = total[gn2][gn1] = round(mean_diff,1)
-                # Make easier readable output
-                d1[5] = [x / 1000 for x in d1[5]]
-                d2[5] = [x / 1000 for x in d2[5]]
-                individual_pdbs_1 = dict(zip(d1[6], d1[5]))
-                individual_pdbs_2 = dict(zip(d2[6], d2[5]))
+                # # Make easier readable output
+                # individual_pdbs_1 = dict(zip(d1[6], d1[5]))
+                # individual_pdbs_2 = dict(zip(d2[6], d2[5]))
 
-                if n1>1 and n2>1 and var1>0 and var2>0:
-                    ## T test to assess seperation of data (only if N>1 and there is variance)
-                    t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
-                    df = n1+n2 - 2
-                    p = 1 - stats.t.cdf(t_stat_welch,df=df)
-                else:
-                    p = 0
+                # if n1>1 and n2>1 and var1>0 and var2>0:
+                #     ## T test to assess seperation of data (only if N>1 and there is variance)
+                #     t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+                #     df = n1+n2 - 2
+                #     p = 1 - stats.t.cdf(t_stat_welch,df=df)
+                # else:
+                #     p = 0
 
-                diff[label] = [round(mean_diff,1),[std1,std2],[mean1,mean2],[n1,n2],p,[individual_pdbs_1,individual_pdbs_2]]
+                # diff[label] = [round(mean_diff,1),[std1,std2],[mean1,mean2],[n1,n2],p,[individual_pdbs_1,individual_pdbs_2]]
 
-            diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1][0])))
+            # diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1][0])))
             # print(diff)
             print('done diff',time.time()-start)
             start = time.time()

@@ -1,4 +1,4 @@
-function tm7_plot(containerSelector, plot_data) {
+function tm7_plot(containerSelector, plot_data, viewBox) {
 
 
     // Ideas
@@ -109,6 +109,14 @@ function tm7_plot(containerSelector, plot_data) {
     min_x = Math.min.apply(Math, [...set1_data, ...set2_data].map(a => a.x)) - padding;
     max_x = Math.max.apply(Math, [...set1_data, ...set2_data].map(a => a.x)) + padding;
 
+    console.log('viewBox', viewBox)
+    viewBox_x = viewBox['diff_x']*scaling_factor+2*padding
+    viewBox_y = viewBox['diff_y'] * scaling_factor + 2 * padding
+    
+    // fix min_x,min_y to reflect the viewBox from input
+    min_y = min_y - (viewBox_y-(max_y-min_y))/2
+    min_x = min_x - (viewBox_x-(max_x-min_x))/2
+
     circle_r = 23;
     line_widths = 3;
     path_r = circle_r + 3 + line_widths;
@@ -160,7 +168,7 @@ function tm7_plot(containerSelector, plot_data) {
     $(containerSelector).css("position","relative");
 
     var svgContainer = d3v4.select(containerSelector).append("svg")
-        .attr("viewBox", min_x + " " + min_y + " " + (max_x - min_x) + " " + (max_y - min_y))
+        .attr("viewBox", min_x + " " + min_y + " " + viewBox_x + " " + viewBox_y)
         .attr("width", "100%")
         .attr("style", "height: 500px");
 

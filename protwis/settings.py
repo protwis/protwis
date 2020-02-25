@@ -139,7 +139,7 @@ if DEBUG:
        },
        'handlers': {
            'django': {
-               'level': 'DEBUG',
+               'level': 'WARNING',
                'class': 'logging.FileHandler',
                'filename': 'logs/django.log',
                'formatter': 'verbose'
@@ -161,7 +161,7 @@ if DEBUG:
            'django': {
                'handlers':['django'],
                'propagate': True,
-               'level':'DEBUG',
+               'level':'WARNING',
            },
            'build': {
                'handlers': ['build'],
