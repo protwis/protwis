@@ -882,19 +882,19 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
-            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"]);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
         case "tm7_plot_intra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
-            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["intracellular"]);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["intracellular"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
         case "tm7_plot_extra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
-            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"]);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
         case "tm7_plot_3d_intra":
             plot_div.find('.plot-container').removeClass('none');
