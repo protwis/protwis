@@ -192,7 +192,7 @@ function pastePDBs() {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
-    pdbs = $('.pastePDBs:visible').val().toUpperCase();
+    pdbs = $('.pastePDBs:visible').val().toUpperCase().trim();
     pdbs = pdbs.split(/[ ,]+/);
     resetselection(1);
     $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
@@ -207,14 +207,18 @@ function pastePDBs() {
         var popOverSettings = {
             placement: 'bottom',
             container: 'body',
-            title: 'PDBs not found', //Sepcify the selector here
+            title: 'One or more PDB(s) not found:', //Sepcify the selector here
             content: pdbs
         }
         $('.pastePDBs').popover(popOverSettings);
         $('.pastePDBs').popover('show');
-    } else {
+        $('.pastePDBs').on('shown.bs.popover',function() {
+         setTimeout(function() {
+          $('.pastePDBs').popover("destroy")}, 3000);
+        })
+    } /*else {
         $('.pastePDBs').popover('destroy');
-    }
+    }*/
     oTable[mode].order([
         [20, 'desc']
     ]);
@@ -321,14 +325,14 @@ function showPDBtable(element) {
                                             </div> \
                                             <span class="pull-right glyphicon glyphicon-info-sign" title="Highest resolution (for each receptor, species and state)" style="font-size: 15px;cursor: pointer;"></span> \
                                             </div>');
-        
+
 
         $(element + ' .btn-toggle').click(function() {
-            $(this).find('.btn').toggleClass('active');  
+            $(this).find('.btn').toggleClass('active');
             $(this).find('.btn').toggleClass('btn-primary');
             $(this).find('.btn').toggleClass('btn-default');
-            $(this).find('.active').html($(this).find('.active').attr("value"));  
-            $(this).find('.btn-default').html('&nbsp;');  
+            $(this).find('.active').html($(this).find('.active').attr("value"));
+            $(this).find('.btn-default').html('&nbsp;');
             toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find('.active').attr("value"))
         })
 
@@ -343,10 +347,18 @@ function showPDBtable(element) {
 
         if (mode!="Single structure"){
           $(element + ' .modal-header').append('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-          $(element + ' .modal-header').append(' | PDB code: <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
+          $(element + ' .modal-header').append(' | PDB code: <span><input type=text class="pastePDBs" placeholder="Paste PDBs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
         } else {
-          $(element + ' .modal-header').append('PDB code: <span><input type=text class="pastePDBs" placeholder="Paste pdb"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
+          $(element + ' .modal-header').append('PDB code: <span><input type=text class="pastePDBs" placeholder="Paste PDB"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
         }
+        
+        $(element + ' .modal-header .pastePDBs').keypress(function(event) {
+            var keycode = (event.keyCode ? event.keyCode : event.which);
+            if(keycode == '13'){
+               pastePDBs();
+            }
+        });
+
 
         $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export</button></span>');
         // $(element + ' .modal-header').append(' | <span><button type="button" onclick="toggle_best(\''+mode+'\',7);" class="btn btn-xs btn-primary">Best</button></span>');
@@ -358,7 +370,7 @@ function showPDBtable(element) {
         }
         // $(element + ' .modal-header').append(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
-        
+
         console.time('DataTable');
         oTable[mode] = $(element + ' .tableview table').DataTable({
             "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
@@ -378,7 +390,7 @@ function showPDBtable(element) {
                 distinctReceptors = [...new Set(cols[1])];
                 distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
                 distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
-                
+
                 return "Showing " + iEnd + " structures for "+distinctReceptors.length+" receptors and "+distinctReceptorState.length+" distinct receptor-state pairs"+filtered_text;
               },
             'scrollX': true,
