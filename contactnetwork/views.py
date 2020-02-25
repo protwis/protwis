@@ -1999,6 +1999,22 @@ def InteractionBrowserData(request):
             data['tm_movement_2D']["classA_ligands"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, 2, data, r_class_translate_from_classA)
             data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, True, data, r_class_translate_from_classA)
             data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, False, data, r_class_translate_from_classA)
+
+            # viewbox
+            diff_x = 0
+            diff_y = 0
+            for x in data['tm_movement_2D']: # 2D set
+                setx = [z["x"] for y in ["coordinates_set1", "coordinates_set2"] for z in data['tm_movement_2D'][x][y]]
+                sety = [z["y"] for y in ["coordinates_set1", "coordinates_set2"] for z in data['tm_movement_2D'][x][y]]
+
+                if diff_x < (max(setx) - min(setx)):
+                    diff_x = max(setx) - min(setx)
+
+                if diff_y < (max(sety) - min(sety)):
+                    diff_y = max(sety) - min(sety)
+
+            data['tm_movement_2D']["viewbox_size"] = {"diff_x": diff_x, "diff_y" : diff_y}
+
             print("Helical movement calculations", time.time() - helical_time)
 
         # calculate distance movements
