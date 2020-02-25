@@ -760,6 +760,8 @@ function drawPlotPanel(plot_type, plot_div) {
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
+    plot_div.find('.plot-title').html( "&nbsp;" + plot_type);
+
     console.log("SET UP PLOT", plot_type, plot_id, mode);
     switch (mode) {
         case "two-crystal-groups":
@@ -913,20 +915,21 @@ function drawPlotPanel(plot_type, plot_div) {
 }
 
 var plotting_options = {
-    'TM1-7 segment (extracellular)': [
-        ['tm7_plot_extra', '2D plot'],
-        ['tm7_plot_3d_extra','3D plot'],
-        ['tm7_heatmap_extra','Heatmap']
-    ],
-    'TM1-7 segment (class A major pocket)': [
-        ['tm7_plot_major', '2D plot'],
-        ['tm7_heatmap_major','Heatmap']
-    ],
-    'TM1-7 segment (cytosolic)': [
-        ['tm7_plot_intra', '2D plot'],
-        ['tm7_plot_3d_intra','3D plot'],
-        ['tm7_heatmap_intra','Heatmap']
-    ],
+    'TM1-7 segment' : {
+        'extracellular': [
+            ['tm7_plot_extra', '2D plot'],
+            ['tm7_plot_3d_extra','3D plot'],
+            ['tm7_heatmap_extra','Heatmap']
+        ],
+        'class A major pocket': [
+            ['tm7_plot_major', '2D plot'],
+            ['tm7_heatmap_major','Heatmap']
+        ],
+        'cytosolic': [
+            ['tm7_plot_intra', '2D plot'],
+            ['tm7_plot_3d_intra','3D plot'],
+            ['tm7_heatmap_intra','Heatmap']
+    ]},
     'Contacts between generic residue positions': [
         ['ngl', '3D structure'],
         ['flareplot', 'Flare Plot'],
@@ -950,6 +953,9 @@ var plotting_options = {
         ['scatterplot', 'Scatter-plot'],
         ['boxplot_angles', 'Box plot '],],
 };
+
+
+                
 function generate_display_options() {
     dropdown_html = '<div class="dropdown" style="display: inline;"> \
                           <button class="btn btn-xs btn-primary dropdown-toggle" type="button" data-toggle="dropdown"> \
@@ -959,10 +965,22 @@ function generate_display_options() {
     for (let key in plotting_options) {
 
         if (after_first) dropdown_html += '<li class="divider"></li>';
-        dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key + '</strong></li>'
-        plotting_options[key].forEach(function (opt) {
-            dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
-        });
+        if ($.isArray(plotting_options[key])) {
+            dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key + '</strong></li>'
+            plotting_options[key].forEach(function (opt) {
+                dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
+            });
+        } else {
+            dropdown_html += '<li class="dropdown-submenu dropleft"><a tabindex="0" href="#">' + key + '</a>'
+            dropdown_html += '<ul class="dropdown-menu">'
+            for (let key2 in plotting_options[key]) {
+                dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key2 + '</strong></li>'
+                plotting_options[key][key2].forEach(function (opt) {
+                    dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
+                });
+            }
+            dropdown_html += '</ul></li>'
+        }
         after_first = true;
     }
     dropdown_html += '</ul></div>';
