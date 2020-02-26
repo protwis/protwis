@@ -49,6 +49,30 @@ function createSnakeplot(data,containerSelector) {
 
     var colors = {}
     colors['distance'] = {}
+    colors['distance_abs'] = {}
+
+
+    index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
+    neg_and_positives = ['core_distance','sasa','rsa', 'hse']
+
+    path_groups = {}
+    path_groups_lookup = {}
+    $(containerSelector).find('.helix_path').each(function () {
+        path_id = $(this).attr('id');
+        res_ids = $(this).attr('previous_res');
+        path_groups[path_id] = { 'distance': [], 'distance_abs': [] };
+        
+        $.each(index_names, function (i, name) {
+            path_groups[path_id][name] = [];
+            if (neg_and_positives.includes(name)) {
+                path_groups[path_id][name+"_abs"] = [];
+            }
+        })
+
+        $.each(res_ids.split(","), function (i, res_id) {
+            path_groups_lookup[res_id] = path_id;
+        });
+    });
 
     $.each(data['distances'], function (gn, dis) {
         seq_pos = data['snakeplot_lookup'][gn];
@@ -59,11 +83,13 @@ function createSnakeplot(data,containerSelector) {
         var color2 = { r: 255, g: 255, b: 255 };
         if (value < 0) {
             // if the header is a set two, then make it red
+            scale_abs = (1-scale)*0.5;
             color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
             color2 = { r: 255-(255-128)*scale, g: 255-(255)*scale, b: 255-(255-128)*scale }; //purple
-        } else if (value > 0) {
+        } else if (value >= 0) {
             // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
             // This is also used for single set/structure
+            scale_abs = (scale)*0.5+0.5;
             color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
             color2 = { r: 255-(255)*scale, b: 255-(255)*scale, g: 128 }; //green
         }
@@ -72,10 +98,15 @@ function createSnakeplot(data,containerSelector) {
         // grey
         var color_grey = { r: 255*(1-scale), g: 255*(1-scale), b: 255*(1-scale) };
         var hex_grey = rgb2hex(color_grey.r, color_grey.g, color_grey.b);
-        colors['distance'][seq_pos] = [hex,value,scale,hex_grey,hex2];
+        colors['distance'][seq_pos] = [value,scale_abs,data['ngl_max_diff_distance']];
+        colors['distance_abs'][seq_pos] = [Math.abs(value), scale, data['ngl_max_diff_distance']];
+        
+        if (seq_pos in path_groups_lookup) {
+            path_groups[path_groups_lookup[seq_pos]]['distance'].push(scale_abs);
+            path_groups[path_groups_lookup[seq_pos]]['distance_abs'].push(scale);
+        }
     });
-
-    index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
+    // console.log(colors)
     // get maximum values
     var max_values = {}
     $.each(data['tab4'], function (gn, v) {
@@ -83,6 +114,9 @@ function createSnakeplot(data,containerSelector) {
             if (!(i in max_values)) {
                 max_values[i] = 0;
                 colors[index_names[i]] = {};
+                if (neg_and_positives.includes(index_names[i])) {
+                    colors[index_names[i]+"_abs"] = {};
+                }
             }
             if (Math.abs(a[0])>max_values[i]) max_values[i] = Math.abs(a[0])
             // console.log(gn, i, a);
@@ -93,15 +127,21 @@ function createSnakeplot(data,containerSelector) {
             seq_pos = data['snakeplot_lookup'][gn];
             value = a[0];
             scale = Math.abs(value) / max_values[i];
+            neg_and_positive = false;
+            if (neg_and_positives.includes(index_names[i])) {
+                neg_and_positive = true;
+            }
             var color = { r: 255, g: 255, b: 255 };
             var color2 = { r: 255, g: 255, b: 255 };
             if (value < 0) {
                 // if the header is a set two, then make it red
+                scale_abs = (1-scale)*0.5;
                 color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
                 color2 = { r: 255-(255-128)*scale, g: 255-(255)*scale, b: 255-(255-128)*scale }; //purple
-            } else if (value > 0) {
+            } else if (value >= 0) {
                 // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
                 // This is also used for single set/structure
+                scale_abs = (scale)*0.5+0.5;
                 color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
                 color2 = { r: 255-(255-153)*scale, b: 255-(255-204)*scale, g: 255 }; //green
             }
@@ -110,10 +150,71 @@ function createSnakeplot(data,containerSelector) {
             // grey
             var color_grey = { r: 255*(1-scale), g: 255*(1-scale), b: 255*(1-scale) }; 
             var hex_grey = rgb2hex(color_grey.r, color_grey.g, color_grey.b);
-            colors[index_names[i]][seq_pos] = [hex,value,scale,hex_grey,hex2];
+
+            if (neg_and_positive) {
+                colors[index_names[i]][seq_pos] = [value,scale_abs,max_values[i]];
+                colors[index_names[i] + '_abs'][seq_pos] = [Math.abs(value), scale, max_values[i]];
+                
+                if (seq_pos in path_groups_lookup) {
+                    path_groups[path_groups_lookup[seq_pos]][index_names[i]].push(scale_abs);
+                    path_groups[path_groups_lookup[seq_pos]][index_names[i] + '_abs'].push(scale);
+                }
+            } else {
+                colors[index_names[i]][seq_pos] = [value, scale, max_values[i]];
+                if (seq_pos in path_groups_lookup) {
+                    path_groups[path_groups_lookup[seq_pos]][index_names[i]].push(scale);
+                }
+            }
             if (!(i in max_values)) max_values[i] = 0;
             // console.log(gn, i, a);
         });
+    });
+    // console.log(path_groups, path_groups_lookup);
+
+    function color_by_scale(color, scale) {
+
+        // case "rwb": // red-white-blue
+        // case "bwr": // blue-white-red
+        // case "ryg": // red-yellow-green
+        // case "gyr": // green-yellow-red
+        // case "rgb":
+        // case "wr": // white-red
+        // case "wg": // white-green
+        // case "wb": // white-blue
+        // case "rb": // red-blue
+        // case "br": // blue-red
+        // case "wp": // white-purple
+        // case "grey": // grey
+
+        return numberToColorGradient(scale, 1, color)
+        
+    }
+
+    var color_options = {
+        'rwb': 'red-white-blue',
+        'bwr': 'blue-white-red',
+        'ryg': 'red-yellow-green',
+        'gyr': 'green-yellow-red',
+        'wr': 'white-red',
+        'wg': 'white-green',
+        'wb': 'white-blue',
+        'wy': 'white-yellow',
+        'wo': 'white-orange',
+        'wp': 'white-purple',
+        'rb': 'red-blue',
+        'br': 'blue-red',
+        'grey': 'grey'
+    }
+
+    var select_color_options = ''
+    $.each(color_options, function (key, description) {
+        select_color_options += '<option value="' + key + '">' + description + '</option>';
+    });
+
+
+    var select_data_options = ''
+    $.each(colors, function (key, description) {
+        select_data_options += '<option value="' + key + '">' + key + '</option>';
     });
     // console.log(colors);
 
@@ -135,69 +236,41 @@ function createSnakeplot(data,containerSelector) {
     
         content += '<table><tr><td>Fill color:</td><td><select id="snakeplot_color">' +
             '<option value="none">None</option>' +
-            '<option value="distance">Distance to all</option>' +
-            '<option value="core_distance">Distance to 7TM axis</option>' +
-            '<option value="a_angle">Angle to helix</option>' + 
-            '<option value="outer_angle">Rotamer</option>' + 
-            '<option value="tau_angle">Tau angle</option>' + 
-            '<option value="theta">Theta angle</option>' + 
-            '<option value="phi">Phi dihedral</option>' + 
-            '<option value="psi">Psi dihedral</option>' + 
-            '<option value="tau">Theta dihedral</option>' + 
-            '<option value="hse">HSE</option>' + 
-            '<option value="sasa">SASA</option>' + 
-            '<option value="rsa">RSA</option>' + 
-            '<option value="presense">Position Presence</option>' +
+            select_data_options +
             '</select></td><td>' +
             '<select id=fill_color>' +
-            '<option value=0>Red-Blue</option>'+
-            '<option value=4>Purple-Green</option>'+
-            '<option value=3>Grey (Abs values)</option>'+
+            select_color_options +
             '</select></td></tr>'
             ;
         content += '<tr><td>Border color:</td><td><select id="snakeplot_color_border">' +
             '<option value="none">None</option>' +
-            '<option value="distance">Distance to all</option>' +
-            '<option value="core_distance">Distance to 7TM axis</option>' +
-            '<option value="a_angle">Angle to helix</option>' + 
-            '<option value="outer_angle">Rotamer</option>' + 
-            '<option value="tau_angle">Tau angle</option>' + 
-            '<option value="theta">Theta angle</option>' + 
-            '<option value="phi">Phi dihedral</option>' + 
-            '<option value="psi">Psi dihedral</option>' + 
-            '<option value="tau">Theta dihedral</option>' + 
-            '<option value="hse">HSE</option>' + 
-            '<option value="sasa">SASA</option>' + 
-            '<option value="rsa">RSA</option>' + 
-            '<option value="presense">Position Presence</option>' +
+            select_data_options +
             '</select></td><td>' +
             '<select id=border_color>' +
-            '<option value=0>Red-Blue</option>'+
-            '<option value=4 >Purple-Green</option>'+
-            '<option value=3 selected>Grey (Abs values)</option>'+
+            select_color_options +
             '</select></td></tr>'
             ;
         content += '<tr><td>Text color:</td><td><select id="snakeplot_color_text">' +
                 '<option value="none">None</option>' +
-                '<option value="distance">Distance to all</option>' +
-                '<option value="core_distance">Distance to 7TM axis</option>' +
-                '<option value="a_angle">Angle to helix</option>' + 
-                '<option value="outer_angle">Rotamer</option>' + 
-                '<option value="tau_angle">Tau angle</option>' + 
-                '<option value="theta">Theta angle</option>' + 
-                '<option value="phi">Phi dihedral</option>' + 
-                '<option value="psi">Psi dihedral</option>' + 
-                '<option value="tau">Theta dihedral</option>' + 
-                '<option value="hse">HSE</option>' + 
-                '<option value="sasa">SASA</option>' + 
-                '<option value="rsa">RSA</option>' + 
-                '<option value="presense">Position Presence</option>' +
+                select_data_options +
                 '</select></td><td>' +
                 '<select id=text_color>' +
-                '<option value=0>Red-Blue</option>'+
-                '<option value=4 selected>Purple-Green</option>'+
-                '<option value=3>Grey (Abs values)</option>'+
-                '</select></td></tr></table>'
+                select_color_options +
+                '</select></td></tr>'
+                ;
+        content += '<tr><td>Backbone:</td><td><select id="snakeplot_color_backbone">' +
+                '<option value="none">None</option>' +
+                select_data_options +
+                '</select></td><td>' +
+                '<select id=backbone_color>' +
+                select_color_options +
+                '</select></td></tr>'
+                ;
+        content += '<tr><td>Shift right:</td><td><select id="snakeplot_move_circle">' +
+                '<option value="none">None</option>' +
+                select_data_options +
+                '</select></td><td>' +
+                '</td></tr></table>'
                 ;
         content += '</span>';
         newDiv.innerHTML = content;
@@ -259,6 +332,19 @@ function createSnakeplot(data,containerSelector) {
             change_text();
         });
 
+
+        d3.select(containerSelector).select("#backbone_color").on("change", function () {
+            change_backbone();
+        });
+
+        d3.select(containerSelector).select("#snakeplot_color_backbone").on("change", function () {
+            change_backbone();
+        });
+
+        d3.select(containerSelector).select("#snakeplot_move_circle").on("change", function () {
+            change_movement();
+        });
+
         function change_fill() {
             fill_color = $(containerSelector + " #snakeplot_color").val();
             console.log('change fill color to!', fill_color);
@@ -285,14 +371,17 @@ function createSnakeplot(data,containerSelector) {
                     return true;
                 }
 
-                if (fill_color!='none') {
-                    color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#fff","#fff"];
+                if (fill_color != 'none') {
+                    if (pos_id in colors[fill_color]) {
+                        $(this).attr("fill", color_by_scale(color_id,colors[fill_color][pos_id][1]));
+                    } else {
+                        $(this).attr("fill", "#fff");
+                    }
                 } else {
-                    color = ["#fff", 0, 0,"#fff","#fff"];     
+                    $(this).attr("fill", "#fff");
                 }
-                
-                $(this).attr("fill", color[color_id]);
-                $(this).attr("fill_value", color[2]);  
+                // console.log(pos_id,color[1],color_by_scale(color_id,color[1]))
+                // $(this).attr("fill_value", color[2]);  
 
                 if ($(containerSelector + " #snakeplot_color_text").val() == 'none') {
                     $(containerSelector).find('#'+pos_id+'t').removeAttr("fill");
@@ -335,23 +424,29 @@ function createSnakeplot(data,containerSelector) {
                     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
                     return true;
                 }
-                if (fill_color!='none') {
-                    color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#000","#000"];
-                } else {
-                    color = ["#000", 0, 0,"#000","#000"];     
-                }
-                
-                
-                $(this).attr("stroke", color[color_id]);
-                $(this).attr("stroke_value", color[2]);          
-                $(this).attr("stroke-width", 1); 
-                // $(this).css("opacity", 0.3);
-                if (color[2] > 0.1) {    
-                    $(this).attr("stroke-width", 3); 
-                    $(this).css("opacity", 1);
+
+                if (fill_color != 'none') {
+                    if (pos_id in colors[fill_color]) {
+                        $(this).attr("stroke", color_by_scale(color_id,colors[fill_color][pos_id][1]));
+                        $(this).attr("stroke-width", 3); 
+                    } else {
+                        $(this).attr("stroke", "#ccc");
+                    }
                 } else {
                     $(this).attr("stroke", "#ccc");
                 }
+                
+                
+                // $(this).attr("stroke", color[color_id]);
+                // $(this).attr("stroke_value", color[2]);          
+                // $(this).attr("stroke-width", 1); 
+                // // $(this).css("opacity", 0.3);
+                // if (color[2] > 0.1) {    
+                //     $(this).attr("stroke-width", 3); 
+                //     $(this).css("opacity", 1);
+                // } else {
+                //     $(this).attr("stroke", "#ccc");
+                // }
             });
         }
 
@@ -375,19 +470,106 @@ function createSnakeplot(data,containerSelector) {
                     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
                     return true;
                 }
-                if (fill_color!='none') {
-                    color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#000",0,0,"#000","#000"];
+
+
+                if (fill_color != 'none') {
+                    if (pos_id in colors[fill_color]) {
+                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(color_id,colors[fill_color][pos_id][1]));
+                        $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
+                    } else {
+                        $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
+                        $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
+                    }
                 } else {
-                    color = ["#000", 0, 0,"#000","#000"];     
+                    $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
+                    $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
                 }
                 
-                $(containerSelector).find('#' + pos_id + 't').attr("fill", color[color_id]);
+                // $(containerSelector).find('#' + pos_id + 't').attr("fill", color[color_id]);
                 // $(this).css("opacity", 0.3);
                 // if (color[2] > 0.1) {    
                     
                 // } else {
                 //     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
                 // }
+            });
+        }
+
+        function change_backbone() {
+            fill_color = $(containerSelector + " #snakeplot_color_backbone").val();
+            color_id  = $(containerSelector+" #backbone_color").val();
+            console.log('change backbone color to!',color_id,fill_color);
+            $(containerSelector).find('.helix_path').each(function () {
+                path_id = $(this).attr('id');
+
+                // if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
+                //     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
+                //     return true;
+                // }
+
+                fill_scale = path_groups[path_id][fill_color];
+
+                const fill_sum = fill_scale.reduce((a, b) => a + b, 0);
+                const fill_avg = (fill_sum / fill_scale.length) || 0;
+
+                if (fill_color != 'none' && fill_scale.length!=0) {
+                        $(this).attr("stroke", color_by_scale(color_id,fill_avg));
+                        $(this).attr("stroke-width", 6);
+                } else {
+                    $(this).attr("stroke", "grey");
+                    $(this).attr("stroke-width", 2);
+                }
+                
+            });
+        }
+
+        function change_movement() {
+            fill_color = $(containerSelector + " #snakeplot_move_circle").val();
+            console.log('change movement to!', fill_color);
+            
+            color_filtered = d3.select(containerSelector).select("#color_filtered").property("checked");
+
+            $(containerSelector).find('.rcircle').each(function () {
+
+                pos_id = $(this).attr('id');
+                original_title = $(this).attr('original_title');
+                gn = false;
+                if (original_title.split(" ")[1].length) {
+                    // this has GN
+                    seg = original_title.split(" ")[1].split(".")[0];
+                    gn = original_title.split(" ")[1].split("x")[1];
+                }
+                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
+                    // $(this).attr("fill", "#fff");
+                    // $(this).attr("stroke", "#ccc");  
+                    // $(this).attr("stroke-width", 1); 
+                    // $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
+                    return true;
+                }
+
+                if (fill_color!='none') {
+                    color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#fff","#fff"];
+                } else {
+                    color = ["#fff", 0, 0,"#fff","#fff"];     
+                }
+
+                max_momement = 25;
+
+                current_x = parseInt($(this).attr("original_cx"));
+                current_x_text = parseInt($(containerSelector).find('#' + pos_id + 't').attr("original_x"));
+                $(this).attr("cx", current_x + color[1] * max_momement);
+                $(containerSelector).find('#' + pos_id + 't').attr("x",current_x_text + color[1] * max_momement)
+                console.log(gn, pos_id, color[1]);
+                
+                // $(this).attr("fill", color[color_id]);
+                // $(this).attr("fill_value", color[2]);  
+
+
+                // if (color[2] < 0.05 && $(this).attr("stroke_value")<0.05) {
+                //     $(this).css("opacity", 0.3);
+                //     $(containerSelector).find('#'+pos_id+'t').css("opacity", 0.1);
+                // }
+                             
             });
         }
 

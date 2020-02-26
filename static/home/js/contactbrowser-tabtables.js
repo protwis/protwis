@@ -3794,38 +3794,62 @@ function numberToColorGradient(value, max, palette, neg_and_pos = false) {
     if (value < 0)
       value = 0
 
+
+    var red = {red:255, green:0, blue: 0}
+    var red = {red:195, green:74, blue: 54}
+    var blue = {red:0, green:0, blue: 255}
+    var blue = {red:0, green:140, blue: 204}
+    var green = {red:0, green:255, blue: 0}
+    var green = {red:0, green:201, blue: 167}
+    var white = {red:255, green:255, blue: 255}
+    var yellow = {red:255, green:255, blue: 0}
+    var yellow = {red:255, green:255, blue: 0}
+    var black = {red:0, green:0, blue: 0}
+    
     switch(palette){
         case "rwb": // red-white-blue
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          return colorGradient(value/max, red, white, blue)
           break;
         case "bwr": // blue-white-red
-          return colorGradient(value/max, {red:0, green:0, blue: 255}, {red:255, green:255, blue: 255}, {red:255, green:0, blue: 0})
+          return colorGradient(value/max, blue, white, red)
           break;
         case "ryg": // red-yellow-green
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:0, green:255, blue: 0}, {red:0, green:255, blue: 0})
+          return colorGradient(value/max, red, yellow, green)
           break;
         case "gyr": // green-yellow-red
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 0}, {red:0, green:255, blue: 0})
+          return colorGradient(value/max, green, yellow, red)
           break;
         case "rgb":
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          return colorGradient(value/max, red, green, blue)
           break;
         case "wr": // white-red
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:255, green:0, blue: 0})
+          return colorGradient(value/max, white, red)
           break;
         case "wg": // white-green
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:255, blue: 0})
+          return colorGradient(value/max, white, green)
           break;
         case "wb": // white-blue
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          return colorGradient(value/max, white, blue)
           break;
+        case "wy": // white-yellow
+            return colorGradient(value/max, white, yellow)
+            break;
+        case "wo": // white-orange
+            return colorGradient(value/max, white, {red:255, green:150, blue: 113})
+            break;
         case "rb": // red-blue
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:0, green:0, blue: 255})
+          return colorGradient(value/max, red, blue)
           break;
+        case "wp": // white-purple
+            return colorGradient(value / max, white, { red: 128, green: 0, blue: 128 })
+            break;
+        case "grey": // grey
+            return colorGradient(value / max, white, black)
+            break;
         // ADDON if you're missing gradient values
         case "br": // blue-red
         default:
-          return colorGradient(value/max, {red:0, green:0, blue: 255}, {red:255, green:0, blue: 0})
+          return colorGradient(value/max, blue, red)
           break;
     }
 }
