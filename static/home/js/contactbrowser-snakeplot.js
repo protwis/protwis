@@ -44,10 +44,6 @@ function createSnakeplot(data,containerSelector) {
     index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
     neg_and_positives = ['core_distance','sasa','rsa', 'hse']
     nice_index_names = {
-        'distance': 'Distance',
-        'distance_abs': 'Distance (abs)',
-        'core_distance': 'Distance to 7TM axis',
-        'core_distance_abs': 'Distance to 7TM axis (abs)',
         'a_angle' : 'Angle to helix/7TM axes',
         'outer_angle': 'Rotamer',
         'tau': 'Tau',
@@ -61,6 +57,10 @@ function createSnakeplot(data,containerSelector) {
         'hse': 'HSE',
         'hse_abs': 'HSE (abs)',
         'tau_angle': 'Tau dihedral',
+        'distance': 'Distance',
+        'distance_abs': 'Distance (abs)',
+        'core_distance': 'Distance to 7TM axis',
+        'core_distance_abs': 'Distance to 7TM axis (abs)',
         
         
     }
@@ -154,7 +154,7 @@ function createSnakeplot(data,containerSelector) {
         });
     });
     // console.log(path_groups, path_groups_lookup);
-
+    console.log('colors', colors);
     function color_by_scale(scale, color1, color2, color3) {
 
         // case "rwb": // red-white-blue
@@ -209,29 +209,49 @@ function createSnakeplot(data,containerSelector) {
 
 
     var color_options = {
+        'w': 'white',
         'r': 'red',
         'b': 'blue',
+        'black': 'black',
         'g': 'green',
         'y': 'yellow',
-        'w': 'white',
         'o': 'orange',
         'p': 'purple',
-        'black': 'black',
     }
+
+    var select_color_options_white = ''
+    $.each(color_options, function (key, description) {
+        checked = '';
+        if (description == 'white') checked = 'selected';
+        select_color_options_white += '<option value="' + description + '" '+checked+'>' + description + '</option>';
+    });
+
+    var select_color_options_red = ''
+    $.each(color_options, function (key, description) {
+        checked = '';
+        if (description == 'red') checked = 'selected';
+        select_color_options_red += '<option value="' + description + '" '+checked+'>' + description + '</option>';
+    });
 
     var select_color_options = ''
     $.each(color_options, function (key, description) {
+        checked = '';
         select_color_options += '<option value="' + description + '">' + description + '</option>';
     });
 
-
     var select_data_options = ''
-    $.each(colors, function (key, description) {
-        select_data_options += '<option value="' + key + '">' + nice_index_names[key] + '</option>';
+    $.each(nice_index_names, function (key, description) {
+        select_data_options += '<option value="' + key + '">' + description + '</option>';
+    });
+
+    var select_data_options_backbone = ''
+    $.each(nice_index_names, function (key, description) {
+        if (description.includes('Distance'))
+            select_data_options_backbone += '<option value="' + key + '">' + description + '</option>';
     });
     // console.log(colors);
 
-    text_content = {'aa': 'Amino Acid', 'gn': 'Generic No', 'both':'Both', 'none':'Empty'}
+    text_content = {'aa': 'Amino Acid', 'gn': 'Generic Residue Number', 'both':'Both', 'none':'Empty'}
     var text_content_options = ''
     $.each(text_content, function (key, description) {
         text_content_options += '<option value="' + key + '">' + description + '</option>';
@@ -244,82 +264,85 @@ function createSnakeplot(data,containerSelector) {
         $(containerSelector).find(".controls-panel").remove();
 
         newDiv.setAttribute("class", "controls-panel");
-        content = '<span class="pull-right snakeplot_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">' +
-            'Only color filtered set <input id="color_filtered" type="checkbox" checked><br>';
+        content = '<span class="pull-right snakeplot_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">';
         
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
     
-        content += '<table><tr><td>Text content (included set):</td><td><select id="text_included">' +
+        content += '<table><tr><td>Residue text (kept positions):</td><td><select id="text_included">' +
         text_content_options +
-        '</select></td></tr><tr><td>Text content (excluded set):</td><td><select id="text_excluded">' +
+        '</select></td></tr><tr><td>Residue text (filtered out positions):</td><td><select id="text_excluded">' +
         text_content_options +
         '</select></td></tr></table>'
         ;
 
 
-        content += '<table><tr><th>Color</th><th>By data</th><th>Color gradient</th></tr><tr><td>Circle fill:</td><td><select id="snakeplot_color">' +
-            '<option value="false">None</option>' +
-            select_data_options +
-            '</select></td><td>' +
-            '<select id=fill_color1 class=fill_color>' +
-            select_color_options +
-            '</select>' +
-            '<select id=fill_color2 class=fill_color>' +
-            select_color_options +
-            '</select>' +
-            '<select id=fill_color3 class=fill_color>' +
-            '<option value="none">None</option>' +
-            select_color_options +
-            '</select></td></tr>'
-            ;
-        content += '<tr><td>Circle border:</td><td><select id="snakeplot_color_border">' +
+        content += '<table><tr><th>Area</th><th>Property</th><th>Color1</th><th>Color2</th><th>Color3</th><th>Only kept positions</th></tr>' +
+            '<tr><td>Residue fill:</td><td><select id="snakeplot_color" class="residue_fill">' +
             '<option value="none">None</option>' +
             select_data_options +
             '</select></td><td>' +
-            '<select id=border_color1 class=border_color>' +
-            select_color_options +
-            '</select>' +
-            '<select id=border_color2 class=border_color>' +
-            select_color_options +
-            '</select>' +
-            '<select id=border_color3 class=border_color>' +
+            '<select id=fill_color1 class="fill_color residue_fill">' +
+            select_color_options_white +
+            '</select></td><td>' +
+            '<select id=fill_color2 class="fill_color residue_fill">' +
+            select_color_options_red +
+            '</select></td><td>' +
+            '<select id=fill_color3 class="fill_color residue_fill">' +
             '<option value="none">None</option>' +
             select_color_options +
-            '</select></td></tr>'
+            '</select></td>' +
+            '<td><input id="fill_filtered" class="residue_fill" type="checkbox" checked></td></tr> '
             ;
-        content += '<tr><td>Text:</td><td><select id="snakeplot_color_text">' +
+        content += '<tr><td>Residue border:</td><td><select id="snakeplot_color_border" class="residue_border">' +
+            '<option value="none">None</option>' +
+            select_data_options +
+            '</select></td><td>' +
+            '<select id=border_color1 class="border_color residue_border">' +
+            select_color_options_white +
+            '</select></td><td>' +
+            '<select id=border_color2 class="border_color residue_border">' +
+            select_color_options_red +
+            '</select></td><td>' +
+            '<select id=border_color3 class="border_color residue_border">' +
+            '<option value="none">None</option>' +
+            select_color_options +
+            '</select></td>' +
+            '<td><input id="border_filtered" type="checkbox" checked class="residue_border"></td></tr> '
+            ;
+        content += '<tr><td>Residue Text:</td><td><select id="snakeplot_color_text" class="residue_text">' +
                 '<option value="none">None</option>' +
                 select_data_options +
                 '</select></td><td>' +
-                '<select id=text_color1 class=text_color>' +
-                select_color_options +
-                '</select>' +
-                '<select id=text_color2 class=text_color>' +
-                select_color_options +
-                '</select>' +
-                '<select id=text_color3 class=text_color>' +
+                '<select id=text_color1 class="text_color residue_text">' +
+                select_color_options_white +
+                '</select></td><td>' +
+                '<select id=text_color2 class="text_color residue_text">' +
+                select_color_options_red +
+                '</select></td><td>' +
+                '<select id=text_color3 class="text_color residue_text">' +
                 '<option value="none">None</option>' +
                 select_color_options +
-                '</select></td></tr>'
+                '</select></td>' +
+                '<td><input id="text_filtered" type="checkbox" checked class="residue_text"></td></tr> '
                 ;
-        content += '<tr><td>Backbone:</td><td><select id="snakeplot_color_backbone">' +
+        content += '<tr><td colspan=6><hr></td></tr><tr><td>Backbone Line:</td><td><select id="snakeplot_color_backbone">' +
                 '<option value="none">None</option>' +
-                select_data_options +
+                select_data_options_backbone +
                 '</select></td><td>' +
                 '<select id=backbone_color1 class=backbone_color>' +
                 select_color_options +
-                '</select>' +
+                '</select></td><td>' +
                 '<select id=backbone_color2 class=backbone_color>' +
                 select_color_options +
-                '</select>' +
+                '</select></td><td>' +
                 '<select id=backbone_color3 class=backbone_color>' +
                 '<option value="none">None</option>' +
                 select_color_options +
                 '</select></td></tr>'
                 ;
-        content += '<tr><td>Shift circle:</td><td><select id="snakeplot_move_circle">' +
+        content += '<tr><td>Backbone:</td><td><select id="snakeplot_move_circle">' +
                 '<option value="none">None</option>' +
-                select_data_options +
+                select_data_options_backbone +
                 '</select></td><td>' +
                 '</td></tr></table>'
                 ;
@@ -427,28 +450,16 @@ function createSnakeplot(data,containerSelector) {
         });
 
 
-
-        d3.select(containerSelector).select("#snakeplot_color").on("change", function () {
+        $(containerSelector+ " .residue_fill").on("change", function () {
             change_fill();
         });
 
-        $(containerSelector+ " .fill_color").on("change", function () {
-            change_fill();
-        });
-
-        $(containerSelector+ " .border_color").on("change", function () {
+        $(containerSelector+ " .residue_border").on("change", function () {
             change_stroke();
         });
 
-        d3.select(containerSelector).select("#snakeplot_color_border").on("change", function () {
-            change_stroke();
-        });
 
-        $(containerSelector+ " .text_color").on("change", function () {
-            change_text();
-        });
-
-        d3.select(containerSelector).select("#snakeplot_color_text").on("change", function () {
+        $(containerSelector+ " .residue_text").on("change", function () {
             change_text();
         });
 
@@ -469,7 +480,7 @@ function createSnakeplot(data,containerSelector) {
             fill_color = $(containerSelector + " #snakeplot_color").val();
             console.log('change fill color to!', fill_color);
             
-            color_filtered = d3.select(containerSelector).select("#color_filtered").property("checked");
+            color_filtered = d3.select(containerSelector).select("#fill_filtered").property("checked");
 
             color_id1  = $(containerSelector+" #fill_color1").val();
             color_id2  = $(containerSelector+" #fill_color2").val();
@@ -485,21 +496,23 @@ function createSnakeplot(data,containerSelector) {
                     seg = original_title.split(" ")[1].split(".")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
-                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
+
+                if (fill_color == 'none') {
                     $(this).attr("fill", "#fff");
-                    $(this).attr("stroke", "#ccc");  
-                    $(this).attr("stroke-width", 1); 
-                    $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
                     return true;
                 }
 
-                if (fill_color != 'none') {
-                    if (pos_id in colors[fill_color]) {
-                        var scale = colors[fill_color][pos_id][1];
-                        $(this).attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
-                    } else {
-                        $(this).attr("fill", "#fff");
-                    }
+                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
+                    $(this).attr("fill", "#fff");
+                    // $(this).attr("stroke", "#ccc");  
+                    // $(this).attr("stroke-width", 1); 
+                    // $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
+                    return true;
+                }
+
+                if (pos_id in colors[fill_color]) {
+                    var scale = colors[fill_color][pos_id][1];
+                    $(this).attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
                 } else {
                     $(this).attr("fill", "#fff");
                 }
@@ -527,6 +540,7 @@ function createSnakeplot(data,containerSelector) {
             color_id1  = $(containerSelector+" #border_color1").val();
             color_id2  = $(containerSelector+" #border_color2").val();
             color_id3  = $(containerSelector+" #border_color3").val();
+            color_filtered = d3.select(containerSelector).select("#border_filtered").property("checked");
             console.log('change stroke color to!');
 
             $(containerSelector).find('.rcircle').each(function () {
@@ -538,22 +552,25 @@ function createSnakeplot(data,containerSelector) {
                     seg = original_title.split(" ")[1].split(".")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
-                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
-                    $(this).attr("fill", "#fff");
-                    $(this).attr("stroke", "#ccc");  
-                    $(this).attr("stroke-width", 1); 
-                    $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
+
+
+                if (fill_color == 'none') {
+                    $(this).attr("stroke", "#ccc");
                     return true;
                 }
 
-                if (fill_color != 'none') {
-                    if (pos_id in colors[fill_color]) {
-                        var scale = colors[fill_color][pos_id][1];
-                        $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
-                        $(this).attr("stroke-width", 5); 
-                    } else {
-                        $(this).attr("stroke", "#ccc");
-                    }
+                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
+                    // $(this).attr("fill", "#fff");
+                    $(this).attr("stroke", "#ccc");  
+                    $(this).attr("stroke-width", 1); 
+                    // $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
+                    return true;
+                }
+
+                if (pos_id in colors[fill_color]) {
+                    var scale = colors[fill_color][pos_id][1];
+                    $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    $(this).attr("stroke-width", 5); 
                 } else {
                     $(this).attr("stroke", "#ccc");
                 }
@@ -578,7 +595,9 @@ function createSnakeplot(data,containerSelector) {
             color_id1  = $(containerSelector+" #text_color1").val();
             color_id2  = $(containerSelector+" #text_color2").val();
             color_id3  = $(containerSelector+" #text_color3").val();
-            console.log('change text color to!');
+            color_filtered = d3.select(containerSelector).select("#text_filtered").property("checked");
+            console.log('change text color to!', fill_color, 'color_filtered', color_filtered);
+            console.log(color_id1, color_id2, color_id3);
 
             $(containerSelector).find('.rcircle').each(function () {
                 original_title = $(this).attr('original_title');
@@ -589,20 +608,24 @@ function createSnakeplot(data,containerSelector) {
                     seg = original_title.split(" ")[1].split(".")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
+
+                if (fill_color == 'none') {
+                    $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
+                    $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
+                    return true;
+                }
+
                 if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
                     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
+                    $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
                     return true;
                 }
 
 
-                if (fill_color != 'none') {
-                    if (pos_id in colors[fill_color]) {
-                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
-                        $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
-                    } else {
-                        $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
-                        $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
-                    }
+                if (pos_id in colors[fill_color]) {
+                    var scale = colors[fill_color][pos_id][1];
+                    $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
                 } else {
                     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
                     $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
@@ -632,6 +655,12 @@ function createSnakeplot(data,containerSelector) {
                 //     return true;
                 // }
 
+                if (fill_color == 'none') {
+                    $(this).attr("stroke", "grey");
+                    $(this).attr("stroke-width", 2);
+                    return
+                }
+
                 fill_scale = path_groups[path_id][fill_color];
 
                 const fill_sum = fill_scale.reduce((a, b) => a + b, 0);
@@ -640,10 +669,7 @@ function createSnakeplot(data,containerSelector) {
                 if (fill_color != 'none' && fill_scale.length!=0) {
                         $(this).attr("stroke", color_by_scale(fill_avg,color_id1,color_id2,color_id3));
                         $(this).attr("stroke-width", 6);
-                } else {
-                    $(this).attr("stroke", "grey");
-                    $(this).attr("stroke-width", 2);
-                }
+                } 
                 
             });
         }
@@ -665,11 +691,7 @@ function createSnakeplot(data,containerSelector) {
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
                 if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
-                    // $(this).attr("fill", "#fff");
-                    // $(this).attr("stroke", "#ccc");  
-                    // $(this).attr("stroke-width", 1); 
-                    // $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
-                    return true;
+                    // return true;
                 }
 
                 if (fill_color!='none') {
@@ -684,16 +706,6 @@ function createSnakeplot(data,containerSelector) {
                 current_x_text = parseInt($(containerSelector).find('#' + pos_id + 't').attr("original_x"));
                 $(this).attr("cx", current_x + color[1] * max_momement);
                 $(containerSelector).find('#' + pos_id + 't').attr("x",current_x_text + color[1] * max_momement)
-                console.log(gn, pos_id, color[1]);
-                
-                // $(this).attr("fill", color[color_id]);
-                // $(this).attr("fill_value", color[2]);  
-
-
-                // if (color[2] < 0.05 && $(this).attr("stroke_value")<0.05) {
-                //     $(this).css("opacity", 0.3);
-                //     $(containerSelector).find('#'+pos_id+'t').css("opacity", 0.1);
-                // }
                              
             });
         }
