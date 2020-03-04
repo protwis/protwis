@@ -161,6 +161,7 @@ class DrawSnakePlot(Diagram):
         skip = 0
         indentX = -self.residue_radius+3
         indentY = 3
+        row_residues = []
         for i in range(0,res_num):
             prevGeneric_number = prevGeneric.split('x')[1]
             currGeneric_number = rs[i][2].split('x')[1]
@@ -219,13 +220,14 @@ class DrawSnakePlot(Diagram):
             if i==0: self.TBCoords[helix_num]['extra'] = [x,y]
             if i==res_num-1: self.TBCoords[helix_num]['intra'] = [x,y]
 
-
+            row_residues.append(str(rs[i][0]))
             if (row_pos==1 and row!=0) or (skip==1 and row_pos==2): # if need for trace
                 id_for_path = str(rs[i-1][0])
                 if helix_num%2==0: id_for_path = str(rs[i][0])
                 if row_length==3: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX-40)+" "+str(prevY+30)+", "+str(x-21)+" "+str(y-8)+" T"+str(x)+" "+str(y)
                 if row_length>=4: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX-40)+" "+str(prevY+30)+", "+str(x-24)+" "+str(y-7)+" T"+str(x)+" "+str(y)
-                output_trace += "<path id='path_"+id_for_path+"' d='" + points + "' stroke='grey' fill='none' stroke-width='2'  />"
+                output_trace += "<path class='helix_path' id='path_" + id_for_path + "' segment='" + str(helix_num) + "' previous_res='" + ','.join(row_residues[:-1]) + "' d='" + points + "' stroke='grey' fill='none' stroke-width='2'  />"
+                row_residues = [row_residues[-1]]
 
             # alternate between 4 and 3 res per row
             if row_length>3 and row_pos>=row_length:
