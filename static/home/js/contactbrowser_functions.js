@@ -898,6 +898,12 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
             tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
+        case "tm7_plot_3d_major":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"]);
+            break;
         case "tm7_plot_3d_intra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
@@ -923,6 +929,7 @@ var plotting_options = {
         ],
         'class A major pocket': [
             ['tm7_plot_major', '2D plot'],
+            ['tm7_plot_3d_major','3D plot'],
             ['tm7_heatmap_major','Heatmap']
         ],
         'cytosolic': [
@@ -955,7 +962,7 @@ var plotting_options = {
 };
 
 
-                
+
 function generate_display_options() {
     dropdown_html = '<div class="dropdown" style="display: inline;"> \
                           <button class="btn btn-xs btn-primary dropdown-toggle" type="button" data-toggle="dropdown"> \
