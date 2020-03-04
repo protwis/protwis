@@ -118,63 +118,86 @@ function createScatterplot(data,containerSelector) {
         return [X, Y, names];
     }
 
+    index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
+    neg_and_positives = ['core_distance','sasa','rsa', 'hse']
+    nice_index_names = {
+        'a_angle' : 'Angle to helix/7TM axes',
+        'outer_angle': 'Rotamer',
+        'tau': 'Tau',
+        'phi': 'Phi',
+        'psi': 'Psi',
+        'sasa': 'SASA',
+        'sasa_abs': 'SASA (abs)',
+        'rsa': 'RSA',
+        'rsa_abs': 'RSA (abs)',
+        'theta': 'Theta',
+        'hse': 'HSE',
+        'hse_abs': 'HSE (abs)',
+        'tau_angle': 'Tau dihedral',
+        'distance': 'Distance',
+        'distance_abs': 'Distance (abs)',
+        'core_distance': 'Distance to 7TM axis',
+        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+    }
+
     x_axis_type = 'distance';
     y_axis_type = 'outer_angle';
+    draw_plot(x_axis_type, y_axis_type);
+    function draw_plot(x_axis_type,y_axis_type) {
+        plot_data = get_values(x_axis_type,y_axis_type)
+        console.log('plot_data', plot_data);
 
-    plot_data = get_values(x_axis_type,y_axis_type)
-    console.log('plot_data', plot_data);
-
-    var trace1 = {
-        x: plot_data[0],
-        y: plot_data[1],
-        mode: 'markers+text',
-        type: 'scatter',
-        name: 'Team A',
-        text: plot_data[2],
-        textposition: 'top center',
-        textfont: {
-          family:  'Raleway, sans-serif'
-        },
-        marker: { size: 12 }
-      };
-      
-      var data = [ trace1 ];
-      
-      var layout = {
-        xaxis: {
-              title: {
-                  text: x_axis_type,
-                  font: {
-                      family: 'Courier New, monospace',
-                      size: 18,
-                      color: '#7f7f7f'
-                  }
-              }
-        },
-        yaxis: {
-            title: {
-                text: y_axis_type,
-                font: {
-                    family: 'Courier New, monospace',
-                    size: 18,
-                    color: '#7f7f7f'
+        var trace1 = {
+            x: plot_data[0],
+            y: plot_data[1],
+            mode: 'markers+text',
+            type: 'scatter',
+            name: 'Team A',
+            text: plot_data[2],
+            textposition: 'top center',
+            textfont: {
+            family:  'Raleway, sans-serif'
+            },
+            marker: { size: 12 }
+        };
+        
+        var data = [ trace1 ];
+        
+        var layout = {
+            xaxis: {
+                title: {
+                    text: nice_index_names[x_axis_type],
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
                 }
+            },
+            yaxis: {
+                title: {
+                    text: nice_index_names[y_axis_type],
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                }
+            },
+            legend: {
+            y: 0.5,
+            yref: 'paper',
+            font: {
+                family: 'Arial, sans-serif',
+                size: 20,
+                color: 'grey',
             }
-        },
-        legend: {
-          y: 0.5,
-          yref: 'paper',
-          font: {
-            family: 'Arial, sans-serif',
-            size: 20,
-            color: 'grey',
-          }
-        },
-        title:'Scatterplot of residue properities'
-      };
-      
-      Plotly.newPlot(containerSelector, data, layout);
-
+            },
+            title:'Scatterplot of residue properities'
+        };
+        
+        Plotly.newPlot(containerSelector, data, layout);
+    }
 
     create_overlay();
 
@@ -185,13 +208,12 @@ function createScatterplot(data,containerSelector) {
 
         newDiv.setAttribute("class", "controls-panel");
         content = '<span class="pull-right snakeplot_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">' +
-            'Generic number with AA<input id="generic" type="checkbox"><br>' +
-            'Only color filtered set <input id="color_filtered" type="checkbox" checked><br>';
+            // 'Generic number with AA<input id="generic" type="checkbox"><br>' +
+            'Only plot kept positions <input id="color_filtered" type="checkbox" checked><br>';
         
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
     
-        content += '<table><tr><td>Fill color:</td><td><select id="snakeplot_color">' +
-            '<option value="none">None</option>' +
+        content += '<table><tr><th>X-axis</th><th>Y-axis</th></tr><tr><td><select id="change_x" class="change_axis">' +
             '<option value="distance">Distance to all</option>' +
             '<option value="core_distance">Distance to 7TM axis</option>' +
             '<option value="a_angle">Angle to helix</option>' + 
@@ -205,19 +227,13 @@ function createScatterplot(data,containerSelector) {
             '<option value="sasa">SASA</option>' + 
             '<option value="rsa">RSA</option>' + 
             '<option value="presense">Position Presence</option>' +
-            '</select></td><td>' +
-            '<select id=fill_color>' +
-            '<option value=0>Red-Blue</option>'+
-            '<option value=4>Purple-Green</option>'+
-            '<option value=3>Grey (Abs values)</option>'+
-            '</select></td></tr>'
+            '</select></td>'
             ;
-        content += '<tr><td>Border color:</td><td><select id="snakeplot_color_border">' +
-            '<option value="none">None</option>' +
+        content += '<td><select id="change_y" class="change_axis">' +
             '<option value="distance">Distance to all</option>' +
             '<option value="core_distance">Distance to 7TM axis</option>' +
             '<option value="a_angle">Angle to helix</option>' + 
-            '<option value="outer_angle">Rotamer</option>' + 
+            '<option value="outer_angle" selected>Rotamer</option>' + 
             '<option value="tau_angle">Tau angle</option>' + 
             '<option value="theta">Theta angle</option>' + 
             '<option value="phi">Phi dihedral</option>' + 
@@ -227,34 +243,7 @@ function createScatterplot(data,containerSelector) {
             '<option value="sasa">SASA</option>' + 
             '<option value="rsa">RSA</option>' + 
             '<option value="presense">Position Presence</option>' +
-            '</select></td><td>' +
-            '<select id=border_color>' +
-            '<option value=0>Red-Blue</option>'+
-            '<option value=4 >Purple-Green</option>'+
-            '<option value=3 selected>Grey (Abs values)</option>'+
-            '</select></td></tr>'
-            ;
-        content += '<tr><td>Text color:</td><td><select id="snakeplot_color_text">' +
-                '<option value="none">None</option>' +
-                '<option value="distance">Distance to all</option>' +
-                '<option value="core_distance">Distance to 7TM axis</option>' +
-                '<option value="a_angle">Angle to helix</option>' + 
-                '<option value="outer_angle">Rotamer</option>' + 
-                '<option value="tau_angle">Tau angle</option>' + 
-                '<option value="theta">Theta angle</option>' + 
-                '<option value="phi">Phi dihedral</option>' + 
-                '<option value="psi">Psi dihedral</option>' + 
-                '<option value="tau">Theta dihedral</option>' + 
-                '<option value="hse">HSE</option>' + 
-                '<option value="sasa">SASA</option>' + 
-                '<option value="rsa">RSA</option>' + 
-                '<option value="presense">Position Presence</option>' +
-                '</select></td><td>' +
-                '<select id=text_color>' +
-                '<option value=0>Red-Blue</option>'+
-                '<option value=4 selected>Purple-Green</option>'+
-                '<option value=3>Grey (Abs values)</option>'+
-                '</select></td></tr></table>'
+            '</select></td></tr></table>'
                 ;
         content += '</span>';
         newDiv.innerHTML = content;
@@ -284,169 +273,15 @@ function createScatterplot(data,containerSelector) {
         });
 
 
-        d3.select(containerSelector_hash).select("#color_filtered").on("change", function () {
-            change_fill();
-            change_stroke();
-            change_text();
+
+        $(containerSelector_hash + " .change_axis").on("change", function () {
+            x_axis_type = $(containerSelector_hash + " #change_x").val();
+            y_axis_type = $(containerSelector_hash + " #change_y").val();
+            console.log('change axis!',x_axis_type,y_axis_type);
+            draw_plot(x_axis_type, y_axis_type);
         });
 
-
-
-        d3.select(containerSelector_hash).select("#snakeplot_color").on("change", function () {
-            change_fill();
-        });
-
-        d3.select(containerSelector_hash).select("#fill_color").on("change", function () {
-            change_fill();
-        });
-
-        d3.select(containerSelector_hash).select("#border_color").on("change", function () {
-            change_stroke();
-        });
-
-        d3.select(containerSelector_hash).select("#snakeplot_color_border").on("change", function () {
-            change_stroke();
-        });
-
-        d3.select(containerSelector_hash).select("#text_color").on("change", function () {
-            change_text();
-        });
-
-        d3.select(containerSelector_hash).select("#snakeplot_color_text").on("change", function () {
-            change_text();
-        });
-
-        function change_fill() {
-            fill_color = $(containerSelector_hash + " #snakeplot_color").val();
-            console.log('change fill color to!', fill_color);
-            
-            color_filtered = d3.select(containerSelector_hash).select("#color_filtered").property("checked");
-            color_id  = $(containerSelector_hash+" #fill_color").val();
-            fill_grey = color_id == '3' ? true : false;
-
-            $(containerSelector_hash).find('.rcircle').each(function () {
-
-                pos_id = $(this).attr('id');
-                original_title = $(this).attr('original_title');
-                gn = false;
-                if (original_title.split(" ")[1].length) {
-                    // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
-                    gn = original_title.split(" ")[1].split("x")[1];
-                }
-                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
-                    $(this).attr("fill", "#fff");
-                    $(this).attr("stroke", "#ccc");  
-                    $(this).attr("stroke-width", 1); 
-                    $(containerSelector_hash).find('#' + pos_id + 't').attr("fill", "#ddd");
-                    return true;
-                }
-
-                if (fill_color!='none') {
-                    color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#fff","#fff"];
-                } else {
-                    color = ["#fff", 0, 0,"#fff","#fff"];     
-                }
-                
-                $(this).attr("fill", color[color_id]);
-                $(this).attr("fill_value", color[2]);  
-
-                if ($(containerSelector_hash + " #snakeplot_color_text").val() == 'none') {
-                    $(containerSelector_hash).find('#'+pos_id+'t').removeAttr("fill");
-                    $(containerSelector_hash).find('#' + pos_id + 't').attr("fill", "#000");
-                    if (fill_grey && color[2]>0.5) {
-                        $(containerSelector_hash).find('#'+pos_id+'t').attr("fill", "#fff");
-                    }
-                }
-
-                $(this).css("opacity", 1);
-                $(this).removeAttr("fill-opacity");
-                $(containerSelector_hash).find('#'+pos_id+'t').css("opacity", 1);
-                // if (color[2] < 0.05 && $(this).attr("stroke_value")<0.05) {
-                //     $(this).css("opacity", 0.3);
-                //     $(containerSelector_hash).find('#'+pos_id+'t').css("opacity", 0.1);
-                // }
-                             
-            });
-        }
-
-        function change_stroke() {
-            fill_color = $(containerSelector_hash + " #snakeplot_color_border").val();
-            color_id  = $(containerSelector_hash+" #border_color").val();
-            fill_grey = color_id == '3' ? true : false;
-            console.log('change stroke color to!');
-
-            $(containerSelector_hash).find('.rcircle').each(function () {
-                original_title = $(this).attr('original_title');
-                gn = false;
-                pos_id = $(this).attr('id');
-                if (original_title.split(" ")[1].length) {
-                    // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
-                    gn = original_title.split(" ")[1].split("x")[1];
-                }
-                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
-                    $(this).attr("fill", "#fff");
-                    $(this).attr("stroke", "#ccc");  
-                    $(this).attr("stroke-width", 1); 
-                    $(containerSelector_hash).find('#' + pos_id + 't').attr("fill", "#ddd");
-                    return true;
-                }
-                if (fill_color!='none') {
-                    color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#000","#000"];
-                } else {
-                    color = ["#000", 0, 0,"#000","#000"];     
-                }
-                
-                
-                $(this).attr("stroke", color[color_id]);
-                $(this).attr("stroke_value", color[2]);          
-                $(this).attr("stroke-width", 1); 
-                // $(this).css("opacity", 0.3);
-                if (color[2] > 0.1) {    
-                    $(this).attr("stroke-width", 3); 
-                    $(this).css("opacity", 1);
-                } else {
-                    $(this).attr("stroke", "#ccc");
-                }
-            });
-        }
-
-
-        function change_text() {
-            fill_color = $(containerSelector_hash + " #snakeplot_color_text").val();
-            color_id  = $(containerSelector_hash+" #text_color").val();
-            fill_grey = color_id == '3' ? true : false;
-            console.log('change text color to!');
-
-            $(containerSelector_hash).find('.rcircle').each(function () {
-                original_title = $(this).attr('original_title');
-                gn = false;
-                pos_id = $(this).attr('id');
-                if (original_title.split(" ")[1].length) {
-                    // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
-                    gn = original_title.split(" ")[1].split("x")[1];
-                }
-                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
-                    $(containerSelector_hash).find('#' + pos_id + 't').attr("fill", "#ddd");
-                    return true;
-                }
-                if (fill_color!='none') {
-                    color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#000",0,0,"#000","#000"];
-                } else {
-                    color = ["#000", 0, 0,"#000","#000"];     
-                }
-                
-                $(containerSelector_hash).find('#' + pos_id + 't').attr("fill", color[color_id]);
-                // $(this).css("opacity", 0.3);
-                // if (color[2] > 0.1) {    
-                    
-                // } else {
-                //     $(containerSelector_hash).find('#' + pos_id + 't').attr("fill", "#ddd");
-                // }
-            });
-        }
+        
 
     }
     
