@@ -446,7 +446,7 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
     #for comb in combinations(tm_ranking[:4], 3):
         sel_refs = [x for x in range(0,len(segment_order)) if segment_order[x] in comb]
         #print(sel_refs)
-        
+
         tms_reference_set1 = np.array(tms_centroids_set1[sel_refs], copy = True)
         tms_reference_set2 = np.array(tms_centroids_set2[sel_refs], copy = True)
 
@@ -469,7 +469,8 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
             error += 1
 
     #if rmsd > 2:
-    if error >= 3:
+    #if error >= 3 or rmsd > 2:
+    if True:
         for i in range(0,len(tms_centroids_set2)):
             tms_centroids_set2[i][2] = tms_centroids_set2[i][2]*-1
 
@@ -480,9 +481,17 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
         imposer = SVDSuperimposer()
         imposer.set(tms_reference_set1, tms_reference_set2)
         imposer.run()
-        rot, trans = imposer.get_rotran()
-        rmsd = imposer.get_rms()
-        print("RMSD2", round(rmsd,2))
+        new_rot, new_trans = imposer.get_rotran()
+        new_rmsd = imposer.get_rms()
+        print("RMSD2", round(new_rmsd,2))
+
+        if new_rmsd < rmsd:
+            rot = new_rot
+            trans = new_trans
+            rmsd = new_rmsd
+        else:
+            for i in range(0,len(tms_centroids_set2)):
+                tms_centroids_set2[i][2] = tms_centroids_set2[i][2]*-1
 
     # test_set2 = np.dot(tms_reference_set2, rot) + trans
     # for i in range(0,len(test_set2)):
