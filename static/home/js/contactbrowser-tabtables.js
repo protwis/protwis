@@ -207,7 +207,7 @@ function renderDataTablesYadcf(element) {
 
             if (analys_mode == "#two-crystal-groups") {
 
-                repeated_from_to_1 = make_range_number_cols(13, 13);
+                repeated_from_to_1 = make_range_number_cols(8, 18);
                 repeated_from_to_2 = make_range_number_cols(28, 9);
 
                 yadcf.init(btable,
@@ -273,7 +273,7 @@ function renderDataTablesYadcf(element) {
 
                 );
             } else if (analys_mode == "#single-crystal-group") {
-                repeated_from_to_1 = make_range_number_cols(11, 13);
+                repeated_from_to_1 = make_range_number_cols(6, 18);
                 repeated_from_to_2 = make_range_number_cols(26, 7);
                 yadcf.init(btable,
                     [{
@@ -1274,10 +1274,6 @@ function renderBrowser(data) {
             var pos1_presence = v['pos1_presence'];
             var pos2_presence = v['pos2_presence'];
 
-
-
-
-
             all_angles_1 = data['all_angles'][gn1];
             all_angles_2 = data['all_angles'][gn2];
 
@@ -1310,8 +1306,6 @@ function renderBrowser(data) {
             })
 
             // console.log(gn1, all_angles_1_set1, all_angles_1_set2)
-            
-            
             if (all_angles_1_set1) ss_pos1_set1 = Object.entries(all_angles_1_set1).filter(x => x[1].length > 6).map(x => x[1][12]);
             if (all_angles_1_set2) ss_pos1_set2 = Object.entries(all_angles_1_set2).filter(x => x[1].length > 6).map(x => x[1][12]);
             if (all_angles_2_set1) ss_pos2_set1 = Object.entries(all_angles_2_set1).filter(x => x[1].length > 6).map(x => x[1][12]);
