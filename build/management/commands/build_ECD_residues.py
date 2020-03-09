@@ -37,12 +37,7 @@ class Command(BaseBuild):
 	anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_anomalies.yaml'])
 
 	def add_arguments(self, parser):
-		parser.add_argument('--filename', action='append', dest='filename',
-							help='Filename to import. Can be used multiple times')
-		parser.add_argument('--wt', default=False, type=str, help='Add wild type protein sequence to data')
-		parser.add_argument('--xtal', default=False, type=str, help='Add xtal to data')
-		parser.add_argument('--build_datafile', default=False, action='store_true', help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
-		parser.add_argument('--purge', default=False, action='store_true', help='Purge G protein structures from database')
+		pass
 
 	def handle(self, *args, **options):
 		self.options = options

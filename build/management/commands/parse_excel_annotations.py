@@ -57,6 +57,7 @@ class Command(BaseCommand):
     mod_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
     xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends_bw.yaml'])
     ECD_annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'ECD_annotation.xlsx'])
+    ClassD_annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Class_D_Annotation.xlsx'])
 
     non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
     non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
@@ -78,6 +79,8 @@ class Command(BaseCommand):
         self.dump_files()
         self.ECD_data = self.parse_excel(self.ECD_annotation_source_file)
         self.dump_ECD_files()
+        self.ClassD_data = self.parse_excel(self.ClassD_annotation_source_file)
+        self.dump_ClassD_data()
         # self.analyse_annotation_consistency()
         self.find_representatives()
         if options['m']:
@@ -101,6 +104,24 @@ class Command(BaseCommand):
             anomalies[entry_name] = val
         with open(self.ECD_anomalies_file, 'w') as outfile:
             yaml.dump(anomalies, outfile, indent=4)
+
+
+    def dump_ClassD_data(self):
+        data_dict1, data_dict2 = OrderedDict(), OrderedDict()
+        for key, val in self.ClassD_data['SegEnds_NonXtal_Prot#'].items():
+            entry_name = val['UniProt'].lower()
+            del val['Key']
+            del val['UniProt']
+            del val['']
+            data_dict1[entry_name] = val
+        with open(self.non_xtal_seg_end_file, 'a') as outfile:
+            yaml.dump(data_dict1, outfile, indent=4)
+        for key, val in self.ClassD_data['SegEnds_NonXtal_BW#'].items():
+            entry_name = val['UniProt'].lower()
+            del val['UniProt']
+            data_dict2[entry_name] = val
+        with open(self.non_xtal_seg_end_bw_file, 'a') as outfile:
+            yaml.dump(data_dict2, outfile, indent=4)
 
 
     def parse_excel(self,path):

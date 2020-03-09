@@ -131,6 +131,7 @@ class QueryPDB():
                         missing_yaml = True
                 if not missing_from_db:
                     continue
+                print(s)
                 try:
                     pdb_data_dict = fetch_pdb_info(s, protein, new_xtal=True)
                     exp_method = pdb_data_dict['experimental_method']
@@ -293,7 +294,7 @@ class QueryPDB():
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
                     print(s, msg)
-            print('Structures with missing x50s: {}'.format(consider_list))
+        print('Structures with missing x50s: {}'.format(consider_list))
 
 
     def pdb_request_by_uniprot(self, uniprot_id):
