@@ -110,6 +110,10 @@ input.form-control {
     -moz-border-radius: 0 6px 6px;
     border-radius: 0 6px 6px 6px;
 }
+h3.dropleft .dropleft>.dropdown-menu {
+    right: 100% !important;
+    left: auto !important;
+}
 
 .dropdown-submenu:hover>.dropdown-menu {
     display: block;

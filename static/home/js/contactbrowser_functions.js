@@ -760,6 +760,8 @@ function drawPlotPanel(plot_type, plot_div) {
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
+    plot_div.find('.plot-title').html( "&nbsp;" + plot_type);
+
     console.log("SET UP PLOT", plot_type, plot_id, mode);
     switch (mode) {
         case "two-crystal-groups":
@@ -869,19 +871,32 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').addClass('snakeplot-container');
             plot_div.find('.plot-container').attr('id', 'snakeplot-' + plot_id);
 
-            createSnakeplot(raw_data, 'snakeplot-' + plot_id);
+            createSnakeplot(raw_data, '#snakeplot-' + plot_id);
+            break;
+        case "scatterplot":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('scatterplot-container');
+            plot_div.find('.plot-container').attr('id', 'scatterplot-' + plot_id);
+
+            createScatterplot(raw_data, 'scatterplot-' + plot_id);
+            break;
+        case "tm7_plot_major":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
         case "tm7_plot_intra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
-            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["intracellular"]);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["intracellular"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
         case "tm7_plot_extra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
-            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"]);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["extracellular"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
         case "tm7_plot_3d_intra":
             plot_div.find('.plot-container').removeClass('none');
@@ -900,16 +915,21 @@ function drawPlotPanel(plot_type, plot_div) {
 }
 
 var plotting_options = {
-    'TM1-7 segment (cytosolic)': [
-        ['tm7_plot_intra', '2D plot'],
-        ['tm7_plot_3d_intra','3D plot'],
-        ['tm7_heatmap_intra','Heatmap']
-    ],
-    'TM1-7 segment (extracellular)': [
-        ['tm7_plot_extra', '2D plot'],
-        ['tm7_plot_3d_extra','3D plot'],
-        ['tm7_heatmap_extra','Heatmap']
-    ],
+    'TM1-7 segment' : {
+        'extracellular': [
+            ['tm7_plot_extra', '2D plot'],
+            ['tm7_plot_3d_extra','3D plot'],
+            ['tm7_heatmap_extra','Heatmap']
+        ],
+        'class A major pocket': [
+            ['tm7_plot_major', '2D plot'],
+            ['tm7_heatmap_major','Heatmap']
+        ],
+        'cytosolic': [
+            ['tm7_plot_intra', '2D plot'],
+            ['tm7_plot_3d_intra','3D plot'],
+            ['tm7_heatmap_intra','Heatmap']
+    ]},
     'Contacts between generic residue positions': [
         ['ngl', '3D structure'],
         ['flareplot', 'Flare Plot'],
@@ -929,8 +949,13 @@ var plotting_options = {
         ['boxplot', 'Box plot'],
     ],
     'Residue Properties': [
+        ['snakeplot', 'Snake plot'],
+        ['scatterplot', 'Scatter-plot'],
         ['boxplot_angles', 'Box plot '],],
 };
+
+
+                
 function generate_display_options() {
     dropdown_html = '<div class="dropdown" style="display: inline;"> \
                           <button class="btn btn-xs btn-primary dropdown-toggle" type="button" data-toggle="dropdown"> \
@@ -940,10 +965,22 @@ function generate_display_options() {
     for (let key in plotting_options) {
 
         if (after_first) dropdown_html += '<li class="divider"></li>';
-        dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key + '</strong></li>'
-        plotting_options[key].forEach(function (opt) {
-            dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
-        });
+        if ($.isArray(plotting_options[key])) {
+            dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key + '</strong></li>'
+            plotting_options[key].forEach(function (opt) {
+                dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
+            });
+        } else {
+            dropdown_html += '<li class="dropdown-submenu dropleft"><a tabindex="0" href="#">' + key + '</a>'
+            dropdown_html += '<ul class="dropdown-menu">'
+            for (let key2 in plotting_options[key]) {
+                dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key2 + '</strong></li>'
+                plotting_options[key][key2].forEach(function (opt) {
+                    dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
+                });
+            }
+            dropdown_html += '</ul></li>'
+        }
         after_first = true;
     }
     dropdown_html += '</ul></div>';
@@ -1108,8 +1145,13 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
 }
 
 function initilizeInitialPlots() {
-    //default_plot_types = ['force_network', 'flareplot', 'ngl'];
-    default_plot_types = ['tm7_plot_intra', 'tm7_plot_extra', 'ngl'];
+    default_plot_types = ['force_network', 'flareplot', 'ngl'];
+    var mode = get_current_mode();
+    // if single structure - use interaction coloring
+    if (mode == "two-crystal-groups") {
+        default_plot_types = ['tm7_plot_extra', 'tm7_plot_major', 'tm7_plot_intra'];
+    }
+
     $(".plot_row:visible").find(".panel").each(function (i) {
         plot_type = default_plot_types[i];
         plot_div = $(this);
@@ -1439,13 +1481,17 @@ function updateStructureRepresentations(mode) {
             o.setVisibility(true);
         }
         // toggle edges
-        reps[mode][key].links.setVisibility(!$("#ngl-" + mode + " #toggle_interactions").prop('checked'));
+        reps[mode][key].links.setVisibility($("#ngl-" + mode + " #toggle_interactions").prop('checked'));
 
         // toggle CA spheres
         reps[mode][key].int_res.setVisibility($("#ngl-" + mode + " #highlight_res").prop('checked'));
 
         // toggle interacting toggle_sidechains
         reps[mode][key].ball_int.setVisibility($("#ngl-" + mode + " #toggle_sidechains_int").prop('checked'));
+
+        // toggle segment movement spheres
+        if (mode_short == 'two-groups')
+          reps[mode][key].movement_spheres.setVisibility($("#ngl-" + mode + " #toggle_movement").prop('checked'));
 
         // Update cartoon using selection
         checked = $("#ngl-" + mode + " #ngl_only_gns").prop('checked');

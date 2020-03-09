@@ -52,9 +52,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="single_1">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -69,9 +69,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="single_2">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -86,9 +86,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="single_3">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select dropleft">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -232,9 +232,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="single_group_1">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -249,9 +249,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="single_group_2">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -266,9 +266,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="single_group_3">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select dropleft">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -417,9 +417,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="two_sets_1">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -434,9 +434,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="two_sets_2">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -451,9 +451,9 @@
             <div class="col-md-4">
                 <div class="panel panel-default" id="two_sets_3">
                     <div class="panel-heading">
-                        <h3 class="panel-title pull-left">Select plot</h3>
+                        <h3 class="panel-title pull-left plot-select dropleft">Select plot</h3>
+                        <span class="plot-title"></span>
                         <span class="pull-right">
-                            <span class="plot-select"></span>
                             <span class="glyphicon glyphicon-download btn-download png"></span>
                             <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                         </span>
@@ -688,7 +688,6 @@
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
     <script src="{% static 'home/js/select2.js' %}"> </script>
     <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 
     <!-- NGL -->
@@ -734,10 +733,13 @@
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-3dforce.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-tm7.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-tm7-3d.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/diagrams.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/contactbrowser-snakeplot.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/contactbrowser-scatterplot.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/forceInABoxv3.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/forceInABoxv4.js' %}"> </script>
 
-    <script src="//unpkg.com/3d-force-graph"></script>
+    <script src="{% static 'home/js/3d-force-graph.js' %}"></script>
 
     <script>
         const csrf_token = "{{ csrf_token }}";
@@ -973,6 +975,27 @@
         }
         p.no_margins {
             margin: 0;
+        }
+
+                
+        .snakeplot .controls-panel {
+            position: absolute;
+            padding: 3px;
+            border: 1px dashed;
+            background-color: white;
+            top: 0px;
+            left: 0px;
+            z-index: 1;
+        }
+                
+        .scatterplot .controls-panel {
+            position: absolute;
+            padding: 3px;
+            border: 1px dashed;
+            background-color: white;
+            top: 0px;
+            left: 0px;
+            z-index: 1;
         }
     </style>
 

@@ -10,7 +10,6 @@ from collections import OrderedDict
 
 import numpy as np
 
-scaling_factor = 10000
 
 class Distances():
     """A class to do distances"""
@@ -87,6 +86,9 @@ class Distances():
                             .annotate(mean = Avg('distance'), std = StdDev('distance'), c = Count('distance'), dis = Count('distance'),arr=ArrayAgg('distance'),arr2=ArrayAgg('structure__pdb_code__index'),arr3=ArrayAgg('gns_pair')).values_list('gns_pair','mean','std','c','dis','arr','arr2','arr3').filter(c__gte=int(0.8*len(self.structures))))
             for i,d in enumerate(ds):
                 ds[i] = list(ds[i])
+                ds[i][1] = ds[i][1] / distance_scaling_factor
+                ds[i][2] = ds[i][2] / distance_scaling_factor
+                ds[i][5] = [x / distance_scaling_factor for x in ds[i][5]]
                 ds[i][3] = d[2]/d[1]
                 ds_with_key[d[0]] = ds[i]
         else:
@@ -269,7 +271,7 @@ class Distances():
             for i,l in enumerate(labels):
                 if l not in d:
                     d[l] = {}
-                d[l][pdbs[i]] = means[i]/scaling_factor
+                d[l][pdbs[i]] = means[i]/distance_scaling_factor
             bin_pairs[label].append(d)
 
             pdbs_per_line = 8
@@ -347,7 +349,7 @@ class Distances():
             label = d[1]
             if label not in self.data:
                 self.data[label] = []
-            self.data[label].append(d[0]/scaling_factor)
+            self.data[label].append(d[0]/distance_scaling_factor)
 
     def fetch_distances_tm(self):
 #                .filter(gn1__in=self.filter_gns).filter(gn2__in=self.filter_gns) \
@@ -363,7 +365,7 @@ class Distances():
             label = d[1]
             if label not in self.data:
                 self.data[label] = []
-            self.data[label].append(d[0]/scaling_factor)
+            self.data[label].append(d[0]/distance_scaling_factor)
 
     def calculate(self):
         self.stats = {}

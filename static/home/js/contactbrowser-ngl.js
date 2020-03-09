@@ -112,7 +112,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                 // Add residue labels for GN residues
                 pdb_data[mode][0]['only_gn'].forEach(function (resNo, index) {
-                    
+
                     var genNo = pdb_data[mode][0][gn_label_to_use][index]
                     int_labels[mode][0][o.structure.id + "|" + resNo] = genNo
                 })
@@ -371,23 +371,35 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
         controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
     }
 
-    controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>' +
-        '<p>Highlight interacting res: <input type=checkbox id="highlight_res" checked></p>' +
-        '<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
+    movement = ""
+    if (two_structures)
+      movement = '<p>Show segment references: <input type=checkbox id="toggle_movement"></p>'
+
+    controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
+        + '<p>Highlight interacting res: <input type=checkbox id="highlight_res" checked></p>'
+        + '<p>Show interaction lines: <input type=checkbox id="toggle_interactions" checked></p>'
         //                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
-        +
-        '<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
+        + '<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
+        + movement
         //                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
-        +
-        '</div>';
+        + '</div>';
     controls += '</span>';
     newDiv.innerHTML = controls;
 
     $("#ngl-" + mode).append(newDiv);
     $("#ngl-" + mode + " .ngl_control").hide();
     $('.ngl_controls_toggle').css('cursor', 'pointer');
-    $("#ngl-" + mode + " .ngl_controls_toggle").click(function() {
-        $("#ngl-" + mode + " .ngl_control").toggle();
+    $("#ngl-" + mode + " .ngl_controls_toggle").click(function(e) {
+      e.stopPropagation();
+      if ($("#ngl-" + mode + " .ngl_control").is(":hidden")) {
+          $("#ngl-" + mode + " .ngl_control").show();
+
+          // close when click outside of div
+          $(document).on("mousedown", {ngl_mode : mode}, hideNGLSettings);
+      } else {
+        $("#ngl-" + mode + " .ngl_control").hide();
+        $(document).off("mousedown", hideNGLSettings);
+      }
     });
 
     if (two_structures) {
@@ -434,6 +446,10 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     });
 
     $("#ngl-" + mode + " #toggle_interactions").change(function(e) {
+        updateStructureRepresentations(mode);
+    });
+
+    $("#ngl-" + mode + " #toggle_movement").change(function(e) {
         updateStructureRepresentations(mode);
     });
 
@@ -485,6 +501,17 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     };
 }
 
+function hideNGLSettings(e) {
+  var mode = e.data.ngl_mode;
+  var container = $("#ngl-" + mode + " .ngl_control");
+  var toggle = $("#ngl-" + mode + " .ngl_controls_toggle");
+  if ((!container.is(e.target) && container.has(e.target).length === 0)){
+    e.stopPropagation();
+    $(document).off("mousedown", hideNGLSettings);
+    container.hide();
+  }
+}
+
 function linkNGLMouseControls(origin) {
     var mode = origin.substring(0, origin.length - 1)
 
@@ -512,6 +539,7 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
 
     var links = []
     var res_int = []
+    var res_movement = []
     if (mode in reps && structureNumber in reps[mode] && reps[mode][structureNumber].structureComponent)
         var o = reps[mode][structureNumber].structureComponent;
     else
@@ -671,6 +699,27 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
         });
     }
 
+    // Add list of segment movement residues when present
+    if (mode_short == 'two-groups'){
+      if (interactions_data["tm_movement_2D"] !== undefined) {
+        if (interactions_data["tm_movement_2D"]["intracellular"] !== undefined) {
+          var gns_used = interactions_data["tm_movement_2D"]["intracellular"]["gns_used"].flat()
+          for (genI in gns_used) {
+            var resNo = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(gns_used[genI])];
+            res_movement.push(resNo);
+          }
+        }
+
+        if (interactions_data["tm_movement_2D"]["extracellular"] !== undefined) {
+          var gns_used = interactions_data["tm_movement_2D"]["extracellular"]["gns_used"].flat()
+          for (genI in gns_used) {
+            var resNo = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(gns_used[genI])];
+            res_movement.push(resNo);
+          }
+        }
+      }
+    }
+
     links.forEach(function(link) {
         linkMap[mode][structureNumber][link.resID] = link
     })
@@ -702,6 +751,7 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
 
     // Empty? Update selection with a fake residue -> hide everything
     if (res_int.length == 0) res_int.push("9999999")
+    if (res_movement.length == 0) res_movement.push("9999999")
 
     if (update) {
         reps[mode][structureNumber].int_res.setSelection(":" + pdb_data[mode][structureNumber]['chain'] + " and (" + res_int.join(", ") + ") and (.CA)")
@@ -721,6 +771,16 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
             colorValue: (structureNumber == 0 ? "#99B5CC" : "#DDA8BC"),
             visible: false
         })
+
+        if (mode_short == 'two-groups') {
+          reps[mode][structureNumber].movement_spheres = o.addRepresentation("spacefill", {
+            sele: ":" + pdb_data[mode][structureNumber]['chain'] + " and (" + res_movement.join(", ") + ") and (.CA)",
+            color: (structureNumber == 0 ? "#084081" : "#811808"),
+            radiusScale: 1,
+            name: "res",
+            visible: false
+          });
+        }
     }
 
     // update show/hide when updating representations

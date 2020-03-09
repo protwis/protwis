@@ -1,8 +1,10 @@
 var filtered_gn_pairs = [];
 var filtered_cluster_groups = [];
+var filtered_gns = [];
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
+    filtered_gns = [];
     pos_contacts_count = {};
     filtered_cluster_groups = [];
     const selector = "#" + $('.main_option:visible').attr('id');
@@ -15,6 +17,8 @@ function filter_browser() {
         }).data().each(function(i) {
             filtered_gn_pairs.push(i['DT_RowId'])
             gns = separatePair(i['DT_RowId']);
+            filtered_gns.push(gns[0]);
+            filtered_gns.push(gns[1]);
 
             // see if there is a key for gns1
             if (!(gns[0] in pos_contacts_count)) pos_contacts_count[gns[0]] = 0;
@@ -80,7 +84,7 @@ function filter_browser() {
         console.log('filter_browser requested, but tab-1 not visible.');
         console.log('reset filtered.')
     }
-   
+
     if (old_filtered_gn_pairs.sort().join(',') === filtered_gn_pairs.sort().join(',')) {
         console.log('no change in filtering');
     } else {
@@ -1156,25 +1160,6 @@ function renderBrowser(data) {
     if (data['proteins2']) {
 
         thead = '<tr> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="3" class="pairselector" datatype="frequency"></th> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="5" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="distance_diff"></th> \
-                      <th colspan="2" class="selector" datatype="core_distance_diff"></th> \
-                      <th colspan="2" class="selector" datatype="rotation_diff"></th> \
-                      <th colspan="2" class="selector" datatype="rotamer_diff"></th> \
-                      <th colspan="2" class="selector" datatype="SASA_diff"></th> \
-                      <th colspan="2" class="selector" datatype="RSA_diff"></th> \
-                      <th colspan="2" class="selector" datatype="presence_diff"></th> \
-                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
-                      <th colspan="2" class="selector" datatype="consensus_freq"></th> \
-                      <th colspan="2" class="selector" datatype="no_gn"></th> \
-                      <th colspan="2" class="selector" datatype="no_3d"></th> \
-                      <th colspan="3" class="selector" datatype="class_conservation"></th> \
-                  </tr> \
-                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2">Contact Frequency (%)</th> \
@@ -1452,25 +1437,6 @@ function renderBrowser(data) {
         });
     } else if (data['proteins'].length > 1) {
         thead = '<tr> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="1" class="pairselector" datatype="frequency"></th> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="5" class="skip"></th> \
-                      <th colspan="1" class="pairselector" datatype="distance"></th> \
-                      <th colspan="2" class="selector" datatype="core_distance"></th> \
-                      <th colspan="2" class="selector" datatype="rotation"></th> \
-                      <th colspan="2" class="selector" datatype="rotamer"></th> \
-                      <th colspan="2" class="selector" datatype="SASA"></th> \
-                      <th colspan="2" class="selector" datatype="RSA"></th> \
-                      <th colspan="2" class="selector" datatype="presence"></th> \
-                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
-                      <th colspan="2" class="selector" datatype="consensus_freq"></th> \
-                      <th colspan="2" class="selector" datatype="no_gn"></th> \
-                      <th colspan="2" class="selector" datatype="no_3d"></th> \
-                      <th colspan="1" class="selector" datatype="class_conservation"></th> \
-                  </tr> \
-                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Contact Frequency (%)</th> \
@@ -1672,20 +1638,6 @@ function renderBrowser(data) {
         });
     } else {
         thead = '<tr> \
-                      <th colspan="3" class="skip"></th> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="pairselector" datatype="distance"></th> \
-                      <th colspan="2" class="selector" datatype="core_distance"></th> \
-                      <th colspan="2" class="selector" datatype="rotation"></th> \
-                      <th colspan="2" class="selector" datatype="rotamer"></th> \
-                      <th colspan="2" class="selector" datatype="SASA"></th> \
-                      <th colspan="2" class="selector" datatype="RSA"></th> \
-                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
-                      <th colspan="1" class="selector" datatype="class_conservation"></th> \
-                  </tr> \
-                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
@@ -1831,7 +1783,7 @@ function renderBrowser(data) {
 
     console.timeEnd("RenderBrowser");
     gray_scale_table(table);
-    enable_hover(table);
+    //enable_hover(table);
     //enable_3Dclick(table)
 }
 
@@ -2559,20 +2511,6 @@ function renderBrowser_3(data) {
     var pdbs_2 = data['pdbs2'].length
     if (data['proteins2']) {
         thead = '<tr> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="3" class="selector" datatype="contacts"></th> \
-                      <th colspan="3" class="selector" datatype="contacts"></th> \
-                      <th colspan="1" class="selector" datatype="contacts"></th> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="3" class="selector" datatype="conservation"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="conservation"></th> \
-                      <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
-                      <th colspan="1" class="selector" datatype="rotation_diff"></th> \
-                      <th colspan="1" class="selector" datatype="rotamer_diff"></th> \
-                      <th colspan="1" class="selector"datatype="SASA_diff"></th> \
-                  </tr> \
-                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Position</th> \
                           <th colspan="3" rowspan="2">Avg no. contact pairs</th> \
@@ -2698,20 +2636,6 @@ function renderBrowser_3(data) {
         tbody[0].innerHTML = tr_list;
     } else if (data['proteins'].length > 1) {
       thead = '<tr> \
-                    <th colspan="2" class="skip"></th> \
-                    <th colspan="3" class="selector" datatype="contacts"></th> \
-                    <th colspan="3" class="selector" datatype="contacts"></th> \
-                    <th colspan="1" class="selector" datatype="contacts"></th> \
-                    <th colspan="2" class="skip"></th> \
-                    <th colspan="3" class="selector" datatype="conservation"></th> \
-                    <th colspan="1" class="skip"></th> \
-                    <th colspan="1" class="selector" datatype="conservation"></th> \
-                    <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
-                    <th colspan="1" class="selector" datatype="rotation_diff"></th> \
-                    <th colspan="1" class="selector" datatype="rotamer_diff"></th> \
-                    <th colspan="1" class="selector"datatype="SASA_diff"></th> \
-                </tr> \
-                <tr> \
                         <th colspan="1" rowspan="2">Segment</th> \
                         <th colspan="1" rowspan="2">Position</th> \
                         <th colspan="3" rowspan="2">Avg no. contact pairs</th> \
@@ -2869,7 +2793,7 @@ function renderBrowser_3(data) {
         }
     });
 
-    enable_hover(table);
+    //enable_hover(table);
     console.timeEnd("RenderBrowser3");
 }
 
@@ -2923,23 +2847,6 @@ function renderBrowser_4(data) {
         var pdbs_2 = data['pdbs2'].length
         var normalized = data['normalized'];
         thead = '<tr> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="2" class="selector" datatype="consensus_SS"></th> \
-                      <th colspan="3" class="selector" datatype="consensus_freq"></th> \
-                      <th colspan="2" class="selector" datatype="no_gn"></th> \
-                      <th colspan="2" class="selector" datatype="no_3d"></th> \
-                      <th colspan="3" class="selector" datatype="phi"></th> \
-                      <th colspan="3" class="selector" datatype="psi"></th> \
-                      <th colspan="3" class="selector" datatype="tau_angle"></th> \
-                      <th colspan="3" class="selector" datatype="tau"></th> \
-                      <th colspan="3" class="selector" datatype="theta"></th> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="3" class="selector" datatype="conservation"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="class_conservation"></th> \
-                      <th colspan="3" class="skip"></th> \
-                  </tr> \
-                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
@@ -3013,6 +2920,7 @@ function renderBrowser_4(data) {
             var angles1 = v['angles_set1'];
             var angles2 = v['angles_set2'];
             var angles_diff = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3158,21 +3066,6 @@ function renderBrowser_4(data) {
         var pdbs_count = data['pdbs'].length;
         var normalized = data['normalized'];
         thead = '<tr> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="consensus_SS"></th> \
-                      <th colspan="1" class="selector" datatype="consensus_freq"></th> \
-                      <th colspan="1" class="selector" datatype="phi"></th> \
-                      <th colspan="1" class="selector" datatype="psi"></th> \
-                      <th colspan="1" class="selector" datatype="tau_angle"></th> \
-                      <th colspan="1" class="selector" datatype="tau"></th> \
-                      <th colspan="1" class="selector" datatype="tau"></th> \
-                      <th colspan="1" class="selector" datatype="theta"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="conservation"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="conservation"></th> \
-                  </tr> \
-                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="2" rowspan="1">Secondary structure</th> \
@@ -3219,6 +3112,7 @@ function renderBrowser_4(data) {
             if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles = v['angles_set'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3309,19 +3203,6 @@ function renderBrowser_4(data) {
         //var proteins = data['proteins'].length
         //var pdbs = data['pdbs'].length
         thead = '<tr> \
-                      <th colspan="2" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="consensus_SS"></th> \
-                      <th colspan="1" class="selector" datatype="phi"></th> \
-                      <th colspan="1" class="selector" datatype="psi"></th> \
-                      <th colspan="1" class="selector" datatype="tau_angle"></th> \
-                      <th colspan="1" class="selector" datatype="tau"></th> \
-                      <th colspan="1" class="selector" datatype="tau"></th> \
-                      <th colspan="1" class="selector" datatype="theta"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="skip"></th> \
-                      <th colspan="1" class="selector" datatype="conservation"></th> \
-                  </tr> \
-                  <tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="1" rowspan="1">Secondary structure</th> \
@@ -3336,7 +3217,7 @@ function renderBrowser_4(data) {
                           <th colspan="1">Psi dihedral<br/><span class="small">(C-Ca-N-C(-1))</span></th> \
                           <th colspan="1">Tau angle<br/><span class="small">(N-Ca-C)</span></th> \
                           <th colspan="1">Tau dihedral<br/><span class="small">(Ca(+1)-Ca-Ca(-1)-Ca(-2))</span></th> \
-                          <th colspan="3">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
+                          <th colspan="1">Next tau dihedral<br/><span class="small">(Ca(+2)-Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="1">Theta angle<br/><span class="small">(Ca(+1)-Ca-Ca(-1))</span></th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
@@ -3364,6 +3245,7 @@ function renderBrowser_4(data) {
             if (seg == 'ECL1' || seg == 'ECL2') return true;
 
             var angles = v['angles_set'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3418,7 +3300,7 @@ function renderBrowser_4(data) {
 
     }
 
-    enable_hover(table);
+    //enable_hover(table);
     console.timeEnd("RenderBrowser4");
 }
 
@@ -3449,35 +3331,7 @@ function renderBrowser_5(data) {
     // table.parent().before('<span><button type="button" onclick="filter_browser(this);" class="btn btn-xs btn-primary reset-selection">Filter</button></span>');
     var tbody = table.find('tbody');
 
-    var thead;
-    if (data['proteins2']) {
-      thead = '<tr> \
-                    <th colspan="2" class="skip"></th> \
-                    <th colspan="1" class="selector" datatype="pair_distance_diff"></th> \
-                    <th colspan="1" class="selector" datatype="core_distance_diff"></th> \
-                    <th colspan="1" class="selector" datatype="rotation_diff"></th> \
-                    <th colspan="1" class="selector" datatype="HSE_diff"></th> \
-                    <th colspan="3" class="skip"></th> \
-                    <th colspan="2" class="skip"></th> \
-                    <th colspan="3" class="selector" datatype="conservation"></th> \
-                    <th colspan="1" class="skip"></th> \
-                    <th colspan="1" class="selector" datatype="class_conservation"></th> \
-                </tr>';
-    } else {
-      thead = '<tr> \
-                    <th colspan="2" class="skip"></th> \
-                    <th colspan="1" class="selector" datatype="pair_distance"></th> \
-                    <th colspan="1" class="selector" datatype="core_distance"></th> \
-                    <th colspan="1" class="selector" datatype="rotation"></th> \
-                    <th colspan="1" class="selector" datatype="HSE"></th> \
-                    <th colspan="3" class="skip"></th> \
-                    <th colspan="1" class="skip"></th> \
-                    <th colspan="1" class="selector" datatype="conservation"></th> \
-                    <th colspan="1" class="skip"></th> \
-                    <th colspan="1" class="selector" datatype="class_conservation"></th> \
-                </tr>';
-    }
-
+    var thead = "";
     if (data['proteins2']) {
         thead += '<tr> \
                         <th colspan="1" rowspan="2">Seg-<br>ment</th> \
@@ -3550,8 +3404,8 @@ function renderBrowser_5(data) {
                 <th class="narrow_col"></th> \
                 <th class="narrow_col"></th> \
                 <th class="narrow_col"></th> \
-                <th class="narrow_col">Set 1<br></th> \
-                <th class="narrow_col">Set 1<br></th> \
+                <th class="narrow_col"><br></th> \
+                <th class="narrow_col"><br></th> \
                 <th class="narrow_col"></th> \
                 <th class="narrow_col"></th> \
                 </tr>';
@@ -3564,6 +3418,7 @@ function renderBrowser_5(data) {
             // console.log(i,v);
             var seg = v['ps'];
             var angles = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3585,14 +3440,21 @@ function renderBrowser_5(data) {
             var diff_seq_cons_freq = Math.round((set1_seq_cons_freq - set2_seq_cons_freq));
 
             var class_cons_aa = v['class_cons'][0];
-            var class_cons_freq = Math.round(100 * v['class_cons'][1]);
+            var class_cons_freq = Math.round(100 * v['class_cons'][1])
+
+            if (i in data['distances']) {
+                distance = data['distances'][i]['avg'];
+            } else {
+                // console.log('no ', i, 'in distances');
+                distance = '';
+            }
 
             tr = ''
             tr_list += `
                     <tr class="clickable-row filter_rows" id="${i}">
                     <td class="dt-center">${seg}</td>
                     <td class="dt-center">${i}</td>
-                    <td class="narrow_col">pair</td>
+                    <td class="narrow_col">${distance}</td>
                     <td class="narrow_col">${angles[0][0]}</td>
                     <td class="narrow_col">${angles[1][0]}</td>
                     <td class="narrow_col">${angles[9][0]}</td>
@@ -3618,6 +3480,7 @@ function renderBrowser_5(data) {
             // console.log(i,v);
             var seg = v['ps'];
             var angles = v['angles'];
+            // index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
             // 0 'core_distance',
             // 1 'a_angle',
             // 2 'outer_angle',
@@ -3663,7 +3526,7 @@ function renderBrowser_5(data) {
     // insert natively for speed increase on Chrome
     tbody[0].innerHTML = tr_list;
 
-    enable_hover(table)
+    //enable_hover(table)
     console.timeEnd("RenderBrowser5");
 }
 
@@ -3680,7 +3543,7 @@ function gray_scale_table(table) {
             }
         }
     }
-    maxmin = [];
+    var maxmin = [];
     cols.forEach(function(col, index) {
         var max = Math.max.apply(null, col);
         var min = Math.min.apply(null, col);
@@ -3706,7 +3569,7 @@ function gray_scale_table(table) {
             if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
                 scale = Math.abs(value) / c_maxmin[2];
                 var color = { r: 255, g: 255, b: 255 };
-                if (c_header.includes('Set 2') || value < 0) {
+                if ((c_header.includes('Set 2') || value < 0) && !(c_header.includes('Set 1'))) {
                     // if the header is a set two, then make it red
                     color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
                 } else if (value > 0) {
@@ -3752,134 +3615,6 @@ function make_abs_values(table) {
             $(".main_loading_overlay").hide();
         }
         , 100);
-}
-var currentHover = -1;
-function enable_hover(table){
-    table[0].children[0].addEventListener("mouseover", function(e){
-      var th = e.target
-      while (th.nodeName != "TH") {
-        th = th.parentNode
-      }
-      var columnNumber = $(th).cellPos().left;
-
-      // Get correct selector cell
-      var selectorHeader = th.parentNode.parentNode.children[0]
-      var selector = selectorHeader.children[0]
-      var columnSelector = 0
-      for (var i = 0; i < selectorHeader.children.length; i++) {
-        if ($(selectorHeader.children[i]).cellPos().left > columnNumber)
-          break
-        selector = selectorHeader.children[i]
-        columnSelector = $(selectorHeader.children[i]).cellPos().left
-      }
-
-      if (currentHover != columnSelector && selector.className!="skip" && !selector.className.includes("keep")) {
-        // other variables
-        var tableNumber = th.parentNode.parentNode.parentNode.className.split(" ")[0]
-        var tableNumber = tableNumber.substr(-1)
-
-        // grab graph options
-        var plots = $('.main_option:visible').find(".plot-container").not(".plotly");
-        for (var i = 0; i < plots.length; i++){
-          var plotType = plots[i].id
-
-          var button = document.createElement("span")
-          button.className = "glyphicon glyphicon-stats toggle"+i
-          selector.appendChild(button)
-
-          var found = true;
-          if (selector.className=="pairselector") {
-              // Plots capable of showing data for residue pairs
-              if (plotType.startsWith("heatmapcontainer") || plotType.startsWith("flareplot") || plotType.startsWith("boxplot")) {
-                button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
-              } else {
-                button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c, d);}})(i, tableNumber, selector.getAttribute("datatype"), columnSelector))
-                found = false;
-              }
-          } else if (selector.className=="selector") {
-            // Plots capable of showing data for single residues
-            if (plotType.startsWith("ngl") || plotType.startsWith("snakeplot")) {
-              button.addEventListener("click", (function(a, b, c, d){ return function(){colorByData(a, b, c, d);}})(plotType, tableNumber, columnSelector, selector.getAttribute("datatype")))
-            } else {
-              button.addEventListener("click", (function(a, b, c, d){ return function(){showVisualizationPanel(a, b, c, d);}})(i, tableNumber, selector.getAttribute("datatype"), columnSelector))
-              found = false;
-            }
-          }
-
-          if (found){
-            button.addEventListener("click", function(e){
-              var targetClasses = e.target.className.split(" ")
-              var object = $(e.target)
-              if (!object.hasClass("red")){
-                // Remove toggle and keep from other header if present
-                $(".glyphicon-stats.red."+targetClasses[targetClasses.length -1]).each( function(i, other){
-                    $(other).removeClass("red")
-                    // clean header
-                    if ($(other).parent().find(".red").length == 0) {
-                      $(other).parent().removeClass("keep")
-                    }
-                })
-
-                // Keep header enabled
-                if (!object.parent().hasClass("keep"))
-                  object.parent().addClass("keep");
-
-                // Toggle icon color
-                object.addClass("red")
-              }
-            });
-          } else {
-            // Grayout button if not available
-            button.className = button.className + " gray"
-
-            // TODO add graph and selector here
-
-            // Step 1 - if multiple data sets - show data selector
-
-            // Step 2 - identify data type for selected data
-
-            // Step 3 - show suitable plotting options
-
-            // Action steps
-            // 0. set plot toggle (red with keep, see above)
-            // 1. Collect data
-            // 2. Draw plot (with data or set data after drawing)
-
-          }
-        }
-
-        currentHover = columnSelector;
-      }
-    });
-
-    table[0].children[0].addEventListener("mouseout", function(e){
-      classes = e.target.className
-      if (!(classes.includes("glyphicon") || classes.includes("selector") || classes.includes("pairselector"))) {
-        clearGraphHeader(e)
-      }
-    });
-
-    header = table[0].children[0].children[0];
-    for (var i = 0; i < header.children.length; i++){
-      $(header.children[i]).mouseleave( clearGraphHeader );
-    }
-}
-
-function clearGraphHeader(e){
-  // clear selector header on mouse out
-  var header = e.target
-  while (header.nodeName != "THEAD") {
-    header = header.parentNode
-  }
-
-  // cleanup with smarter class selector
-  header = header.children[0];
-  for (var i = 0; i < header.children.length; i++){
-      if (header.children[i].innerHTML.length > 0 && !header.children[i].className.includes("keep")){
-          header.children[i].innerHTML = ""
-      }
-  }
-  currentHover = -1;
 }
 
 function colorByData(mode, tableNumber, columnNumber, type) {
@@ -4059,38 +3794,62 @@ function numberToColorGradient(value, max, palette, neg_and_pos = false) {
     if (value < 0)
       value = 0
 
+
+    var red = {red:255, green:0, blue: 0}
+    var red = {red:195, green:74, blue: 54}
+    var blue = {red:0, green:0, blue: 255}
+    var blue = {red:0, green:140, blue: 204}
+    var green = {red:0, green:255, blue: 0}
+    var green = {red:0, green:201, blue: 167}
+    var white = {red:255, green:255, blue: 255}
+    var yellow = {red:255, green:255, blue: 0}
+    var yellow = {red:255, green:255, blue: 0}
+    var black = {red:0, green:0, blue: 0}
+    
     switch(palette){
         case "rwb": // red-white-blue
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          return colorGradient(value/max, red, white, blue)
           break;
         case "bwr": // blue-white-red
-          return colorGradient(value/max, {red:0, green:0, blue: 255}, {red:255, green:255, blue: 255}, {red:255, green:0, blue: 0})
+          return colorGradient(value/max, blue, white, red)
           break;
         case "ryg": // red-yellow-green
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:0, green:255, blue: 0}, {red:0, green:255, blue: 0})
+          return colorGradient(value/max, red, yellow, green)
           break;
         case "gyr": // green-yellow-red
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 0}, {red:0, green:255, blue: 0})
+          return colorGradient(value/max, green, yellow, red)
           break;
         case "rgb":
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          return colorGradient(value/max, red, green, blue)
           break;
         case "wr": // white-red
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:255, green:0, blue: 0})
+          return colorGradient(value/max, white, red)
           break;
         case "wg": // white-green
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:255, blue: 0})
+          return colorGradient(value/max, white, green)
           break;
         case "wb": // white-blue
-          return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+          return colorGradient(value/max, white, blue)
           break;
+        case "wy": // white-yellow
+            return colorGradient(value/max, white, yellow)
+            break;
+        case "wo": // white-orange
+            return colorGradient(value/max, white, {red:255, green:150, blue: 113})
+            break;
         case "rb": // red-blue
-          return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:0, green:0, blue: 255})
+          return colorGradient(value/max, red, blue)
           break;
+        case "wp": // white-purple
+            return colorGradient(value / max, white, { red: 128, green: 0, blue: 128 })
+            break;
+        case "grey": // grey
+            return colorGradient(value / max, white, black)
+            break;
         // ADDON if you're missing gradient values
         case "br": // blue-red
         default:
-          return colorGradient(value/max, {red:0, green:0, blue: 255}, {red:255, green:0, blue: 0})
+          return colorGradient(value/max, blue, red)
           break;
     }
 }
@@ -4135,92 +3894,3 @@ function rgb2hexCG(r,g,b) {
 
     return '#' + r + g + b;
 }
-
-/*function enable_3Dclick(table){
-  for (header in table[0].children[0].children[1].children){
-    var th = table[0].children[0].children[1].children[header]
-    if (typeof th === 'object')
-      th.addEventListener("click", function(e){
-
-        // filter keys for current mode (single/single_group/two_sets)
-        const analys_mode = $('.main_option:visible').attr('id').replace('-tab', '');
-        var cmode = "single_"
-        if (analys_mode=="two-crystal-groups")
-          cmode = "two_sets_"
-        else if (analys_mode=="single-crystal-group")
-          cmode = "single_group_"
-
-        // BUG: single_ and single_group both match the single_ string
-        var viewers = Object.keys(stage).filter(function(x){ return x.startsWith(cmode)})
-        if (viewers.length > 0) {
-          var mode = viewers[0];
-          // TODO: select which 3D view if more than one
-
-          // Table data
-          var th = e.target
-          var tableNumber = th.parentNode.parentNode.parentNode.className.split(" ")[0];
-          var tableNumber = tableNumber.substr(-1)
-          var columnNumber = $(th).cellPos().left;
-
-          // Color 3D viewer
-          if ( th.colSpan == 3 ){
-            // Toggle between group 1/2 values and group differences
-
-          } else if (th.colSpan == 2 ){
-            colorByData(mode, tableNumber, [columnNumber, columnNumber+1])
-          } else {
-            colorByData(mode, tableNumber, columnNumber)
-          }
-        }
-      })
-  }
-}*/
-
-/*  cellPos jQuery plugin
-    ---------------------
-    Get visual position of cell in HTML table (or its block like thead).
-    Return value is object with "top" and "left" properties set to row and column index of top-left cell corner.
-    Example of use:
-        $("#myTable tbody td").each(function(){
-            $(this).text( $(this).cellPos().top +", "+ $(this).cellPos().left );
-        });
-*/
-(function($){
-    /* scan individual table and set "cellPos" data in the form { left: x-coord, top: y-coord } */
-    function scanTable( $table ) {
-        var m = [];
-        $table.children( "tr" ).each( function( y, row ) {
-            $( row ).children( "td, th" ).each( function( x, cell ) {
-                var $cell = $( cell ),
-                    cspan = $cell.attr( "colspan" ) | 0,
-                    rspan = $cell.attr( "rowspan" ) | 0,
-                    tx, ty;
-                cspan = cspan ? cspan : 1;
-                rspan = rspan ? rspan : 1;
-                for( ; m[y] && m[y][x]; ++x );  //skip already occupied cells in current row
-                for( tx = x; tx < x + cspan; ++tx ) {  //mark matrix elements occupied by current cell with true
-                    for( ty = y; ty < y + rspan; ++ty ) {
-                        if( !m[ty] ) {  //fill missing rows
-                            m[ty] = [];
-                        }
-                        m[ty][tx] = true;
-                    }
-                }
-                var pos = { top: y, left: x };
-                $cell.data( "cellPos", pos );
-            } );
-        } );
-    };
-
-    /* plugin */
-    $.fn.cellPos = function( rescan ) {
-        var $cell = this.first(),
-            pos = $cell.data( "cellPos" );
-        if( !pos || rescan ) {
-            var $table = $cell.closest( "table, thead, tbody, tfoot" );
-            scanTable( $table );
-        }
-        pos = $cell.data( "cellPos" );
-        return pos;
-    }
-})(jQuery);

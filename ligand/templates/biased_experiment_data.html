@@ -15,27 +15,32 @@
       <h3>Ligand</h3>
       <table class="table table-striped table-bordered">
         <tr>
-          <td>Ligand</td>
+          <td>Biased Ligand</td>
           <td>{{experiment.ligand.name}}</td>
         </tr>
         <tr>
-          <td>Ligand pChEMBL ID</td>
+          <td>pChEMBL ID</td>
           <td>{{experiment.chembl}}</td>
         </tr>
         <tr>
-          <td>Ligand Smiles</td>
+          <td>Smiles</td>
           <td style="word-wrap: break-word;
         word-break: break-all;
         white-space: normal;">
             {{experiment.ligand.properities.smiles}}</td>
         </tr>
         <tr>
-          <td>Ligand Inchikey</td>
+          <td>Inchikey</td>
           <td>{{experiment.ligand.properities.inchikey}}</td>
         </tr>
         <tr>
-          <td>Ligand Type</td>
+          <td>Type</td>
           <td>{{experiment.ligand.properities.ligand_type}}</td>
+        </tr>
+        <tr>
+          <td>Reference Ligand</td>
+          <td>
+              {{experiment.reference_ligand}}</td>
         </tr>
       </table>
     </div>
@@ -48,32 +53,34 @@
           <td>{{experiment.receptor}}</td>
         </tr>
         <tr>
-          <td>Receptor Family</td>
-          <td>{{experiment.receptor.family}}</td>
+          <td>Class</td>
+          <td>{{experiment.class}}</td>
         </tr>
         <tr>
-          <td>Receptor Species</td>
+          <td>Family</td>
+          <td>{{experiment.receptor.family.parent}}</td>
+        </tr>
+        <tr>
+          <td>UniProt</td>
+          <td>{{experiment.receptor.entry_short}}</td>
+        </tr>
+        <tr>
+          <td>IUPHAR</td>
+          <td>{{experiment.receptor.name}}</td>
+        </tr>
+        <tr>
+          <td>Species</td>
           <td>{{experiment.receptor.species}}</td>
         </tr>
         <tr>
-          <td>Receptor Source</td>
-          <td>{{experiment.receptor.endogenous_ligands.parent.parent}}</td>
-        </tr>
-        <tr>
-          <td>Receptor Endogenous Ligand</td>
+          <td>Endogenous Ligand</td>
           <td>{{experiment.endogenous_ligand}}</td>
         </tr>
-        <tr>
-          <td>Receptor Class</td>
-          <td>{{experiment.receptor.family.parent.parent.parent.name}}</td>
-        </tr>
-
       </table>
     </div>
 
     <div class="col-xs-4">
-      <h3>Experiment</h3><table class="table table-striped table-bordered">
-
+      <h3>Reference</h3><table class="table table-striped table-bordered">
         <tr>
           <td>Article Author</td>
           <td>
@@ -86,13 +93,6 @@
             <a href='{{experiment.publication.web_link}}' target='blank'>
               {{experiment.publication.reference}}</td>
         </tr>
-        <tr>
-          <td>Reference Ligand</td>
-          <td>
-              {{experiment.reference_ligand}}</td>
-        </tr>
-
-
       </table>
     </div>
   </div>
@@ -100,13 +100,12 @@
   <div class="row">
     {%for data in experiment.analyzed_data.all%}
     <div class="col-xs-6">
-      <h2 class="sub-header">Experiment Assay</h2>
-      <h3 class="sub-header" style="text-transform: capitalize;">Pathway {{ forloop.counter }}: {{data.signalling_protein}} </h3>
+      <h3 class="sub-header" style="text-transform: capitalize;">Pathway {{ forloop.counter }}: {{data.family}} </h3>
       <div class="table-responsive">
         <table class="table table-striped" id="vendors_table">
           <tr>
             <td>Signalling Protein</td>
-            <td>{{data.signalling_protein}}</td>
+            <td>{{data.family}}</td>
           </tr>
           {%if data.assay_description%}
             <tr>
@@ -166,11 +165,10 @@
             <td>Emax Reference Ligand</td>
             <td>{{data.emax_ligand_reference.name}}</td>
           </tr>
-
-          <!-- <tr>
-            <td>Reference Ligand</br>Quantitive Activity</td>
+          <tr>
+            <td>Emax Reference Ligand</br>Quantitive Activity</td>
             <td>{{data.emax_ligand_reference.name}}</td>
-          </tr>  -->
+          </tr>
         </table>
       </div>
     </div>
