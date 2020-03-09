@@ -170,9 +170,10 @@
             },
 
             "fnDrawCallback": function() {
-                grey()
+
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
+                grey()
                 setTimeout(function() {
                     $('#loadingSpinner').hide();
                     $('#structures_scrollable_body').show();
