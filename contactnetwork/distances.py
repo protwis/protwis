@@ -484,7 +484,6 @@ class Distances():
 
                 # Get distance between cells that have both GNs.
                 distance = np.sum(np.absolute(pdb_distance_maps[pdb1][gn_indices,:][:, gn_indices] - pdb_distance_maps[pdb2][gn_indices,:][:, gn_indices]))
-                distance_matrix[i, j] = pow(distance,2)/(len(gn_indices)*len(gn_indices))
-                distance_matrix[j, i] = distance_matrix[i, j]
+                distance_matrix[i, j] = distance_matrix[j, i] = distance * distance/(len(gn_indices)*len(gn_indices))
 
         return distance_matrix
