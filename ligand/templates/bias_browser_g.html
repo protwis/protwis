@@ -3,7 +3,7 @@
 {% load static %}
 
 
-
+{%csrf_token%}
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
@@ -62,25 +62,26 @@ function getCookie(c_name) {
                     action: function(e, dt, node, config) {
                         var id = read_ids()
                         var result
+                        console.log('test' + id)
                         $.ajaxSetup({
                             headers: { "X-CSRFToken": getCookie("csrftoken") }
                         });
                         $.ajax({
                             type: 'POST',
-                            url: '/ligand/browservendors/',
+                            url: '/ligand/vendors',
                             data: {
-                                data: id,
+                                ids: id,
                                 csrfmiddlewaretoken: '{{csrf_token }}',
                                 action: 'post',
                             },
                             success: function() {
 
-                                myFunction('/ligand/browservendors', 'Detail View', window, 720, 1000)
+                                myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
                             }
                         });
                     },
                 },
-            ],
+                ],
             scrollX: '100%',
             scrollY: '70vh',
             scrollCollapse: true,
@@ -753,6 +754,7 @@ function getCookie(c_name) {
             ids.push($(x).find('span:first')[0].innerText)
         }
         var myJSON = JSON.stringify(ids);
+
         return myJSON
     }
 </script>
