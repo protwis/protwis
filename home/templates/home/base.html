@@ -4,106 +4,120 @@
 
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% site_title %}</title>
-
     <!-- Bootstrap -->
     <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'bootstrap/css/bootstrap-submenu.min.css' %}" rel="stylesheet">
-
     <!-- TreeView -->
     <link href="{% static 'home/css/bootstrap-treeview.min.css' %}" rel="stylesheet">
-
     <!-- Custom styles -->
     <link href="{% static 'home/css/style.css' %}" rel="stylesheet">
-
     <!-- flowplayer skin -->
-    <link rel="stylesheet" href="{% static 'flowplayer/flowplayer.css' %}">
-
+    <link href="{% static 'flowplayer/flowplayer.css' %}" rel="stylesheet">
+    <!-- Comply with GDPR Minified Cookie Consent from https://github.com/osano/cookieconsent -->
+    <link href="{% static 'home/css/cookieconsent.min.css' %}" rel="stylesheet">
     <!-- Additional CSS -->
     {% block addon_css %}{% endblock %}
 
     {% if google_analytics %}
-      {% include "home/ga.html" %}
+        {% include "home/ga.html" %}
     {% endif %}
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
-  <body>
-    {% mainmenu %}
 
-    <div class="container" id="content">
-        {% block content %}{% endblock %}
-    </div>
-    {% block outcontent %}{% endblock %}
+</head>
+<body>
+{% mainmenu %}
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
-    <!-- jQueryUI -->
-    <link rel="stylesheet" href="{% static 'home/css/jquery-ui.min.css' %}" type="text/css" media="all" />
-    <link rel="stylesheet" href="{% static 'home/css/jquery-ui.theme.min.css' %}" type="text/css" media="all" />
-    <script src="{% static 'home/js/jquery-ui.min.js' %}"></script>
-    <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'bootstrap/js/bootstrap-submenu.js' %}"></script>
-    <script src="{% static 'home/js/navbar-autocomplete.js' %}"></script>
-    <script src="{% static 'home/js/svg-pan-zoom.min.js' %}"></script>
-    <script src="{% static 'home/js/bootstrap-treeview.min.js' %}"></script>
-    <script src="{% static 'home/js/papaparse.min.js' %}" type="text/javascript"></script>
-    <!-- Probably not needed - Victor inserted irt contact network -->
-    <!-- <script src="{% static 'home/js/csv.min.js' %}" type="text/javascript"></script> -->
+<div class="container" id="content">
+    {% block content %}{% endblock %}
+</div>
+{% block outcontent %}{% endblock %}
 
-    <!-- 3. flowplayer -->
-    <script src="{% static 'flowplayer/flowplayer.min.js' %}"></script>
-    <!-- the overlay plugin -->
-    <script src="{% static 'flowplayer/flowplayer.overlay.min.js' %}"></script>
-    <!-- the bootstrap vendor overlay wrapper -->
-    <script src="{% static 'flowplayer/flowplayer.overlay.bootstrap.js' %}"></script>
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
+<!-- jQueryUI -->
+<link rel="stylesheet" href="{% static 'home/css/jquery-ui.min.css' %}" type="text/css" media="all"/>
+<link rel="stylesheet" href="{% static 'home/css/jquery-ui.theme.min.css' %}" type="text/css" media="all"/>
+<script src="{% static 'home/js/jquery-ui.min.js' %}"></script>
+<script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'bootstrap/js/bootstrap-submenu.js' %}"></script>
+<script src="{% static 'home/js/navbar-autocomplete.js' %}"></script>
+<script src="{% static 'home/js/svg-pan-zoom.min.js' %}"></script>
+<script src="{% static 'home/js/bootstrap-treeview.min.js' %}"></script>
+<script src="{% static 'home/js/papaparse.min.js' %}"></script>
+<!-- Probably not needed - Victor inserted irt contact network -->
+<!-- <script src="{% static 'home/js/csv.min.js' %}" type="text/javascript"></script> -->
 
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('[data-submenu]').submenupicker();
-        });
-    </script>
-    <script>
+<!-- 3. flowplayer -->
+<script src="{% static 'flowplayer/flowplayer.min.js' %}"></script>
+<!-- the overlay plugin -->
+<script src="{% static 'flowplayer/flowplayer.overlay.min.js' %}"></script>
+<!-- the bootstrap vendor overlay wrapper -->
+<script src="{% static 'flowplayer/flowplayer.overlay.bootstrap.js' %}"></script>
+    <!-- Comply with GDPR Minified Cookie Consent from https://github.com/osano/cookieconsent -->
+<script src="{% static 'home/js/cookieconsent.min.js' %}" data-cfasync="false"></script>
 
-$('.videoLink').click(function(e) {
-    e.preventDefault();
-
-    $("#fp-modal").remove();
-    $("body").append("<div id=\"fp-modal\"></div>");
-
-    mp4 = $(this).attr('mp4');
-    flowplayer("#fp-modal", {
-    // ratio: 9/16,
-    // overlay plugin using bootstrap modal vendor
-    overlay: {
-        trigger: "#fp-modal",
-        vendor: "bootstrap",
-        title: mp4,
-        size: "lg"
-    },
-    clip: { sources: [ { type: "video/mp4", src:  mp4 } ] }
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('[data-submenu]').submenupicker();
     });
-    $("#fp-modal").click();
-});
-
-$('.refLink').click(function(e){
-    e.preventDefault();
-    url = $(this).attr('url');
-    window.open(url);
-});
-
-$('.refLink').tooltip();
 </script>
-    <!-- Include custom ajax functions -->
-    {% block addon_js %}{% endblock %}
-  </body>
+<script>
+
+    $('.videoLink').click(function (e) {
+        e.preventDefault();
+
+        $("#fp-modal").remove();
+        $("body").append("<div id=\"fp-modal\"></div>");
+
+        mp4 = $(this).attr('mp4');
+        flowplayer("#fp-modal", {
+            // ratio: 9/16,
+            // overlay plugin using bootstrap modal vendor
+            overlay: {
+                trigger: "#fp-modal",
+                vendor: "bootstrap",
+                title: mp4,
+                size: "lg"
+            },
+            clip: {sources: [{type: "video/mp4", src: mp4}]}
+        });
+        $("#fp-modal").click();
+    });
+
+    $('.refLink').click(function (e) {
+        e.preventDefault();
+        url = $(this).attr('url');
+        window.open(url);
+    });
+
+    $('.refLink').tooltip();
+</script>
+<!-- Include custom ajax functions -->
+{% block addon_js %}{% endblock %}
+
+<script>
+    window.cookieconsent.initialise({
+        "palette": {
+            "popup": {
+                "background": "#edeff5",
+                "text": "#838391"
+            },
+            "button": {
+                "background": "#4b81e8"
+            }
+        }
+    });
+</script>
+</body>
 </html>
