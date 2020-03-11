@@ -1,4 +1,40 @@
-function createSnakeplot(data,containerSelector) {
+function color_by_scale(scale, color1, color2, color3) {
+
+    // case "rwb": // red-white-blue
+    // case "bwr": // blue-white-red
+    // case "ryg": // red-yellow-green
+    // case "gyr": // green-yellow-red
+    // case "rgb":
+    // case "wr": // white-red
+    // case "wg": // white-green
+    // case "wb": // white-blue
+    // case "rb": // red-blue
+    // case "br": // blue-red
+    // case "wp": // white-purple
+    // case "grey": // grey
+
+    // return numberToColorGradient(scale, 1, color)
+
+    var colors = {}
+
+    colors.red = {red:255, green:0, blue: 0};
+    colors.red = {red:195, green:74, blue: 54};
+    colors.blue = {red:0, green:0, blue: 255};
+    colors.blue = {red:0, green:140, blue: 204};
+    colors.green = {red:0, green:255, blue: 0};
+    colors.green = {red:0, green:201, blue: 167};
+    colors.white = {red:255, green:255, blue: 255};
+    colors.yellow = {red:255, green:255, blue: 0};
+    colors.yellow = {red:255, green:255, blue: 0};
+    colors.black = { red: 0, green: 0, blue: 0 };
+    colors.orange = { red: 255, green: 150, blue: 113 };
+    colors.purple = { red: 128, green: 0, blue: 128 };
+    colors.false = false;
+    
+    return colorGradient(scale, colors[color1], colors[color2], colors[color3])
+}
+
+function createSnakeplot(data, containerSelector) {
 
 
     $(containerSelector).html('')
@@ -153,41 +189,7 @@ function createSnakeplot(data,containerSelector) {
     });
     // console.log(path_groups, path_groups_lookup);
     console.log('colors', colors);
-    function color_by_scale(scale, color1, color2, color3) {
 
-        // case "rwb": // red-white-blue
-        // case "bwr": // blue-white-red
-        // case "ryg": // red-yellow-green
-        // case "gyr": // green-yellow-red
-        // case "rgb":
-        // case "wr": // white-red
-        // case "wg": // white-green
-        // case "wb": // white-blue
-        // case "rb": // red-blue
-        // case "br": // blue-red
-        // case "wp": // white-purple
-        // case "grey": // grey
-
-        // return numberToColorGradient(scale, 1, color)
-
-        var colors = {}
-
-        colors.red = {red:255, green:0, blue: 0};
-        colors.red = {red:195, green:74, blue: 54};
-        colors.blue = {red:0, green:0, blue: 255};
-        colors.blue = {red:0, green:140, blue: 204};
-        colors.green = {red:0, green:255, blue: 0};
-        colors.green = {red:0, green:201, blue: 167};
-        colors.white = {red:255, green:255, blue: 255};
-        colors.yellow = {red:255, green:255, blue: 0};
-        colors.yellow = {red:255, green:255, blue: 0};
-        colors.black = { red: 0, green: 0, blue: 0 };
-        colors.orange = { red: 255, green: 150, blue: 113 };
-        colors.purple = { red: 128, green: 0, blue: 128 };
-        colors.false = false;
-        
-        return colorGradient(scale, colors[color1], colors[color2], colors[color3])
-    }
 
     var color_options = {
         'rwb': 'red-white-blue',
