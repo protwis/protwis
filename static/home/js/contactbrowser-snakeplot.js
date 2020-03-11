@@ -353,6 +353,16 @@ function createSnakeplot(data,containerSelector) {
                 '</div>' +
                 '</td></tr> '
                 ;
+        content += '<tr><td>Residue rotation:</td><td colspan=4><select id="snakeplot_color_rotation" class="residue_rotation">' +
+            '<option value="none">None</option>' +
+            select_data_options +
+            '</select></td>' +
+            '<td>' + 
+            '<div class="btn-group btn-toggle residue_rotation" id="rotation_filtered">' +
+            '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
+            '    <button class="btn btn-xs btn-default" value="false">All</button>' +
+            '</div>' +
+            '</td></tr> '
         content += '<tr><td colspan=6><hr></td></tr><tr><td>Backbone line:</td><td><select id="snakeplot_color_backbone">' +
                 '<option value="none">None</option>' +
                 select_data_options_backbone +
@@ -388,6 +398,7 @@ function createSnakeplot(data,containerSelector) {
             if (id=='fill_filtered') change_fill();
             if (id=='border_filtered') change_stroke();
             if (id == 'text_filtered') change_text();
+            if (id == 'rotation_filtered') change_rotation();
             
             if (id == 'excluded_color') $(containerSelector + " #text_excluded")[0].dispatchEvent(new Event("change"));
             if (id == 'included_color') $(containerSelector + " #text_included")[0].dispatchEvent(new Event("change"));
@@ -518,6 +529,10 @@ function createSnakeplot(data,containerSelector) {
 
         $(containerSelector+ " .backbone_color").on("change", function () {
             change_backbone();
+        });
+
+        $(containerSelector+ " .residue_rotation").on("change", function () {
+            change_rotation();
         });
 
         d3.select(containerSelector).select("#snakeplot_color_backbone").on("change", function () {
@@ -684,6 +699,53 @@ function createSnakeplot(data,containerSelector) {
                 } else {
                     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
                     $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
+                }
+                
+                // $(containerSelector).find('#' + pos_id + 't').attr("fill", color[color_id]);
+                // $(this).css("opacity", 0.3);
+                // if (color[2] > 0.1) {    
+                    
+                // } else {
+                //     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
+                // }
+            });
+        }
+
+        function change_rotation() {
+            fill_color = $(containerSelector + " #snakeplot_color_rotation").val();
+            color_filtered = ($(containerSelector + " #rotation_filtered").find(".active").attr('value') == 'true');
+            console.log('change rotation to!', fill_color, 'color_filtered', color_filtered);
+
+            $(containerSelector).find('.rcircle').each(function () {
+                original_title = $(this).attr('original_title');
+                gn = false;
+                pos_id = $(this).attr('id');
+                if (original_title.split(" ")[1].length) {
+                    // this has GN
+                    seg = original_title.split(" ")[1].split(".")[0];
+                    gn = original_title.split(" ")[1].split("x")[1];
+                }
+
+                if (fill_color == 'none') {
+                    $(containerSelector).find('#' + pos_id + 't').attr("transform", "");
+                    return true;
+                }
+
+                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
+                    $(containerSelector).find('#' + pos_id + 't').attr("transform", "");
+                    return true;
+                }
+
+
+                if (pos_id in colors[fill_color]) {
+                    var scale = colors[fill_color][pos_id][1];
+                    var rotation_value = Math.round(scale * 180 - 90);
+                    var x = $(containerSelector).find('#' + pos_id + 't').attr("x");
+                    var y = $(containerSelector).find('#' + pos_id + 't').attr("y");
+                    // d3.select("#t37t").transition().duration(10000).attr("transform","rotate(45)")
+                    $(containerSelector).find('#' + pos_id + 't').attr("transform", "rotate("+rotation_value+" " + x + " " + y + ")");
+                } else {
+                    $(containerSelector).find('#' + pos_id + 't').attr("transform", "");
                 }
                 
                 // $(containerSelector).find('#' + pos_id + 't').attr("fill", color[color_id]);
