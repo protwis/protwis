@@ -145,6 +145,7 @@ def Couplings(request):
     proteins = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00',
                                       species__common_name='Human').all().prefetch_related('family')
     data = {}
+    uniprot_accession = {}
     class_names = {}
     family_names = {}
 
@@ -153,12 +154,14 @@ def Couplings(request):
         if p_class not in class_names:
             class_names[p_class] = p.family.parent.parent.parent.name
             family_names[p_class] = p.family.parent.name
+            uniprot_accession[p_class] = p.accession
         p_class_name = class_names[p_class].replace('Class','').strip()
         p_family_name = family_names[p_class].replace('receptors','').strip()
-        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'pretty': p.short()[:25], 'GuideToPharma': {}, 'Aska': {}}
+        p_accession = uniprot_accession[p_class]
+        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession, 'pretty': p.short(), 'GuideToPharma': {}, 'Aska': {}, 'Bouvier':{}}
     distinct_g_families = []
     distinct_g_subunit_families = {}
-    distinct_sources = ['GuideToPharma', 'Aska']
+    distinct_sources = ['GuideToPharma', 'Aska', 'Bouvier']
     couplings = ProteinGProteinPair.objects.all().prefetch_related('protein', 'g_protein_subunit', 'g_protein')
 
     for c in couplings:
@@ -207,7 +210,7 @@ def Couplings(request):
     # This for loop, which perhaps should be a function in itself, perhaps an instance of a Couplings class, does
     # the job of merging together two data-sets, that of the GuideToPharma and Aska's results.
     for p, v in data.items():
-        fd[p] = [v['class'], v['family'], p, v['pretty']]
+        fd[p] = [v['class'], v['family'], v['accession'], p, v['pretty']]
         s = 'GuideToPharma'
         # Merge
         for gf in distinct_g_families:
@@ -253,7 +256,9 @@ def Couplings(request):
                         fd[p].append("")
                 else:
                     fd[p].append("")
-
+        #print(v)
+    #print(data['5HT1A'])
+    #print(fd['5HT1A'])
     context['data'] = fd
     context['distinct_gf'] = distinct_g_families
     context['distinct_sf'] = distinct_g_subunit_families
