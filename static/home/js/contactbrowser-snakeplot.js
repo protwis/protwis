@@ -795,7 +795,7 @@ function createSnakeplot(data,containerSelector) {
             fill_color = $(containerSelector + " #snakeplot_move_circle").val();
             console.log('change movement to!', fill_color);
             
-            color_filtered = d3.select(containerSelector).select("#color_filtered").property("checked");
+            // color_filtered = d3.select(containerSelector).select("#color_filtered").property("checked");
 
             $(containerSelector).find('.rcircle').each(function () {
 
@@ -807,9 +807,9 @@ function createSnakeplot(data,containerSelector) {
                     seg = original_title.split(" ")[1].split(".")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
-                if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
+                //if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
                     // return true;
-                }
+                //}
 
                 if (fill_color!='none') {
                     color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#fff","#fff"];
