@@ -826,6 +826,7 @@ function createSnakeplot(data, containerSelector) {
                 current_x_text = parseInt($(containerSelector).find('#' + pos_id + 't').attr("original_x"));
                 $(this).attr("cx", current_x + color[1] * max_momement);
                 $(containerSelector).find('#' + pos_id + 't').attr("x",current_x_text + color[1] * max_momement)
+                $(containerSelector).find('#' + pos_id + 't').find("tspan").attr("x",current_x_text + color[1] * max_momement)
                              
             });
         }
