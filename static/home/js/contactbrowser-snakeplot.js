@@ -814,10 +814,36 @@ function createSnakeplot(data, containerSelector) {
                     // return true;
                 //}
 
-                if (fill_color!='none') {
-                    color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#fff","#fff"];
+                if (fill_color != 'none') {
+                    if (pos_id in colors[fill_color]) {
+                        color = colors[fill_color][pos_id];
+                    } else {
+                        console.log("no movement for ", seg,gn, pos_id);
+                        // find closest value
+                        color = ["#fff", 0, 0, "#fff", "#fff"];   
+                        if (gn && parseInt(gn.substring(0,2)) >= 50) {
+                            for (i = parseInt(gn.substring(0,2)); i > 0; i--) {
+                                seq_pos = data['snakeplot_lookup'][seg+"x"+i]
+                                if (seq_pos in colors[fill_color]) {
+                                    color = colors[fill_color][seq_pos];
+                                    console.log('found',i,seg+"x"+i)
+                                    break;
+                                }
+                            }
+                        } else if (gn) {
+                            for (i = parseInt(gn.substring(0,2)); i < 100; i++) {
+                                seq_pos = data['snakeplot_lookup'][seg+"x"+i]
+                                if (seq_pos in colors[fill_color]) {
+                                    color = colors[fill_color][seq_pos];
+                                    console.log('found',i,seg+"x"+i)
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    //color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#fff","#fff"];
                 } else {
-                    color = ["#fff", 0, 0,"#fff","#fff"];     
+                    color = ["#fff", 0, 0, "#fff", "#fff"];   
                 }
 
                 max_momement = 25;
