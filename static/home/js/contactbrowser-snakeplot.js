@@ -444,7 +444,8 @@ function createSnakeplot(data, containerSelector) {
                     break;
                     case "both":
                         fontsize = 12;
-                        text = "<tspan dy=-6>" + AA + "</tspan><tspan dy=9 dx=-10>" + gn + "</tspan>";
+                        
+                        text = "<tspan x='"+$(this).attr('x')+"'>" + AA + "</tspan><tspan dy=9  x='"+$(this).attr('x')+"'>" + gn + "</tspan>";
                     break;
                     case "aa":
                             text = AA;
