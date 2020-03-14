@@ -17,6 +17,7 @@ function createScatterplot(data,containerSelector) {
     var colors = {}
     colors['distance'] = {}
     colors['distance_abs'] = {}
+    colors['segment'] = {}
 
 
     index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
@@ -73,6 +74,7 @@ function createScatterplot(data,containerSelector) {
             if (Math.abs(a[0])>max_values[i]) max_values[i] = Math.abs(a[0])
         });
     });
+    var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
     $.each(data['tab4'], function (gn, v) {
         $.each(v["angles"], function (i, a) {
             seq_pos = gn
@@ -98,8 +100,11 @@ function createScatterplot(data,containerSelector) {
             }
             if (!(i in max_values)) max_values[i] = 0;
         });
+        var seg = data['segm_lookup'][gn];
+        colors["segment"][seq_pos] = rb_colors[highlight.indexOf(seg)];
+        
     });
-
+    console.log('colors',colors)
     // var colors = {}
     // colors['distance'] = {}
 
@@ -177,7 +182,17 @@ function createScatterplot(data,containerSelector) {
         Object.keys(index_names).forEach(key => {
             index_names_rev[index_names[key]] = key;
         });
-        console.log(index_names_rev,index_names)
+        console.log(index_names_rev, index_names)
+        var x_abs = false;
+        var y_abs = false;
+        if (x.includes("_abs")) {
+            x = x.slice(0, -4);
+            x_abs = true;
+        }
+        if (y.includes("_abs")) {
+            y = y.slice(0, -4);
+            y_abs = true;
+        }
         
         var X = [];
         var Y = [];
@@ -187,15 +202,17 @@ function createScatterplot(data,containerSelector) {
             // console.log('filtered', gn,y,index_names_rev[y]);
             if (x == 'distance') {
                 if (!(gn in data['distances'])) return true;
-                X.push(data['distances'][gn]['avg']);
+                x_abs ? X.push(Math.abs(data['distances'][gn]['avg'])) : X.push(data['distances'][gn]['avg']);
             } else {
-                X.push(data['tab4'][gn]['angles'][index_names_rev[x]][0]);
+                x_abs ? X.push(Math.abs(data['tab4'][gn]['angles'][index_names_rev[x]][0])) : X.push(data['tab4'][gn]['angles'][index_names_rev[x]][0]);
             }
             if (y == 'distance') {
                 if (!(gn in data['distances'])) return true;
-                Y.push(data['distances'][gn]['avg']);
+                //Y.push(data['distances'][gn]['avg']);
+                y_abs ? Y.push(Math.abs(data['distances'][gn]['avg'])) : Y.push(data['distances'][gn]['avg']);
             } else {
-                Y.push(data['tab4'][gn]['angles'][index_names_rev[y]][0]);
+                //Y.push(data['tab4'][gn]['angles'][index_names_rev[y]][0]);
+                y_abs ? Y.push(Math.abs(data['tab4'][gn]['angles'][index_names_rev[y]][0])) : Y.push(data['tab4'][gn]['angles'][index_names_rev[y]][0]);
             }
             names.push(gn);
         });
@@ -244,7 +261,10 @@ function createScatterplot(data,containerSelector) {
         y_axis_type = $(containerSelector_hash + " #change_y").val();
         sp_color = $(containerSelector_hash + " #sp_color").val();
         sp_size = $(containerSelector_hash + " #sp_size").val();
-        console.log('draw scatter', x_axis_type, y_axis_type, sp_color, sp_size);
+        label_only = $(containerSelector_hash + " #label_only").prop("checked");
+
+        
+        console.log('draw scatter', x_axis_type, y_axis_type, sp_color, sp_size,'label_only',label_only);
         plot_data = get_values(x_axis_type, y_axis_type)
         // set the dimensions and margins of the graph
         scatter_svg.html("");
@@ -260,7 +280,7 @@ function createScatterplot(data,containerSelector) {
             .attr("x", 0)
             .attr("y", 0)
             .attr("height", height)
-            .attr("width", height)
+            .attr("width", width)
             // .style("fill", "EBEBEB")
             .style("fill", "white")
     
@@ -272,7 +292,7 @@ function createScatterplot(data,containerSelector) {
             .range([0, width])
         scatter_svg.append("g")
             .attr("transform", "translate(0," + height + ")")
-            .call(d3v4.axisBottom(x).tickSize(-height * 1.3).ticks(10))
+            .call(d3v4.axisBottom(x).tickSize(-height).ticks(10))
             .select(".domain").remove()
 
         // Add Y axis
@@ -281,7 +301,7 @@ function createScatterplot(data,containerSelector) {
             .range([height, 0])
             .nice()
         scatter_svg.append("g")
-            .call(d3v4.axisLeft(y).tickSize(-width * 1.3).ticks(7))
+            .call(d3v4.axisLeft(y).tickSize(-width).ticks(10))
             .select(".domain").remove()
 
         // Customization
@@ -289,23 +309,23 @@ function createScatterplot(data,containerSelector) {
 
         // Add X axis label:
         scatter_svg.append("text")
-            .attr("text-anchor", "end")
-            .attr("x", width / 2 + margin.left)
+            .attr("text-anchor", "middle")
+            .attr("x", width / 2)
             .attr("y", height + margin.top + 20)
             .text(nice_index_names[x_axis_type]);
 
         // Y axis label:
         scatter_svg.append("text")
-            .attr("text-anchor", "end")
+            .attr("text-anchor", "middle")
             .attr("transform", "rotate(-90)")
             .attr("y", -margin.left + 20)
             .attr("x", -margin.top - height / 2 + 20)
             .text(nice_index_names[y_axis_type])
 
         // Color scale: give me a specie name, I return a color
-        var color = d3v4.scaleOrdinal()
-            .domain(["setosa", "versicolor", "virginica"])
-            .range(["#F8766D", "#00BA38", "#619CFF"])
+        // var color = d3v4.scaleOrdinal()
+        //     .domain(["setosa", "versicolor", "virginica"])
+        //     .range(["#F8766D", "#00BA38", "#619CFF"])
 
         // generate data
         var data = []
@@ -317,27 +337,50 @@ function createScatterplot(data,containerSelector) {
         });
         console.log(data)
         // Add dots
-        scatter_svg.append('g')
-            .selectAll("dot")
-            .data(data)
-            .enter()
-            .append("circle")
-            .attr("cx", function (d) { return x(d.x); })
-            .attr("cy", function (d) { return y(d.y); })
-            .attr("opacity",0.7)
-            .attr("r", function (d) { return d.name in colors[sp_size] ? 2+colors[sp_size][d.name][1] * 8 : 5;})
-            .style("fill", function (d) { return d.name in colors[sp_size] ? color_by_scale(colors[sp_color][d.name][1], "red", "blue") : "black";} )
+        label_offset = 0;
+        text_anchor = 'middle';
+        font_weight = 'bold';
+        if (!label_only) {
+            label_offset = 7;
+            text_anchor = 'left';
+            font_weight = 'normal';
+            scatter_svg.append('g')
+                .selectAll("dot")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("cx", function (d) { return x(d.x); })
+                .attr("cy", function (d) { return y(d.y); })
+                .attr("opacity",0.7)
+                .attr("r", function (d) { return sp_size!='none' && d.name in colors[sp_size] ? 2+colors[sp_size][d.name][1] * 8 : 5;})
+                .style("fill", function (d) {
+                    if (sp_color == "segment") {
+                        return colors[sp_color][d.name];
+                    } else {
+                        return d.name in colors[sp_size] ? color_by_scale(colors[sp_color][d.name][1], "red", "blue") : "black";
+                    }
+                })
+        }
     
-    scatter_svg.append("g")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 10)
-        .selectAll("text")
-        .data(data)
-        .join("text")
-        .attr("dy", "0.35em")
-        .attr("x", d => x(d.x) + 7)
-        .attr("y", d => y(d.y))
-        .text(d => d.name);
+        scatter_svg.append("g")
+            .attr("font-family", "sans-serif")
+            .selectAll("text")
+            .data(data)
+            .join("text")
+            .attr("dy", "0.35em")
+            .attr("x", d => x(d.x) + label_offset)
+            .attr("y", d => y(d.y))
+            .text(d => d.name)
+            .attr("font-size", function (d) { return sp_size != 'none' && label_only && d.name in colors[sp_size] ? 5 + colors[sp_size][d.name][1] * 10 : 8; })
+            .attr("font-weight", font_weight)
+            .attr("text-anchor",text_anchor)
+            .style("fill", function (d) {
+                if (sp_color == "segment") {
+                    return colors[sp_color][d.name];
+                } else {
+                    return label_only && d.name in colors[sp_size] ? color_by_scale(colors[sp_color][d.name][1], "red", "blue") : "black";
+                }
+            });
     
 
 }
@@ -373,8 +416,8 @@ function createScatterplot(data,containerSelector) {
 
         $(containerSelector_hash).find(".controls-panel").remove();
         newDiv.setAttribute("class", "controls-panel");
-        content = '<span class="pull-right snakeplot_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">';
-            // 'Generic number with AA<input id="generic" type="checkbox"><br>' +
+        content = '<span class="pull-right snakeplot_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">' +
+            'Replace marker with label<input id="label_only" class="change_axis" type="checkbox"><br>';
             // 'Only plot kept positions <input id="color_filtered" type="checkbox" checked><br>';
         
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
@@ -389,9 +432,11 @@ function createScatterplot(data,containerSelector) {
             
         content += '<tr><th>Color</th><th>Size</th></tr><tr>';
         content += '<td><select id="sp_color" class="change_axis">' +
+            '<option value="segment">Segment</option>' +
             select_data_options +
             '</select></td>';
         content += '<td><select id="sp_size" class="change_axis">' +
+            '<option value="none">Fixed</option>' +
             select_data_options +
             '</select></td>';
         content += '</table > '
