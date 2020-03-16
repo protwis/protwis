@@ -390,12 +390,12 @@ def isoforms(request):
             if i>0:
                 c = row.split("\t")
                 try:
-                    lookup_entry = "{}_human_{}".format(c[1].lower(),c[2])
+                    lookup_entry = "{}_human_{}".format(c[0].lower(),c[1])
                     summary = isoform_summary[lookup_entry]
                     # print(lookup_entry,isoform_summary[lookup_entry])
                     c.append(summary)
                 except:
-                    print("something off with ",c[1])
+                    print("something off with ",c[0])
                     c.append(['error'])
                 table_data.append(c)
 
