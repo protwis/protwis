@@ -444,8 +444,11 @@ function createSnakeplot(data, containerSelector) {
                     break;
                     case "both":
                         fontsize = 12;
+
+                        var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                        y_shift = isSafari ? 2 : 5;
                         
-                        text = "<tspan x='"+$(this).attr('x')+"'>" + AA + "</tspan><tspan dy=9  x='"+$(this).attr('x')+"'>" + gn + "</tspan>";
+                        text = "<tspan x='"+$(this).attr('x')+"' y='"+(parseInt($(this).attr('y'))-y_shift)+"'>" + AA + "</tspan><tspan dy=9  x='"+$(this).attr('x')+"'>" + gn + "</tspan>";
                     break;
                     case "aa":
                             text = AA;
