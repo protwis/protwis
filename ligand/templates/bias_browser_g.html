@@ -2,7 +2,6 @@
 
 {% load static %}
 
-
 {%csrf_token%}
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
@@ -10,20 +9,74 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="https://cdn.datatables.net/buttons/1.0.3/js/buttons.colVis.js"></script>
+<script type="text/javascript">
+    function grey(){
 
-<script type="text/javascript" charset="utf-8">
-function getCookie(c_name) {
-    if (document.cookie.length > 0) {
-        c_start = document.cookie.indexOf(c_name + "=");
-        if (c_start != -1) {
-            c_start = c_start + c_name.length + 1;
-            c_end = document.cookie.indexOf(";", c_start);
-            if (c_end == -1) c_end = document.cookie.length;
-            return unescape(document.cookie.substring(c_start, c_end));
+        function rgb2hex(r,g,b) {
+            r = Math.round(r).toString(16);
+            g = Math.round(g).toString(16);
+            b = Math.round(b).toString(16);
+
+            if (r.length == 1) r = '0' + r;
+            if (g.length == 1) g = '0' + g;
+            if (b.length == 1) b = '0' + b;
+
+            return '#' + r + g + b;
         }
+        $('.greyscale_potency').each(function() {
+        var s = $(this).html();
+        if (s == "-") return
+        if (!s) return
+        frequency = (Math.abs(s));
+        var rgb = { r:255-(frequency), g: 255-(frequency), b: 255-(frequency)};
+        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+        if (s == 'primary') hex = "#808080";
+        if (s == 'secondary') hex = "#bebebe";
+        if (s == 'No coupling') hex = "#f9f9f9";
+        $(this).attr('bgcolor',hex);
+        });
+        // Color cells according to their content
+        $('.greyscale').each(function() {
+        var s = $(this).html();
+        if (s == "-") return
+        if (!s) return
+        frequency = (Math.abs(s)/40);
+        var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
+        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+        if (s == 'primary') hex = "#808080";
+        if (s == 'secondary') hex = "#bebebe";
+        if (s == 'No coupling') hex = "#f9f9f9";
+        $(this).attr('bgcolor',hex);
+        });
+
+        // Color cells according to their content
+        $('.greyscale_normal').each(function() {
+        var s = $(this).html();
+        if (s == "-") return
+        if (!s) return
+        if (Math.abs(s) < 1) s = Math.abs(s)+1;
+        s = (Math.abs(s))
+        frequency = s;
+        var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
+        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+        $(this).attr('bgcolor',hex);
+        });
+
     }
-    return "";
-}
+</script>
+<script type="text/javascript" charset="utf-8">
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
     // main table load
     $(document).ready(function() {
         oTable = $('#structures_scrollable').DataTable({
@@ -81,7 +134,7 @@ function getCookie(c_name) {
                         });
                     },
                 },
-                ],
+            ],
             scrollX: '100%',
             scrollY: '70vh',
             scrollCollapse: true,
@@ -89,6 +142,7 @@ function getCookie(c_name) {
                 [3, "desc"]
             ],
             AutoWidth: false,
+
             paging: true,
             "lengthMenu": [
                 [100, -1],
@@ -97,6 +151,7 @@ function getCookie(c_name) {
             "initComplete": function(settings, json) {
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
+                grey()
                 setTimeout(function() {
                     oTable.columns().flatten().each(function(colIdx) {
                         var columnData = [];
@@ -116,8 +171,10 @@ function getCookie(c_name) {
             },
 
             "fnDrawCallback": function() {
+
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
+                grey()
                 setTimeout(function() {
                     $('#loadingSpinner').hide();
                     $('#structures_scrollable_body').show();
@@ -139,7 +196,6 @@ function getCookie(c_name) {
                 }, 1);
             }
         });
-
 
         yadcf.init(oTable,
             [{
@@ -207,12 +263,14 @@ function getCookie(c_name) {
                     column_number: 9,
                     filter_type: "range_number",
                     filter_default_label: ["From", "To"],
+                    filter_plugin_options: { width: '30px' },
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 10,
                     filter_type: "range_number",
                     filter_default_label: ["From", "To"],
+                    filter_plugin_options:  { width: '30px' },
                     filter_reset_button_text: false,
                 },
                 {
@@ -560,7 +618,7 @@ function getCookie(c_name) {
                     column_number: 61,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Article Authors",
+                    filter_default_label: "Authors",
                     filter_reset_button_text: false,
 
                 },
@@ -570,69 +628,21 @@ function getCookie(c_name) {
                     select_type: 'select2',
                     column_data_type: "html",
                     html_data_type: "text",
-                    filter_default_label: "Article DOI",
+                    filter_default_label: "DOI",
                     filter_reset_button_text: false,
                 },
 
             ], {
                 cumulative_filtering: true
-            }, {
-                externally_triggered: true
-            },
+            }
         );
 
         function reset_filters() {
-            yadcf.exResetAllFilters(oTable);
+            $('#loadingSpinner').show();
+            $('#structures_scrollable_body').hide();
+            location.reload()
+            //yadcf.exResetAllFilters(oTable);
         }
-
-            function rgb2hex(r,g,b) {
-                r = Math.round(r).toString(16);
-                g = Math.round(g).toString(16);
-                b = Math.round(b).toString(16);
-
-                if (r.length == 1) r = '0' + r;
-                if (g.length == 1) g = '0' + g;
-                if (b.length == 1) b = '0' + b;
-
-                return '#' + r + g + b;
-            }
-            $('.greyscale_potency').each(function() {
-            var s = $(this).html();
-            if (s == "-") return
-            if (!s) return
-            frequency = (Math.abs(s));
-            var rgb = { r:255-(frequency), g: 255-(frequency), b: 255-(frequency)};
-            var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-            if (s == 'primary') hex = "#808080";
-            if (s == 'secondary') hex = "#bebebe";
-            if (s == 'No coupling') hex = "#f9f9f9";
-            $(this).attr('bgcolor',hex);
-            });
-            // Color cells according to their content
-            $('.greyscale').each(function() {
-            var s = $(this).html();
-            if (s == "-") return
-            if (!s) return
-            frequency = (Math.abs(s)/40);
-            var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
-            var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-            if (s == 'primary') hex = "#808080";
-            if (s == 'secondary') hex = "#bebebe";
-            if (s == 'No coupling') hex = "#f9f9f9";
-            $(this).attr('bgcolor',hex);
-            });
-
-            // Color cells according to their content
-            $('.greyscale_normal').each(function() {
-            var s = $(this).html();
-            if (s == "-") return
-            if (!s) return
-            s = (Math.abs(s)+1)
-            frequency = s;
-            var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
-            var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-            $(this).attr('bgcolor',hex);
-            });
 
         $('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
 
@@ -754,7 +764,6 @@ function getCookie(c_name) {
             ids.push($(x).find('span:first')[0].innerText)
         }
         var myJSON = JSON.stringify(ids);
-
         return myJSON
     }
 </script>
@@ -785,7 +794,7 @@ function getCookie(c_name) {
 {% if data %}
 {% autoescape off %}
 
-<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
+<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden; display:inline-block; width:100%;'>
 
     <div id='structures_scrollable_div'>
 
@@ -794,15 +803,15 @@ function getCookie(c_name) {
 
                 <thead id="headers">
                     <tr>
-                        <th colspan="1">Details</th>
-                        <th style="border-left: 1px solid black;" id="col_Receptor" colspan="6" style="text-align:left">Receptor</th>
+                        <th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th id="col_Receptor" colspan="6" style="text-align:left">Receptor</th>
                         <th style="border-left: 1px solid black;" id="col_Ligand" colspan="5" style="text-align:left">Tested Ligand Pair </th>
                         <th style="border-left: 1px solid black;" colspan="2" style="text-align:left">Receptor transducers</th>
                         <th style="border-left: 1px solid black;" id="col_Pathway" colspan="5">Pathway Bias Rank Order </th>
                         <th style="border-left: 1px solid black;" id="col_Operational" colspan="4">Operational model <br> &#916;&#916;(Tau/Ka)</th>
-                        <th style="border-left: 1px solid black;" id="col_Log" colspan="4">Intrinsic relative activity<br> (&#916;&#916;Log(Emax/EC50))</th>
+                        <th style="border-left: 1px solid black;" id="col_Log" colspan="4">Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
                         <th style="border-left: 1px solid black;" id="col_Potency" colspan="4">Potency ratio</th>
-                        <th style="border-left: 1px solid black;" id="col_ec50" colspan="5">Potency (EC50 or <font color="#FF0000">IC50)</font>
+                        <th style="border-left: 1px solid black;" id="col_ec50" colspan="5">Potency (EC50 or<br> <font color="#FF0000">IC50)</font>
                         </th>
                         <th style="border-left: 1px solid black;" id="col_Emax" colspan="5">Emax (% of ref ligand)</th>
                         <th style="border-left: 1px solid black;" id="col_Transduction" colspan="5">Transduction coefficient</th>
@@ -816,19 +825,19 @@ function getCookie(c_name) {
                     </tr>
                     <tr>
                         <!-- Receptor -->
-                        <th>Details</th>
+                        <th><a href="#"><span class="glyphicon glyphicon-info-sign"></a></span></th>
                         <th>Class<br></th>
                         <th>Family</th>
                         <th>UniProt</th>
                         <th>IUPHAR</th>
                         <th>Species</th>
-                        <th>Endogenous Ligand</th>
+                        <th>Endogenous<br>Ligand</th>
                         <!-- Ligand -->
                         <th class='pathways' style="border-left: 1px solid black;">Reference</th>
                         <th>Biased</th>
-                        <th>#Vendors</th>
-                        <th>#Articles</th>
-                        <th>#Labs</th>
+                        <th>#Ven<br>dors</th>
+                        <th>#Arti<br>cles</th>
+                        <th>#Labs<br> </th>
                         <!-- Receptor trunsducers-->
                         <th style="border-left: 1px solid black;">Primary</th>
                         <th>Secondary</th>
@@ -893,8 +902,8 @@ function getCookie(c_name) {
                         <th style="overflow: hidden;
           white-space: nowrap;
           text-overflow: ellipsis;
-          max-width: 250px; border-left: 1px solid black;">Authors</th>
-                        <th style="border-right: 1px solid black;">DOI</th>
+          max-width: 100px; border-left: 1px solid black;">Authors</th>
+                        <th style="border-right: 1px solid black;">DOI/ <br>Reference</th>
                     </tr>
                 </thead>
                 <tbody id='structures_scrollable_body' style="display: none">
@@ -904,8 +913,7 @@ function getCookie(c_name) {
                         <td>
                             <span style='display: none'> {{e.1.ligand.id}}</span>
                             <a href="#">
-                                <!-- <span class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.1.ligand.id}}/detail', 'Detail View', window, 1500, 1000)">Details</span> -->
-                                <span style="margin-left: 35%;" class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span>
+                            <span class="glyphicon glyphicon-info-sign"  onclick="myFunction('experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span>
                             </a>
                         </td>
 
@@ -936,14 +944,14 @@ function getCookie(c_name) {
 
                         <!-- receptor trunsducers -->
                         <td style="border-left: 1px solid black;">{{e.1.primary}}</td>
-                        <td style="border-right: 1px solid black;">{{e.1.secondary}}</td>
+                        <td>{{e.1.secondary}}</td>
 
                         <!-- pathways -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if forloop.first %}
-                        <td id="pathways" style="border-left: 1px solid black;">{{ex.signalling_protein}}</td>
+                        <td id="pathways" style="border-left: 1px solid black;" title="{{ex.signalling_protein}}">{{ex.signalling_protein}}</td>
                         {% else %}
-                        <td id="pathways">{{ex.signalling_protein}}</td>
+                        <td id="pathways" title="{{ex.signalling_protein}}">{{ex.signalling_protein}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -951,7 +959,7 @@ function getCookie(c_name) {
 
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_normal">{{ex.t_factor}}</td>
+                        <td class="greyscale_normal" style= "text-align:right">{{ex.t_factor}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -967,14 +975,14 @@ function getCookie(c_name) {
                         <!-- log bias facrtor -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_normal"> {{ex.log_bias_factor }}</td>
+                        <td class="greyscale_normal" style= "text-align:right"> {{ex.log_bias_factor }}</td>
                         {%endif%}
                         {%endfor%}
 
                         <!-- potency ratio -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td>{{ex.potency }}</td>
+                        <td style= "text-align:right">{{ex.potency }}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -982,9 +990,9 @@ function getCookie(c_name) {
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {%if ex.quantitive_activity %}
                         {%if ex.quantitive_measure_type == 'EC50' %}
-                        <td>{{ex.quantitive_activity}} </td>
+                        <td style= "text-align:right">{{ex.quantitive_activity}} </td>
                         {%else%}
-                        <td>
+                        <td style= "text-align:right">
                             <font color="#FF0000">{{ex.quantitive_activity}} </font>
                         </td>
                         {%endif%}
@@ -998,7 +1006,7 @@ function getCookie(c_name) {
                         {% if ex.quantitive_efficacy == None %}
                         <td></td>
                         {%else%}
-                        <td>{{ex.quantitive_efficacy}}</td>
+                        <td style= "text-align:right">{{ex.quantitive_efficacy}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1007,7 +1015,7 @@ function getCookie(c_name) {
                         {% if ex.t_coefficient == None %}
                         <td></td>
                         {%else%}
-                        <td class="greyscale_normal">{{ex.t_coefficient}}</td>
+                        <td class="greyscale_normal" style= "text-align:right">{{ex.t_coefficient}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1016,7 +1024,7 @@ function getCookie(c_name) {
                         {% if ex.assay_type == None %}
                         <td></td>
                         {%else%}
-                        <td title='{{ex.assay_type}}'>{{ex.assay_type }}</td>
+                        <td title='{{ex.assay_type}}' >{{ex.assay_type }}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1043,7 +1051,7 @@ function getCookie(c_name) {
                             {{e.1.publication.authors}}</td>
                         <td class="name">
                             <a href='{{e.1.publication.web_link}}' target='blank'>
-                                {{e.1.publication.reference}}</td>
+                                {{e.1.publication.web_link.index}}</td>
 
                     </tr>
                     {%endfor%}
@@ -1085,168 +1093,168 @@ document.getElementById("loadingSpinner").style.display = "none";
 </style>
 
 <style type="text/css">
-        .dataTables_scrollHeadInner {
-        margin-top: 20px;
-        }
-
-        table.dataTable thead th,
-        table.dataTable tbody td {
-        max-width: 65px ;
-        word-break: break-all;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        }
-        table.dataTable thead .sorting {
-        background-position: right;
-        }
-        .select2-container select2-container-multi{
-        width: 75%;
-        }
-
-        .select2-container-multi .select2-choices .select2-search-field input {
-        max-width: 50px;
-        }
-        .yadcf-filter-wrapper {
-        position: center;
-        display: flex;
-        white-space: normal;
-        margin-top: 7px;
-        width: 50% !important;
-        }
-
-        .select2-results {
-    background-color:white;
-    border:gray;
-    width: 150px;
+    .dataTables_scrollHeadInner {
+    margin-top: 20px;
     }
 
-        .yadcf-filter-range {
-        grid-auto-columns: auto;
-        max-width: 50px !important;
+    table.dataTable thead th,
+    table.dataTable tbody td {
+    max-width: 65px ;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    }
+    table.dataTable thead .sorting {
+    background-position: right;
+    }
+    .select2-container select2-container-multi{
+    width: 75%;
+    }
+
+    .select2-container-multi .select2-choices .select2-search-field input {
+    max-width: 50px;
+    }
+    .yadcf-filter-wrapper {
+    position: center;
+    display: flex;
+    white-space: normal;
+    margin-top: 7px;
+    width: 50% !important;
+    }
+
+    .select2-results {
+background-color:white;
+border:gray;
+width: 150px;
+}
+
+    .yadcf-filter-range {
+    grid-auto-columns: auto;
+    max-width: 50px !important;
+    font-family: sans-serif;
+    font-size: 80%;
+    font-weight: bold;
+    margin: auto;
+    margin-top: 10%;
+    min-width: 40px;
+    }
+
+    table.dataTable thead .sorting {
+    background-image:none !important;
+    }
+    table.dataTable thead .sorting_desc {
+    background-image:none !important;
+    }
+
+    table.dataTable thead .sorting_asc {
+    background-image:none !important;
+    }
+
+    table.dataTable.compact tbody th, table.dataTable.compact tbody td {
+    padding: 5px 10px 5px 0px !important;
+    width: 0px ;
+    }
+
+    table.dataTable.compact thead th, table.dataTable.compact thead td {
+    padding: 5px 10px 5px 0px;
+    width: 0px ;
+    }
+
+    table.dataTable.compact thead tr.over_header th {
+    border-bottom: 1px solid #ccc;
+    }
+
+    table.dataTable.compact thead th.leftborder {
+    border-left: 1px solid;
+    }
+
+    table.dataTable.compact thead th.rightborder {
+    border-right: 1px solid;
+    }
+
+    .yadcf-filter-range {
+    max-width: 40px !important;
         font-family: sans-serif;
         font-size: 80%;
         font-weight: bold;
-        margin: auto;
-        margin-top: 10%;
-        min-width: 40px;
-        }
-
-        table.dataTable thead .sorting {
-        background-image:none !important;
-        }
-        table.dataTable thead .sorting_desc {
-        background-image:none !important;
-        }
-
-        table.dataTable thead .sorting_asc {
-        background-image:none !important;
-        }
-
-        table.dataTable.compact tbody th, table.dataTable.compact tbody td {
-        padding: 5px 10px 5px 0px !important;
-        width: 0px ;
-        }
-
-        table.dataTable.compact thead th, table.dataTable.compact thead td {
-        padding: 5px 10px 5px 0px;
-        width: 0px ;
-        }
-
-        table.dataTable.compact thead tr.over_header th {
-        border-bottom: 1px solid #ccc;
-        }
-
-        table.dataTable.compact thead th.leftborder {
-        border-left: 1px solid;
-        }
-
-        table.dataTable.compact thead th.rightborder {
-        border-right: 1px solid;
-        }
-
-        .yadcf-filter-range {
-        max-width: 40px !important;
-            font-family: sans-serif;
-            font-size: 80%;
-            font-weight: bold;
-        min-width: 40px;
-        }
+    min-width: 40px;
+    }
 
 
-        .clicked_button {
-        background-color: rgb(215, 215, 215);
-        }
+    .clicked_button {
+    background-color: rgb(215, 215, 215);
+    }
 
-        #overlay {
-        top: 0px;
-        position: absolute;
-        background: #f8f8f8;
-        /*border: 1px solid #333;*/
-        -webkit-box-shadow: 5px 0 2px -2px #888;
-        box-shadow: 5px 0 2px -2px #888;
-        }
+    #overlay {
+    top: 0px;
+    position: absolute;
+    background: #f8f8f8;
+    /*border: 1px solid #333;*/
+    -webkit-box-shadow: 5px 0 2px -2px #888;
+    box-shadow: 5px 0 2px -2px #888;
+    }
 
-        .container {
-        width: 90%;
-        }
+    .container {
+    width: 90%;
+    }
 
-        .wrapper {
-        overflow-x: scroll;
-        overflow-y: hidden;
-        }
+    .wrapper {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    }
 
-        #overlay tbody tr {
-        background-color: #f8f8f8;
-        }
+    #overlay tbody tr {
+    background-color: #f8f8f8;
+    }
 
-        #count_row th {
-        font-size: 11px;
-        text-align: center;
-        }
+    #count_row th {
+    font-size: 11px;
+    text-align: center;
+    }
 
-        .switch-field label:hover {
-        cursor: pointer;
-        /* width: 100%; */
-        }
+    .switch-field label:hover {
+    cursor: pointer;
+    /* width: 100%; */
+    }
 
-        .switch-field input:checked+label {
-        background-color: #337ab7;
-        /* #a5dc86; */
-        box-shadow: none;
-        }
-        .border-left{
-            padding-left: 3px;
-        }
+    .switch-field input:checked+label {
+    background-color: #337ab7;
+    /* #a5dc86; */
+    box-shadow: none;
+    }
+    .border-left{
+        padding-left: 3px;
+    }
 
-        .switch-field label:first-of-type {
-        border-radius: 4px 0 0 4px;
+    .switch-field label:first-of-type {
+    border-radius: 4px 0 0 4px;
 
-        }
+    }
 
-        .switch-field label:last-of-type {
-        border-radius: 0 4px 4px 0;
-        }
+    .switch-field label:last-of-type {
+    border-radius: 0 4px 4px 0;
+    }
 
-        /* This is just for CodePen. */
+    /* This is just for CodePen. */
 
 
 
-        .name {
-        width: 150px;
-        text-overflow: ellipsis;
-        cursor: pointer;
-        word-break: break-all;
-        overflow: hidden;
-        white-space: nowrap;
-        }
+    .name {
+    width: 100px;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    word-break: break-all;
+    overflow: hidden;
+    white-space: nowrap;
+    }
 
-        .name:hover {
-        overflow: visible;
-        white-space: normal;
-        /* height: auto;  /* just added this line */
-        */
-        }
-    </style>
+    .name:hover {
+    overflow: visible;
+    white-space: normal;
+    /* height: auto;  /* just added this line */
+    */
+    }
+</style>
 
 {% endblock %}
