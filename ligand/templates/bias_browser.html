@@ -55,7 +55,8 @@
         var s = $(this).html();
         if (s == "-") return
         if (!s) return
-        s = (Math.abs(s)+1)
+        if (Math.abs(s) < 1) s = Math.abs(s)+1;
+        s = (Math.abs(s))
         frequency = s;
         var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
         var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
@@ -136,12 +137,13 @@
                 },
             ],
             scrollX: '100%',
-            scrollY: '170vh',
+            scrollY: '70vh',
             scrollCollapse: true,
             "order": [
                 [3, "desc"]
             ],
             AutoWidth: false,
+
             paging: true,
             "lengthMenu": [
                 [100, -1],
@@ -901,8 +903,8 @@
                         <th style="overflow: hidden;
           white-space: nowrap;
           text-overflow: ellipsis;
-          max-width: 250px; border-left: 1px solid black;">Authors</th>
-                        <th style="border-right: 1px solid black;">DOI</th>
+          max-width: 100px; border-left: 1px solid black;">Authors</th>
+                        <th style="border-right: 1px solid black;">DOI/ <br>Reference</th>
                     </tr>
                 </thead>
                 <tbody id='structures_scrollable_body' style="display: none">
@@ -958,7 +960,7 @@
 
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_normal">{{ex.t_factor}}</td>
+                        <td class="greyscale_normal" style= "text-align:right">{{ex.t_factor}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -974,14 +976,14 @@
                         <!-- log bias facrtor -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_normal"> {{ex.log_bias_factor }}</td>
+                        <td class="greyscale_normal" style= "text-align:right"> {{ex.log_bias_factor }}</td>
                         {%endif%}
                         {%endfor%}
 
                         <!-- potency ratio -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td>{{ex.potency }}</td>
+                        <td style= "text-align:right">{{ex.potency }}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -989,9 +991,9 @@
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {%if ex.quantitive_activity %}
                         {%if ex.quantitive_measure_type == 'EC50' %}
-                        <td>{{ex.quantitive_activity}} </td>
+                        <td style= "text-align:right">{{ex.quantitive_activity}} </td>
                         {%else%}
-                        <td>
+                        <td style= "text-align:right">
                             <font color="#FF0000">{{ex.quantitive_activity}} </font>
                         </td>
                         {%endif%}
@@ -1005,7 +1007,7 @@
                         {% if ex.quantitive_efficacy == None %}
                         <td></td>
                         {%else%}
-                        <td>{{ex.quantitive_efficacy}}</td>
+                        <td style= "text-align:right">{{ex.quantitive_efficacy}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1014,7 +1016,7 @@
                         {% if ex.t_coefficient == None %}
                         <td></td>
                         {%else%}
-                        <td class="greyscale_normal">{{ex.t_coefficient}}</td>
+                        <td class="greyscale_normal" style= "text-align:right">{{ex.t_coefficient}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1023,7 +1025,7 @@
                         {% if ex.assay_type == None %}
                         <td></td>
                         {%else%}
-                        <td title='{{ex.assay_type}}'>{{ex.assay_type }}</td>
+                        <td title='{{ex.assay_type}}' >{{ex.assay_type }}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1240,7 +1242,7 @@ width: 150px;
 
 
     .name {
-    width: 150px;
+    width: 100px;
     text-overflow: ellipsis;
     cursor: pointer;
     word-break: break-all;
