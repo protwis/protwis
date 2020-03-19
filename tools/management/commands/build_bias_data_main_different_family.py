@@ -293,11 +293,11 @@ class Command(BaseBuild):
             # TODO: reconsider verify calc
 
             #self.calc_t_coefficient(i[1]['biasdata'])
+            self.calc_bias_factor(i[1]['biasdata'])
+
             self.calc_potency(i[1]['biasdata'])
             for j in i[1]['biasdata']:
                 counter1 += 1
-
-            self.calc_bias_factor(i[1]['biasdata'])
 
             if len(i[1]['reference']) < 1:
                 countq += 1
@@ -307,6 +307,10 @@ class Command(BaseBuild):
         print('---counter of no reference---', countq)
 
     # TODO: done
+    def caclulate_bias_factor_variables(self,a,b,c,d):
+        lgb = (a-b)-(c-d)
+        return lgb
+
     def calc_bias_factor(self, biasdata):
         most_reference = dict()
         most_potent = dict()
@@ -332,7 +336,12 @@ class Command(BaseBuild):
                         b = math.log10(most_potent['reference_quantitive_efficacy'] / most_potent['reference_quantitive_activity'])
                         c = math.log10(i['quantitive_efficacy'] / i['quantitive_activity'])
                         d = math.log10(i['reference_quantitive_efficacy'] / i['reference_quantitive_activity'])
-                        temp_calculation = (a-b)-(c-d)
+                        temp_calculation = self.caclulate_bias_factor_variables(a,b,c,d)
+                        if temp_calculation < 0:
+                            temp_calculation = self.caclulate_bias_factor_variables(c,d,a,b)
+                            x = most_potent['order_no']
+                            most_potent['order_no'] = i['order_no']
+                            i['order_no'] = x
 
                         i['log_bias_factor'] = round(
                             temp_calculation, 1)
@@ -361,6 +370,7 @@ class Command(BaseBuild):
         for i in biasdata:
             if i['order_no'] > 0:
                 if i['quantitive_measure_type'].lower() == 'ec50' or i['quantitive_measure_type'].lower() == 'ic50' :
+                    print('\n--i--',most_potent)
                     if i['quantitive_activity'] is not None and i['quantitive_activity'] != 0 and most_potent['quantitive_activity'] is not None:
                         i['potency'] = round(
                             i['quantitive_activity']/most_potent['quantitive_activity'], 1)
