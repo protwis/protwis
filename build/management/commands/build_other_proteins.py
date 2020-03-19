@@ -102,6 +102,9 @@ class Command(BuildHumanProteins):
             # parse files
             filenames = os.listdir(self.local_uniprot_dir)
 
+            ###GP - class D addition
+            construct_entry_names = construct_entry_names+['a0a1d8ptb4_canal', 'a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs']
+
             # Keep track of first or second iteration
             reviewed = ['SWISSPROT','TREMBL'][iteration-1]
             skipped_due_to_swissprot = 0
@@ -178,6 +181,7 @@ class Command(BuildHumanProteins):
 
                     # check whether the entry name is in the construct list
                     if not p and up['entry_name'] in construct_entry_names:
+                        print(up['entry_name'])
                         # BLAST sequence to find closest hit (for reference positions)
                         blast = BlastSearch()
                         blast_out = blast.run(up['sequence'])
@@ -185,6 +189,9 @@ class Command(BuildHumanProteins):
                         # use first hit from BLAST as template for reference positions
                         try:
                             p = Protein.objects.get(pk=blast_out[0][0])
+                            # class D exception
+                            if p.entry_name=='ste2_yeast':
+                                ortholog = True
                         except Protein.DoesNotExist:
                             print('Template protein for {} not found'.format(up['entry_name']))
                             self.logger.error('Template protein for {} not found'.format(up['entry_name']))

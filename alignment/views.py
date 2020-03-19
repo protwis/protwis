@@ -252,6 +252,7 @@ def render_alignment(request):
 
     key = "ALIGNMENT_" + a.get_hash()
     return_html = cache_alignment.get(key)
+    print(a.proteins, 'blab')
 
     if return_html==None:
         # build the alignment data matrix

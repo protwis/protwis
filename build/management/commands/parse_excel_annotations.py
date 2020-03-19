@@ -122,7 +122,69 @@ class Command(BaseCommand):
             data_dict2[entry_name] = val
         with open(self.non_xtal_seg_end_bw_file, 'a') as outfile:
             yaml.dump(data_dict2, outfile, indent=4)
+        data = self.ClassD_data["Bulges_Constrictions"]
+        NonXtal_Bulges_Constr_GPCRdb = {}
+        for structure,vals in data.items():
+            entry = structure.lower()
+            NonXtal_Bulges_Constr_GPCRdb[entry] = OrderedDict()
+            for key,val in vals.items():
+                if not key:
+                    continue
+                NonXtal_Bulges_Constr_GPCRdb[entry][key] = val
+        NonXtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(NonXtal_Bulges_Constr_GPCRdb.items()))
+        with open(self.all_anomalities_file, 'a') as outfile:
+            yaml.dump(NonXtal_Bulges_Constr_GPCRdb, outfile, indent=4)
+        data = self.ClassD_data["Seqs"]
+        Seqs = {}
+        for structure,vals in data.items():
+            entry = structure.lower()
+            Seqs[entry] = OrderedDict()
+            for key,val in vals.items():
+                if not key:
+                    continue
+                Seqs[entry][key] = val
+        Seqs = OrderedDict(sorted(Seqs.items()))
+        with open(self.sequence_file, 'a') as outfile:
+            yaml.dump(Seqs, outfile, indent=4)
 
+        structures = self.ClassD_data["SegEnds_Xtal_Prot#"]
+        pdb_info = {}
+        pdb_info_all = {}
+        for structure,vals in structures.items():
+            if structure.split("_")[-1] == "wt":
+                continue
+            if structure.split("_")[-1] == "dist":
+                continue
+            #print(structure)
+            pdb_id = structure.split("_")[-1]
+            pdb_info[pdb_id] = OrderedDict()
+            for key,val in vals.items():
+                if len(key)>3:
+                    continue
+                if not key:
+                    continue
+                if key[-1]!="b" and key[-1]!="e":
+                    continue
+                pdb_info[pdb_id][key] = val
+
+        for structure,vals in structures.items():
+            entry = structure
+            pdb_info_all[entry] = OrderedDict()
+            for key,val in vals.items():
+                if len(key)>3:
+                    continue
+                if not key:
+                    continue
+                if key[-1]!="b" and key[-1]!="e":
+                    continue
+                pdb_info_all[entry][key] = val
+
+        pdb_info = OrderedDict(sorted(pdb_info.items())) 
+        with open(self.mod_xtal_seg_end_file, 'a') as outfile:
+            yaml.dump(pdb_info, outfile, indent=4)
+        pdb_info_all = OrderedDict(sorted(pdb_info_all.items())) 
+        with open(self.xtal_seg_end_file, 'a') as outfile:
+            yaml.dump(pdb_info_all, outfile, indent=4)
 
     def parse_excel(self,path):
         workbook = xlrd.open_workbook(path)
