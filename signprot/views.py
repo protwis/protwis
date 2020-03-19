@@ -145,7 +145,6 @@ def Couplings(request):
     proteins = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00',
                                       species__common_name='Human').all().prefetch_related('family')
     data = {}
-    uniprot_accession = {}
     class_names = {}
     family_names = {}
 
@@ -154,10 +153,9 @@ def Couplings(request):
         if p_class not in class_names:
             class_names[p_class] = p.family.parent.parent.parent.name
             family_names[p_class] = p.family.parent.name
-            uniprot_accession[p_class] = p.accession
         p_class_name = class_names[p_class].replace('Class','').strip()
         p_family_name = family_names[p_class].replace('receptors','').strip()
-        p_accession = uniprot_accession[p_class]
+        p_accession = p.accession
         data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession, 'pretty': p.short(), 'GuideToPharma': {}, 'Aska': {}, 'Bouvier':{}}
     distinct_g_families = []
     distinct_g_subunit_families = {}
@@ -203,7 +201,7 @@ def Couplings(request):
                 data[p][s][gf]['best'] = round(Decimal(m), 2)
     fd = {}  # final data
     distinct_g_families = sorted(distinct_g_families)
-    distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13', ]
+    distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
     distinct_g_subunit_families = OrderedDict([('Gs', ['gnas2', 'gnal']), ('Gi/Go', ['gnai1', 'gnai3', 'gnao', 'gnaz']),
                                                ('Gq/G11', ['gnaq', 'gna14', 'gna15']), ('G12/G13', ['gna12', 'gna13'])])
 
@@ -258,7 +256,8 @@ def Couplings(request):
                     fd[p].append("")
         #print(v)
     #print(data['5HT1A'])
-    #print(fd['5HT1A'])
+    print(fd)
+    print(fd['5HT1A'])
     context['data'] = fd
     context['distinct_gf'] = distinct_g_families
     context['distinct_sf'] = distinct_g_subunit_families

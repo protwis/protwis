@@ -76,15 +76,6 @@
             font-weight: bold;
         }
 
-        /*#yadcf-filter--couplings-from-12 {
-            width: 10px;
-        }
-        #yadcf-filter--couplings-to-12 {
-            width: 10px;
-        }
-        .yadcf-filter-wrapper-inner--couplings-12 {
-            width: 5px;
-        }*/
         .clicked_button {
             background-color: rgb(215, 215, 215);
         }
@@ -391,7 +382,7 @@
             });
 
             $('#reset_filters_btn').click(function () {
-                window.location.href = '/signprot/'
+                window.location.href = '/signprot/couplings'
             });
 
             $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" ' +
@@ -562,7 +553,8 @@
         <br>
 
         <!-- scrollable column -->
-        <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
+        <!--<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>-->
+         <div id="exTab2" class="container">
             <ul class="nav nav-tabs" id="myTab" role="tablist">
                 <li class="nav-item">
                     <a class="nav-link active" id="families-tab" data-toggle="tab" href="#families" role="tab"
@@ -583,8 +575,9 @@
             </ul>
 
             <div class="tab-content" id="myTabContent">
-                <div id='couplings_div'>
-                    <div class="tab-pane fade active show" id="families" role="tabpanel" aria-labelledby="families-tab">
+
+                <div class="tab-pane active" id="families" role="tabpanel" aria-labelledby="families-tab">
+
                         <table width="100%" class="display compact text-nowrap" id='couplings'>
                             <thead>
                             <tr class='over_header over_header_row'>
@@ -672,19 +665,111 @@
                             {% endfor %}
                             </tbody>
                         </table>
-                    </div>
-                    <div class="tab-pane fade" id="subtypes" role="tabpanel" aria-labelledby="subtypes-tab">
-                        <h2>Soon Content Here</h2>
-                    </div>
-                    <div class="tab-pane fade" id="bouvier" role="tabpanel" aria-labelledby="bouvier-tab">
-                        <h2>Soon Content Here</h2>
-                    </div>
-                    <div class="tab-pane fade" id="inoue" role="tabpanel" aria-labelledby="inoue-tab">
-                        <h2>Soon Content Here</h2>
-                    </div>
+
+                </div>
+
+                <div class="tab-pane" id="subtypes" role="tabpanel" aria-labelledby="subtypes-tab">
+                    <table>
+                            <thead>
+                            <tr class='over_header over_header_row'>
+                                <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                                    RECEPTOR
+                                </th>
+                                <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                                    Gs
+                                    <button type="button" class="close hide_columns" columns="5,6,7"
+                                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                                    </button>
+                                </th>
+                                <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                                    Gi/o
+                                    <button type="button" class="close hide_columns" columns="8,9,10"
+                                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                                    </button>
+                                </th>
+                                <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                                    Gq/11
+                                    <button type="button" class="close hide_columns" columns="11,12,13"
+                                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                                    </button>
+                                </th>
+                                <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                                    G12/13
+                                    <button type="button" class="close hide_columns" columns="14,15,16"
+                                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                                    </button>
+                                </th>
+                                <th colspan=1 style='text-align:left;'>
+                                    Arrestin
+                                    <button type="button" class="close hide_columns" columns="17" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </th>
+                            </tr>
+                            <tr>
+                                <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                                <th title="Class" style='height: 70px;'></th>
+                                <th title="Family"></th>
+                                <th title="uniprot"></th>
+                                <th title="IUPHAR" class='rightborder'></th>
+                                <th title="Bouvier"></th>
+                                <th title="Inoue"></th>
+                                <th title="GtP" class='rightborder'></th>
+                                <th title="Bouvier"></th>
+                                <th title="Inoue"></th>
+                                <th title="GtP" class='rightborder'></th>
+                                <th title="Bouvier"></th>
+                                <th title="Inoue"></th>
+                                <th title="GtP" class='rightborder'></th>
+                                <th title="Bouvier"></th>
+                                <th title="Inoue"></th>
+                                <th title="GtP" class='rightborder'></th>
+                                <th title="Bouvier"></th>
+                            </tr>
+                            </thead>
+
+                        <tbody>
+                        <tr>
+                            <td>value here</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane" id="bouvier" role="tabpanel" aria-labelledby="bouvier-tab">
+                    <table>
+                        <thead>
+                            <tr class='over_header over_header_row'>
+                                <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                                    RECEPTOR
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>value here</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane" id="inoue" role="tabpanel" aria-labelledby="inoue-tab">
+                    <table>
+                        <thead>
+                            <tr class='over_header over_header_row'>
+                                <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                                    RECEPTOR
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>value here</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+
     </div>
 
 {% endblock %}
