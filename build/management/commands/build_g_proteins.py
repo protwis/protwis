@@ -78,37 +78,37 @@ class Command(BaseCommand):
         elif self.options['build_datafile']:
             self.build_table_from_fasta()
         else:
-            # add gproteins from cgn db
+            # Add gproteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
             try:
-                # self.purge_signprot_complex_data()
-                # self.purge_coupling_data()
-                # self.purge_cgn_proteins()
-                # self.purge_other_subunit_proteins()
-                #
-                # self.ortholog_mapping = OrderedDict()
-                # with open(self.ortholog_file, 'r') as ortholog_file:
-                #     ortholog_data = csv.reader(ortholog_file, delimiter=',')
-                #     for i, row in enumerate(ortholog_data):
-                #         if i == 0:
-                #             header = list(row)
-                #             continue
-                #         for j, column in enumerate(row):
-                #             if j in [0, 1]:
-                #                 continue
-                #             if '_' in column:
-                #                 self.ortholog_mapping[column] = row[0]
-                #             else:
-                #                 if column == '':
-                #                     continue
-                #                 self.ortholog_mapping[column + '_' + header[j]] = row[0]
-                #
-                # self.create_g_proteins(filenames)
-                # self.cgn_create_proteins_and_families()
-                #
-                # human_and_orths = self.cgn_add_proteins()
-                # self.update_protein_conformation(human_and_orths)
-                # self.create_barcode()
-                # self.add_other_subunits()
+                self.purge_signprot_complex_data()
+                self.purge_coupling_data()
+                self.purge_cgn_proteins()
+                self.purge_other_subunit_proteins()
+
+                self.ortholog_mapping = OrderedDict()
+                with open(self.ortholog_file, 'r') as ortholog_file:
+                    ortholog_data = csv.reader(ortholog_file, delimiter=',')
+                    for i, row in enumerate(ortholog_data):
+                        if i == 0:
+                            header = list(row)
+                            continue
+                        for j, column in enumerate(row):
+                            if j in [0, 1]:
+                                continue
+                            if '_' in column:
+                                self.ortholog_mapping[column] = row[0]
+                            else:
+                                if column == '':
+                                    continue
+                                self.ortholog_mapping[column + '_' + header[j]] = row[0]
+
+                self.create_g_proteins(filenames)
+                self.cgn_create_proteins_and_families()
+
+                human_and_orths = self.cgn_add_proteins()
+                self.update_protein_conformation(human_and_orths)
+                self.create_barcode()
+                self.add_other_subunits()
                 if os.path.exists(self.aska_file):
                     self.add_aska_coupling_data()
                 else:
