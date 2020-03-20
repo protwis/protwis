@@ -2112,7 +2112,7 @@ def InteractionBrowserData(request):
         data['residue_table'] = r_class_translate
 
 
-        excluded_segment = ['C-term','N-term','H8'] #'ICL1','ECL1','ECL2','ICL2'
+        excluded_segment = ['C-term','N-term'] #'ICL1','ECL1','ECL2','ICL2'
         segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
         proteins =  Protein.objects.filter(entry_name__in=list(data['proteins'])).distinct().all()
         a = Alignment()

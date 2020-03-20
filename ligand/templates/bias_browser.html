@@ -2,7 +2,7 @@
 
 {% load static %}
 
-
+{%csrf_token%}
 
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
@@ -10,7 +10,61 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="https://cdn.datatables.net/buttons/1.0.3/js/buttons.colVis.js"></script>
+<script type="text/javascript">
+    function grey(){
 
+        function rgb2hex(r,g,b) {
+            r = Math.round(r).toString(16);
+            g = Math.round(g).toString(16);
+            b = Math.round(b).toString(16);
+
+            if (r.length == 1) r = '0' + r;
+            if (g.length == 1) g = '0' + g;
+            if (b.length == 1) b = '0' + b;
+
+            return '#' + r + g + b;
+        }
+        $('.greyscale_potency').each(function() {
+        var s = $(this).html();
+        if (s == "-") return
+        if (!s) return
+        frequency = (Math.abs(s));
+        var rgb = { r:255-(frequency), g: 255-(frequency), b: 255-(frequency)};
+        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+        if (s == 'primary') hex = "#808080";
+        if (s == 'secondary') hex = "#bebebe";
+        if (s == 'No coupling') hex = "#f9f9f9";
+        $(this).attr('bgcolor',hex);
+        });
+        // Color cells according to their content
+        $('.greyscale').each(function() {
+        var s = $(this).html();
+        if (s == "-") return
+        if (!s) return
+        frequency = (Math.abs(s)/40);
+        var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
+        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+        if (s == 'primary') hex = "#808080";
+        if (s == 'secondary') hex = "#bebebe";
+        if (s == 'No coupling') hex = "#f9f9f9";
+        $(this).attr('bgcolor',hex);
+        });
+
+        // Color cells according to their content
+        $('.greyscale_normal').each(function() {
+        var s = $(this).html();
+        if (s == "-") return
+        if (!s) return
+        if (Math.abs(s) < 1) s = Math.abs(s)+1;
+        s = (Math.abs(s))
+        frequency = s;
+        var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
+        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
+        $(this).attr('bgcolor',hex);
+        });
+
+    }
+</script>
 <script type="text/javascript" charset="utf-8">
     function getCookie(c_name) {
         if (document.cookie.length > 0) {
@@ -62,6 +116,7 @@
                     action: function(e, dt, node, config) {
                         var id = read_ids()
                         var result
+                        console.log('test' + id)
                         $.ajaxSetup({
                             headers: { "X-CSRFToken": getCookie("csrftoken") }
                         });
@@ -70,7 +125,7 @@
                             url: '/ligand/vendors',
                             data: {
                                 ids: id,
-                                //csrfmiddlewaretoken: '{{csrf_token }}',
+                                csrfmiddlewaretoken: '{{csrf_token }}',
                                 action: 'post',
                             },
                             success: function() {
@@ -82,12 +137,13 @@
                 },
             ],
             scrollX: '100%',
-            scrollY: '170vh',
+            scrollY: '70vh',
             scrollCollapse: true,
             "order": [
                 [3, "desc"]
             ],
             AutoWidth: false,
+
             paging: true,
             "lengthMenu": [
                 [100, -1],
@@ -96,6 +152,7 @@
             "initComplete": function(settings, json) {
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
+                grey()
                 setTimeout(function() {
                     oTable.columns().flatten().each(function(colIdx) {
                         var columnData = [];
@@ -115,8 +172,10 @@
             },
 
             "fnDrawCallback": function() {
+
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
+                grey()
                 setTimeout(function() {
                     $('#loadingSpinner').hide();
                     $('#structures_scrollable_body').show();
@@ -586,55 +645,6 @@
             //yadcf.exResetAllFilters(oTable);
         }
 
-        function rgb2hex(r,g,b) {
-            r = Math.round(r).toString(16);
-            g = Math.round(g).toString(16);
-            b = Math.round(b).toString(16);
-
-            if (r.length == 1) r = '0' + r;
-            if (g.length == 1) g = '0' + g;
-            if (b.length == 1) b = '0' + b;
-
-            return '#' + r + g + b;
-        }
-        $('.greyscale_potency').each(function() {
-        var s = $(this).html();
-        if (s == "-") return
-        if (!s) return
-        frequency = (Math.abs(s));
-        var rgb = { r:255-(frequency), g: 255-(frequency), b: 255-(frequency)};
-        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-        if (s == 'primary') hex = "#808080";
-        if (s == 'secondary') hex = "#bebebe";
-        if (s == 'No coupling') hex = "#f9f9f9";
-        $(this).attr('bgcolor',hex);
-        });
-        // Color cells according to their content
-        $('.greyscale').each(function() {
-        var s = $(this).html();
-        if (s == "-") return
-        if (!s) return
-        frequency = (Math.abs(s)/40);
-        var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
-        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-        if (s == 'primary') hex = "#808080";
-        if (s == 'secondary') hex = "#bebebe";
-        if (s == 'No coupling') hex = "#f9f9f9";
-        $(this).attr('bgcolor',hex);
-        });
-
-        // Color cells according to their content
-        $('.greyscale_normal').each(function() {
-        var s = $(this).html();
-        if (s == "-") return
-        if (!s) return
-        s = (Math.abs(s)+1)
-        frequency = s;
-        var rgb = { r:300-(50*frequency), g: 300-(50*frequency), b: 300-(50*frequency) };
-        var hex = rgb2hex(rgb.r, rgb.g, rgb.b);
-        $(this).attr('bgcolor',hex);
-        });
-
         $('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
 
         $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
@@ -893,8 +903,8 @@
                         <th style="overflow: hidden;
           white-space: nowrap;
           text-overflow: ellipsis;
-          max-width: 250px; border-left: 1px solid black;">Authors</th>
-                        <th style="border-right: 1px solid black;">DOI</th>
+          max-width: 100px; border-left: 1px solid black;">Authors</th>
+                        <th style="border-right: 1px solid black;">DOI/ <br>Reference</th>
                     </tr>
                 </thead>
                 <tbody id='structures_scrollable_body' style="display: none">
@@ -950,7 +960,7 @@
 
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_normal">{{ex.t_factor}}</td>
+                        <td class="greyscale_normal" style= "text-align:right">{{ex.t_factor}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -966,14 +976,14 @@
                         <!-- log bias facrtor -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_normal"> {{ex.log_bias_factor }}</td>
+                        <td class="greyscale_normal" style= "text-align:right"> {{ex.log_bias_factor }}</td>
                         {%endif%}
                         {%endfor%}
 
                         <!-- potency ratio -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td>{{ex.potency }}</td>
+                        <td style= "text-align:right">{{ex.potency }}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -981,9 +991,9 @@
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {%if ex.quantitive_activity %}
                         {%if ex.quantitive_measure_type == 'EC50' %}
-                        <td>{{ex.quantitive_activity}} </td>
+                        <td style= "text-align:right">{{ex.quantitive_activity}} </td>
                         {%else%}
-                        <td>
+                        <td style= "text-align:right">
                             <font color="#FF0000">{{ex.quantitive_activity}} </font>
                         </td>
                         {%endif%}
@@ -997,7 +1007,7 @@
                         {% if ex.quantitive_efficacy == None %}
                         <td></td>
                         {%else%}
-                        <td>{{ex.quantitive_efficacy}}</td>
+                        <td style= "text-align:right">{{ex.quantitive_efficacy}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1006,7 +1016,7 @@
                         {% if ex.t_coefficient == None %}
                         <td></td>
                         {%else%}
-                        <td class="greyscale_normal">{{ex.t_coefficient}}</td>
+                        <td class="greyscale_normal" style= "text-align:right">{{ex.t_coefficient}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1015,7 +1025,7 @@
                         {% if ex.assay_type == None %}
                         <td></td>
                         {%else%}
-                        <td title='{{ex.assay_type}}'>{{ex.assay_type }}</td>
+                        <td title='{{ex.assay_type}}' >{{ex.assay_type }}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -1042,7 +1052,7 @@
                             {{e.1.publication.authors}}</td>
                         <td class="name">
                             <a href='{{e.1.publication.web_link}}' target='blank'>
-                                {{e.1.publication.reference}}</td>
+                                {{e.1.publication.web_link.index}}</td>
 
                     </tr>
                     {%endfor%}
@@ -1232,7 +1242,7 @@ width: 150px;
 
 
     .name {
-    width: 150px;
+    width: 100px;
     text-overflow: ellipsis;
     cursor: pointer;
     word-break: break-all;

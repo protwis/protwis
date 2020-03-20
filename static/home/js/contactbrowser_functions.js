@@ -1135,7 +1135,7 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
                 two_sets_data = data;
                 renderBrowser(data);
                 renderBrowser_2(data);
-                renderBrowser_3(data);
+                // renderBrowser_3(data); //Disabled for now..
                 renderBrowser_4(data);
                 renderBrowser_5(data);
                 browser_visible = $(".nav-browsers:visible li.active a").attr('id');
