@@ -648,6 +648,7 @@ function createSnakeplot(data, containerSelector) {
                     $(this).attr("stroke-width", 5); 
                 } else {
                     $(this).attr("stroke", "#ccc");
+                    $(this).attr("stroke-width", 1); 
                 }
                 
                 

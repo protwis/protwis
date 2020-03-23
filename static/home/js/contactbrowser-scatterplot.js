@@ -59,7 +59,7 @@ function createScatterplot(data,containerSelector) {
         colors['distance_abs'][seq_pos] = [Math.abs(value), scale, data['ngl_max_diff_distance']];
         
     });
-    // console.log(colors)
+    console.log(colors)
     // get maximum values
     var max_values = {}
     $.each(data['tab4'], function (gn, v) {
@@ -104,77 +104,7 @@ function createScatterplot(data,containerSelector) {
         colors["segment"][seq_pos] = rb_colors[highlight.indexOf(seg)];
         
     });
-    console.log('colors',colors)
-    // var colors = {}
-    // colors['distance'] = {}
-
-    // $.each(data['distances'], function (gn, dis) {
-    //     seq_pos = data['snakeplot_lookup'][gn];
-    //     // console.log(gn, dis['avg'], seq_pos);
-    //     value = dis['avg'];
-    //     scale = Math.abs(value) / data['ngl_max_diff_distance'];
-    //     var color = { r: 255, g: 255, b: 255 };
-    //     var color2 = { r: 255, g: 255, b: 255 };
-    //     if (value < 0) {
-    //         // if the header is a set two, then make it red
-    //         color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
-    //         color2 = { r: 255-(255-128)*scale, g: 255-(255)*scale, b: 255-(255-128)*scale }; //purple
-    //     } else if (value > 0) {
-    //         // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
-    //         // This is also used for single set/structure
-    //         color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
-    //         color2 = { r: 255-(255)*scale, b: 255-(255)*scale, g: 128 }; //green
-    //     }
-    //     var hex = rgb2hex(color.r, color.g, color.b);
-    //     var hex2 = rgb2hex(color2.r, color2.g, color2.b);
-    //     // grey
-    //     var color_grey = { r: 255*(1-scale), g: 255*(1-scale), b: 255*(1-scale) };
-    //     var hex_grey = rgb2hex(color_grey.r, color_grey.g, color_grey.b);
-    //     colors['distance'][seq_pos] = [hex,value,scale,hex_grey,hex2];
-    // });
-
-    // index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
-    // // get maximum values
-    // var max_values = {}
-    // $.each(data['tab4'], function (gn, v) {
-    //     $.each(v["angles"], function (i, a) {
-    //         if (!(i in max_values)) {
-    //             max_values[i] = 0;
-    //             colors[index_names[i]] = {};
-    //         }
-    //         if (Math.abs(a[0])>max_values[i]) max_values[i] = Math.abs(a[0])
-    //         // console.log(gn, i, a);
-    //     });
-    // });
-    // $.each(data['tab4'], function (gn, v) {
-    //     $.each(v["angles"], function (i, a) {
-    //         seq_pos = data['snakeplot_lookup'][gn];
-    //         value = a[0];
-    //         scale = Math.abs(value) / max_values[i];
-    //         var color = { r: 255, g: 255, b: 255 };
-    //         var color2 = { r: 255, g: 255, b: 255 };
-    //         if (value < 0) {
-    //             // if the header is a set two, then make it red
-    //             color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
-    //             color2 = { r: 255-(255-128)*scale, g: 255-(255)*scale, b: 255-(255-128)*scale }; //purple
-    //         } else if (value > 0) {
-    //             // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
-    //             // This is also used for single set/structure
-    //             color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
-    //             color2 = { r: 255-(255-153)*scale, b: 255-(255-204)*scale, g: 255 }; //green
-    //         }
-    //         var hex = rgb2hex(color.r, color.g, color.b);
-    //         var hex2 = rgb2hex(color2.r, color2.g, color2.b);
-    //         // grey
-    //         var color_grey = { r: 255*(1-scale), g: 255*(1-scale), b: 255*(1-scale) }; 
-    //         var hex_grey = rgb2hex(color_grey.r, color_grey.g, color_grey.b);
-    //         colors[index_names[i]][seq_pos] = [hex,value,scale,hex_grey,hex2];
-    //         if (!(i in max_values)) max_values[i] = 0;
-    //         // console.log(gn, i, a);
-    //     });
-    // });
-    // console.log(colors);
-
+    //console.log('colors',colors)
     
     function get_values(x, y) {
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
@@ -182,7 +112,7 @@ function createScatterplot(data,containerSelector) {
         Object.keys(index_names).forEach(key => {
             index_names_rev[index_names[key]] = key;
         });
-        console.log(index_names_rev, index_names)
+        //console.log(index_names_rev, index_names)
         var x_abs = false;
         var y_abs = false;
         if (x.includes("_abs")) {
@@ -262,6 +192,12 @@ function createScatterplot(data,containerSelector) {
         sp_color = $(containerSelector_hash + " #sp_color").val();
         sp_size = $(containerSelector_hash + " #sp_size").val();
         label_only = $(containerSelector_hash + " #label_only").prop("checked");
+        label = $(containerSelector_hash + " #change_label").val();
+
+
+        color_id1  = $(containerSelector_hash+" #color1").val();
+        color_id2  = $(containerSelector_hash+" #color2").val();
+        color_id3  = $(containerSelector_hash+" #color3").val();
 
         
         console.log('draw scatter', x_axis_type, y_axis_type, sp_color, sp_size,'label_only',label_only);
@@ -284,7 +220,7 @@ function createScatterplot(data,containerSelector) {
             // .style("fill", "EBEBEB")
             .style("fill", "white")
     
-        console.log(plot_data);
+        //console.log(plot_data);
 
         // Add X axis
         var x = d3v4.scaleLinear()
@@ -328,14 +264,16 @@ function createScatterplot(data,containerSelector) {
         //     .range(["#F8766D", "#00BA38", "#619CFF"])
 
         // generate data
-        var data = []
+        var scatter_data = []
         plot_data[0].forEach(function (d_x, i) {
             d_y = plot_data[1][i]
             name = plot_data[2][i]
+            // console.log(name, data['tab4']);
+            // console.log(name,data['tab4'][name]['set1_seq_cons'],data['tab4'][name]['set2_seq_cons'],data['tab4'][name]['all_seq_cons'],data['snakeplot_lookup_aa'][name])
             if (d_y)
-                data.push({ x: d_x, y: d_y, name: name });
+            scatter_data.push({ x: d_x, y: d_y, name: name, set1_cons : data['tab4'][name]['set1_seq_cons'][0]+name, set2_cons : data['tab4'][name]['set2_seq_cons'][0]+name, comb_cons: data['tab4'][name]['all_seq_cons'][0]+name});
         });
-        console.log(data)
+        //console.log(scatter_data)
         // Add dots
         label_offset = 0;
         text_anchor = 'middle';
@@ -346,7 +284,7 @@ function createScatterplot(data,containerSelector) {
             font_weight = 'normal';
             scatter_svg.append('g')
                 .selectAll("dot")
-                .data(data)
+                .data(scatter_data)
                 .enter()
                 .append("circle")
                 .attr("cx", function (d) { return x(d.x); })
@@ -356,8 +294,18 @@ function createScatterplot(data,containerSelector) {
                 .style("fill", function (d) {
                     if (sp_color == "segment") {
                         return colors[sp_color][d.name];
+                    } else if (sp_color == "network") {
+                        network_group = filtered_cluster_groups.filter(l => l.includes(d.name));
+                        network_group_id = filtered_cluster_groups.indexOf(network_group[0]);
+                        if (filtered_cluster_groups.length > 10 || 1==1) {
+                            return d3v4.interpolateTurbo(network_group_id/filtered_cluster_groups.length);
+                        } else {
+                            return d3v4.schemePaired[network_group_id]
+                        }
                     } else {
-                        return d.name in colors[sp_size] ? color_by_scale(colors[sp_color][d.name][1], "red", "blue") : "black";
+                        console.log(sp_color);
+                        console.log(colors[sp_color]);
+                        return d.name in colors[sp_color] ? color_by_scale(colors[sp_color][d.name][1], color_id1, color_id2, color_id3) : "black";
                     }
                 })
         }
@@ -365,20 +313,38 @@ function createScatterplot(data,containerSelector) {
         scatter_svg.append("g")
             .attr("font-family", "sans-serif")
             .selectAll("text")
-            .data(data)
+            .data(scatter_data)
             .join("text")
             .attr("dy", "0.35em")
             .attr("x", d => x(d.x) + label_offset)
             .attr("y", d => y(d.y))
-            .text(d => d.name)
+            .text(function (d) {
+                if (label == 'set1') {
+                    return d.set1_cons;
+                } else if (label == 'set2') {
+                    return d.set2_cons;
+                } else if (label == 'combined') {
+                    return d.comb_cons;
+                } else {
+                    return d.name;
+                }
+            })
             .attr("font-size", function (d) { return sp_size != 'none' && label_only && d.name in colors[sp_size] ? 5 + colors[sp_size][d.name][1] * 10 : 8; })
             .attr("font-weight", font_weight)
             .attr("text-anchor",text_anchor)
             .style("fill", function (d) {
                 if (sp_color == "segment") {
                     return colors[sp_color][d.name];
+                } else if (sp_color == "network") {
+                    network_group = filtered_cluster_groups.filter(l => l.includes(d.name));
+                    network_group_id = filtered_cluster_groups.indexOf(network_group[0]);
+                    if (filtered_cluster_groups.length >  10 || 1==1) {
+                        return d3v4.interpolateTurbo(network_group_id/filtered_cluster_groups.length);
+                    } else {
+                        return d3v4.schemePaired[network_group_id]
+                    }
                 } else {
-                    return label_only && d.name in colors[sp_size] ? color_by_scale(colors[sp_color][d.name][1], "red", "blue") : "black";
+                    return label_only && d.name in colors[sp_color] ? color_by_scale(colors[sp_color][d.name][1], color_id1, color_id2, color_id3) : "black";
                 }
             });
     
@@ -410,45 +376,80 @@ function createScatterplot(data,containerSelector) {
     $.each(nice_index_names, function (key, description) {
         select_data_options += '<option value="' + key + '">' + description + '</option>';
     });
+    var color_options = {
+        'w': 'white',
+        'r': 'red',
+        'b': 'blue',
+        'black': 'black',
+        'g': 'green',
+        'y': 'yellow',
+        'o': 'orange',
+        'p': 'purple',
+    }
+    var select_color_options = ''
+    $.each(color_options, function (key, description) {
+        checked = '';
+        select_color_options += '<option value="' + description + '">' + description + '</option>';
+    });
 
     function create_overlay() {
         var newDiv = document.createElement("div");
 
         $(containerSelector_hash).find(".controls-panel").remove();
         newDiv.setAttribute("class", "controls-panel");
-        content = '<span class="pull-right snakeplot_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">' +
-            'Replace marker with label<input id="label_only" class="change_axis" type="checkbox"><br>';
+        content = '<span class="pull-right scatter_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span>' +
+            '<div class="scatter_options" style="display: block; min-width: 120px;">' +
+            '<div>Replace marker with label</div><div><input id="label_only" class="change_axis" type="checkbox"></div>' +
+            '<div>Label format</div><div><select id="change_label" class="change_axis">' +
+            '<option value="gn">Generic Number</option>' +
+            '<option value="combined">Consensus AA (combined sets) + Generic Number</option>' +
+            '<option value="set1">Consensus AA (set1) + Generic Number</option>' +
+            '<option value="set2">Consensus AA (set2) + Generic Number</option>' +
+            '</select></div> ';
             // 'Only plot kept positions <input id="color_filtered" type="checkbox" checked><br>';
         
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
     
-        content += '<table><tr><th>X-axis</th><th>Y-axis</th></tr><tr><td><select id="change_x" class="change_axis">' +
+        content += '<div>X-axis</div><div><select id="change_x" class="change_axis">' +
             select_data_options +
-            '</select></td>'
+            '</select></div>'
             ;
-        content += '<td><select id="change_y" class="change_axis">' +
+        content += '<div>Y-axis</div><div><select id="change_y" class="change_axis">' +
             select_data_options +
-            '</select></td></tr>';
+            '</select></div>';
             
-        content += '<tr><th>Color</th><th>Size</th></tr><tr>';
-        content += '<td><select id="sp_color" class="change_axis">' +
+        content += '<div>Color</div>';
+        content += '<div><select id="sp_color" class="change_axis">' +
             '<option value="segment">Segment</option>' +
+            '<option value="network">Network group</option>' +
             select_data_options +
-            '</select></td>';
-        content += '<td><select id="sp_size" class="change_axis">' +
+            '</select></div>' +
+            '<div>Color scale</div><div>' +
+                '<select id=color1 class=color>' +
+                select_color_options +
+                '</select>' +
+                '<select id=color2 class=color>' +
+                select_color_options +
+                '</select>' +
+                '<select id=color3 class=color>' +
+                '<option value="none">None</option>' +
+                select_color_options +
+                '</select>'+
+            '</div > ';
+        content += '<div>Size</div><div><select id="sp_size" class="change_axis">' +
             '<option value="none">Fixed</option>' +
             select_data_options +
-            '</select></td>';
-        content += '</table > '
-                ;
-        content += '</span>';
+            '</select></div>';
+        // content += '</table > '
+        //         ;
+        content += '</div>';
         newDiv.innerHTML = content;
 
         $(containerSelector_hash).prepend(newDiv);
         $(containerSelector_hash).find(".options").toggle();
 
-        $(containerSelector_hash).find(".snakeplot_controls_toggle").click(function() {
-            $(containerSelector_hash).find(".options").slideToggle();
+        $(containerSelector_hash).find(".scatter_controls_toggle").click(function() {
+            $(containerSelector_hash).find(".scatter_options").slideToggle();
         });
 
         d3v4.select(containerSelector_hash).select("#generic").on("change", function () {
@@ -475,12 +476,32 @@ function createScatterplot(data,containerSelector) {
             draw_plot();
         });
 
-        
+        $(containerSelector_hash).find(".scatter_options").css("display", "grid");
+        // $(containerSelector_hash).find(".scatter_options").css("grid-template-columns", "50px 50px 50px");
+        // $(containerSelector_hash).find(".scatter_options").css("grid-template-rows", "auto");
+        $(containerSelector_hash).find(".scatter_options").css("grid-template-areas", "'. .'");
+
+        ;
 
     }
 
 
     create_overlay();
+
+    // Init
+    x_axis_type = $(containerSelector_hash + " #change_x").val("distance");
+    y_axis_type = $(containerSelector_hash + " #change_y").val("outer_angle");
+    // sp_color = $(containerSelector_hash + " #sp_color").val();
+    // sp_size = $(containerSelector_hash + " #sp_size").val();
+    // label_only = $(containerSelector_hash + " #label_only").prop("checked");
+    // label = $(containerSelector_hash + " #change_label").val();
+
+
+    color_id1  = $(containerSelector_hash+" #color1").val("blue");
+    color_id2  = $(containerSelector_hash+" #color2").val("red");
+    // color_id3  = $(containerSelector_hash+" #color3").val();
+
+
     draw_plot();
     
 }

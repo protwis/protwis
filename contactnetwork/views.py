@@ -1939,12 +1939,14 @@ def InteractionBrowserData(request):
 
                     pdbs1_with_aa = list(set(pdbs).intersection(pdbs1))
                     pdbs2_with_aa = list(set(pdbs).intersection(pdbs2))
-                    temp_score_dict.append([aa,len(pdbs1_with_aa),len(pdbs2_with_aa)])
+                    temp_score_dict.append([aa,len(pdbs1_with_aa),len(pdbs2_with_aa), len(pdbs)])
 
                 most_freq_set1 = sorted(temp_score_dict.copy(), key = lambda x: -x[1])
                 most_freq_set2 = sorted(temp_score_dict.copy(), key = lambda x: -x[2])
+                most_freq_combi = sorted(temp_score_dict.copy(), key = lambda x: -x[3])
                 data['tab4'][res1]['set1_seq_cons'] = most_freq_set1[0]
                 data['tab4'][res1]['set2_seq_cons'] = most_freq_set2[0]
+                data['tab4'][res1]['all_seq_cons'] = most_freq_combi[0]
 
                 if res1 in group_1_angles:
                     data['tab4'][res1]['angles_set1'] = [ round(elem) if isinstance(elem, float) else '' for elem in group_1_angles[res1] ]
@@ -2125,8 +2127,10 @@ def InteractionBrowserData(request):
         a.calculate_statistics()
         consensus = a.full_consensus
         data['snakeplot_lookup'] = {}
+        data['snakeplot_lookup_aa'] = {}
         for a in consensus:
             data['snakeplot_lookup'][a.family_generic_number] = a.sequence_number
+            data['snakeplot_lookup_aa'][a.family_generic_number] = a.amino_acid
         from common.diagrams_gpcr import DrawSnakePlot
         snakeplot = DrawSnakePlot(consensus, 'Class A', 'family_diagram_preloaded_data',nobuttons = True)
         data['snakeplot'] = str(snakeplot)
