@@ -1,19 +1,19 @@
 from django.db.models import Count, Avg, Min, Max
 from collections import defaultdict
 from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.generic import TemplateView, View
+from django.http import HttpResponse, HttpResponseRedirect
+from django.views.generic import TemplateView, View, DetailView
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
-from ligand.models import Ligand, AssayExperiment, LigandProperities, LigandVendorLink
+from ligand.models import *
 from protein.models import Protein, Species, ProteinFamily
 
 from copy import deepcopy
 import itertools
 import json
-    
+
 class LigandBrowser(TemplateView):
     """
     Per target summary of ligands.
@@ -25,7 +25,7 @@ class LigandBrowser(TemplateView):
         context = super(LigandBrowser, self).get_context_data(**kwargs)
 
         ligands = AssayExperiment.objects.values(
-            'protein__entry_name', 
+            'protein__entry_name',
             'protein__species__common_name',
             'protein__family__name',
             'protein__family__parent__name',
@@ -51,8 +51,8 @@ def LigandDetails(request, ligand_id):
         'protein',
         ).annotate(num_records = Count('protein__entry_name')
                    ).order_by('protein__entry_name')
-    
-    
+
+
     ligand_data = []
 
     for record in record_count:
@@ -73,7 +73,7 @@ def LigandDetails(request, ligand_id):
 
         #Flattened list of lists of dict values
         values = list(itertools.chain(*[itertools.chain(*tmp[x].values()) for x in tmp.keys()]))
-        
+
         ligand_data.append({
             'protein_name': protein_details.entry_name,
             'receptor_family': protein_details.family.parent.name,
@@ -89,7 +89,7 @@ def LigandDetails(request, ligand_id):
             })
 
     context = {'ligand_data': ligand_data, 'ligand':ligand_id}
-    
+
     return render(request, 'ligand_details.html', context)
 
 
@@ -105,9 +105,9 @@ def TargetDetailsCompact(request, **kwargs):
         #elif slug.count('_') == 3:
         elif slug.count('_') == 1 and len(slug) != 7:
             ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-    
+
         if slug.count('_') == 1 and len(slug) == 7:
-            f = ProteinFamily.objects.get(slug=slug)      
+            f = ProteinFamily.objects.get(slug=slug)
         else:
             f = slug
 
@@ -182,7 +182,7 @@ def TargetDetailsCompact(request, **kwargs):
                 'logp': lig.properities.logp,
                 })
     context['ligand_data'] = ligand_data
-    
+
     return render(request, 'target_details_compact.html', context)
 
 def TargetDetails(request, **kwargs):
@@ -198,9 +198,9 @@ def TargetDetails(request, **kwargs):
         #elif slug.count('_') == 3:
         elif slug.count('_') == 1 and len(slug) != 7:
             ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-    
+
         if slug.count('_') == 1 and len(slug) == 7:
-            f = ProteinFamily.objects.get(slug=slug)      
+            f = ProteinFamily.objects.get(slug=slug)
         else:
             f = slug
 
@@ -364,7 +364,7 @@ class LigandStatistics(TemplateView):
             class_subset = AssayExperiment.objects.filter(
                 id=prot_class['protein__family__parent__parent__parent']).values(
                     'protein').annotate(
-                        avg_num_ligands=Avg('ligand', distinct=True), 
+                        avg_num_ligands=Avg('ligand', distinct=True),
                         p_count=Count('protein')
                         )
             prot_class['avg_num_ligands']=class_subset[0]['avg_num_ligands']
@@ -412,3 +412,529 @@ class LigandStatistics(TemplateView):
         context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('ligands'))
 
         return context
+
+#Biased Ligands part
+
+class ExperimentEntryView(DetailView):
+    context_object_name = 'experiment'
+    model = AnalyzedExperiment
+    template_name = 'biased_experiment_data.html'
+
+#Biased pathways part
+
+class PathwayExperimentEntryView(DetailView):
+    context_object_name = 'experiment'
+    model = BiasedPathways
+    template_name = 'biased_pathways_data.html'
+
+def test_link(request):
+    request.session['ids'] = ''
+    # try:
+    request.session['ids']
+    if request.POST.get('action') == 'post':
+
+        request.session.modified = True
+        data = request.POST.get('ids')
+        data = filter(lambda char: char not in " \"?.!/;:[]", data)
+        datum = "".join(data)
+        request.session['ids'] = datum
+        request.session.set_expiry(15)
+        # print('datum',datum )
+
+    return HttpResponse(request)
+    # except OSError as exc:
+    #     raise
+
+
+class BiasVendorBrowser(TemplateView):
+
+    template_name = 'biased_ligand_vendor.html'
+    #@cache_page(50000)
+    def get_context_data(self, **kwargs):
+        # try:
+        context = dict()
+        datum = self.request.session.get('ids')
+
+        self.request.session.modified = True
+        rd = list()
+        for i in datum.split(','):
+            ligand = Ligand.objects.filter(id=int(i))
+            ligand = ligand.get()
+            links = LigandVendorLink.objects.filter(lp=ligand.properities_id).prefetch_related('lp','vendor')
+            for x in links:
+                if x.vendor.name not in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']:
+                    temp = dict()
+                    vendor = LigandVendors.objects.filter(id=x.vendor_id)
+                    vendor = vendor.get()
+                    temp['ligand'] = ligand
+                    temp['url'] = x.url
+                    temp['vendor_id'] = x.vendor_external_id
+                    temp['vendor'] = vendor
+
+                    rd.append(temp)
+            context['data'] = rd
+        del self.request.session['ids']
+        return context
+        # except:
+        #     raise
+
+'''
+Bias browser between families
+access data from db, fill empty fields with empty parse_children
+'''
+class BiasBrowser(TemplateView):
+
+    template_name = 'bias_browser.html'
+    #@cache_page(50000)
+    def get_context_data(self, *args, **kwargs  ):
+
+        content = AnalyzedExperiment.objects.filter(source='different_family').prefetch_related(
+        'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
+        'endogenous_ligand' ,'ligand__properities','receptor','receptor','receptor__family',
+        'receptor__family__parent','receptor__family__parent__parent__parent',
+        'receptor__family__parent__parent','receptor__family', 'receptor__species',
+        'publication', 'publication__web_link', 'publication__web_link__web_resource',
+        'publication__journal', 'ligand__ref_ligand_bias_analyzed',
+        'analyzed_data__emax_ligand_reference')
+        context = dict()
+        prepare_data = self.process_data(content)
+
+        keys = [k for k, v in prepare_data.items() if len(v['biasdata']) < 2]
+        for x in keys:
+            del prepare_data[x]
+
+        self.multply_assay(prepare_data)
+        context.update({'data': prepare_data})
+
+        return context
+
+    def process_data(self, content):
+        '''
+        Merge BiasedExperiment with its children
+        and pass it back to loop through dublicates
+        '''
+        rd = dict()
+        increment = 0
+
+        for instance in content:
+            fin_obj = {}
+            fin_obj['main'] = instance
+            temp = dict()
+            doubles = []
+            temp['experiment_id'] = instance.id
+            temp['publication'] = instance.publication
+            temp['ligand'] = instance.ligand
+            temp['source'] = instance.source
+            temp['chembl'] = instance.chembl
+            temp['endogenous_ligand'] = instance.endogenous_ligand
+            temp['vendor_quantity'] = instance.vendor_quantity
+            temp['publication_quantity'] = instance.article_quantity
+            temp['lab_quantity'] = instance.labs_quantity
+            temp['reference_ligand'] = instance.reference_ligand
+            temp['primary'] =   instance.primary.replace('family','').strip()
+            temp['secondary'] = instance.secondary.replace('family','').strip()
+            if instance.receptor:
+                temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
+                temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].split('-adrenoceptor', 1)[0].strip()
+            else:
+                temp['receptor'] = 'Error appeared'
+            temp['biasdata'] = list()
+            increment_assay = 0
+            for entry in instance.analyzed_data.all():
+                if entry.order_no < 5:
+
+                    temp_dict = dict()
+                    temp_dict['emax_reference_ligand'] = entry.emax_ligand_reference
+                    temp_dict['family'] = entry.family
+                    temp_dict['show_family'] = entry.signalling_protein
+                    temp_dict['signalling_protein'] = entry.signalling_protein
+                    temp_dict['cell_line'] = entry.cell_line
+                    temp_dict['assay_type'] = entry.assay_type
+                    temp_dict['assay_measure'] = entry.assay_measure
+                    temp_dict['assay_time_resolved'] = entry.assay_time_resolved
+                    temp_dict['ligand_function'] = entry.ligand_function
+                    temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
+                    temp_dict['quantitive_activity'] = entry.quantitive_activity
+                    temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
+                    temp_dict['quantitive_unit'] = entry.quantitive_unit
+                    temp_dict['qualitative_activity'] = entry.qualitative_activity
+                    temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
+                    temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
+                    temp_dict['efficacy_unit'] = entry.efficacy_unit
+                    temp_dict['order_no'] =  int(entry.order_no)
+                    temp_dict['t_coefficient'] = entry.t_coefficient
+                    if entry.t_value != None and entry.t_value !='None':
+                        temp_dict['t_value'] = entry.t_value
+                    else:
+                        temp_dict['t_value'] = ''
+
+                    if entry.t_factor != None and entry.t_factor !='None':
+                        temp_dict['t_factor'] = entry.t_factor
+                    else:
+                        temp_dict['t_factor'] = ''
+
+                    if entry.potency != None and entry.potency !='None':
+                        temp_dict['potency'] =  entry.potency
+                    else:
+                        temp_dict['potency'] = ''
+
+                    if entry.log_bias_factor != None and entry.log_bias_factor !='None':
+                        temp_dict['log_bias_factor'] = entry.log_bias_factor
+                    else:
+                        temp_dict['log_bias_factor'] = ''
+
+                    temp_dict['emax_ligand_reference'] = entry.emax_ligand_reference
+
+                    temp['biasdata'].append(temp_dict)
+
+                    doubles.append(temp_dict)
+                    increment_assay+=1
+                else:
+                    continue
+
+            rd[increment] = temp
+            increment+=1
+
+
+        return rd
+
+    def multply_assay(self, data):
+
+        for i in data.items():
+
+            lenght = len(i[1]['biasdata'])
+            for key in range(lenght,5):
+                temp_dict = dict()
+                temp_dict['pathway'] = ''
+                temp_dict['bias'] = ''
+                temp_dict['cell_line'] = ''
+                temp_dict['assay_type'] = ''
+                temp_dict['log_bias_factor'] = ''
+                temp_dict['t_factor'] = ''
+                temp_dict['ligand_function'] = ''
+                temp_dict['order_no'] = lenght
+                i[1]['biasdata'].append(temp_dict)
+                lenght+=1
+            test = sorted(i[1]['biasdata'], key=lambda x: x['order_no'],
+                          reverse=True)
+            i[1]['biasdata'] = test
+
+    '''
+    End  of Bias Browser
+    '''
+
+class BiasBrowserGSubbtype(TemplateView):
+    template_name = 'bias_browser_g.html'
+    #@cache_page(50000)
+    def get_context_data(self, *args, **kwargs  ):
+
+        content = AnalyzedExperiment.objects.filter(source='same_family').prefetch_related(
+    'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
+    'endogenous_ligand' ,'ligand__properities','receptor','receptor__family__parent','receptor__family__parent__parent__parent',
+    'receptor__family__parent__parent','receptor__species',
+    'publication', 'publication__web_link', 'publication__web_link__web_resource',
+    'publication__journal', 'ligand__ref_ligand_bias_analyzed',
+    'analyzed_data__emax_ligand_reference')
+        context = dict()
+        prepare_data = self.process_data(content)
+
+        keys = [k for k, v in prepare_data.items() if len(v['biasdata']) < 2]
+        for x in keys:
+            del prepare_data[x]
+
+        self.multply_assay(prepare_data)
+        context.update({'data': prepare_data})
+        return context
+
+    def process_data(self, content):
+        '''
+        Merge BiasedExperiment with its children
+        and pass it back to loop through dublicates
+        '''
+        rd = dict()
+        increment = 0
+
+        for instance in content:
+            fin_obj = {}
+            fin_obj['main'] = instance
+            temp = dict()
+            doubles = []
+            # TODO: mutation residue
+            temp['experiment_id'] = instance.id
+            temp['publication'] = instance.publication
+            temp['ligand'] = instance.ligand
+            temp['source'] = instance.source
+            temp['chembl'] = instance.chembl
+            temp['endogenous_ligand'] = instance.endogenous_ligand
+            temp['vendor_quantity'] = instance.vendor_quantity
+            temp['publication_quantity'] = instance.article_quantity
+            temp['lab_quantity'] = instance.labs_quantity
+            temp['reference_ligand'] = instance.reference_ligand
+            temp['primary'] =   instance.primary
+            temp['secondary'] = instance.secondary
+            if instance.receptor:
+                temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
+                temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
+            else:
+                temp['receptor'] = 'Error appeared'
+            temp['biasdata'] = list()
+            increment_assay = 0
+            for entry in instance.analyzed_data.all():
+                if entry.order_no < 5:
+
+                    temp_dict = dict()
+                    temp_dict['emax_reference_ligand'] = entry.emax_ligand_reference
+                    temp_dict['family'] = entry.family
+                    temp_dict['show_family'] = entry.signalling_protein
+                    temp_dict['signalling_protein'] = entry.signalling_protein
+                    temp_dict['cell_line'] = entry.cell_line
+                    temp_dict['assay_type'] = entry.assay_type
+                    temp_dict['assay_measure'] = entry.assay_measure
+                    temp_dict['assay_time_resolved'] = entry.assay_time_resolved
+                    temp_dict['ligand_function'] = entry.ligand_function
+                    temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
+                    temp_dict['quantitive_activity'] = entry.quantitive_activity
+                    temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
+                    temp_dict['quantitive_unit'] = entry.quantitive_unit
+                    temp_dict['qualitative_activity'] = entry.qualitative_activity
+                    temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
+                    temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
+                    temp_dict['efficacy_unit'] = entry.efficacy_unit
+                    temp_dict['order_no'] =  int(entry.order_no)
+                    temp_dict['t_coefficient'] = entry.t_coefficient
+                    if entry.t_value != None and entry.t_value !='None':
+                        temp_dict['t_value'] = entry.t_value
+                    else:
+                        temp_dict['t_value'] = ''
+
+                    if entry.t_factor != None and entry.t_factor !='None':
+                        temp_dict['t_factor'] = entry.t_factor
+                    else:
+                        temp_dict['t_factor'] = ''
+
+                    if entry.potency != None and entry.potency !='None':
+                        temp_dict['potency'] =  entry.potency
+                    else:
+                        temp_dict['potency'] = ''
+
+                    if entry.log_bias_factor != None and entry.log_bias_factor !='None':
+                        temp_dict['log_bias_factor'] = entry.log_bias_factor
+                    else:
+                        temp_dict['log_bias_factor'] = ''
+
+                    temp_dict['emax_ligand_reference'] = entry.emax_ligand_reference
+
+                    temp['biasdata'].append(temp_dict)
+
+                    doubles.append(temp_dict)
+                    increment_assay+=1
+                else:
+                    continue
+
+            rd[increment] = temp
+            increment+=1
+
+
+        return rd
+
+    def multply_assay(self, data):
+
+        for i in data.items():
+
+            lenght = len(i[1]['biasdata'])
+            for key in range(lenght,5):
+                temp_dict = dict()
+                temp_dict['pathway'] = ''
+                temp_dict['bias'] = ''
+                temp_dict['cell_line'] = ''
+                temp_dict['assay_type'] = ''
+                temp_dict['log_bias_factor'] = ''
+                temp_dict['t_factor'] = ''
+                temp_dict['ligand_function'] = ''
+                temp_dict['order_no'] = lenght
+                i[1]['biasdata'].append(temp_dict)
+                lenght+=1
+            test = sorted(i[1]['biasdata'], key=lambda x: x['order_no'],
+                          reverse=True)
+            i[1]['biasdata'] = test
+
+
+
+'''
+Bias browser between families
+access data from db, fill empty fields with empty parse_children
+'''
+class BiasBrowserChembl(TemplateView):
+    template_name = 'bias_browser_chembl.html'
+    #@cache_page(50000)
+    def get_context_data(self, *args, **kwargs  ):
+        content = AnalyzedExperiment.objects.filter(source='chembl').prefetch_related(
+            'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
+            'endogenous_ligand' ,'ligand__properities','receptor','receptor__family',
+            'receptor__family__parent','receptor__family__parent__parent__parent',
+            'receptor__family__parent__parent','receptor__species',
+            'publication', 'publication__web_link', 'publication__web_link__web_resource',
+            'publication__journal', 'ligand__ref_ligand_bias_analyzed',
+            'analyzed_data__emax_ligand_reference')
+        context = dict()
+        prepare_data = self.process_data(content)
+        keys = [k for k, v in prepare_data.items() if len(v['biasdata']) < 2]
+        for x in keys:
+            del prepare_data[x]
+
+        self.multply_assay(prepare_data)
+        context.update({'data': prepare_data})
+        return context
+
+    def process_data(self, content):
+        '''
+        Merge BiasedExperiment with its children
+        and pass it back to loop through dublicates
+        '''
+        rd = dict()
+        increment = 0
+
+        for instance in content:
+            fin_obj = {}
+            fin_obj['main'] = instance
+            temp = dict()
+            doubles = []
+            # TODO: mutation residue
+            temp['experiment_id'] = instance.id
+            temp['ligand'] = instance.ligand
+            temp['source'] = instance.source
+            temp['chembl'] = instance.chembl
+            temp['endogenous_ligand'] = instance.endogenous_ligand
+            temp['vendor_quantity'] = instance.vendor_quantity
+            temp['primary'] =   instance.primary
+            temp['secondary'] = instance.secondary
+
+            if instance.receptor:
+                temp['receptor'] = instance.receptor
+            else:
+                temp['receptor'] = 'Error appeared'
+            temp['biasdata'] = list()
+            increment_assay = 0
+            for entry in instance.analyzed_data.all():
+                if entry.order_no < 5:
+                    temp_dict = dict()
+                    temp_dict['family'] = entry.family
+                    temp_dict['show_family'] = entry.signalling_protein
+                    temp_dict['signalling_protein'] = entry.signalling_protein
+                    temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
+                    temp_dict['quantitive_activity'] = entry.quantitive_activity
+                    temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
+                    temp_dict['quantitive_unit'] = entry.quantitive_unit
+                    temp_dict['qualitative_activity'] = entry.qualitative_activity
+                    temp_dict['order_no'] =  int(entry.order_no)
+
+                    if entry.potency != None and entry.potency !='None':
+                        temp_dict['potency'] =  entry.potency
+                    else:
+                        temp_dict['potency'] = ''
+
+                    temp['biasdata'].append(temp_dict)
+                    doubles.append(temp_dict)
+                    increment_assay+=1
+                else:
+                    continue
+
+            rd[increment] = temp
+            increment+=1
+
+
+        return rd
+
+    def multply_assay(self, data):
+
+        for i in data.items():
+
+            lenght = len(i[1]['biasdata'])
+            for key in range(lenght,5):
+                temp_dict = dict()
+                temp_dict['pathway'] = ''
+                temp_dict['order_no'] = lenght
+                i[1]['biasdata'].append(temp_dict)
+                lenght+=1
+            test = sorted(i[1]['biasdata'], key=lambda x: x['order_no'],
+                          reverse=True)
+            i[1]['biasdata'] = test
+
+
+
+
+    '''
+    End  of Bias Browser
+    '''
+
+class BiasPathways(TemplateView):
+
+    template_name = 'bias_browser_pathways.html'
+    #@cache_page(50000)
+    def get_context_data(self, *args, **kwargs  ):
+        content = BiasedPathways.objects.all().prefetch_related(
+        'biased_pathway', 'ligand','receptor','receptor','receptor__family',
+        'receptor__family__parent','receptor__family__parent__parent__parent',
+        'receptor__family__parent__parent','receptor__species',
+        'publication', 'publication__web_link', 'publication__web_link__web_resource',
+        'publication__journal')
+        context = dict()
+        prepare_data = self.process_data(content)
+        context.update({'data': prepare_data})
+
+        return context
+
+    def process_data(self, content):
+        '''
+        Merge BiasedExperiment with its children
+        and pass it back to loop through dublicates
+        '''
+        rd = dict()
+        increment = 0
+
+        for instance in content:
+            fin_obj = {}
+            fin_obj['main'] = instance
+            temp = dict()
+            doubles = []
+            # TODO: mutation residue
+            temp['experiment_id'] = instance.id
+            temp['publication'] = instance.publication
+            temp['ligand'] = instance.ligand
+            temp['rece'] = instance.chembl
+            temp['chembl'] = instance.chembl
+            temp['relevance'] = instance.relevance
+            temp['signalling_protein'] = instance.signalling_protein
+
+            if instance.receptor:
+                temp['receptor'] = instance.receptor
+                temp['uniprot'] = instance.receptor.entry_short
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
+            else:
+                temp['receptor'] = 'Error appeared'
+            # at the moment, there is only 1 pathways for every biased_pathway
+            # change if more pathways added (logic changed)
+            for entry in instance.biased_pathway.all():
+                temp['pathway_outcome_high'] = entry.pathway_outcome_high
+                temp['pathway_outcome_summary'] = entry.pathway_outcome_summary
+                temp['pathway_outcome_detail'] = entry.pathway_outcome_detail
+                temp['experiment_pathway_distinction'] = entry.experiment_pathway_distinction
+                temp['experiment_system'] = entry.experiment_system
+                temp['experiment_outcome_method'] = entry.experiment_outcome_method
+
+            rd[increment] = temp
+            increment+=1
+
+
+        return rd
+
+
+
+
+    '''
+    End  of Bias Browser
+    '''
