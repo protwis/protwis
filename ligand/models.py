@@ -3,7 +3,7 @@ from django.utils.text import slugify
 from django.db import IntegrityError
 
 from common.models import WebResource
-from common.models import WebLink
+from common.models import WebLink, Publication
 from common.tools import fetch_from_web_api
 
 from urllib.request import urlopen, quote
