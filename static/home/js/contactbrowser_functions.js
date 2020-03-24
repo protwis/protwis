@@ -1157,6 +1157,7 @@ function initilizeInitialPlots() {
     // if single structure - use interaction coloring
     if (mode == "two-crystal-groups") {
         default_plot_types = ['tm7_plot_extra', 'tm7_plot_major', 'tm7_plot_intra'];
+        default_plot_types = ['scatterplot', 'snakeplot', ''];
     }
 
     $(".plot_row:visible").find(".panel").each(function (i) {
