@@ -278,10 +278,11 @@ def trilaterate(P1,P2,P3,r1,r2,r3):
     return p_12_a,p_12_b
 
 
-# mode => 0 - extracellular, 1 intracellular, 2 major pocket (class A)
+# mode => 0 - extracellular, 1 intracellular, 2 major pocket (class A), 3 middle
 def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
+    string_mode = ["extracellular", "intracellular", "pocket", "middle"]
     intracellular = (mode == 1)
-    print("COMPARISON")
+    print("COMPARISON", string_mode[mode])
     print(pdbs1)
     print("VS")
     print(pdbs2)
@@ -347,6 +348,7 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
                 for upwards in range(9, 6, -1):
                    if len(tm_only) >= (start_pos+upwards):
                        middle_gpcr[i] = tm_only[(start_pos+upwards-3):(start_pos+upwards)]
+                       continue
             else:
                 if len(tm_only) < 9:
                     print("too few residues")
@@ -373,6 +375,50 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
         #
         #     middle_gpcr[i] = tm_only[0:3]
         #print(middle_gpcr)
+
+    elif mode == 3: # Middle
+        # References points from membrane middle of GPCR
+        ref_membrane_mid = {}
+        ref_membrane_mid["001"] = [['1x43', '1x44','1x45'], ['2x51', '2x52','2x53'], ['3x35', '3x36', '3x37'], ['4x53', '4x54', '4x55'], ['5x45', '5x46', '5x47'], ['6x47', '6x48', '6x49'], ['7x42', '7x43', '7x44']] # A
+        #ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x53', '4x54', '4x55'], ['5x44', '5x45', '5x46'], ['6x48', '6x49', '6x50'], ['7x49', '7x50', '7x51']] # B1
+        #ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x55', '4x56'], ['5x42', '5x43', '5x44'], ['7x47', '7x49']] # B1
+        ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x55', '4x56'], ['5x42', '5x43', '5x44'], ['6x48', '6x49', '6x50'], ['7x47', '7x49']] # B1
+        ref_membrane_mid["003"] = ref_membrane_mid["002"] # B2
+        ref_membrane_mid["004"] = [['1x48', '1x49', '1x50'], ['2x47', '2x48', '2x49'], ['3x39', '3x40', '3x41'], ['4x40', '4x41', '4x42'], ['5x47', '5x48', '5x49'], ['6x47', '6x48', '6x49'], ['7x39', '7x40', '7x41']] # C
+        ref_membrane_mid["005"] = [['1x42', '1x43', '1x44'], ['2x52', '2x53', '2x54'], ['3x37', '3x38', '3x39'], ['4x52', '4x53', '4x54'], ['5x52', '5x53', '5x54'], ['6x42', '6x43', '6x44'], ['7x46', '7x47', '7x48']] # F
+
+        membrane_mid = ref_membrane_mid[data['gpcr_class']]
+        for i in range(0,7):
+            gns[i] = [x for x in membrane_mid[i] if x in conserved]
+            tm_only = [x for x in conserved if x[0]==str(i+1)]
+            if i % 2 == 1: #all uneven TMs (as # = i+1)
+                tm_only.reverse()
+            if len(gns[i]) > 0:
+                if i % 2 == 1: #all uneven TMs (as # = i+1)
+                    start_pos = tm_only.index(gns[i][-1])
+                else:
+                    start_pos = tm_only.index(gns[i][0])
+
+                gns[i] = tm_only[start_pos:(start_pos+3)]
+
+                # Stay close for this as references
+                #middle_gpcr[i] = tm_only[(start_pos+6):(start_pos+9)]
+                for upwards in range(6, 3, -1):
+                   if len(tm_only) >= (start_pos+upwards):
+                       middle_gpcr[i] = tm_only[(start_pos+upwards-3):(start_pos+upwards)]
+                       continue
+            else:
+                if len(tm_only) < 6:
+                    print("too few residues")
+                    return []
+                else:
+                    #print("Refind",i, gns[i])
+                    gns[i] = tm_only[0:3]
+                    middle_gpcr[i] = tm_only[3:6]
+
+                    # for upwards in range(15, 6, -1):
+                    #     if len(tm_only) >= upwards:
+                    #         middle_gpcr[i] = tm_only[(upwards-3):upwards]
 
     # Merge the reference and the helper points
     gns_flat = [y for x in gns for y in x]
