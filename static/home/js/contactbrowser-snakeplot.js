@@ -588,7 +588,20 @@ function createSnakeplot(data, containerSelector) {
                     var scale = colors[fill_color][pos_id][1];
                     $(this).attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
                 } else {
-                    $(this).attr("fill", "#fff");
+
+
+                    if (fill_color.includes("distance")) {
+                        closest = find_closest_value(seg, gn, fill_color);
+                        //console.log('found closest', closest, seg, gn);
+                        var scale = closest[1];
+                    } else {
+                        var closest = 'not_found';
+                    }
+                    if (closest == 'not_found') {
+                        $(this).attr("fill", "#fff"); 
+                    } else {
+                        $(this).attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    }
                 }
                 // console.log(pos_id,color[1],color_by_scale(color_id,color[1]))
                 // $(this).attr("fill_value", color[2]);  
@@ -647,8 +660,22 @@ function createSnakeplot(data, containerSelector) {
                     $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
                     $(this).attr("stroke-width", 5); 
                 } else {
-                    $(this).attr("stroke", "#ccc");
-                    $(this).attr("stroke-width", 1); 
+
+                    if (fill_color.includes("distance")) {
+                        closest = find_closest_value(seg, gn, fill_color);
+                        //console.log('found closest', closest, seg, gn);
+                        var scale = closest[1];
+                    } else {
+                        var closest = 'not_found';
+                    }
+                    if (closest == 'not_found') {
+                        $(this).attr("stroke", "#ccc");
+                        $(this).attr("stroke-width", 1); 
+                    } else {
+                        $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
+                        $(this).attr("stroke-width", 5); 
+
+                    }
                 }
                 
                 
@@ -704,8 +731,22 @@ function createSnakeplot(data, containerSelector) {
                     $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
                     $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
                 } else {
-                    $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
-                    $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
+
+                    if (fill_color.includes("distance")) {
+                        closest = find_closest_value(seg, gn, fill_color);
+                        //console.log('found closest', closest, seg, gn);
+                        var scale = closest[1];
+                    } else {
+                        var closest = 'not_found';
+                    }
+                    if (closest == 'not_found') {
+                        $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
+                        $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
+                    } else {
+                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                        $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
+                    }
+                    
                 }
                 
                 // $(containerSelector).find('#' + pos_id + 't').attr("fill", color[color_id]);
@@ -798,6 +839,28 @@ function createSnakeplot(data, containerSelector) {
             });
         }
 
+        function find_closest_value(seg, gn, fill_color) {
+            color = "not_found";   
+            if (gn && parseInt(gn.substring(0,2)) >= 50) {
+                for (i = parseInt(gn.substring(0,2)); i > 0; i--) {
+                    seq_pos = data['snakeplot_lookup'][seg+"x"+i]
+                    if (seq_pos in colors[fill_color]) {
+                        color = colors[fill_color][seq_pos];
+                        break;
+                    }
+                }
+            } else if (gn) {
+                for (i = parseInt(gn.substring(0,2)); i < 100; i++) {
+                    seq_pos = data['snakeplot_lookup'][seg+"x"+i]
+                    if (seq_pos in colors[fill_color]) {
+                        color = colors[fill_color][seq_pos];
+                        break;
+                    }
+                }
+            }
+            return color;
+        }
+
         function change_movement() {
             fill_color = $(containerSelector + " #snakeplot_move_circle").val();
             console.log('change movement to!', fill_color);
@@ -824,26 +887,10 @@ function createSnakeplot(data, containerSelector) {
                     } else {
                         console.log("no movement for ", seg,gn, pos_id);
                         // find closest value
-                        color = ["#fff", 0, 0, "#fff", "#fff"];   
-                        if (gn && parseInt(gn.substring(0,2)) >= 50) {
-                            for (i = parseInt(gn.substring(0,2)); i > 0; i--) {
-                                seq_pos = data['snakeplot_lookup'][seg+"x"+i]
-                                if (seq_pos in colors[fill_color]) {
-                                    color = colors[fill_color][seq_pos];
-                                    console.log('found',i,seg+"x"+i)
-                                    break;
-                                }
-                            }
-                        } else if (gn) {
-                            for (i = parseInt(gn.substring(0,2)); i < 100; i++) {
-                                seq_pos = data['snakeplot_lookup'][seg+"x"+i]
-                                if (seq_pos in colors[fill_color]) {
-                                    color = colors[fill_color][seq_pos];
-                                    console.log('found',i,seg+"x"+i)
-                                    break;
-                                }
-                            }
-                        }
+                        
+                        color = find_closest_value(seg, gn, fill_color);
+                        if (color == 'not_found')
+                            color = ["#fff", 0, 0, "#fff", "#fff"];   
                     }
                     //color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#fff","#fff"];
                 } else {
