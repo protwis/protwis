@@ -130,7 +130,10 @@ def GProtein(request, dataset="GuideToPharma"):
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 2)  # two days timeout on cache
 
-    return render(request, 'signprot/gprotein.html', context)
+    return render(request,
+                  'signprot/gprotein.html',
+                  context
+    )
 
 
 # @cache_page(60*60*24*2) # 2 days caching
@@ -261,7 +264,10 @@ def Couplings(request):
     context['data'] = fd
     context['distinct_gf'] = distinct_g_families
     context['distinct_sf'] = distinct_g_subunit_families
-    return render(request, 'signprot/browser.html', context)
+    return render(request,
+                  'signprot/browser.html',
+                  context
+    )
 
 
 @cache_page(60 * 60 * 24 * 2)
@@ -365,7 +371,10 @@ def familyDetail(request, slug):
                'no_of_human_proteins': no_of_human_proteins, 'mutations': mutations, 'r_chunks': r_chunks,
                'chunk_size': chunk_size}
 
-    return render(request, 'signprot/family_details.html', context)
+    return render(request,
+                  'signprot/family_details.html',
+                  context
+    )
 
 
 @cache_page(60 * 60 * 24 * 2)
@@ -483,13 +492,21 @@ def Ginterface(request, protein=None):
                     "G13", "G<sub>13</sub>").replace("Gq", "G<sub>q</sub>").replace("G", "G&alpha;"),
                 entry.g_protein.slug))
 
-    return render(request, 'signprot/ginterface.html',
-                  {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal,
+    return render(request,
+                  'signprot/ginterface.html',
+                  {'pdbname': '3SN6',
+                   'snakeplot': SnakePlot,
+                   'gproteinplot': gproteinplot,
+                   'crystal': crystal,
                    'interacting_equivalent': GS_equivalent_interacting_pos,
-                   'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos,
-                   'residues': residues_browser, 'mapped_protein': protein,
-                   'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': set(primary),
-                   'secondary_Gprotein': set(secondary)})
+                   'interacting_none_equivalent': GS_none_equivalent_interacting_pos,
+                   'accessible': accessible_pos,
+                   'residues': residues_browser,
+                   'mapped_protein': protein,
+                   'interacting_gn': GS_none_equivalent_interacting_gn,
+                   'primary_Gprotein': set(primary),
+                   'secondary_Gprotein': set(secondary)}
+    )
 
 
 def ajaxInterface(request, slug, **response_kwargs):
@@ -578,7 +595,12 @@ def StructureInfo(request, pdbname):
 
     crystal = SignprotStructure.objects.get(PDB_code=pdbname)
 
-    return render(request, 'signprot/structure_info.html', {'pdbname': pdbname, 'protein': protein, 'crystal': crystal})
+    return render(request,
+                  'signprot/structure_info.html',
+                  {'pdbname': pdbname,
+                   'protein': protein,
+                   'crystal': crystal}
+    )
 
 
 # @cache_page(60*60*24*2)
@@ -655,7 +677,10 @@ def signprotdetail(request, slug):
                'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'complex_structures': complex_structures,
                'mutations': mutations}
 
-    return render(request, 'signprot/signprot_details.html', context)
+    return render(request,
+                  'signprot/signprot_details.html',
+                  context
+    )
 
 
 def sort_a_by_b(a, b, remove_invalid=False):
@@ -806,7 +831,10 @@ def InteractionMatrix(request):
     request.session['signature'] = None
     request.session.modified = True
 
-    return render(request, 'signprot/matrix.html', context)
+    return render(request,
+                  'signprot/matrix.html',
+                  context
+    )
 
 
 def IMSequenceSignature(request):
@@ -941,7 +969,7 @@ def render_IMSigMat(request):
 
     response = render(
         request,
-        'signature_match.html',
+        'signprot/signature_match.html',
         {'scores': signature_match}
     )
     return response
