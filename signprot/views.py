@@ -270,6 +270,11 @@ def Couplings(request):
     )
 
 
+def Testtables(request, template_name='signprot/multitable.html'):
+    return render(request,
+                  template_name
+    )
+
 @cache_page(60 * 60 * 24 * 2)
 def familyDetail(request, slug):
     # get family
