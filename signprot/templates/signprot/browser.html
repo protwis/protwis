@@ -1,6 +1,6 @@
 {% extends "home/base.html" %}
 {% load static %}
-{% load structure_extras %}
+{# load structure_extras #}
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
@@ -129,17 +129,6 @@
         }
 
     </style>
-{% endblock %}
-
-{% block addon_js %}
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
-    <script src="{% static 'home/js/select2.js' %}"></script>
-    <script src="{% static 'home/js/datatables.min.js' %}"></script>
-    <script src="{% static 'home/js/signprot-families.js' %}"></script>
-    <script src="{% static 'home/js/signprot-subtypes.js' %}"></script>
-
-
 {% endblock %}
 
 {% block content %}
@@ -464,4 +453,14 @@
 
 {% endblock %}
 
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+    <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/datatables.min.js' %}"></script>
+    <script src="{% static 'home/js/signprot-families.js' %}"></script>
+    <script src="{% static 'home/js/signprot-subtypes.js' %}"></script>
+
+
+{% endblock %}
 

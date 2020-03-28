@@ -130,34 +130,34 @@
     </style>
 {% endblock %}
 
-{% block addon_js %}
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
-    <script src="{% static 'home/js/select2.js' %}"></script>
-    <script src="{% static 'home/js/datatables.min.js' %}"></script>
-    <script src="{% static 'home/js/couplings.js' %}"></script>
-    <script src="{% static 'home/js/multitable.js' %}"></script>
-{% endblock %}
-
-
 {% block content %}
 
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item">
             <a class="nav-link active" id="table1-tab" data-toggle="tab" href="#table_1" role="tab"
-               aria-controls="table_1" aria-selected="true">Table 1</a>
+               aria-controls="table_1" aria-selected="true">Families</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" id="table2-tab" data-toggle="tab" href="#table_2" role="tab"
-               aria-controls="table_2" aria-selected="false">Table 2</a>
+               aria-controls="table_2" aria-selected="false">Subtypes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table3-tab" data-toggle="tab" href="#table_3" role="tab"
+               aria-controls="table_3" aria-selected="false">Bouvier</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table4-tab" data-toggle="tab" href="#table_4" role="tab"
+               aria-controls="table_4" aria-selected="false">Inoue</a>
         </li>
     </ul>
 
-
     <div class="tab-content" id="myTabContent">
 
-        <div class="tab-pane fade active" id="table_1">
-            <table cellpadding="0" cellspacing="0" border="0" class="display" id="example1">
+        {# ====================================================================== #}
+        {# FAMILIES TAB STARTS HERE id='familiestabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade active" id="table_1" role="tabpanel">
+            <table cellpadding="0" cellspacing="0" border="0" id="familiestabletab" width="100%">
                 <thead>
                 <tr>
                     <th>Some Data</th>
@@ -167,7 +167,7 @@
                     <th>Tags</th>
                 </tr>
 
-                 <tr>
+                <tr>
                     <th>row </th>
                     <th>two</th>
                     <th>test</th>
@@ -175,7 +175,7 @@
                     <th>thead</th>
                 </tr>
 
-                 <tr>
+                <tr>
                     <th>row </th>
                     <th>two</th>
                     <th>test</th>
@@ -312,8 +312,12 @@
             </table>
         </div>
 
-        <div class="tab-pane fade" id="table_2">
-            <table cellpadding="0" cellspacing="0" border="0" class="display" id="example2">
+
+        {# ====================================================================== #}
+        {# SUBTYPES TAB STARTS HERE id='subtypestabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_2" role="tabpanel">
+            <table cellpadding="0" cellspacing="0" border="0" id="subtypestabletab" width="100%">
                 <thead>
                 <tr>
                     <th width="20%">Rendering engine</th>
@@ -328,7 +332,58 @@
                 </tbody>
             </table>
         </div>
+
+
+        {# ====================================================================== #}
+        {# BOUVIER TAB STARTS HERE id='bouviertabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_3" role="tabpanel">
+            <table cellpadding="0" cellspacing="0" border="0" id="bouviertabletab">
+                <thead>
+                <tr>
+                    <th width="20%">Rendering engine</th>
+                    <th width="25%">Browser</th>
+                    <th width="25%">Platform(s)</th>
+                    <th width="15%">Engine version</th>
+                    <th width="15%">CSS grade</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+
+
+        {# ====================================================================== #}
+        {# INOUE TAB STARTS HERE id='inouetabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_4" role="tabpanel">
+            <table cellpadding="0" cellspacing="0" border="0" id="inouetabletab">
+                <thead>
+                <tr>
+                    <th width="20%">Rendering engine</th>
+                    <th width="25%">Browser</th>
+                    <th width="25%">Platform(s)</th>
+                    <th width="15%">Engine version</th>
+                    <th width="15%">CSS grade</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+
     </div>
 
 
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+    <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/datatables.min.js' %}"></script>
+    <script src="{% static 'home/js/multitable.js' %}"></script>
 {% endblock %}
