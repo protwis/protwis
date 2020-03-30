@@ -150,9 +150,10 @@ function renderDataTablesYadcf(element) {
     const analys_mode = selector.replace('-tab', '');
     var table = $(selector + " .browser-table-" + tab_number);
     var heading = $(selector + " .tab-content .panel-title:visible");
-    if (!heading.hasClass("button_added") && analys_mode == "#two-crystal-groups") {
-        heading.append(' <button type="button"  onclick="make_abs_values(\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs">Toggle if difference values are absolute</button>');
-        heading.addClass("button_added");
+    if (analys_mode == "#two-crystal-groups") {
+        heading.find(".abs_button").remove();
+        heading.append(' <button type="button"  onclick="make_abs_values(this,\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs abs_button" changed=0>Change negative to absolute values</button>');
+        //heading.addClass("button_added");
     }
     // If table is without tbody, then do not init further.
     if (!(table.find("thead").length)) {
@@ -189,7 +190,7 @@ function renderDataTablesYadcf(element) {
                 pageLength: 200,
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
                 "order": [],
                 columnDefs: [{
                         type: "string",
@@ -3582,9 +3583,18 @@ function gray_scale_table(table) {
     console.timeEnd('Greyscale');
 }
 
-function make_abs_values(table) {
+function make_abs_values(e,table) {
     $(".main_loading_overlay").show();
     console.time('Abs values')
+
+    if ($(e).attr('changed') == '0') {
+        $(e).html('Change back to original values');
+        $(e).attr('changed','1')
+    } else {
+        $(e).html('Change negative to absolute values');
+        $(e).attr('changed','0')
+
+    }
     console.log(table);
 
     myVar = setTimeout(function () {
