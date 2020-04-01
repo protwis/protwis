@@ -429,12 +429,14 @@ class PathwayExperimentEntryView(DetailView):
     model = BiasedPathways
     template_name = 'biased_pathways_data.html'
 
+
+@csrf_exempt
 def test_link(request):
     request.session['ids'] = ''
     # try:
     request.session['ids']
     if request.POST.get('action') == 'post':
-        
+
         request.session.modified = True
         data = request.POST.get('ids')
         data = filter(lambda char: char not in " \"?.!/;:[]", data)
@@ -446,6 +448,7 @@ def test_link(request):
     return HttpResponse(request)
     # except OSError as exc:
     #     raise
+
 
 
 class BiasVendorBrowser(TemplateView):
