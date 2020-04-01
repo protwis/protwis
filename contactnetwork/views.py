@@ -309,11 +309,11 @@ def PdbTableData(request):
         r['contact_representative'] = 'Yes' if s.contact_representative else 'No'
         r['class_consensus_based_representative'] = 'Yes' if s.class_contact_representative else 'No'
 
-        r['contact_representative_score'] = "{:.0%}".format(s.contact_representative_score)
+        #r['contact_representative_score'] = "{:.0%}".format(s.contact_representative_score)
 
-        r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
-        r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
-        r['diff_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction - s.active_class_contacts_fraction)
+        #r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
+        #r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
+        #r['diff_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction - s.active_class_contacts_fraction)
 
         r['mammal'] = 'Only show mammalian receptor structures (even if the non-mammalian is the only)' if s.mammal else ''
         r['closest_to_human'] = 'Only show structures from human or the closest species (for each receptor and state)' if s.closest_to_human else ''
