@@ -34,6 +34,95 @@ print_pdb = False
 GN_only = False
 incremental_update = False
 
+# atom name dictionary
+# Based on https://github.com/fomightez/structurework/blob/master/spartan_fixer/SPARTAN08_Fixer_standalone.py
+residue_atom_names = {
+    'ALA': ['N', 'CA', 'C', 'O', 'CB'],
+    'ARG': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'NE', 'CZ', 'NH1', 'NH2'],
+    'ASN': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'OD1', 'ND2'],
+    'ASP': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'OD1', 'OD2'],
+    'CYS': ['N', 'CA', 'C', 'O', 'CB', 'SG'],
+    'GLU': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'OE1', 'OE2'],
+    'GLN': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'OE1', 'NE2'],
+    'GLY': ['N', 'CA', 'C', 'O'],
+    'HIS': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'ND1', 'CD2', 'CE1', 'NE2'],
+    'ILE': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2', 'CD1'],
+    'LEU': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2'],
+    'LYS': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'CE', 'NZ'],
+    'MET': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'SD', 'CE'],
+    'PHE': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ'],
+    'PRO': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD'],
+    'SER': ['N', 'CA', 'C', 'O', 'CB', 'OG'],
+    'THR': ['N', 'CA', 'C', 'O', 'CB', 'OG1', 'CG2'],
+    'TRP': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'NE1', 'CE2', 'CE3', 'CZ2', 'CZ3', 'CH2'],
+    'TYR': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'OH'],
+    'VAL': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2']
+}
+
+# sidechain torsion angles - chi dihedrals
+# From https://gist.github.com/lennax/0f5f65ddbfa278713f58
+chi_atoms = dict(
+    chi1=dict(
+        ARG=['N', 'CA', 'CB', 'CG'],
+        ASN=['N', 'CA', 'CB', 'CG'],
+        ASP=['N', 'CA', 'CB', 'CG'],
+        CYS=['N', 'CA', 'CB', 'SG'],
+        GLN=['N', 'CA', 'CB', 'CG'],
+        GLU=['N', 'CA', 'CB', 'CG'],
+        HIS=['N', 'CA', 'CB', 'CG'],
+        ILE=['N', 'CA', 'CB', 'CG1'],
+        LEU=['N', 'CA', 'CB', 'CG'],
+        LYS=['N', 'CA', 'CB', 'CG'],
+        MET=['N', 'CA', 'CB', 'CG'],
+        PHE=['N', 'CA', 'CB', 'CG'],
+        PRO=['N', 'CA', 'CB', 'CG'],
+        SER=['N', 'CA', 'CB', 'OG'],
+        THR=['N', 'CA', 'CB', 'OG1'],
+        TRP=['N', 'CA', 'CB', 'CG'],
+        TYR=['N', 'CA', 'CB', 'CG'],
+        VAL=['N', 'CA', 'CB', 'CG1'],
+    ),
+    altchi1=dict(
+        VAL=['N', 'CA', 'CB', 'CG2'],
+    ),
+    chi2=dict(
+        ARG=['CA', 'CB', 'CG', 'CD'],
+        ASN=['CA', 'CB', 'CG', 'OD1'],
+        ASP=['CA', 'CB', 'CG', 'OD1'],
+        GLN=['CA', 'CB', 'CG', 'CD'],
+        GLU=['CA', 'CB', 'CG', 'CD'],
+        HIS=['CA', 'CB', 'CG', 'ND1'],
+        ILE=['CA', 'CB', 'CG1', 'CD1'],
+        LEU=['CA', 'CB', 'CG', 'CD1'],
+        LYS=['CA', 'CB', 'CG', 'CD'],
+        MET=['CA', 'CB', 'CG', 'SD'],
+        PHE=['CA', 'CB', 'CG', 'CD1'],
+        PRO=['CA', 'CB', 'CG', 'CD'],
+        TRP=['CA', 'CB', 'CG', 'CD1'],
+        TYR=['CA', 'CB', 'CG', 'CD1'],
+    ),
+    altchi2=dict(
+        ASP=['CA', 'CB', 'CG', 'OD2'],
+        LEU=['CA', 'CB', 'CG', 'CD2'],
+        PHE=['CA', 'CB', 'CG', 'CD2'],
+        TYR=['CA', 'CB', 'CG', 'CD2'],
+    ),
+    chi3=dict(
+        ARG=['CB', 'CG', 'CD', 'NE'],
+        GLN=['CB', 'CG', 'CD', 'OE1'],
+        GLU=['CB', 'CG', 'CD', 'OE1'],
+        LYS=['CB', 'CG', 'CD', 'CE'],
+        MET=['CB', 'CG', 'SD', 'CE'],
+    ),
+    chi4=dict(
+        ARG=['CG', 'CD', 'NE', 'CZ'],
+        LYS=['CG', 'CD', 'CE', 'NZ'],
+    ),
+    chi5=dict(
+        ARG=['CD', 'NE', 'CZ', 'NH1'],
+    ),
+)
+
 # Empirical values as defined by Tien et al. Plos ONE 2013
 maxSASA = {
     "A": 121,
@@ -170,7 +259,7 @@ class Command(BaseCommand):
             self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         # DEBUG for a specific PDB
-        # self.references = Structure.objects.filter(pdb_code__index="5IUB").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # self.references = Structure.objects.filter(pdb_code__index="3SN6").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
 
         print(len(self.references),'structures')
@@ -274,6 +363,40 @@ class Command(BaseCommand):
                     return qset[i+1:]
             del qset[start+1:]
             return qset
+
+
+        def calculate_missing_atoms(poly):
+            """
+            Helper function to calculate missing atoms for all residues in poly
+            """
+            # loop over each residue
+            for r in poly:
+                # store missing atoms in residue annotations
+                if r.resname in residue_atom_names:
+                    r.xtra["MISSING"] = sum([0 if atom in r else 1 for atom in residue_atom_names[r.resname]])
+
+        def calculate_chi_angles(poly):
+            """
+            Helper function to calculate all chi angles for all residues in poly
+            """
+            # loop over each residue
+            for r in poly:
+                # check for all chi_atoms if residue is present -
+                chi_angles = [None] * 5
+                for chi_index in range(1,6):
+                    if r.resname in chi_atoms["chi" + str(chi_index)]:
+                        try:
+                            atom_list = chi_atoms["chi" + str(chi_index)][r.resname]
+                            vec_atoms = [r[a] for a in atom_list]
+                        except KeyError:
+                            continue
+
+                        vectors = [a.get_vector() for a in vec_atoms]
+                        chi_angles[chi_index-1] = round(np.rad2deg(Bio.PDB.vectors.calc_dihedral(*vectors)),3)
+
+                # store in residue annotations
+                r.xtra["CHI"] = chi_angles.copy()
+
 
         #######################################################################
         ######################### Start of main loop ##########################
@@ -406,9 +529,11 @@ class Command(BaseCommand):
 
                 poly.get_theta_list() # angle three consecutive Ca atoms
                 poly.get_tau_list() # dihedral four consecutive Ca atoms
+                calculate_chi_angles(poly) # calculate chi1-chi5
+                calculate_missing_atoms(poly) # calculate missing
                 dihedrals = {}
                 for r in poly:
-                  angle_list = ["PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE"]
+                  angle_list = ["PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "CHI", "MISSING"]
                   for angle in angle_list:
                       if angle not in r.xtra:
                           r.xtra[angle] = None
@@ -437,8 +562,7 @@ class Command(BaseCommand):
 #                      print(pdb_code, " - TAU ANGLE ERROR - ", e)
                       tau_angles = None
 
-
-                  dihedrals[str(r.id[1])] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles]
+                  dihedrals[str(r.id[1])] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles, r.xtra["CHI"], r.xtra["MISSING"]]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
@@ -1000,7 +1124,7 @@ class Command(BaseCommand):
                 for res in polychain:
                     residue_id = str(res.id[1])
 
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "ASA", "DISTANCE"
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "CHI", "MISSING", "ASA", "DISTANCE"
                     if residue_id in full_resdict:
                         dblist.append([reference, full_resdict[residue_id], a_angle[residue_id], b_angle[residue_id], \
                             rsa_list[residue_id], \
@@ -1033,9 +1157,9 @@ class Command(BaseCommand):
 #            std = stats.t.cdf(std_test, df=std_len)
 #            dblist[i].append(0.501 if np.isnan(std) else std)
 
-        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
+        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "CHI", "MISSING", "ASA", "DISTANCE"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,chi_angles,missing,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
             try:
                 if asa != None:
                     asa = round(asa,1)
@@ -1053,7 +1177,7 @@ class Command(BaseCommand):
                     tau = round(np.rad2deg(tau),3)
                 if tau_angle != None:
                     tau_angle = round(np.rad2deg(tau_angle),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=asa, rsa=rsa, hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=asa, rsa=rsa, hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, chi1=chi_angles[0], chi2=chi_angles[1], chi3=chi_angles[2], chi4=chi_angles[3], chi5=chi_angles[4], missing_atoms=missing, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
             except Exception as e:
                 print(e)
                 print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance])
