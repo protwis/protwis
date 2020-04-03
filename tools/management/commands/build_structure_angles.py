@@ -543,8 +543,9 @@ class Command(BaseCommand):
                   try:
                       angle_atoms = [r[a].get_vector() for a in ['N','CA', outerAtom[r.resname]]]
 
-                      # use pseudo CB placement when glycine
-                      if r.resname == 'GLY':
+                      # use pseudo CB placement when glycine (or in case of missing CB)
+                      #if r.resname == 'GLY':
+                      if 'CB' not in r:
                           angle_atoms[2] = Bio.PDB.vectors.Vector(*cal_pseudo_CB(r))
 
                       outer = Bio.PDB.calc_angle(*angle_atoms)
