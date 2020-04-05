@@ -130,11 +130,14 @@ def GProtein(request, dataset="GuideToPharma"):
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 2)  # two days timeout on cache
 
-    return render(request, 'signprot/gprotein.html', context)
+    return render(request,
+                  'signprot/gprotein.html',
+                  context
+    )
 
 
 # @cache_page(60*60*24*2) # 2 days caching
-def Couplings(request):
+def Legacy(request):
     """
     Presents coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier
@@ -261,8 +264,143 @@ def Couplings(request):
     context['data'] = fd
     context['distinct_gf'] = distinct_g_families
     context['distinct_sf'] = distinct_g_subunit_families
-    return render(request, 'signprot/browser.html', context)
+    return render(request,
+                  'signprot/browser.html',
+                  context
+    )
 
+# @cache_page(60*60*24*2) # 2 days caching
+def Couplings(request, template_name='signprot/coupling_browser.html'):
+    """
+    Presents coupling data between Receptors and G-proteins.
+    Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier
+    """
+    context = OrderedDict()
+    threshold_primary = -0.1
+    threshold_secondary = -1
+    proteins = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00',
+                                      species__common_name='Human').all().prefetch_related('family')
+    data = {}
+    class_names = {}
+    family_names = {}
+
+    for p in proteins:
+        p_class = p.family.slug.split('_')[0]
+        if p_class not in class_names:
+            class_names[p_class] = p.family.parent.parent.parent.name
+            family_names[p_class] = p.family.parent.name
+        p_class_name = class_names[p_class].replace('Class','').strip()
+        p_family_name = family_names[p_class].replace('receptors','').strip()
+        p_accession = p.accession
+        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession, 'pretty': p.short(), 'GuideToPharma': {}, 'Aska': {}, 'Bouvier':{}}
+    distinct_g_families = []
+    distinct_g_subunit_families = {}
+    distinct_sources = ['GuideToPharma', 'Aska', 'Bouvier']
+    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein', 'g_protein_subunit', 'g_protein')
+
+    for c in couplings:
+        p = c.protein.entry_short()
+        s = c.source
+        t = c.transduction
+        m = c.log_rai_mean
+        gf = c.g_protein.name
+        gf = gf.replace(" family", "")
+
+        if gf not in distinct_g_families:
+            distinct_g_families.append(gf)
+            distinct_g_subunit_families[gf] = []
+
+        if c.g_protein_subunit:
+            g = c.g_protein_subunit.entry_name
+            g = g.replace("_human", "")
+            if g not in distinct_g_subunit_families[gf]:
+                distinct_g_subunit_families[gf].append(g)
+                distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
+
+        if s not in data[p]:
+            data[p][s] = {}
+
+        if gf not in data[p][s]:
+            data[p][s][gf] = {}
+
+        # If transduction in GuideToPharma data
+        if t:
+            data[p][s][gf] = t
+        else:
+            if 'subunits' not in data[p][s][gf]:
+                data[p][s][gf] = {'subunits': {}, 'best': -2.00}
+            data[p][s][gf]['subunits'][g] = round(Decimal(m), 2)
+            if round(Decimal(m), 2) == -0.00:
+                data[p][s][gf]['subunits'][g] = 0.00
+            # get the lowest number into 'best'
+            if m > data[p][s][gf]['best']:
+                data[p][s][gf]['best'] = round(Decimal(m), 2)
+    fd = {}  # final data
+    distinct_g_families = sorted(distinct_g_families)
+    distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
+    distinct_g_subunit_families = OrderedDict([('Gs', ['gnas2', 'gnal']), ('Gi/Go', ['gnai1', 'gnai3', 'gnao', 'gnaz']),
+                                               ('Gq/G11', ['gnaq', 'gna14', 'gna15']), ('G12/G13', ['gna12', 'gna13'])])
+
+    # This for loop, which perhaps should be a function in itself, perhaps an instance of a Couplings class, does
+    # the job of merging together two data-sets, that of the GuideToPharma and Aska's results.
+    for p, v in data.items():
+        fd[p] = [v['class'], v['family'], v['accession'], p, v['pretty']]
+        s = 'GuideToPharma'
+        # Merge
+        for gf in distinct_g_families:
+            values = []
+            if 'GuideToPharma' in v and gf in v['GuideToPharma']:
+                values.append(v['GuideToPharma'][gf])
+            if 'Aska' in v and gf in v['Aska']:
+                best = v['Aska'][gf]['best']
+                if best > threshold_primary:
+                    values.append('primary')
+                elif best > threshold_secondary:
+                    values.append('secondary')
+            if 'primary' in values:
+                fd[p].append('primary')
+            elif 'secondary' in values:
+                fd[p].append('secondary')
+            else:
+                fd[p].append('')
+        s = 'GuideToPharma'
+        # First loop over GuideToPharma
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                fd[p].append(v[s][gf])
+            else:
+                fd[p].append("")
+        s = 'Aska'
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                if v[s][gf]['best'] > threshold_primary:
+                    fd[p].append("primary")
+                elif v[s][gf]['best'] > threshold_secondary:
+                    fd[p].append("secondary")
+                else:
+                    fd[p].append("No coupling")
+            else:
+                fd[p].append("")
+        for gf, sfs in distinct_g_subunit_families.items():
+            for sf in sfs:
+                if gf in v[s]:
+                    if sf in v[s][gf]['subunits']:
+                        fd[p].append(v[s][gf]['subunits'][sf])
+                    else:
+                        fd[p].append("")
+                else:
+                    fd[p].append("")
+        #print(v)
+    #print(data['5HT1A'])
+    print(fd)
+    print(fd['5HT1A'])
+    context['data'] = fd
+    context['distinct_gf'] = distinct_g_families
+    context['distinct_sf'] = distinct_g_subunit_families
+
+    return render(request,
+                  template_name, context
+    )
 
 @cache_page(60 * 60 * 24 * 2)
 def familyDetail(request, slug):
@@ -365,7 +503,10 @@ def familyDetail(request, slug):
                'no_of_human_proteins': no_of_human_proteins, 'mutations': mutations, 'r_chunks': r_chunks,
                'chunk_size': chunk_size}
 
-    return render(request, 'signprot/family_details.html', context)
+    return render(request,
+                  'signprot/family_details.html',
+                  context
+    )
 
 
 @cache_page(60 * 60 * 24 * 2)
@@ -483,13 +624,21 @@ def Ginterface(request, protein=None):
                     "G13", "G<sub>13</sub>").replace("Gq", "G<sub>q</sub>").replace("G", "G&alpha;"),
                 entry.g_protein.slug))
 
-    return render(request, 'signprot/ginterface.html',
-                  {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal,
+    return render(request,
+                  'signprot/ginterface.html',
+                  {'pdbname': '3SN6',
+                   'snakeplot': SnakePlot,
+                   'gproteinplot': gproteinplot,
+                   'crystal': crystal,
                    'interacting_equivalent': GS_equivalent_interacting_pos,
-                   'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos,
-                   'residues': residues_browser, 'mapped_protein': protein,
-                   'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': set(primary),
-                   'secondary_Gprotein': set(secondary)})
+                   'interacting_none_equivalent': GS_none_equivalent_interacting_pos,
+                   'accessible': accessible_pos,
+                   'residues': residues_browser,
+                   'mapped_protein': protein,
+                   'interacting_gn': GS_none_equivalent_interacting_gn,
+                   'primary_Gprotein': set(primary),
+                   'secondary_Gprotein': set(secondary)}
+    )
 
 
 def ajaxInterface(request, slug, **response_kwargs):
@@ -578,7 +727,12 @@ def StructureInfo(request, pdbname):
 
     crystal = SignprotStructure.objects.get(PDB_code=pdbname)
 
-    return render(request, 'signprot/structure_info.html', {'pdbname': pdbname, 'protein': protein, 'crystal': crystal})
+    return render(request,
+                  'signprot/structure_info.html',
+                  {'pdbname': pdbname,
+                   'protein': protein,
+                   'crystal': crystal}
+    )
 
 
 # @cache_page(60*60*24*2)
@@ -655,7 +809,10 @@ def signprotdetail(request, slug):
                'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'complex_structures': complex_structures,
                'mutations': mutations}
 
-    return render(request, 'signprot/signprot_details.html', context)
+    return render(request,
+                  'signprot/signprot_details.html',
+                  context
+    )
 
 
 def sort_a_by_b(a, b, remove_invalid=False):
@@ -806,7 +963,10 @@ def InteractionMatrix(request):
     request.session['signature'] = None
     request.session.modified = True
 
-    return render(request, 'signprot/matrix.html', context)
+    return render(request,
+                  'signprot/matrix.html',
+                  context
+    )
 
 
 def IMSequenceSignature(request):
@@ -941,7 +1101,7 @@ def render_IMSigMat(request):
 
     response = render(
         request,
-        'signature_match.html',
+        'signprot/signature_match.html',
         {'scores': signature_match}
     )
     return response

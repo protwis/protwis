@@ -1,0 +1,537 @@
+{% extends "home/base.html" %}
+{% load static %}
+{# load structure_extras #}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
+    <style type="text/css">
+        .select2-result-label {
+            font-size: 10px;
+        }
+
+        #filters {
+
+            font-size: 10px;
+            padding: 7px 15px;
+        }
+
+        @media (min-width: 1600px) {
+            #content {
+                width: 1570px;
+            }
+        }
+
+        @media (min-width: 1800px) {
+            #content {
+                width: 1770px;
+            }
+        }
+
+        table.dataTable.compact thead th.over_header {
+            border-right: 1px solid;
+            border-left: 0px solid;
+            text-align: center;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead tr.over_header th {
+            border-bottom: 1px solid #ccc;
+        }
+
+        table.dataTable.compact thead th.leftborder {
+            border-left: 1px solid;
+        }
+
+        table.dataTable.compact thead th.rightborder {
+            border-right: 1px solid;
+        }
+
+        table.dataTable.compact thead th.checkbox_tr {
+            text-align: left;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead th {
+            padding: 4px 16px 4px 2px;
+        }
+
+        .yadcf-filter-wrapper {
+            margin-top: 0px;
+        }
+
+        input.yadcf-filter {
+            width: 100px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
+
+        .yadcf-filter-range-date, .yadcf-filter-range-number {
+            width: 30px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
+
+        .clicked_button {
+            background-color: rgb(215, 215, 215);
+        }
+
+        .wrapper {
+            overflow-x: scroll;
+            overflow-y: hidden;
+        }
+
+        #overlay {
+            top: 0px;
+            position: absolute;
+            background: #f8f8f8;
+            /*border: 1px solid #333;*/
+            -webkit-box-shadow: 5px 0 2px -2px #888;
+            box-shadow: 5px 0 2px -2px #888;
+        }
+
+        #overlay tbody tr {
+            background-color: #f8f8f8;
+        }
+
+        .highlight {
+            background-color: rgb(204, 229, 255);
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f1f1f1;
+            width: 100%;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content p {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            width: 100%;
+            display: block;
+        }
+
+        .show {
+            display: block;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="table1-tab" data-toggle="tab" href="#table_1" role="tab"
+               aria-controls="table_1" aria-selected="true">Families</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table2-tab" data-toggle="tab" href="#table_2" role="tab"
+               aria-controls="table_2" aria-selected="false">Subtypes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table3-tab" data-toggle="tab" href="#table_3" role="tab"
+               aria-controls="table_3" aria-selected="false">Bouvier</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table4-tab" data-toggle="tab" href="#table_4" role="tab"
+               aria-controls="table_4" aria-selected="false">Inoue</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+
+        {# ====================================================================== #}
+        {# FAMILIES TAB STARTS HERE id='familiestabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade active" id="table_1" role="tabpanel" aria-labelledby="table1-tab">
+
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns"
+                           href="javascript:void(0)">
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
+                           value="Export Excel">
+                    <label class="btn btn-default btn-s" id="reset_filters_btn" href="javascript:void(0)">
+                        Reset All
+                    </label>
+                </div>
+            </div>
+
+
+
+            <table width="100%" class="display compact text-nowrap" id="familiestabletab" >
+
+                <thead>
+                <tr class='over_header over_header_row'>
+                    <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                        RECEPTOR
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gs
+                        <button type="button" class="close hide_columns" columns="5,6,7"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gi/o
+                        <button type="button" class="close hide_columns" columns="8,9,10"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gq/11
+                        <button type="button" class="close hide_columns" columns="11,12,13"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        G12/13
+                        <button type="button" class="close hide_columns" columns="14,15,16"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=1 class="over_header flexible_over_header" id='annotated_over_header'>
+                        Arrestin
+                        <button type="button" class="close hide_columns" columns="17," style="float:right;
+                                display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    </th>
+                </tr>
+
+
+
+                <tr class='over_header over_header_row'>
+                    <th title="" class='checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)
+"></th>
+                    <th title="Class" style="height: 70px;"></th>
+                    <th title="Family"></th>
+                    <th title="uniprot"></th>
+                    <th title="IUPHAR" class='rightborder'></th>
+                    <th title="Bouvier"></th>
+                    <th title="Inoue"></th>
+                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier"></th>
+                    <th title="Inoue"></th>
+                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier"></th>
+                    <th title="Inoue"></th>
+                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier"></th>
+                    <th title="Inoue"></th>
+                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier"></th>
+                </tr>
+
+                </thead>
+
+                <br>
+                <br>
+
+                <tbody>
+                {% for p, vals in data.items %}
+                    <tr>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.3 }}"></td>
+                        <td class="text-left">{{ vals.0 }}</td>
+                        <td class="text-left">{{ vals.1 }}</td>
+                        <td class="uniprot">
+                            <span><a href="http://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.3 }}</a></span>
+                        </td>
+                        <td class="text-left">{{ vals.4|safe }}</td>
+                        <td class="text-center">{{ vals.pk }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.9 }}</td>
+                        <td class="text-center">{{ vals.pk }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.10 }}</td>
+                        <td class="text-center">{{ vals.pk }}</td>
+                        <td class="text-center">{{ vals.23 }}</td>
+                        <td class="text-center">{{ vals.11 }}</td>
+                        <td class="text-center">{{ vals.pk }}</td>
+                        <td class="text-center">{{ vals.11 }}</td>
+                        <td class="text-center">{{ vals.26 }}</td>
+                        <td class="text-center">{{ vals.11 }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+
+        {# ====================================================================== #}
+        {# SUBTYPES TAB STARTS HERE id='subtypestabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_2" role="tabpanel" aria-labelledby="table2-tab">
+
+            <table width="100%" class="display compact text-nowrap" id="subtypestabletab" >
+
+                <thead>
+                <tr class='over_header over_header_row'>
+                    <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                        RECEPTOR
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gs
+                        <button type="button" class="close hide_columns" columns="5,6,7"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=8 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gi/o
+                        <button type="button" class="close hide_columns" columns="8,9,10,11,12,13,14,15"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=7 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gq/11
+                        <button type="button" class="close hide_columns" columns="16,17,18,19,20,21,22"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        G12/13
+                        <button type="button" class="close hide_columns" columns="23,24,25,26"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=3 style='text-align:left;'>
+                        Arrestin
+                        <button type="button" class="close hide_columns" columns="27,28,29"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                </tr>
+
+                <tr class='over_header over_header_row'>
+                    <th colspan=5 class="over_header rightborder"></th>
+                    <th colspan=1 class="over_header rightborder">Bouvier</th>
+                    <th colspan=2 class="over_header rightborder">Inoue</th>
+                    <th colspan=4 class="over_header rightborder">Bouvier</th>
+                    <th colspan=4 class="over_header rightborder">Inoue</th>
+                    <th colspan=4 class="over_header rightborder">Bouvier</th>
+                    <th colspan=3 class="over_header rightborder">Inoue</th>
+                    <th colspan=2 class="over_header rightborder">Bouvier</th>
+                    <th colspan=2 class="over_header rightborder">Inoue</th>
+                    <th colspan=3 class="over_header">Bouvier</th>
+                </tr>
+
+                <tr>
+                    <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th title="Class" style='height: 70px;'></th>
+                    <th title="Family"></th>
+                    <th title="UniProt"></th>
+                    <th title="IUPHAR" class='rightborder'></th>
+                    <th title="GNAS2" class='rightborder'></th>
+                    <th title="GNAS2"></th>
+                    <th title="GNAL" class='rightborder'></th>
+                    <th title="GNAI1"></th>
+                    <th title="GNAI2"></th>
+                    <th title="GNAO"></th>
+                    <th title="GNAZ" class='rightborder'></th>
+                    <th title="GNAI1"></th>
+                    <th title="GNAI3"></th>
+                    <th title="GNAO"></th>
+                    <th title="GNAZ" class='rightborder'></th>
+                    <th title="GNAQ"></th>
+                    <th title="GNA11"></th>
+                    <th title="GNA14"></th>
+                    <th title="GNA15" class='rightborder'></th>
+                    <th title="GNAQ"></th>
+                    <th title="GNA14"></th>
+                    <th title="GNA15" class='rightborder'></th>
+                    <th title="GNA12"></th>
+                    <th title="GNA13" class='rightborder'></th>
+                    <th title="GNA12"></th>
+                    <th title="GNA13" class='rightborder'></th>
+                    <th title="BARR1/GRK2"></th>
+                    <th title="BARR2"></th>
+                    <th title="BARR2/GRK2"></th>
+                </tr>
+
+                </thead>
+
+                <br>
+                <br>
+
+                <tbody>
+                {% for p, vals in data.items %}
+                    <tr>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.3 }}"></td>
+                        <td class="text-left">{{ vals.0 }}</td>
+                        <td class="text-left">{{ vals.1 }}</td>
+                        <td class="uniprot">
+                            <span><a href="http://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.3 }}</a></span>
+                        </td>
+                        <td class="text-left">{{ vals.4|safe }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.21 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.21 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.21 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.21 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.21 }}</td>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+        </div>
+
+
+        {# ====================================================================== #}
+        {# BOUVIER TAB STARTS HERE id='bouviertabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_3" role="tabpanel" aria-labelledby="table3-tab">
+
+            <table width="100%" class="display compact text-nowrap" id="bouviertabletab" >
+
+                <thead>
+                <tr class='over_header over_header_row'>
+                    <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                        RECEPTOR
+                    </th>
+                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gs
+                        <button type="button" class="close hide_columns" columns="5"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gi/o
+                        <button type="button" class="close hide_columns" columns="6"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gq/11
+                        <button type="button" class="close hide_columns" columns="7"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
+                        G12/13
+                        <button type="button" class="close hide_columns" columns="8"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
+                        Arrestin
+                        <button type="button" class="close hide_columns" columns="9"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                </tr>
+
+                <tr class='over_header over_header_row'>
+                    <th title="" class='checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)
+"></th>
+                    <th title="Class" style="height: 70px;"></th>
+                    <th title="Family"></th>
+                    <th title="uniprot"></th>
+                    <th title="IUPHAR" class='rightborder'></th>
+                    <th title="Gs"></th>
+                    <th title="Gi/o"></th>
+                    <th title="Gq/11"></th>
+                    <th title="G12/23"></th>
+                    <th title="Arrestin"></th>
+                </tr>
+
+                </thead>
+
+                <br>
+                <br>
+
+                <tbody>
+                {% for p, vals in data.items %}
+                    <tr>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.3 }}"></td>
+                        <td class="text-left">{{ vals.0 }}</td>
+                        <td class="text-left">{{ vals.1 }}</td>
+                        <td class="uniprot">
+                            <span><a href="http://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.3 }}</a></span>
+                        </td>
+                        <td class="text-left">{{ vals.4|safe }}</td>
+                        <td class="text-center">{{ vals.pk }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.9 }}</td>
+                        <td class="text-center">{{ vals.pk }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+
+        {# ====================================================================== #}
+        {# INOUE TAB STARTS HERE id='inouetabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_4" role="tabpanel" aria-labelledby="table4-tab">
+            <table cellpadding="0" cellspacing="0" border="0" id="inouetabletab">
+                <thead>
+                <tr>
+                    <th width="20%">Rendering engine</th>
+                    <th width="25%">Browser</th>
+                    <th width="25%">Platform(s)</th>
+                    <th width="15%">Engine version</th>
+                    <th width="15%">CSS grade</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+    <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/datatables.min.js' %}"></script>
+    <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
+{% endblock %}
