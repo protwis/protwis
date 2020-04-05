@@ -1,3 +1,20 @@
+
+var color_scale_colors = {}
+
+color_scale_colors.red = {red:255, green:0, blue: 0};
+color_scale_colors.red = {red:195, green:74, blue: 54};
+color_scale_colors.blue = {red:0, green:0, blue: 255};
+color_scale_colors.blue = {red:0, green:140, blue: 204};
+color_scale_colors.green = {red:0, green:255, blue: 0};
+color_scale_colors.green = {red:0, green:201, blue: 167};
+color_scale_colors.white = {red:255, green:255, blue: 255};
+color_scale_colors.yellow = {red:255, green:255, blue: 0};
+color_scale_colors.yellow = {red:255, green:255, blue: 0};
+color_scale_colors.black = { red: 0, green: 0, blue: 0 };
+color_scale_colors.orange = { red: 255, green: 150, blue: 113 };
+color_scale_colors.purple = { red: 128, green: 0, blue: 128 };
+color_scale_colors.false = false;
+
 function color_by_scale(scale, color1, color2, color3) {
 
     // case "rwb": // red-white-blue
@@ -15,23 +32,23 @@ function color_by_scale(scale, color1, color2, color3) {
 
     // return numberToColorGradient(scale, 1, color)
 
-    var colors = {}
+    // var colors = {}
 
-    colors.red = {red:255, green:0, blue: 0};
-    colors.red = {red:195, green:74, blue: 54};
-    colors.blue = {red:0, green:0, blue: 255};
-    colors.blue = {red:0, green:140, blue: 204};
-    colors.green = {red:0, green:255, blue: 0};
-    colors.green = {red:0, green:201, blue: 167};
-    colors.white = {red:255, green:255, blue: 255};
-    colors.yellow = {red:255, green:255, blue: 0};
-    colors.yellow = {red:255, green:255, blue: 0};
-    colors.black = { red: 0, green: 0, blue: 0 };
-    colors.orange = { red: 255, green: 150, blue: 113 };
-    colors.purple = { red: 128, green: 0, blue: 128 };
-    colors.false = false;
+    // colors.red = {red:255, green:0, blue: 0};
+    // colors.red = {red:195, green:74, blue: 54};
+    // colors.blue = {red:0, green:0, blue: 255};
+    // colors.blue = {red:0, green:140, blue: 204};
+    // colors.green = {red:0, green:255, blue: 0};
+    // colors.green = {red:0, green:201, blue: 167};
+    // colors.white = {red:255, green:255, blue: 255};
+    // colors.yellow = {red:255, green:255, blue: 0};
+    // colors.yellow = {red:255, green:255, blue: 0};
+    // colors.black = { red: 0, green: 0, blue: 0 };
+    // colors.orange = { red: 255, green: 150, blue: 113 };
+    // colors.purple = { red: 128, green: 0, blue: 128 };
+    // colors.false = false;
     
-    return colorGradient(scale, colors[color1], colors[color2], colors[color3])
+    return colorGradient(scale, color_scale_colors[color1], color_scale_colors[color2], color_scale_colors[color3])
 }
 
 function createSnakeplot(data, containerSelector) {
@@ -53,6 +70,7 @@ function createSnakeplot(data, containerSelector) {
     
     $(containerSelector).find(".long").hide();
     maxmin();
+    create_legend();
 
     $(containerSelector).find("text").tooltip({
         'container': 'body',
@@ -462,6 +480,7 @@ function createSnakeplot(data, containerSelector) {
                 $(this).attr("fill", color);
                 $(this).html(text);
             });
+            create_legend();
         });
 
         d3.select(containerSelector).select("#text_excluded").on("change", function () {
@@ -515,38 +534,45 @@ function createSnakeplot(data, containerSelector) {
             change_fill();
             change_stroke();
             change_text();
+            create_legend();
         });
 
 
         $(containerSelector+ " .residue_fill").on("change", function () {
             change_fill();
+            create_legend();
         });
 
         $(containerSelector+ " .residue_border").on("change", function () {
             change_stroke();
-            console.log('residue_border');
+            create_legend();
         });
 
 
         $(containerSelector+ " .residue_text").on("change", function () {
             change_text();
+            create_legend();
         });
 
 
         $(containerSelector+ " .backbone_color").on("change", function () {
             change_backbone();
+            create_legend();
         });
 
         $(containerSelector+ " .residue_rotation").on("change", function () {
             change_rotation();
+            create_legend();
         });
 
         d3.select(containerSelector).select("#snakeplot_color_backbone").on("change", function () {
             change_backbone();
+            create_legend();
         });
 
         d3.select(containerSelector).select("#snakeplot_move_circle").on("change", function () {
             change_movement();
+            create_legend();
         });
 
         function change_fill() {
@@ -909,6 +935,174 @@ function createSnakeplot(data, containerSelector) {
         }
 
     }
+
+    function create_legend() {
+        console.log('create legend!');
+        // var newDiv = document.createElement("div");
+
+        // $(containerSelector).find(".snakeplot-legend").remove();
+
+        // newDiv.setAttribute("class", "snakeplot-legend");
+        // newDiv.innerHTML = 'test legend';
+        // $(containerSelector).append(newDiv);
+        var fill_color;
+        legends = [];
+        // Deduce which legends to make
+        fill_color = $(containerSelector + " #snakeplot_color").val();
+        if (fill_color != "none" && fill_color) {
+
+            var color1  = $(containerSelector+" #fill_color1").val();
+            var color2  = $(containerSelector+" #fill_color2").val();
+            var color3  = $(containerSelector+" #fill_color3").val();
+            var colors = [color1,color2,color3].filter(item => !(item == 'none'));
+            legends.push({ icon: 'fill', value: nice_index_names[fill_color],colors:colors })
+        }
+        fill_color = $(containerSelector + " #snakeplot_color_border").val();
+        if (fill_color!="none" && fill_color) {
+
+            var color1  = $(containerSelector+" #border_color1").val();
+            var color2  = $(containerSelector+" #border_color2").val();
+            var color3  = $(containerSelector+" #border_color3").val();
+            var colors = [color1,color2,color3].filter(item => !(item == 'none'));
+            legends.push({ icon: 'border', value: nice_index_names[fill_color],colors:colors })
+        }
+        fill_color = $(containerSelector + " #snakeplot_color_text").val();
+        if (fill_color!="none" && fill_color) {
+
+            var color1  = $(containerSelector+" #text_color1").val();
+            var color2  = $(containerSelector+" #text_color2").val();
+            var color3  = $(containerSelector+" #text_color3").val();
+            var colors = [color1, color2, color3].filter(item => !(item == 'none'));
+            legends.push({ icon: 'text', value: nice_index_names[fill_color],colors:colors })
+        }
+        fill_color = $(containerSelector + " #snakeplot_color_rotation").val();
+        if (fill_color!="none" && fill_color) legends.push({ icon: 'rotation', value: nice_index_names[fill_color]})
+        fill_color = $(containerSelector + " #snakeplot_color_backbone").val();
+            if (fill_color != "none" && fill_color) {
+
+                var color1 = $(containerSelector + " #backbone_color1").val();
+                var color2 = $(containerSelector + " #backbone_color2").val();
+                var color3 = $(containerSelector + " #backbone_color3").val();
+                var colors = [color1, color2, color3].filter(item => !(item == 'none'));
+                legends.push({ icon: 'backbone_line', value: nice_index_names[fill_color],colors:colors })
+            }
+        fill_color = $(containerSelector + " #snakeplot_move_circle").val();
+        if (fill_color!="none" && fill_color) legends.push({ icon: 'backbone', value: nice_index_names[fill_color]})
+
+        console.log(legends);
+        // legends = [{ icon: 'fill', value: 'rotamer' },
+        //            { icon: 'border', value: 'distance' },
+        //            { icon: 'text', value: 'distance' },
+        //            { icon: 'rotation', value: 'distance' },
+        //            { icon: 'backbone_line', value: 'distance' },
+        //            { icon: 'backbone', value: 'distance' }];
+
+        var dataL = 0;
+        var offset = 45;
+        d3.select(containerSelector).select(".legend").remove();
+        var legend = d3.select(containerSelector).select("svg").append("g").attr("class","legend");
+        legend.attr("transform", "translate(15,"+(newheight-70)+")");
+        var legend4 = legend.selectAll('.legends')
+            .data(legends)
+            .enter().append('g')
+            .attr("transform", function (d, i) {
+                if (i === 0) {
+                    dataL = Math.max(50,d.value.length*6) + offset
+                    return "translate(0,0)"
+                } else {
+                    var newdataL = dataL
+                    console.log(d.value,"length",d.value.length)
+                    dataL += Math.max(50,d.value.length*6)  + offset
+                    return "translate(" + (newdataL) + ",0)"
+                }
+            })
+
+        legend4.append('text')
+            .attr("x", 25)
+            .attr("y", function (d) { return 'colors' in d ? 1 : 6 })
+            .text(function (d, i) {return d.value})
+            .style("text-anchor", "start")
+            .style("font-size", 15)
+
+        legend4.append("svg:image")
+            .attr('x', 0)
+            .attr('y', -12)
+            .attr('width', 20)
+            .attr('height', 24)
+            .attr("xlink:href", function (d, i) { return "/static/home/images/legends/" + d.icon + ".png" })
+        
+        legendcolorscales = legend4.append('g').attr('class','colorscale')
+        legendcolorscales.append('rect')
+            .attr('x', 25)
+            .attr('y', 3)
+            .attr('width', 50)
+            .attr('height', 8)
+            .style("stroke", "black")
+            .style("stroke-width", 1)
+            .style("fill", "white")
+        
+        console.log(legendcolorscales)
+
+        // for (element in legendcolorscales[0]) {
+        //     console.log("test",element)
+        // }
+        legendcolorscales.each(function(d) {
+            // your update code here as it was in your example
+            test = d3.select(this) // Transform to d3 Object
+            if (!('colors' in d)) {
+                test.remove();
+                return;
+            }
+            var data = d3.range(48);
+            range_colors = []
+            d.colors.forEach(c => {
+                var rgb = color_scale_colors[c]
+                var hex = rgb2hex(rgb.red, rgb.green, rgb.blue);
+                range_colors.push(hex);
+            });
+            
+            var colors = d3v4.scaleLinear()
+                .domain(d3v4.ticks(0, 48, range_colors.length))
+                .range(range_colors);
+            
+            var rects = test.selectAll(".colorinterval")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("y", 4)
+                .attr("height", 6)
+                .attr("x", (d,i)=>26 + i)
+                .attr("width", 1)
+                .attr("fill", d=>colors(d))
+                .attr("stroke-width", 0);
+                            
+          });
+
+
+        legends_width = legend.node().getBBox().width
+        legend.attr("transform", "translate("+((max_x-legends_width)/2)+","+(newheight-70)+")");
+        
+        // legend4.append('rect')
+        //     .attr("x", 0)
+        //     .attr("y", 0)
+        //     .attr("width", 10)
+        //     .attr("height", 10)
+        //     .style("fill", function (d, i) {
+        //         return color(i)
+        //     })
+        
+        // legend4.append('text')
+        //     .attr("x", 20)
+        //     .attr("y", 10)
+        //     //.attr("dy", ".35em")
+        //     .text(function (d, i) {
+        //         return d
+        //     })
+        //     .attr("class", "textselected")
+        //     .style("text-anchor", "start")
+        //     .style("font-size", 15)
+            
+        }
     
 }
 
@@ -950,7 +1144,28 @@ function maxmin() {
 
             }
         });
+        // console.log("temp",y_max,y_min);
+        $(obj).find('svg').find('g').children('.segment').each(function () {
+            counter += 1;
+            y = parseInt($(this).attr( "y" ));
+            x = parseInt($(this).attr( "x" ));
+            classtext = $(this).attr("class");
+            // test = $(this).attr("original_title");
+            // test2 = $(this).css("display");
+            if ($(this).css("display")!='none') {
+                count = count +1;
+                if (y<svgmin) {
+                    svgmin = y;
+                    classmin = classtext;
+                    }
+                if (y>svgmax) {
+                    classmax = classtext;
+                    svgmax= y;
+                }
+                if (x>x_svgmax) x_svgmax = x;
 
+            }
+        });
         // if (svgmin>y_min) svgmin = y_min;
         // if (svgmax<y_max) svgmax = y_max;
 
@@ -975,7 +1190,8 @@ function maxmin() {
         // console.log("Prev attr"+$('#snake').attr("transform"));
         if (newheight!=oldheight) {
             svg.attr('height', (svgmax-svgmin+margin*2));
-            svg.find('g').attr("transform", "translate(0," + (-svgmin+margin) + ")");
+            svg.find('g#snake').attr("transform", "translate(0," + (-svgmin+margin/2) + ")");
+            svg.find('g.legend').attr("transform", "translate(15," + (newheight-70) + ")");
 
             // $('#snakeplot')[0].attr("viewBox", "0 0 " + width + " " + newheight);
             svg.attr("viewBox", "0 0 " + width + " " + newheight);
