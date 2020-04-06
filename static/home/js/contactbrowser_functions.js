@@ -1193,6 +1193,8 @@ function initializeFullscreenButton(selector) {
         } else {
             fullScreenElement = $(this).closest(".panel-default").find(".plot-container");
             fullScreenElement.css('background-color', 'white');
+            var cp = fullScreenElement.find(".controls-panel");
+            cp.toggleClass("fullscreen");
         }
 
         toggleFullScreen(fullScreenElement.get(0));
