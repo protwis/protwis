@@ -134,7 +134,7 @@ class Command(BaseBuild):
             fin_obj['vendor_counter'] = vendor_counter
             rd.append(fin_obj)
 
-        print('---counter of assays at process data---', counter)
+
         return rd
 
     def change(self, rd):
@@ -204,7 +204,7 @@ class Command(BaseBuild):
                 send[increment] = temp
                 increment = increment + 1
                 counter += 1
-        print('---counter of assays at change---', counter)
+
         return send
 
 
@@ -223,7 +223,7 @@ class Command(BaseBuild):
             for data in j[1]:
                 if data['assay'][0]['bias_reference'].lower() != "" and data['assay'][0]['bias_reference'] =='Reference':
                     if data in ref:
-                        print('already in list')
+                        pass
                     else:
                         ref.append(data)
 
@@ -250,7 +250,7 @@ class Command(BaseBuild):
                     send[increment] = data
                     increment += 1
 
-        print('---counter at process_refs---', increment,'\n')
+
         results_temp = self.process_group(send)
 
         return results_temp
@@ -268,7 +268,7 @@ class Command(BaseBuild):
                 if j not in temp_obj:
                     temp_obj.append(j)
                 else:
-                    print('passing dublicate___-')
+                    pass
             i[1]['assay'] = temp_obj
             test = sorted(i[1]['assay'], key=lambda k: k['quantitive_activity']
                           if k['quantitive_activity'] else 999999,  reverse=False)
@@ -284,13 +284,12 @@ class Command(BaseBuild):
 
             most_potent = dict()
             for x in i[1]['biasdata']:
-                if x['log_bias_factor'] and x['log_bias_factor'] < 0:
+                if x['log_bias_factor'] and isinstance(x['log_bias_factor'], int) and x['log_bias_factor'] < 0:
                     for j in i[1]['biasdata']:
                         if j['order_no'] == 0:
                             j['order_no'] = x['order_no']
                             x['order_no'] = 0
-                    self.calc_bias_factor(i[1]['biasdata'])               
-
+                    self.calc_bias_factor(i[1]['biasdata'])
 
             self.calc_potency(i[1]['biasdata'])
 
@@ -333,6 +332,16 @@ class Command(BaseBuild):
                             temp_calculation, 1)
                     elif (i['quantitive_measure_type'].lower() == 'ic50' and temp_reference['quantitive_measure_type'].lower() == 'ic50' ):
                         i['log_bias_factor'] = 'Only agonist in main pathway'
+
+                    elif (i['qualitative_activity'] =='No activity' ):
+                        i['log_bias_factor'] = "Full Bias"
+
+                    elif (i['qualitative_activity'] =='Low activity' ):
+                        i['log_bias_factor'] = "High Bias"
+
+                    elif (i['qualitative_activity'] =='High activity' ):
+                        i['log_bias_factor'] = "Low Bias"
+
                 else:
                     i['log_bias_factor'] = None
             except:
@@ -390,8 +399,7 @@ class Command(BaseBuild):
             temp_obj.append(j[1])
             context[name] = temp_obj
             context[name][0]['publication'] == name
-        print('---context[name]s---', len(context), '\n')
-        print('---counter of data at process_references---', counter)
+
         send = self.process_dublicates(context)
 
         return send
@@ -544,7 +552,6 @@ class Command(BaseBuild):
         return primary, secondary
 
     def bias_list(self):
-        print('i am in')
         context = {}
         content = BiasedExperiment.objects.all().prefetch_related(
             'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',

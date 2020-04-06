@@ -3,7 +3,6 @@
 {% load static %}
 
 {%csrf_token%}
-
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
@@ -844,10 +843,15 @@
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden; display:inline-block; width:100%;'>
 <div class="toolbar_data_css" id="toolbar_data">
  <table class="display compact text-nowrap toolbar_data_css">
- <tr><td><b>The number of unique data<br>for current page:</b></td> <td></td> </tr>
+     <thead>
+<tr>
+    <h4>Showing unique:</h4>
+</tr>
+     </thead>
+
  <tr><td>Ligands</td><td id="ligand_counter"></td></tr>
  <tr><td>Receptors</td><td id="receptor_counter"></td></tr>
- <tr><td>Publications</td><td id="ligand_counter"></td></tr></table>
+ </table>
 </div>
     <div id='structures_scrollable_div'>
 
