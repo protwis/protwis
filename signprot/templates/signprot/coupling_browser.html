@@ -132,6 +132,13 @@
 
 {% block content %}
 
+    <div style="display:block;">
+        <div style="display:inline; float:left;">
+            <h2 style="width:auto; display:inline;">G-Protein Couplings</h2>
+        </div>
+    </div>
+    <br><br>
+
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item">
             <a class="nav-link active" id="table1-tab" data-toggle="tab" href="#table_1" role="tab"
@@ -171,9 +178,9 @@
                     <input class="btn btn-default btn-s" type="button"
                            onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
                            value="Export Excel">
-                    <label class="btn btn-default btn-s" id="reset_filters_btn" href="javascript:void(0)">
-                        Reset All
-                    </label>
+                     <label class="btn btn-default btn-s" id="reset_tab1" href="javascript:void(0)">
+                     Reset All
+                     </label>
                 </div>
             </div>
 
@@ -182,7 +189,7 @@
             <table width="100%" class="display compact text-nowrap" id="familiestabletab" >
 
                 <thead>
-                <tr class='over_header over_header_row'>
+                <tr>
                     <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
                         RECEPTOR
                     </th>
@@ -219,7 +226,7 @@
 
 
 
-                <tr class='over_header over_header_row'>
+                <tr>
                     <th title="" class='checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)
 "></th>
                     <th title="Class" style="height: 70px;"></th>
@@ -282,12 +289,31 @@
         {# ====================================================================== #}
         <div class="tab-pane fade" id="table_2" role="tabpanel" aria-labelledby="table2-tab">
 
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns"
+                           href="javascript:void(0)">
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
+                           value="Export Excel">
+                    <label class="btn btn-default btn-s" id="reset_filters_btn" href="#">
+                        Reset All
+                    </label>
+                </div>
+            </div>
+
             <table width="100%" class="display compact text-nowrap" id="subtypestabletab" >
 
                 <thead>
-                <tr class='over_header over_header_row'>
+                <tr>
                     <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
-                        RECEPTOR
+
                     </th>
                     <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
                         Gs
@@ -322,8 +348,8 @@
                     </th>
                 </tr>
 
-                <tr class='over_header over_header_row'>
-                    <th colspan=5 class="over_header rightborder"></th>
+                <tr>
+                    <th colspan=5 class="over_header rightborder">RECEPTOR</th>
                     <th colspan=1 class="over_header rightborder">Bouvier</th>
                     <th colspan=2 class="over_header rightborder">Inoue</th>
                     <th colspan=4 class="over_header rightborder">Bouvier</th>
@@ -422,6 +448,26 @@
         {# ====================================================================== #}
         <div class="tab-pane fade" id="table_3" role="tabpanel" aria-labelledby="table3-tab">
 
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns"
+                           href="javascript:void(0)">
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('bouviertabletab', 'Bouvier data', 'bouvier_coupling.xls')"
+                           value="Export Excel">
+                    <label class="btn btn-default btn-s" id="reset_filters_btn" href="javascript:void(0)">
+                        Reset All
+                    </label>
+                </div>
+            </div>
+
+
             <table width="100%" class="display compact text-nowrap" id="bouviertabletab" >
 
                 <thead>
@@ -429,37 +475,56 @@
                     <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
                         RECEPTOR
                     </th>
-                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
-                        Gs
-                        <button type="button" class="close hide_columns" columns="5"
+                    <th colspan=5 class="over_header flexible_over_header" style='text-align:left;'>
+                        Max Norm
+                        <button type="button" class="close hide_columns" columns="5,6,7,8,9"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
-                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
-                        Gi/o
-                        <button type="button" class="close hide_columns" columns="6"
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Avg
+                        <button type="button" class="close hide_columns" columns="10,11,12,13"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
-                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
-                        Gq/11
-                        <button type="button" class="close hide_columns" columns="7"
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (dNorm)
+                        <button type="button" class="close hide_columns" columns="14,15,16,17"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
-                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
-                        G12/13
-                        <button type="button" class="close hide_columns" columns="8"
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (dNorm)
+                        <button type="button" class="close hide_columns" columns="18,19,20,21"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
-                    <th colspan=1 class="over_header flexible_over_header" style='text-align:left;'>
-                        Arrestin
-                        <button type="button" class="close hide_columns" columns="9"
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (raw)
+                        <button type="button" class="close hide_columns" columns="22,23,24,25"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (raw)
+                        <button type="button" class="close hide_columns" columns="26,27,28,29"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (SEM)
+                        <button type="button" class="close hide_columns" columns="30,31,32,33"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (SEM)
+                        <button type="button" class="close hide_columns" columns="34,35,36,37"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                 </tr>
+
 
                 <tr class='over_header over_header_row'>
                     <th title="" class='checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)
@@ -470,9 +535,37 @@
                     <th title="IUPHAR" class='rightborder'></th>
                     <th title="Gs"></th>
                     <th title="Gi/o"></th>
+                    <th title="G12/13"></th>
                     <th title="Gq/11"></th>
-                    <th title="G12/23"></th>
-                    <th title="Arrestin"></th>
+                    <th title="Arrestin" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA"></th>
                 </tr>
 
                 </thead>
@@ -483,18 +576,46 @@
                 <tbody>
                 {% for p, vals in data.items %}
                     <tr>
-                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.3 }}"></td>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.pk }}"></td>
                         <td class="text-left">{{ vals.0 }}</td>
                         <td class="text-left">{{ vals.1 }}</td>
                         <td class="uniprot">
                             <span><a href="http://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.3 }}</a></span>
                         </td>
                         <td class="text-left">{{ vals.4|safe }}</td>
-                        <td class="text-center">{{ vals.pk }}</td>
                         <td class="text-center">{{ vals.17 }}</td>
-                        <td class="text-center">{{ vals.9 }}</td>
-                        <td class="text-center">{{ vals.pk }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
                         <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -507,19 +628,176 @@
         {# INOUE TAB STARTS HERE id='inouetabletab' connects to js #}
         {# ====================================================================== #}
         <div class="tab-pane fade" id="table_4" role="tabpanel" aria-labelledby="table4-tab">
-            <table cellpadding="0" cellspacing="0" border="0" id="inouetabletab">
-                <thead>
-                <tr>
-                    <th width="20%">Rendering engine</th>
-                    <th width="25%">Browser</th>
-                    <th width="25%">Platform(s)</th>
-                    <th width="15%">Engine version</th>
-                    <th width="15%">CSS grade</th>
-                </tr>
-                </thead>
-                <tbody>
+<br>
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns"
+                           href="javascript:void(0)">
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('inouetabletab', 'Inoue data', 'inoue_coupling.xls')"
+                           value="Export Excel">
+                    <label class="btn btn-default btn-s" id="reset_filters_btn" href="javascript:void(0)">
+                        Reset All
+                    </label>
+                </div>
+            </div>
 
+            <table width="100%" class="display compact text-nowrap" id="inouetabletab" >
+
+                <thead>
+                <tr class='over_header over_header_row'>
+                    <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                        RECEPTOR
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Max Norm
+                        <button type="button" class="close hide_columns" columns="5,6,7,8"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Avg
+                        <button type="button" class="close hide_columns" columns="9,10,11,12"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (dNorm)
+                        <button type="button" class="close hide_columns" columns="13,14,15,16"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (dNorm)
+                        <button type="button" class="close hide_columns" columns="17,18,19,20"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (raw)
+                        <button type="button" class="close hide_columns" columns="21,22,23,24"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (raw)
+                        <button type="button" class="close hide_columns" columns="25,26,27,28"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (SEM)
+                        <button type="button" class="close hide_columns" columns="29,30,31,32"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (SEM)
+                        <button type="button" class="close hide_columns" columns="33,34,35,36"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                </tr>
+
+
+                <tr class='over_header over_header_row'>
+                    <th title="" class='checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)
+"></th>
+                    <th title="Class" style="height: 70px;"></th>
+                    <th title="Family"></th>
+                    <th title="uniprot"></th>
+                    <th title="IUPHAR" class='rightborder'></th>
+                    <th title="Gs"></th>
+                    <th title="Gi/o"></th>
+                    <th title="G12/13"></th>
+                    <th title="Gq/11" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA" class="rightborder"></th>
+                    <th title="Gs"></th>
+                    <th title="Gi1"></th>
+                    <th title="Gi2"></th>
+                    <th title="GoA"></th>
+                </tr>
+
+                </thead>
+
+                <br>
+                <br>
+
+                <tbody>
+                {% for p, vals in data.items %}
+                    <tr>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.pk }}"></td>
+                        <td class="text-left">{{ vals.0 }}</td>
+                        <td class="text-left">{{ vals.1 }}</td>
+                        <td class="uniprot">
+                            <span><a href="http://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.3 }}</a></span>
+                        </td>
+                        <td class="text-left">{{ vals.4|safe }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                        <td class="text-center">{{ vals.17 }}</td>
+                        <td class="text-center">{{ vals.18 }}</td>
+                        <td class="text-center">{{ vals.19 }}</td>
+                        <td class="text-center">{{ vals.20 }}</td>
+                    </tr>
+                {% endfor %}
                 </tbody>
+
             </table>
         </div>
 
