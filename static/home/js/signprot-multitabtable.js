@@ -52,7 +52,6 @@ function select_all(e) {
         };
 
 
-
 $(document).ready(function () {
 
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
@@ -616,7 +615,7 @@ $(document).ready(function () {
                 column_number: 7,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gq/11",
+                filter_default_label: "G12/13",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -626,7 +625,7 @@ $(document).ready(function () {
                 column_number: 8,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "G12/13",
+                filter_default_label: "Gq/11",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -642,7 +641,287 @@ $(document).ready(function () {
                     width: '80px',
                 },
             },
-            ],
+            {
+                column_number: 10,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 11,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 12,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 13,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 14,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 15,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 16,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 17,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 18,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 19,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 20,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 21,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 22,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 23,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 24,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 25,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 26,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 27,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 28,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 29,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 30,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 31,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 32,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 33,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 34,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 35,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 36,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 37,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+        ],
         {filters_tr_index: 1},
         {
             cumulative_filtering: true
@@ -654,19 +933,402 @@ $(document).ready(function () {
 
     oTable4 = $("#inouetabletab").dataTable({
         //data: data1,
-        "ordering": false,
+        //"ordering": false,
+        //"fixedHeader":true,
+        //"searching": false,
+        //"info": false,
+        "deferRender": true,
+        "scrollY": $(window).height() - 450,
+        "scrollX": true,
+        "scrollCollapse": true,
+        "scroller": true,
         "paging": false,
-        "fixedHeader":true,
-        "searching": false,
-        "info": false,
-        //"deferRender": true,
-    });
+        "bSortCellsTop": false, //prevent sort arrows going on bottom row
+        "autoWidth": true,
+        "pageLength": -1,
+        "bInfo": true,
+    }).yadcf(
+        [
+            {
+                column_number: 1,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Class",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '90px',
+                },
+            },
+            {
+                column_number: 2,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Family",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '100px',
+                },
+            },
+            {
+                column_number: 3,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "UniProt",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                },
+            },
+            {
+                column_number: 4,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "IUPHAR",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '100px',
+                },
+            },
+            {
+                column_number: 5,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                },
+            },
+            {
+                column_number: 6,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi/o",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                },
+            },
+            {
+                column_number: 7,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "G12/13",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                },
+            },
+            {
+                column_number: 8,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gq/11",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                },
+            },
+            {
+                column_number: 9,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 10,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 11,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 12,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 13,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 14,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 15,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 16,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 17,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 18,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 19,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 20,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 21,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 22,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 23,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 24,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 25,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 26,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 27,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 28,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 29,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 30,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 31,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 32,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 33,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 34,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 35,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gi2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+            {
+                column_number: 36,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GoA",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '30px',
+                },
+            },
+        ],
+        {filters_tr_index: 1},
+        {
+            cumulative_filtering: true
+        }
+    );
+
+    yadcf.exResetAllFilters(oTable4);
 
 
 
 
     // By default display the first tab. If this is not ON, one has to click on the tab for display.
     $('#myTab a:first').tab('show');
+
+// Just a button to go back to the main page.
+    $('#reset_tab1').click(function () {
+        window.location.href = '/signprot/couplings/#table_1';
+    });
+
 
 });
 
