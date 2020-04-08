@@ -5,6 +5,7 @@ import contactnetwork.pdb as pdb
 from structure.models import Structure, StructureVectors
 from residue.models import Residue
 from angles.models import ResidueAngle as Angle
+from contactnetwork.models import Distance, distance_scaling_factor
 
 import Bio.PDB
 import copy
@@ -256,11 +257,13 @@ class Command(BaseCommand):
             self.references = Structure.objects.all().exclude(refined=True).exclude(id__in=done_structures).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         else:
             Angle.objects.all().delete()
+            Distance.objects.all().delete()
+            StructureVectors.objects.all().delete()
+            print("All Angle, Distance, and StructureVector data cleaned")
             self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         # DEBUG for a specific PDB
         # self.references = Structure.objects.filter(pdb_code__index="3SN6").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
-
 
         print(len(self.references),'structures')
         self.references = list(self.references)
@@ -327,17 +330,62 @@ class Command(BaseCommand):
             """
             return np.sqrt(np.sum(np.power(pca.transform(ca)[:,1:],2), axis = 1))
 
+        def center_coordinates(h, p, pca):
+            """
+            Calculate the orthogonal projection of the CA to the helix axis
+            which is moved to the mean of seven consecutive amino acids
+            """
+            h_middle = np.transpose(np.stack((moving_average(h[:,0], 7), moving_average(h[:,1], 7), moving_average(h[:,2], 7))))
+            a = np.concatenate((h_middle[(0,0,0),:], h_middle, h_middle[(-1,-1,-1),:]))
+
+            b = p.transform(h)
+            b[:,1:] = p.transform(a)[:,1:]
+            b = p.inverse_transform(b)
+
+            return b
+
         def axes_calc(h,p,pca):
             """
             Calculate the orthogonal projection of the CA to the helix axis
             which is moved to the mean of three consecutive amino acids
             """
-            a = (np.roll(np.vstack((h,h[0])),1,axis=0)[:-1] + h + np.roll(np.vstack((h,h[-1])),-1,axis=0)[:-1])/3
+
+            # Running average - over 3 residues at a same time
+            #a = (np.roll(np.vstack((h,h[0])),1,axis=0)[:-1] + h + np.roll(np.vstack((h,h[-1])),-1,axis=0)[:-1])/3
+
+            # Running average - over 7 residues at a same time
+            h_middle = np.transpose(np.stack((moving_average(h[:,0], 7), moving_average(h[:,1], 7), moving_average(h[:,2], 7))))
+            a = np.concatenate((h_middle[(0,0,0),:], h_middle, h_middle[(-1,-1,-1),:]))
+
             b = p.transform(h)
             b[:,1:] = p.transform(a)[:,1:]
             b = p.inverse_transform(b)
 
+            # count=0
+            # for row in h:
+            #     count += 1
+            #     print("pseudo orig" + str(count) ,", pos=[", row[0], ",", row[1], ",", row[2] ,"];")
+            #
+            # count=0
+            # for row in b:
+            #     count += 1
+            #     print("pseudo line" + str(count) ,", pos=[", row[0], ",", row[1], ",", row[2] ,"];")
+            #
+            # print("hide everything")
+            # print("set sphere_scale, .5")
+            # print("show spheres, fake*")
+            # print("show spheres, orig*")
+            # print("show spheres, line*")
+            # print("color red, line*")
+            # print("color cyan, fake*")
+            # exit(0)
+
             return calc_angle(pca.transform(b),pca.transform(h))
+
+        def moving_average(a, n=3) :
+            ret = np.cumsum(a, dtype=float)
+            ret[n:] = ret[n:] - ret[:-n]
+            return ret[n - 1:] / n
 
         def set_bfactor(chain,angles):
             """
@@ -426,7 +474,7 @@ class Command(BaseCommand):
         res_dict = {ref.pdb_code.index:qgen(ref.protein_conformation.protein,qset) for ref in references}
 
         # clean structure vectors table
-        StructureVectors.objects.all().delete()
+        # StructureVectors.objects.all().delete()
 
         #######################################################################
         ######################### Start of main loop ##########################
@@ -461,7 +509,7 @@ class Command(BaseCommand):
                 elif os.path.exists("/env/bin/mkdssp"):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/mkdssp')
 
-                # DISABLED STRIDE - selected DSSP over STRIDE
+                # DISABLED STRIDE - selected DSSP 3 over STRIDE
 #                try:
 #                    if os.path.exists("/env/bin/stride"):
 #                       stride = subprocess.Popen(['/env/bin/stride', filename], stdout=subprocess.PIPE)
@@ -482,10 +530,14 @@ class Command(BaseCommand):
                 ###################### prepare and evaluate query #####################
 
                 db_reslist = res_dict[pdb_code]
+                gn_reslist = []
                 tm_reslist = []
                 for i in db_reslist:
-                    if i.generic_number and re.match(r'^[1-7]x[0-9]+', i.generic_number.label):
-                        tm_reslist.append(i)
+                    if i.generic_number:
+                        gn_reslist.append(i)
+                        if re.match(r'^[1-7]x[0-9]+', i.generic_number.label):
+                            tm_reslist.append(i)
+
 
                 full_resdict = {str(r.sequence_number):r for r in db_reslist}
 
@@ -503,6 +555,8 @@ class Command(BaseCommand):
                 db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain] for x in ["1","2","3","4","5","6","7"]]
                 gdict = {r[1]:r[0] for hlist in db_helper for r in hlist}
                 tm_keys = [r[1] for hlist in db_helper for r in hlist]
+                tm_keys_str = [str(i) for i in tm_keys]
+                tm_keys_int = [int(i) for i in tm_keys]
                 db_tmlist = [[(' ',r[1],' ') for r in sl] for sl in db_helper]
                 db_set = set(db_tmlist[0]+db_tmlist[1]+db_tmlist[2]+db_tmlist[3]+db_tmlist[4]+db_tmlist[5]+db_tmlist[6])
 
@@ -511,26 +565,23 @@ class Command(BaseCommand):
 
                 polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
                 poly = Bio.PDB.Polypeptide.Polypeptide(polychain)
+
+                # Calculate backbone and sidechain dihedrals + missing atoms
                 poly.get_phi_psi_list() # backbone dihedrals
+                calculate_chi_angles(poly) # calculate chi1-chi5
+                calculate_missing_atoms(poly) # calculate missing
 
-                #poly.get_theta_list() # angle three consecutive Ca atoms
-                #poly.get_tau_list() # dihedral four consecutive Ca atoms
-
-                # TODO: extend with Chi1-5?
-                # https://gist.github.com/lennax/0f5f65ddbfa278713f58
-                # Definition http://www.ccp14.ac.uk/ccp/web-mirrors/garlic/garlic/commands/dihedrals.html
-                # http://biopython.org/DIST/docs/api/Bio.PDB.Polypeptide-pysrc.html#Polypeptide.get_phi_psi_list
+                # Possibly only relevant for helices?
+                poly.get_theta_list() # angle three consecutive Ca atoms
+                poly.get_tau_list() # dihedral four consecutive Ca atoms
 
                 ### DEPRECATED: clean the structure to solely the 7TM bundle
                 #recurse(structure, [[0], preferred_chain, db_set])
+
                 ### NEW: clean the structure to all protein residues in DB
                 db_fullset = set([(' ',r.sequence_number,' ') for r in db_reslist])
                 recurse(structure, [[0], preferred_chain, db_fullset])
 
-                poly.get_theta_list() # angle three consecutive Ca atoms
-                poly.get_tau_list() # dihedral four consecutive Ca atoms
-                calculate_chi_angles(poly) # calculate chi1-chi5
-                calculate_missing_atoms(poly) # calculate missing
                 dihedrals = {}
                 for r in poly:
                   angle_list = ["PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "CHI", "MISSING"]
@@ -570,9 +621,35 @@ class Command(BaseCommand):
                     for id in [atom.id for atom in residue if atom.element == "H"]:
                         residue.detach_child(id)
 
+                # List of CA coordinates for all residues with GN for distances
+                gn_res_gns = [res.generic_number.label for res in gn_reslist]
+                gn_res_ids = [res.sequence_number for res in gn_reslist]
+
+                # Order by GNs
+                # QUICK HACK: to be cleaned up and simplified
+                gns_order = []
+                for gn in gn_res_gns:
+                    part1, part2 = gn.split("x")
+                    multiply1 = 10000
+                    if len(part1)>=2:
+                        multiply1 = 1000
+
+                    multiply2 = 1
+                    if (len(part2))<=2:
+                        multiply2 = 10
+
+                    gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
+
+                gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]
+
+                gns_ca_list = {resid:pchain[resid]["CA"].get_coord() for resid in gns_ids_list if resid in pchain}
+                gns_cb_list = {resid:np.asarray(pchain[resid]["CB"].get_coord() if "CB" in pchain[resid] else cal_pseudo_CB(pchain[resid]), dtype=float) for resid in gns_ids_list if resid in pchain}
+
+
                 ### AXES through each of the TMs and the TM bundle (center axis)
                 hres_list = [np.asarray([pchain[r]["CA"].get_coord() for r in sl], dtype=float) for sl in db_tmlist]
-                h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else cal_pseudo_CB(pchain[r]) for r in sl], dtype=float) for sl in db_tmlist]
+                #h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else cal_pseudo_CB(pchain[r]) for r in sl], dtype=float) for sl in db_tmlist]
+                h_cb_list = [[gns_cb_list[r[1]] for r in sl] for sl in db_tmlist]
 
                 # fast and fancy way to take the average of N consecutive elements
                 N = 3
@@ -595,7 +672,7 @@ class Command(BaseCommand):
                         minlength = 6
 
                     # create PCA per helix using extracellular half
-                    # Exlude the first turn if possible (often still part of loop)
+                    # Exclude the first turn if possible (often still part of loop)
                     for i,h in enumerate(hres_three):
                         if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
                             h = np.flip(h, 0)
@@ -607,7 +684,7 @@ class Command(BaseCommand):
 
 
                     # create fake coordinates along each helix PCA to create center PCA
-                    # UGLY hack - should be cleand up
+                    # UGLY hack - should be cleaned up
                     coord_list = []
                     for pos in pos_list:
                         start = pos[0]
@@ -619,7 +696,8 @@ class Command(BaseCommand):
                         coord_list.append(line_points)
                     center_vector = pca_line(pca, np.vstack(coord_list))
                 else:
-                    # Less robust with differing TM lengths
+                    # Create PCA line through whole helix
+                    # NOTE: much less robust with differing TM lengths, bends, kinks, etc.
                     center_vector = pca_line( pca, np.vstack(hres_three))
 
                 # DEBUG print arrow for PyMol
@@ -630,41 +708,41 @@ class Command(BaseCommand):
                 # Measure level of activation by TM6 tilt
                 # Residue most often found at kink start
                 # TODO: check for numbering at other classes
-                kink_start = 44 #  general class A number 6x44 seems quite conserved to be the kink start
+                # kink_start = 44 #  general class A number 6x44 seems quite conserved to be the kink start
 
                 # Select all residues before indicated residue
-                lower_tm6 = []
-                kink_start_res = None
-                kink_measure = None
-                for res in db_tmlist[5]:
-                    gnlabel = gdict[res[1]].generic_number.label
-                    if int(gnlabel.replace("6x","")) <= kink_start:
-                        lower_tm6.append(pchain[res]["CA"].get_coord())
-                        if int(gnlabel.replace("6x","")) == kink_start:
-                            kink_start_res = pchain[res]["CA"].get_coord()
-                        if int(gnlabel.replace("6x","")) == 38:
-                            kink_measure = pchain[res]["CA"].get_coord()
-
-                lower_tm6 = np.asarray(lower_tm6)
+                # lower_tm6 = []
+                # kink_start_res = None
+                # kink_measure = None
+                # for res in db_tmlist[5]:
+                #     gnlabel = gdict[res[1]].generic_number.label
+                #     if int(gnlabel.replace("6x","")) <= kink_start:
+                #         lower_tm6.append(pchain[res]["CA"].get_coord())
+                #         if int(gnlabel.replace("6x","")) == kink_start:
+                #             kink_start_res = pchain[res]["CA"].get_coord()
+                #         if int(gnlabel.replace("6x","")) == 38:
+                #             kink_measure = pchain[res]["CA"].get_coord()
+                #
+                # lower_tm6 = np.asarray(lower_tm6)
 
                 # TM2 intracellular for comparison
-                lower_tm2 = []
-                ref_tm2 = None
-                for res in db_tmlist[1]:
-                    gnlabel = gdict[res[1]].generic_number.label
-                    gn_id = int(gnlabel.replace("2x",""))
-                    if gn_id >= 40 and gn_id <= 50: # Lower well-defined half of TM2
-                        lower_tm2.append(pchain[res]["CA"].get_coord())
-                        if gn_id == 41:
-                            ref_tm2 = pchain[res]["CA"].get_coord()
-                lower_tm2 = np.asarray(lower_tm2)
+                # lower_tm2 = []
+                # ref_tm2 = None
+                # for res in db_tmlist[1]:
+                #     gnlabel = gdict[res[1]].generic_number.label
+                #     gn_id = int(gnlabel.replace("2x",""))
+                #     if gn_id >= 40 and gn_id <= 50: # Lower well-defined half of TM2
+                #         lower_tm2.append(pchain[res]["CA"].get_coord())
+                #         if gn_id == 41:
+                #             ref_tm2 = pchain[res]["CA"].get_coord()
+                # lower_tm2 = np.asarray(lower_tm2)
 
-                posb_list = []
-                # create PCA per helix using full helix
-                for i,h in enumerate(hres_three):
-                    if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
-                        h = np.flip(h, 0)
-                    posb_list.append(pca_line(PCA(), h))
+                # posb_list = []
+                # # create PCA per helix using full helix
+                # for i,h in enumerate(hres_three):
+                #     if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
+                #         h = np.flip(h, 0)
+                #     posb_list.append(pca_line(PCA(), h))
 
 
                 # NOTE: Slight variations between the mid membrane residues can have a strong affect on the plane
@@ -1014,8 +1092,43 @@ class Command(BaseCommand):
                 c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
                 translation = np.array2string(-1*center_vector[0], separator=',')
 
+                StructureVectors.objects.filter(structure = reference).all().delete()
                 sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector))
                 sv.save()
+
+                # TODO:
+                # FIX RESIDUE ORDER
+                # FIX requirement checking
+
+                ### DISTANCES - moved here from cube
+                # REMOVE OLD distances
+                Distance.objects.filter(structure=reference).all().delete()
+
+                # Perpendicular projection of Ca onto helical PCA
+                h_center_list = np.concatenate([center_coordinates(h,p,pca) for h,p in zip(hres_list,helix_pcas)])
+                gns_center_list = dict(zip(tm_keys_int, h_center_list))
+
+                # triangular matrix for distances
+                up_ind = np.triu_indices(len(gns_ca_list), 1)
+                bulk_distances = []
+                for i1, i2 in zip(up_ind[0], up_ind[1]):
+                    key1 = gns_ids_list[i1]
+                    key2 = gns_ids_list[i2]
+                    res1 = full_resdict[str(key1)]
+                    res2 = full_resdict[str(key2)]
+
+                    ca_dist = int(np.linalg.norm(gns_ca_list[key1] - gns_ca_list[key2])*distance_scaling_factor)
+                    cb_dist = int(np.linalg.norm(gns_cb_list[key1] - gns_cb_list[key2])*distance_scaling_factor)
+                    center_dist = None
+                    if key1 in gns_center_list and key2 in gns_center_list:
+                        center_dist = int(np.linalg.norm(gns_center_list[key1] - gns_center_list[key2])*distance_scaling_factor)
+
+                    # residues in gn_reslist, structure in structure
+                    distance = Distance(distance = ca_dist, distance_cb = cb_dist, distance_helix_center = center_dist, res1=res1, res2=res2, gn1=res1.generic_number.label, gn2=res2.generic_number.label, gns_pair='_'.join([res1.generic_number.label, res2.generic_number.label]), structure=reference)
+                    bulk_distances.append(distance)
+
+                # Bulk insert
+                Distance.objects.bulk_create(bulk_distances, batch_size=5000)
 
                 ### ANGLES
                 # Center axis to helix axis to CA
@@ -1091,7 +1204,7 @@ class Command(BaseCommand):
 #                else:
 #                    print("{} Rotating the right way  {}".format(pdb_code, signed_diff))
 
-                tm_keys_str = [str(i) for i in tm_keys]
+                # tm_keys_str = [str(i) for i in tm_keys]
                 a_angle = dict(zip(tm_keys_str, a_angle))
                 b_angle = dict(zip(tm_keys_str, b_angle))
                 core_distances = dict(zip(tm_keys_str, core_distances))
