@@ -434,8 +434,9 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
 
     distances_set1.filter_gns.extend([y for x in ends_and_middle for y in x])
     distances_set2.filter_gns = distances_set1.filter_gns
-    distances_set1.fetch_distances_tm()
-    distances_set2.fetch_distances_tm()
+    distances_set1.fetch_distances_tm(distance_type = "HC")
+    distances_set2.fetch_distances_tm(distance_type = "HC")
+
 
     membrane_data1 = [x[:] for x in [[0] * len(ends_and_middle_flat)] * len(ends_and_middle_flat)]
     membrane_data2 = [x[:] for x in [[0] * len(ends_and_middle_flat)] * len(ends_and_middle_flat)]
