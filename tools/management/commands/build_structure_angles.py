@@ -59,6 +59,10 @@ residue_atom_names = {
     'TYR': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'OH'],
     'VAL': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2']
 }
+residue_atom_names['YCM'] = residue_atom_names['CYS']
+residue_atom_names['CSD'] = residue_atom_names['ALA']
+residue_atom_names['TYS'] = residue_atom_names['TYR']
+residue_atom_names['SEP'] = residue_atom_names['SER']
 
 # sidechain torsion angles - chi dihedrals
 # From https://gist.github.com/lennax/0f5f65ddbfa278713f58
@@ -82,6 +86,9 @@ chi_atoms = dict(
         TRP=['N', 'CA', 'CB', 'CG'],
         TYR=['N', 'CA', 'CB', 'CG'],
         VAL=['N', 'CA', 'CB', 'CG1'],
+        YCM=['N', 'CA', 'CB', 'SG'],
+        TYS=['N', 'CA', 'CB', 'CG'],
+        SEP=['N', 'CA', 'CB', 'OG'],
     ),
     altchi1=dict(
         VAL=['N', 'CA', 'CB', 'CG2'],
@@ -101,12 +108,14 @@ chi_atoms = dict(
         PRO=['CA', 'CB', 'CG', 'CD'],
         TRP=['CA', 'CB', 'CG', 'CD1'],
         TYR=['CA', 'CB', 'CG', 'CD1'],
+        TYS=['CA', 'CB', 'CG', 'CD1'],
     ),
     altchi2=dict(
         ASP=['CA', 'CB', 'CG', 'OD2'],
         LEU=['CA', 'CB', 'CG', 'CD2'],
         PHE=['CA', 'CB', 'CG', 'CD2'],
         TYR=['CA', 'CB', 'CG', 'CD2'],
+        TYS=['CA', 'CB', 'CG', 'CD2'],
     ),
     chi3=dict(
         ARG=['CB', 'CG', 'CD', 'NE'],
@@ -167,6 +176,11 @@ maxSASA = {
     "TRP": 264,
     "TYR": 255
 }
+# TODO adjust to capture actual SASA of modified residue
+maxSASA['YCM'] = maxSASA['CYS']
+maxSASA['CSD'] = maxSASA['ALA']
+maxSASA['TYS'] = maxSASA['TYR']
+maxSASA['SEP'] = maxSASA['SER']
 
 # Most outer residue atom
 outerAtom = {
@@ -191,6 +205,10 @@ outerAtom = {
     "TRP": 'CZ3', # second ring - capture rotation
     "TYR": 'OH' # endpoint
 }
+outerAtom['YCM'] = outerAtom['CYS']
+outerAtom['CSD'] = outerAtom['ALA']
+outerAtom['TYS'] = outerAtom['TYR']
+outerAtom['SEP'] = outerAtom['SER']
 
 
 class NonHetSelect(Bio.PDB.Select):
@@ -263,7 +281,7 @@ class Command(BaseCommand):
             self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         # DEBUG for a specific PDB
-        # self.references = Structure.objects.filter(pdb_code__index="3SN6").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # self.references = Structure.objects.filter(pdb_code__index="4OO9").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         print(len(self.references),'structures')
         self.references = list(self.references)
@@ -563,7 +581,9 @@ class Command(BaseCommand):
                 #######################################################################
                 ##################### Angles/dihedrals residues #######################
 
-                polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
+                #for line in pdblines_temp: #Get rid of all odd records
+                #polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
+                polychain = [ residue for residue in pchain if (Bio.PDB.Polypeptide.is_aa(residue) or residue.resname in ['YCM','CSD','TYS','SEP']) and "CA" in residue]
                 poly = Bio.PDB.Polypeptide.Polypeptide(polychain)
 
                 # Calculate backbone and sidechain dihedrals + missing atoms
@@ -642,9 +662,10 @@ class Command(BaseCommand):
 
                 gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]
 
-                gns_ca_list = {resid:pchain[resid]["CA"].get_coord() for resid in gns_ids_list if resid in pchain}
-                gns_cb_list = {resid:np.asarray(pchain[resid]["CB"].get_coord() if "CB" in pchain[resid] else cal_pseudo_CB(pchain[resid]), dtype=float) for resid in gns_ids_list if resid in pchain}
-
+                #gns_ca_list = {resid:pchain[resid]["CA"].get_coord() for resid in gns_ids_list if resid in pchain}
+                gns_ca_list = {residue.id[1]:residue["CA"].get_coord() for residue in poly if residue.id[1] in gns_ids_list}
+                #gns_cb_list = {resid:np.asarray(pchain[resid]["CB"].get_coord() if "CB" in pchain[resid] else cal_pseudo_CB(pchain[resid]), dtype=float) for resid in gns_ids_list if resid in pchain}
+                gns_cb_list = {residue.id[1]:np.asarray(residue["CB"].get_coord() if "CB" in residue else cal_pseudo_CB(residue), dtype=float) for residue in poly if residue.id[1] in gns_ids_list}
 
                 ### AXES through each of the TMs and the TM bundle (center axis)
                 hres_list = [np.asarray([pchain[r]["CA"].get_coord() for r in sl], dtype=float) for sl in db_tmlist]
