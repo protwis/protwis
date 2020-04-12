@@ -1306,11 +1306,11 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Group#</th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1540,7 +1540,7 @@ function renderBrowser(data) {
                     </tr>`;
             tbody.append(tr);
         });
-    } else if (data['proteins'].length > 1) {
+    } else if ((data['proteins'].length > 1 && normalized) || (data['pdbs'].length > 1 && !normalized)) {
         thead = '<tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
@@ -1575,11 +1575,11 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Group#</th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1964,11 +1964,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -2243,11 +2243,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -3063,7 +3063,7 @@ function renderBrowser_4(data) {
 
             missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);
             missing_2 = Math.round(100 * dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
-            
+
 
             all_angles_1_set1 = data['all_angles_set1'][i];
             all_angles_1_set2 = data['all_angles_set2'][i];
@@ -3919,7 +3919,7 @@ function numberToColorGradient(value, max, palette, neg_and_pos = false) {
     var yellow = {red:255, green:255, blue: 0}
     var yellow = {red:255, green:255, blue: 0}
     var black = {red:0, green:0, blue: 0}
-    
+
     switch(palette){
         case "rwb": // red-white-blue
           return colorGradient(value/max, red, white, blue)

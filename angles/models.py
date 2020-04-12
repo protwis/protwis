@@ -28,6 +28,12 @@ class ResidueAngle(models.Model):
     mid_distance        = models.FloatField(default=0, null=True)
     ss_dssp             = models.CharField(max_length=1, null=True)
     ss_stride           = models.CharField(max_length=1, null=True)
+    chi1                = models.FloatField(default=0, null=True)
+    chi2                = models.FloatField(default=0, null=True)
+    chi3                = models.FloatField(default=0, null=True)
+    chi4                = models.FloatField(default=0, null=True)
+    chi5                = models.FloatField(default=0, null=True)
+    missing_atoms       = models.IntegerField(default=0, null=True)
 
     class Meta():
         db_table = 'residue_angles'
