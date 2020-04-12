@@ -392,9 +392,26 @@ class Command(BaseCommand):
             h_middle = np.transpose(np.stack((moving_average(h[:,0], 7), moving_average(h[:,1], 7), moving_average(h[:,2], 7))))
             a = np.concatenate((h_middle[(0,0,0),:], h_middle, h_middle[(-1,-1,-1),:]))
 
-            b = p.transform(h)
-            b[:,1:] = p.transform(a)[:,1:]
-            b = p.inverse_transform(b)
+            # PCA transform moved to running average
+            # b = p.transform(h)
+            # b[:,1:] = p.transform(a)[:,1:]
+            # b = p.inverse_transform(b)
+
+            # Use reference of 7 average as placement point
+            # TODO cleanup
+            helper_lines = a - np.roll(a,-1,0)
+            helper_lines[-1] = a[-1] - a[-5]
+            helper_lines[-2] = helper_lines[-1]
+            helper_lines[-3] = helper_lines[-1]
+            helper_lines[-4] = helper_lines[-1]
+            helper_lines[0] = a[0] - a[4]
+            helper_lines[1] = helper_lines[0]
+            helper_lines[2] = helper_lines[0]
+            helper_lines[3] = helper_lines[0]
+            helper_lines = np.array([ line/np.linalg.norm(line) for line in helper_lines])
+
+            # loop over points
+            b = np.round([ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)],3)
 
             # count=0
             # for row in h:
