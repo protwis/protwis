@@ -839,6 +839,7 @@
                     redraw_renders();
                 } else {
                     console.log('not fullscreen')
+                    $(".controls-panel").removeClass("fullscreen");
                     is_fullscreen = false ;
                     redraw_renders();
                 }
@@ -996,6 +997,11 @@
             top: 0px;
             left: 0px;
             z-index: 1;
+        }
+        .fullscreen.controls-panel {
+            top: 30px !important;
+            left: 30px !important;
+            font-size: 20px;
         }
     </style>
 

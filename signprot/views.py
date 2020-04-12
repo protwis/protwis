@@ -130,11 +130,13 @@ def GProtein(request, dataset="GuideToPharma"):
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 2)  # two days timeout on cache
 
-    return render(request, 'signprot/gprotein.html', context)
-
+    return render(request,
+                  'signprot/gprotein.html',
+                  context
+    )
 
 # @cache_page(60*60*24*2) # 2 days caching
-def Couplings(request):
+def Couplings(request, template_name='signprot/coupling_browser.html'):
     """
     Presents coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier
@@ -156,7 +158,8 @@ def Couplings(request):
         p_class_name = class_names[p_class].replace('Class','').strip()
         p_family_name = family_names[p_class].replace('receptors','').strip()
         p_accession = p.accession
-        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession, 'pretty': p.short(), 'GuideToPharma': {}, 'Aska': {}, 'Bouvier':{}}
+        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession,
+                                 'pretty': p.short(), 'GuideToPharma': {}, 'Aska': {}, 'Bouvier':{}}
     distinct_g_families = []
     distinct_g_subunit_families = {}
     distinct_sources = ['GuideToPharma', 'Aska', 'Bouvier']
@@ -261,8 +264,10 @@ def Couplings(request):
     context['data'] = fd
     context['distinct_gf'] = distinct_g_families
     context['distinct_sf'] = distinct_g_subunit_families
-    return render(request, 'signprot/browser.html', context)
 
+    return render(request,
+                  template_name, context
+    )
 
 @cache_page(60 * 60 * 24 * 2)
 def familyDetail(request, slug):
@@ -365,8 +370,10 @@ def familyDetail(request, slug):
                'no_of_human_proteins': no_of_human_proteins, 'mutations': mutations, 'r_chunks': r_chunks,
                'chunk_size': chunk_size}
 
-    return render(request, 'signprot/family_details.html', context)
-
+    return render(request,
+                  'signprot/family_details.html',
+                  context
+    )
 
 @cache_page(60 * 60 * 24 * 2)
 def Ginterface(request, protein=None):
@@ -483,14 +490,21 @@ def Ginterface(request, protein=None):
                     "G13", "G<sub>13</sub>").replace("Gq", "G<sub>q</sub>").replace("G", "G&alpha;"),
                 entry.g_protein.slug))
 
-    return render(request, 'signprot/ginterface.html',
-                  {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal,
+    return render(request,
+                  'signprot/ginterface.html',
+                  {'pdbname': '3SN6',
+                   'snakeplot': SnakePlot,
+                   'gproteinplot': gproteinplot,
+                   'crystal': crystal,
                    'interacting_equivalent': GS_equivalent_interacting_pos,
-                   'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos,
-                   'residues': residues_browser, 'mapped_protein': protein,
-                   'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': set(primary),
-                   'secondary_Gprotein': set(secondary)})
-
+                   'interacting_none_equivalent': GS_none_equivalent_interacting_pos,
+                   'accessible': accessible_pos,
+                   'residues': residues_browser,
+                   'mapped_protein': protein,
+                   'interacting_gn': GS_none_equivalent_interacting_gn,
+                   'primary_Gprotein': set(primary),
+                   'secondary_Gprotein': set(secondary)}
+    )
 
 def ajaxInterface(request, slug, **response_kwargs):
     name_of_cache = 'ajaxInterface_' + slug
@@ -524,7 +538,6 @@ def ajaxInterface(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
 
     return HttpResponse(jsondata, **response_kwargs)
-
 
 def ajaxBarcode(request, slug, cutoff, **response_kwargs):
     name_of_cache = 'ajaxBarcode_' + slug + cutoff
@@ -568,7 +581,6 @@ def ajaxBarcode(request, slug, cutoff, **response_kwargs):
 
     return HttpResponse(jsondata, **response_kwargs)
 
-
 @cache_page(60 * 60 * 24 * 2)
 def StructureInfo(request, pdbname):
     """
@@ -578,8 +590,12 @@ def StructureInfo(request, pdbname):
 
     crystal = SignprotStructure.objects.get(PDB_code=pdbname)
 
-    return render(request, 'signprot/structure_info.html', {'pdbname': pdbname, 'protein': protein, 'crystal': crystal})
-
+    return render(request,
+                  'signprot/structure_info.html',
+                  {'pdbname': pdbname,
+                   'protein': protein,
+                   'crystal': crystal}
+    )
 
 # @cache_page(60*60*24*2)
 def signprotdetail(request, slug):
@@ -655,8 +671,10 @@ def signprotdetail(request, slug):
                'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'complex_structures': complex_structures,
                'mutations': mutations}
 
-    return render(request, 'signprot/signprot_details.html', context)
-
+    return render(request,
+                  'signprot/signprot_details.html',
+                  context
+    )
 
 def sort_a_by_b(a, b, remove_invalid=False):
     '''Sort one list based on the order of elements from another list'''
@@ -667,7 +685,6 @@ def sort_a_by_b(a, b, remove_invalid=False):
     if remove_invalid:
         a = [a_elem for a_elem in a if a_elem in b]
     return sorted(a, key=lambda x: b.index(x))
-
 
 def interface_dataset():
     # correct receptor entry names - the ones with '_a' appended
@@ -739,7 +756,6 @@ def interface_dataset():
 
     return list(conf_ids), list(interactions)
 
-
 # @cache_page(60*60*24*2)
 def InteractionMatrix(request):
     prot_conf_ids, dataset = interface_dataset()
@@ -806,8 +822,10 @@ def InteractionMatrix(request):
     request.session['signature'] = None
     request.session.modified = True
 
-    return render(request, 'signprot/matrix.html', context)
-
+    return render(request,
+                  'signprot/matrix.html',
+                  context
+    )
 
 def IMSequenceSignature(request):
     """Accept set of proteins + generic numbers and calculate the signature for those"""
@@ -869,7 +887,6 @@ def IMSequenceSignature(request):
 
     return JsonResponse(res, safe=False)
 
-
 def IMSignatureMatch(request):
     '''Take the signature stored in the session and query the db'''
     signature_data = request.session.get('signature')
@@ -914,7 +931,6 @@ def IMSignatureMatch(request):
     signature_match = prepare_signature_match(signature_match)
     return JsonResponse(signature_match, safe=False)
 
-
 def render_IMSigMat(request):
     # signature_match = request.session.get('signature_match')
     signature_data = request.session.get('signature')
@@ -941,7 +957,7 @@ def render_IMSigMat(request):
 
     response = render(
         request,
-        'signature_match.html',
+        'signprot/signature_match.html',
         {'scores': signature_match}
     )
     return response

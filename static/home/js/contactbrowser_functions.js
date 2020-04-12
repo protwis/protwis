@@ -760,7 +760,7 @@ function drawPlotPanel(plot_type, plot_div) {
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
-    plot_div.find('.plot-title').html( "&nbsp;" + plot_type);
+    plot_div.find('.plot-title').html( "&nbsp;" + display_plot_names[plot_type]);
 
     console.log("SET UP PLOT", plot_type, plot_id, mode);
     switch (mode) {
@@ -978,6 +978,8 @@ var plotting_options = {
         ['boxplot_angles', 'Box plot '],],
 };
 
+display_plot_names = {}
+
 
 
 function generate_display_options() {
@@ -992,6 +994,7 @@ function generate_display_options() {
         if ($.isArray(plotting_options[key])) {
             dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key + '</strong></li>'
             plotting_options[key].forEach(function (opt) {
+                display_plot_names[opt[0]] = '<span class="text-uppercase"><strong>'+key + '</strong></span> - ' + opt[1];
                 dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
             });
         } else {
@@ -1000,6 +1003,7 @@ function generate_display_options() {
             for (let key2 in plotting_options[key]) {
                 dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key2 + '</strong></li>'
                 plotting_options[key][key2].forEach(function (opt) {
+                    display_plot_names[opt[0]] = '<span class="text-uppercase"><strong>'+key + '</strong></span> - <span class="text-uppercase"><strong>'+ key2 + '</strong></span> - ' + opt[1];
                     dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
                 });
             }
@@ -1174,6 +1178,7 @@ function initilizeInitialPlots() {
     // if single structure - use interaction coloring
     if (mode == "two-crystal-groups") {
         default_plot_types = ['tm7_plot_extra', 'tm7_plot_middle', 'tm7_plot_intra'];
+        // default_plot_types = ['scatterplot', 'snakeplot', ''];
     }
 
     $(".plot_row:visible").find(".panel").each(function (i) {
@@ -1205,6 +1210,8 @@ function initializeFullscreenButton(selector) {
         } else {
             fullScreenElement = $(this).closest(".panel-default").find(".plot-container");
             fullScreenElement.css('background-color', 'white');
+            var cp = fullScreenElement.find(".controls-panel");
+            cp.toggleClass("fullscreen");
         }
 
         toggleFullScreen(fullScreenElement.get(0));

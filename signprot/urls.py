@@ -1,11 +1,11 @@
-from django.conf.urls import url
-
-from signprot import views
 from contactnetwork.views import PdbTableData
+from django.conf.urls import url
+from django.views.decorators.cache import cache_page
+from signprot import views
 
 urlpatterns = [
-	url(r'^$', views.BrowseSelection.as_view(), name='index'),
-	url(r'^statistics/(?P<dataset>[^/]*?)/$',  views.GProtein, name='gprotein'),
+    url(r'^$', views.BrowseSelection.as_view(), name='index'),
+    url(r'^statistics/(?P<dataset>[^/]*?)/$',  views.GProtein, name='gprotein'),
     url(r'^statistics',  views.GProtein, name='gprotein'),
     url(r'^couplings',  views.Couplings, name='couplings'),
     url(r'^ginterface/(?P<protein>[^/]*?)/$', views.Ginterface, name='render'),

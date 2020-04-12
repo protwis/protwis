@@ -150,9 +150,10 @@ function renderDataTablesYadcf(element) {
     const analys_mode = selector.replace('-tab', '');
     var table = $(selector + " .browser-table-" + tab_number);
     var heading = $(selector + " .tab-content .panel-title:visible");
-    if (!heading.hasClass("button_added") && analys_mode == "#two-crystal-groups") {
-        heading.append(' <button type="button"  onclick="make_abs_values(\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs">Toggle if difference values are absolute</button>');
-        heading.addClass("button_added");
+    if (analys_mode == "#two-crystal-groups") {
+        heading.find(".abs_button").remove();
+        heading.append(' <button type="button"  onclick="make_abs_values(this,\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs abs_button" changed=0>Change negative to absolute values</button>');
+        //heading.addClass("button_added");
     }
     // If table is without tbody, then do not init further.
     if (!(table.find("thead").length)) {
@@ -189,7 +190,29 @@ function renderDataTablesYadcf(element) {
                 pageLength: 200,
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1].map((val, i) => val.split("-")).flat())]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " contact-pairs covering "+distinctPositions.length+" positions"+filtered_text;
+                  },
                 "order": [],
                 columnDefs: [{
                         type: "string",
@@ -422,7 +445,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1].map((val, i) => val.split("-")).flat())]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " contact-pairs covering "+distinctPositions.length+" positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -688,7 +733,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -793,7 +860,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -1027,7 +1116,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -3582,9 +3693,18 @@ function gray_scale_table(table) {
     console.timeEnd('Greyscale');
 }
 
-function make_abs_values(table) {
+function make_abs_values(e,table) {
     $(".main_loading_overlay").show();
     console.time('Abs values')
+
+    if ($(e).attr('changed') == '0') {
+        $(e).html('Change back to original values');
+        $(e).attr('changed','1')
+    } else {
+        $(e).html('Change negative to absolute values');
+        $(e).attr('changed','0')
+
+    }
     console.log(table);
 
     myVar = setTimeout(function () {
