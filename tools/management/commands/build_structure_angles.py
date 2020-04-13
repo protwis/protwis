@@ -1157,7 +1157,7 @@ class Command(BaseCommand):
 
                 ### DISTANCES - moved here from cube
                 # REMOVE OLD distances
-                Distance.objects.filter(structure=reference).all().delete()
+                # Distance.objects.filter(structure=reference).all().delete()
 
                 # Perpendicular projection of Ca onto helical PCA
                 h_center_list = np.concatenate([center_coordinates(h,p,pca) for h,p in zip(hres_list,helix_pcas)])
