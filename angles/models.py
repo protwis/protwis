@@ -23,6 +23,7 @@ class ResidueAngle(models.Model):
     tau_angle           = models.FloatField(default=0, null=True)
     theta               = models.FloatField(default=0, null=True)
     tau                 = models.FloatField(default=0, null=True)
+    rotation_angle      = models.FloatField(default=0, null=True)
     core_distance       = models.FloatField(default=0, null=True)
     midplane_distance   = models.FloatField(default=0, null=True)
     mid_distance        = models.FloatField(default=0, null=True)
