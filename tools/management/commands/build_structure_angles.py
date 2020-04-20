@@ -21,6 +21,7 @@ import traceback
 import numpy as np
 import scipy.stats as stats
 
+from scipy.spatial.transform import Rotation as R
 from collections import OrderedDict
 from sklearn.decomposition import PCA
 from numpy.core.umath_tests import inner1d
@@ -373,7 +374,8 @@ class Command(BaseCommand):
             helper_lines = np.array([ line/np.linalg.norm(line) for line in helper_lines])
 
             # loop over points
-            c = np.round([ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)],3)
+            #c = np.round([ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)],3)
+            c = [ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)]
 
 
             # return b
@@ -411,7 +413,8 @@ class Command(BaseCommand):
             helper_lines = np.array([ line/np.linalg.norm(line) for line in helper_lines])
 
             # loop over points
-            b = np.round([ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)],3)
+            # b = np.round([ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)],3)
+            b = [ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)]
 
             # count=0
             # for row in h:
@@ -695,6 +698,7 @@ class Command(BaseCommand):
                     gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
 
                 gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]
+                #gn_res_gns = [gn_res_gns[key] for key in np.argsort(gns_order)]
 
                 #gns_ca_list = {resid:pchain[resid]["CA"].get_coord() for resid in gns_ids_list if resid in pchain}
                 gns_ca_list = {residue.id[1]:residue["CA"].get_coord() for residue in poly if residue.id[1] in gns_ids_list}
@@ -1157,11 +1161,46 @@ class Command(BaseCommand):
 
                 ### DISTANCES - moved here from cube
                 # REMOVE OLD distances
-                Distance.objects.filter(structure=reference).all().delete()
+                # Distance.objects.filter(structure=reference).all().delete()
 
                 # Perpendicular projection of Ca onto helical PCA
                 h_center_list = np.concatenate([center_coordinates(h,p,pca) for h,p in zip(hres_list,helix_pcas)])
                 gns_center_list = dict(zip(tm_keys_int, h_center_list))
+
+                # New rotation angle
+                # Angle between normal from center axis to 1x46 and normal from helix axis to CA
+                key_tm1 = gn_res_ids[gn_res_gns.index("1x46")]
+                ref_tm1 = gns_center_list[key_tm1]
+                # print(gns_order)
+                # print(np.argsort(gns_order))
+                # print(gn_res_gns)
+                # print(gn_res_ids)
+                # print(key_tm1)
+
+                # Project 1x46 onto center axis
+                axis_vector = (center_vector[0] - center_vector[1])/np.linalg.norm(center_vector[0] - center_vector[1])
+                center_tm1 = center_vector[0] + np.dot(ref_tm1 - center_vector[0], axis_vector) * axis_vector
+                tm1_vector = (center_tm1 - ref_tm1)/np.linalg.norm(center_tm1 - ref_tm1)
+
+                # Calculate CA to helix center vectors
+                ca_center_vectors = {resid:(gns_ca_list[resid] - gns_center_list[resid])/np.linalg.norm(gns_ca_list[resid] - gns_center_list[resid]) for resid in gns_center_list }
+
+                # Calculate rotation angles
+                rotation_angles = { resid:np.rad2deg(np.arccos(np.dot(tm1_vector, ca_center))) for resid, ca_center in ca_center_vectors.items() }
+
+                # Rotate tm1_vector by 90 degrees and then check the angles again  - if angle gets larger -> 360 - angle otherwise ok
+                rotation_vector = np.radians(90) * axis_vector
+                rotation = R.from_rotvec(rotation_vector)
+                rotated_tm1_vector = rotation.apply(tm1_vector)
+                rotation_angles_ref = { resid:np.rad2deg(np.arccos(np.dot(rotated_tm1_vector, ca_center))) for resid, ca_center in ca_center_vectors.items() }
+                # Make key a string to match with other dictionaries
+                rotation_angles = {str(resid):(round(rotation_angles[resid],3) if rotation_angles_ref[resid] - rotation_angles[resid] < 0 else round(360 - rotation_angles[resid],3)) for resid in rotation_angles }
+
+
+                # print("pseudo center, pos=[", ref_tm1[0], ",", ref_tm1[1], ",", ref_tm1[2] ,"];")
+                # print("pseudo ca, pos=[", gns_ca_list[key_tm1][0], ",", gns_ca_list[key_tm1][1], ",", gns_ca_list[key_tm1][2] ,"];")
+                # print("pseudo mid, pos=[", center_tm1[0], ",", center_tm1[1], ",", center_tm1[2] ,"];")
+                # print(rotation_angles[key_tm1])
 
                 # triangular matrix for distances
                 up_ind = np.triu_indices(len(gns_ca_list), 1)
@@ -1288,18 +1327,20 @@ class Command(BaseCommand):
                         dihedrals[residue_id] = None
                     if not residue_id in asa_list:
                         asa_list[residue_id] = None
+                    if not residue_id in rotation_angles:
+                        rotation_angles[residue_id] = None
 
                 #for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distances, midpoint_distances, mid_membrane_distances):
                 for res in polychain:
                     residue_id = str(res.id[1])
 
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "CHI", "MISSING", "ASA", "DISTANCE"
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "CHI", "MISSING", "ASA", "DISTANCE", "ROTATION_ANGLE"
                     if residue_id in full_resdict:
                         dblist.append([reference, full_resdict[residue_id], a_angle[residue_id], b_angle[residue_id], \
                             rsa_list[residue_id], \
                             hselist[residue_id]] + \
                             dihedrals[residue_id] + \
-                            [asa_list[residue_id], core_distances[residue_id], midpoint_distances[residue_id], mid_membrane_distances[residue_id]])
+                            [asa_list[residue_id], core_distances[residue_id], midpoint_distances[residue_id], mid_membrane_distances[residue_id], rotation_angles[residue_id]])
             except Exception as e:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
@@ -1326,9 +1367,9 @@ class Command(BaseCommand):
 #            std = stats.t.cdf(std_test, df=std_len)
 #            dblist[i].append(0.501 if np.isnan(std) else std)
 
-        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "CHI", "MISSING", "ASA", "DISTANCE"
+        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "CHI", "MISSING", "ASA", "DISTANCE", "ROTATION_ANGLE"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,chi_angles,missing,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,chi_angles,missing,asa,distance,midpoint_distance,mid_membrane_distance,rotation_angle in dblist:
             try:
                 if asa != None:
                     asa = round(asa,1)
@@ -1346,7 +1387,7 @@ class Command(BaseCommand):
                     tau = round(np.rad2deg(tau),3)
                 if tau_angle != None:
                     tau_angle = round(np.rad2deg(tau_angle),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=asa, rsa=rsa, hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, chi1=chi_angles[0], chi2=chi_angles[1], chi3=chi_angles[2], chi4=chi_angles[3], chi5=chi_angles[4], missing_atoms=missing, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=asa, rsa=rsa, hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, chi1=chi_angles[0], chi2=chi_angles[1], chi3=chi_angles[2], chi4=chi_angles[3], chi5=chi_angles[4], missing_atoms=missing, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance, rotation_angle=rotation_angle))
             except Exception as e:
                 print(e)
                 print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance])

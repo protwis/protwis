@@ -1391,7 +1391,7 @@ def InteractionBrowserData(request):
 
             print('got angles values for',mode,'mode',time.time()-start_time)
             custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
-            index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
+            index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle', 11:'tau', 12:'rotation_angle'}
 
             for coord in data['interactions']:
                 gn1 = coord.split(",")[0]
