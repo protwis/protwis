@@ -698,6 +698,7 @@ class Command(BaseCommand):
                     gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
 
                 gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]
+                #gn_res_gns = [gn_res_gns[key] for key in np.argsort(gns_order)]
 
                 #gns_ca_list = {resid:pchain[resid]["CA"].get_coord() for resid in gns_ids_list if resid in pchain}
                 gns_ca_list = {residue.id[1]:residue["CA"].get_coord() for residue in poly if residue.id[1] in gns_ids_list}
