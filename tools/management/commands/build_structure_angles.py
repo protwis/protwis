@@ -1203,6 +1203,9 @@ class Command(BaseCommand):
                 rotation_angles_ref = { resid:np.rad2deg(np.arccos(np.dot(rotated_tm1_vector, ca_center))) for resid, ca_center in ca_center_vectors.items() }
                 # Make key a string to match with other dictionaries
                 rotation_angles = {str(resid):(round(rotation_angles[resid],3) if rotation_angles_ref[resid] - rotation_angles[resid] < 0 else round(360 - rotation_angles[resid],3)) for resid in rotation_angles }
+                # Making the rotation angle compliant with the other angles (-180 to 180 degrees)
+                rotation_angles = {resid:rotation_angles[resid]-180 for resid in rotation_angles }
+                # print(pdb_code, "1x45", rotation_angles[str(gn_res_ids[gn_res_gns.index("1x45")])], "and 1x47", rotation_angles[str(gn_res_ids[gn_res_gns.index("1x47")])])
 
 
                 # print("pseudo center, pos=[", ref_tm1[0], ",", ref_tm1[1], ",", ref_tm1[2] ,"];")
@@ -1213,6 +1216,7 @@ class Command(BaseCommand):
                 # triangular matrix for distances
                 up_ind = np.triu_indices(len(gns_ca_list), 1)
                 bulk_distances = []
+
                 for i1, i2 in zip(up_ind[0], up_ind[1]):
                     key1 = gns_ids_list[i1]
                     key2 = gns_ids_list[i2]
