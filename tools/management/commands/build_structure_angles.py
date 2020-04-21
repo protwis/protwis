@@ -1250,9 +1250,14 @@ class Command(BaseCommand):
                 # SASA calculations - results per atom
                 clean_structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
                 clean_pchain = clean_structure[0][preferred_chain]
+
                 # PTM residues give an FreeSASA error - remove
                 db_fullset = set([(' ',r.sequence_number,' ') for r in db_reslist])
                 recurse(clean_structure, [[0], preferred_chain, db_fullset])
+                # Remove hydrogens from structure (e.g. 5VRA)
+                for residue in clean_structure[0][preferred_chain]:
+                    for id in [atom.id for atom in residue if atom.element == "H"]:
+                        residue.detach_child(id)
 
                 res, trash = freesasa.calcBioPDB(clean_structure)
 
