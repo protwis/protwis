@@ -606,6 +606,12 @@ class Command(BaseCommand):
                     except IndexError:
                         pass
 
+                # Fix IDs matching for handling PTM-ed residues
+                ids_in_pchain = []
+                for residue in pchain:
+                    if residue.id[1] not in pchain:
+                        residue.id = (' ', residue.id[1], ' ')
+
                 # when gdict is not needed the helper can be removed
                 db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain] for x in ["1","2","3","4","5","6","7"]]
                 gdict = {r[1]:r[0] for hlist in db_helper for r in hlist}
@@ -697,7 +703,9 @@ class Command(BaseCommand):
 
                     gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
 
+
                 gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]
+
                 #gn_res_gns = [gn_res_gns[key] for key in np.argsort(gns_order)]
 
                 #gns_ca_list = {resid:pchain[resid]["CA"].get_coord() for resid in gns_ids_list if resid in pchain}
@@ -1195,6 +1203,9 @@ class Command(BaseCommand):
                 rotation_angles_ref = { resid:np.rad2deg(np.arccos(np.dot(rotated_tm1_vector, ca_center))) for resid, ca_center in ca_center_vectors.items() }
                 # Make key a string to match with other dictionaries
                 rotation_angles = {str(resid):(round(rotation_angles[resid],3) if rotation_angles_ref[resid] - rotation_angles[resid] < 0 else round(360 - rotation_angles[resid],3)) for resid in rotation_angles }
+                # Making the rotation angle compliant with the other angles (-180 to 180 degrees)
+                rotation_angles = {resid:rotation_angles[resid]-180 for resid in rotation_angles }
+                # print(pdb_code, "1x45", rotation_angles[str(gn_res_ids[gn_res_gns.index("1x45")])], "and 1x47", rotation_angles[str(gn_res_ids[gn_res_gns.index("1x47")])])
 
 
                 # print("pseudo center, pos=[", ref_tm1[0], ",", ref_tm1[1], ",", ref_tm1[2] ,"];")
@@ -1205,6 +1216,7 @@ class Command(BaseCommand):
                 # triangular matrix for distances
                 up_ind = np.triu_indices(len(gns_ca_list), 1)
                 bulk_distances = []
+
                 for i1, i2 in zip(up_ind[0], up_ind[1]):
                     key1 = gns_ids_list[i1]
                     key2 = gns_ids_list[i2]
@@ -1236,12 +1248,23 @@ class Command(BaseCommand):
 
                 ### freeSASA (only for TM bundle)
                 # SASA calculations - results per atom
-                res, trash = freesasa.calcBioPDB(structure)
+                clean_structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
+                clean_pchain = clean_structure[0][preferred_chain]
+
+                # PTM residues give an FreeSASA error - remove
+                db_fullset = set([(' ',r.sequence_number,' ') for r in db_reslist])
+                recurse(clean_structure, [[0], preferred_chain, db_fullset])
+                # Remove hydrogens from structure (e.g. 5VRA)
+                for residue in clean_structure[0][preferred_chain]:
+                    for id in [atom.id for atom in residue if atom.element == "H"]:
+                        residue.detach_child(id)
+
+                res, trash = freesasa.calcBioPDB(clean_structure)
 
                 # create results dictionary per residue
                 asa_list = {}
                 rsa_list = {}
-                atomlist = list(pchain.get_atoms())
+                atomlist = list(clean_pchain.get_atoms())
                 for i in range(res.nAtoms()):
                     resnum = str(atomlist[i].get_parent().id[1])
                     if resnum not in asa_list:

@@ -131,6 +131,7 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
     to_ref = consecutive_group_order(gn_grouping) # based on groups - same initial four points, same plane
     for repeat in range(0,10):
         to = to_ref[:]
+        skip_this_loop = False
 
         if repeat > 0:
             random.seed(repeat)
@@ -193,8 +194,10 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
                         scaler += 0.01
                         # print("Scaling up", scaler)
                         if scaler > 1.1: # Way off, only if DB data is wrong (TODO: throw and handle error )
+                            skip_this_loop = True
                             break
                         pass
+
 
                 # Alternative 3: place point using the most distant references (should minimize placement rounding error)
                 # ref_distances = [reorder_dist[i][x] for x in range(0,min(i,max(gn_grouping)+1))]
@@ -215,6 +218,10 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
                 # changes = [abs(np.linalg.norm(tms[i][j]-tms[ref_point]) - ref_dist) for j in range(0,2)]
                 # print("CHANGES", i, changes)
                 # tms[i] = tms[i][changes.index(min(changes))]
+
+        # Verify if this loop could reconstruct all points
+        if skip_this_loop:
+            continue
 
         # Rearrange to correct order
         tms = [tms[to.index(i)] for i in range(0,len(gn_grouping))]
