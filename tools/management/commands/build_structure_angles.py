@@ -606,6 +606,12 @@ class Command(BaseCommand):
                     except IndexError:
                         pass
 
+                # Fix IDs matching for handling PTM-ed residues
+                ids_in_pchain = []
+                for residue in pchain:
+                    if residue.id[1] not in pchain:
+                        residue.id = (' ', residue.id[1], ' ')
+
                 # when gdict is not needed the helper can be removed
                 db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain] for x in ["1","2","3","4","5","6","7"]]
                 gdict = {r[1]:r[0] for hlist in db_helper for r in hlist}
@@ -697,7 +703,9 @@ class Command(BaseCommand):
 
                     gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
 
+
                 gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]
+
                 #gn_res_gns = [gn_res_gns[key] for key in np.argsort(gns_order)]
 
                 #gns_ca_list = {resid:pchain[resid]["CA"].get_coord() for resid in gns_ids_list if resid in pchain}
@@ -1236,12 +1244,18 @@ class Command(BaseCommand):
 
                 ### freeSASA (only for TM bundle)
                 # SASA calculations - results per atom
-                res, trash = freesasa.calcBioPDB(structure)
+                clean_structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
+                clean_pchain = clean_structure[0][preferred_chain]
+                # PTM residues give an FreeSASA error - remove
+                db_fullset = set([(' ',r.sequence_number,' ') for r in db_reslist])
+                recurse(clean_structure, [[0], preferred_chain, db_fullset])
+
+                res, trash = freesasa.calcBioPDB(clean_structure)
 
                 # create results dictionary per residue
                 asa_list = {}
                 rsa_list = {}
-                atomlist = list(pchain.get_atoms())
+                atomlist = list(clean_pchain.get_atoms())
                 for i in range(res.nAtoms()):
                     resnum = str(atomlist[i].get_parent().id[1])
                     if resnum not in asa_list:
